@@ -1,5 +1,5 @@
-<!-- Vista Editar Habitación -->
 <?php
+// ── Datos del formulario ─────────────────────────────────────────
 $tiposHabitacion = is_array($tipos ?? null) && !empty($tipos) ? $tipos : Habitacion::getTipos();
 if (!isset($tiposHabitacion[$habitacion['tipo']])) {
     $tiposHabitacion[$habitacion['tipo']] = function_exists('get_tipo_habitacion')
@@ -14,12 +14,7 @@ if (!isset($pisosHabitacion[(int) $habitacion['piso']])) {
 
 $amenidadesHabitacion = is_array($amenidades ?? null) && !empty($amenidades)
     ? $amenidades
-    : [
-        'pantalla' => 'Pantalla',
-        'balcon' => 'Balcon',
-        'jacuzzi' => 'Jacuzzi',
-        'amplia' => 'Mas amplia',
-    ];
+    : ['pantalla' => 'Pantalla', 'balcon' => 'Balcón', 'jacuzzi' => 'Jacuzzi', 'amplia' => 'Más amplia'];
 
 $habitacionCaracteristicasPlain = strtolower((string)($habitacion['caracteristicas'] ?? ''));
 $habitacionCaracteristicasAscii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $habitacionCaracteristicasPlain);
@@ -30,7 +25,7 @@ $habitacionCaracteristicasLimpias = trim((string)($habitacion['caracteristicas']
 $habitacionTipoCatalogoMarker = null;
 if (preg_match('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*([^\[\r\n,;]+?)\s*\[([a-z0-9_\-]+)\]/i', (string)($habitacion['caracteristicas'] ?? ''), $habitacionTipoCatalogoMatch)) {
     $habitacionTipoCatalogoCodigo = strtolower(trim((string)($habitacionTipoCatalogoMatch[2] ?? '')));
-    $habitacionTipoCatalogoLabel = trim((string)($habitacionTipoCatalogoMatch[1] ?? ''));
+    $habitacionTipoCatalogoLabel  = trim((string)($habitacionTipoCatalogoMatch[1] ?? ''));
     if ($habitacionTipoCatalogoCodigo !== '') {
         $habitacionTipoCatalogoMarker = $habitacionTipoCatalogoCodigo;
         if (!isset($tiposHabitacion[$habitacionTipoCatalogoCodigo])) {
@@ -54,24 +49,24 @@ if ($habitacionTipoCatalogoMarker !== null) {
     }
 }
 
-$habitacionOldInput = is_array($_SESSION['old_input'] ?? null) ? $_SESSION['old_input'] : [];
-$habitacionTieneOldInput = !empty($habitacionOldInput);
-$habitacionCampoFormulario = static function (string $campo, $valorActual) use ($habitacionOldInput, $habitacionTieneOldInput) {
+$habitacionOldInput       = is_array($_SESSION['old_input'] ?? null) ? $_SESSION['old_input'] : [];
+$habitacionTieneOldInput  = !empty($habitacionOldInput);
+$habitacionCampo = static function (string $campo, $valorActual) use ($habitacionOldInput, $habitacionTieneOldInput) {
     return $habitacionTieneOldInput && array_key_exists($campo, $habitacionOldInput)
         ? $habitacionOldInput[$campo]
         : $valorActual;
 };
 
-$habitacionTipoFormulario = (string)$habitacionCampoFormulario('tipo', $habitacionTipoSeleccionado);
-$habitacionNumeroFormulario = (string)$habitacionCampoFormulario('numero', $habitacion['numero'] ?? '');
-$habitacionPisoFormulario = (int)$habitacionCampoFormulario('piso', $habitacion['piso'] ?? 0);
-$habitacionPrecioFormulario = (string)$habitacionCampoFormulario('precio_base', $habitacion['precio_base'] ?? '');
-$habitacionCapacidadFormulario = (string)$habitacionCampoFormulario('capacidad_personas', $habitacion['capacidad_personas'] ?? 2);
-$habitacionCamasMatrimonialesFormulario = (string)$habitacionCampoFormulario('camas_matrimoniales', $habitacion['camas_matrimoniales'] ?? 1);
-$habitacionCamasIndividualesFormulario = (string)$habitacionCampoFormulario('camas_individuales', $habitacion['camas_individuales'] ?? 0);
-$habitacionCaracteristicasFormulario = (string)$habitacionCampoFormulario('caracteristicas', $habitacionCaracteristicasLimpias);
-$habitacionActivaFormulario = $habitacionTieneOldInput ? !empty($habitacionOldInput['activa']) : !empty($habitacion['activa']);
-$habitacionEspecialesFormulario = null;
+$habitacionTipoFormulario            = (string)$habitacionCampo('tipo', $habitacionTipoSeleccionado);
+$habitacionNumeroFormulario          = (string)$habitacionCampo('numero', $habitacion['numero'] ?? '');
+$habitacionPisoFormulario            = (int)$habitacionCampo('piso', $habitacion['piso'] ?? 0);
+$habitacionPrecioFormulario          = (string)$habitacionCampo('precio_base', $habitacion['precio_base'] ?? '');
+$habitacionCapacidadFormulario       = (string)$habitacionCampo('capacidad_personas', $habitacion['capacidad_personas'] ?? 2);
+$habitacionCamasMatrimonialesForm    = (string)$habitacionCampo('camas_matrimoniales', $habitacion['camas_matrimoniales'] ?? 1);
+$habitacionCamasIndividualesForm     = (string)$habitacionCampo('camas_individuales', $habitacion['camas_individuales'] ?? 0);
+$habitacionCaracteristicasFormulario = (string)$habitacionCampo('caracteristicas', $habitacionCaracteristicasLimpias);
+$habitacionActivaFormulario          = $habitacionTieneOldInput ? !empty($habitacionOldInput['activa']) : !empty($habitacion['activa']);
+$habitacionEspecialesFormulario      = null;
 if ($habitacionTieneOldInput) {
     $habitacionEspecialesFormulario = $habitacionOldInput['caracteristicas_especiales'] ?? [];
     if (!is_array($habitacionEspecialesFormulario)) {
@@ -80,1600 +75,1007 @@ if ($habitacionTieneOldInput) {
     $habitacionEspecialesFormulario = array_map('strval', $habitacionEspecialesFormulario);
 }
 
-$habitacionTipoLabel = $tiposHabitacion[$habitacionTipoFormulario] ?? ($tiposHabitacion[$habitacion['tipo']] ?? get_tipo_habitacion($habitacion['tipo']));
+$habitacionTipoLabel = $tiposHabitacion[$habitacionTipoFormulario]
+    ?? ($tiposHabitacion[$habitacion['tipo']] ?? get_tipo_habitacion($habitacion['tipo']));
 
 $rangosHabitacion = Habitacion::getRangoPrecios();
 if (function_exists('hotel_room_catalog_type_rows')) {
-    foreach (hotel_room_catalog_type_rows(null, true) as $catalogTypeRow) {
-        $catalogTypeCode = (string) ($catalogTypeRow['codigo'] ?? '');
-        $catalogTypePrice = (float) ($catalogTypeRow['precio_base_default'] ?? 0);
-
-        if ($catalogTypeCode !== '' && $catalogTypePrice > 0 && !isset($rangosHabitacion[$catalogTypeCode])) {
-            $rangosHabitacion[$catalogTypeCode] = [
-                'min' => $catalogTypePrice,
-                'max' => $catalogTypePrice,
-            ];
+    foreach (hotel_room_catalog_type_rows(null, true) as $catalogRow) {
+        $catalogCode  = (string)($catalogRow['codigo'] ?? '');
+        $catalogPrice = (float)($catalogRow['precio_base_default'] ?? 0);
+        if ($catalogCode !== '' && $catalogPrice > 0 && !isset($rangosHabitacion[$catalogCode])) {
+            $rangosHabitacion[$catalogCode] = ['min' => $catalogPrice, 'max' => $catalogPrice];
         }
     }
 }
 
-$reservacionesBloqueantesEliminacion = is_array($reservaciones_bloqueantes_eliminacion ?? null)
-    ? $reservaciones_bloqueantes_eliminacion
-    : [];
-$hayReservacionesBloqueantesEliminacion = count($reservacionesBloqueantesEliminacion) > 0;
-$estadosReservacionEliminacion = [
-    'confirmada' => 'Confirmada',
-    'checked_in' => 'Check-in',
-];
-$habitacionNumeroEliminacion = (string)($habitacion['numero'] ?? '');
-?>
+$reservacionesBloqueantes     = is_array($reservaciones_bloqueantes_eliminacion ?? null) ? $reservaciones_bloqueantes_eliminacion : [];
+$hayReservacionesBloqueantes  = count($reservacionesBloqueantes) > 0;
+$estadosResEliminacion        = ['confirmada' => 'Confirmada', 'checked_in' => 'Check-in'];
+$habitacionNumeroEliminacion  = (string)($habitacion['numero'] ?? '');
 
-<style id="edit-room-redesign">
+$_ehEstados    = Habitacion::getEstados();
+$_ehEstado     = $_ehEstados[$habitacion['estado']] ?? ['label' => 'Sin estado', 'color' => 'gray', 'icon' => 'circle'];
+$_ehEstadoIcon = [
+    'disponible'   => 'fa-check-circle',
+    'ocupada'      => 'fa-user-lock',
+    'mantenimiento'=> 'fa-tools',
+    'limpieza'     => 'fa-broom',
+][($habitacion['estado'] ?? '')] ?? 'fa-circle';
+
+$pisosAbajo  = [];
+$pisosArriba = [];
+foreach ($pisosHabitacion as $pn => $pl) {
+    if ((int)$pn < 0) { $pisosAbajo[(int)$pn]  = $pl; }
+    else               { $pisosArriba[(int)$pn] = $pl; }
+}
+
+$amenidadMeta = [
+    'pantalla' => ['icon' => 'fa-tv',                 'label' => 'Pantalla'],
+    'balcon'   => ['icon' => 'fa-home',               'label' => 'Balcón'],
+    'jacuzzi'  => ['icon' => 'fa-bath',               'label' => 'Jacuzzi', 'disabled_for' => ['doble_jacuzzi','sencilla_jacuzzi']],
+    'amplia'   => ['icon' => 'fa-expand-arrows-alt',  'label' => 'Más amplia'],
+];
+
+$habitacionImagenModel    = new HabitacionImagen();
+$imagenesExistentes       = $habitacionImagenModel->porHabitacion($habitacion['id']);
+$totalImagenes            = count($imagenesExistentes);
+$rangoActual              = $rangosHabitacion[$habitacionTipoFormulario] ?? ['min' => 500, 'max' => 3000];
+?>
+<style id="edit-hab-gc">
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
-.edit-room-page {
-    --er-brand: var(--brand-primary, #1B2746);
-    --er-brand-dark: var(--brand-secondary, #0F172A);
-    --er-accent: var(--brand-accent, #BD9441);
-    --er-ink: #1C2635;
-    --er-muted: #687586;
-    --er-sky: #477CA8;
-    --er-sage: #5E7F69;
-    --er-clay: #B86A54;
-    --er-sun: #C18A28;
-    --er-line: rgba(28, 38, 53, .12);
-    --er-panel: rgba(255, 255, 255, .94);
+.edit-hab-page {
+    --gc-brand:         var(--brand-primary, #1B2746);
+    --gc-brand-2:       var(--brand-secondary, #0F172A);
+    --gc-accent:        var(--brand-accent, #BD9441);
+    --gc-accent-dark:   color-mix(in srgb, var(--gc-accent) 72%, #3F2E12);
+    --gc-accent-soft:   color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF);
+    --gc-accent-line:   color-mix(in srgb, var(--gc-accent) 32%, #E8DDCA);
+    --gc-ivory:         color-mix(in srgb, var(--gc-accent) 8%, #F8F5ED);
+    --gc-ivory-2:       color-mix(in srgb, var(--gc-accent) 5%, #FCFAF5);
+    --gc-surface:       color-mix(in srgb, var(--gc-accent) 2%, #FFFFFF);
+    --gc-surface-warm:  color-mix(in srgb, var(--gc-accent) 5%, #FFFFFF);
+    --gc-line:          color-mix(in srgb, var(--gc-accent) 20%, #E7DEC9);
+    --gc-line-soft:     color-mix(in srgb, var(--gc-accent) 11%, #F0ECE2);
+    --gc-muted:         color-mix(in srgb, var(--gc-brand-2) 48%, #94A3B8);
+    --gc-text:          var(--gc-brand-2);
+    --gc-success:       #1E9E63;
+    --gc-success-bg:    #E7F4EC;
+    --gc-info:          #2F77E0;
+    --gc-info-bg:       #E6EFFC;
+    --gc-danger:        #D64539;
+    --gc-danger-bg:     #FBE9E7;
+    --gc-serif:         'Cormorant Garamond', Georgia, serif;
+    --gc-sans:          'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     background:
-        radial-gradient(circle at 6% 8%, color-mix(in srgb, var(--er-sky) 16%, transparent), transparent 24rem),
-        radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--er-accent) 14%, transparent), transparent 25rem),
-        radial-gradient(circle at 74% 86%, color-mix(in srgb, var(--er-sage) 13%, transparent), transparent 28rem),
-        linear-gradient(180deg, #FBFAF5 0%, #F4F6F1 44%, #EEF5F6 100%);
-    color: var(--er-ink);
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        repeating-linear-gradient(135deg, color-mix(in srgb, var(--gc-accent) 3%, transparent) 0 1px, transparent 1px 22px),
+        linear-gradient(180deg, var(--gc-ivory-2), var(--gc-ivory) 58%, #F7F2EA);
+    color: var(--gc-text);
+    font-family: var(--gc-sans);
+    -webkit-font-smoothing: antialiased;
 }
+.edit-hab-page *, .edit-hab-page *::before, .edit-hab-page *::after { box-sizing: border-box; }
+.edit-hab-page :where(p, span, a, button, input, select, textarea, label) { font-family: var(--gc-sans); }
 
-.edit-room-page * {
-    box-sizing: border-box;
-}
+.gc-wrap  { width: min(100%, 1280px); margin: 0 auto; padding: 26px 18px 34px; }
 
-.edit-room-page :where(a, button, input, textarea, select, label, span, p) {
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
+/* Breadcrumb */
+.gc-breadcrumb { display: inline-flex; align-items: center; gap: 9px; color: var(--gc-muted); font-size: .78rem; font-weight: 700; margin-bottom: 18px; }
+.gc-breadcrumb a { color: #111827; display: inline-flex; align-items: center; gap: 7px; transition: color .18s ease, transform .18s ease; }
+.gc-breadcrumb a:hover { color: var(--gc-accent-dark); transform: translateY(-1px); }
 
-.edit-room-page .edit-room-breadcrumb {
-    color: var(--er-muted);
-    font-weight: 800;
-}
+/* Hero */
+.gc-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.gc-hero-main { display: flex; align-items: flex-start; gap: 14px; min-width: 0; flex: 1 1 auto; }
+.gc-hero-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: 0 0 auto; background: linear-gradient(150deg, var(--gc-brand), var(--gc-brand-2)); color: #fff; box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--gc-brand) 58%, transparent); }
+.gc-kicker { margin: 0 0 4px; color: var(--gc-accent-dark); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.gc-title { margin: 0; color: #111827; font-family: var(--gc-serif); font-size: clamp(2rem, 3.6vw, 2.75rem); font-weight: 650; letter-spacing: 0; line-height: .96; text-wrap: balance; }
+.gc-title-accent { color: var(--gc-brand); }
+.gc-subtitle { max-width: 62ch; margin: 8px 0 0; color: var(--gc-muted); font-size: .88rem; font-weight: 600; line-height: 1.55; }
+.gc-flow-pill { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 38px; padding: 8px 12px; border: 1px solid var(--gc-accent-line); border-radius: 999px; background: var(--gc-accent-soft); color: var(--gc-accent-dark); font-size: .76rem; font-weight: 800; white-space: nowrap; }
 
-.edit-room-page .edit-room-breadcrumb a {
-    color: color-mix(in srgb, var(--er-brand) 62%, var(--er-ink));
-    transition: color .18s ease, transform .18s ease;
-}
+/* Layout */
+.gc-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(286px, 318px); gap: 18px; align-items: start; }
+.gc-form { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
 
-.edit-room-page .edit-room-breadcrumb a:hover {
-    color: var(--er-clay);
-    transform: translateY(-1px);
-}
-
-.edit-room-page .edit-room-hero-card,
-.edit-room-page .edit-room-card,
-.edit-room-page .edit-room-status-card,
-.edit-room-page .edit-room-preview-card,
-.edit-room-page .edit-room-active-card {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid var(--er-line);
-    border-radius: 24px;
-    background: var(--er-panel);
-    box-shadow:
-        0 1px 0 rgba(255,255,255,.82) inset,
-        0 22px 48px -38px rgba(28, 38, 53, .58);
-}
-
-.edit-room-page .edit-room-hero-card {
-    border-left: 0;
-    padding: clamp(22px, 3vw, 32px) !important;
-    background:
-        radial-gradient(circle at 95% 6%, color-mix(in srgb, var(--er-sun) 16%, transparent), transparent 16rem),
-        linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,250,248,.92));
-}
-
-.edit-room-page .edit-room-hero-card::before,
-.edit-room-page .edit-room-card::before,
-.edit-room-page .edit-room-status-card::before,
-.edit-room-page .edit-room-preview-card::before,
-.edit-room-page .edit-room-active-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 5px;
-    background: var(--er-section-accent, var(--er-sky));
-    opacity: .78;
-}
-
-.edit-room-page .edit-room-hero-card::before {
-    background: linear-gradient(180deg, var(--er-sky), var(--er-sage) 42%, var(--er-accent) 72%, var(--er-clay));
-}
-
-.edit-room-page h1 {
-    color: var(--er-ink) !important;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: clamp(3.2rem, 6vw, 5.6rem) !important;
-    line-height: .88;
-    letter-spacing: 0;
-}
-
-.edit-room-page .edit-room-title-kicker {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--er-muted);
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: clamp(.84rem, 1.2vw, .98rem);
-    font-weight: 950;
-    letter-spacing: .08em;
-    line-height: 1.25;
-    text-transform: uppercase;
-}
-
-.edit-room-page h1 + p {
-    color: var(--er-muted) !important;
-    font-weight: 760;
-}
-
-.edit-room-page .edit-room-hero-icon {
-    background: linear-gradient(145deg, #FFFFFF, #EAF3FA) !important;
-    box-shadow: 0 16px 34px -30px rgba(28, 38, 53, .72);
-}
-
-.edit-room-page .edit-room-hero-icon i {
-    color: color-mix(in srgb, var(--er-sky) 72%, var(--er-ink)) !important;
-}
-
-.edit-room-page .edit-room-card {
-    --er-section-accent: var(--er-sky);
-}
-
-.edit-room-page .edit-section-features {
-    --er-section-accent: var(--er-sage);
-}
-
-.edit-room-page .edit-section-photos {
-    --er-section-accent: var(--er-clay);
-}
-
-.edit-room-page .edit-room-status-card {
-    --er-section-accent: color-mix(in srgb, var(--er-brand) 58%, var(--er-sky));
-}
-
-.edit-room-page .edit-room-preview-card {
-    --er-section-accent: var(--er-sun);
-}
-
-.edit-room-page .edit-room-active-card {
-    --er-section-accent: var(--er-clay);
-}
-
-.edit-room-page .edit-room-card > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding: 18px 20px !important;
-    border-bottom: 1px solid rgba(28, 38, 53, .1);
-    background: linear-gradient(90deg, rgba(255,255,255,.98), rgba(247,249,248,.94)) !important;
-}
-
-.edit-room-page .edit-room-card > div:first-child h2 {
-    margin: 0;
-    color: var(--er-ink) !important;
-    font-size: 1.04rem !important;
-    font-weight: 950;
-}
-
-.edit-room-page .edit-room-card > div:first-child h2 i {
-    width: 38px;
-    height: 38px;
-    display: inline-grid;
-    place-items: center;
-    margin-right: 10px !important;
-    border: 1px solid color-mix(in srgb, var(--er-section-accent) 22%, transparent);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--er-section-accent) 10%, #FFFFFF);
-    color: color-mix(in srgb, var(--er-section-accent) 76%, var(--er-ink)) !important;
-}
-
-.edit-room-page .edit-room-card > div:first-child h2::after {
-    content: "";
-    display: inline-block;
-    width: 42px;
-    height: 2px;
-    margin-left: 14px;
-    border-radius: 999px;
-    background: var(--er-section-accent);
-    opacity: .42;
-    vertical-align: middle;
-}
-
-.edit-room-page .edit-room-card > div:last-child,
-.edit-room-page .edit-room-status-card,
-.edit-room-page .edit-room-preview-card,
-.edit-room-page .edit-room-active-card {
-    background: rgba(255,255,255,.94) !important;
-}
-
-.edit-room-page :where(input[type="text"], input[type="number"], textarea, select) {
-    border: 1px solid rgba(28, 38, 53, .14) !important;
-    background: #FFFFFF !important;
-    color: var(--er-ink) !important;
-    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
-}
-
-.edit-room-page :where(input[type="text"], input[type="number"], textarea, select):focus {
-    border-color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 62%, var(--er-brand)) !important;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 16%, transparent) !important;
-    outline: none;
-}
-
-.edit-room-page label,
-.edit-room-page h3,
-.edit-room-page h4 {
-    color: var(--er-ink) !important;
-}
-
-.edit-room-error {
-    display: block;
-    margin-top: 0.45rem;
-    color: #b42318;
-    font-size: 0.78rem;
-    font-weight: 850;
-}
-
-.edit-room-page .text-gray-500,
-.edit-room-page .text-gray-600,
-.edit-room-page .text-gray-700 {
-    color: var(--er-muted) !important;
-}
-
-.edit-room-page .edit-room-card .border-2,
-.edit-room-page .edit-room-preview-card .border-2 {
-    border-width: 1px !important;
-    border-color: rgba(28, 38, 53, .1) !important;
-    background: #FFFFFF;
-}
-
-.edit-room-page input[type="radio"]:checked + div {
-    border-color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 34%, transparent) !important;
-    background: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 10%, #FFFFFF) !important;
-    color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 78%, var(--er-ink)) !important;
-}
-
-.edit-room-page input[type="checkbox"] {
-    accent-color: var(--er-section-accent, var(--er-sun));
-}
-
-.edit-room-page .edit-room-status-card {
-    color: var(--er-ink) !important;
-}
-
-.edit-room-page .edit-room-status-card > div,
-.edit-room-page .edit-room-status-card .bg-white\/10,
-.edit-room-page .edit-room-status-card .bg-blue-500\/20 {
-    border: 1px solid rgba(28, 38, 53, .1);
-    background: #FFFFFF !important;
-    color: var(--er-ink) !important;
-    backdrop-filter: none;
-}
-
-.edit-room-page .edit-room-preview-inner {
-    border-color: rgba(28, 38, 53, .1) !important;
-    background: linear-gradient(135deg, #FFFFFF, rgba(247,249,248,.94)) !important;
-}
-
-.edit-room-page #preview-numero,
-.edit-room-page #preview-precio {
-    color: color-mix(in srgb, var(--er-clay) 74%, var(--er-ink)) !important;
-}
-
-.edit-room-page .edit-room-active-card {
-    border-color: rgba(28, 38, 53, .12) !important;
-}
-
-.edit-room-page .edit-room-actions button[type="submit"] {
-    background: linear-gradient(145deg, color-mix(in srgb, var(--er-brand) 82%, #263247), #263247) !important;
-    box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--er-brand) 52%, transparent);
-}
-
-.edit-room-page .edit-room-actions button.is-confirming {
-    background: linear-gradient(145deg, #b91c1c, #7f1d1d) !important;
-    border-color: rgba(185, 28, 28, .34) !important;
-    color: #FFFFFF !important;
-}
-
-.edit-room-delete-warning {
-    display: grid;
-    gap: 0.9rem;
-    padding: 1rem;
-    border: 1px solid rgba(185, 28, 28, .24);
-    border-radius: 1.15rem;
-    background: linear-gradient(135deg, rgba(254, 242, 242, .96), rgba(255, 247, 237, .92));
-    color: #7f1d1d;
-}
-
-.edit-room-delete-warning__head {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-}
-
-.edit-room-delete-warning__icon {
-    width: 2.35rem;
-    height: 2.35rem;
-    flex: 0 0 auto;
-    display: inline-grid;
-    place-items: center;
-    border-radius: 0.9rem;
-    background: #991b1b;
-    color: #FFFFFF;
-}
-
-.edit-room-delete-warning strong {
-    display: block;
-    color: #7f1d1d;
-    font-size: 0.95rem;
-    font-weight: 950;
-    line-height: 1.2;
-}
-
-.edit-room-delete-warning p {
-    margin: 0.24rem 0 0;
-    color: #991b1b !important;
-    font-size: 0.82rem;
-    font-weight: 780;
-    line-height: 1.45;
-}
-
-.edit-room-delete-list {
-    display: grid;
-    gap: 0.65rem;
-}
-
-.edit-room-delete-reservation {
-    display: grid;
-    gap: 0.6rem;
-    padding: 0.75rem;
-    border: 1px solid rgba(185, 28, 28, .16);
-    border-radius: 0.9rem;
-    background: rgba(255, 255, 255, .76);
-}
-
-.edit-room-delete-reservation__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    color: #7f1d1d;
-    font-size: 0.76rem;
-    font-weight: 850;
-}
-
-.edit-room-delete-reservation__meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.edit-room-delete-reservation a {
-    min-height: 2.5rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    border: 1px solid rgba(185, 28, 28, .25);
-    border-radius: 0.75rem;
-    background: #FFFFFF;
-    color: #991b1b;
-    font-size: 0.78rem;
-    font-weight: 930;
-    transition: transform .18s ease, border-color .18s ease, background .18s ease;
-}
-
-.edit-room-delete-reservation a:hover {
-    transform: translateY(-1px);
-    border-color: rgba(153, 27, 27, .45);
-    background: rgba(254, 242, 242, .95);
-}
-
-.edit-room-delete-disabled {
-    opacity: .78;
-    cursor: not-allowed;
-}
-
-.edit-room-upload-alert {
-    display: none;
-    align-items: flex-start;
-    gap: 0.65rem;
-    margin: 1rem 0 0;
-    padding: 0.85rem 0.95rem;
-    border: 1px solid rgba(196, 69, 54, 0.24);
-    border-radius: 1rem;
-    background: rgba(254, 242, 242, 0.92);
-    color: #991b1b;
-    font-size: 0.86rem;
-    font-weight: 800;
-    line-height: 1.4;
-}
-
-.edit-room-upload-alert.is-visible {
-    display: flex;
-}
-
-.edit-room-upload-alert i {
-    margin-top: 0.12rem;
-    color: #b91c1c;
-}
-
-.edit-room-page .edit-room-actions a,
-.edit-room-page .edit-room-actions button {
-    transform: none !important;
-}
-
-.edit-room-page .edit-room-actions a:hover,
-.edit-room-page .edit-room-actions button:hover {
-    transform: translateY(-1px) !important;
-}
-
-.edit-room-page .edit-room-form-grid {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(305px, 360px) !important;
-    gap: 20px !important;
-    align-items: start;
-}
-
-.edit-room-page .edit-room-main,
-.edit-room-page .edit-room-side {
-    grid-column: auto !important;
+/* Sections */
+.gc-section, .gc-side-card, .gc-actions {
+    border: 1px solid var(--gc-line); border-radius: 18px;
+    background: var(--gc-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--gc-brand-2) 4%, transparent), 0 14px 32px -24px color-mix(in srgb, var(--gc-brand-2) 34%, transparent);
     min-width: 0;
 }
+.gc-section { overflow: hidden; }
+.gc-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 14px 17px; border-bottom: 1px solid var(--gc-line); background: var(--gc-surface-warm); min-width: 0; }
+.gc-section-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gc-section-icon { width: 34px; height: 34px; border-radius: 11px; border: 1px solid var(--gc-line); background: color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF); color: var(--gc-accent-dark); display: grid; place-items: center; flex: 0 0 auto; }
+.gc-section h2 { margin: 0; color: #111827; font-size: .92rem; font-weight: 850; letter-spacing: 0; text-wrap: balance; }
+.gc-section-sub { margin: 2px 0 0; color: var(--gc-muted); font-size: .72rem; font-weight: 600; }
+.gc-section-body { padding: 17px; }
 
-.edit-room-page .edit-room-side {
-    position: sticky;
-    top: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+/* Grid & fields */
+.gc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; }
+.gc-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.gc-field { min-width: 0; }
+.gc-field-full { grid-column: 1 / -1; }
+.gc-label { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; color: var(--gc-muted); font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.gc-required { color: var(--gc-danger); }
+.gc-form-error { display: block; margin-top: 7px; color: var(--gc-danger); font-size: .76rem; font-weight: 850; line-height: 1.35; }
+.gc-field-hint { margin: 7px 0 0; color: var(--gc-muted); font-size: .76rem; font-weight: 650; line-height: 1.45; }
+.gc-input-wrap { position: relative; }
+.gc-input-wrap i, .gc-input-wrap span.prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: color-mix(in srgb, var(--gc-brand) 42%, var(--gc-muted)); font-size: .78rem; pointer-events: none; }
+.gc-input-wrap span.prefix { font-size: .9rem; font-weight: 700; }
+.gc-control { width: 100%; min-height: 42px; border: 1px solid var(--gc-line); border-radius: 12px; background: var(--gc-surface-warm); color: var(--gc-text); font-size: .88rem; font-weight: 650; padding: 10px 12px; outline: none; transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; min-width: 0; }
+.gc-control.has-icon { padding-left: 36px; }
+.gc-control.has-prefix { padding-left: 26px; }
+.gc-control::placeholder { color: color-mix(in srgb, var(--gc-muted) 72%, #CBD5E1); font-weight: 500; }
+.gc-control:focus { border-color: var(--gc-accent); background: #FFFFFF; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 22%, transparent); }
+
+/* Note */
+.gc-note { margin: 12px 0 0; padding: 11px 12px; border: 1px solid var(--gc-line); border-radius: 13px; background: var(--gc-ivory-2); color: var(--gc-muted); font-size: .78rem; font-weight: 600; line-height: 1.5; }
+.gc-note i { color: var(--gc-accent-dark); margin-right: 6px; }
+
+/* Radio cards (piso) */
+.gc-radio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 9px; }
+.gc-radio-card { min-height: 68px; display: grid; place-items: center; gap: 4px; border: 1px solid var(--gc-line); border-radius: 13px; background: var(--gc-surface); color: #111827; text-align: center; font-size: .78rem; font-weight: 800; transition: border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; overflow: hidden; cursor: pointer; padding: 8px 6px; }
+.gc-radio-card i { font-size: 1rem; }
+.eh-peer { display: none; }
+.eh-peer:checked ~ .gc-radio-card { border-color: var(--gc-brand); background: var(--gc-brand); color: #FFFFFF; box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--gc-brand) 68%, transparent); }
+.eh-peer:focus ~ .gc-radio-card { box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 24%, transparent); }
+
+/* Checkbox amenidades */
+.gc-check-item { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid var(--gc-line); border-radius: 13px; background: var(--gc-surface-warm); cursor: pointer; transition: border-color .18s ease, background .18s ease; }
+.gc-check-item:hover { border-color: var(--gc-accent-line); background: var(--gc-accent-soft); }
+.gc-check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--gc-brand); flex-shrink: 0; cursor: pointer; }
+.gc-check-item.is-disabled { opacity: .52; cursor: not-allowed; }
+.gc-check-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--gc-accent) 12%, #fff); color: var(--gc-accent-dark); font-size: .78rem; flex-shrink: 0; border: 1px solid var(--gc-line); }
+.gc-check-name { font-size: .84rem; font-weight: 750; color: #111827; flex: 1; }
+.gc-check-badge { font-size: .68rem; color: var(--gc-muted); font-weight: 700; }
+
+/* Photo section */
+.gc-photo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.gc-photo-thumb { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; }
+.gc-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gc-photo-badge { position: absolute; top: 6px; left: 6px; background: var(--gc-success); color: #fff; border-radius: 999px; padding: 2px 8px; font-size: .68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
+.gc-photo-more { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--gc-line); border-radius: 12px; aspect-ratio: 4/3; color: var(--gc-muted); font-size: .82rem; font-weight: 700; background: var(--gc-ivory-2); }
+.gc-upload-zone { border: 2px dashed var(--gc-line); border-radius: 16px; padding: 28px 20px; text-align: center; cursor: pointer; transition: border-color .18s ease, background .18s ease; }
+.gc-upload-zone:hover, .gc-upload-zone.drag-over { border-color: var(--gc-accent-line); background: var(--gc-accent-soft); }
+.gc-upload-zone i { font-size: 2rem; color: var(--gc-muted); display: block; margin-bottom: 10px; }
+.gc-upload-zone p { color: var(--gc-muted); font-size: .84rem; font-weight: 700; margin: 0 0 4px; }
+.gc-upload-zone small { color: color-mix(in srgb, var(--gc-muted) 72%, #CBD5E1); font-size: .76rem; font-weight: 600; }
+.gc-upload-alert { display: none; align-items: flex-start; gap: 10px; margin: 12px 0 0; padding: 10px 13px; border: 1px solid color-mix(in srgb, var(--gc-danger) 24%, transparent); border-radius: 12px; background: var(--gc-danger-bg); color: var(--gc-danger); font-size: .82rem; font-weight: 800; }
+.gc-upload-alert.is-visible { display: flex; }
+.gc-upload-preview { margin-top: 14px; }
+.gc-upload-preview h5 { font-size: .78rem; font-weight: 800; color: #111827; margin: 0 0 9px; }
+.gc-upload-preview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+
+/* Sidebar */
+.gc-side { position: sticky; top: 18px; display: flex; flex-direction: column; gap: 13px; min-width: 0; }
+.gc-side-card { padding: 16px; }
+.gc-side-card h3 { margin: 0 0 11px; display: flex; align-items: center; gap: 9px; color: #111827; font-size: .92rem; font-weight: 850; }
+.gc-side-icon { width: 34px; height: 34px; border-radius: 11px; border: 1px solid var(--gc-line); background: color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF); color: var(--gc-accent-dark); display: grid; place-items: center; flex: 0 0 auto; }
+
+/* Preview card */
+.gc-preview-inner { border: 1px solid var(--gc-accent-line); border-radius: 14px; padding: 14px; background: linear-gradient(135deg, var(--gc-ivory-2), var(--gc-surface-warm)); }
+.gc-preview-room { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.gc-preview-num { font-family: var(--gc-serif); font-size: 2.2rem; font-weight: 700; color: var(--gc-brand); line-height: 1; }
+.gc-preview-tipo { font-size: .8rem; font-weight: 700; color: var(--gc-muted); margin-top: 3px; }
+.gc-preview-piso-label { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--gc-muted); }
+.gc-preview-piso-val { font-size: 1rem; font-weight: 800; color: #111827; }
+.gc-preview-divider { height: 1px; background: var(--gc-line); margin: 10px 0; }
+.gc-preview-precio-label { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--gc-muted); }
+.gc-preview-precio-val { font-family: var(--gc-serif); font-size: 1.6rem; font-weight: 700; color: var(--gc-accent-dark); }
+.gc-preview-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 22px; }
+.gc-preview-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: color-mix(in srgb, var(--gc-brand) 10%, #FFFFFF); border: 1px solid color-mix(in srgb, var(--gc-brand) 18%, transparent); color: var(--gc-brand); font-size: .68rem; font-weight: 800; }
+
+/* Toggle activa */
+.gc-toggle-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px; border: 1px solid var(--gc-line-soft); border-radius: 14px; background: var(--gc-surface-warm); cursor: pointer; }
+.gc-toggle-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--gc-brand); flex-shrink: 0; margin-top: 1px; cursor: pointer; }
+.gc-toggle-row-copy strong { display: block; font-size: .86rem; font-weight: 850; color: #111827; }
+.gc-toggle-row-copy p { margin: 3px 0 0; font-size: .76rem; color: var(--gc-muted); font-weight: 650; }
+
+/* Resumen info */
+.gc-info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gc-line-soft); font-size: .82rem; }
+.gc-info-row:last-child { border-bottom: none; }
+.gc-info-row span:first-child { color: var(--gc-muted); font-weight: 650; }
+.gc-info-row span:last-child  { font-weight: 800; color: #111827; }
+
+/* Actions */
+.gc-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 14px; align-items: center; margin-top: 2px; }
+.gc-btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; padding: 10px 15px; font-size: .86rem; font-weight: 850; transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease; white-space: nowrap; border: none; cursor: pointer; }
+.gc-btn:hover { transform: translateY(-1px); }
+.gc-btn:active { transform: translateY(0) scale(.99); }
+.gc-btn-secondary { border: 1px solid var(--gc-line); background: var(--gc-surface-warm); color: var(--gc-muted); }
+.gc-btn-secondary:hover { border-color: var(--gc-accent-line); color: var(--gc-accent-dark); background: var(--gc-accent-soft); }
+.gc-btn-primary { border: 1px solid color-mix(in srgb, var(--gc-accent) 32%, transparent); background: linear-gradient(135deg, var(--gc-brand), var(--gc-brand-2)); color: #FFFFFF; box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--gc-brand) 60%, transparent); }
+.gc-btn-primary:hover { color: #FFFFFF; box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--gc-brand) 66%, transparent); }
+.gc-btn-danger { border: 1px solid color-mix(in srgb, var(--gc-danger) 26%, transparent); background: var(--gc-danger-bg); color: var(--gc-danger); }
+.gc-btn-danger:hover { background: color-mix(in srgb, var(--gc-danger) 14%, #FFFFFF); }
+
+/* Delete zone */
+.gc-danger-zone { margin-top: 18px; border: 1px solid color-mix(in srgb, var(--gc-danger) 24%, #F3D7D4); border-radius: 18px; overflow: hidden; background: #FFFFFF; }
+.gc-danger-head { display: flex; align-items: center; gap: 12px; padding: 14px 17px; border-bottom: 1px solid color-mix(in srgb, var(--gc-danger) 16%, #F3D7D4); background: var(--gc-danger-bg); }
+.gc-danger-icon { width: 34px; height: 34px; border-radius: 11px; background: var(--gc-danger); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
+.gc-danger-head h2 { margin: 0; font-size: .92rem; font-weight: 850; color: #7f1d1d; }
+.gc-danger-body { padding: 17px; display: flex; flex-direction: column; gap: 12px; }
+.gc-blocker-card { border: 1px solid color-mix(in srgb, var(--gc-danger) 18%, #F3D7D4); border-radius: 14px; padding: 13px 14px; background: rgba(255,255,255,.82); }
+.gc-blocker-card + .gc-blocker-card { margin-top: 8px; }
+.gc-blocker-card strong { display: block; color: #7f1d1d; font-size: .86rem; font-weight: 850; }
+.gc-blocker-card p { margin: 3px 0 0; color: #991b1b; font-size: .78rem; font-weight: 700; }
+.gc-blocker-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.gc-blocker-meta span { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 800; color: #7f1d1d; }
+.gc-blocker-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; min-height: 36px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--gc-danger) 26%, #F3D7D4); border-radius: 10px; background: #FFFFFF; color: #991b1b; font-size: .76rem; font-weight: 850; text-decoration: none; transition: transform .16s, border-color .16s, background .16s; }
+.gc-blocker-link:hover { transform: translateY(-1px); background: var(--gc-danger-bg); }
+
+/* Scrollbar */
+.edit-hab-page ::-webkit-scrollbar { width: 6px; height: 6px; }
+.edit-hab-page ::-webkit-scrollbar-track { background: var(--gc-ivory); }
+.edit-hab-page ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gc-accent), #fff 34%); border-radius: 999px; }
+
+/* ── Responsive ── */
+@media (min-width: 1440px) {
+    .gc-wrap { width: min(100%, 1360px); }
+    .gc-layout { grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; }
 }
-
-.edit-room-page .bg-purple-50,
-.edit-room-page .bg-yellow-50,
-.edit-room-page .bg-gray-50,
-.edit-room-page .bg-gray-100 {
-    background: linear-gradient(135deg, #FFFFFF, rgba(247,249,248,.94)) !important;
+@media (max-width: 1180px) {
+    .gc-layout { grid-template-columns: minmax(0, 1fr) 284px; gap: 16px; }
+    .gc-photo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-
-.edit-room-page .text-purple-600,
-.edit-room-page .text-purple-700,
-.edit-room-page .text-purple-800 {
-    color: color-mix(in srgb, var(--er-clay) 70%, var(--er-ink)) !important;
+@media (max-width: 1024px) {
+    .gc-layout { grid-template-columns: 1fr; }
+    .gc-side { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-@media (max-width: 780px) {
-    .edit-room-page {
-        padding: 18px 12px !important;
-    }
-
-    .edit-room-page h1 {
-        font-size: clamp(2.6rem, 16vw, 4rem) !important;
-    }
-
-    .edit-room-page .edit-room-card > div:first-child h2::after {
-        display: none;
-    }
-
-    .edit-room-page .edit-room-form-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    .edit-room-page .edit-room-side {
-        position: static;
-    }
+@media (max-width: 860px) {
+    .gc-hero { flex-direction: column; align-items: stretch; }
+    .gc-flow-pill { align-self: flex-start; }
+    .gc-side { grid-template-columns: 1fr; }
+    .gc-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-/* ===== Ajuste minimalista (override) ===== */
-.edit-room-page { background: #F7F8FA !important; }
-.edit-room-page * { font-weight: 600 !important; }
-.edit-room-page h1, .edit-room-page h2, .edit-room-page h3,
-.edit-room-page strong, .edit-room-page b,
-.edit-room-page .edit-room-title { font-weight: 700 !important; }
-.edit-room-page [class*="kicker"] { letter-spacing: .06em !important; }
-.edit-room-page .edit-room-card,
-.edit-room-page .edit-room-hero-card,
-.edit-room-page .edit-room-status-card,
-.edit-room-page .edit-room-preview-card {
-    background: #FFFFFF !important;
-    border: 1px solid #ECEEF1 !important;
-    box-shadow: 0 1px 2px rgba(16,24,40,.03), 0 10px 26px -22px rgba(16,24,40,.28) !important;
-    border-radius: 16px !important;
+@media (max-width: 700px) {
+    .gc-wrap { padding: 10px 10px 16px; }
+    .gc-breadcrumb { margin-bottom: 14px; font-size: .66rem; gap: 5px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .gc-breadcrumb::-webkit-scrollbar { display: none; }
+    .gc-hero { gap: 12px; margin-bottom: 18px; }
+    .gc-hero-icon { width: 38px; height: 38px; border-radius: 12px; font-size: .88rem; flex-basis: 38px; }
+    .gc-kicker { font-size: .57rem; }
+    .gc-title { font-size: 1.38rem; }
+    .gc-subtitle { font-size: .68rem; }
+    .gc-layout, .gc-form { gap: 9px; }
+    .gc-section { border-radius: 15px; }
+    .gc-section-head { padding: 9px 10px; min-height: 0; }
+    .gc-section-icon { width: 29px; height: 29px; border-radius: 10px; flex-basis: 29px; }
+    .gc-section h2 { font-size: .86rem; }
+    .gc-section-sub, .gc-field-hint, .gc-note, .gc-side { display: none; }
+    .gc-section-body { padding: 10px; }
+    .gc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .gc-grid-3 { grid-template-columns: 1fr; }
+    .gc-label { margin-bottom: 4px; font-size: .58rem; }
+    .gc-control { min-height: 44px; border-radius: 11px; padding: 7px 10px; font-size: 16px; font-weight: 650; }
+    .gc-control.has-icon { padding-left: 30px; }
+    .gc-control.has-prefix { padding-left: 22px; }
+    .gc-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gc-upload-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gc-actions { grid-template-columns: minmax(0,.78fr) minmax(0,1.22fr); display: grid; padding: 9px; border-radius: 15px; margin-top: 0; }
+    .gc-btn { width: 100%; min-height: 44px; border-radius: 12px; padding: 0 10px; font-size: .72rem; }
 }
-.edit-room-page .edit-room-preview-inner { background: #FAFBFC !important; box-shadow: none !important; }
-.edit-room-page .edit-room-hero-icon { background: #F2F5F9 !important; box-shadow: none !important; }
+@media (max-width: 380px) {
+    .gc-grid, .gc-actions { grid-template-columns: 1fr; }
+    .gc-actions .gc-btn-primary { order: -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .edit-hab-page *, .edit-hab-page *::before, .edit-hab-page *::after { transition: none !important; animation: none !important; }
+}
 </style>
 
-<div class="edit-room-page min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
-    <!-- Header elegante -->
-    <div class="max-w-7xl mx-auto mb-8">
-        <div class="edit-room-breadcrumb flex items-center text-sm text-gray-600 mb-4">
-            <a href="<?= url('habitaciones') ?>" class="hover:text-hotel-brown">
-                <i class="fas fa-bed mr-1"></i>Habitaciones
-            </a>
-            <i class="fas fa-chevron-right mx-2 text-xs"></i>
-            <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" class="hover:text-hotel-brown">
-                Habitación <?= htmlspecialchars($habitacion['numero']) ?>
-            </a>
-            <i class="fas fa-chevron-right mx-2 text-xs"></i>
-            <span>Editar</span>
-        </div>
+<div class="edit-hab-page">
+<div class="gc-wrap">
 
-        <div class="edit-room-hero-card bg-white rounded-2xl shadow-xl p-8 border-l-8 border-hotel-gold">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        <span class="edit-room-title-kicker">Editar habitación</span>
-                        <?= htmlspecialchars($habitacion['numero']) ?>
-                    </h1>
-                    <p class="text-gray-600">
-                        <?php
-                        echo htmlspecialchars((string) ($habitacionTipoLabel ?? 'Tipo especial'), ENT_QUOTES, 'UTF-8');
-                        ?>
-                    </p>
-                </div>
-                <div class="hidden lg:block">
-                    <div class="relative">
-                        <div class="edit-room-hero-icon bg-hotel-cream p-6 rounded-full">
-                            <i class="fas fa-edit text-5xl text-hotel-brown"></i>
-                        </div>
-                        <!-- Estado actual badge -->
-                        <?php
-                        $estados = Habitacion::getEstados();
-                        $estadoActual = $estados[$habitacion['estado']] ?? ['label' => 'Desconocido', 'color' => 'gray'];
-                        $badgeColors = [
-                            'disponible' => 'bg-green-500',
-                            'ocupada' => 'bg-red-500',
-                            'mantenimiento' => 'bg-yellow-500',
-                            'limpieza' => 'bg-blue-500'
-                        ];
-                        ?>
-                        <div class="absolute -bottom-2 -right-2 <?= $badgeColors[$habitacion['estado']] ?? 'bg-gray-500' ?> text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
-                            <?= $estadoActual['label'] ?>
-                        </div>
-                    </div>
-                </div>
+    <!-- Breadcrumb -->
+    <nav class="gc-breadcrumb">
+        <a href="<?= url('habitaciones') ?>"><i class="fas fa-bed"></i> Habitaciones</a>
+        <i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5"></i>
+        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>">Hab. <?= htmlspecialchars($habitacion['numero'], ENT_QUOTES, 'UTF-8') ?></a>
+        <i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5"></i>
+        <span>Editar</span>
+    </nav>
+
+    <!-- Hero -->
+    <header class="gc-hero">
+        <div class="gc-hero-main">
+            <div class="gc-hero-icon"><i class="fas fa-door-open"></i></div>
+            <div>
+                <p class="gc-kicker">Editar habitación</p>
+                <h1 class="gc-title">Habitación <span class="gc-title-accent"><?= htmlspecialchars($habitacionNumeroFormulario, ENT_QUOTES, 'UTF-8') ?></span></h1>
+                <p class="gc-subtitle">
+                    <?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?> &middot;
+                    <?= htmlspecialchars((string)($pisosHabitacion[$habitacionPisoFormulario] ?? ('Piso ' . $habitacionPisoFormulario)), ENT_QUOTES, 'UTF-8') ?>
+                    — actualiza los datos para mantener el inventario al día.
+                </p>
             </div>
         </div>
-    </div>
+        <span class="gc-flow-pill">
+            <i class="fas <?= $_ehEstadoIcon ?>"></i>
+            <?= htmlspecialchars((string)($_ehEstado['label'] ?? 'Sin estado'), ENT_QUOTES, 'UTF-8') ?>
+        </span>
+    </header>
 
-    <!-- Formulario con diseño moderno -->
-    <div class="max-w-7xl mx-auto">
-        <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/update') ?>"
-              enctype="multipart/form-data" class="space-y-8">
-            <?= csrf_field() ?>
+    <!-- Formulario -->
+    <form method="POST"
+          action="<?= url('habitaciones/' . $habitacion['id'] . '/update') ?>"
+          enctype="multipart/form-data"
+          id="formEditHab">
+        <?= csrf_field() ?>
 
-            <div class="edit-room-form-grid grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Columna principal (2/3) -->
-                <div class="edit-room-main lg:col-span-2 space-y-6">
-                    <!-- Card de Información Básica -->
-                    <div class="edit-room-card edit-section-basic bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
-                        <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark p-6">
-                            <h2 class="text-xl font-semibold text-white flex items-center">
-                                <i class="fas fa-info-circle mr-3"></i>
-                                Información Básica
-                            </h2>
+        <div class="gc-layout">
+
+            <!-- ── Main ── -->
+            <main class="gc-form">
+
+                <!-- Sección: Identificación y precio -->
+                <section class="gc-section">
+                    <div class="gc-section-head">
+                        <div class="gc-section-title-wrap">
+                            <span class="gc-section-icon"><i class="fas fa-hashtag"></i></span>
+                            <div>
+                                <h2>Identificación y precio</h2>
+                                <p class="gc-section-sub">Número, tipo de habitación y tarifa por noche.</p>
+                            </div>
                         </div>
-
-                        <div class="p-6 space-y-6">
-                            <!-- Número y Tipo en grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Número de habitación -->
-                                <div class="relative">
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Número de Habitación <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                            <i class="fas fa-hashtag text-gray-400"></i>
-                                        </div>
-                                        <input type="text"
-                                               name="numero"
-                                               value="<?= htmlspecialchars($habitacionNumeroFormulario, ENT_QUOTES, 'UTF-8') ?>"
-                                               required
-                                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
-                                    </div>
-                                    <?php if (form_error('numero')): ?>
-                                        <span class="edit-room-error"><?= form_error('numero') ?></span>
-                                    <?php endif; ?>
-
+                    </div>
+                    <div class="gc-section-body">
+                        <div class="gc-grid">
+                            <!-- Número -->
+                            <div class="gc-field">
+                                <label class="gc-label">Número <span class="gc-required">*</span></label>
+                                <div class="gc-input-wrap">
+                                    <i class="fas fa-hashtag"></i>
+                                    <input type="text"
+                                           name="numero"
+                                           id="input-numero"
+                                           value="<?= htmlspecialchars($habitacionNumeroFormulario, ENT_QUOTES, 'UTF-8') ?>"
+                                           required
+                                           placeholder="Ej. 101"
+                                           class="gc-control has-icon">
                                 </div>
-
-                                <!-- Tipo de habitación - ACTUALIZADO -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Tipo de Habitación <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <select name="tipo"
-                                                required
-                                                class="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all appearance-none">
-                                            <?php foreach ($tiposHabitacion as $key => $tipo): ?>
-                                                <option value="<?= $key ?>" <?= $habitacionTipoFormulario == $key ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars((string) $tipo, ENT_QUOTES, 'UTF-8') ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                            <i class="fas fa-chevron-down text-gray-400"></i>
-                                        </div>
-                                    </div>
-                                    <?php if (form_error('tipo')): ?>
-                                        <span class="edit-room-error"><?= form_error('tipo') ?></span>
-                                    <?php endif; ?>
-                                </div>
+                                <?php if (form_error('numero')): ?>
+                                    <span class="gc-form-error"><?= form_error('numero') ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            <!-- Piso y Precio en grid - ACTUALIZADO PARA SÓTANOS -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Piso con selección ACTUALIZADA para incluir sótanos -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Ubicación - Piso <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="space-y-3">
-                                        <?php
-                                        $pisosAbajo = [];
-                                        $pisosArriba = [];
-                                        foreach ($pisosHabitacion as $pisoCatalogoNumero => $pisoCatalogoLabel) {
-                                            if ((int) $pisoCatalogoNumero < 0) {
-                                                $pisosAbajo[(int) $pisoCatalogoNumero] = $pisoCatalogoLabel;
-                                            } else {
-                                                $pisosArriba[(int) $pisoCatalogoNumero] = $pisoCatalogoLabel;
-                                            }
-                                        }
-                                        ?>
-                                        <!-- Sótanos -->
-                                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                                            <p class="text-xs font-medium text-gray-600 mb-2">Niveles abajo</p>
-                                            <div class="grid grid-cols-3 gap-2">
-                                                <?php
-                                                $sotanos = $pisosAbajo;
-                                                foreach ($sotanos as $piso_num => $label):
-                                                ?>
-                                                <label class="relative">
-                                                    <input type="radio"
-                                                           name="piso"
-                                                           value="<?= $piso_num ?>"
-                                                           <?= $habitacionPisoFormulario == $piso_num ? 'checked' : '' ?>
-                                                           required
-                                                           class="sr-only peer">
-                                                    <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white hover:border-gray-300">
-                                                        <i class="fas fa-arrow-down text-lg mb-1"></i>
-                                                        <span class="text-xs font-medium"><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></span>
-                                                    </div>
-                                                </label>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-
-                                        <!-- Pisos superiores -->
-                                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                                            <p class="text-xs font-medium text-gray-600 mb-2">Pisos Superiores</p>
-                                            <div class="grid grid-cols-3 gap-2">
-                                                <?php
-                                                $pisos_sup = $pisosArriba;
-                                                foreach ($pisos_sup as $piso_num => $label):
-                                                ?>
-                                                <label class="relative">
-                                                    <input type="radio"
-                                                           name="piso"
-                                                           value="<?= $piso_num ?>"
-                                                           <?= $habitacionPisoFormulario == $piso_num ? 'checked' : '' ?>
-                                                           required
-                                                           class="sr-only peer">
-                                                    <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-hotel-brown peer-checked:bg-hotel-brown peer-checked:text-white hover:border-gray-300">
-                                                        <i class="fas fa-building text-lg mb-1"></i>
-                                                        <span class="text-xs font-medium"><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></span>
-                                                    </div>
-                                                </label>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php if (form_error('piso')): ?>
-                                        <span class="edit-room-error"><?= form_error('piso') ?></span>
-                                    <?php endif; ?>
+                            <!-- Tipo -->
+                            <div class="gc-field">
+                                <label class="gc-label">Tipo <span class="gc-required">*</span></label>
+                                <div class="gc-input-wrap">
+                                    <i class="fas fa-tag"></i>
+                                    <select name="tipo" id="input-tipo" required class="gc-control has-icon">
+                                        <?php foreach ($tiposHabitacion as $key => $label): ?>
+                                            <option value="<?= htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8') ?>"
+                                                    <?= $habitacionTipoFormulario == $key ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-
-                                <!-- Precio con rangos por tipo -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Precio por Noche <span class="text-red-500">*</span>
-                                    </label>
-                                    <?php
-                                    // Mostrar rango sugerido según el tipo actual
-                                    $rangos = $rangosHabitacion;
-                                    $rango_actual = $rangos[$habitacionTipoFormulario] ?? ['min' => 500, 'max' => 1600];
-                                    ?>
-                                    <div class="mb-2">
-                                        <span class="text-xs text-gray-500" id="rango-precio">
-                                            Rango sugerido para <?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?>:
-                                            $<?= number_format($rango_actual['min']) ?> - $<?= number_format($rango_actual['max']) ?>
-                                        </span>
-                                    </div>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                            <span class="text-xl font-bold text-hotel-gold">$</span>
-                                        </div>
-                                        <input type="number"
-                                               name="precio_base"
-                                               data-money-format="true"
-                                               value="<?= htmlspecialchars($habitacionPrecioFormulario, ENT_QUOTES, 'UTF-8') ?>"
-                                               step="50"
-                                               required
-                                               class="w-full pl-10 pr-4 py-3 text-xl font-semibold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
-                                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                                            <span class="text-sm text-gray-500">MXN</span>
-                                        </div>
-                                    </div>
-                                    <?php if (form_error('precio_base')): ?>
-                                        <span class="edit-room-error"><?= form_error('precio_base') ?></span>
-                                    <?php endif; ?>
-                                </div>
+                                <?php if (form_error('tipo')): ?>
+                                    <span class="gc-form-error"><?= form_error('tipo') ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Capacidad de Personas <span class="text-red-500">*</span>
-                                    </label>
+                            <!-- Precio -->
+                            <div class="gc-field gc-field-full">
+                                <label class="gc-label">
+                                    Precio por noche <span class="gc-required">*</span>
+                                    <span id="rango-precio" style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--gc-muted)">
+                                        — Rango sugerido: $<?= number_format($rangoActual['min']) ?> - $<?= number_format($rangoActual['max']) ?>
+                                    </span>
+                                </label>
+                                <div class="gc-input-wrap">
+                                    <span class="prefix">$</span>
+                                    <input type="number"
+                                           name="precio_base"
+                                           id="input-precio"
+                                           data-money-format="true"
+                                           value="<?= htmlspecialchars($habitacionPrecioFormulario, ENT_QUOTES, 'UTF-8') ?>"
+                                           step="50"
+                                           required
+                                           placeholder="0.00"
+                                           class="gc-control has-prefix"
+                                           style="font-size:1.1rem;font-weight:800">
+                                </div>
+                                <?php if (form_error('precio_base')): ?>
+                                    <span class="gc-form-error"><?= form_error('precio_base') ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección: Capacidad -->
+                <section class="gc-section">
+                    <div class="gc-section-head">
+                        <div class="gc-section-title-wrap">
+                            <span class="gc-section-icon"><i class="fas fa-users"></i></span>
+                            <div>
+                                <h2>Capacidad y camas</h2>
+                                <p class="gc-section-sub">Personas que puede alojar y configuración de camas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gc-section-body">
+                        <div class="gc-grid gc-grid-3">
+                            <div class="gc-field">
+                                <label class="gc-label">Personas <span class="gc-required">*</span></label>
+                                <div class="gc-input-wrap">
+                                    <i class="fas fa-user"></i>
                                     <input type="number"
                                            name="capacidad_personas"
+                                           id="input-capacidad"
                                            value="<?= htmlspecialchars($habitacionCapacidadFormulario, ENT_QUOTES, 'UTF-8') ?>"
-                                           min="1"
-                                           max="30"
-                                           step="1"
-                                           required
-                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
-                                    <?php if (form_error('capacidad_personas')): ?>
-                                        <span class="edit-room-error"><?= form_error('capacidad_personas') ?></span>
-                                    <?php endif; ?>
+                                           min="1" max="30" step="1" required
+                                           class="gc-control has-icon">
                                 </div>
+                                <?php if (form_error('capacidad_personas')): ?>
+                                    <span class="gc-form-error"><?= form_error('capacidad_personas') ?></span>
+                                <?php endif; ?>
+                            </div>
 
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Camas Matrimoniales <span class="text-red-500">*</span>
-                                    </label>
+                            <div class="gc-field">
+                                <label class="gc-label">Camas matrimoniales <span class="gc-required">*</span></label>
+                                <div class="gc-input-wrap">
+                                    <i class="fas fa-bed"></i>
                                     <input type="number"
                                            name="camas_matrimoniales"
-                                           value="<?= htmlspecialchars($habitacionCamasMatrimonialesFormulario, ENT_QUOTES, 'UTF-8') ?>"
-                                           min="0"
-                                           max="20"
-                                           step="1"
-                                           required
-                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
-                                    <?php if (form_error('camas_matrimoniales')): ?>
-                                        <span class="edit-room-error"><?= form_error('camas_matrimoniales') ?></span>
-                                    <?php endif; ?>
+                                           value="<?= htmlspecialchars($habitacionCamasMatrimonialesForm, ENT_QUOTES, 'UTF-8') ?>"
+                                           min="0" max="20" step="1" required
+                                           class="gc-control has-icon">
                                 </div>
+                                <?php if (form_error('camas_matrimoniales')): ?>
+                                    <span class="gc-form-error"><?= form_error('camas_matrimoniales') ?></span>
+                                <?php endif; ?>
+                            </div>
 
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Camas Individuales
-                                    </label>
+                            <div class="gc-field">
+                                <label class="gc-label">Camas individuales</label>
+                                <div class="gc-input-wrap">
+                                    <i class="fas fa-bed"></i>
                                     <input type="number"
                                            name="camas_individuales"
-                                           value="<?= htmlspecialchars($habitacionCamasIndividualesFormulario, ENT_QUOTES, 'UTF-8') ?>"
-                                           min="0"
-                                           max="20"
-                                           step="1"
-                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
-                                    <?php if (form_error('camas_individuales')): ?>
-                                        <span class="edit-room-error"><?= form_error('camas_individuales') ?></span>
-                                    <?php endif; ?>
+                                           value="<?= htmlspecialchars($habitacionCamasIndividualesForm, ENT_QUOTES, 'UTF-8') ?>"
+                                           min="0" max="20" step="1"
+                                           class="gc-control has-icon">
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card de Características - ACTUALIZADO -->
-                    <div class="edit-room-card edit-section-features bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
-                        <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6">
-                            <h2 class="text-xl font-semibold text-white flex items-center">
-                                <i class="fas fa-list-check mr-3"></i>
-                                Características de la habitación
-                            </h2>
-                        </div>
-
-                        <div class="p-6">
-                            <!-- Características estándar del hotel -->
-                            <div class="mb-6">
-                                <p class="text-sm font-medium text-gray-700 mb-3">Características incluidas en todas las habitaciones:</p>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <?php
-                                    $caracteristicas_base = [
-                                        ['icon' => 'wifi', 'label' => 'Wi-Fi', 'color' => 'blue'],
-                                        ['icon' => 'tv', 'label' => 'Cablevisión', 'color' => 'purple'],
-                                        ['icon' => 'bath', 'label' => 'Baño Privado', 'color' => 'green'],
-                                        ['icon' => 'car', 'label' => 'Estacionamiento', 'color' => 'gray'],
-                                        ['icon' => 'shower', 'label' => 'Agua Caliente', 'color' => 'red'],
-                                        ['icon' => 'fan', 'label' => 'Ventilador', 'color' => 'cyan']
-                                    ];
-
-                                    foreach ($caracteristicas_base as $caract):
-                                    ?>
-                                    <div class="flex items-center p-2 bg-gray-50 rounded-lg">
-                                        <i class="fas fa-<?= $caract['icon'] ?> mr-2 text-<?= $caract['color'] ?>-600"></i>
-                                        <span class="text-xs font-medium"><?= $caract['label'] ?></span>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-
-                            <!-- Características especiales con checkboxes -->
-                            <div class="mb-6">
-                                <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <?php
-                                    $amenidadIconos = [
-                                        'pantalla' => ['icon' => 'tv', 'color' => 'purple'],
-                                        'balcon' => ['icon' => 'home', 'color' => 'green'],
-                                        'jacuzzi' => ['icon' => 'bath', 'color' => 'blue', 'disabled_for' => ['doble_jacuzzi', 'sencilla_jacuzzi']],
-                                        'amplia' => ['icon' => 'expand-arrows-alt', 'color' => 'yellow']
-                                    ];
-                                    $caracteristicas_especiales = [];
-                                    foreach ($amenidadesHabitacion as $amenidadKey => $amenidadLabel) {
-                                        $meta = $amenidadIconos[$amenidadKey] ?? ['icon' => 'check-circle', 'color' => 'blue'];
-                                        $meta['label'] = $amenidadLabel;
-                                        $caracteristicas_especiales[$amenidadKey] = $meta;
-                                    }
-
-                                    // Parsear características existentes
-                                    $caracteristicas_actuales = strtolower($habitacionCaracteristicasFormulario);
-                                    $caracteristicas_actuales = strtr($caracteristicas_actuales, [
-                                        'á' => 'a',
-                                        'é' => 'e',
-                                        'í' => 'i',
-                                        'ó' => 'o',
-                                        'ú' => 'u',
-                                        'ñ' => 'n',
-                                    ]);
-
-                                    foreach ($caracteristicas_especiales as $key => $especial):
-                                        $keywords = [
-                                            'pantalla' => 'pantalla',
-                                            'balcon' => 'balcon',
-                                            'jacuzzi' => 'jacuzzi',
-                                            'amplia' => 'amplia'
-                                        ];
-                                        $keyword = $keywords[$key] ?? strtolower((string) $especial['label']);
-                                        $isChecked = $habitacionEspecialesFormulario !== null
-                                            ? in_array((string)$key, $habitacionEspecialesFormulario, true)
-                                            : strpos($caracteristicas_actuales, $keyword) !== false;
-                                        $isDisabled = isset($especial['disabled_for']) && in_array($habitacionTipoFormulario, $especial['disabled_for'], true);
-                                        $isChecked = $isDisabled || $isChecked;
-                                    ?>
-                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-<?= $especial['color'] ?>-300 hover:bg-<?= $especial['color'] ?>-50 transition-all group <?= $isDisabled ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                                        <input type="checkbox"
-                                               name="caracteristicas_especiales[]"
-                                               value="<?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') ?>"
-                                               <?= $isChecked ? 'checked' : '' ?>
-                                               <?= $isDisabled ? 'disabled' : '' ?>
-                                               class="mr-3 w-4 h-4 text-<?= $especial['color'] ?>-600 focus:ring-<?= $especial['color'] ?>-500 rounded">
-                                        <i class="fas fa-<?= $especial['icon'] ?> mr-2 text-gray-600 group-hover:text-<?= $especial['color'] ?>-600"></i>
-                                        <span class="text-sm font-medium"><?= htmlspecialchars((string) $especial['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php if ($isDisabled): ?>
-                                            <span class="ml-2 text-xs text-gray-500">(incluido en el tipo)</span>
-                                        <?php endif; ?>
-                                    </label>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-
-                            <!-- Descripción completa (solo lectura mejorada) -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Descripción completa de características
-                                </label>
-                                <textarea name="caracteristicas"
-                                          rows="4"
-                                          placeholder="Ejemplo: 2 camas matrimoniales, pantalla, balcón, baño, ventilador, agua caliente, Wifi, Cablevisión, estacionamiento"
-                                          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"><?= htmlspecialchars($habitacionCaracteristicasFormulario, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    Esta descripción se genera automáticamente en base al tipo y características seleccionadas, pero puede personalizarse.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card de Imágenes MÚLTIPLES -->
-                    <div class="edit-room-card edit-section-photos bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
-                        <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6">
-                            <h2 class="text-xl font-semibold text-white flex items-center">
-                                <i class="fas fa-images mr-3"></i>
-                                Fotografías de la Habitación
-                            </h2>
-                        </div>
-
-                        <div class="p-6">
-                            <?php
-                            // Obtener imágenes existentes
-                            $habitacionImagenModel = new HabitacionImagen();
-                            $imagenes_existentes = $habitacionImagenModel->porHabitacion($habitacion['id']);
-                            $total_imagenes = count($imagenes_existentes);
-                            ?>
-
-                            <!-- Imágenes actuales -->
-                            <!-- Encabezado de imágenes con enlace de gestión siempre visible -->
-<div class="flex justify-between items-center mb-4">
-    <h4 class="text-sm font-semibold text-gray-700">
-        Imágenes de la habitación (<?= $total_imagenes ?>/10)
-    </h4>
-    <a href="<?= url('habitaciones/' . $habitacion['id'] . '/imagenes') ?>"
-       class="text-sm text-purple-600 hover:underline">
-        <i class="fas fa-cog mr-1"></i>Gestionar imágenes
-    </a>
-</div>
-
-<!-- Imágenes actuales -->
-<?php if ($total_imagenes > 0): ?>
-<div class="mb-6">
-
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <?php foreach (array_slice($imagenes_existentes, 0, 4) as $index => $imagen): ?>
-                                    <div class="relative group">
-                                        <img src="<?= image_url($imagen['url']) ?>"
-                                             alt="Imagen <?= $index + 1 ?>"
-                                             class="w-full h-24 object-cover rounded-lg shadow">
-                                        <?php if ($imagen['es_principal']): ?>
-                                        <div class="absolute top-1 left-1 bg-green-500 text-white px-2 py-0.5 rounded text-xs">
-                                            <i class="fas fa-star"></i>
-                                        </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php endforeach; ?>
-
-                                    <?php if ($total_imagenes > 4): ?>
-                                    <div class="flex items-center justify-center bg-gray-100 rounded-lg h-24">
-                                        <span class="text-gray-600 text-sm">+<?= $total_imagenes - 4 ?> más</span>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-
-                            <!-- Upload de nuevas imágenes -->
-                            <?php if ($total_imagenes < 10): ?>
-                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-all" id="drop-zone">
-                                    <input type="file"
-                                           name="fotos[]"
-                                           accept="image/*"
-                                           id="fotos-input"
-                                           multiple
-                                           class="hidden">
-                                    <label for="fotos-input" class="cursor-pointer">
-                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
-                                        <p class="text-gray-600 font-medium mb-1">Click para agregar nuevas imagenes</p>
-                                        <p class="text-sm text-gray-500">JPG, PNG, GIF o WebP - Maximo 5MB por imagen</p>
-                                        <p class="text-xs text-blue-600 mt-2">O arrastra y suelta las imagenes aqui</p>
-                                    </label>
-                                </div>
-
-
-                                <!-- Vista previa de nuevas imágenes -->
-                                <div id="upload-alert" class="edit-room-upload-alert" role="alert" aria-live="assertive" hidden>
-                                    <i class="fas fa-circle-exclamation"></i>
-                                    <span></span>
-                                </div>
-                                <?php if (form_error('fotos[]')): ?>
-                                    <span class="edit-room-error"><?= form_error('fotos[]') ?></span>
+                                <?php if (form_error('camas_individuales')): ?>
+                                    <span class="gc-form-error"><?= form_error('camas_individuales') ?></span>
                                 <?php endif; ?>
-
-                                <div id="preview-container" class="mt-4 hidden">
-                                    <h5 class="text-sm font-medium text-gray-700 mb-2">Nuevas imágenes a agregar:</h5>
-                                    <div id="preview-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <!-- Las previsualizaciones se agregarán aquí dinámicamente -->
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <p class="text-yellow-800 text-sm">
-                                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                                    Has alcanzado el límite máximo de 10 imágenes. Para agregar nuevas, primero debes eliminar algunas existentes.
-                                </p>
-                            </div>
-                            <?php endif; ?>
-
-                            <!-- Información -->
-                            <div class="mt-4 bg-purple-50 rounded-lg p-4">
-                                <h4 class="text-sm font-semibold text-purple-800 mb-2">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Información sobre las imágenes
-                                </h4>
-                                <ul class="text-xs text-purple-700 space-y-1">
-                                    <li>• Máximo 10 imágenes por habitación</li>
-                                    <li>• La imagen marcada con <i class="fas fa-star"></i> es la principal</li>
-                                    <li>• Puedes gestionar el orden y eliminar imágenes en la sección de gestión</li>
-                                    <li>• Las nuevas imágenes se agregarán al final de la galería</li>
-                                </ul>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                <!-- Columna lateral (1/3) -->
-                <div class="edit-room-side space-y-6">
-                    <!-- Card de Estado Actual con información del hotel -->
-                    <div class="edit-room-status-card bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-xl p-6 text-white">
-                        <h3 class="text-lg font-semibold mb-4 flex items-center">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            Información de la Habitación
-                        </h3>
-
-                        <div class="bg-white/10 backdrop-blur rounded-xl p-4 mb-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm opacity-80">Estado:</span>
-                                <span class="font-bold text-lg flex items-center">
-                                    <i class="fas fa-<?= $estadoActual['icon'] ?? 'question' ?> mr-2"></i>
-                                    <?= $estadoActual['label'] ?>
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm opacity-80">Ubicación:</span>
-                                <span class="font-medium">
-                                    <?= htmlspecialchars((string) ($pisosHabitacion[(int) $habitacion['piso']] ?? ('Piso ' . (int) $habitacion['piso'])), ENT_QUOTES, 'UTF-8') ?>
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm opacity-80">Capacidad:</span>
-                                <span class="font-medium">
-                                    <?= $habitacion['capacidad_personas'] ?> personas
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between mt-3">
-                                <span class="text-sm opacity-80">Camas:</span>
-                                <span class="font-medium">
-                                    <?php $totalCamasEdicion = (int)($habitacion['camas_matrimoniales'] ?? 0) + (int)($habitacion['camas_individuales'] ?? 0); ?>
-                                    <?= $totalCamasEdicion > 0 ? $totalCamasEdicion . ' en total' : 'No definidas' ?>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="bg-blue-500/20 rounded-lg p-3">
-                            <p class="text-xs flex items-start">
-                                <i class="fas fa-info-circle mr-2 mt-0.5 flex-shrink-0"></i>
-                                Esta habitación pertenece al hotel actual.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Preview en tiempo real MEJORADO -->
-                    <div class="edit-room-preview-card bg-white rounded-2xl shadow-xl p-6 sticky top-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-eye mr-2 text-hotel-brown"></i>
-                            Vista Previa
-                        </h3>
-
-                        <div class="edit-room-preview-inner bg-gradient-to-br from-hotel-cream to-white rounded-xl p-4 border-2 border-hotel-brown/20">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <p class="text-2xl font-bold text-hotel-brown" id="preview-numero">
-                                        <?= htmlspecialchars($habitacion['numero']) ?>
-                                    </p>
-                                    <p class="text-sm text-gray-600" id="preview-tipo">
-                                        <?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?>
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500">Ubicación</p>
-                                    <p class="text-lg font-bold text-gray-800" id="preview-piso">
-                                        <?= htmlspecialchars((string) ($pisosHabitacion[(int) $habitacion['piso']] ?? ('Piso ' . (int) $habitacion['piso'])), ENT_QUOTES, 'UTF-8') ?>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="border-t pt-3">
-                                <p class="text-xs text-gray-500">Precio por noche</p>
-                                <p class="text-2xl font-bold text-hotel-gold" id="preview-precio">
-                                    $<?= number_format($habitacion['precio_base'], 0) ?>
-                                </p>
-                            </div>
-
-                            <!-- Características especiales en el preview -->
-                            <div class="mt-3 pt-3 border-t" id="preview-caracteristicas">
-                                <p class="text-xs text-gray-500 mb-1">Características especiales:</p>
-                                <div class="flex flex-wrap gap-1" id="preview-badges">
-                                    <!-- Se llenarán con JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Estado Activo/Inactivo -->
-                    <div class="edit-room-active-card bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
-                        <label class="flex items-start cursor-pointer">
-                            <input type="checkbox"
-                                   name="activa"
-                                   value="1"
-                                   <?= $habitacionActivaFormulario ? 'checked' : '' ?>
-                                   class="mt-1 mr-3 w-5 h-5 text-yellow-600 focus:ring-yellow-500 rounded">
+                <!-- Sección: Piso -->
+                <section class="gc-section">
+                    <div class="gc-section-head">
+                        <div class="gc-section-title-wrap">
+                            <span class="gc-section-icon"><i class="fas fa-building"></i></span>
                             <div>
-                                <span class="font-semibold text-gray-800">Habitación Activa</span>
-                                <p class="text-sm text-gray-600 mt-1">
-                                    Desmarque para ocultar la habitación del sistema de reservas
-                                </p>
+                                <h2>Ubicación — Piso</h2>
+                                <p class="gc-section-sub">Selecciona el nivel donde se encuentra la habitación.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-
-                    <!-- Botones de acción -->
-                    <div class="edit-room-actions space-y-3">
-                        <button type="submit"
-                                class="w-full bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white font-semibold py-4 px-6 rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center">
-                            <i class="fas fa-save mr-3"></i>
-                            Guardar Cambios
-                        </button>
-
-                        <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>"
-                           class="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
-                            <i class="fas fa-times mr-3"></i>
-                            Cancelar
-                        </a>
-
-                        <?php if (can('habitaciones.delete') && $hayReservacionesBloqueantesEliminacion): ?>
-                            <div id="delete-room-blocker" class="edit-room-delete-warning" role="alert" aria-live="polite">
-                                <div class="edit-room-delete-warning__head">
-                                    <span class="edit-room-delete-warning__icon" aria-hidden="true">
-                                        <i class="fas fa-ban"></i>
-                                    </span>
-                                    <div>
-                                        <strong>No se puede eliminar esta habitaci&oacute;n todav&iacute;a.</strong>
-                                        <p>
-                                            La habitaci&oacute;n <?= htmlspecialchars($habitacionNumeroEliminacion, ENT_QUOTES, 'UTF-8') ?>
-                                            tiene <?= count($reservacionesBloqueantesEliminacion) ?> reservaci&oacute;n(es) activa(s) o futura(s).
-                                            Antes de eliminarla, cancela esas reservaciones o cambia la habitaci&oacute;n asignada desde cada detalle.
-                                        </p>
+                    <div class="gc-section-body">
+                        <?php if (!empty($pisosAbajo)): ?>
+                        <div style="margin-bottom:14px;">
+                            <p class="gc-label" style="margin-bottom:9px;"><i class="fas fa-arrow-down"></i> Niveles inferiores</p>
+                            <div class="gc-radio-grid">
+                                <?php foreach ($pisosAbajo as $pn => $pl): ?>
+                                <label>
+                                    <input type="radio" name="piso" value="<?= $pn ?>" class="eh-peer"
+                                           <?= $habitacionPisoFormulario == $pn ? 'checked' : '' ?> required>
+                                    <div class="gc-radio-card">
+                                        <i class="fas fa-arrow-down"></i>
+                                        <span><?= htmlspecialchars((string)$pl, ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
-                                </div>
-
-                                <div class="edit-room-delete-list">
-                                    <?php foreach ($reservacionesBloqueantesEliminacion as $reservacionBloqueante): ?>
-                                        <?php
-                                        $reservacionBloqueanteId = (int)($reservacionBloqueante['id'] ?? 0);
-                                        $reservacionBloqueanteEstado = (string)($reservacionBloqueante['estado'] ?? '');
-                                        $reservacionBloqueanteEstadoLabel = $estadosReservacionEliminacion[$reservacionBloqueanteEstado] ?? ucfirst(str_replace('_', ' ', $reservacionBloqueanteEstado));
-                                        $reservacionBloqueanteEntrada = !empty($reservacionBloqueante['fecha_entrada']) ? date('d/m/Y', strtotime((string)$reservacionBloqueante['fecha_entrada'])) : 'Sin entrada';
-                                        $reservacionBloqueanteSalida = !empty($reservacionBloqueante['fecha_salida']) ? date('d/m/Y', strtotime((string)$reservacionBloqueante['fecha_salida'])) : 'Sin salida';
-                                        ?>
-                                        <div class="edit-room-delete-reservation">
-                                            <div>
-                                                <strong>Reservaci&oacute;n #<?= $reservacionBloqueanteId ?></strong>
-                                                <p><?= htmlspecialchars((string)($reservacionBloqueante['nombre_completo'] ?? 'Huesped sin nombre'), ENT_QUOTES, 'UTF-8') ?></p>
-                                            </div>
-                                            <div class="edit-room-delete-reservation__meta">
-                                                <span><i class="fas fa-circle" aria-hidden="true"></i><?= htmlspecialchars($reservacionBloqueanteEstadoLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                                <span><i class="fas fa-calendar-alt" aria-hidden="true"></i><?= htmlspecialchars($reservacionBloqueanteEntrada . ' - ' . $reservacionBloqueanteSalida, ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php if (!empty($reservacionBloqueante['telefono'])): ?>
-                                                    <span><i class="fas fa-phone" aria-hidden="true"></i><?= htmlspecialchars((string)$reservacionBloqueante['telefono'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <a href="<?= url('reservaciones/ver/' . $reservacionBloqueanteId) ?>">
-                                                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-                                                Ver reservaci&oacute;n y resolver bloqueo
-                                            </a>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                </label>
+                                <?php endforeach; ?>
                             </div>
-
-                            <button type="button"
-                                    onclick="confirmarEliminacion(this)"
-                                    class="edit-room-delete-disabled w-full bg-red-50 border-2 border-red-200 text-red-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center"
-                                    aria-describedby="delete-room-blocker">
-                                <i class="fas fa-lock mr-3"></i>
-                                Eliminaci&oacute;n bloqueada por reservaciones
-                            </button>
+                        </div>
                         <?php endif; ?>
 
-                        <?php if (can('habitaciones.delete') && !$hayReservacionesBloqueantesEliminacion && $habitacion['estado'] == 'disponible'): ?>
-                        <button type="button"
-                                onclick="confirmarEliminacion(this)"
-                                class="w-full bg-red-50 border-2 border-red-200 text-red-600 font-semibold py-4 px-6 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center">
-                            <i class="fas fa-trash-alt mr-3"></i>
-                            Eliminar Habitación
-                        </button>
+                        <?php if (!empty($pisosArriba)): ?>
+                        <div>
+                            <p class="gc-label" style="margin-bottom:9px;"><i class="fas fa-building"></i> Pisos</p>
+                            <div class="gc-radio-grid">
+                                <?php foreach ($pisosArriba as $pn => $pl): ?>
+                                <label>
+                                    <input type="radio" name="piso" value="<?= $pn ?>" class="eh-peer"
+                                           <?= $habitacionPisoFormulario == $pn ? 'checked' : '' ?> required>
+                                    <div class="gc-radio-card">
+                                        <i class="fas fa-building"></i>
+                                        <span><?= htmlspecialchars((string)$pl, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                         <?php endif; ?>
+
+                        <?php if (form_error('piso')): ?>
+                            <span class="gc-form-error" style="margin-top:8px;display:block"><?= form_error('piso') ?></span>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <!-- Sección: Características -->
+                <section class="gc-section">
+                    <div class="gc-section-head">
+                        <div class="gc-section-title-wrap">
+                            <span class="gc-section-icon"><i class="fas fa-list-check"></i></span>
+                            <div>
+                                <h2>Características especiales</h2>
+                                <p class="gc-section-sub">Amenidades adicionales que distinguen a esta habitación.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gc-section-body">
+                        <div class="gc-grid" style="margin-bottom:14px;">
+                            <?php
+                            $caracteristicasActuales = strtr(strtolower($habitacionCaracteristicasFormulario), ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ñ'=>'n']);
+                            $keywords = ['pantalla' => 'pantalla', 'balcon' => 'balcon', 'jacuzzi' => 'jacuzzi', 'amplia' => 'amplia'];
+                            foreach ($amenidadesHabitacion as $key => $label):
+                                $meta       = $amenidadMeta[$key] ?? ['icon' => 'fa-check-circle', 'label' => $label];
+                                $keyword    = $keywords[$key] ?? strtolower((string)$label);
+                                $isChecked  = $habitacionEspecialesFormulario !== null
+                                    ? in_array((string)$key, $habitacionEspecialesFormulario, true)
+                                    : strpos($caracteristicasActuales, $keyword) !== false;
+                                $isDisabled = isset($meta['disabled_for']) && in_array($habitacionTipoFormulario, $meta['disabled_for'], true);
+                                $isChecked  = $isChecked || $isDisabled;
+                            ?>
+                            <label class="gc-check-item<?= $isDisabled ? ' is-disabled' : '' ?>">
+                                <input type="checkbox"
+                                       name="caracteristicas_especiales[]"
+                                       value="<?= htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8') ?>"
+                                       <?= $isChecked ? 'checked' : '' ?>
+                                       <?= $isDisabled ? 'disabled' : '' ?>>
+                                <span class="gc-check-icon"><i class="fas <?= htmlspecialchars((string)($meta['icon'] ?? 'fa-check'), ENT_QUOTES, 'UTF-8') ?>"></i></span>
+                                <span class="gc-check-name"><?= htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($isDisabled): ?><span class="gc-check-badge">(del tipo)</span><?php endif; ?>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="gc-field">
+                            <label class="gc-label"><i class="fas fa-align-left"></i> Descripción completa</label>
+                            <textarea name="caracteristicas"
+                                      rows="3"
+                                      placeholder="Ej: 2 camas matrimoniales, pantalla, balcón, jacuzzi, Wifi, agua caliente..."
+                                      class="gc-control"><?= htmlspecialchars($habitacionCaracteristicasFormulario, ENT_QUOTES, 'UTF-8') ?></textarea>
+                            <span class="gc-field-hint">Se genera automáticamente al seleccionar las amenidades, pero puede personalizarse libremente.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección: Fotografías -->
+                <section class="gc-section">
+                    <div class="gc-section-head">
+                        <div class="gc-section-title-wrap">
+                            <span class="gc-section-icon"><i class="fas fa-images"></i></span>
+                            <div>
+                                <h2>Fotografías (<?= $totalImagenes ?>/10)</h2>
+                                <p class="gc-section-sub">Imágenes actuales y nuevas a agregar.</p>
+                            </div>
+                        </div>
+                        <a href="<?= url('habitaciones/' . $habitacion['id'] . '/imagenes') ?>"
+                           style="font-size:.78rem;font-weight:800;color:var(--gc-accent-dark);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;text-decoration:none">
+                            <i class="fas fa-cog"></i> Gestionar
+                        </a>
+                    </div>
+                    <div class="gc-section-body">
+                        <?php if ($totalImagenes > 0): ?>
+                        <div class="gc-photo-grid" style="margin-bottom:16px;">
+                            <?php foreach (array_slice($imagenesExistentes, 0, 4) as $idx => $img): ?>
+                            <div class="gc-photo-thumb">
+                                <img src="<?= image_url($img['url']) ?>" alt="Imagen <?= $idx + 1 ?>">
+                                <?php if ($img['es_principal']): ?>
+                                    <span class="gc-photo-badge"><i class="fas fa-star"></i> Principal</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if ($totalImagenes > 4): ?>
+                            <div class="gc-photo-more">+<?= $totalImagenes - 4 ?> más</div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($totalImagenes < 10): ?>
+                        <div class="gc-upload-zone" id="drop-zone">
+                            <input type="file" name="fotos[]" accept="image/*"
+                                   id="fotos-input" multiple class="eh-peer" style="display:none">
+                            <label for="fotos-input" style="cursor:pointer;display:block">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Clic para agregar imágenes</p>
+                                <small>JPG, PNG, WebP — máx. 5 MB por imagen</small>
+                            </label>
+                        </div>
+
+                        <div id="upload-alert" class="gc-upload-alert" role="alert" aria-live="assertive" hidden>
+                            <i class="fas fa-circle-exclamation" style="flex-shrink:0;margin-top:2px"></i>
+                            <span></span>
+                        </div>
+                        <?php if (form_error('fotos[]')): ?>
+                            <span class="gc-form-error"><?= form_error('fotos[]') ?></span>
+                        <?php endif; ?>
+
+                        <div id="preview-container" class="gc-upload-preview" style="display:none">
+                            <h5>Imágenes a agregar</h5>
+                            <div id="preview-grid" class="gc-upload-preview-grid"></div>
+                        </div>
+                        <?php else: ?>
+                        <div class="gc-note">
+                            <i class="fas fa-info-circle"></i>
+                            Límite de 10 imágenes alcanzado. Elimina alguna antes de agregar nuevas.
+                        </div>
+                        <?php endif; ?>
+
+                        <p class="gc-note">
+                            <i class="fas fa-info-circle"></i>
+                            La imagen marcada como <strong>Principal</strong> se muestra primero en el listado. Gestiona el orden desde el panel de imágenes.
+                        </p>
+                    </div>
+                </section>
+
+            </main><!-- /.gc-form -->
+
+            <!-- ── Sidebar ── -->
+            <aside class="gc-side">
+
+                <!-- Preview en tiempo real -->
+                <div class="gc-side-card">
+                    <h3><span class="gc-side-icon"><i class="fas fa-eye"></i></span> Vista previa</h3>
+                    <div class="gc-preview-inner">
+                        <div class="gc-preview-room">
+                            <div>
+                                <p class="gc-preview-num" id="preview-numero"><?= htmlspecialchars($habitacion['numero'], ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="gc-preview-tipo" id="preview-tipo"><?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                            <div style="text-align:right">
+                                <p class="gc-preview-piso-label">Piso</p>
+                                <p class="gc-preview-piso-val" id="preview-piso"><?= htmlspecialchars((string)($pisosHabitacion[$habitacionPisoFormulario] ?? ('Piso ' . $habitacionPisoFormulario)), ENT_QUOTES, 'UTF-8') ?></p>
+                            </div>
+                        </div>
+                        <div class="gc-preview-divider"></div>
+                        <p class="gc-preview-precio-label">Precio por noche</p>
+                        <p class="gc-preview-precio-val" id="preview-precio">$<?= number_format((float)($habitacion['precio_base'] ?? 0), 0) ?></p>
+                        <div class="gc-preview-badges" id="preview-badges"></div>
                     </div>
                 </div>
+
+                <!-- Estado activo -->
+                <div class="gc-side-card">
+                    <h3><span class="gc-side-icon"><i class="fas fa-toggle-on"></i></span> Disponibilidad</h3>
+                    <label class="gc-toggle-row">
+                        <input type="checkbox" name="activa" value="1"
+                               <?= $habitacionActivaFormulario ? 'checked' : '' ?>>
+                        <div class="gc-toggle-row-copy">
+                            <strong>Habitación activa</strong>
+                            <p>Desmarca para ocultarla del sistema de reservas sin eliminarla.</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Resumen -->
+                <div class="gc-side-card">
+                    <h3><span class="gc-side-icon"><i class="fas fa-circle-info"></i></span> Datos actuales</h3>
+                    <div>
+                        <div class="gc-info-row">
+                            <span>Estado</span>
+                            <span><?= htmlspecialchars((string)($_ehEstado['label'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="gc-info-row">
+                            <span>Tipo</span>
+                            <span><?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="gc-info-row">
+                            <span>Piso</span>
+                            <span><?= htmlspecialchars((string)($pisosHabitacion[$habitacionPisoFormulario] ?? ('Piso ' . $habitacionPisoFormulario)), ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="gc-info-row">
+                            <span>Capacidad</span>
+                            <span><?= (int)($habitacion['capacidad_personas'] ?? 0) ?> personas</span>
+                        </div>
+                        <?php
+                        $totalCamas = (int)($habitacion['camas_matrimoniales'] ?? 0) + (int)($habitacion['camas_individuales'] ?? 0);
+                        ?>
+                        <div class="gc-info-row">
+                            <span>Camas</span>
+                            <span><?= $totalCamas > 0 ? $totalCamas . ' en total' : 'Sin definir' ?></span>
+                        </div>
+                        <div class="gc-info-row">
+                            <span>Fotos</span>
+                            <span><?= $totalImagenes ?>/10</span>
+                        </div>
+                    </div>
+                </div>
+
+            </aside><!-- /.gc-side -->
+
+        </div><!-- /.gc-layout -->
+
+        <!-- Botones -->
+        <div class="gc-actions">
+            <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>" class="gc-btn gc-btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="gc-btn gc-btn-primary">
+                <i class="fas fa-save"></i> Guardar cambios
+            </button>
+        </div>
+
+    </form>
+
+    <!-- ── Zona de eliminación (fuera del form principal) ── -->
+    <?php if (can('habitaciones.delete')): ?>
+    <div class="gc-danger-zone">
+        <div class="gc-danger-head">
+            <span class="gc-danger-icon"><i class="fas fa-trash-alt"></i></span>
+            <div>
+                <h2>Eliminar habitación</h2>
             </div>
-        </form>
+        </div>
+        <div class="gc-danger-body">
+            <?php if ($hayReservacionesBloqueantes): ?>
+                <div id="delete-room-blocker" style="padding:12px 14px;background:var(--gc-danger-bg);border:1px solid color-mix(in srgb,var(--gc-danger) 22%,transparent);border-radius:13px;color:#7f1d1d;font-size:.84rem;font-weight:700" role="alert">
+                    <p style="margin:0 0 10px"><i class="fas fa-ban" style="margin-right:6px"></i>
+                    <strong>No se puede eliminar aún.</strong> Hay <?= count($reservacionesBloqueantes) ?> reservación(es) activa(s) vinculada(s).</p>
+                    <?php foreach ($reservacionesBloqueantes as $rb): ?>
+                    <div class="gc-blocker-card">
+                        <strong>Reservación #<?= (int)($rb['id'] ?? 0) ?></strong>
+                        <p><?= htmlspecialchars((string)($rb['nombre_completo'] ?? 'Huésped'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <div class="gc-blocker-meta">
+                            <?php
+                            $rbEstado  = $estadosResEliminacion[$rb['estado'] ?? ''] ?? ucfirst((string)($rb['estado'] ?? ''));
+                            $rbEntrada = !empty($rb['fecha_entrada']) ? date('d/m/Y', strtotime((string)$rb['fecha_entrada'])) : '—';
+                            $rbSalida  = !empty($rb['fecha_salida'])  ? date('d/m/Y', strtotime((string)$rb['fecha_salida']))  : '—';
+                            ?>
+                            <span><i class="fas fa-circle" style="font-size:.5rem"></i><?= htmlspecialchars($rbEstado, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span><i class="fas fa-calendar-alt"></i><?= htmlspecialchars($rbEntrada . ' - ' . $rbSalida, ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <a href="<?= url('reservaciones/ver/' . (int)($rb['id'] ?? 0)) ?>" class="gc-blocker-link">
+                            <i class="fas fa-external-link-alt"></i> Ver reservación y resolver
+                        </a>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <button type="button" onclick="confirmarEliminacion(this)"
+                        class="gc-btn gc-btn-danger" style="width:100%;cursor:not-allowed;opacity:.6"
+                        aria-describedby="delete-room-blocker" disabled>
+                    <i class="fas fa-lock"></i> Eliminación bloqueada
+                </button>
+
+            <?php elseif ($habitacion['estado'] == 'disponible'): ?>
+                <p style="font-size:.84rem;color:var(--gc-muted);font-weight:650;margin:0">
+                    Eliminar esta habitación la quitará del listado operativo y de las opciones de reserva. Su historial de reservaciones se conservará.
+                </p>
+                <button type="button" onclick="confirmarEliminacion(this)"
+                        class="gc-btn gc-btn-danger" style="width:100%">
+                    <i class="fas fa-trash-alt"></i> Eliminar habitación <?= htmlspecialchars($habitacionNumeroEliminacion, ENT_QUOTES, 'UTF-8') ?>
+                </button>
+            <?php else: ?>
+                <p style="font-size:.84rem;color:var(--gc-muted);font-weight:650;margin:0">
+                    <i class="fas fa-info-circle" style="margin-right:6px;color:var(--gc-accent-dark)"></i>
+                    Solo se pueden eliminar habitaciones en estado <strong>Disponible</strong>. Estado actual: <strong><?= htmlspecialchars((string)($_ehEstado['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></strong>.
+                </p>
+            <?php endif; ?>
+        </div>
     </div>
-</div>
+    <?php endif; ?>
 
-<!-- Script de la vista hotelera -->
+</div><!-- /.gc-wrap -->
+</div><!-- /.edit-hab-page -->
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tiposInfo = <?= json_encode($tiposHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    const pisosInfo = <?= json_encode($pisosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    const rangosPrecio = <?= json_encode($rangosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK) ?>;
-    const amenidadesInfo = <?= json_encode($amenidadesHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+document.addEventListener('DOMContentLoaded', function () {
+    const tiposInfo    = <?= json_encode($tiposHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const pisosInfo    = <?= json_encode($pisosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const rangosPrec   = <?= json_encode($rangosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK) ?>;
+    const amenidadesI  = <?= json_encode($amenidadesHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
-    // Preview en tiempo real
-    const numeroInput = document.querySelector('input[name="numero"]');
-    const tipoSelect = document.querySelector('select[name="tipo"]');
-    const pisoInputs = document.querySelectorAll('input[name="piso"]');
-    const precioInput = document.querySelector('input[name="precio_base"]');
-    const caracteristicasCheckboxes = document.querySelectorAll('input[name="caracteristicas_especiales[]"]');
+    const numInput     = document.getElementById('input-numero');
+    const tipoSel      = document.getElementById('input-tipo');
+    const pisoInputs   = document.querySelectorAll('input[name="piso"]');
+    const precioInput  = document.getElementById('input-precio');
+    const amCheckboxes = document.querySelectorAll('input[name="caracteristicas_especiales[]"]');
 
-    // Elementos del preview
-    const previewNumero = document.getElementById('preview-numero');
-    const previewTipo = document.getElementById('preview-tipo');
-    const previewPiso = document.getElementById('preview-piso');
-    const previewPrecio = document.getElementById('preview-precio');
-    const previewBadges = document.getElementById('preview-badges');
+    const pvNum    = document.getElementById('preview-numero');
+    const pvTipo   = document.getElementById('preview-tipo');
+    const pvPiso   = document.getElementById('preview-piso');
+    const pvPrecio = document.getElementById('preview-precio');
+    const pvBadges = document.getElementById('preview-badges');
+    const rangoEl  = document.getElementById('rango-precio');
 
-    // Actualizar preview
     function updatePreview() {
-        // Número
-        previewNumero.textContent = numeroInput.value || '---';
+        pvNum.textContent  = numInput.value || '—';
+        const tipo = tipoSel.value;
+        pvTipo.textContent = tiposInfo[tipo] || tipo;
 
-        // Tipo
-        const tipoSeleccionado = tipoSelect.value;
-        previewTipo.textContent = tiposInfo[tipoSeleccionado] || 'Sin tipo';
+        const pisoEl = document.querySelector('input[name="piso"]:checked');
+        pvPiso.textContent = pisoEl ? (pisosInfo[pisoEl.value] || pisoEl.value) : '—';
 
-        // Piso
-        const pisoSeleccionado = document.querySelector('input[name="piso"]:checked');
-        if (pisoSeleccionado) {
-            previewPiso.textContent = pisosInfo[pisoSeleccionado.value] || pisoSeleccionado.value;
-        } else {
-            previewPiso.textContent = 'Sin definir';
-        }
-
-        // Precio (lee de forma segura aunque el campo tenga comas de miles)
         const precio = window.MedisoftMoneyInput
             ? window.MedisoftMoneyInput.read(precioInput)
             : (parseFloat(String(precioInput.value).replace(/,/g, '')) || 0);
-        previewPrecio.textContent = '$' + precio.toLocaleString('es-MX');
+        pvPrecio.textContent = '$' + precio.toLocaleString('es-MX');
 
-        // Características especiales
-        updateCaracteristicasBadges();
-
-        // Actualizar rango de precio sugerido
-        updateRangoPrecio(tipoSeleccionado);
-
-        // Manejar checkboxes especiales para tipos con jacuzzi
-        manejarJacuzziCheckbox(tipoSeleccionado);
+        updateBadges(tipo);
+        updateRango(tipo);
+        updateJacuzzi(tipo);
     }
 
-    // Actualizar badges de características
-    function updateCaracteristicasBadges() {
-        const caracteristicasSeleccionadas = [];
-        caracteristicasCheckboxes.forEach(checkbox => {
-            if (checkbox.checked && !checkbox.disabled) {
-                caracteristicasSeleccionadas.push(amenidadesInfo[checkbox.value] || checkbox.value);
-            }
+    function updateBadges(tipo) {
+        pvBadges.innerHTML = '';
+        const sel = [];
+        amCheckboxes.forEach(cb => {
+            if (cb.checked && !cb.disabled) sel.push(amenidadesI[cb.value] || cb.value);
         });
-
-        // Agregar jacuzzi automáticamente si es tipo con jacuzzi
-        const tipoSeleccionado = tipoSelect.value;
-        if ((tipoSeleccionado === 'doble_jacuzzi' || tipoSeleccionado === 'sencilla_jacuzzi') && !caracteristicasSeleccionadas.includes('Jacuzzi')) {
-            caracteristicasSeleccionadas.unshift('Jacuzzi');
+        if (tipo === 'doble_jacuzzi' || tipo === 'sencilla_jacuzzi') {
+            if (!sel.includes('Jacuzzi')) sel.unshift('Jacuzzi');
         }
+        if (!sel.length) {
+            pvBadges.innerHTML = '<span style="font-size:.7rem;color:var(--gc-muted)">Sin especiales</span>';
+            return;
+        }
+        sel.forEach(s => {
+            const span = document.createElement('span');
+            span.className = 'gc-preview-badge';
+            span.textContent = s;
+            pvBadges.appendChild(span);
+        });
+    }
 
-        previewBadges.innerHTML = '';
-        if (caracteristicasSeleccionadas.length > 0) {
-            caracteristicasSeleccionadas.forEach(caract => {
-                const badge = document.createElement('span');
-                badge.className = 'px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium';
-                badge.textContent = caract;
-                previewBadges.appendChild(badge);
-            });
+    function updateRango(tipo) {
+        if (!rangoEl) return;
+        const r = rangosPrec[tipo];
+        if (r && tiposInfo[tipo]) {
+            rangoEl.textContent = '— Rango sugerido: $' + Number(r.min).toLocaleString() + ' - $' + Number(r.max).toLocaleString();
         } else {
-            previewBadges.innerHTML = '<span class="text-xs text-gray-500">Ninguna especial</span>';
+            rangoEl.textContent = '';
         }
     }
 
-    // Actualizar rango de precio sugerido
-    function updateRangoPrecio(tipo) {
-        const rango = rangosPrecio[tipo];
-        if (rango) {
-            // Buscar el elemento de rango sugerido y actualizarlo
-            const rangoTexto = document.getElementById('rango-precio');
-            if (rangoTexto) {
-                rangoTexto.textContent = `Rango sugerido para ${tiposInfo[tipo]}: $${rango.min.toLocaleString()} - $${rango.max.toLocaleString()}`;
-            }
-        }
+    function updateJacuzzi(tipo) {
+        const cb = document.querySelector('input[name="caracteristicas_especiales[]"][value="jacuzzi"]');
+        if (!cb) return;
+        const label = cb.closest('.gc-check-item');
+        const isJacType = tipo === 'doble_jacuzzi' || tipo === 'sencilla_jacuzzi';
+        cb.disabled = isJacType;
+        if (isJacType) { cb.checked = true; label && label.classList.add('is-disabled'); }
+        else           { label && label.classList.remove('is-disabled'); }
     }
 
-    // Manejar checkbox de jacuzzi para tipos con jacuzzi incluido
-    function manejarJacuzziCheckbox(tipo) {
-        const jacuzziCheckbox = document.querySelector('input[name="caracteristicas_especiales[]"][value="jacuzzi"]');
-        if (jacuzziCheckbox) {
-            const label = jacuzziCheckbox.closest('label');
-            if (tipo === 'doble_jacuzzi' || tipo === 'sencilla_jacuzzi') {
-                jacuzziCheckbox.disabled = true;
-                jacuzziCheckbox.checked = true;
-                label.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                jacuzziCheckbox.disabled = false;
-                label.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
-    }
-
-    // Event listeners
-    numeroInput.addEventListener('input', updatePreview);
-    tipoSelect.addEventListener('change', updatePreview);
-    pisoInputs.forEach(input => input.addEventListener('change', updatePreview));
+    numInput.addEventListener('input', updatePreview);
+    tipoSel.addEventListener('change', updatePreview);
+    pisoInputs.forEach(i => i.addEventListener('change', updatePreview));
     precioInput.addEventListener('input', updatePreview);
-    caracteristicasCheckboxes.forEach(checkbox => checkbox.addEventListener('change', updatePreview));
-
-    // Formatear precio al perder foco
-    precioInput.addEventListener('blur', function() {
-        if (this.value) {
-            const valor = parseFloat(this.value);
-            // Redondear a múltiplos de 50
-            const valorRedondeado = Math.round(valor / 50) * 50;
-            this.value = valorRedondeado;
-            updatePreview();
-        }
+    amCheckboxes.forEach(cb => cb.addEventListener('change', updatePreview));
+    precioInput.addEventListener('blur', function () {
+        const v = parseFloat(this.value);
+        if (v) { this.value = Math.round(v / 50) * 50; updatePreview(); }
     });
 
-    // Inicializar preview
     updatePreview();
 });
 
-const deleteRoomBlocked = <?= $hayReservacionesBloqueantesEliminacion ? 'true' : 'false' ?>;
-const deleteRoomNumber = <?= json_encode($habitacionNumeroEliminacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-let deleteRoomPending = false;
-let deleteRoomTimer = null;
+// ── Eliminar habitación ──────────────────────────────────────────
+const deleteRoomBlocked = <?= $hayReservacionesBloqueantes ? 'true' : 'false' ?>;
+const deleteRoomNumber  = <?= json_encode($habitacionNumeroEliminacion, JSON_UNESCAPED_UNICODE) ?>;
 
-function showRoomActionNotice(message) {
-    let notice = document.querySelector('[data-room-action-notice]');
-    if (!notice) {
-        notice = document.createElement('div');
-        notice.setAttribute('data-room-action-notice', '1');
-        notice.setAttribute('role', 'status');
-        notice.style.position = 'fixed';
-        notice.style.right = '24px';
-        notice.style.bottom = '24px';
-        notice.style.zIndex = '9999';
-        notice.style.maxWidth = '360px';
-        notice.style.padding = '12px 14px';
-        notice.style.border = '1px solid rgba(185, 28, 28, .24)';
-        notice.style.borderRadius = '14px';
-        notice.style.background = 'rgba(254, 242, 242, .98)';
-        notice.style.color = '#991b1b';
-        notice.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
-        notice.style.fontSize = '14px';
-        notice.style.fontWeight = '800';
-        document.body.appendChild(notice);
-    }
-
-    notice.textContent = message;
-    notice.style.display = 'block';
-    window.clearTimeout(notice._hideTimer);
-    notice._hideTimer = window.setTimeout(() => {
-        notice.style.display = 'none';
-    }, 4200);
-}
-
-function resetDeleteRoomConfirmation(trigger) {
-    deleteRoomPending = false;
-    if (trigger) {
-        trigger.classList.remove('is-confirming');
-        trigger.innerHTML = trigger.dataset.defaultHtml || trigger.innerHTML;
-    }
-}
-
-// Confirmar eliminación
 function confirmarEliminacion(trigger) {
     if (deleteRoomBlocked) {
         const blocker = document.getElementById('delete-room-blocker');
         if (blocker) {
             blocker.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            blocker.style.boxShadow = '0 0 0 4px rgba(185, 28, 28, .14)';
-            window.setTimeout(() => {
-                blocker.style.boxShadow = '';
-            }, 1800);
+            blocker.style.outline = '3px solid rgba(185,28,28,.4)';
+            setTimeout(() => blocker.style.outline = '', 1800);
         }
-        showRoomActionNotice('No se puede eliminar esta habitacion hasta resolver sus reservaciones vinculadas.');
         return;
     }
-
-    const submitDeleteRoom = function() {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
-
-        const csrfField = document.createElement('input');
-        csrfField.type = 'hidden';
-        csrfField.name = 'csrf_token';
-        csrfField.value = '<?= csrf_token() ?>';
-        form.appendChild(csrfField);
-
-        document.body.appendChild(form);
-        form.submit();
+    const submit = function () {
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = 'csrf_token'; csrf.value = '<?= csrf_token() ?>';
+        f.appendChild(csrf);
+        document.body.appendChild(f);
+        f.submit();
     };
-
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'warning',
-            title: 'Eliminar habitacion ' + (deleteRoomNumber || ''),
-            html: 'Esta accion quitara la habitacion del listado operativo y de nuevas reservas. El historial asociado se conservara para auditoria.',
+            title: 'Eliminar habitación ' + (deleteRoomNumber || ''),
+            html: 'Esta acción la quitará del listado y de nuevas reservas. El historial se conserva.',
             showCancelButton: true,
-            confirmButtonText: 'Si, eliminar habitacion',
+            confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#991b1b',
-            cancelButtonColor: '#6b7280',
             reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                submitDeleteRoom();
-            }
-        });
+        }).then(r => { if (r.isConfirmed) submit(); });
         return;
     }
-
-    if (window.confirm('Eliminar habitacion ' + (deleteRoomNumber || '') + '? Se quitara del listado operativo y se conservara su historial.')) {
-        submitDeleteRoom();
-    }
+    if (confirm('¿Eliminar habitación ' + (deleteRoomNumber || '') + '?')) submit();
 }
 
-// Script para manejo de múltiples imágenes en edición
-document.addEventListener('DOMContentLoaded', function() {
-    const fotosInput = document.getElementById('fotos-input');
-    const previewContainer = document.getElementById('preview-container');
-    const previewGrid = document.getElementById('preview-grid');
+// ── Upload de imágenes ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const input    = document.getElementById('fotos-input');
     const dropZone = document.getElementById('drop-zone');
-    const uploadAlert = document.getElementById('upload-alert');
-
-    if (!fotosInput) return;
+    const prevCont = document.getElementById('preview-container');
+    const prevGrid = document.getElementById('preview-grid');
+    const alert_   = document.getElementById('upload-alert');
+    if (!input) return;
 
     let selectedFiles = [];
-    const maxFiles = <?= 10 - $total_imagenes ?>;
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxFiles    = <?= 10 - $totalImagenes ?>;
+    const maxSize     = 5 * 1024 * 1024;
+    const allowed     = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-    // Manejar selección de archivos
-    fotosInput.addEventListener('change', function(e) {
-        handleFiles(e.target.files);
-    });
-
-    // Drag and drop
-    if (dropZone) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('border-purple-400', 'bg-purple-50');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('border-purple-400', 'bg-purple-50');
-            }, false);
-        });
-
-        dropZone.addEventListener('drop', function(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-        }, false);
+    function showErr(msg) {
+        if (!alert_) return;
+        alert_.querySelector('span').textContent = msg;
+        alert_.hidden = false;
+        alert_.classList.add('is-visible');
     }
-
-    function handleFiles(files) {
-        const newFiles = Array.from(files);
-        clearUploadError();
-
-        // Validar cantidad
-        if (newFiles.length > maxFiles) {
-            showError(`Solo puedes agregar ${maxFiles} imagen${maxFiles > 1 ? 'es' : ''} mas.`);
-            return;
-        }
-
-        // Validar cada archivo
-        selectedFiles = [];
-        for (let file of newFiles) {
-            if (!allowedTypes.includes(file.type)) {
-                showError(`${file.name} no es una imagen válida`);
-                continue;
-            }
-
-            if (file.size > maxSize) {
-                showError(`${file.name} excede el tamaño máximo de 5MB`);
-                continue;
-            }
-
-            selectedFiles.push(file);
-        }
-
-        updatePreview();
-        updateFileInput();
+    function clearErr() {
+        if (!alert_) return;
+        alert_.hidden = true;
+        alert_.classList.remove('is-visible');
     }
-
-    function updatePreview() {
-        if (!previewGrid || !previewContainer) return;
-
-        previewGrid.innerHTML = '';
-
-        if (selectedFiles.length === 0) {
-            previewContainer.classList.add('hidden');
-            return;
-        }
-
-        previewContainer.classList.remove('hidden');
-
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'relative group';
-                div.innerHTML = `
-                    <img src="${e.target.result}"
-                         alt="${file.name}"
-                         class="w-full h-24 object-cover rounded-lg shadow">
-                    <button type="button"
-                            onclick="removeNewImage(${index})"
-                            class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                    <p class="text-xs text-gray-600 mt-1 truncate">${file.name}</p>
-                `;
-                previewGrid.appendChild(div);
+    function renderPrev() {
+        if (!prevGrid || !prevCont) return;
+        prevGrid.innerHTML = '';
+        if (!selectedFiles.length) { prevCont.style.display = 'none'; return; }
+        prevCont.style.display = '';
+        selectedFiles.forEach((file, idx) => {
+            const rd = new FileReader();
+            rd.onload = e => {
+                const d = document.createElement('div');
+                d.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;aspect-ratio:4/3;';
+                d.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;display:block">
+                    <button type="button" onclick="window.__removeImg(${idx})"
+                        style="position:absolute;top:4px;right:4px;background:#D64539;color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.7rem">✕</button>
+                    <p style="font-size:.66rem;color:var(--gc-muted);padding:3px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.9)">${file.name}</p>`;
+                prevGrid.appendChild(d);
             };
-            reader.readAsDataURL(file);
+            rd.readAsDataURL(file);
         });
     }
-
-    window.removeNewImage = function(index) {
-        selectedFiles.splice(index, 1);
-        updatePreview();
-        updateFileInput();
-    };
-
-    function updateFileInput() {
-        const dataTransfer = new DataTransfer();
-        selectedFiles.forEach(file => {
-            dataTransfer.items.add(file);
-        });
-        fotosInput.files = dataTransfer.files;
+    function syncInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(f => dt.items.add(f));
+        input.files = dt.files;
     }
-
-    function showError(message) {
-        if (!uploadAlert) {
-            return;
+    function handleFiles(files) {
+        clearErr();
+        const arr = Array.from(files);
+        if (arr.length > maxFiles) { showErr(`Solo puedes agregar ${maxFiles} imagen${maxFiles > 1 ? 'es' : ''} más.`); return; }
+        selectedFiles = [];
+        for (const f of arr) {
+            if (!allowed.includes(f.type))  { showErr(f.name + ': tipo no válido'); continue; }
+            if (f.size > maxSize)           { showErr(f.name + ': supera el máximo de 5 MB'); continue; }
+            selectedFiles.push(f);
         }
-
-        const text = uploadAlert.querySelector('span');
-        if (text) {
-            text.textContent = message;
-        }
-
-        uploadAlert.hidden = false;
-        uploadAlert.classList.add('is-visible');
-        uploadAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        renderPrev(); syncInput();
     }
+    window.__removeImg = idx => { selectedFiles.splice(idx, 1); renderPrev(); syncInput(); };
 
-    function clearUploadError() {
-        if (!uploadAlert) {
-            return;
-        }
-
-        uploadAlert.hidden = true;
-        uploadAlert.classList.remove('is-visible');
+    input.addEventListener('change', e => handleFiles(e.target.files));
+    if (dropZone) {
+        ['dragenter','dragover','dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+        ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.add('drag-over')));
+        ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.remove('drag-over')));
+        dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
     }
 });
 </script>
