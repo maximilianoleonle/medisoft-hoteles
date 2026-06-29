@@ -47,7 +47,7 @@ class PwaController extends Controller {
             'display' => 'standalone',
             'background_color' => $this->colorSeguro($branding['color_secondary'] ?? null, '#FFFFFF'),
             'theme_color' => $this->colorSeguro($branding['color_primary'] ?? null, '#9CA777'),
-            'orientation' => 'any',
+            'orientation' => 'portrait-primary',
             'lang' => 'es-MX',
             'dir' => 'ltr',
             'categories' => ['business', 'productivity'],

@@ -444,6 +444,70 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             }
         }
         /* HEADER MÓVIL MODERNO CON AUTO-HIDE */
+        .pwa-portrait-guard {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+            background:
+                radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--brand-accent, #BD9441) 18%, transparent), transparent 18rem),
+                linear-gradient(135deg, color-mix(in srgb, var(--brand-primary, #1B2746) 92%, #000000), var(--brand-secondary, #0F172A));
+            color: var(--brand-action-text, #FFFEFB);
+            text-align: center;
+        }
+
+        .pwa-portrait-guard-card {
+            width: min(360px, 82vw);
+            display: grid;
+            justify-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 22px;
+            background: rgba(255,255,255,.08);
+            box-shadow: 0 24px 60px rgba(0,0,0,.32);
+            padding: 24px 22px;
+            backdrop-filter: blur(14px);
+        }
+
+        .pwa-portrait-guard-icon {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            background: rgba(255,255,255,.12);
+            color: var(--brand-accent, #BD9441);
+            font-size: 1.55rem;
+        }
+
+        .pwa-portrait-guard-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 850;
+            line-height: 1.2;
+        }
+
+        .pwa-portrait-guard-copy {
+            margin: 0;
+            color: rgba(255,255,255,.78);
+            font-size: .86rem;
+            font-weight: 650;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 1024px) and (orientation: landscape) and (pointer: coarse) {
+            body.hotel-layout-scope {
+                overflow: hidden !important;
+            }
+
+            body.hotel-layout-scope .pwa-portrait-guard {
+                display: flex;
+            }
+        }
+
         @media (max-width: 1024px) {
             body {
                 padding-top: 60px;
@@ -617,6 +681,14 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <?php endif; ?>
 </head>
 <body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?><?= htmlspecialchars($layoutPageClass, ENT_QUOTES, 'UTF-8') ?>">
+
+  <div class="pwa-portrait-guard" role="alert" aria-live="assertive" aria-label="Modo vertical requerido">
+    <div class="pwa-portrait-guard-card">
+      <span class="pwa-portrait-guard-icon"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
+      <p class="pwa-portrait-guard-title">Usa la app en vertical</p>
+      <p class="pwa-portrait-guard-copy">Gira tu dispositivo para continuar con la operacion del hotel.</p>
+    </div>
+  </div>
 
   <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
   <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>

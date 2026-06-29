@@ -10,7 +10,7 @@ return [
     'theme_color' => '#5D3A1A',
     'background_color' => '#7A8B5C',
     'display' => 'standalone',
-    'orientation' => 'any',
+    'orientation' => 'portrait-primary',
     'version' => '1.0.0',
     'cache_version' => 'v1',
     
