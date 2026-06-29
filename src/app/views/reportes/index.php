@@ -374,6 +374,153 @@
     }
 }
 
+/* Mobile report cards */
+@media (max-width: 680px) {
+    .reportes-view.rep-bg {
+        padding: 0 !important;
+    }
+
+    .reportes-view .section-kicker {
+        margin-bottom: 0.72rem;
+        gap: 0.55rem;
+    }
+
+    .reportes-view .section-kicker-bar {
+        width: 1.45rem;
+        margin-top: 0.62rem;
+    }
+
+    .reportes-view .section-kicker h2 {
+        font-size: 0.98rem !important;
+        line-height: 1.05;
+    }
+
+    .reportes-view .section-kicker p {
+        font-size: 0.72rem !important;
+        line-height: 1.25;
+    }
+
+    .reportes-view .report-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.54rem !important;
+    }
+
+    .reportes-view .rep-card {
+        min-height: 0;
+        border-radius: 0.84rem !important;
+        box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 10px 22px -20px rgba(17,24,39,.42) !important;
+    }
+
+    .reportes-view .card-accent {
+        height: 2px;
+    }
+
+    .reportes-view .card-body {
+        padding: 0.62rem !important;
+    }
+
+    .reportes-view .card-body > .flex {
+        margin-bottom: 0.46rem !important;
+        gap: 0.42rem;
+        align-items: flex-start !important;
+    }
+
+    .reportes-view .rep-icon-wrap {
+        width: 2rem;
+        height: 2rem;
+        min-width: 2rem;
+        margin-bottom: 0 !important;
+        border-radius: 0.58rem !important;
+        font-size: 0.86rem;
+        box-shadow: none !important;
+    }
+
+    .reportes-view .rep-icon-wrap i {
+        font-size: 0.84rem !important;
+    }
+
+    .reportes-view .cat-badge {
+        max-width: 5.25rem;
+        padding: 0.16rem 0.42rem;
+        font-size: 0.5rem;
+        letter-spacing: 0.045em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .reportes-view .rep-card h3 {
+        margin-bottom: 0.3rem !important;
+        font-size: 0.76rem !important;
+        line-height: 1.13 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .reportes-view .rep-card p {
+        margin-bottom: 0.48rem !important;
+        font-size: 0.62rem !important;
+        line-height: 1.22 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .reportes-view .feat-list {
+        display: none;
+    }
+
+    .reportes-view .rep-cta {
+        min-height: 2.12rem;
+        padding: 0.45rem 0.5rem;
+        gap: 0.34rem;
+        border-radius: 0.62rem;
+        font-size: 0.62rem;
+        line-height: 1;
+        white-space: nowrap;
+        box-shadow: 0 8px 18px -16px color-mix(in srgb, var(--report-brand) 70%, #111827) !important;
+    }
+
+    .reportes-view .rep-cta i {
+        font-size: 0.68rem !important;
+    }
+
+    .reportes-view .rep-cta + .rep-cta {
+        margin-top: 0.34rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .reportes-view .report-grid {
+        gap: 0.45rem !important;
+    }
+
+    .reportes-view .card-body {
+        padding: 0.54rem !important;
+    }
+
+    .reportes-view .cat-badge {
+        max-width: 4.55rem;
+        font-size: 0.48rem;
+    }
+
+    .reportes-view .rep-card h3 {
+        font-size: 0.7rem !important;
+    }
+
+    .reportes-view .rep-card p {
+        display: none;
+    }
+
+    .reportes-view .rep-cta {
+        min-height: 2rem;
+        padding-inline: 0.42rem;
+        font-size: 0.58rem;
+    }
+}
+
 /* ── Scrollbar ───────────────────────────── */
 .report-scroll::-webkit-scrollbar { width:4px; }
 .report-scroll::-webkit-scrollbar-track { background:#E5E7EB; }

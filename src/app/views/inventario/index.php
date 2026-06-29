@@ -348,9 +348,12 @@
     grid-template-columns: repeat(5, minmax(126px, 1fr));
     gap: 8px;
     width: min(100%, 760px);
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     padding-bottom: 2px;
     scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .inv-page .inv-action-grid::-webkit-scrollbar {
@@ -903,8 +906,50 @@
     }
 
     .inv-page .inv-action-grid {
-        grid-template-columns: repeat(5, minmax(132px, 132px));
+        display: flex;
+        align-items: stretch;
+        flex-wrap: nowrap;
+        gap: 7px;
         width: 100%;
+        max-width: 100%;
+        margin-inline: -2px;
+        padding: 2px 2px 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .inv-page .inv-action-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inv-page .inv-action-grid .btn-inv {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: clamp(112px, 31vw, 142px);
+        max-width: 152px;
+        min-height: 40px;
+        padding: 0 10px;
+        gap: 6px;
+        border-radius: 999px !important;
+        font-size: .68rem;
+        box-shadow: 0 9px 18px -15px currentColor !important;
+        scroll-snap-align: start;
+    }
+
+    .inv-page .inv-action-grid .btn-inv i {
+        width: 12px;
+        min-width: 12px;
+        font-size: .68rem !important;
+    }
+
+    .inv-page .inv-action-grid .btn-inv span {
+        max-width: 104px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .inv-page .inv-pill {
@@ -943,6 +988,23 @@
 }
 
 @media (max-width: 480px) {
+    .inv-page .inv-action-grid {
+        gap: 6px;
+        padding-bottom: 6px;
+    }
+
+    .inv-page .inv-action-grid .btn-inv {
+        min-width: 108px;
+        max-width: 132px;
+        min-height: 38px;
+        padding: 0 9px;
+        font-size: .64rem;
+    }
+
+    .inv-page .inv-action-grid .btn-inv span {
+        max-width: 88px;
+    }
+
     .inv-page .grid.grid-cols-2 {
         grid-template-columns: 1fr !important;
     }
@@ -954,6 +1016,72 @@
     .inv-page .inv-topbar .flex.flex-wrap.gap-2.mt-3,
     .inv-page > .px-4 .grid.grid-cols-2.lg\:grid-cols-4 {
         grid-template-columns: 1fr !important;
+    }
+
+    .inv-page > .px-4 .grid.grid-cols-2.lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .inv-page > .px-4 .grid.grid-cols-2.lg\:grid-cols-4 > .stat-widget {
+        grid-column: span 1;
+        min-height: 88px;
+        padding: 10px 10px 9px !important;
+        border-radius: 13px !important;
+        justify-content: flex-start;
+        box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 10px 22px -20px rgba(17, 24, 39, .45) !important;
+    }
+
+    .inv-page > .px-4 .grid.grid-cols-2.lg\:grid-cols-4 > .stat-widget::before {
+        width: 44px;
+        height: 44px;
+        right: -18px;
+        bottom: -18px;
+        opacity: .04;
+    }
+
+    .inv-page > .px-4 .grid.grid-cols-2.lg\:grid-cols-4 > .stat-widget::after {
+        display: none;
+    }
+
+    .inv-page .stat-widget > .flex {
+        margin-bottom: 6px !important;
+        align-items: flex-start !important;
+    }
+
+    .inv-page .stat-widget .stat-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px !important;
+        font-size: .72rem;
+    }
+
+    .inv-page .stat-widget .text-2xl {
+        font-size: 1.28rem !important;
+        line-height: 1 !important;
+    }
+
+    .inv-page .stat-widget > p {
+        line-height: 1.15;
+    }
+
+    .inv-page .stat-widget > p:first-of-type {
+        font-size: .61rem !important;
+        letter-spacing: .045em !important;
+    }
+
+    .inv-page .stat-widget > p:nth-of-type(2) {
+        font-size: .66rem !important;
+        margin-top: 2px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .inv-page .stat-widget .bar-track {
+        height: 2px;
+        margin-top: 7px;
     }
 }
 

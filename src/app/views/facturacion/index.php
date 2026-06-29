@@ -860,7 +860,61 @@ a.billing-name:hover {
     }
 
     .billing-summary-strip {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .billing-summary-card {
+        min-height: 5.35rem;
+        padding: 0.62rem 0.64rem 0.54rem;
+        border-radius: 0.82rem;
+        box-shadow: 0 1px 2px rgba(31, 41, 55, 0.04), 0 10px 22px -20px rgba(31, 41, 55, 0.42);
+    }
+
+    .billing-summary-card::before {
+        height: 2px;
+    }
+
+    .billing-summary-card::after {
+        top: -25px;
+        right: -23px;
+        width: 58px;
+        height: 58px;
+        opacity: 0.72;
+    }
+
+    .billing-summary-label {
+        gap: 0.34rem;
+        font-size: 0.58rem;
+        letter-spacing: 0.055em;
+        line-height: 1.1;
+        white-space: nowrap;
+    }
+
+    .billing-summary-dot {
+        width: 0.42rem;
+        height: 0.42rem;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-tone) 12%, transparent);
+    }
+
+    .billing-summary-value {
+        margin-top: 0.58rem;
+        font-size: clamp(1.15rem, 5.1vw, 1.34rem);
+        line-height: 0.98;
+    }
+
+    .billing-summary-card[data-tone="gold"] .billing-summary-value {
+        font-size: clamp(0.98rem, 4.55vw, 1.18rem);
+    }
+
+    .billing-summary-meta {
+        margin-top: 0.24rem;
+        font-size: 0.64rem;
+        line-height: 1.12;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .billing-panel-header,

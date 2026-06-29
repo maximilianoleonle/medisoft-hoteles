@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 header('Content-Type: text/html; charset=UTF-8');
 /**
  * Vista de Detalle de Reservación - Diseño Moderno y Colorido
@@ -5312,363 +5312,321 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
 </div>
 <!-- ========== FIN MODAL CAMBIAR MÉTODO DE PAGO ========== -->
 
-<div id="modalCheckInTardio" class="modal-overlay rv-checkin-modal rv-tardio-modal" style="display: none;">
-    <div class="modal-content rv-checkin-shell rv-tardio-shell" style="width: 420px; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header rv-checkin-hero rv-tardio-hero" style="padding: 1rem; border-bottom: 2px solid #F3F4F6;">
-            <h3 id="tituloModalTardio" style="font-size: 1.125rem; font-weight: 700; margin: 0; color: #1F2937;">
-                <i class="fas fa-clock" style="color: #F59E0B; margin-right: 0.5rem;"></i>
-                Check-in Tardío
-            </h3>
-            <button onclick="cerrarModalCheckInTardio()" class="rv-checkin-close" style="background: none; border: none; cursor: pointer; color: #6B7280; font-size: 1.25rem;">
+<!-- ── Modal Express / Tardío ─────────────────────────────── -->
+<style>
+.xpm-ov{position:fixed;inset:0;z-index:9990;background:rgba(17,24,39,.52);display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.xpm-ov{align-items:center;backdrop-filter:blur(3px)}}
+.xpm-shell{width:100%;height:100dvh;max-height:100dvh;background:#F6F8F5;display:flex;flex-direction:column;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+@media(min-width:600px){.xpm-shell{max-width:468px;height:auto;max-height:min(90dvh,800px);border-radius:18px;box-shadow:0 32px 80px -12px rgba(0,0,0,.3)}}
+.xpm-shell *,.xpm-shell *::before,.xpm-shell *::after{box-sizing:border-box}
+.xpm-shell h2,.xpm-shell h3,.xpm-shell h4{font-family:'Outfit','DM Sans',sans-serif;letter-spacing:-.01em;margin:0}
+/* Header */
+.xpm-head{flex-shrink:0;display:flex;align-items:center;gap:11px;padding:14px 16px 13px;background:#fff;border-bottom:1px solid #E5EAE4}
+.xpm-head-ico{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#FFF3E0;color:#B66A00;font-size:.9rem;flex-shrink:0}
+.xpm-head-ico.is-late{background:#EDF2EC;color:#3A5233}
+.xpm-head-text{flex:1;min-width:0}
+.xpm-head-title{display:block;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:800;color:#111827;line-height:1.2}
+.xpm-head-sub{display:block;font-size:.7rem;font-weight:500;color:#9CA3AF;margin-top:1px}
+.xpm-head-close{width:34px;height:34px;display:grid;place-items:center;border:1px solid #E5E7EB;border-radius:9px;background:#F9FAFB;color:#6B7280;font-size:.82rem;cursor:pointer;flex-shrink:0;transition:background .12s,color .12s}
+.xpm-head-close:hover{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
+/* Alert */
+.xpm-alert{flex-shrink:0;padding:10px 16px;background:#FFF8E1;border-bottom:1px solid #FFE082;font-size:.79rem;font-weight:600;color:#78350F;display:none}
+/* Form */
+.xpm-form{flex:1;display:flex;flex-direction:column;min-height:0}
+/* Scrollable body */
+.xpm-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px}
+/* Validation */
+.xpm-vmsg{padding:9px 13px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;font-size:.78rem;font-weight:600;color:#B91C1C}
+.xpm-vmsg.hidden{display:none}
+/* Info card */
+.xpm-info-card{background:#fff;border:1px solid #E5EAE4;border-radius:13px;overflow:hidden}
+.xpm-info-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid #F3F6F2}
+.xpm-info-row:last-child{border-bottom:none}
+.xpm-info-ico{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:#EDF2EC;color:#4A6741;font-size:.72rem;flex-shrink:0}
+.xpm-info-lbl{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9CA3AF;display:block}
+.xpm-info-val{font-size:.86rem;font-weight:700;color:#111827;display:block;margin-top:1px}
+/* Fields */
+.xpm-field{display:flex;flex-direction:column;gap:5px}
+.xpm-lbl{font-size:.76rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px}
+.xpm-lbl i{color:#4A6741;font-size:.7rem}
+.xpm-inp{width:100%;height:42px;padding:0 12px;border:1.5px solid #D1D9CC;border-radius:10px;font-family:inherit;font-size:.88rem;font-weight:600;color:#111827;background:#fff;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .13s,box-shadow .13s}
+.xpm-inp:focus{border-color:#4A6741;box-shadow:0 0 0 3px rgba(74,103,65,.12)}
+textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
+/* Total */
+.xpm-total{background:#fff;border:1.5px solid #C5D3C0;border-radius:13px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between}
+.xpm-total-lbl{font-size:.76rem;font-weight:700;color:#5A7058;display:flex;align-items:center;gap:7px}
+.xpm-total-lbl i{color:#4A6741}
+.xpm-total-val{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:#1A2E1A;font-variant-numeric:tabular-nums}
+/* Section */
+.xpm-sec{font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#9CA3AF;display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.xpm-sec i{color:#4A6741}
+/* Shortcuts */
+.xpm-sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.xpm-sc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 7px;background:#fff;border:1.5px solid #E2EBE0;border-radius:11px;font-family:inherit;font-size:.69rem;font-weight:700;color:#3A5233;cursor:pointer;text-align:center;line-height:1.3;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
+.xpm-sc i{font-size:.88rem;color:#4A6741}
+.xpm-sc:active{background:#EDF2EC;border-color:#A8C0A0}
+/* Payment opts */
+.xpm-pay-list{display:flex;flex-direction:column;gap:7px}
+.xpm-pay-opt{background:#fff;border:1.5px solid #E5EAE4;border-radius:12px;overflow:hidden;transition:border-color .13s}
+.xpm-pay-opt.is-active{border-color:#A8C0A0}
+.xpm-pay-toggle{display:flex;align-items:center;gap:11px;padding:12px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.xpm-pay-toggle input[type=checkbox]{width:18px;height:18px;accent-color:#4A6741;flex-shrink:0;cursor:pointer}
+.xpm-pay-ico{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;font-size:.78rem;flex-shrink:0}
+.xpm-pay-ico.cash{background:#DCFCE7;color:#15803D}
+.xpm-pay-ico.card{background:#DBEAFE;color:#1D4ED8}
+.xpm-pay-ico.xfer{background:#EDE9FE;color:#6D28D9}
+.xpm-pay-ico.pend{background:#F3F4F6;color:#6B7280}
+.xpm-pay-name{font-size:.86rem;font-weight:700;color:#111827;flex:1}
+.xpm-pay-sub{font-size:.68rem;font-weight:500;color:#9CA3AF}
+.xpm-pay-body{padding:0 13px 13px;display:flex;flex-direction:column;gap:9px}
+.xpm-pay-body.hidden{display:none}
+.xpm-2col{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.xpm-fld{display:flex;flex-direction:column;gap:4px}
+.xpm-fld-lbl{font-size:.68rem;font-weight:700;color:#6B7280}
+.xpm-cambio{padding:8px 11px;background:#DCFCE7;border-radius:9px;display:flex;justify-content:space-between;align-items:center;font-size:.78rem;font-weight:600;color:#14532D}
+.xpm-card-types{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.xpm-card-chip{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border:1.5px solid #BFDBFE;border-radius:9px;background:#fff;color:#1D4ED8;font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
+.xpm-card-chip input{display:none}
+.xpm-card-chip.is-sel{background:#DBEAFE;border-color:#3B82F6}
+/* Resumen */
+.xpm-resumen{background:#F4F7F3;border:1.5px solid #C5D3C0;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.xpm-resumen.hidden{display:none}
+.xpm-rrow{display:flex;justify-content:space-between;align-items:center;font-size:.81rem}
+.xpm-rrow span{color:#5A7058;font-weight:500}
+.xpm-rrow strong{color:#111827;font-weight:800}
+.xpm-rrow strong.red{color:#B91C1C}
+/* Invoice */
+.xpm-inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xpm-inv-opt{display:flex;align-items:center;gap:9px;padding:11px 12px;background:#fff;border:1.5px solid #E5EAE4;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
+.xpm-inv-opt input{accent-color:#4A6741;flex-shrink:0;width:16px;height:16px}
+.xpm-inv-opt:has(input:checked){border-color:#4A6741;background:#EDF2EC}
+.xpm-inv-t{font-size:.8rem;font-weight:700;color:#111827;display:block}
+.xpm-inv-s{font-size:.66rem;color:#9CA3AF;font-weight:500;display:block;margin-top:1px}
+.xpm-inv-note{padding:8px 11px;border-radius:9px;font-size:.76rem;font-weight:600;margin-top:7px}
+.xpm-inv-note.is-err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.xpm-inv-note.is-info{background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8}
+.xpm-inv-note.is-ok{background:#EDF2EC;border:1px solid #C5D3C0;color:#3A5233}
+.xpm-inv-note.hidden{display:none}
+/* Mini btn */
+.xpm-mini{align-self:flex-start;padding:5px 11px;border:1.5px solid #C5D3C0;border-radius:8px;background:#EDF2EC;color:#3A5233;font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.xpm-mini:active{background:#C5D3C0}
+/* Footer */
+.xpm-foot{flex-shrink:0;display:grid;grid-template-columns:1fr 1.7fr;gap:9px;padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E5EAE4}
+.xpm-fbtn{height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;transition:opacity .13s,transform .13s}
+.xpm-fbtn:active{opacity:.85;transform:scale(.98)}
+.xpm-fbtn-cancel{background:#F3F4F6;color:#374151}
+.xpm-fbtn-cancel:hover{background:#E5E7EB}
+.xpm-fbtn-ok{background:#4A6741;color:#fff}
+.xpm-fbtn-ok:hover{background:#3A5233}
+.xpm-fbtn-ok.is-express{background:#B66A00}
+</style>
+
+<div id="modalCheckInTardio" class="xpm-ov" style="display:none;">
+    <div class="xpm-shell rv-tardio-shell">
+
+        <div class="xpm-head">
+            <div class="xpm-head-ico is-express" id="xpHeaderIcon"><i class="fas fa-bolt"></i></div>
+            <div class="xpm-head-text">
+                <span class="xpm-head-title" id="tituloModalTardio">Proceso Express</span>
+                <span class="xpm-head-sub">Confirma la llegada y registra el pago</span>
+            </div>
+            <button type="button" class="xpm-head-close" onclick="cerrarModalCheckInTardio()" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
-        <!-- Alerta de Advertencia -->
-        <div id="alertaTardio" style="padding: 1rem; display: none;">
-            <!-- Se llena dinámicamente -->
-        </div>
+        <div id="alertaTardio" class="xpm-alert"></div>
 
-        <div class="modal-body rv-checkin-body rv-tardio-body" style="padding: 1rem;">
-            <form id="formCheckInTardio" method="POST" action="" class="rv-checkin-form rv-tardio-form">
-                <?= csrf_field() ?>
-                <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
+        <form id="formCheckInTardio" method="POST" action="" class="xpm-form rv-checkin-form rv-tardio-form">
+            <?= csrf_field() ?>
+            <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
 
-                <div id="mensajeValidacionTardio" class="rv-checkin-message hidden" aria-live="polite"></div>
+            <div class="xpm-body">
 
-                <div class="rv-tardio-fields">
-                <!-- Info Reservación -->
-                <div class="rv-tardio-info" style="background: #F9FAFB; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
-                        <div>
-                            <span style="color: #6B7280;">Huésped:</span>
-                            <span id="huesped_tardio" style="font-weight: 600; color: #1F2937;"></span>
-                        </div>
-                        <div>
-                            <span style="color: #6B7280;">Habitaciones:</span>
-                            <span id="habitaciones_tardio" style="font-weight: 600; color: #1F2937;"></span>
-                        </div>
-                        <div>
-                            <span style="color: #6B7280;">Entrada:</span>
-                            <span id="fecha_entrada_tardio" style="font-weight: 600; color: #1F2937;"></span>
-                        </div>
-                        <div>
-                            <span style="color: #6B7280;">Salida:</span>
-                            <span id="fecha_salida_tardio" style="font-weight: 600; color: #1F2937;"></span>
-                        </div>
+                <div id="mensajeValidacionTardio" class="xpm-vmsg hidden rv-checkin-message" aria-live="polite"></div>
+
+                <div class="xpm-info-card">
+                    <div class="xpm-info-row">
+                        <span class="xpm-info-ico"><i class="fas fa-user"></i></span>
+                        <div><span class="xpm-info-lbl">Huésped</span><span class="xpm-info-val" id="huesped_tardio">—</span></div>
+                    </div>
+                    <div class="xpm-info-row">
+                        <span class="xpm-info-ico"><i class="fas fa-bed"></i></span>
+                        <div><span class="xpm-info-lbl">Habitaciones</span><span class="xpm-info-val" id="habitaciones_tardio">—</span></div>
+                    </div>
+                    <div class="xpm-info-row">
+                        <span class="xpm-info-ico"><i class="fas fa-arrow-right-to-bracket"></i></span>
+                        <div><span class="xpm-info-lbl">Entrada</span><span class="xpm-info-val" id="fecha_entrada_tardio">—</span></div>
+                    </div>
+                    <div class="xpm-info-row">
+                        <span class="xpm-info-ico"><i class="fas fa-arrow-right-from-bracket"></i></span>
+                        <div><span class="xpm-info-lbl">Salida</span><span class="xpm-info-val" id="fecha_salida_tardio">—</span></div>
                     </div>
                 </div>
 
-                <!-- Hora de Entrada (solo para tardío normal) -->
-                <div id="campo_hora_entrada" class="form-group rv-arrival-field" style="margin-bottom: 1rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                        Hora de Check-in
-                    </label>
-                    <input type="time" name="hora_entrada" class="form-input" value="<?= date('H:i') ?>"
-                           style="width: 100%; padding: 0.5rem; border: 2px solid #E5E7EB; border-radius: 0.5rem; font-size: 0.875rem;">
+                <div id="campo_hora_entrada" class="xpm-field rv-arrival-field">
+                    <label class="xpm-lbl" for="hora_entrada_xpm"><i class="fas fa-clock"></i> Hora de Check-in</label>
+                    <input type="time" name="hora_entrada" id="hora_entrada_xpm" class="xpm-inp" value="<?= date('H:i') ?>">
                 </div>
 
-                <!-- Total a Cobrar -->
-                <div class="form-group rv-total-field" style="margin-bottom: 1rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                        Total a Cobrar
-                    </label>
-                    <div style="padding: 0.75rem; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 0.5rem; text-align: center;">
-                        <span id="totalACobrarTardio" style="font-weight: 600; font-size: 1.5rem; color: #92400E;">$0.00</span>
-                    </div>
+                <div class="xpm-total">
+                    <span class="xpm-total-lbl"><i class="fas fa-receipt"></i> Total a cobrar</span>
+                    <span class="xpm-total-val" id="totalACobrarTardio">$0.00</span>
                 </div>
 
-                <!-- Métodos de Pago -->
-                <div class="form-group rv-payment-section rv-tardio-payment">
-                    <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
-                        <i class="fas fa-wallet" style="color: #9333EA; margin-right: 0.375rem;"></i>
-                        Métodos de Pago
-                    </h4>
-                    <p id="nota_pago_opcional" style="font-size: 0.75rem; color: #6B7280; margin-bottom: 0.5rem;">
-                        💡 Opcional: Puede registrar el pago ahora o dejarlo pendiente.
-                    </p>
+                <div>
+                    <div class="xpm-sec"><i class="fas fa-wallet"></i> Método de pago</div>
+                    <p id="nota_pago_opcional" style="font-size:.72rem;color:#9CA3AF;font-weight:500;margin:6px 0 10px;">Opcional — puede quedar pendiente y cobrarse después.</p>
 
-                    <div class="rv-payment-shortcuts" aria-label="Atajos de pago express">
-                        <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapidoTardio('efectivo')">
-                            <i class="fas fa-money-bill-wave"></i>
-                            Efectivo exacto
+                    <div class="xpm-sc-grid" style="margin-bottom:10px;">
+                        <button type="button" class="xpm-sc rv-money-shortcut is-cash" onclick="aplicarPagoRapidoTardio('efectivo')">
+                            <i class="fas fa-money-bill-wave"></i>Efectivo exacto
                         </button>
-                        <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapidoTardio('tarjeta')">
-                            <i class="fas fa-credit-card"></i>
-                            Tarjeta exacta
+                        <button type="button" class="xpm-sc rv-money-shortcut is-card" onclick="aplicarPagoRapidoTardio('tarjeta')">
+                            <i class="fas fa-credit-card"></i>Tarjeta exacta
                         </button>
-                        <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapidoTardio('transferencia')">
-                            <i class="fas fa-exchange-alt"></i>
-                            Transferencia exacta
+                        <button type="button" class="xpm-sc rv-money-shortcut is-transfer" onclick="aplicarPagoRapidoTardio('transferencia')">
+                            <i class="fas fa-exchange-alt"></i>Transferencia
                         </button>
-                        <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapidoTardio()">
-                            <i class="fas fa-code-branch"></i>
-                            Mitad efectivo/tarjeta
+                        <button type="button" class="xpm-sc rv-money-shortcut is-split" onclick="dividirPagoRapidoTardio()">
+                            <i class="fas fa-code-branch"></i>Mitad ef./tarjeta
                         </button>
-                        <button type="button" class="rv-money-shortcut is-cash-transfer" onclick="dividirPagoEfectivoTransferenciaTardio()">
-                            <i class="fas fa-university"></i>
-                            Efectivo + transferencia
+                        <button type="button" class="xpm-sc rv-money-shortcut is-cash-transfer" onclick="dividirPagoEfectivoTransferenciaTardio()" style="grid-column:span 2;">
+                            <i class="fas fa-university"></i>Efectivo + transferencia
                         </button>
                     </div>
 
-                    <div id="metodosPagoContainerTardio" class="rv-pay-methods" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <!-- Sin Pago -->
-                        <div class="metodo-pago-item rv-pay-option rv-pay-pending" style="background: #F3F4F6; border: 2px solid #D1D5DB; border-radius: 0.5rem; padding: 0.75rem;">
-                            <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #4B5563; cursor: pointer;">
-                                <input type="checkbox"
-                                    id="check_sin_pago"
-                                    onchange="toggleMetodoPagoTardio('sin_pago')"
-                                    checked
-                                    style="margin-right: 0.5rem;">
-                                <i class="fas fa-clock" style="color: #6B7280; margin-right: 0.5rem;"></i>
-                                Sin Pago (Pendiente)
+                    <div id="metodosPagoContainerTardio" class="xpm-pay-list rv-pay-methods">
+
+                        <div class="xpm-pay-opt metodo-pago-item rv-pay-option rv-pay-pending">
+                            <label class="xpm-pay-toggle">
+                                <input type="checkbox" id="check_sin_pago" onchange="toggleMetodoPagoTardio('sin_pago')" checked>
+                                <span class="xpm-pay-ico pend"><i class="fas fa-clock"></i></span>
+                                <span class="xpm-pay-name">Sin pago ahora</span>
+                                <span class="xpm-pay-sub">Queda pendiente</span>
                             </label>
                         </div>
 
-                        <!-- Efectivo -->
-                        <div class="metodo-pago-item rv-pay-option rv-pay-cash" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 0.5rem; padding: 0.75rem;">
-                            <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #065F46; cursor: pointer;">
-                                <input type="checkbox"
-                                    id="check_efectivo_tardio"
-                                    onchange="toggleMetodoPagoTardio('efectivo')"
-                                    style="margin-right: 0.5rem;">
-                                <i class="fas fa-money-bill-wave" style="color: #10B981; margin-right: 0.5rem;"></i>
-                                Efectivo
+                        <div class="xpm-pay-opt metodo-pago-item rv-pay-option rv-pay-cash">
+                            <label class="xpm-pay-toggle">
+                                <input type="checkbox" id="check_efectivo_tardio" onchange="toggleMetodoPagoTardio('efectivo')">
+                                <span class="xpm-pay-ico cash"><i class="fas fa-money-bill-wave"></i></span>
+                                <span class="xpm-pay-name">Efectivo</span>
                             </label>
-                            <div id="panel_efectivo_tardio" class="hidden" style="margin-top: 0.5rem;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                    <div>
-                                        <label style="font-size: 0.75rem; color: #065F46;">Total a cobrar</label>
-                                        <input type="number"
-                                            name="monto_efectivo"
-                                            id="monto_efectivo_tardio"
-                                            data-money-format="true"
-                                            step="0.01"
-                                            min="0"
-                                            readonly
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background-color: #F0FDF4;">
+                            <div id="panel_efectivo_tardio" class="xpm-pay-body hidden">
+                                <div class="xpm-2col">
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Total a cobrar</span>
+                                        <input type="number" name="monto_efectivo" id="monto_efectivo_tardio" data-money-format="true" step="0.01" min="0" readonly class="xpm-inp" style="background:#F4F7F3">
                                     </div>
-                                    <div>
-                                        <label style="font-size: 0.75rem; color: #065F46;">Monto recibido</label>
-                                        <input type="number"
-                                            name="recibido_efectivo"
-                                            id="recibido_efectivo_tardio"
-                                            data-money-format="true"
-                                            step="0.01"
-                                            min="0"
-                                            oninput="calcularCambioTardio()"
-                                            onchange="calcularCambioTardio()"
-                                            onkeyup="calcularCambioTardio()"
-                                            placeholder="0.00"
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background: white;">
-                                        <button type="button" class="rv-money-mini" onclick="marcarEfectivoExactoTardio()">
-                                            Recibi exacto
-                                        </button>
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Monto recibido</span>
+                                        <input type="number" name="recibido_efectivo" id="recibido_efectivo_tardio" data-money-format="true" step="0.01" min="0" oninput="calcularCambioTardio()" onchange="calcularCambioTardio()" onkeyup="calcularCambioTardio()" placeholder="0.00" class="xpm-inp">
+                                        <button type="button" class="xpm-mini rv-money-mini" onclick="marcarEfectivoExactoTardio()">Recibí exacto</button>
                                     </div>
                                 </div>
-                                <div style="background-color: #D1FAE5; border-radius: 0.375rem; padding: 0.375rem 0.5rem; margin-top: 0.375rem; font-size: 0.75rem;">
-                                    Cambio: <span id="cambio_efectivo_tardio" style="font-weight: 700; color: #065F46;">$0.00</span>
+                                <div class="xpm-cambio">
+                                    <span>Cambio</span>
+                                    <strong id="cambio_efectivo_tardio">$0.00</strong>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tarjeta -->
-                        <div class="metodo-pago-item rv-pay-option rv-pay-card" style="background: #EFF6FF; border: 2px solid #BFDBFE; border-radius: 0.5rem; padding: 0.75rem;">
-                            <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #1E40AF; cursor: pointer;">
-                                <input type="checkbox"
-                                    id="check_tarjeta_tardio"
-                                    onchange="toggleMetodoPagoTardio('tarjeta')"
-                                    style="margin-right: 0.5rem;">
-                                <i class="fas fa-credit-card" style="color: #3B82F6; margin-right: 0.5rem;"></i>
-                                Tarjeta
+                        <div class="xpm-pay-opt metodo-pago-item rv-pay-option rv-pay-card">
+                            <label class="xpm-pay-toggle">
+                                <input type="checkbox" id="check_tarjeta_tardio" onchange="toggleMetodoPagoTardio('tarjeta')">
+                                <span class="xpm-pay-ico card"><i class="fas fa-credit-card"></i></span>
+                                <span class="xpm-pay-name">Tarjeta</span>
                             </label>
-                            <div id="panel_tarjeta_tardio" class="hidden" style="margin-top: 0.5rem;">
-    <!-- Tipo de tarjeta: Crédito / Débito -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
-                       background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
-                       cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
-               id="label_credito_tardio"
-               onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_debito_tardio').style.borderColor='#BFDBFE'; document.getElementById('label_debito_tardio').style.background='white';">
-            <input type="radio" name="tipo_tarjeta_tardio" value="credito" style="accent-color: #3B82F6;">
-            <i class="fas fa-credit-card" style="font-size: 0.625rem;"></i> Crédito
-        </label>
-        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
-                       background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
-                       cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
-               id="label_debito_tardio"
-               onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_credito_tardio').style.borderColor='#BFDBFE'; document.getElementById('label_credito_tardio').style.background='white';">
-            <input type="radio" name="tipo_tarjeta_tardio" value="debito" style="accent-color: #3B82F6;">
-            <i class="fas fa-money-check-alt" style="font-size: 0.625rem;"></i> Débito
-        </label>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-        <div>
-            <label style="font-size: 0.75rem; color: #1E40AF;">Monto</label>
-                                        <input type="number"
-                                            name="monto_tarjeta"
-                                            id="monto_tarjeta_tardio"
-                                            data-money-format="true"
-                                            step="0.01"
-                                            min="0"
-                                            oninput="calcularTotalesTardio()"
-                                            onchange="calcularTotalesTardio()"
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
+                            <div id="panel_tarjeta_tardio" class="xpm-pay-body hidden">
+                                <div class="xpm-card-types">
+                                    <label class="xpm-card-chip" id="label_credito_tardio" onclick="this.classList.add('is-sel');document.getElementById('label_debito_tardio').classList.remove('is-sel')">
+                                        <input type="radio" name="tipo_tarjeta_tardio" value="credito">
+                                        <i class="fas fa-credit-card"></i> Crédito
+                                    </label>
+                                    <label class="xpm-card-chip" id="label_debito_tardio" onclick="this.classList.add('is-sel');document.getElementById('label_credito_tardio').classList.remove('is-sel')">
+                                        <input type="radio" name="tipo_tarjeta_tardio" value="debito">
+                                        <i class="fas fa-money-check-alt"></i> Débito
+                                    </label>
+                                </div>
+                                <div class="xpm-2col">
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Monto</span>
+                                        <input type="number" name="monto_tarjeta" id="monto_tarjeta_tardio" data-money-format="true" step="0.01" min="0" oninput="calcularTotalesTardio()" onchange="calcularTotalesTardio()" class="xpm-inp">
                                     </div>
-                                    <div>
-                                        <label style="font-size: 0.75rem; color: #1E40AF;">Referencia</label>
-                                        <input type="text"
-                                            name="referencia_tarjeta"
-                                            placeholder="Últimos 4 dígitos"
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Referencia</span>
+                                        <input type="text" name="referencia_tarjeta" placeholder="Últ. 4 dígitos" class="xpm-inp">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Transferencia -->
-                        <div class="metodo-pago-item rv-pay-option rv-pay-transfer" style="background: #F5F3FF; border: 2px solid #DDD6FE; border-radius: 0.5rem; padding: 0.75rem;">
-                            <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #5B21B6; cursor: pointer;">
-                                <input type="checkbox"
-                                    id="check_transferencia_tardio"
-                                    onchange="toggleMetodoPagoTardio('transferencia')"
-                                    style="margin-right: 0.5rem;">
-                                <i class="fas fa-exchange-alt" style="color: #9333EA; margin-right: 0.5rem;"></i>
-                                Transferencia
+                        <div class="xpm-pay-opt metodo-pago-item rv-pay-option rv-pay-transfer">
+                            <label class="xpm-pay-toggle">
+                                <input type="checkbox" id="check_transferencia_tardio" onchange="toggleMetodoPagoTardio('transferencia')">
+                                <span class="xpm-pay-ico xfer"><i class="fas fa-exchange-alt"></i></span>
+                                <span class="xpm-pay-name">Transferencia</span>
                             </label>
-                            <div id="panel_transferencia_tardio" class="hidden" style="margin-top: 0.5rem;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                    <div>
-                                        <label style="font-size: 0.75rem; color: #5B21B6;">Monto</label>
-                                        <input type="number"
-                                            name="monto_transferencia"
-                                            id="monto_transferencia_tardio"
-                                            data-money-format="true"
-                                            step="0.01"
-                                            min="0"
-                                            oninput="calcularTotalesTardio()"
-                                            onchange="calcularTotalesTardio()"
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
+                            <div id="panel_transferencia_tardio" class="xpm-pay-body hidden">
+                                <div class="xpm-2col">
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Monto</span>
+                                        <input type="number" name="monto_transferencia" id="monto_transferencia_tardio" data-money-format="true" step="0.01" min="0" oninput="calcularTotalesTardio()" onchange="calcularTotalesTardio()" class="xpm-inp">
                                     </div>
-                                    <div>
-                                        <label style="font-size: 0.75rem; color: #5B21B6;">Referencia</label>
-                                        <input type="text"
-                                            name="referencia_transferencia"
-                                            placeholder="Nº de operación"
-                                            style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
+                                    <div class="xpm-fld">
+                                        <span class="xpm-fld-lbl">Referencia</span>
+                                        <input type="text" name="referencia_transferencia" placeholder="Nº de operación" class="xpm-inp">
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
-                    <!-- Resumen de Totales (pago mixto) -->
-                    <div id="resumen_totales_tardio" class="hidden" style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem; padding: 0.75rem; margin-top: 0.75rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.375rem; font-size: 0.875rem;">
-                            <span style="color: #6B7280;">Total Pagado:</span>
-                            <span id="total_pagado_tardio" style="font-weight: 700; color: #1F2937;">$0.00</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
-                            <span style="color: #6B7280;">Pendiente:</span>
-                            <span id="pendiente_tardio" style="font-weight: 700; color: #DC2626;">$0.00</span>
-                        </div>
+                    <div id="resumen_totales_tardio" class="xpm-resumen hidden">
+                        <div class="xpm-rrow"><span>Total pagado</span><strong id="total_pagado_tardio">$0.00</strong></div>
+                        <div class="xpm-rrow"><span>Pendiente</span><strong id="pendiente_tardio" class="red">$0.00</strong></div>
                     </div>
                 </div>
-                <!-- ========== SECCIÓN DE FACTURA (TARDÍO) ========== -->
-<div class="rv-invoice-section" style="margin-top: 1rem;">
-    <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
-        <i class="fas fa-file-invoice" style="color: #2563EB; margin-right: 0.375rem;"></i>
-        ¿El cliente requiere factura?
-        <span style="color: #EF4444; font-size: 0.75rem;">*</span>
-    </h4>
 
-    <div id="facturaContainerTardio" class="rv-invoice-grid" style="display: flex; gap: 0.5rem;">
-        <!-- Opción SÍ -->
-        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
-                       background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
-                       cursor: pointer; transition: all 0.2s;"
-               id="label_factura_si_tardio"
-               onmouseover="this.style.borderColor='#3B82F6'"
-               onmouseout="if(!document.getElementById('factura_si_tardio').checked) this.style.borderColor='#E5E7EB'">
-            <input type="radio" name="requiere_factura" id="factura_si_tardio" value="si"
-                   onchange="seleccionarFacturaTardio('si')"
-                   style="accent-color: #2563EB;">
-            <div>
-                <span style="font-weight: 600; font-size: 0.875rem; color: #1F2937;">Sí</span>
-                <p style="font-size: 0.7rem; color: #6B7280; margin: 0;">Se registrará para facturación</p>
+                <div>
+                    <div class="xpm-sec"><i class="fas fa-file-invoice"></i> ¿Requiere factura?</div>
+                    <div id="facturaContainerTardio" class="xpm-inv-grid rv-invoice-grid" style="margin-top:9px;">
+                        <label class="xpm-inv-opt rv-invoice-choice" id="label_factura_si_tardio">
+                            <input type="radio" name="requiere_factura" id="factura_si_tardio" value="si" onchange="seleccionarFacturaTardio('si')">
+                            <div><span class="xpm-inv-t">Sí, con factura</span><span class="xpm-inv-s">Genera solicitud</span></div>
+                        </label>
+                        <label class="xpm-inv-opt rv-invoice-choice" id="label_factura_no_tardio">
+                            <input type="radio" name="requiere_factura" id="factura_no_tardio" value="no" onchange="seleccionarFacturaTardio('no')">
+                            <div><span class="xpm-inv-t">Sin factura</span><span class="xpm-inv-s">Uso interno si aplica</span></div>
+                        </label>
+                    </div>
+                    <div id="facturaResultadoTardio" class="xpm-inv-note is-ok rv-invoice-result hidden"></div>
+                    <div id="facturaValidacionTardio" class="xpm-inv-note is-err rv-checkin-message hidden"><i class="fas fa-exclamation-circle"></i> Indica si el cliente requiere factura</div>
+                    <div id="facturaInfoInternaTardio" class="xpm-inv-note is-info rv-checkin-note hidden"><i class="fas fa-info-circle"></i> Tarjeta/transferencia se registra en facturación interna</div>
+                </div>
+
+                <div class="xpm-field rv-notes-section">
+                    <label class="xpm-lbl"><i class="fas fa-note-sticky"></i> Notas <span style="font-weight:400;color:#9CA3AF;font-size:.7rem">(opcional)</span></label>
+                    <textarea name="notas_adicionales" rows="2" class="xpm-inp" placeholder="Ej: El personal olvidó registrar la llegada"></textarea>
+                </div>
+
             </div>
-        </label>
 
-        <!-- Opción NO -->
-        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
-                       background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
-                       cursor: pointer; transition: all 0.2s;"
-               id="label_factura_no_tardio"
-               onmouseover="this.style.borderColor='#6B7280'"
-               onmouseout="if(!document.getElementById('factura_no_tardio').checked) this.style.borderColor='#E5E7EB'">
-            <input type="radio" name="requiere_factura" id="factura_no_tardio" value="no"
-                   onchange="seleccionarFacturaTardio('no')"
-                   style="accent-color: #6B7280;">
-            <div>
-                <span style="font-weight: 600; font-size: 0.875rem; color: #1F2937;">No</span>
-                <p style="font-size: 0.7rem; color: #6B7280; margin: 0;">Sin factura</p>
+            <div class="xpm-foot rv-checkin-actions">
+                <button type="button" onclick="cerrarModalCheckInTardio()" class="xpm-fbtn xpm-fbtn-cancel rv-btn-cancel">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" id="btnConfirmarTardio" class="xpm-fbtn xpm-fbtn-ok rv-btn-confirm">
+                    <i class="fas fa-check"></i> Confirmar Check-in
+                </button>
             </div>
-        </label>
-    </div>
 
-    <div id="facturaResultadoTardio" class="rv-invoice-result">
-        <p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>
-    </div>
-
-    <!-- Mensaje cuando no se ha seleccionado -->
-    <div id="facturaValidacionTardio" class="rv-checkin-message hidden"
-         style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #FEF2F2;
-                border-radius: 0.375rem; border: 1px solid #FECACA;">
-        <p style="font-size: 0.75rem; color: #DC2626; margin: 0;">
-            <i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i>
-            Debe indicar si el cliente requiere factura
-        </p>
-    </div>
-
-    <!-- Info: se registrará para facturación interna -->
-    <div id="facturaInfoInternaTardio" class="rv-checkin-note hidden"
-         style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #EFF6FF;
-                border-radius: 0.375rem; border: 1px solid #BFDBFE;">
-        <p style="font-size: 0.7rem; color: #1E40AF; margin: 0;">
-            <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>
-            El pago con tarjeta/transferencia se registrará en facturación para uso interno
-        </p>
+        </form>
     </div>
 </div>
-<!-- ========== FIN SECCIÓN DE FACTURA (TARDÍO) ========== -->
-                <!-- Notas Adicionales -->
-                <div class="form-group rv-notes-section" style="margin-top: 1rem;">
-                    <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                        Notas Adicionales (opcional)
-                    </label>
-                    <textarea name="notas_adicionales" rows="2"
-                              placeholder="Ej: El personal olvidó hacer el check-in"
-                              style="width: 100%; padding: 0.5rem; border: 2px solid #E5E7EB; border-radius: 0.5rem; font-size: 0.875rem; resize: vertical;"></textarea>
-                </div>
-                </div>
 
-                <!-- Botones -->
-                <div class="rv-checkin-actions" style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-                    <button type="button" onclick="cerrarModalCheckInTardio()"
-                            class="rv-btn-cancel"
-                            style="flex: 1; padding: 0.625rem; background: #F3F4F6; color: #374151; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="btnConfirmarTardio"
-                            class="rv-btn-confirm"
-                            style="flex: 1; padding: 0.625rem; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border: none; border-radius: 0.5rem; font-weight: 700; cursor: pointer;">
-                        ✓ Confirmar Check-in
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- =====================================================
      MODAL: Modificar Días de Reservación
