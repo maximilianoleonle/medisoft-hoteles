@@ -793,6 +793,36 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 
     <!-- SCRIPT PARA AUTO-HIDE -->
     <script>
+        (function () {
+            async function lockPwaPortrait() {
+                const isHotelMobile = document.body.classList.contains('hotel-layout-scope')
+                    && window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+
+                if (!isHotelMobile || !window.screen || !window.screen.orientation || typeof window.screen.orientation.lock !== 'function') {
+                    return;
+                }
+
+                try {
+                    await window.screen.orientation.lock('portrait-primary');
+                } catch (error) {
+                    // iOS y algunos navegadores rechazan este bloqueo en PWAs web.
+                    // El overlay CSS de paisaje queda como respaldo visual.
+                }
+            }
+
+            window.lockPwaPortrait = lockPwaPortrait;
+
+            document.addEventListener('DOMContentLoaded', lockPwaPortrait);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    lockPwaPortrait();
+                }
+            });
+            window.addEventListener('resize', lockPwaPortrait, { passive: true });
+            window.addEventListener('orientationchange', lockPwaPortrait, { passive: true });
+            document.addEventListener('pointerdown', lockPwaPortrait, { passive: true });
+        })();
+
         // Ejecutar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
 
