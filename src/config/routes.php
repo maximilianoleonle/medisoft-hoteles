@@ -20,6 +20,7 @@ $router->post('/reservaciones/cotizacion-reservacion-pdf', ['controller' => 'Res
 // Modificar dÃ­as de reservaciÃ³n (AJAX)
 $router->post('/reservaciones/verificar-modificar-dias', ['controller' => 'Reservacion', 'action' => 'verificarModificarDias']);
 $router->post('/reservaciones/modificar-dias', ['controller' => 'Reservacion', 'action' => 'modificarDias']);
+$router->post('/reservaciones/tope-modificar-dias', ['controller' => 'Reservacion', 'action' => 'topeModificarDias']);
 
 $router->get('/facturacion', [
     'controller' => 'Facturacion',

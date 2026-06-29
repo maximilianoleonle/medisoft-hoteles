@@ -5635,84 +5635,101 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
 <!-- =====================================================
      MODAL: Modificar Días de Reservación
      ===================================================== -->
+<style>
+.mdd-shell{ width:520px; max-width:96vw; border-radius:18px; overflow:hidden; background:#fff; font-family:'Manrope',system-ui,sans-serif; }
+.mdd-head{ display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid #EEF0F4; }
+.mdd-head-ico{ width:40px; height:40px; border-radius:11px; background:#EEF2FF; color:#4F46E5; display:grid; place-items:center; font-size:1.05rem; flex-shrink:0; }
+.mdd-head-tt{ flex:1; min-width:0; }
+.mdd-head-tt strong{ display:block; font-size:.98rem; font-weight:800; color:#1E293B; }
+.mdd-head-tt span{ display:block; font-size:.74rem; font-weight:600; color:#94A3B8; }
+.mdd-head-x{ width:32px; height:32px; border-radius:9px; border:1px solid #E2E8F0; background:#F8FAFC; color:#64748B; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
+.mdd-head-x:hover{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5; }
+.mdd-body{ padding:18px; }
+.mdd-daterow{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; font-size:.78rem; color:#64748B; font-weight:600; }
+.mdd-daterow b{ color:#1E293B; font-weight:800; }
+.mdd-track{ display:flex; gap:6px; margin-bottom:12px; }
+.mdd-cell{ flex:1; min-width:0; height:52px; border-radius:9px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:.72rem; font-weight:800; transition:background .15s, border-color .15s, color .15s; }
+.mdd-cell i{ font-size:.8rem; }
+.mdd-cell.is-on{ background:#4F46E5; color:#fff; }
+.mdd-cell.is-add{ border:1.5px dashed #6EE7B7; color:#059669; background:#F0FDF9; }
+.mdd-cell-day{ font-size:.66rem; opacity:.92; }
+.mdd-stop{ width:34px; flex-shrink:0; height:52px; border-radius:9px; background:#FEF2F2; color:#DC2626; display:grid; place-items:center; }
+.mdd-sliderrow{ display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+.mdd-sliderrow i{ color:#94A3B8; font-size:1rem; }
+.mdd-range{ flex:1; accent-color:#4F46E5; height:6px; cursor:pointer; }
+.mdd-nights{ font-size:.86rem; font-weight:800; color:#1E293B; min-width:74px; text-align:right; }
+.mdd-legend{ display:flex; flex-wrap:wrap; gap:14px; margin:12px 0 16px; font-size:.7rem; color:#64748B; font-weight:600; }
+.mdd-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.mdd-legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+.mdd-limit{ display:none; align-items:center; gap:9px; padding:9px 12px; border-radius:9px; font-size:.78rem; font-weight:700; margin-bottom:15px; }
+.mdd-limit.is-info{ background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; }
+.mdd-limit.is-blocked{ background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; }
+.mdd-impact{ background:#F8FAFC; border:1px solid #EEF0F4; border-radius:12px; padding:14px; margin-bottom:16px; }
+.mdd-impact-row{ display:flex; justify-content:space-between; font-size:.82rem; color:#64748B; font-weight:600; margin-bottom:8px; }
+.mdd-impact-row b{ color:#1E293B; font-weight:800; }
+.mdd-impact-diff{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E5E9F0; padding-top:10px; margin-top:2px; }
+.mdd-impact-diff span{ font-size:.82rem; font-weight:700; color:#64748B; }
+.mdd-impact-diff strong{ font-size:1.15rem; font-weight:800; }
+.mdd-note{ display:none; padding:10px 12px; border-radius:9px; font-size:.78rem; font-weight:700; line-height:1.45; margin-bottom:15px; }
+.mdd-foot{ display:flex; gap:10px; }
+.mdd-btn{ height:46px; border:none; border-radius:11px; font-family:inherit; font-size:.88rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s, opacity .15s; }
+.mdd-btn-cancel{ flex:1; background:#F1F5F9; color:#475569; }
+.mdd-btn-cancel:hover{ background:#E2E8F0; }
+.mdd-btn-ok{ flex:2; background:#4F46E5; color:#fff; }
+.mdd-btn-ok:hover{ background:#4338CA; }
+.mdd-btn-ok.is-charge{ background:#059669; }
+.mdd-btn-ok.is-charge:hover{ background:#047857; }
+.mdd-btn-ok.is-refund{ background:#2563EB; }
+.mdd-btn-ok:disabled{ opacity:.5; cursor:not-allowed; }
+@media(max-width:560px){ .mdd-shell{ width:100%; border-radius:18px 18px 0 0; } .mdd-cell-day{ display:none; } }
+</style>
 <div id="modalModificarDias" class="modal-overlay" style="display:none;">
-    <div class="modal-content" style="width:480px; max-width:95vw;">
-        <!-- Header -->
-        <div style="background:linear-gradient(135deg,#4F46E5,#6366F1); color:white; padding:1rem 1.25rem; border-radius:0.75rem 0.75rem 0 0; display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:0.625rem;">
-                <div style="background:rgba(255,255,255,0.2); border-radius:0.5rem; width:2rem; height:2rem; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div>
-                    <div style="font-weight:700; font-size:0.95rem;">Modificar Días</div>
-                    <div style="font-size:0.7rem; opacity:0.85;">Reservación #<?= $reservacion['id'] ?></div>
-                </div>
+    <div class="mdd-shell">
+        <div class="mdd-head">
+            <span class="mdd-head-ico"><i class="fas fa-calendar-week"></i></span>
+            <div class="mdd-head-tt">
+                <strong>Modificar estancia</strong>
+                <span>Reserva #<?= $reservacion['id'] ?> &middot; <?= htmlspecialchars($huesped['nombre_completo'] ?? 'Huésped', ENT_QUOTES, 'UTF-8') ?></span>
             </div>
-            <button onclick="cerrarModalModificarDias()" style="background:rgba(255,255,255,0.15); border:none; border-radius:0.375rem; color:white; width:1.75rem; height:1.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; position:static;">
-                <i class="fas fa-times"></i>
-            </button>
+            <button type="button" class="mdd-head-x" onclick="cerrarModalModificarDias()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
         </div>
 
-        <div style="padding:1.25rem;">
-            <!-- Fechas actuales -->
-            <div style="background:#F1F5F9; border-radius:0.625rem; padding:0.875rem; margin-bottom:1rem; display:flex; gap:1rem;">
-                <div style="flex:1; text-align:center;">
-                    <div style="font-size:0.65rem; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Entrada</div>
-                    <div style="font-size:0.9rem; font-weight:700; color:#1E293B;"><?= date('d/m/Y', strtotime($reservacion['fecha_entrada'])) ?></div>
-                </div>
-                <div style="display:flex; align-items:center; color:#94A3B8;">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-                <div style="flex:1; text-align:center;">
-                    <div style="font-size:0.65rem; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Salida actual</div>
-                    <div style="font-size:0.9rem; font-weight:700; color:#1E293B;"><?= date('d/m/Y', strtotime($reservacion['fecha_salida'])) ?></div>
-                </div>
-                <div style="flex:1; text-align:center;">
-                    <div style="font-size:0.65rem; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Noches actuales</div>
-                    <div style="font-size:0.9rem; font-weight:700; color:#4F46E5;" id="mdd-noches-actuales">–</div>
+        <div class="mdd-body">
+            <div class="mdd-daterow">
+                <span>Noches de la estancia</span>
+                <span><b id="mdd-checkin">–</b> → <b id="mdd-checkout">–</b></span>
+            </div>
+
+            <div class="mdd-track" id="mdd-track"></div>
+
+            <div class="mdd-sliderrow">
+                <i class="fas fa-bed"></i>
+                <input type="range" id="mdd-range" class="mdd-range" min="1" max="1" value="1" step="1" oninput="mddOnSlide()" aria-label="Número de noches">
+                <span class="mdd-nights" id="mdd-nights">–</span>
+            </div>
+
+            <div class="mdd-legend">
+                <span><i style="background:#4F46E5;"></i>Noche reservada</span>
+                <span><i style="border:1.5px dashed #6EE7B7;"></i>Por agregar</span>
+                <span><i style="background:#FEF2F2;border:1px solid #FECACA;"></i>Siguiente reserva</span>
+            </div>
+
+            <div class="mdd-limit" id="mdd-limit"></div>
+
+            <div class="mdd-impact">
+                <div class="mdd-impact-row"><span>Total actual (<span id="mdd-noches-act">–</span>)</span><b id="mdd-total-actual">–</b></div>
+                <div class="mdd-impact-row"><span>Total nuevo (<span id="mdd-noches-new">–</span>)</span><b id="mdd-total-nuevo">–</b></div>
+                <div class="mdd-impact-diff">
+                    <span id="mdd-diff-label">Sin cambios</span>
+                    <strong id="mdd-diff" style="color:#1E293B;">$0</strong>
                 </div>
             </div>
 
-            <!-- Selector de noches -->
-            <div style="margin-bottom:1rem;">
-                <label style="display:block; font-size:0.8rem; font-weight:600; color:#374151; margin-bottom:0.5rem;">
-                    <i class="fas fa-moon mr-1" style="color:#4F46E5;"></i>
-                    Nueva cantidad de noches
-                </label>
-                <div style="display:flex; align-items:center; gap:0.75rem;">
-                    <button type="button" onclick="cambiarNoches(-1)"
-                            style="background:#E0E7FF; color:#4F46E5; border:none; border-radius:0.5rem; width:2.5rem; height:2.5rem; font-size:1.25rem; cursor:pointer; font-weight:700;">−</button>
-                    <input type="number" id="mdd-noches-input" min="1" max="365"
-                           style="flex:1; text-align:center; font-size:1.5rem; font-weight:700; color:#1E293B; border:2px solid #C7D2FE; border-radius:0.625rem; padding:0.5rem; outline:none;"
-                           oninput="actualizarPreviewDias()" />
-                    <button type="button" onclick="cambiarNoches(1)"
-                            style="background:#E0E7FF; color:#4F46E5; border:none; border-radius:0.5rem; width:2.5rem; height:2.5rem; font-size:1.25rem; cursor:pointer; font-weight:700;">+</button>
-                </div>
-            </div>
+            <div class="mdd-note" id="mdd-preview"></div>
 
-            <!-- Nueva fecha de salida -->
-            <div style="background:#EEF2FF; border:1.5px solid #C7D2FE; border-radius:0.625rem; padding:0.75rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between;">
-                <span style="font-size:0.8rem; color:#4338CA; font-weight:600;">
-                    <i class="fas fa-calendar-check mr-1"></i>
-                    Nueva fecha de salida:
-                </span>
-                <span id="mdd-nueva-salida" style="font-size:0.9rem; font-weight:700; color:#312E81;">–</span>
-            </div>
-
-            <!-- Panel de resultado -->
-            <div id="mdd-preview" style="display:none; border-radius:0.625rem; padding:0.875rem; margin-bottom:1rem;"></div>
-
-            <!-- Botones -->
-            <div style="display:flex; gap:0.75rem;">
-                <button type="button" onclick="cerrarModalModificarDias()"
-                        style="flex:1; background:#F1F5F9; color:#374151; border:none; border-radius:0.625rem; padding:0.75rem; font-weight:600; cursor:pointer;">
-                    Cancelar
-                </button>
-                <button type="button" id="mdd-btn-verificar" onclick="verificarYConfirmarDias()"
-                        style="flex:2; background:linear-gradient(135deg,#4F46E5,#6366F1); color:white; border:none; border-radius:0.625rem; padding:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
-                    <i class="fas fa-search" id="mdd-btn-icon"></i>
-                    <span id="mdd-btn-texto">Verificar disponibilidad</span>
-                </button>
+            <div class="mdd-foot">
+                <button type="button" class="mdd-btn mdd-btn-cancel" onclick="cerrarModalModificarDias()">Cancelar</button>
+                <button type="button" class="mdd-btn mdd-btn-ok" id="mdd-confirm" onclick="confirmarCambioDias()" disabled>Confirmar cambio</button>
             </div>
         </div>
     </div>
@@ -8757,75 +8774,166 @@ document.addEventListener('DOMContentLoaded', function () {
     mostrarAvisoReservacion('Captura el pago pendiente de ' + montoTexto + ' para que caja y la reservacion queden conciliadas.', 'warning', 7200);
 });
 
-function abrirModalModificarDias() {
+/* ── Modal "Modificar estancia" — línea de tiempo interactiva ────── */
+const MDD_MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let mddVerifyTimer = null;
+
+function mddFechaDesdeNoches(noches) {
+    const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
+    const salida  = new Date(entrada);
+    salida.setDate(salida.getDate() + noches);
+    return salida;
+}
+function mddFmt(d) {
+    return d.getDate() + ' ' + MDD_MESES[d.getMonth()];
+}
+function mddMoney(n) {
+    return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+}
+
+async function abrirModalModificarDias() {
     const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
     const salida  = new Date(MDD.fechaSalida + 'T12:00:00');
-    MDD.nochesActuales = Math.round((salida - entrada) / (1000 * 60 * 60 * 24));
-
-    document.getElementById('mdd-noches-actuales').textContent = MDD.nochesActuales + ' noche' + (MDD.nochesActuales !== 1 ? 's' : '');
-    document.getElementById('mdd-noches-input').value = MDD.nochesActuales;
-    document.getElementById('mdd-preview').style.display = 'none';
-    document.getElementById('mdd-preview').innerHTML = '';
-    resetBtnVerificar();
+    MDD.nochesActuales = Math.round((salida - entrada) / 86400000);
+    MDD.maxNoches = MDD.nochesActuales;     // provisional hasta conocer el tope
+    MDD.precioPorNoche = MDD.nochesActuales > 0 ? MDD.precioActual / MDD.nochesActuales : MDD.precioActual;
+    MDD.proxima = null;
     MDD.estadoVerificado = false;
-    actualizarPreviewDias();
+    MDD.nuevoPrecioCalculado = MDD.precioActual;
+
+    document.getElementById('mdd-checkin').textContent     = mddFmt(entrada);
+    document.getElementById('mdd-noches-act').textContent  = MDD.nochesActuales + (MDD.nochesActuales === 1 ? ' noche' : ' noches');
+    document.getElementById('mdd-noches-new').textContent  = MDD.nochesActuales + (MDD.nochesActuales === 1 ? ' noche' : ' noches');
+    document.getElementById('mdd-total-actual').textContent = mddMoney(MDD.precioActual);
+    document.getElementById('mdd-total-nuevo').textContent  = mddMoney(MDD.precioActual);
+    document.getElementById('mdd-preview').style.display = 'none';
+
+    const range = document.getElementById('mdd-range');
+    range.min   = 1;
+    range.max   = MDD.nochesActuales;
+    range.value = MDD.nochesActuales;
+
+    document.getElementById('mdd-limit').style.display = 'none';
+    mddRender();
 
     document.getElementById('modalModificarDias').style.display = 'flex';
+
+    // Consultar el tope real (sin pisar la siguiente reserva)
+    try {
+        const resp = await fetch(`<?= url('reservaciones/tope-modificar-dias') ?>`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ reservacion_id: MDD.reservacionId })
+        });
+        const data = await resp.json();
+        if (data && data.ok) {
+            MDD.maxNoches = Math.max(MDD.nochesActuales, parseInt(data.max_noches, 10) || MDD.nochesActuales);
+            MDD.proxima = data.tiene_limite ? data : null;
+            range.max = MDD.maxNoches;
+            mddPintarLimite();
+            mddRender();
+        }
+    } catch (e) { /* si falla, se queda con tope = noches actuales */ }
 }
 
 function cerrarModalModificarDias() {
     document.getElementById('modalModificarDias').style.display = 'none';
+    if (mddVerifyTimer) clearTimeout(mddVerifyTimer);
 }
 
-function cambiarNoches(delta) {
-    const input = document.getElementById('mdd-noches-input');
-    const val = parseInt(input.value) || MDD.nochesActuales;
-    input.value = Math.max(1, val + delta);
-    actualizarPreviewDias();
+function mddPintarLimite() {
+    const el = document.getElementById('mdd-limit');
+    if (!MDD.proxima) { el.style.display = 'none'; return; }
+    const fechaTope = new Date(MDD.proxima.proxima_entrada + 'T12:00:00');
+    const hab = MDD.proxima.proxima_habitacion ? ('Hab. ' + MDD.proxima.proxima_habitacion) : ('Reserva #' + MDD.proxima.proxima_reserva_id);
+    const sinMargen = MDD.maxNoches <= MDD.nochesActuales;
+    el.className = 'mdd-limit ' + (sinMargen ? 'is-blocked' : 'is-info');
+    el.innerHTML = sinMargen
+        ? `<i class="fas fa-lock"></i><span>No puedes extender: ${hab} entra el ${mddFmt(fechaTope)}, justo después de esta estancia.</span>`
+        : `<i class="fas fa-circle-info"></i><span>Puedes extender hasta el <b>${mddFmt(fechaTope)}</b>. ${hab} entra ese día.</span>`;
+    el.style.display = 'flex';
 }
 
-function actualizarPreviewDias() {
-    const noches = parseInt(document.getElementById('mdd-noches-input').value) || 1;
+function mddRender() {
+    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
+    const track = document.getElementById('mdd-track');
     const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
-    const nuevaSalida = new Date(entrada);
-    nuevaSalida.setDate(nuevaSalida.getDate() + noches);
+    const maxCeldas = Math.min(MDD.maxNoches, 14);   // tope visual de fichas
 
-    MDD.nuevaFechaSalida = nuevaSalida.toISOString().split('T')[0];
+    let html = '';
+    for (let i = 0; i < maxCeldas; i++) {
+        const d = new Date(entrada);
+        d.setDate(d.getDate() + i);
+        const dia = d.getDate();
+        if (i < n) {
+            const icono = (i === 0) ? 'fa-lock' : 'fa-moon';
+            html += `<div class="mdd-cell is-on"><i class="fas ${icono}"></i><span class="mdd-cell-day">${dia}</span></div>`;
+        } else {
+            html += `<div class="mdd-cell is-add"><i class="fas fa-plus"></i><span class="mdd-cell-day">${dia}</span></div>`;
+        }
+    }
+    if (MDD.proxima) {
+        html += `<div class="mdd-stop" title="Siguiente reserva"><i class="fas fa-sign-in-alt"></i></div>`;
+    }
+    track.innerHTML = html;
 
-    const opciones = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    document.getElementById('mdd-nueva-salida').textContent = nuevaSalida.toLocaleDateString('es-MX', opciones);
+    const nuevaSalida = mddFechaDesdeNoches(n);
+    MDD.nuevaFechaSalida = nuevaSalida.getFullYear() + '-' +
+        String(nuevaSalida.getMonth() + 1).padStart(2, '0') + '-' +
+        String(nuevaSalida.getDate()).padStart(2, '0');
 
+    document.getElementById('mdd-checkout').textContent   = mddFmt(nuevaSalida);
+    document.getElementById('mdd-nights').textContent     = n + (n === 1 ? ' noche' : ' noches');
+    document.getElementById('mdd-noches-new').textContent = n + (n === 1 ? ' noche' : ' noches');
+
+    // Estimación inmediata (se confirma con el cálculo exacto del servidor)
+    const estimado = n * MDD.precioPorNoche;
+    document.getElementById('mdd-total-nuevo').textContent = mddMoney(estimado);
+    mddPintarDiferencia(estimado, false);
+}
+
+function mddPintarDiferencia(totalNuevo, exacto) {
+    const diff = totalNuevo - MDD.precioActual;
+    const lbl  = document.getElementById('mdd-diff-label');
+    const val  = document.getElementById('mdd-diff');
+    const btn  = document.getElementById('mdd-confirm');
+    const n    = parseInt(document.getElementById('mdd-range').value, 10) || 1;
+
+    if (Math.abs(diff) < 0.004) {
+        lbl.textContent = 'Sin cambios';
+        val.textContent = '$0.00'; val.style.color = '#1E293B';
+        btn.className = 'mdd-btn mdd-btn-ok';
+        btn.textContent = 'Confirmar cambio';
+        btn.disabled = (n === MDD.nochesActuales);
+        return;
+    }
+    if (diff > 0) {
+        lbl.textContent = exacto ? 'A cobrar al huésped' : 'A cobrar (estimado)';
+        val.textContent = '+' + mddMoney(diff); val.style.color = '#059669';
+        btn.className = 'mdd-btn mdd-btn-ok is-charge';
+        btn.textContent = 'Cobrar ' + mddMoney(diff) + ' y guardar';
+    } else {
+        lbl.textContent = exacto ? 'A reembolsar' : 'A reembolsar (estimado)';
+        val.textContent = '−' + mddMoney(-diff); val.style.color = '#2563EB';
+        btn.className = 'mdd-btn mdd-btn-ok is-refund';
+        btn.textContent = 'Reembolsar y guardar';
+    }
+    btn.disabled = false;
+}
+
+function mddOnSlide() {
     MDD.estadoVerificado = false;
-    resetBtnVerificar();
     document.getElementById('mdd-preview').style.display = 'none';
+    mddRender();
+    // Cálculo exacto con debounce (incluye incrementos de tarifa)
+    if (mddVerifyTimer) clearTimeout(mddVerifyTimer);
+    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
+    if (n === MDD.nochesActuales) return;
+    mddVerifyTimer = setTimeout(mddVerificarExacto, 320);
 }
 
-function resetBtnVerificar() {
-    const btn = document.getElementById('mdd-btn-verificar');
-    document.getElementById('mdd-btn-icon').className  = 'fas fa-search';
-    document.getElementById('mdd-btn-texto').textContent = 'Verificar disponibilidad';
-    btn.style.background = 'linear-gradient(135deg,#4F46E5,#6366F1)';
-    btn.style.pointerEvents = '';
-    btn.onclick = verificarYConfirmarDias;
-}
-
-async function verificarYConfirmarDias() {
-    const noches = parseInt(document.getElementById('mdd-noches-input').value);
-
-    if (noches === MDD.nochesActuales) {
-        mostrarPreviewMDD('warning', '<i class="fas fa-info-circle mr-2"></i>El número de noches es igual al actual. No hay cambios que hacer.');
-        return;
-    }
-    if (noches < 1) {
-        mostrarPreviewMDD('error', '<i class="fas fa-exclamation-triangle mr-2"></i>Mínimo 1 noche.');
-        return;
-    }
-
-    document.getElementById('mdd-btn-icon').className  = 'fas fa-spinner fa-spin';
-    document.getElementById('mdd-btn-texto').textContent = 'Verificando...';
-    document.getElementById('mdd-btn-verificar').style.pointerEvents = 'none';
-    document.getElementById('mdd-preview').style.display = 'none';
-
+async function mddVerificarExacto() {
+    const noches = parseInt(document.getElementById('mdd-range').value, 10) || 1;
     try {
         const resp = await fetch(`<?= url('reservaciones/verificar-modificar-dias') ?>`, {
             method: 'POST',
@@ -8835,63 +8943,35 @@ async function verificarYConfirmarDias() {
                 nueva_fecha_salida: MDD.nuevaFechaSalida
             })
         });
-
         const data = await resp.json();
+        // Ignorar si el usuario ya movió el slider otra vez
+        if (noches !== (parseInt(document.getElementById('mdd-range').value, 10) || 1)) return;
 
         if (!data.disponible) {
-            mostrarPreviewMDD('error',
-                `<i class="fas fa-ban mr-2"></i><strong>Sin disponibilidad</strong><br>
-                 <small style="opacity:.85;">${data.mensaje || 'Alguna habitación no está libre en las fechas solicitadas.'}</small>`
-            );
-            resetBtnVerificar();
+            mostrarPreviewMDD('error', `<i class="fas fa-ban" style="margin-right:6px"></i>${data.mensaje || 'Alguna habitación no está libre en esas fechas.'}`);
+            document.getElementById('mdd-confirm').disabled = true;
+            MDD.estadoVerificado = false;
             return;
         }
-
-        const diff = data.nuevo_precio - MDD.precioActual;
-        const signo = diff >= 0 ? '+' : '';
-        const colorDiff = diff > 0 ? '#DC2626' : (diff < 0 ? '#059669' : '#374151');
-        const avisoCobro = diff > 0.004
-            ? `<div style="margin-top:.65rem;padding:.65rem .75rem;border-radius:.55rem;background:#FFF7ED;border:1px solid #FDBA74;color:#9A3412;">
-                    <strong style="display:block;margin-bottom:.2rem;">Saldo adicional por cobrar</strong>
-                    Al guardar, la diferencia quedara pendiente en Pagos y anticipos. No se registrara en caja hasta que captures el pago.
-               </div>`
-            : '';
-        const notasExtra = noches > MDD.nochesActuales
-            ? '<small style="opacity:.8;">Se extenderá la fecha de salida.</small>'
-            : '<small style="opacity:.8;">Se reducirá la fecha de salida.</small>';
-
-        mostrarPreviewMDD('success',
-            `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem;">
-                <span style="font-weight:700;"><i class="fas fa-check-circle mr-1"></i>Habitaciones disponibles</span>
-             </div>
-             <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:.82rem;">
-                <div>Precio actual: <strong>$${MDD.precioActual.toLocaleString('es-MX', {minimumFractionDigits:2})}</strong></div>
-                <div>Precio nuevo: <strong>$${data.nuevo_precio.toLocaleString('es-MX', {minimumFractionDigits:2})}</strong></div>
-                <div>Diferencia: <strong style="color:${colorDiff};">${signo}$${Math.abs(diff).toLocaleString('es-MX', {minimumFractionDigits:2})}</strong></div>
-             </div>
-             <div style="margin-top:.5rem;">${notasExtra}</div>
-             ${avisoCobro}`
-        );
-
-        document.getElementById('mdd-btn-icon').className  = 'fas fa-check';
-        document.getElementById('mdd-btn-texto').textContent = 'Confirmar cambio';
-        document.getElementById('mdd-btn-verificar').style.background = 'linear-gradient(135deg,#059669,#10B981)';
-        document.getElementById('mdd-btn-verificar').style.pointerEvents = '';
-        document.getElementById('mdd-btn-verificar').onclick = confirmarCambioDias;
-
+        document.getElementById('mdd-total-nuevo').textContent = mddMoney(data.nuevo_precio);
+        mddPintarDiferencia(data.nuevo_precio, true);
         MDD.estadoVerificado = true;
         MDD.nuevoPrecioCalculado = data.nuevo_precio;
-
     } catch (e) {
-        mostrarPreviewMDD('error', '<i class="fas fa-exclamation-triangle mr-2"></i>Error de conexión. Intenta de nuevo.');
-        resetBtnVerificar();
+        /* deja la estimación local; el guardado revalida en el servidor */
     }
 }
 
 async function confirmarCambioDias() {
-    document.getElementById('mdd-btn-icon').className  = 'fas fa-spinner fa-spin';
-    document.getElementById('mdd-btn-texto').textContent = 'Guardando...';
-    document.getElementById('mdd-btn-verificar').style.pointerEvents = 'none';
+    const btn = document.getElementById('mdd-confirm');
+    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
+    if (n === MDD.nochesActuales) {
+        mostrarPreviewMDD('warning', '<i class="fas fa-info-circle" style="margin-right:6px"></i>No hay cambios respecto a la estancia actual.');
+        return;
+    }
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
 
     try {
         const resp = await fetch(`<?= url('reservaciones/modificar-dias') ?>`, {
@@ -8936,12 +9016,14 @@ async function confirmarCambioDias() {
                 window.location.reload();
             }
         } else {
-            mostrarPreviewMDD('error', `<i class="fas fa-times mr-2"></i>${data.mensaje || 'Error al guardar el cambio.'}`);
-            resetBtnVerificar();
+            mostrarPreviewMDD('error', `<i class="fas fa-times" style="margin-right:6px"></i>${data.mensaje || 'Error al guardar el cambio.'}`);
+            btn.disabled = false;
+            btn.textContent = textoOriginal;
         }
     } catch (e) {
-        mostrarPreviewMDD('error', '<i class="fas fa-exclamation-triangle mr-2"></i>Error de conexión.');
-        resetBtnVerificar();
+        mostrarPreviewMDD('error', '<i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>Error de conexión.');
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
     }
 }
 
@@ -8953,7 +9035,8 @@ function mostrarPreviewMDD(tipo, html) {
     };
     const c = colores[tipo] || colores.warning;
     const el = document.getElementById('mdd-preview');
-    el.style.cssText = `display:block; background:${c.bg}; border:1.5px solid ${c.border}; color:${c.color}; border-radius:.625rem; padding:.875rem; margin-bottom:1rem; font-size:.82rem; line-height:1.5;`;
+    el.className = 'mdd-note';
+    el.style.cssText = `display:block; background:${c.bg}; border:1px solid ${c.border}; color:${c.color};`;
     el.innerHTML = html;
 }
 </script>

@@ -5521,6 +5521,102 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
     }
 
     /**
+     * Calcula el tope de días al que se puede extender una reservación sin
+     * pisar la siguiente reserva de cualquiera de sus habitaciones (AJAX).
+     * Devuelve: max_noches, max_checkout, y datos de la reserva que limita.
+     */
+    public function topeModificarDiasAction() {
+        header('Content-Type: application/json');
+
+        $reservacion_id = intval($this->getPost('reservacion_id'));
+        if (!$reservacion_id) {
+            echo json_encode(['ok' => false, 'mensaje' => 'Datos incompletos.']);
+            return;
+        }
+
+        try {
+            $model    = new Reservacion();
+            $db       = Database::getInstance();
+            $hotel_id = obtenerHotelIdActualCompat();
+
+            $reservacion = $model->obtenerPorId($reservacion_id);
+            if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                echo json_encode(['ok' => false, 'mensaje' => 'Reservación no encontrada.']);
+                return;
+            }
+
+            $habitacion_ids = $model->obtenerHabitacionIds($reservacion_id);
+            if (empty($habitacion_ids)) {
+                echo json_encode(['ok' => false, 'mensaje' => 'Sin habitaciones.']);
+                return;
+            }
+
+            $fecha_entrada = new DateTime($reservacion['fecha_entrada']);
+            $fecha_salida  = new DateTime($reservacion['fecha_salida']);
+            // Tope por defecto: 365 noches desde la entrada (sin reservas que limiten).
+            $cap_checkout  = (clone $fecha_entrada)->modify('+365 days');
+
+            // Próxima reserva (confirmada / check-in) de cualquiera de estas
+            // habitaciones que empiece en o después de la salida actual.
+            $placeholders = implode(',', array_fill(0, count($habitacion_ids), '?'));
+            $params = $habitacion_ids;
+            $params[] = $hotel_id;
+            $params[] = $reservacion_id;
+            $params[] = $reservacion['fecha_salida'];
+
+            $stmt = $db->query(
+                "SELECT r.id, r.fecha_entrada, h.numero AS habitacion_numero
+                 FROM reservaciones r
+                 INNER JOIN reservacion_habitaciones rh
+                     ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                 LEFT JOIN habitaciones h
+                     ON h.id = rh.habitacion_id AND h.hotel_id = rh.hotel_id
+                 WHERE rh.habitacion_id IN ($placeholders)
+                   AND r.hotel_id = ?
+                   AND r.id != ?
+                   AND r.estado IN ('confirmada', 'checked_in')
+                   AND r.fecha_entrada >= ?
+                 ORDER BY r.fecha_entrada ASC, r.id ASC
+                 LIMIT 1",
+                $params
+            );
+            $proxima = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+
+            if ($proxima && !empty($proxima['fecha_entrada'])) {
+                $max_checkout = new DateTime($proxima['fecha_entrada']);
+            } else {
+                $max_checkout = $cap_checkout;
+            }
+
+            // Seguridad: el tope nunca puede ser menor a la salida actual.
+            if ($max_checkout < $fecha_salida) {
+                $max_checkout = clone $fecha_salida;
+            }
+
+            $max_noches = (int)$fecha_entrada->diff($max_checkout)->days;
+            if ($max_noches < 1) {
+                $max_noches = 1;
+            }
+
+            echo json_encode([
+                'ok'                 => true,
+                'fecha_entrada'      => $reservacion['fecha_entrada'],
+                'fecha_salida'       => $reservacion['fecha_salida'],
+                'max_noches'         => $max_noches,
+                'max_checkout'       => $max_checkout->format('Y-m-d'),
+                'tiene_limite'       => $proxima ? true : false,
+                'proxima_reserva_id' => $proxima ? (int)$proxima['id'] : null,
+                'proxima_entrada'    => $proxima['fecha_entrada'] ?? null,
+                'proxima_habitacion' => $proxima['habitacion_numero'] ?? null,
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error topeModificarDias: " . $e->getMessage());
+            echo json_encode(['ok' => false, 'mensaje' => 'Error interno.']);
+        }
+    }
+
+    /**
      * Aplicar el cambio de días de la reservación (AJAX)
      */
     public function modificarDiasAction() {
