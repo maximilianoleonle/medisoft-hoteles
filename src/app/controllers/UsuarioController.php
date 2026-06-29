@@ -7,10 +7,12 @@
 class UsuarioController extends Controller {
 
     private $usuarioModel;
+    private $rolModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->usuarioModel = new Usuario();
+        $this->rolModel = new Rol();
     }
 
     /**
@@ -52,9 +54,12 @@ class UsuarioController extends Controller {
      * Mostrar formulario de creación
      */
     public function crearAction() {
+        $hotelId = $this->hotelIdActual();
+
         View::renderTemplate('usuarios/crear', [
-            'title' => $this->hotelIdActual() ? 'Nuevo Trabajador' : 'Nuevo Usuario',
-            'esGestionHotel' => (bool) $this->hotelIdActual()
+            'title' => $hotelId ? 'Nuevo Trabajador' : 'Nuevo Usuario',
+            'esGestionHotel' => (bool) $hotelId,
+            'rolesHotel' => $this->rolesDelHotel($hotelId)
         ]);
     }
 
@@ -69,6 +74,13 @@ class UsuarioController extends Controller {
         // Validar CSRF
         $this->validateCSRF();
 
+        $hotelId = $this->hotelIdActual();
+        $rolesHotel = $this->rolesDelHotel($hotelId);
+        $usaRolesConfigurables = !empty($rolesHotel);
+        $asignacion = $usaRolesConfigurables
+            ? $this->resolverAsignacionRol($hotelId, $this->getPost('role_id'))
+            : null;
+
         // Obtener datos
         $data = [
             'nombre_usuario' => $this->getPost('nombre_usuario'),
@@ -76,12 +88,17 @@ class UsuarioController extends Controller {
             'nombre_completo' => $this->getPost('nombre_completo'),
             'email' => $this->getPost('email'),
             'telefono' => $this->getPost('telefono'),
-            'rol' => $this->getPost('rol'),
+            'rol' => $asignacion ? $asignacion['rol'] : $this->getPost('rol'),
+            'role_id' => $asignacion['role_id'] ?? null,
             'activo' => 1
         ];
 
         // Validaciones
         $errores = $this->validarDatosUsuario($data, true);
+
+        if ($usaRolesConfigurables && !$asignacion) {
+            $errores[] = 'Selecciona un rol válido para el trabajador.';
+        }
 
         if (!empty($errores)) {
             save_old_input($this->oldInputUsuario($data));
@@ -103,9 +120,8 @@ class UsuarioController extends Controller {
             $usuario = $this->usuarioModel->crearUsuario($data);
 
             if ($usuario) {
-                $hotelId = $this->hotelIdActual();
                 if ($hotelId) {
-                    $this->usuarioModel->vincularAHotel($hotelId, $usuario, $data['rol'], true);
+                    $this->usuarioModel->vincularAHotel($hotelId, $usuario, $data['rol'], true, $data['role_id']);
                 }
 
                 // Registrar en log
@@ -157,7 +173,9 @@ class UsuarioController extends Controller {
         View::renderTemplate('usuarios/editar', [
             'title' => 'Editar Usuario',
             'usuario' => $usuario,
-            'esGestionHotel' => (bool) $hotelId
+            'esGestionHotel' => (bool) $hotelId,
+            'rolesHotel' => $this->rolesDelHotel($hotelId),
+            'usuarioRoleId' => $this->roleIdActualUsuario($hotelId, $id)
         ]);
     }
 
@@ -181,13 +199,22 @@ class UsuarioController extends Controller {
             $this->redirect('usuarios');
         }
 
+        $rolesHotel = $this->rolesDelHotel($hotelId);
+        $usaRolesConfigurables = !empty($rolesHotel);
+        $roleIdPost = $this->getPost('role_id');
+        $rolLegacyPost = $this->getPost('rol'); // campo de solo-lectura (rol no editable)
+        $asignacion = ($usaRolesConfigurables && $roleIdPost)
+            ? $this->resolverAsignacionRol($hotelId, $roleIdPost)
+            : null;
+
         // Obtener datos
         $data = [
             'nombre_usuario' => $this->getPost('nombre_usuario'),
             'nombre_completo' => $this->getPost('nombre_completo'),
             'email' => $this->getPost('email'),
             'telefono' => $this->getPost('telefono'),
-            'rol' => $this->getPost('rol')
+            'rol' => $asignacion ? $asignacion['rol'] : $rolLegacyPost,
+            'role_id' => $asignacion['role_id'] ?? null
         ];
 
         // Solo incluir password si se proporcionó
@@ -198,6 +225,11 @@ class UsuarioController extends Controller {
 
         // Validaciones
         $errores = $this->validarDatosUsuario($data, false);
+
+        // Si se esperaba un rol configurable y no se resolvió, exigirlo.
+        if ($usaRolesConfigurables && $rolLegacyPost === null && !$asignacion) {
+            $errores[] = 'Selecciona un rol válido para el trabajador.';
+        }
 
         if (!empty($errores)) {
             save_old_input($this->oldInputUsuario($data));
@@ -218,7 +250,7 @@ class UsuarioController extends Controller {
             // Actualizar usuario
             $actualizado = $this->usuarioModel->actualizarUsuario($id, $data);
             if ($actualizado && $hotelId) {
-                $this->usuarioModel->actualizarRolHotel($hotelId, $id, $data['rol']);
+                $this->usuarioModel->actualizarRolHotel($hotelId, $id, $data['rol'], $data['role_id']);
             }
 
             if ($actualizado) {
@@ -343,8 +375,8 @@ class UsuarioController extends Controller {
             $errores[] = 'El email no es válido';
         }
 
-        // Rol
-        $rolesValidos = ['gerente', 'administrador', 'recepcionista'];
+        // Rol (valores ENUM de hotel_usuarios; el rol configurable ya se valida al resolverse)
+        $rolesValidos = ['superadmin', 'propietario', 'gerente', 'administrador', 'recepcionista'];
         if (empty($data['rol']) || !in_array($data['rol'], $rolesValidos)) {
             $errores[] = 'El rol seleccionado no es válido';
         }
@@ -411,6 +443,59 @@ class UsuarioController extends Controller {
         return function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_id')
             ? current_hotel_id()
             : null;
+    }
+
+    /**
+     * Roles configurables (activos) del hotel para poblar el selector.
+     * Devuelve [] si no hay hotel o la tabla aun no existe (migracion pendiente).
+     */
+    private function rolesDelHotel($hotelId) {
+        if (!$hotelId) {
+            return [];
+        }
+
+        return $this->rolModel->listarPorHotel((int) $hotelId, true);
+    }
+
+    /**
+     * Resuelve un role_id enviado por el form a [role_id, rol-ENUM]. El ENUM se
+     * mapea desde la clave del rol; los roles personalizados usan 'recepcionista'
+     * como valor de compatibilidad (can() ya resuelve por role_id).
+     */
+    private function resolverAsignacionRol($hotelId, $roleIdInput) {
+        $roleIdInput = (int) $roleIdInput;
+
+        if (!$hotelId || $roleIdInput <= 0) {
+            return null;
+        }
+
+        $rol = $this->rolModel->obtenerPorId($roleIdInput, (int) $hotelId);
+
+        if (!$rol || empty($rol['activo'])) {
+            return null;
+        }
+
+        $enumValidos = ['superadmin', 'propietario', 'gerente', 'administrador', 'recepcionista'];
+        $enum = in_array($rol['clave'], $enumValidos, true) ? $rol['clave'] : 'recepcionista';
+
+        return ['role_id' => (int) $rol['id'], 'rol' => $enum];
+    }
+
+    /**
+     * role_id actual de un usuario en el hotel (para preseleccionar en edicion).
+     * Devuelve null si no tiene o la columna no existe.
+     */
+    private function roleIdActualUsuario($hotelId, $usuarioId) {
+        if (!$hotelId) {
+            return null;
+        }
+
+        $rows = $this->usuarioModel->query(
+            "SELECT role_id FROM hotel_usuarios WHERE hotel_id = ? AND usuario_id = ? LIMIT 1",
+            [(int) $hotelId, (int) $usuarioId]
+        );
+
+        return (!empty($rows) && $rows[0]['role_id'] !== null) ? (int) $rows[0]['role_id'] : null;
     }
 
     private function puedeGestionarUsuariosHotel() {

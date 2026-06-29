@@ -82,7 +82,8 @@
                                        name="cantidad" 
                                        id="cantidad_input"
                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
-                                       min="1"
+                                       min="0.01"
+                                       step="0.01"
                                        placeholder="0"
                                        value="<?= old('cantidad') ?>"
                                        required>
@@ -144,7 +145,7 @@
 // Función para establecer cantidad
 function setCantidad(valor) {
     const input = document.getElementById('cantidad_input');
-    const currentValue = parseInt(input.value) || 0;
+    const currentValue = parseFloat(input.value) || 0;
     input.value = currentValue + valor;
     updatePreview();
 }
@@ -162,12 +163,14 @@ function updatePreview() {
     const productoSelect = document.getElementById('producto_select');
     const selectedOption = productoSelect.options[productoSelect.selectedIndex];
     const previewPanel = document.getElementById('preview-panel');
-    const cantidad = parseInt(document.getElementById('cantidad_input').value) || 0;
+    const cantidad = parseFloat(document.getElementById('cantidad_input').value) || 0;
     
     if (productoSelect.value) {
-        const stock = parseInt(selectedOption.getAttribute('data-stock'));
+        const stock = parseFloat(selectedOption.getAttribute('data-stock'));
         const nombre = selectedOption.getAttribute('data-nombre');
         const nuevoStock = stock + cantidad;
+        const stockLabel = stock.toFixed(2);
+        const nuevoStockLabel = nuevoStock.toFixed(2);
         
         previewPanel.innerHTML = `
             <div class="space-y-3">
@@ -177,13 +180,13 @@ function updatePreview() {
                 </div>
                 <div class="flex justify-between items-center py-2 border-t border-b">
                     <span class="text-sm text-gray-600">Stock actual</span>
-                    <span class="font-bold text-gray-900">${stock}</span>
+                    <span class="font-bold text-gray-900">${stockLabel}</span>
                 </div>
                 ${cantidad > 0 ? `
                 <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-emerald-700">Stock después</span>
-                        <span class="text-lg font-bold text-emerald-900">${nuevoStock}</span>
+                        <span class="text-lg font-bold text-emerald-900">${nuevoStockLabel}</span>
                     </div>
                 </div>
                 ` : ''}

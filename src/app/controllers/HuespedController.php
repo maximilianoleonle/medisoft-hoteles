@@ -1021,10 +1021,6 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
      * Mostrar formulario para crear huésped
      */
     public function crearAction() {
-        error_log("=== DEBUG CREAR RESERVACIÓN ===");
-    error_log("GET params: " . print_r($_GET, true));
-    error_log("POST params: " . print_r($_POST, true));
-    error_log("Session data: " . print_r($_SESSION, true));
         View::renderTemplate('huespedes/crear', [
             'title' => 'Nuevo Huésped - ' . current_hotel_display_name(),
             'estados' => Huesped::getEstados(),
@@ -1101,92 +1097,42 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
 /**
  * Eliminar vehículo (soft delete - AJAX)
  */
-/**
- * Eliminar vehículo (soft delete - AJAX) - CON LOGGING PARA DEBUG
- */
 public function eliminarVehiculoAction() {
-    // LOG 1: Verificar que la función se está ejecutando
-    error_log("=== ELIMINACIÓN VEHÍCULO DEBUG ===");
-    error_log("1. Método eliminarVehiculoAction() ejecutándose");
-    error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
-    error_log("REQUEST_URI: " . $_SERVER['REQUEST_URI']);
-    
-    // LOG 2: Verificar headers
-    error_log("2. Headers importantes:");
-    error_log("Content-Type: " . ($_SERVER['CONTENT_TYPE'] ?? 'No definido'));
-    error_log("X-Requested-With: " . ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? 'No definido'));
-    
-    // LOG 3: Verificar datos POST
-    error_log("3. Datos POST recibidos:");
-    error_log("POST data: " . print_r($_POST, true));
-    
-    // LOG 4: Verificar verificaciones del controlador
-    error_log("4. Verificaciones del controlador:");
-    error_log("isAjax(): " . ($this->isAjax() ? 'true' : 'false'));
-    error_log("isPost(): " . ($this->isPost() ? 'true' : 'false'));
-    
     if (!$this->isAjax() || !$this->isPost()) {
-        error_log("5. ERROR: Fallo en verificación AJAX o POST");
-        error_log("Enviando respuesta de método no permitido");
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
         return;
     }
-    
-    error_log("5. Verificaciones AJAX y POST pasaron correctamente");
-    
+
     try {
-        // LOG 6: CSRF
-        error_log("6. Validando CSRF...");
         $this->validateCSRF();
-        error_log("CSRF validado correctamente");
-        
-        // LOG 7: Obtener ID
         $vehiculo_id = intval($this->getPost('vehiculo_id'));
-        error_log("7. ID del vehículo: " . $vehiculo_id);
-        
+
         if (!$vehiculo_id) {
-            error_log("ERROR: ID de vehículo vacío o inválido");
             View::renderJSON(['success' => false, 'message' => 'ID de vehículo requerido']);
             return;
         }
-        
-        // LOG 8: Verificar modelo
-        error_log("8. Creando instancia del modelo...");
+
         $vehiculoModel = new HuespedVehiculo();
-        error_log("Modelo creado correctamente");
-        
-        // LOG 9: Buscar vehículo
-        error_log("9. Buscando vehículo con ID: " . $vehiculo_id);
         $hotelId = $this->hotelIdActual();
         $vehiculo = $vehiculoModel->findForHotel($vehiculo_id, $hotelId);
-        error_log("Resultado de búsqueda: " . ($vehiculo ? 'Encontrado' : 'No encontrado'));
-        
+
         if (!$vehiculo) {
-            error_log("ERROR: Vehículo no encontrado en la base de datos");
             View::renderJSON(['success' => false, 'message' => 'Vehículo no encontrado']);
             return;
         }
-        
-        // LOG 10: Intentar desactivar
-        error_log("10. Intentando desactivar vehículo...");
+
         $result = $vehiculoModel->desactivarParaHotel($vehiculo_id, $hotelId);
-        error_log("Resultado de desactivación: " . ($result ? 'Éxito' : 'Fallo'));
-        
+
         if ($result) {
-            error_log("11. ÉXITO: Vehículo eliminado correctamente");
             View::renderJSON(['success' => true, 'message' => 'Vehículo eliminado exitosamente']);
         } else {
-            error_log("11. ERROR: Fallo al desactivar vehículo");
             View::renderJSON(['success' => false, 'message' => 'Error al eliminar vehículo']);
         }
-        
+
     } catch (Exception $e) {
-        error_log("EXCEPCIÓN CAPTURADA: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
+        error_log('eliminarVehiculoAction: ' . $e->getMessage());
         View::renderJSON(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
     }
-    
-    error_log("=== FIN DEBUG ELIMINACIÓN VEHÍCULO ===");
 }
     
     /**
@@ -1386,10 +1332,6 @@ public function eliminarVehiculoAction() {
     }
 
 public function guardarAction() {
-    // LOGGING PARA DEBUG
-    error_log("=== DEBUG GUARDAR HUÉSPED ===");
-    error_log("POST completo: " . print_r($_POST, true));
-    
     if (!$this->isPost()) {
         $this->redirect('huespedes');
     }

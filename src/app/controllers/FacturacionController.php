@@ -58,7 +58,8 @@ class FacturacionController extends Controller {
         // Construir query
         $where = [
             "sf.hotel_id = ?",
-            "r.hotel_id = ?"
+            "r.hotel_id = ?",
+            "sf.created_at >= r.created_at"
         ];
         $params = [$hotel_id, $hotel_id];
         
@@ -186,9 +187,19 @@ class FacturacionController extends Controller {
         $pagos = [];
         try {
             $hotel_id = obtenerHotelIdActualCompat();
-            $sql = "SELECT * FROM movimientos_caja WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso' ORDER BY created_at DESC";
+            $sql = "SELECT mc.*
+                    FROM movimientos_caja mc
+                    INNER JOIN reservaciones r
+                        ON mc.reservacion_id = r.id
+                        AND mc.hotel_id = r.hotel_id
+                    WHERE mc.reservacion_id = ?
+                      AND mc.hotel_id = ?
+                      AND r.hotel_id = ?
+                      AND mc.tipo = 'ingreso'
+                      AND mc.created_at >= r.created_at
+                    ORDER BY mc.created_at DESC";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$solicitud['reservacion_id'], $hotel_id]);
+            $stmt->execute([$solicitud['reservacion_id'], $hotel_id, $hotel_id]);
             $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error al obtener pagos de facturación: " . $e->getMessage());
@@ -580,7 +591,8 @@ h.nombre_completo as huesped_nombre,
                 LEFT JOIN usuarios u ON sf.usuario_registro_id = u.id
                 WHERE sf.id = ?
                   AND sf.hotel_id = ?
-                  AND r.hotel_id = ?";
+                  AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$id, $hotel_id, $hotel_id]);
@@ -625,6 +637,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus = 'pendiente'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$hotel_id, $hotel_id]);
@@ -638,6 +651,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus = 'en_proceso'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$hotel_id, $hotel_id]);
@@ -651,6 +665,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus = 'completada'
                   AND MONTH(sf.fecha_facturada) = MONTH(NOW())
                   AND YEAR(sf.fecha_facturada) = YEAR(NOW())";
@@ -666,6 +681,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus = 'pendiente'
                   AND sf.tipo = 'cliente'";
         $stmt = $this->db->prepare($sql);
@@ -680,6 +696,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus = 'pendiente'
                   AND sf.tipo = 'uso_interno'";
         $stmt = $this->db->prepare($sql);
@@ -694,6 +711,7 @@ h.nombre_completo as huesped_nombre,
                     AND sf.hotel_id = r.hotel_id
                 WHERE sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                   AND sf.estatus IN ('pendiente', 'en_proceso')";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$hotel_id, $hotel_id]);

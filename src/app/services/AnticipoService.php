@@ -94,6 +94,7 @@ class AnticipoService
         $metodoPago = $this->normalizarMetodoPago($datos['metodo_pago'] ?? null);
         $referencia = $this->normalizarTextoNullable($datos['referencia'] ?? null, 100);
         $concepto = $this->normalizarTextoNullable($datos['concepto'] ?? null, 255) ?? 'Anticipo de reservacion';
+        $requiereFactura = (($datos['requiere_factura'] ?? 'no') === 'si') ? 'si' : 'no';
 
         if ($this->pdo->inTransaction()) {
             throw new Exception('El anticipo debe controlar su propia transaccion.');
@@ -157,7 +158,7 @@ class AnticipoService
                      concepto, referencia, usuario_id, corte_id, movimiento_caja_id,
                      created_at, requiere_factura, tipo_tarjeta)
                  VALUES
-                    (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW(), 'no', '')"
+                    (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW(), ?, '')"
             );
             $stmt->execute([
                 $hotelId,
@@ -169,6 +170,7 @@ class AnticipoService
                 $usuarioId,
                 (int)$corte['id'],
                 $movimientoCajaId,
+                $requiereFactura,
             ]);
             $abonoId = (int)$this->pdo->lastInsertId();
 
@@ -181,6 +183,8 @@ class AnticipoService
                 'movimiento_caja_id' => $movimientoCajaId,
                 'corte_id' => (int)$corte['id'],
                 'monto' => round($monto, 2),
+                'metodo_pago' => $metodoPago,
+                'requiere_factura' => $requiereFactura,
                 'saldo_anterior' => round($saldoAnterior, 2),
                 'saldo_posterior' => $saldoPosterior,
             ];

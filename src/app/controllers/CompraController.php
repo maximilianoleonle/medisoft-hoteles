@@ -200,15 +200,30 @@ class CompraController extends Controller
             ];
 
             $detalles = $this->detallesFormulario();
-            $compraId = $this->compraService->crearBorrador(
+            if (!$detalles) {
+                throw new Exception('La compra requiere al menos un producto');
+            }
+
+            $detallesPorProveedor = $this->agruparDetallesPorProveedor($detalles, $datos['proveedor_id']);
+            $comprasCreadas = $this->compraService->crearBorradoresPorProveedor(
                 $hotelId,
                 $datos,
-                $detalles,
+                $detallesPorProveedor,
                 $this->usuarioIdActual()
             );
 
             clear_old_input();
-            set_mensaje('Borrador de compra #' . $compraId . ' creado correctamente.', 'success');
+            if (count($comprasCreadas) === 1) {
+                set_mensaje('Borrador de compra #' . (int)($comprasCreadas[0]['compra_id'] ?? 0) . ' creado correctamente.', 'success');
+            } else {
+                $compraIds = array_map(static function ($compra) {
+                    return '#' . (int)($compra['compra_id'] ?? 0);
+                }, $comprasCreadas);
+                set_mensaje(
+                    'Se crearon ' . count($comprasCreadas) . ' borradores de compra por proveedor: ' . implode(', ', $compraIds) . '.',
+                    'success'
+                );
+            }
             $this->redirect('compras');
         } catch (Throwable $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
@@ -295,13 +310,15 @@ class CompraController extends Controller
         $productoIds = $this->normalizarArregloPost('producto_id');
         $cantidades = $this->normalizarArregloPost('cantidad');
         $costos = $this->normalizarArregloPost('costo_unitario');
+        $proveedoresLinea = $this->normalizarArregloPost('detalle_proveedor_id');
 
         $detalles = [];
-        $maxRows = max(count($productoIds), count($cantidades), count($costos));
+        $maxRows = max(count($productoIds), count($cantidades), count($costos), count($proveedoresLinea));
         for ($i = 0; $i < $maxRows; $i++) {
             $productoId = trim((string)($productoIds[$i] ?? ''));
             $cantidad = trim((string)($cantidades[$i] ?? ''));
             $costo = trim((string)($costos[$i] ?? ''));
+            $proveedorLinea = trim((string)($proveedoresLinea[$i] ?? ''));
 
             if ($productoId === '' && $cantidad === '' && $costo === '') {
                 continue;
@@ -316,10 +333,61 @@ class CompraController extends Controller
                 $detalle['costo_unitario'] = $costo;
             }
 
+            if ($proveedorLinea !== '') {
+                $detalle['proveedor_id'] = $proveedorLinea;
+            }
+
             $detalles[] = $detalle;
         }
 
         return $detalles;
+    }
+
+    private function agruparDetallesPorProveedor(array $detalles, $proveedorGeneral): array
+    {
+        $necesitaProveedorGeneral = false;
+        foreach ($detalles as $detalle) {
+            if (trim((string)($detalle['proveedor_id'] ?? '')) === '') {
+                $necesitaProveedorGeneral = true;
+                break;
+            }
+        }
+
+        $proveedorGeneralId = null;
+        if ($necesitaProveedorGeneral) {
+            $proveedorGeneralId = $this->validarProveedorFormulario(
+                $proveedorGeneral,
+                'Elige un proveedor general o selecciona proveedor en cada producto'
+            );
+        }
+
+        $grupos = [];
+        foreach ($detalles as $detalle) {
+            $proveedorLinea = trim((string)($detalle['proveedor_id'] ?? ''));
+            $proveedorId = $proveedorLinea !== ''
+                ? $this->validarProveedorFormulario($proveedorLinea)
+                : $proveedorGeneralId;
+
+            $detalleNormal = $detalle;
+            unset($detalleNormal['proveedor_id']);
+
+            if (!isset($grupos[$proveedorId])) {
+                $grupos[$proveedorId] = [];
+            }
+            $grupos[$proveedorId][] = $detalleNormal;
+        }
+
+        return $grupos;
+    }
+
+    private function validarProveedorFormulario($value, string $message = 'Proveedor invalido'): int
+    {
+        $text = trim((string)($value ?? ''));
+        if ($text === '' || !ctype_digit($text) || (int)$text <= 0) {
+            throw new Exception($message);
+        }
+
+        return (int)$text;
     }
 
     private function normalizarArregloPost(string $key): array

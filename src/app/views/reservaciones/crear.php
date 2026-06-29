@@ -2199,7 +2199,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
     <!-- ── Main grid ── -->
     <div class="px-5 sm:px-7 py-5 pb-24 xl:pb-6">
-        <form method="POST" action="<?= url('reservaciones/guardar') ?>" id="formReservacion">
+        <form method="POST" action="<?= url('reservaciones/guardar') ?>" id="formReservacion" data-no-draft data-no-unsaved-warning data-no-submit-state>
             <?= csrf_field() ?>
             <input type="hidden" name="descuento_aplicado" id="descuento_aplicado" value="">
 
@@ -3918,6 +3918,7 @@ $(document).ready(function() {
     // ── Form submit ───────────────────────────────────────────
     $('#formReservacion').on('submit', function(e) {
         e.preventDefault();
+        if (this.dataset.enviandoReservacion === '1') return;
         const totalHabs        = $('.habitacion-check:checked').length;
         const cortesiasAplicadas = habitacionesCortesiaSeleccionadas.length;
 
@@ -3952,7 +3953,46 @@ $(document).ready(function() {
                 return;
             }
 
-            formRef.submit();
+            formRef.dataset.enviandoReservacion = '1';
+            $('#btnGuardar, #btnGuardarMovil').prop('disabled', true);
+            Swal.fire({
+                title: 'Guardando reservacion...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const response = await fetch(formRef.action, {
+                    method: formRef.method || 'POST',
+                    body: new FormData(formRef),
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const payload = await response.json().catch(() => ({}));
+
+                if (payload.redirect) {
+                    window.location.assign(payload.redirect);
+                    return;
+                }
+
+                if (!response.ok || payload.success === false) {
+                    throw new Error(payload.message || 'No se pudo guardar la reservacion.');
+                }
+
+                window.location.assign('<?= url('reservaciones') ?>');
+            } catch (err) {
+                console.error('[Reservaciones] Error al guardar reservacion:', err);
+                delete formRef.dataset.enviandoReservacion;
+                verificarFormularioCompleto();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo guardar',
+                    text: err.message || 'Revisa los datos e intenta de nuevo.',
+                    confirmButtonColor: 'var(--lc-green)'
+                });
+            }
         });
     });
     // ── Cotización PDF ────────────────────────────────────────
@@ -3996,6 +4036,19 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     addHidden('hora_llegada_modo', horaLlegadaModoActual());
     addHidden('hora_llegada', hl);
     addHidden('notas', notas);
+
+    const visibleDescuento = document.getElementById('descuento_input_visible');
+    const hiddenDescuento = document.getElementById('descuento_aplicado');
+    if (visibleDescuento && hiddenDescuento) {
+        const descuentoManual = parseFloat(String(visibleDescuento.value || '').replace(/,/g, ''));
+        if (isFinite(descuentoManual) && descuentoManual >= 0) {
+            hiddenDescuento.value = descuentoManual.toFixed(2);
+        }
+    }
+    const descuentoAplicado = hiddenDescuento ? String(hiddenDescuento.value || '').trim() : '';
+    if (descuentoAplicado !== '') {
+        addHidden('descuento_aplicado', descuentoAplicado);
+    }
 
     habsChecked.each(function() {
         addHidden('habitaciones[]', $(this).val());

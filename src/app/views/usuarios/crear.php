@@ -809,12 +809,26 @@ if (!function_exists('usuario_form_error_attrs')) {
                                 <label for="rol" class="worker-label">Rol *</label>
                                 <div class="worker-control-wrap">
                                     <span class="worker-control-icon"><i class="fas fa-user-tag"></i></span>
+                                    <?php $rolesHotelForm = $rolesHotel ?? []; ?>
+                                    <?php if (!empty($rolesHotelForm)): ?>
+                                    <?php $roleIdSel = (string) old('role_id', ''); ?>
+                                    <select id="role_id" name="role_id" required class="worker-input has-right appearance-none<?= usuario_form_error_class($usuarioFieldErrors, 'rol') ?>"
+                                            onchange="var pr=document.getElementById('preview-rol'); if(pr&&this.selectedIndex>=0) pr.textContent=this.options[this.selectedIndex].text.trim();"<?= usuario_form_error_attrs($usuarioFieldErrors, 'rol', 'ms-form-error-usuario_rol') ?>>
+                                        <option value="">Seleccione un rol</option>
+                                        <?php foreach ($rolesHotelForm as $rolOpcion): ?>
+                                        <option value="<?= (int) $rolOpcion['id'] ?>" <?= $roleIdSel === (string) $rolOpcion['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($rolOpcion['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php else: ?>
                                     <select id="rol" name="rol" required class="worker-input has-right appearance-none<?= usuario_form_error_class($usuarioFieldErrors, 'rol') ?>" onchange="actualizarPermisos()"<?= usuario_form_error_attrs($usuarioFieldErrors, 'rol', 'ms-form-error-usuario_rol') ?>>
                                         <option value="">Seleccione un rol</option>
                                         <option value="gerente" <?= $usuarioRolValor === 'gerente' ? 'selected' : '' ?>>Gerente</option>
                                         <option value="administrador" <?= $usuarioRolValor === 'administrador' ? 'selected' : '' ?>>Administrador</option>
                                         <option value="recepcionista" <?= $usuarioRolValor === 'recepcionista' ? 'selected' : '' ?>>Recepcionista</option>
                                     </select>
+                                    <?php endif; ?>
                                     <span class="worker-select-caret"><i class="fas fa-chevron-down"></i></span>
                                 </div>
                                 <?php if (usuario_form_error($usuarioFieldErrors, 'rol') !== ''): ?>

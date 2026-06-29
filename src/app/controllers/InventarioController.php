@@ -284,9 +284,8 @@ public function debugPdfAction() {
     echo "<div class='debug-section'>";
     echo "<h2>5. Prueba de Consulta del PDF</h2>";
 
-    // Usar fechas que sabemos que tienen datos
-    $fecha_desde = '2025-09-01';
-    $fecha_hasta = '2025-09-30';
+    $fecha_hasta = date('Y-m-d');
+    $fecha_desde = date('Y-m-01', strtotime($fecha_hasta));
 
     echo "<p><strong>Probando con fechas:</strong> $fecha_desde a $fecha_hasta</p>";
 
@@ -375,10 +374,10 @@ public function debugPdfAction() {
     echo "<p>Para generar un PDF de prueba con las fechas correctas:</p>";
     echo "<form method='POST' action='" . url('inventario/generarPdfMovimientos') . "'>";
     echo csrf_field();
-    echo "<input type='hidden' name='fecha_desde' value='2025-09-01'>";
-    echo "<input type='hidden' name='fecha_hasta' value='2025-09-30'>";
+    echo "<input type='hidden' name='fecha_desde' value='" . htmlspecialchars($fecha_desde, ENT_QUOTES, 'UTF-8') . "'>";
+    echo "<input type='hidden' name='fecha_hasta' value='" . htmlspecialchars($fecha_hasta, ENT_QUOTES, 'UTF-8') . "'>";
     echo "<button type='submit' style='background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;'>";
-    echo "Generar PDF de Prueba (Septiembre 2025)";
+    echo "Generar PDF de Prueba (Periodo actual)";
     echo "</button>";
     echo "</form>";
     echo "</div>";
@@ -436,8 +435,12 @@ public function logInventarioAction() {
  * Vista de exportación
  */
 public function exportarAction() {
+    $fecha_hoy = date('Y-m-d');
+
     View::renderTemplate('inventario/exportar', [
-        'title' => 'Exportar Inventario - ' . current_hotel_display_name()
+        'title' => 'Exportar Inventario - ' . current_hotel_display_name(),
+        'fecha_hoy' => $fecha_hoy,
+        'fecha_inicio_mes' => date('Y-m-01', strtotime($fecha_hoy))
     ]);
 }
 
@@ -460,11 +463,6 @@ public function generarPdfMovimientosAction() {
         if (!$fecha_desde || !$fecha_hasta) {
             throw new Exception('Debe seleccionar ambas fechas');
         }
-
-        // Debug: Ver qué fechas se están usando
-        error_log("=== DEBUG FECHAS PDF ===");
-        error_log("Fecha desde: " . $fecha_desde);
-        error_log("Fecha hasta: " . $fecha_hasta);
 
         $hotel_id = obtenerHotelIdActualCompat();
 
@@ -528,16 +526,6 @@ public function generarPdfMovimientosAction() {
  */
 private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fecha_hasta) {
     require_once APP_PATH . '/libs/TCPDF/tcpdf.php';
-
-    // Debug para ver si hay movimientos
-    error_log("=== DEBUG PDF ===");
-    error_log("Total movimientos recibidos: " . count($movimientos));
-    error_log("Fecha desde: " . $fecha_desde);
-    error_log("Fecha hasta: " . $fecha_hasta);
-
-    if (!empty($movimientos)) {
-        error_log("Primer movimiento: " . print_r($movimientos[0], true));
-    }
 
     // Crear nuevo PDF
     $brand = $this->inventarioPdfBranding();
@@ -989,6 +977,26 @@ public function debugMovimientosDateAction() {
         return $this->unidadMedidaDefaultInventario();
     }
 
+    private function normalizarCantidadMovimientoInventario($valor): float {
+        $texto = str_replace(',', '.', trim((string)$valor));
+
+        if ($texto === '' || !is_numeric($texto)) {
+            throw new Exception('La cantidad debe ser numerica');
+        }
+
+        $cantidad = round((float)$texto, 2);
+
+        if ($cantidad <= 0) {
+            throw new Exception('La cantidad debe ser mayor a cero');
+        }
+
+        return $cantidad;
+    }
+
+    private function decimalInventario(float $valor): string {
+        return number_format(round($valor, 2), 2, '.', '');
+    }
+
     private function normalizarTipoHabitacionInventario($codigo): string {
         $codigo = strtolower(trim((string)$codigo));
 
@@ -1374,7 +1382,7 @@ public function debugMovimientosDateAction() {
                     'stock_anterior' => 0,
                     'stock_posterior' => $data['stock_actual'],
                     'motivo' => 'Stock inicial al crear producto',
-                    'usuario_id' => $_SESSION['usuario_id'] ?? null,
+                    'usuario_id' => $this->usuarioIdActualInventario(),
                     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LINEA
                 ];
 
@@ -1423,7 +1431,7 @@ public function debugMovimientosDateAction() {
 
         try {
             $producto_id = intval($this->getPost('producto_id'));
-            $cantidad = abs(intval($this->getPost('cantidad')));
+            $cantidad = $this->normalizarCantidadMovimientoInventario($this->getPost('cantidad'));
             $motivo = trim($this->getPost('motivo'));
 
             // Obtener producto actual
@@ -1433,14 +1441,14 @@ public function debugMovimientosDateAction() {
                 throw new Exception('Producto no encontrado');
             }
 
-            $stock_anterior = intval($producto['stock_actual']);
-            $stock_nuevo = $stock_anterior + $cantidad;
+            $stock_anterior = round((float)$producto['stock_actual'], 2);
+            $stock_nuevo = round($stock_anterior + $cantidad, 2);
 
             $this->db->safeBeginTransaction();
 
             // Actualizar stock directamente
             $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
-                'stock_actual' => $stock_nuevo
+                'stock_actual' => $this->decimalInventario($stock_nuevo)
             ]);
 
             if ($actualizado) {
@@ -1448,11 +1456,11 @@ public function debugMovimientosDateAction() {
                 $movimiento_data = [
     'producto_id' => $producto_id,
     'tipo_movimiento' => 'ENTRADA',
-    'cantidad' => $cantidad,
-    'stock_anterior' => $stock_anterior,
-    'stock_posterior' => $stock_nuevo,
+    'cantidad' => $this->decimalInventario($cantidad),
+    'stock_anterior' => $this->decimalInventario($stock_anterior),
+    'stock_posterior' => $this->decimalInventario($stock_nuevo),
     'motivo' => $motivo,
-    'usuario_id' => $_SESSION['usuario_id'] ?? null,
+    'usuario_id' => $this->usuarioIdActualInventario(),
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
 
@@ -1506,7 +1514,7 @@ public function debugMovimientosDateAction() {
 
         try {
             $producto_id = intval($this->getPost('producto_id'));
-            $cantidad = abs(intval($this->getPost('cantidad')));
+            $cantidad = $this->normalizarCantidadMovimientoInventario($this->getPost('cantidad'));
             $motivo = trim($this->getPost('motivo'));
             $habitacion_id = $this->getPost('habitacion_id') ?: null;
 
@@ -1517,20 +1525,20 @@ public function debugMovimientosDateAction() {
                 throw new Exception('Producto no encontrado');
             }
 
-            $stock_anterior = intval($producto['stock_actual']);
+            $stock_anterior = round((float)$producto['stock_actual'], 2);
 
             // Verificar stock suficiente
             if ($stock_anterior < $cantidad) {
-                throw new Exception('Stock insuficiente. Disponible: ' . $stock_anterior);
+                throw new Exception('Stock insuficiente. Disponible: ' . $this->decimalInventario($stock_anterior));
             }
 
-            $stock_nuevo = $stock_anterior - $cantidad;
+            $stock_nuevo = round($stock_anterior - $cantidad, 2);
 
             $this->db->safeBeginTransaction();
 
             // Actualizar stock directamente
             $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
-                'stock_actual' => $stock_nuevo
+                'stock_actual' => $this->decimalInventario($stock_nuevo)
             ]);
 
             if ($actualizado) {
@@ -1538,12 +1546,12 @@ public function debugMovimientosDateAction() {
                 $movimiento_data = [
     'producto_id' => $producto_id,
     'tipo_movimiento' => 'SALIDA',
-    'cantidad' => $cantidad,
-    'stock_anterior' => $stock_anterior,
-    'stock_posterior' => $stock_nuevo,
+    'cantidad' => $this->decimalInventario($cantidad),
+    'stock_anterior' => $this->decimalInventario($stock_anterior),
+    'stock_posterior' => $this->decimalInventario($stock_nuevo),
     'motivo' => $motivo,
     'habitacion_id' => $habitacion_id,
-    'usuario_id' => $_SESSION['usuario_id'] ?? null,
+    'usuario_id' => $this->usuarioIdActualInventario(),
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
 
@@ -1601,16 +1609,7 @@ public function debugMovimientosDateAction() {
     $this->validateCSRF();
 
     try {
-        // AGREGAR ESTAS LÍNEAS DE DEBUG
-        error_log("=== DEBUG CONFIGURACION ===");
-        error_log("POST completo: " . print_r($_POST, true));
-
-        // Procesar cada configuración enviada
         $config = $this->getPost('config', []);
-
-        // AGREGAR ESTA LÍNEA
-        error_log("Config procesada: " . print_r($config, true));
-
         $cambiosAuditables = [];
 
         foreach ($config as $tipo_hab => $productos) {

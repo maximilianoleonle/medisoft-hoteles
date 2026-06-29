@@ -1,4 +1,9 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
+<?php
+$fecha_hoy = $fecha_hoy ?? date('Y-m-d');
+$fecha_inicio_mes = $fecha_inicio_mes ?? date('Y-m-01');
+
+require_once APP_PATH . '/views/layout/header.php';
+?>
 
 <style>
 :root {
@@ -457,7 +462,7 @@
                                 <input type="date"
                                        id="fecha_desde"
                                        name="fecha_desde"
-                                       value="2025-09-01"
+                                       value="<?= htmlspecialchars($fecha_inicio_mes, ENT_QUOTES, 'UTF-8') ?>"
                                        required>
                             </div>
 
@@ -466,7 +471,7 @@
                                 <input type="date"
                                        id="fecha_hasta"
                                        name="fecha_hasta"
-                                       value="2025-09-30"
+                                       value="<?= htmlspecialchars($fecha_hoy, ENT_QUOTES, 'UTF-8') ?>"
                                        required>
                             </div>
                         </div>
@@ -515,17 +520,19 @@
 
             <div class="exp-footer-note">
                 <i class="fas fa-lightbulb"></i>
-                <span>Los movimientos en el sistema estan registrados con fechas de 2025. Selecciona el rango correcto antes de generar el PDF.</span>
+                <span>El periodo se prepara con la fecha actual del sistema. Ajustalo antes de generar el PDF si necesitas otro rango.</span>
             </div>
         </div>
     </main>
 </div>
 
 <script>
+const fechaHoyExportacion = <?= json_encode($fecha_hoy) ?>;
+const fechaInicioMesExportacion = <?= json_encode($fecha_inicio_mes) ?>;
+
 // Funcion para obtener la fecha actual en formato correcto
 function getFechaActual() {
-    // Como los movimientos estan en 2025, usar esa fecha
-    return '2025-09-13';
+    return fechaHoyExportacion;
 }
 
 function exportarStockActual() {
@@ -534,8 +541,8 @@ function exportarStockActual() {
     form.action = '<?= url("inventario/generarPdfMovimientos") ?>';
     form.innerHTML = `
         <?= csrf_field() ?>
-        <input type="hidden" name="fecha_desde" value="2025-09-12">
-        <input type="hidden" name="fecha_hasta" value="2025-09-13">
+        <input type="hidden" name="fecha_desde" value="${fechaInicioMesExportacion}">
+        <input type="hidden" name="fecha_hasta" value="${fechaHoyExportacion}">
     `;
     document.body.appendChild(form);
     form.submit();

@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonColor: '#dc2626'
             });
         } else {
-            alert('Error: ' + message);
+            (window.msToast ? window.msToast('error', 'Error', message) : alert('Error: ' + message));
         }
     }
     
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonColor: '#dc2626'
             });
         } else {
-            alert('Error: ' + message);
+            (window.msToast ? window.msToast('error', 'Error', message) : alert('Error: ' + message));
         }
     }
     

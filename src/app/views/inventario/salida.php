@@ -82,7 +82,8 @@
                                        name="cantidad" 
                                        id="cantidad"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" 
-                                       min="1"
+                                       min="0.01"
+                                       step="0.01"
                                        value="<?= old('cantidad') ?>"
                                        required>
                                 <small class="text-gray-500" id="stock_info"></small>
@@ -203,12 +204,14 @@ function updatePreview() {
     const productoSelect = document.getElementById('producto_id');
     const selectedOption = productoSelect.options[productoSelect.selectedIndex];
     const previewPanel = document.getElementById('preview-panel');
-    const cantidad = parseInt(document.getElementById('cantidad').value) || 0;
+    const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
     
     if (productoSelect.value) {
-        const stock = parseInt(selectedOption.getAttribute('data-stock'));
+        const stock = parseFloat(selectedOption.getAttribute('data-stock'));
         const nombre = selectedOption.getAttribute('data-nombre');
         const stockFinal = stock - cantidad;
+        const stockLabel = stock.toFixed(2);
+        const stockFinalLabel = stockFinal.toFixed(2);
         
         let estadoHtml = '';
         if (stock === 0) {
@@ -225,13 +228,13 @@ function updatePreview() {
                 </div>
                 <div class="flex justify-between items-center py-2 border-t border-b">
                     <span class="text-sm text-gray-600">Stock actual</span>
-                    <span class="font-bold text-gray-900">${stock}</span>
+                    <span class="font-bold text-gray-900">${stockLabel}</span>
                 </div>
                 ${cantidad > 0 ? `
                 <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-orange-700">Stock después</span>
-                        <span class="text-lg font-bold ${stockFinal < 0 ? 'text-red-600' : 'text-orange-900'}">${stockFinal}</span>
+                        <span class="text-lg font-bold ${stockFinal < 0 ? 'text-red-600' : 'text-orange-900'}">${stockFinalLabel}</span>
                     </div>
                 </div>
                 ${estadoHtml}
@@ -275,13 +278,13 @@ function validarStockSalida(enviar = false) {
     const productoSelect = document.getElementById('producto_id');
     const cantidadInput = document.getElementById('cantidad');
     const stockError = document.getElementById('stock_error');
-    const cantidad = parseInt(cantidadInput.value) || 0;
+    const cantidad = parseFloat(cantidadInput.value) || 0;
     const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-    const stockActual = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+    const stockActual = parseFloat(selectedOption.getAttribute('data-stock')) || 0;
     let mensaje = '';
 
     if (productoSelect.value && cantidad > stockActual) {
-        mensaje = `No hay suficiente stock. Disponible: ${stockActual}.`;
+        mensaje = `No hay suficiente stock. Disponible: ${stockActual.toFixed(2)}.`;
     }
 
     cantidadInput.setCustomValidity(mensaje);

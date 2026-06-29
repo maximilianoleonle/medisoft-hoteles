@@ -500,7 +500,6 @@ class ReservacionController extends Controller {
             $pdf->SetTextColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
             $pdf->SetX($margin);
             $pdf->Cell($contentW, 7, $u('DATOS DEL HUÉSPED'), 0, 1, 'L');
- 
             $pdf->SetDrawColor($gold[0], $gold[1], $gold[2]);
             $pdf->SetLineWidth(0.5);
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
@@ -1055,11 +1054,6 @@ public function checkOutParcialAction() {
         // Obtener habitaciones seleccionadas
         $habitaciones_ids = $this->getPost('habitaciones', []);
         
-        // 🔍 DEBUG: Ver qué IDs se reciben
-        error_log("=== DEBUG CHECK-OUT PARCIAL ===");
-        error_log("ID Reservación: $id");
-        error_log("IDs recibidos del POST: " . print_r($habitaciones_ids, true));
-        
         if (empty($habitaciones_ids)) {
             // Si es AJAX, devolver JSON
             if ($this->isAjax()) {
@@ -1088,8 +1082,6 @@ public function checkOutParcialAction() {
         
         // Reindexar el array
         $habitaciones_ids = array_values($habitaciones_ids);
-        
-        error_log("IDs después de intval y filtrado: " . print_r($habitaciones_ids, true));
         
         // Verificar nuevamente después del filtrado
         if (empty($habitaciones_ids)) {
@@ -1363,8 +1355,19 @@ public function obtenerNotasAction() {
             if (!empty($res_ids)) {
                 $placeholders = str_repeat('?,', count($res_ids) - 1) . '?';
                 try {
-                    $stmt = $this->db->prepare("SELECT reservacion_id FROM solicitudes_factura WHERE reservacion_id IN ($placeholders) AND hotel_id = ? AND requiere_factura = 'si'");
-                    $stmt->execute(array_merge(array_values($res_ids), [$hotel_id]));
+                    $stmt = $this->db->prepare(
+                        "SELECT sf.reservacion_id
+                         FROM solicitudes_factura sf
+                         INNER JOIN reservaciones r
+                            ON sf.reservacion_id = r.id
+                            AND sf.hotel_id = r.hotel_id
+                         WHERE sf.reservacion_id IN ($placeholders)
+                           AND sf.hotel_id = ?
+                           AND r.hotel_id = ?
+                           AND sf.requiere_factura = 'si'
+                           AND sf.created_at >= r.created_at"
+                    );
+                    $stmt->execute(array_merge(array_values($res_ids), [$hotel_id, $hotel_id]));
                     while ($f = $stmt->fetch(PDO::FETCH_ASSOC)) {
                         $facturas_por_reservacion[$f['reservacion_id']] = true;
                     }
@@ -1518,9 +1521,20 @@ public function obtenerNotasAction() {
                 $res_ids = array_column($reservaciones, 'id');
                 if (!empty($res_ids)) {
                     $placeholders = str_repeat('?,', count($res_ids) - 1) . '?';
-                    $stmt = $this->db->prepare("SELECT reservacion_id, requiere_factura FROM solicitudes_factura WHERE reservacion_id IN ($placeholders) AND hotel_id = ? AND requiere_factura = 'si'");
+                    $stmt = $this->db->prepare(
+                        "SELECT sf.reservacion_id, sf.requiere_factura
+                         FROM solicitudes_factura sf
+                         INNER JOIN reservaciones r
+                            ON sf.reservacion_id = r.id
+                            AND sf.hotel_id = r.hotel_id
+                         WHERE sf.reservacion_id IN ($placeholders)
+                           AND sf.hotel_id = ?
+                           AND r.hotel_id = ?
+                           AND sf.requiere_factura = 'si'
+                           AND sf.created_at >= r.created_at"
+                    );
                     try {
-                        $stmt->execute(array_merge(array_values($res_ids), [$hotel_id]));
+                        $stmt->execute(array_merge(array_values($res_ids), [$hotel_id, $hotel_id]));
                         while ($f = $stmt->fetch(PDO::FETCH_ASSOC)) {
                             $facturas_por_reservacion[$f['reservacion_id']] = true;
                         }
@@ -2772,13 +2786,7 @@ public function indexAction() {
         
         // Obtener habitaciones
         $habitaciones = $this->reservacionModel->getHabitaciones($id);
-        // DEBUG: Verificar que se están obteniendo los precios
-error_log("=== DEBUG HABITACIONES ===");
-foreach ($habitaciones as $hab) {
-    error_log("Habitación {$hab['numero']}: Precio = {$hab['precio']}, Es cortesía = {$hab['es_cortesia']}");
-}
-error_log("=== FIN DEBUG ===");
-        
+
         // Obtener información del huésped
         $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $this->hotelIdActual());
         
@@ -2841,6 +2849,7 @@ try {
         $resumenPagos = $this->reservacionModel->resumenPagos((int)$id, $hotelIdAnticipo);
         $anticipoEval = (new AnticipoService())->evaluar($hotelIdAnticipo, (int)$id);
         $abonos = [];
+        $anticipoFacturaSolicitud = null;
         try {
             $dbAbonos = Database::getInstance();
             $chkAbonos = $dbAbonos->query("SHOW TABLES LIKE 'reservacion_abonos'");
@@ -2851,6 +2860,19 @@ try {
                     [(int)$id, $hotelIdAnticipo]
                 );
                 $abonos = $stmtAbonos ? $stmtAbonos->fetchAll(PDO::FETCH_ASSOC) : [];
+            }
+            // Solicitud de factura pendiente originada por un anticipo
+            $chkSf = $dbAbonos->query("SHOW TABLES LIKE 'solicitudes_factura'");
+            if ($chkSf && $chkSf->rowCount() > 0) {
+                $stmtSf = $dbAbonos->query(
+                    "SELECT id, monto_total, metodo_pago_principal, estatus, created_at
+                     FROM solicitudes_factura
+                     WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'cliente'
+                       AND estatus IN ('pendiente', 'en_proceso')
+                     ORDER BY id DESC LIMIT 1",
+                    [(int)$id, $hotelIdAnticipo]
+                );
+                $anticipoFacturaSolicitud = $stmtSf ? $stmtSf->fetch(PDO::FETCH_ASSOC) : null;
             }
         } catch (Throwable $e) {
             $abonos = [];
@@ -2867,6 +2889,7 @@ try {
     'resumenPagos' => $resumenPagos,
     'abonos' => $abonos,
     'anticipoEval' => $anticipoEval,
+    'anticipoFacturaSolicitud' => $anticipoFacturaSolicitud,
     'notas' => $notas,
     'total_notas' => $total_notas,
     'documentosEntidad' => $documentosEntidad,
@@ -3354,20 +3377,8 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             }
             
             if ($resultado) {
-                
-                // Justo después de: if ($resultado) {
-error_log("=== DEBUG CHECK-IN ===");
-error_log("Check-in exitoso, iniciando descuento de inventario...");
-
-// Llamar al procesamiento de inventario
-$this->procesarDescuentoInventario($id);
-
-// Verificar si se guardó algún mensaje
-error_log("Mensaje inventario: " . ($_SESSION['mensaje_inventario'] ?? 'No hay mensaje'));
-error_log("=== FIN DEBUG CHECK-IN ===");
-                // Procesar descuento de inventario
-                // Procesar entrega automática de llaves
-$this->procesarEntregaLlavesCheckIn($id);
+                $this->procesarDescuentoInventario($id);
+                $this->procesarEntregaLlavesCheckIn($id);
                 
                 // ========== PROCESAR SOLICITUD DE FACTURA ==========
                 $this->procesarSolicitudFactura($id, $pagos, $reservacion['precio_total']);
@@ -3468,19 +3479,23 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
         return;
     }
 
+    $resumenPagos = $this->reservacionModel->resumenPagos($id, $this->hotelIdActual());
+    $saldoPendiente = (float)($resumenPagos['saldo'] ?? 0);
+    if ($saldoPendiente > 0.004) {
+        set_mensaje('No se puede hacer check-out con saldo pendiente de $' . number_format($saldoPendiente, 2), 'error');
+        $this->redirect('reservaciones/ver/' . $id);
+        return;
+    }
+
     // Obtener hora de salida
     $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
     
     // Usar el método checkOut del modelo
     $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
     
-    // Procesar recogida automática de llaves
-    $this->procesarRecogidaLlavesCheckOut($id);
-    
-    // Procesar recogida automática de controles remotos
-    $this->procesarRecogidaRemotosCheckOut($id);
-    
     if ($resultado) {
+        $this->procesarRecogidaLlavesCheckOut($id);
+        $this->procesarRecogidaRemotosCheckOut($id);
         set_mensaje('Check-out realizado exitosamente. Las habitaciones pasaron a limpieza.', 'success');
     } else {
         set_mensaje('Error al realizar check-out', 'error');
@@ -3560,18 +3575,35 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
         try {
             require_once __DIR__ . '/../services/AnticipoService.php';
             $hotelId = obtenerHotelIdActualCompat();
+            $requiereFactura = ($this->getPost('requiere_factura') === 'si') ? 'si' : 'no';
             $svc = new AnticipoService();
             $resultado = $svc->registrar($hotelId, $id, [
-                'monto'       => $this->getPost('monto'),
-                'metodo_pago' => $this->getPost('metodo_pago'),
-                'referencia'  => $this->getPost('referencia'),
-                'concepto'    => $this->getPost('concepto'),
+                'monto'            => $this->getPost('monto'),
+                'metodo_pago'      => $this->getPost('metodo_pago'),
+                'referencia'       => $this->getPost('referencia'),
+                'concepto'         => $this->getPost('concepto'),
+                'requiere_factura' => $requiereFactura,
             ], user_id());
-            set_mensaje(
-                'Anticipo de $' . number_format($resultado['monto'], 2) .
-                ' registrado. Saldo pendiente: $' . number_format($resultado['saldo_posterior'], 2),
-                'success'
-            );
+
+            if ($requiereFactura === 'si') {
+                $this->reservacionModel->crearSolicitudFactura([
+                    'reservacion_id'      => $id,
+                    'hotel_id'            => $hotelId,
+                    'requiere_factura'    => 'si',
+                    'tipo'                => 'cliente',
+                    'metodo_pago_principal' => $resultado['metodo_pago'],
+                    'monto_total'         => $resultado['monto'],
+                    'usuario_registro_id' => user_id(),
+                    'notas'               => 'Anticipo registrado - Abono #' . $resultado['abono_id'],
+                ]);
+            }
+
+            $msg = 'Anticipo de $' . number_format($resultado['monto'], 2) .
+                   ' registrado. Saldo pendiente: $' . number_format($resultado['saldo_posterior'], 2);
+            if ($requiereFactura === 'si') {
+                $msg .= '. Solicitud de factura creada.';
+            }
+            set_mensaje($msg, 'success');
         } catch (Throwable $e) {
             set_mensaje('No se pudo registrar el anticipo: ' . $e->getMessage(), 'error');
         }
@@ -3829,10 +3861,6 @@ private function validarCancelacion($reservacion) {
     
     $this->validateCSRF();
     
-    // DEBUG: Log todos los datos POST
-    error_log("=== DEBUG GUARDAR RESERVACIÓN ===");
-    error_log("POST completo: " . json_encode($_POST));
-    
     try {
         $horaLlegadaModo = trim((string)$this->getPost('hora_llegada_modo', 'manual'));
         $horaLlegadaPost = trim((string)$this->getPost('hora_llegada', ''));
@@ -3859,18 +3887,11 @@ private function validarCancelacion($reservacion) {
             $data['descuento_aplicado'] = (float) str_replace(',', '', (string) $descuentoAplicadoPost);
         }
         
-        // DEBUG: Log datos procesados
-        error_log("Datos procesados: " . json_encode($data));
-        
         // Obtener habitaciones seleccionadas
         $habitaciones_ids = $this->getPost('habitaciones', []);
         $habitaciones_ids = array_values(array_unique(array_map('intval', (array) $habitaciones_ids)));
         // Obtener habitaciones marcadas como cortesía (NUEVO)
 $cortesias_ids = $this->getPost('cortesias', []);
-error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_ids));
-        
-        // DEBUG: Log habitaciones
-        error_log("Habitaciones seleccionadas: " . json_encode($habitaciones_ids));
         
         // Validaciones
         if (empty($data['huesped_id'])) {
@@ -3889,9 +3910,6 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $hab = $this->habitacionModel->find($hab_id);
             if ($hab) {
                 $habitaciones[] = $hab;
-                error_log("Habitación encontrada: " . json_encode($hab));
-            } else {
-                error_log("ERROR: Habitación no encontrada con ID: " . $hab_id);
             }
         }
         
@@ -3900,7 +3918,6 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         }
 
         // Verificar disponibilidad
-        error_log("Verificando disponibilidad...");
         $disponible = $this->reservacionModel->verificarDisponibilidadMultiple(
             $habitaciones_ids, 
             $data['fecha_entrada'], 
@@ -3944,10 +3961,8 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $reservacion = $this->reservacionModel->create($data);
         }
         
-        error_log("Resultado de creación: " . json_encode($reservacion));
-        
         if ($reservacion && isset($reservacion['id'])) {
-            error_log("ÉXITO: Reservación creada con ID: " . $reservacion['id']);
+            $redirectReservacion = 'reservaciones/ver/' . $reservacion['id'];
 
             // Anticipo inicial opcional: si el operador capturó uno, se registra como abono real.
             // Best-effort: si no hay caja abierta u ocurre un error, la reservación NO se pierde.
@@ -3973,24 +3988,40 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                         'warning'
                     );
                 }
-                $this->redirect('reservaciones/ver/' . $reservacion['id']);
+                if ($this->isAjax()) {
+                    View::renderJSON([
+                        'success' => true,
+                        'redirect' => url($redirectReservacion),
+                    ]);
+                }
+                $this->redirect($redirectReservacion);
                 return;
             }
 
             set_mensaje('Reservación creada exitosamente', 'success');
-            $this->redirect('reservaciones/ver/' . $reservacion['id']);
+            if ($this->isAjax()) {
+                View::renderJSON([
+                    'success' => true,
+                    'redirect' => url($redirectReservacion),
+                ]);
+            }
+            $this->redirect($redirectReservacion);
         } else {
-            error_log("ERROR: No se pudo crear la reservación");
             throw new Exception('Error al crear la reservación');
         }
-        
+
     } catch (Exception $e) {
-        error_log('ERROR en guardarAction: ' . $e->getMessage());
-        error_log('Stack trace: ' . $e->getTraceAsString());
-        error_log("=== FIN DEBUG ===");
+        error_log('guardarAction: ' . $e->getMessage());
         save_old_input($_POST);
         save_form_errors($this->erroresCamposReservacionCrear($e->getMessage()));
         set_mensaje('Error: ' . $e->getMessage(), 'error');
+        if ($this->isAjax()) {
+            View::renderJSON([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'redirect' => url('reservaciones/crear'),
+            ], 422);
+        }
         $this->redirect('reservaciones/crear');
     }
 }
@@ -4019,6 +4050,11 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $habitaciones_ids = $this->getPost('habitaciones', []);
             $cortesias_ids  = $this->getPost('cortesias', []);
             $notas          = trim($this->getPost('notas', ''));
+            $descuentoAplicadoPost = $this->getPost('descuento_aplicado', null);
+            $descuentoAplicadoManual = null;
+            if ($descuentoAplicadoPost !== null && trim((string)$descuentoAplicadoPost) !== '') {
+                $descuentoAplicadoManual = max(0, (float) str_replace(',', '', (string) $descuentoAplicadoPost));
+            }
 
             // Validaciones básicas
             if (empty($huesped_id) || empty($fecha_entrada) || empty($fecha_salida) || empty($habitaciones_ids)) {
@@ -4391,12 +4427,14 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             }
 
             // Descuentos de precio (por tipo de habitación + por huésped)
-            $descuento_precio = (float)($calculo['descuento_total'] ?? 0);
+            $descuento_auto = (float)($calculo['descuento_total'] ?? 0);
+            $descuento_precio = $descuentoAplicadoManual !== null ? $descuentoAplicadoManual : $descuento_auto;
             $max_desc_precio = $subtotal - $descuento_cortesia;
             if ($descuento_precio > $max_desc_precio) {
                 $descuento_precio = max(0, $max_desc_precio);
             }
-            if ($descuento_precio > 0) {
+            $descuento_manual_difiere = $descuentoAplicadoManual !== null && abs($descuento_precio - $descuento_auto) > 0.005;
+            if ($descuento_auto > 0 || $descuento_precio > 0) {
                 $desc_tipo = (float)($calculo['descuento_tipo'] ?? 0);
                 $desc_huesped = (float)($calculo['descuento_huesped'] ?? 0);
                 $pdf->SetFont('Helvetica', '', 9);
@@ -4410,6 +4448,13 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                     $pdf->SetX($totalesX);
                     $pdf->Cell(40, 6, $u('Descuento del huésped:'), 0, 0, 'R');
                     $pdf->Cell(40, 6, '-$' . number_format($desc_huesped, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                }
+                if ($descuento_manual_difiere) {
+                    $pdf->SetFont('Helvetica', 'B', 9);
+                    $pdf->SetX($totalesX);
+                    $pdf->Cell(40, 6, $u('Descuento aplicado:'), 0, 0, 'R');
+                    $pdf->Cell(40, 6, '-$' . number_format($descuento_precio, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                    $pdf->SetFont('Helvetica', '', 9);
                 }
             }
 
@@ -4492,179 +4537,93 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
     private function procesarDescuentoInventario($reservacion_id) {
     try {
         $hotel_id = $this->hotelIdActual();
-        error_log("=== INICIO procesarDescuentoInventario ===");
-        error_log("Reservacion ID: " . $reservacion_id);
-        
-        // 1. Verificar configuración de inventario
-        $sql = "SELECT COUNT(*) as total
-                FROM inventario_config_habitacion
-                WHERE hotel_id = ?
-                AND activo = 1";
-        $stmt = $this->db->prepare($sql);
+
+        // Verificar si hay configuración de inventario activa
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) as total FROM inventario_config_habitacion WHERE hotel_id = ? AND activo = 1"
+        );
         $stmt->execute([$hotel_id]);
-        $config_count = $stmt->fetch()['total'];
-        error_log("Configuraciones activas de inventario: " . $config_count);
-        
-        if ($config_count == 0) {
-            error_log("ADVERTENCIA: No hay configuraciones de inventario activas");
-            $_SESSION['mensaje_inventario'] = "No hay productos configurados para descuento automático";
-            $_SESSION['tipo_mensaje'] = 'warning';
+        if ((int)$stmt->fetch()['total'] === 0) {
             return;
         }
-        
-        // 2. Obtener todas las habitaciones de la reservación
-        $sql = "SELECT rh.habitacion_id, h.numero, h.tipo
-                FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h
-                    ON rh.habitacion_id = h.id
-                    AND h.hotel_id = rh.hotel_id
-                INNER JOIN reservaciones r
-                    ON r.id = rh.reservacion_id
-                    AND r.hotel_id = rh.hotel_id
-                WHERE rh.reservacion_id = ?
-                AND rh.hotel_id = ?
-                AND h.hotel_id = ?
-                AND r.hotel_id = ?";
-        
-        $stmt = $this->db->prepare($sql);
+
+        // Obtener habitaciones de la reservación
+        $stmt = $this->db->prepare(
+            "SELECT rh.habitacion_id, h.numero, h.tipo
+             FROM reservacion_habitaciones rh
+             INNER JOIN habitaciones h ON h.id = rh.habitacion_id AND h.hotel_id = rh.hotel_id
+             INNER JOIN reservaciones r ON r.id = rh.reservacion_id AND r.hotel_id = rh.hotel_id
+             WHERE rh.reservacion_id = ? AND rh.hotel_id = ? AND h.hotel_id = ? AND r.hotel_id = ?"
+        );
         $stmt->execute([$reservacion_id, $hotel_id, $hotel_id, $hotel_id]);
         $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        error_log("Habitaciones encontradas: " . count($habitaciones));
-        foreach ($habitaciones as $hab) {
-            error_log("  - Habitación {$hab['numero']} (ID: {$hab['habitacion_id']}, Tipo: {$hab['tipo']})");
-        }
-        
+
         if (empty($habitaciones)) {
-            error_log("ERROR: No se encontraron habitaciones para la reservación");
             return;
         }
-        
-        // 3. Verificar configuración para cada tipo de habitación
-        foreach ($habitaciones as $hab) {
-            $sql = "SELECT COUNT(*) as total 
-                    FROM inventario_config_habitacion 
-                    WHERE tipo_habitacion = ?
-                    AND hotel_id = ?
-                    AND activo = 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$hab['tipo'], $hotel_id]);
-            $config_tipo = $stmt->fetch()['total'];
-            error_log("  Configuraciones para tipo '{$hab['tipo']}': " . $config_tipo);
-        }
-        
-        // 4. Cargar servicio de inventario
+
         $service_path = __DIR__ . '/../services/InventarioService.php';
-        error_log("Buscando InventarioService en: " . $service_path);
-        
         if (!file_exists($service_path)) {
-            // Intentar ruta alternativa
             $service_path_alt = __DIR__ . '/../../services/InventarioService.php';
             if (file_exists($service_path_alt)) {
                 $service_path = $service_path_alt;
-                error_log("Encontrado en ruta alternativa: " . $service_path);
             } else {
-                error_log("ERROR: No se encontró el archivo InventarioService.php");
-                $_SESSION['error_inventario'] = "Sistema de inventario no configurado";
                 return;
             }
         }
-        
+
         require_once $service_path;
-        
+
         if (!class_exists('InventarioService')) {
-            error_log("ERROR: La clase InventarioService no existe");
-            $_SESSION['error_inventario'] = "Error de configuración del inventario";
             return;
         }
-        
+
         $inventarioService = new InventarioService($this->db);
-        error_log("InventarioService creado correctamente");
-        
         $total_productos_descontados = 0;
         $productos_sin_stock = [];
         $resumen_descuentos = [];
-        
-        // 5. Procesar descuento para cada habitación
+
         foreach ($habitaciones as $hab) {
-            error_log("Procesando habitación {$hab['numero']} (Tipo: {$hab['tipo']})...");
-            
-            // Verificar disponibilidad primero
-            $disponibilidad = $inventarioService->verificarDisponibilidad($hab['habitacion_id']);
-            error_log("  Disponibilidad: " . json_encode($disponibilidad));
-            
-            // Procesar descuento
             $resultado = $inventarioService->descontarInventarioCheckIn(
-                $hab['habitacion_id'], 
+                $hab['habitacion_id'],
                 $reservacion_id
             );
-            
-            error_log("  Resultado: " . json_encode($resultado));
-            
+
             if ($resultado['success']) {
                 if (!empty($resultado['productos_descontados'])) {
                     $total_productos_descontados += count($resultado['productos_descontados']);
                     $resumen_descuentos[$hab['numero']] = $resultado['productos_descontados'];
-                    
-                    foreach ($resultado['productos_descontados'] as $prod) {
-                        error_log("    ✓ Descontado: {$prod['cantidad']} {$prod['unidad']} de {$prod['nombre']}");
-                    }
                 }
-                
                 if (!empty($resultado['productos_sin_stock'])) {
                     foreach ($resultado['productos_sin_stock'] as $producto) {
                         $productos_sin_stock[] = $producto['nombre'] . " (Hab. {$hab['numero']})";
-                        error_log("    ⚠️ Sin stock: {$producto['nombre']}");
                     }
                 }
-            } else {
-                error_log("  ERROR: " . ($resultado['error'] ?? 'Error desconocido'));
             }
         }
-        
-        // 6. Preparar mensaje de retroalimentación
+
         if ($total_productos_descontados > 0) {
-            $mensaje = "✔ Se descontaron automáticamente del inventario: ";
             $detalles = [];
-            
-            foreach ($resumen_descuentos as $habitacion => $productos) {
+            foreach ($resumen_descuentos as $productos) {
                 foreach ($productos as $prod) {
-                    $detalles[] = $prod['cantidad'] . " " . $prod['unidad'] . " de " . $prod['nombre'];
+                    $detalles[] = $prod['cantidad'] . ' ' . $prod['unidad'] . ' de ' . $prod['nombre'];
                 }
             }
-            
-            $mensaje .= implode(', ', $detalles);
-            
-            $_SESSION['mensaje_inventario'] = $mensaje;
+            $_SESSION['mensaje_inventario'] = 'Se descontaron del inventario: ' . implode(', ', $detalles);
             $_SESSION['tipo_mensaje'] = 'success';
-            
-            error_log("ÉXITO: " . $mensaje);
-        } else {
-            $mensaje = "No se encontraron productos configurados para descuento automático";
-            $_SESSION['mensaje_inventario'] = $mensaje;
-            $_SESSION['tipo_mensaje'] = 'warning';
-            
-            error_log("ADVERTENCIA: " . $mensaje);
         }
-        
-        // Agregar mensaje sobre productos sin stock
+
         if (!empty($productos_sin_stock)) {
-            $mensaje_stock = "ATENCIÓN: Los siguientes productos no tenían stock suficiente: " . 
-                           implode(', ', $productos_sin_stock);
-            
-            $_SESSION['mensaje_inventario'] = ($_SESSION['mensaje_inventario'] ?? '') . " | " . $mensaje_stock;
+            $aviso = 'Sin stock suficiente: ' . implode(', ', $productos_sin_stock);
+            $_SESSION['mensaje_inventario'] = (($_SESSION['mensaje_inventario'] ?? '') !== ''
+                ? $_SESSION['mensaje_inventario'] . ' | '
+                : '') . $aviso;
             $_SESSION['tipo_mensaje'] = 'warning';
-            
-            error_log($mensaje_stock);
         }
-        
-        error_log("=== FIN procesarDescuentoInventario ===");
-        
+
     } catch (Exception $e) {
-        error_log("ERROR CRÍTICO en procesarDescuentoInventario: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        
-        $_SESSION['error_inventario'] = "Advertencia: No se pudo procesar el descuento automático de inventario";
+        error_log('procesarDescuentoInventario: ' . $e->getMessage());
+        $_SESSION['error_inventario'] = 'No se pudo procesar el descuento automatico de inventario';
     }
 }
     /**
@@ -4705,7 +4664,21 @@ public function checkOutRapidoAction() {
             ]);
             exit;
         }
-        
+
+        $resumenPagos = $this->reservacionModel->resumenPagos($id, $this->hotelIdActual());
+        $saldoPendiente = (float)($resumenPagos['saldo'] ?? 0);
+        if ($saldoPendiente > 0.004) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'saldo_pendiente' => true,
+                'saldo' => $saldoPendiente,
+                'message' => 'Hay un saldo pendiente de $' . number_format($saldoPendiente, 2) . '. Cobra el saldo antes de registrar la salida.',
+                'url_reservacion' => function_exists('url') ? url('reservaciones/ver/' . $id) : null,
+            ]);
+            exit;
+        }
+
         // NUEVO: Verificar controles remotos ANTES del check-out
         require_once __DIR__ . '/../models/ControlRemoto.php';
         $controlRemoto = new ControlRemoto();
@@ -4742,13 +4715,9 @@ public function checkOutRapidoAction() {
         // Usar el método checkOut del modelo
         $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
         
-        // Procesar recogida automática de llaves
-        $this->procesarRecogidaLlavesCheckOut($id);
-        
-        // Procesar recogida automática de controles remotos
-        $this->procesarRecogidaRemotosCheckOut($id);
-        
         if ($resultado) {
+            $this->procesarRecogidaLlavesCheckOut($id);
+            $this->procesarRecogidaRemotosCheckOut($id);
             $response = [
                 'success' => true,
                 'huesped' => $huesped['nombre_completo'],
@@ -5350,14 +5319,19 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             // Verificar en qué corte están los movimientos actuales de esta reservación
             $sql_check_corte = "SELECT mc.id, mc.corte_id, cc.estado as corte_estado, c.id as caja_id
                                 FROM movimientos_caja mc
+                                INNER JOIN reservaciones r
+                                    ON mc.reservacion_id = r.id
+                                    AND mc.hotel_id = r.hotel_id
                                 LEFT JOIN cortes_caja cc ON mc.corte_id = cc.id AND cc.hotel_id = mc.hotel_id
                                 LEFT JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
                                 WHERE mc.reservacion_id = ?
                                 AND mc.hotel_id = ?
+                                AND r.hotel_id = ?
+                                AND mc.created_at >= r.created_at
                                 AND mc.categoria = 'Hospedaje'
                                 AND mc.tipo = 'ingreso'";
             $stmt_check = $this->db->prepare($sql_check_corte);
-            $stmt_check->execute([$id, $hotel_id]);
+            $stmt_check->execute([$id, $hotel_id, $hotel_id]);
             $movimientos_existentes = $stmt_check->fetchAll(PDO::FETCH_ASSOC);
             
             $hay_movimientos_en_corte_cerrado = false;
@@ -5377,9 +5351,9 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 error_log("Cambio de método Res #$id: movimientos en corte cerrado, solo se actualizó reservacion_pagos. No se tocó movimientos_caja.");
             } else {
                 // Los movimientos están en el corte actual o no existen → seguro eliminar y recrear
-                $sql = "DELETE FROM movimientos_caja WHERE reservacion_id = ? AND hotel_id = ? AND categoria = 'Hospedaje'";
+                $sql = "DELETE FROM movimientos_caja WHERE reservacion_id = ? AND hotel_id = ? AND categoria = 'Hospedaje' AND created_at >= ?";
                 $stmt = $this->db->prepare($sql);
-                $stmt->execute([$id, $hotel_id]);
+                $stmt->execute([$id, $hotel_id, $reservacion['created_at'] ?? '1970-01-01 00:00:00']);
                 
                 // Insertar nuevos movimientos en el corte actual
                 foreach ($pagos as $pago) {
@@ -5624,14 +5598,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             $precio_anterior = floatval($reservacion['precio_total']);
             $precio_nuevo    = floatval($calculo['precio_total']);
             $diferencia      = round($precio_nuevo - $precio_anterior, 2);
+            $resumenAntes = $model->resumenPagos($reservacion_id, $hotel_id);
+            $pagado_antes = (float)($resumenAntes['pagado'] ?? 0);
+
+            $db->beginTransaction();
 
             $resultado = $model->modificarFechaSalida(
                 $reservacion_id,
                 $nueva_fecha_salida,
-                $calculo['precio_total']
+                $calculo['precio_total'],
+                $calculo['desglose'] ?? []
             );
 
             if (!$resultado) {
+                if ($db->enTransaccion()) {
+                    $db->rollBack();
+                }
                 echo json_encode(['success' => false, 'mensaje' => 'Error al guardar en la base de datos.']);
                 return;
             }
@@ -5639,13 +5621,20 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             // ========== AJUSTE DE CAJA ==========
             // Solo si la reservación ya tiene check-in (ya se cobró)
             $ajuste_caja = null;
+            $saldo_pendiente_actual = null;
             if ($reservacion['estado'] === 'checked_in' && $diferencia != 0 && $corteActual) {
                 if ((int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    if ($db->enTransaccion()) {
+                        $db->rollBack();
+                    }
                     echo json_encode(['success' => false, 'mensaje' => 'Reservacion no encontrada.']);
                     return;
                 }
 
                 if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    if ($db->enTransaccion()) {
+                        $db->rollBack();
+                    }
                     echo json_encode(['success' => false, 'mensaje' => 'El corte abierto no pertenece al hotel actual.']);
                     return;
                 }
@@ -5662,122 +5651,98 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
                 if ($diferencia < 0) {
                     // ─── REDUCCIÓN DE DÍAS → DEVOLUCIÓN (gasto) ───
-                    $monto_devolver = abs($diferencia);
+                    $monto_devolver = round(max(0, min(abs($diferencia), $pagado_antes - $precio_nuevo)), 2);
 
-                    // Obtener o crear categoría de Devoluciones
-                    $stmt_cat = $db->query(
-                        "SELECT id FROM categorias_movimientos 
-                         WHERE nombre = 'Devoluciones' AND tipo = 'egreso' AND activa = 1 
-                         LIMIT 1"
-                    );
-                    $cat = $stmt_cat->fetch();
-
-                    if (!$cat) {
-                        $db->query(
-                            "INSERT INTO categorias_movimientos 
-                             (nombre, tipo, descripcion, icono, color, activa, created_at) 
-                             VALUES ('Devoluciones', 'egreso', 'Devoluciones por ajustes', 
-                                     'fas fa-undo', '#EF4444', 1, NOW())"
-                        );
-                        $categoria_id = $db->lastInsertId();
+                    if ($monto_devolver <= 0.004) {
+                        error_log("Reduccion de dias sin devolucion: pagado $" . $pagado_antes . ", nuevo total $" . $precio_nuevo . " - Reservacion #" . $reservacion_id);
                     } else {
-                        $categoria_id = $cat['id'];
+
+                        // Obtener o crear categoría de Devoluciones
+                        $stmt_cat = $db->query(
+                            "SELECT id FROM categorias_movimientos
+                             WHERE nombre = 'Devoluciones' AND tipo = 'egreso' AND activa = 1
+                             LIMIT 1"
+                        );
+                        $cat = $stmt_cat->fetch();
+
+                        if (!$cat) {
+                            $db->query(
+                                "INSERT INTO categorias_movimientos
+                                 (nombre, tipo, descripcion, icono, color, activa, created_at)
+                                 VALUES ('Devoluciones', 'egreso', 'Devoluciones por ajustes',
+                                         'fas fa-undo', '#EF4444', 1, NOW())"
+                            );
+                            $categoria_id = $db->lastInsertId();
+                        } else {
+                            $categoria_id = $cat['id'];
+                        }
+
+                        $descripcion = "Devolución por reducción de días - Reservación #" . $reservacion_id .
+                                       " (" . $precio_anterior . " → " . $precio_nuevo . ")";
+
+                        $stmtMov = $db->query(
+                            "INSERT INTO movimientos_caja
+                             (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
+                               referencia, reservacion_id, usuario_id, corte_id, created_at)
+                             VALUES (?, 'gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                            [
+                                $hotel_id,
+                                $categoria_id,
+                                $descripcion,
+                                $monto_devolver,
+                                $metodo_pago,
+                                'Ajuste por modificación de días',
+                                $reservacion_id,
+                                $usuario_id,
+                                $corteActual['id']
+                            ]
+                        );
+
+                        if (!$stmtMov || !$model->registrarAjustePagoPorDevolucion($reservacion_id, $monto_devolver, $metodo_pago, $hotel_id)) {
+                            throw new Exception('No se pudo registrar la devolucion de la reservacion.');
+                        }
+
+                        $ajuste_caja = [
+                            'tipo' => 'devolucion',
+                            'monto' => $monto_devolver,
+                            'metodo_pago' => $metodo_pago
+                        ];
+
+                        error_log("Devolucion registrada: $" . $monto_devolver . " (" . $metodo_pago . ") - Reservacion #" . $reservacion_id);
                     }
-
-                    $descripcion = "Devolución por reducción de días - Reservación #" . $reservacion_id .
-                                   " (" . $precio_anterior . " → " . $precio_nuevo . ")";
-
-                    $db->query(
-                        "INSERT INTO movimientos_caja 
-                         (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
-                           referencia, reservacion_id, usuario_id, corte_id, created_at)
-                         VALUES (?, 'gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-                        [
-                            $hotel_id,
-                            $categoria_id,
-                            $descripcion,
-                            $monto_devolver,
-                            $metodo_pago,
-                            'Ajuste por modificación de días',
-                            $reservacion_id,
-                            $usuario_id,
-                            $corteActual['id']
-                        ]
-                    );
-
-                    $ajuste_caja = [
-                        'tipo' => 'devolucion',
-                        'monto' => $monto_devolver,
-                        'metodo_pago' => $metodo_pago
-                    ];
-
-                    error_log("Devolución registrada: $" . $monto_devolver . " (" . $metodo_pago . ") - Reservación #" . $reservacion_id);
 
                 } else {
-                    // ─── EXTENSIÓN DE DÍAS → COBRO ADICIONAL (ingreso) ───
-                    $monto_cobrar = $diferencia;
-
-                    // Obtener categoría de Hospedaje
-                    $stmt_cat = $db->query(
-                        "SELECT id FROM categorias_movimientos 
-                         WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 
-                         LIMIT 1"
-                    );
-                    $cat = $stmt_cat->fetch();
-
-                    if (!$cat) {
-                        $db->query(
-                            "INSERT INTO categorias_movimientos 
-                             (nombre, tipo, descripcion, icono, color, activa, created_at) 
-                             VALUES ('Hospedaje', 'ingreso', 'Ingresos por hospedaje', 
-                                     'fas fa-bed', '#10B981', 1, NOW())"
-                        );
-                        $categoria_id = $db->lastInsertId();
-                    } else {
-                        $categoria_id = $cat['id'];
-                    }
-
-                    $descripcion = "Cobro adicional por extensión de días - Reservación #" . $reservacion_id .
-                                   " (" . $precio_anterior . " → " . $precio_nuevo . ")";
-
-                    $db->query(
-                        "INSERT INTO movimientos_caja 
-                         (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
-                           referencia, reservacion_id, usuario_id, corte_id, created_at)
-                         VALUES (?, 'ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-                        [
-                            $hotel_id,
-                            $categoria_id,
-                            $descripcion,
-                            $monto_cobrar,
-                            $metodo_pago,
-                            'Ajuste por modificación de días',
-                            $reservacion_id,
-                            $usuario_id,
-                            $corteActual['id']
-                        ]
-                    );
-
-                    $ajuste_caja = [
-                        'tipo' => 'cobro_adicional',
-                        'monto' => $monto_cobrar,
-                        'metodo_pago' => $metodo_pago
-                    ];
-
-                    error_log("Cobro adicional registrado: $" . $monto_cobrar . " (" . $metodo_pago . ") - Reservación #" . $reservacion_id);
+                    error_log("Extension de dias genero saldo pendiente: $" . $diferencia . " - Reservacion #" . $reservacion_id);
                 }
             }
             // ========== FIN AJUSTE DE CAJA ==========
+
+            try {
+                $resumenActualizado = $model->resumenPagos($reservacion_id, $hotel_id);
+                $saldo_pendiente_actual = (float)($resumenActualizado['saldo'] ?? 0);
+            } catch (Throwable $e) {
+                $saldo_pendiente_actual = max(0, round($precio_nuevo - $precio_anterior, 2));
+            }
+
+            if ($db->enTransaccion()) {
+                $db->commit();
+            }
 
             echo json_encode([
                 'success'      => true,
                 'nuevo_precio' => $calculo['precio_total'],
                 'nueva_fecha'  => $nueva_fecha_salida,
                 'noches'       => $calculo['noches'],
+                'diferencia'   => $diferencia,
+                'saldo_pendiente' => $saldo_pendiente_actual,
+                'requiere_cobro' => ($diferencia > 0.004 && $saldo_pendiente_actual > 0.004),
                 'ajuste_caja'  => $ajuste_caja
             ]);
 
         } catch (Exception $e) {
+            if (isset($db) && $db instanceof Database && $db->enTransaccion()) {
+                $db->rollBack();
+            }
             error_log("Error modificarDias: " . $e->getMessage());
             echo json_encode(['success' => false, 'mensaje' => 'Error interno: ' . $e->getMessage()]);
         }

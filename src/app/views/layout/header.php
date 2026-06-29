@@ -503,13 +503,24 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
                 position: absolute;
                 left: 50%;
                 transform: translateX(-50%);
-                height: 40px;
+                height: 44px;
                 /* IMPORTANTE: Ancho fijo para evitar que se redimensione */
                 width: auto;
                 min-width: 120px; /* Ancho mínimo */
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                padding: 2px 8px;
+                border-radius: 12px;
+                color: #fff;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            .mobile-header-logo:focus-visible {
+                outline: 2px solid rgba(255, 255, 255, 0.95);
+                outline-offset: 3px;
+                background: rgba(255, 255, 255, 0.12);
             }
             
           .mobile-header-logo img {
@@ -625,6 +636,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     </span>
     <button data-action="update"><i class="fas fa-bolt"></i><span>Actualizar</span></button>
   </div>
+
+  <!-- ── Toast / alertas flotantes (siempre visibles, no se pierden con el scroll) ── -->
+  <?php include APP_PATH . '/views/partials/toast.php'; ?>
+
     <!-- Incluir pantalla de carga -->
     <?php include APP_PATH . '/views/components/loading-screen.php'; ?>
     
@@ -634,12 +649,15 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             <i class="fas fa-bars"></i>
         </button>
         
-        <div class="mobile-header-logo">
+        <a href="<?= url('dashboard') ?>"
+           class="mobile-header-logo"
+           aria-label="Ir al dashboard"
+           title="Ir al dashboard">
             <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
             <?php if (!$layoutEsPanelSaas): ?>
             <span class="mobile-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></span>
             <?php endif; ?>
-        </div>
+        </a>
         
         <!-- Acciones: sync + install -->
         <div class="mobile-header-actions" style="display:flex;align-items:center;gap:6px;">
@@ -698,37 +716,8 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             
             <!-- Contenido de la página -->
             <main class="main-content">
-                <!-- Mensajes Flash -->
-                <?php if ($mensaje = get_mensaje()): ?>
-                    <?php 
-                    // Asegurar que el mensaje tenga la estructura correcta
-                    if (is_string($mensaje)) {
-                        $mensaje = ['texto' => $mensaje, 'tipo' => 'info'];
-                    }
-                    
-                    // Obtener valores con defaults seguros
-                    $texto = $mensaje['texto'] ?? 'Operación realizada';
-                    $tipo = $mensaje['tipo'] ?? 'info';
-                    ?>
-                    <div class="mx-6 mt-4 fade-in">
-                        <div class="p-4 rounded-lg flex items-center justify-between <?php 
-                            echo $tipo === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 
-                                ($tipo === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
-                                'bg-blue-50 text-blue-700 border border-blue-200'); 
-                        ?>">
-                            <div class="flex items-center">
-                                <i class="fas <?php 
-                                    echo $tipo === 'error' ? 'fa-exclamation-circle' : 
-                                        ($tipo === 'success' ? 'fa-check-circle' : 'fa-info-circle'); 
-                                ?> mr-3"></i>
-                                <span><?= htmlspecialchars($texto) ?></span>
-                            </div>
-                            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                <?php endif; ?>
+                <!-- Mensajes Flash → ahora se renderizan como toast flotante (siempre visible) en partials/toast.php -->
+
 
     <!-- SCRIPT PARA AUTO-HIDE -->
     <script>

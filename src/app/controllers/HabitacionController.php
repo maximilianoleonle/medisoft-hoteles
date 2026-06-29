@@ -357,9 +357,6 @@ private function anexarResumenTareasHabitaciones(int $hotelId, array $habitacion
 private function mostrarDisponibilidadPorFecha($filtros) {
     $fecha_consulta = $filtros['fecha_consulta'];
     
-    error_log("===== INICIO DISPONIBILIDAD POR FECHA =====");
-    error_log("Fecha: $fecha_consulta");
-    
     $db = Database::getInstance();
     
     // Obtener TODAS las habitaciones activas primero
@@ -570,9 +567,6 @@ public function verAction() {
     // IMPORTANTE: Obtener ocupación actual SIEMPRE
 $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
 
-// DEBUG TEMPORAL - AGREGAR ESTAS LÍNEAS
-error_log("DEBUG ocupacion_actual para habitacion $id:");
-error_log(print_r($ocupacion_actual, true));
     $proxima_salida = null;
     $historial_reciente = [];
     $mantenimiento_actual = null;
@@ -650,6 +644,19 @@ error_log(print_r($ocupacion_actual, true));
     require_once __DIR__ . '/../models/Mantenimiento.php';
     $mantenimientoModel = new Mantenimiento();
     $mantenimientos_programados = $mantenimientoModel->programadosPorHabitacion($id);
+    $reservas_mantenimiento_futuras = $this->reservacionesMantenimientoHabitacion(
+        (int)$id,
+        date('Y-m-d'),
+        date('Y-m-d', strtotime('+365 days')),
+        40
+    );
+    $reservas_mantenimiento_proximas = array_values(array_filter(
+        $reservas_mantenimiento_futuras,
+        static function ($reserva) {
+            $fechaEntrada = substr((string)($reserva['fecha_entrada'] ?? ''), 0, 10);
+            return $fechaEntrada !== '' && $fechaEntrada <= date('Y-m-d', strtotime('+7 days'));
+        }
+    ));
     
     // Obtener historial reciente
     $historial_reciente = [];
@@ -745,6 +752,8 @@ error_log(print_r($ocupacion_actual, true));
         'historial_reciente' => $historial_reciente,
         'mantenimiento_actual' => $mantenimiento_actual,
         'mantenimientos_programados' => $mantenimientos_programados ?? [],
+        'reservas_mantenimiento_futuras' => $reservas_mantenimiento_futuras,
+        'reservas_mantenimiento_proximas' => $reservas_mantenimiento_proximas,
         'tareas_contextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'habitacion', (int)$id, 8),
         'reservacion_pendiente' => $reservacion_pendiente,
         'estados' => Habitacion::getEstados(),
@@ -1537,6 +1546,7 @@ public function mantenimientoAction() {
     
     $db = Database::getInstance();
     $habitacion = $this->habitacionModel->find($id);
+    $reservasConflictoMantenimiento = [];
 
     if (!$habitacion) {
         set_mensaje('Habitación no encontrada', 'error');
@@ -1580,6 +1590,20 @@ public function mantenimientoAction() {
             }
 
             // Actualizar estado de habitación
+            $reservasConflictoMantenimiento = $this->reservacionesMantenimientoHabitacion(
+                (int)$id,
+                date('Y-m-d'),
+                date('Y-m-d', strtotime('+7 days')),
+                8
+            );
+
+            if (!empty($reservasConflictoMantenimiento) && !$this->confirmoConflictoMantenimiento()) {
+                $db->rollBack();
+                set_mensaje($this->mensajeConflictoMantenimiento($reservasConflictoMantenimiento, 'iniciar'), 'warning');
+                $this->redirect('habitaciones/' . $id);
+                return;
+            }
+
             $this->habitacionModel->update($id, ['estado' => 'mantenimiento']);
             
             // Registrar en tabla de mantenimientos - AGREGADO fecha_inicio y estado
@@ -1605,7 +1629,15 @@ public function mantenimientoAction() {
                 $motivo ?: 'La habitacion paso a mantenimiento.',
                 $prioridad === 'alta' ? 'alta' : 'media'
             );
-            
+            if (!empty($reservasConflictoMantenimiento)) {
+                $this->registrarNotificacionMantenimientoReserva(
+                    (int)$id,
+                    (string)($habitacion['numero'] ?? $id),
+                    $reservasConflictoMantenimiento,
+                    'iniciado'
+                );
+            }
+
         } elseif ($accion == 'finalizar') {
             if (($habitacion['estado'] ?? '') !== 'mantenimiento') {
                 throw new RuntimeException('Solo se puede finalizar mantenimiento de una habitaciÃ³n en mantenimiento');
@@ -1773,12 +1805,12 @@ public function programarMantenimientoAction() {
     $stmt = $db->query($sql, [$id, $hotelId, $fecha_fin_check_ext, $fecha_inicio]);
     $reservaciones_conflicto = $stmt->fetchAll();
     
-    if (!empty($reservaciones_conflicto)) {
+    if (!empty($reservaciones_conflicto) && !$this->confirmoConflictoMantenimiento()) {
         $conflictos = [];
         foreach ($reservaciones_conflicto as $res) {
             $conflictos[] = $res['nombre_completo'] . ' (' . date('d/m/Y', strtotime($res['fecha_entrada'])) . ' - ' . date('d/m/Y', strtotime($res['fecha_salida'])) . ')';
         }
-        set_mensaje('No se puede programar: hay reservaciones en esas fechas: ' . implode(', ', $conflictos), 'error');
+        set_mensaje('Esta habitacion tiene reservaciones en esas fechas. Confirma el aviso de riesgo para programar de todos modos: ' . implode(', ', $conflictos), 'warning');
         $this->redirect('habitaciones/' . $id);
         return;
     }
@@ -1806,6 +1838,14 @@ public function programarMantenimientoAction() {
             'Programado para el ' . $fecha_txt . $fin_txt . '.',
             $prioridad === 'alta' ? 'alta' : 'media'
         );
+        if (!empty($reservaciones_conflicto)) {
+            $this->registrarNotificacionMantenimientoReserva(
+                (int)$id,
+                (string)($habitacion['numero'] ?? $id),
+                $reservaciones_conflicto,
+                'programado'
+            );
+        }
     } else {
         set_mensaje('Error al programar el mantenimiento', 'error');
     }
@@ -1888,6 +1928,131 @@ private function registrarNotificacionHabitacion(int $habitacionId, string $tipo
         'entidad_id' => $habitacionId,
         'url' => 'habitaciones/' . $habitacionId,
         'dedupe_key' => 'habitaciones.' . $tipo . '.' . $habitacionId . '.' . date('YmdHis'),
+        'creada_por' => function_exists('user_id') ? user_id() : null,
+    ]);
+}
+
+/**
+ * Reservaciones activas que se cruzan con una ventana de mantenimiento.
+ */
+private function reservacionesMantenimientoHabitacion(int $habitacionId, string $fechaInicio, ?string $fechaFin = null, int $limite = 8): array {
+    if ($habitacionId <= 0) {
+        return [];
+    }
+
+    $fechaInicio = substr(trim($fechaInicio), 0, 10);
+    $fechaFin = substr(trim((string)($fechaFin ?: $fechaInicio)), 0, 10);
+
+    if ($fechaInicio === '' || strtotime($fechaInicio) === false) {
+        return [];
+    }
+
+    if ($fechaFin === '' || strtotime($fechaFin) === false || $fechaFin < $fechaInicio) {
+        $fechaFin = $fechaInicio;
+    }
+
+    $limite = max(1, min(40, (int)$limite));
+    $fechaFinExclusiva = date('Y-m-d', strtotime($fechaFin . ' +1 day'));
+    $hotelId = $this->hotelIdActual();
+
+    try {
+        $db = Database::getInstance();
+        $sql = "SELECT
+                    r.id,
+                    r.fecha_entrada,
+                    r.fecha_salida,
+                    r.hora_llegada_estimada,
+                    r.estado,
+                    h.nombre_completo,
+                    h.telefono,
+                    COUNT(DISTINCT rh2.habitacion_id) AS total_habitaciones
+                FROM reservaciones r
+                INNER JOIN reservacion_habitaciones rh
+                    ON rh.reservacion_id = r.id
+                INNER JOIN habitaciones hab_scope
+                    ON hab_scope.id = rh.habitacion_id
+                   AND hab_scope.hotel_id = r.hotel_id
+                INNER JOIN huespedes h
+                    ON h.id = r.huesped_id
+                   AND h.hotel_id = r.hotel_id
+                LEFT JOIN reservacion_habitaciones rh2
+                    ON rh2.reservacion_id = r.id
+                WHERE r.hotel_id = ?
+                  AND rh.habitacion_id = ?
+                  AND hab_scope.hotel_id = ?
+                  AND r.estado IN ('confirmada', 'checked_in')
+                  AND r.fecha_entrada < ?
+                  AND r.fecha_salida > ?
+                GROUP BY r.id, r.fecha_entrada, r.fecha_salida, r.hora_llegada_estimada, r.estado, h.nombre_completo, h.telefono
+                ORDER BY r.fecha_entrada ASC, COALESCE(r.hora_llegada_estimada, '23:59:59') ASC, r.id ASC
+                LIMIT {$limite}";
+
+        $stmt = $db->query($sql, [
+            $hotelId,
+            $habitacionId,
+            $hotelId,
+            $fechaFinExclusiva,
+            $fechaInicio,
+        ]);
+
+        $rows = $stmt ? $stmt->fetchAll() : [];
+        return is_array($rows) ? $rows : [];
+    } catch (Throwable $e) {
+        error_log('No se pudieron consultar reservaciones para mantenimiento: ' . $e->getMessage());
+        return [];
+    }
+}
+
+private function confirmoConflictoMantenimiento(): bool {
+    return trim((string)$this->getPost('confirmar_conflicto_mantenimiento', '')) === '1';
+}
+
+private function mensajeConflictoMantenimiento(array $reservas, string $accion): string {
+    $accionTexto = $accion === 'programar' ? 'programar este mantenimiento' : 'iniciar mantenimiento';
+    $detalles = [];
+
+    foreach (array_slice($reservas, 0, 3) as $reserva) {
+        $nombre = trim((string)($reserva['nombre_completo'] ?? 'Huesped'));
+        $entrada = !empty($reserva['fecha_entrada']) ? date('d/m/Y', strtotime((string)$reserva['fecha_entrada'])) : 'sin fecha';
+        $hora = trim((string)($reserva['hora_llegada_estimada'] ?? ''));
+        $detalles[] = $nombre . ' llega ' . $entrada . ($hora !== '' ? ' ' . substr($hora, 0, 5) : '');
+    }
+
+    $resumen = implode('; ', $detalles);
+    if (count($reservas) > 3) {
+        $resumen .= '; +' . (count($reservas) - 3) . ' mas';
+    }
+
+    return 'Atencion: antes de ' . $accionTexto . ', esta habitacion tiene reservacion proxima o empalmada. ' .
+        $resumen . '. Marca la confirmacion del aviso si el hotel ya gestiono el riesgo.';
+}
+
+private function registrarNotificacionMantenimientoReserva(int $habitacionId, string $habitacionNumero, array $reservas, string $accion): void {
+    if ($habitacionId <= 0 || empty($reservas)) {
+        return;
+    }
+
+    $primera = $reservas[0];
+    $nombre = trim((string)($primera['nombre_completo'] ?? 'Huesped'));
+    $entrada = !empty($primera['fecha_entrada']) ? date('d/m/Y', strtotime((string)$primera['fecha_entrada'])) : 'sin fecha';
+    $hora = trim((string)($primera['hora_llegada_estimada'] ?? ''));
+    $horaTexto = $hora !== '' ? ' a las ' . substr($hora, 0, 5) : '';
+    $accionTexto = $accion === 'programado' ? 'programado' : 'iniciado';
+    $total = count($reservas);
+
+    NotificacionService::crear([
+        'hotel_id' => $this->hotelIdActual(),
+        'modulo' => 'habitaciones',
+        'tipo' => 'mantenimiento_reserva_proxima',
+        'severidad' => 'alta',
+        'titulo' => 'Mantenimiento con reserva proxima',
+        'mensaje' => 'Hab. ' . $habitacionNumero . ': mantenimiento ' . $accionTexto .
+            ' con ' . $total . ' reservacion(es) activa(s). Proxima llegada: ' . $nombre . ' el ' . $entrada . $horaTexto .
+            '. Revisar reasignacion o seguimiento operativo.',
+        'entidad_tipo' => 'habitacion',
+        'entidad_id' => $habitacionId,
+        'url' => 'habitaciones/' . $habitacionId,
+        'dedupe_key' => 'habitaciones.mantenimiento_reserva.' . $habitacionId . '.' . $accion . '.' . date('YmdHi'),
         'creada_por' => function_exists('user_id') ? user_id() : null,
     ]);
 }

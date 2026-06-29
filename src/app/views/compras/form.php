@@ -60,6 +60,7 @@ $notasValor = old('notas', '');
 $productosSeleccionados = is_array($oldInputCompra['producto_id'] ?? null) ? array_values($oldInputCompra['producto_id']) : [];
 $cantidadesFormulario = is_array($oldInputCompra['cantidad'] ?? null) ? array_values($oldInputCompra['cantidad']) : [];
 $costosFormulario = is_array($oldInputCompra['costo_unitario'] ?? null) ? array_values($oldInputCompra['costo_unitario']) : [];
+$proveedoresPorProductoFormulario = is_array($oldInputCompra['detalle_proveedor_id'] ?? null) ? array_values($oldInputCompra['detalle_proveedor_id']) : [];
 $faltanCatalogos = empty($proveedores) || empty($productos);
 ?>
 
@@ -107,6 +108,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 .purchase-form-page .cp-panel { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .purchase-form-page label { display: block; font-size: .74rem; font-weight: 700; color: var(--cp-muted); text-transform: uppercase; letter-spacing: .045em; margin-bottom: 6px; }
 .purchase-form-page .cp-req { color: var(--cp-gold-ink); }
+.purchase-form-page .cp-optional { color: var(--cp-muted); font-size: .68rem; font-weight: 700; text-transform: none; letter-spacing: 0; }
 .purchase-form-page .cp-input, .purchase-form-page .cp-textarea {
     width: 100%; border: 1px solid var(--cp-border); background: var(--cp-surface-warm); border-radius: 11px; padding: 11px 13px;
     color: var(--cp-text); font-weight: 600; font-size: .9rem; font-family: var(--cp-sans); transition: border-color .16s ease, box-shadow .16s ease;
@@ -134,7 +136,11 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 .purchase-form-page .cp-section-title { font-family: var(--cp-serif); font-size: 1.4rem; font-weight: 700; color: var(--cp-heading); }
 .purchase-form-page .cp-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--cp-warning-bg); color: color-mix(in srgb, var(--cp-warning) 82%, #000); border: 1px solid color-mix(in srgb, var(--cp-warning) 28%, #fff); font-size: .72rem; font-weight: 700; }
 .purchase-form-page .cp-line-row { border: 1px solid var(--cp-border); background: var(--cp-surface-warm); border-radius: 13px; padding: 13px; }
+.purchase-form-page .cp-line-row.has-provider-override { border-color: var(--cp-gold-line); background: #fff; box-shadow: 0 10px 24px -22px color-mix(in srgb, var(--cp-gold) 54%, transparent); }
 .purchase-form-page .cp-line-row label { font-size: .68rem; }
+.purchase-form-page .cp-field-hint { margin-top: 6px; color: var(--cp-muted); font-size: .72rem; font-weight: 600; line-height: 1.35; }
+.purchase-form-page .cp-line-note { margin-top: 7px; color: var(--cp-gold-ink); font-size: .7rem; font-weight: 800; line-height: 1.25; display: none; }
+.purchase-form-page .cp-line-row.has-provider-override .cp-line-note { display: block; }
 
 .purchase-form-page .cp-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: 0 20px;
@@ -185,9 +191,9 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="proveedor_id">Proveedor <span class="cp-req">*</span></label>
-                        <select class="cp-input<?= comp_form_error_class($compraFieldErrors, 'proveedor_id') ?>" id="proveedor_id" name="proveedor_id" required<?= comp_form_error_attrs($compraFieldErrors, 'proveedor_id', 'ms-form-error-proveedor_id') ?>>
-                            <option value="">Elige un proveedor</option>
+                        <label for="proveedor_id">Proveedor general <span class="cp-optional">(opcional)</span></label>
+                        <select class="cp-input<?= comp_form_error_class($compraFieldErrors, 'proveedor_id') ?>" id="proveedor_id" name="proveedor_id"<?= comp_form_error_attrs($compraFieldErrors, 'proveedor_id', 'ms-form-error-proveedor_id') ?>>
+                            <option value="">Elige proveedor general</option>
                             <?php foreach ($proveedores as $proveedor): ?>
                                 <option value="<?= (int)$proveedor['id'] ?>" <?= $proveedorSeleccionado === (string)$proveedor['id'] ? 'selected' : '' ?>>
                                     <?= comp_form_safe($proveedor['nombre']) ?>
@@ -197,6 +203,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <?php if (comp_form_error($compraFieldErrors, 'proveedor_id')): ?>
                             <span class="cp-form-error ms-form-field-error" id="ms-form-error-proveedor_id"><?= comp_form_error($compraFieldErrors, 'proveedor_id') ?></span>
                         <?php endif; ?>
+                        <p class="cp-field-hint">Se usa solo en las lineas que digan "Usar proveedor general". Si cada producto ya tiene proveedor, puedes dejarlo vacio.</p>
                     </div>
 
                     <div>
@@ -205,6 +212,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <?php if (comp_form_error($compraFieldErrors, 'folio')): ?>
                             <span class="cp-form-error ms-form-field-error" id="ms-form-error-folio"><?= comp_form_error($compraFieldErrors, 'folio') ?></span>
                         <?php endif; ?>
+                        <p class="cp-field-hint">Si mezclas proveedores, se agregara un sufijo al folio de cada borrador.</p>
                     </div>
 
                     <div>
@@ -228,8 +236,9 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                             $productoSeleccionado = (string)($productosSeleccionados[$i] ?? '');
                             $cantidadValor = comp_form_safe($cantidadesFormulario[$i] ?? '');
                             $costoValor = comp_form_safe($costosFormulario[$i] ?? '');
+                            $proveedorLineaSeleccionado = (string)($proveedoresPorProductoFormulario[$i] ?? '');
                             ?>
-                            <div class="cp-line-row grid grid-cols-1 md:grid-cols-[1fr_130px_160px] gap-3">
+                            <div class="cp-line-row purchase-line-row grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(190px,.75fr)_120px_150px] gap-3<?= $proveedorLineaSeleccionado !== '' ? ' has-provider-override' : '' ?>">
                                 <div>
                                     <label for="producto_id_<?= $i ?>">Producto <?= $i === 0 ? '<span class="cp-req">*</span>' : '' ?></label>
                                     <select class="cp-input cp-product-select<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'producto_id_0') : '' ?>" id="producto_id_<?= $i ?>" name="producto_id[]" <?= $i === 0 ? 'required' : '' ?><?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'producto_id_0', 'ms-form-error-producto_id_0') : '' ?>>
@@ -244,6 +253,19 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                                     <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'producto_id_0')): ?>
                                         <span class="cp-form-error ms-form-field-error" id="ms-form-error-producto_id_0"><?= comp_form_error($compraFieldErrors, 'producto_id_0') ?></span>
                                     <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <label for="detalle_proveedor_id_<?= $i ?>">Proveedor del producto</label>
+                                    <select class="cp-input cp-line-provider-select" id="detalle_proveedor_id_<?= $i ?>" name="detalle_proveedor_id[]">
+                                        <option value="">Usar proveedor general</option>
+                                        <?php foreach ($proveedores as $proveedor): ?>
+                                            <option value="<?= (int)$proveedor['id'] ?>" <?= $proveedorLineaSeleccionado === (string)$proveedor['id'] ? 'selected' : '' ?>>
+                                                <?= comp_form_safe($proveedor['nombre']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="cp-line-note">Se guardara en un borrador separado para este proveedor.</p>
                                 </div>
 
                                 <div>
@@ -264,7 +286,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                             </div>
                         <?php endfor; ?>
                     </div>
-                    <p class="mt-2" style="font-size:.74rem;color:var(--cp-muted);font-weight:600">Puedes capturar hasta 5 productos. El costo se llena solo al elegir el producto; ajustalo si pagaste otro precio.</p>
+                    <p class="mt-2" style="font-size:.74rem;color:var(--cp-muted);font-weight:600">Puedes capturar hasta 5 productos. El costo se llena solo al elegir el producto; ajustalo si pagaste otro precio. Si una linea usa otro proveedor, se creara un borrador separado para mantener correcta la cuenta por pagar.</p>
                 </div>
 
                 <div class="mt-6">
@@ -299,8 +321,73 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
 <script>
 (() => {
+    const proveedorGeneral = document.getElementById('proveedor_id');
+    const proveedoresLinea = Array.from(document.querySelectorAll('.cp-line-provider-select'));
+
+    function actualizarProveedorGeneralEnLineas() {
+        if (!proveedorGeneral) {
+            return;
+        }
+
+        const selected = proveedorGeneral.options[proveedorGeneral.selectedIndex];
+        const nombreProveedor = selected && proveedorGeneral.value !== ''
+            ? selected.textContent.trim().replace(/\s+/g, ' ')
+            : '';
+
+        proveedoresLinea.forEach((select) => {
+            const opcionGeneral = select.querySelector('option[value=""]');
+            if (!opcionGeneral) {
+                return;
+            }
+
+            opcionGeneral.textContent = nombreProveedor
+                ? 'Usar proveedor general (' + nombreProveedor + ')'
+                : 'Usar proveedor general';
+        });
+    }
+
+    function actualizarRequiredProveedorGeneral() {
+        if (!proveedorGeneral) {
+            return;
+        }
+
+        const necesitaGeneral = proveedoresLinea.some((provSelect) => {
+            const row = provSelect.closest('.cp-line-row');
+            const prodSelect = row ? row.querySelector('.cp-product-select') : null;
+            return prodSelect && prodSelect.value !== '' && provSelect.value === '';
+        });
+
+        proveedorGeneral.required = false;
+        proveedorGeneral.dataset.necesitaGeneral = necesitaGeneral ? 'true' : 'false';
+    }
+
+    function actualizarEstadoProveedorLinea(select) {
+        const row = select.closest('.cp-line-row');
+        if (!row) {
+            return;
+        }
+
+        row.classList.toggle('has-provider-override', select.value !== '');
+    }
+
+    if (proveedorGeneral) {
+        proveedorGeneral.addEventListener('change', actualizarProveedorGeneralEnLineas);
+        actualizarProveedorGeneralEnLineas();
+    }
+
+    proveedoresLinea.forEach((select) => {
+        select.addEventListener('change', () => {
+            actualizarEstadoProveedorLinea(select);
+            actualizarRequiredProveedorGeneral();
+        });
+        actualizarEstadoProveedorLinea(select);
+    });
+
+    actualizarRequiredProveedorGeneral();
+
     document.querySelectorAll('.cp-product-select').forEach((select) => {
         select.addEventListener('change', () => {
+            actualizarRequiredProveedorGeneral();
             const row = select.closest('.cp-line-row');
             const costInput = row ? row.querySelector('.cp-cost-input') : null;
             const selected = select.options[select.selectedIndex];

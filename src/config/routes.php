@@ -542,6 +542,14 @@ $router->post('/configuracion/tarifas/eliminar', ['controller' => 'Tarifas', 'ac
 $router->post('/configuracion/tarifas/previsualizar', ['controller' => 'Tarifas', 'action' => 'previsualizar']);
 $router->get('/configuracion/tarifas/detalle', ['controller' => 'Tarifas', 'action' => 'detalle']);
 
+// Roles y permisos configurables por hotel (requiere permiso roles.manage)
+$router->get('/configuracion/roles', ['controller' => 'Rol', 'action' => 'index']);
+$router->get('/configuracion/roles/crear', ['controller' => 'Rol', 'action' => 'crear']);
+$router->post('/configuracion/roles', ['controller' => 'Rol', 'action' => 'guardar']);
+$router->get('/configuracion/roles/{id:[0-9]+}/editar', ['controller' => 'Rol', 'action' => 'editar']);
+$router->post('/configuracion/roles/{id:[0-9]+}', ['controller' => 'Rol', 'action' => 'actualizar']);
+$router->post('/configuracion/roles/{id:[0-9]+}/eliminar', ['controller' => 'Rol', 'action' => 'eliminar']);
+
 // APIs para AJAX
 $router->get('/api/buscar', ['controller' => 'Api', 'action' => 'buscarGlobal']);
 $router->get('/api/reservaciones/hoy', ['controller' => 'Api', 'action' => 'reservacionesHoy']);

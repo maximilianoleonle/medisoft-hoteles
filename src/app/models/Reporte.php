@@ -1013,7 +1013,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas_dias,
                 CASE
                     WHEN ? > 0 THEN ROUND(COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) * 100.0 /
-                        (? * DAY(LAST_DAY(r.fecha_entrada))), 2)
+                        (? * DAY(LAST_DAY(MIN(r.fecha_entrada)))), 2)
                     ELSE 0
                 END as porcentaje_ocupacion
                 FROM reservaciones r
@@ -1083,8 +1083,8 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
-                DAYOFWEEK(fecha_entrada) as dia_semana,
-                CASE DAYOFWEEK(fecha_entrada)
+                DAYOFWEEK(r.fecha_entrada) as dia_semana,
+                MIN(CASE DAYOFWEEK(r.fecha_entrada)
                     WHEN 1 THEN 'Domingo'
                     WHEN 2 THEN 'Lunes'
                     WHEN 3 THEN 'Martes'
@@ -1092,7 +1092,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     WHEN 5 THEN 'Jueves'
                     WHEN 6 THEN 'Viernes'
                     WHEN 7 THEN 'Sábado'
-                END as nombre_dia,
+                END) as nombre_dia,
                 COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas,
                 ROUND(AVG(rh.precio), 2) as precio_promedio
                 FROM reservaciones r
@@ -1101,11 +1101,11 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 WHERE r.hotel_id = ?
                 AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
-                GROUP BY DAYOFWEEK(fecha_entrada)
+                GROUP BY DAYOFWEEK(r.fecha_entrada)
                 ORDER BY dia_semana";
         
         $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
-        return $stmt->fetchAll();
+        return $stmt ? $stmt->fetchAll() : [];
     }
     
     /**

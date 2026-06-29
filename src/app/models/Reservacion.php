@@ -324,6 +324,11 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
             throw new Exception('La reservación no está activa (estado: ' . $reservacion['estado'] . ')');
         }
         
+        $resumenPagos = $this->resumenPagos($reservacion_id, $hotel_id);
+        if ((float)($resumenPagos['saldo'] ?? 0) > 0.004) {
+            throw new Exception('No se puede hacer check-out con saldo pendiente de $' . number_format((float)$resumenPagos['saldo'], 2));
+        }
+
         // Validar que haya habitaciones a liberar
         if (empty($habitaciones_ids)) {
             throw new Exception('Debe seleccionar al menos una habitación');
@@ -2348,6 +2353,12 @@ public function checkOut($reservacion_id, $hora_salida = null) {
     $db = Database::getInstance();
     
     try {
+        $resumenPagos = $this->resumenPagos($reservacion_id, $hotel_id);
+        if ((float)($resumenPagos['saldo'] ?? 0) > 0.004) {
+            error_log("Check-out bloqueado por saldo pendiente en reservacion {$reservacion_id}: " . $resumenPagos['saldo']);
+            return false;
+        }
+
         // NO iniciar transacción aquí para evitar conflictos
         
         // 1. Actualizar reservación
@@ -2670,6 +2681,7 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 AND sf.hotel_id = ?
                 AND sf.hotel_id = r.hotel_id
                 AND r.hotel_id = ?
+                AND sf.created_at >= r.created_at
                 AND sf.estatus IN ('pendiente', 'en_proceso')";
         
         $nota_factura = "\n[CANCELADA AUTOMÁTICAMENTE] " . date('d/m/Y H:i') . 
@@ -3197,13 +3209,69 @@ public function paraCalendario($mes = null, $año = null) {
         
         try {
             $stmt_reservacion = $db->query(
-                "SELECT id, hotel_id FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                "SELECT id, hotel_id, created_at FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
                 [$datos['reservacion_id'], $hotel_id]
             );
             $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch(PDO::FETCH_ASSOC) : null;
 
             if (!$reservacion) {
                 throw new Exception("Reservación no encontrada para el hotel actual");
+            }
+
+            $requiere_factura = $datos['requiere_factura'] ?? 'no';
+            $tipo = $datos['tipo'] ?? 'cliente';
+            $estatus = $datos['estatus'] ?? 'pendiente';
+            $metodo_principal = $datos['metodo_pago_principal'] ?? 'efectivo';
+            $monto_total = $datos['monto_total'] ?? 0;
+            $usuario_id = $datos['usuario_registro_id'] ?? null;
+            $notas = $datos['notas'] ?? null;
+
+            $stmt_existente = $db->query(
+                "SELECT sf.id
+                 FROM solicitudes_factura sf
+                 WHERE sf.reservacion_id = ?
+                   AND sf.hotel_id = ?
+                   AND sf.requiere_factura = ?
+                   AND sf.tipo = ?
+                   AND sf.estatus IN ('pendiente', 'en_proceso')
+                   AND sf.created_at >= ?
+                 ORDER BY sf.created_at DESC, sf.id DESC
+                 LIMIT 1",
+                [
+                    $datos['reservacion_id'],
+                    $hotel_id,
+                    $requiere_factura,
+                    $tipo,
+                    $reservacion['created_at']
+                ]
+            );
+            $existente = $stmt_existente ? $stmt_existente->fetch(PDO::FETCH_ASSOC) : null;
+
+            if ($existente) {
+                $stmt = $db->query(
+                    "UPDATE solicitudes_factura
+                     SET metodo_pago_principal = ?,
+                         monto_total = ?,
+                         usuario_registro_id = COALESCE(?, usuario_registro_id),
+                         notas = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?",
+                    [
+                        $metodo_principal,
+                        $monto_total,
+                        $usuario_id,
+                        $notas,
+                        $existente['id'],
+                        $hotel_id
+                    ]
+                );
+
+                if ($stmt) {
+                    return (int)$existente['id'];
+                }
+
+                return false;
             }
 
             $sql = "INSERT INTO solicitudes_factura 
@@ -3214,21 +3282,19 @@ public function paraCalendario($mes = null, $año = null) {
             $params = [
                 $datos['reservacion_id'],
                 $hotel_id,
-                $datos['requiere_factura'],
-                $datos['tipo'],
-                $datos['estatus'],
-                $datos['metodo_pago_principal'] ?? 'efectivo',
-                $datos['monto_total'] ?? 0,
-                $datos['usuario_registro_id'] ?? null,
-                $datos['notas'] ?? null
+                $requiere_factura,
+                $tipo,
+                $estatus,
+                $metodo_principal,
+                $monto_total,
+                $usuario_id,
+                $notas
             ];
             
             $stmt = $db->query($sql, $params);
             
             if ($stmt) {
-                $id = $db->lastInsertId();
-                error_log("✅ Solicitud de factura creada - ID: $id, Reservación: {$datos['reservacion_id']}, Tipo: {$datos['tipo']}");
-                return $id;
+                return $db->lastInsertId();
             }
             
             return false;
@@ -3254,6 +3320,7 @@ public function paraCalendario($mes = null, $año = null) {
                 WHERE sf.reservacion_id = ?
                   AND sf.hotel_id = ?
                   AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at
                 ORDER BY sf.created_at DESC
                 LIMIT 1";
         $stmt = $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
@@ -3278,7 +3345,8 @@ public function paraCalendario($mes = null, $año = null) {
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 WHERE sf.estatus = 'pendiente'
                   AND sf.hotel_id = ?
-                  AND r.hotel_id = ?";
+                  AND r.hotel_id = ?
+                  AND sf.created_at >= r.created_at";
         
         $params = [$hotel_id, $hotel_id];
         
@@ -3326,6 +3394,7 @@ public function paraCalendario($mes = null, $año = null) {
              WHERE sf.id = ?
                AND sf.hotel_id = ?
                AND r.hotel_id = ?
+               AND sf.created_at >= r.created_at
              LIMIT 1",
             [$id, $hotel_id, $hotel_id]
         );
@@ -3346,9 +3415,14 @@ public function paraCalendario($mes = null, $año = null) {
     /**
      * Modificar la fecha de salida y recalcular el precio total
      */
-    public function modificarFechaSalida($reservacion_id, $nueva_fecha_salida, $nuevo_precio_total) {
+    public function modificarFechaSalida($reservacion_id, $nueva_fecha_salida, $nuevo_precio_total, array $desglose = []) {
         try {
             $hotel_id = $this->hotelIdActual();
+            $inicioTransaccion = !$this->db->enTransaccion();
+
+            if ($inicioTransaccion) {
+                $this->db->beginTransaction();
+            }
 
             $sql = "UPDATE reservaciones
                     SET fecha_salida = ?,
@@ -3364,10 +3438,111 @@ public function paraCalendario($mes = null, $año = null) {
                 $hotel_id
             ]);
 
-            return $stmt && $stmt->rowCount() > 0;
+            if (!$stmt) {
+                throw new Exception('No se pudo actualizar la reservacion.');
+            }
+
+            $preciosPorHabitacion = [];
+            foreach ($desglose as $item) {
+                $habitacionId = (int)($item['habitacion_id'] ?? 0);
+                if ($habitacionId <= 0 || !array_key_exists('precio_total', $item)) {
+                    continue;
+                }
+                $preciosPorHabitacion[$habitacionId] = (float)$item['precio_total'];
+            }
+
+            if (!empty($preciosPorHabitacion)) {
+                $stmtCount = $this->db->query(
+                    "SELECT COUNT(*) AS total
+                     FROM reservacion_habitaciones
+                     WHERE reservacion_id = ?
+                     AND hotel_id = ?",
+                    [$reservacion_id, $hotel_id]
+                );
+                $rowCount = $stmtCount ? $stmtCount->fetch() : null;
+                $habitacionesActuales = (int)($rowCount['total'] ?? 0);
+
+                if ($habitacionesActuales !== count($preciosPorHabitacion)) {
+                    throw new Exception('El desglose de habitaciones no coincide con la reservacion.');
+                }
+
+                foreach ($preciosPorHabitacion as $habitacionId => $precioHabitacion) {
+                    $stmtHabitacion = $this->db->query(
+                        "UPDATE reservacion_habitaciones
+                         SET precio = ?
+                         WHERE reservacion_id = ?
+                         AND hotel_id = ?
+                         AND habitacion_id = ?",
+                        [$precioHabitacion, $reservacion_id, $hotel_id, $habitacionId]
+                    );
+
+                    if (!$stmtHabitacion) {
+                        throw new Exception('No se pudo actualizar el subtotal de una habitacion.');
+                    }
+                }
+            }
+
+            if ($inicioTransaccion) {
+                $this->db->commit();
+            }
+
+            return true;
 
         } catch (Exception $e) {
+            if (isset($inicioTransaccion) && $inicioTransaccion && $this->db->enTransaccion()) {
+                $this->db->rollBack();
+            }
             error_log("Error en modificarFechaSalida: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function registrarAjustePagoPorDevolucion($reservacion_id, $monto, $metodo_pago = 'efectivo', $hotelId = null) {
+        try {
+            $reservacion_id = (int)$reservacion_id;
+            $hotel_id = $hotelId !== null ? (int)$hotelId : (int)$this->hotelIdActual();
+            $monto = round(abs((float)$monto), 2);
+
+            if ($reservacion_id <= 0 || $hotel_id <= 0 || $monto <= 0.004) {
+                return true;
+            }
+
+            if (!in_array($metodo_pago, ['efectivo', 'tarjeta', 'transferencia'], true)) {
+                $metodo_pago = 'efectivo';
+            }
+
+            $stmt = $this->db->query(
+                "INSERT INTO reservacion_pagos
+                 (hotel_id, reservacion_id, metodo_pago, monto, referencia, created_at)
+                 VALUES (?, ?, ?, ?, ?, NOW())",
+                [
+                    $hotel_id,
+                    $reservacion_id,
+                    $metodo_pago,
+                    -$monto,
+                    'Devolucion por reduccion de dias'
+                ]
+            );
+
+            if (!$stmt) {
+                return false;
+            }
+
+            $stmtUpdate = $this->db->query(
+                "UPDATE reservaciones
+                 SET monto_recibido = CASE
+                        WHEN monto_recibido IS NULL THEN NULL
+                        ELSE GREATEST(monto_recibido - ?, 0)
+                     END,
+                     updated_at = NOW()
+                 WHERE id = ?
+                 AND hotel_id = ?",
+                [$monto, $reservacion_id, $hotel_id]
+            );
+
+            return (bool)$stmtUpdate;
+        } catch (Exception $e) {
+            error_log("Error en registrarAjustePagoPorDevolucion: " . $e->getMessage());
             return false;
         }
     }

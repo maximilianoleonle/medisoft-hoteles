@@ -220,9 +220,25 @@ class AuthController extends Controller {
             // Limpiar contador de intentos al login exitoso
             unset($_SESSION[$intentos_key], $_SESSION[$bloqueo_key]);
 
-            login($usuario['id'], $remember);
+            $preferredSlug = defined('MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE')
+                ? normalize_hotel_login_slug($_COOKIE[MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE] ?? null)
+                : null;
+            $hotelContext = function_exists('resolve_default_hotel_context_for_user')
+                ? resolve_default_hotel_context_for_user((int) $usuario['id'], $preferredSlug)
+                : null;
+
+            if (!$hotelContext) {
+                // El usuario no tiene ningun hotel activo asignado. No se permite
+                // entrar sin contexto hotelero porque toda la UI quedaría sin branding
+                // y los datos cruzarían entre hoteles. Se indica al usuario que use
+                // la liga directa de su hotel (BUG-001).
+                set_mensaje('Su usuario no tiene acceso a ning&uacute;n hotel activo. Ingrese desde la liga directa de su hotel (ej. /h/nombre-hotel/login).', 'warning');
+                $this->redirect('login');
+            }
+
+            login($usuario['id'], $remember, $hotelContext);
             $this->logLogin($usuario['id'], true);
-            $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, null, 'login');
+            $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, $hotelContext['id'] ?? null, 'login');
             set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
             $this->redirect('dashboard');
 
@@ -256,14 +272,23 @@ class AuthController extends Controller {
         }
 
         $this->validateCSRF();
-        $loginPath = function_exists('login_path_for_current_context')
-            ? login_path_for_current_context($_SERVER['HTTP_REFERER'] ?? $_SERVER['REQUEST_URI'] ?? null)
-            : 'login';
+        $loginPath = 'login';
 
         // Verificar que esté autenticado
         if (is_authenticated()) {
             $user_id = user_id();
             $hotel_id = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
+            $hotel_slug = $hotel_id && function_exists('hotel_login_slug_for_hotel_id')
+                ? hotel_login_slug_for_hotel_id((int) $hotel_id)
+                : null;
+
+            if (!$hotel_slug && function_exists('current_hotel_slug')) {
+                $hotel_slug = normalize_hotel_login_slug(current_hotel_slug());
+            }
+
+            if ($hotel_slug) {
+                $loginPath = 'h/' . $hotel_slug . '/login';
+            }
             
             // Cerrar sesión
             logout();

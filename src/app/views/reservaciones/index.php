@@ -529,6 +529,48 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     padding: 18px 20px;
     border-bottom: 1px solid var(--res-line);
     background: rgba(255,255,255,.74);
+    cursor: pointer;
+    user-select: none;
+}
+.res-upcoming:not(.is-open) .res-upcoming-head {
+    border-bottom-color: transparent;
+}
+.res-upcoming-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.res-upcoming-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid var(--res-line);
+    background: rgba(255,255,255,.8);
+    color: var(--res-heading);
+    font-size: .82rem;
+    flex-shrink: 0;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), background .18s ease, border-color .18s ease;
+}
+.res-upcoming.is-open .res-upcoming-chevron {
+    transform: rotate(180deg);
+    background: color-mix(in srgb, var(--res-accent) 8%, #fff);
+    border-color: color-mix(in srgb, var(--res-accent) 34%, var(--res-line));
+}
+.res-upcoming-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .3s cubic-bezier(.22,1,.36,1);
+}
+.res-upcoming.is-open .res-upcoming-body {
+    grid-template-rows: 1fr;
+}
+.res-upcoming-body-inner {
+    overflow: hidden;
+    min-height: 0;
 }
 .res-section-kicker {
     display: inline-flex;
@@ -704,6 +746,46 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-inline-toast.is-warning { border-color: #F4D38E; background: #FFF8E8; color: #9A5F10; }
 .res-inline-toast.is-error { border-color: #FECACA; background: #FEF2F2; color: #B42318; }
 .res-inline-toast.is-success { border-color: #BFE9D3; background: #F0FBF5; color: #15835A; }
+
+.swal2-popup.res-swal-checkout {
+    border-radius: 20px !important;
+    border: 1px solid color-mix(in srgb, #F97316 18%, #E7DDD1) !important;
+    box-shadow: 0 32px 80px -42px rgba(15, 23, 42, .68) !important;
+}
+.res-checkout-confirm {
+    text-align: left;
+    display: grid;
+    gap: 12px;
+}
+.res-checkout-confirm__lead {
+    margin: 0;
+    color: #475467;
+    font-size: .92rem;
+    line-height: 1.45;
+}
+.res-checkout-confirm__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #FED7AA;
+    border-radius: 14px;
+    background: #FFF7ED;
+    color: #9A3412;
+    font-size: .82rem;
+    font-weight: 750;
+    line-height: 1.4;
+}
+.res-swal-checkout-confirm,
+.res-swal-checkout-cancel {
+    min-height: 42px !important;
+    border-radius: 12px !important;
+    font-weight: 900 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+}
 
 /* Check-in modal: arrival desk redesign, same operational flow. */
 .res-checkin-modal {
@@ -914,6 +996,80 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-ci-section-head h4 { margin: 0; color: var(--res-brand-2); font-size: .95rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
 .res-ci-section-head span { color: #7A8498; font-size: .72rem; font-weight: 750; }
 .res-ci-prompt { margin: -2px 0 12px; color: #687386; font-size: .78rem; font-weight: 650; line-height: 1.45; }
+.res-ci-breakdown {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding: 13px;
+    border: 1px solid color-mix(in srgb, var(--res-brand) 12%, #DCE2EA);
+    border-radius: 16px;
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--res-brand) 4%, #FFFFFF), #fff);
+}
+.res-ci-breakdown[hidden] { display: none; }
+.res-ci-breakdown-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.res-ci-breakdown-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    color: color-mix(in srgb, var(--res-brand) 88%, #263247);
+    background: color-mix(in srgb, var(--res-brand) 8%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--res-brand) 14%, #DCE2EA);
+}
+.res-ci-breakdown-title {
+    margin: 0;
+    color: var(--res-brand-2);
+    font-size: .86rem;
+    font-weight: 950;
+    line-height: 1.2;
+}
+.res-ci-breakdown-sub {
+    margin: 2px 0 0;
+    color: #687386;
+    font-size: .73rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+.res-ci-breakdown-lines {
+    display: grid;
+    gap: 5px;
+    padding-top: 8px;
+    border-top: 1px dashed color-mix(in srgb, var(--res-brand) 13%, #DCE2EA);
+}
+.res-ci-breakdown-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #667085;
+    font-size: .78rem;
+    font-weight: 750;
+}
+.res-ci-breakdown-line strong {
+    color: var(--res-brand-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.res-ci-breakdown-line.is-discount strong,
+.res-ci-breakdown-line.is-paid strong { color: #148653; }
+.res-ci-breakdown-line.is-due {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--res-brand) 10%, #E7DDD1);
+    color: var(--res-brand-2);
+    font-weight: 900;
+}
+.res-ci-breakdown-line.is-due strong {
+    color: #DC2626;
+    font-size: .92rem;
+}
 .res-ci-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
 .res-ci-shortcut {
     --res-shortcut-color: var(--res-brand);
@@ -4164,18 +4320,23 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 
         <?php if ($total_proximas > 0): ?>
             <section class="res-upcoming no-print" id="proximasReservaciones" aria-label="Agenda de proximas reservaciones">
-                <div class="res-upcoming-head">
+                <div class="res-upcoming-head" onclick="resUpcomingToggle(this)" role="button" aria-expanded="false" aria-controls="upcomingGrid" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resUpcomingToggle(this);}">
                     <div>
                         <span class="res-section-kicker"><i class="fas fa-route"></i>Agenda pr&oacute;xima</span>
                         <h2>Pr&oacute;ximas reservaciones</h2>
                         <p>Confirmadas despu&eacute;s de la fecha seleccionada, ordenadas por llegada.</p>
                     </div>
-                    <a href="<?= url('reservaciones/calendario') ?>" class="res-date-chip">
-                        <i class="fas fa-calendar-alt"></i>Calendario
-                    </a>
+                    <div class="res-upcoming-toggle">
+                        <a href="<?= url('reservaciones/calendario') ?>" class="res-date-chip" onclick="event.stopPropagation()">
+                            <i class="fas fa-calendar-alt"></i>Calendario
+                        </a>
+                        <span class="res-upcoming-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                    </div>
                 </div>
 
-                <div class="res-upcoming-grid">
+                <div class="res-upcoming-body">
+                <div class="res-upcoming-body-inner">
+                <div class="res-upcoming-grid" id="upcomingGrid">
                     <?php foreach ($proximas_reservaciones as $row): ?>
                         <?php
                             $res_id = (int) ($row['id'] ?? 0);
@@ -4245,6 +4406,8 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         </article>
                     <?php endforeach; ?>
                 </div>
+                </div><!-- /.res-upcoming-body-inner -->
+                </div><!-- /.res-upcoming-body -->
             </section>
         <?php endif; ?>
     </div>
@@ -4295,6 +4458,43 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         <span>Uno o varios</span>
                     </div>
                     <p class="res-ci-prompt">Elige una forma rapida o ajusta los montos por metodo. El total pagado debe cuadrar con el total de la reservacion antes de confirmar.</p>
+
+                    <div id="resCiBreakdown" class="res-ci-breakdown" aria-live="polite" hidden>
+                        <div class="res-ci-breakdown-head">
+                            <span class="res-ci-breakdown-icon"><i class="fas fa-circle-info"></i></span>
+                            <div>
+                                <p class="res-ci-breakdown-title">Por que se cobra este monto</p>
+                                <p id="resCiBreakdownSub" class="res-ci-breakdown-sub">Resumen informativo del precio, anticipos y saldo pendiente.</p>
+                            </div>
+                        </div>
+                        <div class="res-ci-breakdown-lines">
+                            <div class="res-ci-breakdown-line" id="resCiSubtotalRow">
+                                <span>Subtotal antes de descuentos</span>
+                                <strong id="resCiSubtotal">$0.00</strong>
+                            </div>
+                            <div class="res-ci-breakdown-line is-discount" id="resCiDiscountRow" hidden>
+                                <span>Descuentos aplicados</span>
+                                <strong id="resCiDiscount">-$0.00</strong>
+                            </div>
+                            <div class="res-ci-breakdown-line">
+                                <span>Total de la reservacion</span>
+                                <strong id="resCiTotalFinal">$0.00</strong>
+                            </div>
+                            <div class="res-ci-breakdown-line is-paid" id="resCiAdvanceRow" hidden>
+                                <span>Anticipos registrados</span>
+                                <strong id="resCiAdvances">-$0.00</strong>
+                            </div>
+                            <div class="res-ci-breakdown-line is-paid" id="resCiPaymentsRow" hidden>
+                                <span>Pagos registrados</span>
+                                <strong id="resCiPayments">-$0.00</strong>
+                            </div>
+                            <div class="res-ci-breakdown-line is-due">
+                                <span>Saldo a cobrar en check-in</span>
+                                <strong id="resCiDue">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="res-ci-shortcuts" aria-label="Atajos de metodo de pago">
                         <button type="button" class="res-ci-shortcut res-ci-shortcut--cash" onclick="aplicarPagoRapido('efectivo')">
                             <i class="fas fa-money-bill-wave"></i>Efectivo exacto
@@ -4533,7 +4733,12 @@ let filtroEstadoActual = 'todos';
 let totalReservacion = 0;
 
 let resReservaSwalTimer = null;
-let resCheckoutConfirmacion = { id: null, timer: null };
+
+function resUpcomingToggle(headEl) {
+    const section = headEl.closest('.res-upcoming');
+    const isOpen = section.classList.toggle('is-open');
+    headEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
 
 function resIndexToast(mensaje, tipo = 'info', duracion = 5200) {
     let toast = document.getElementById('resIndexToast');
@@ -4550,13 +4755,6 @@ function resIndexToast(mensaje, tipo = 'info', duracion = 5200) {
     toast.textContent = mensaje;
     requestAnimationFrame(() => toast.classList.add('is-visible'));
     toast._resTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duracion);
-}
-
-function resResetCheckoutConfirmacion() {
-    if (resCheckoutConfirmacion.timer) {
-        window.clearTimeout(resCheckoutConfirmacion.timer);
-    }
-    resCheckoutConfirmacion = { id: null, timer: null };
 }
 
 function resMostrarErrorExportacion(inputId, errorId, mensaje) {
@@ -5170,6 +5368,65 @@ function resSplitMoneyParts(total, count) {
     });
 }
 
+function resCheckInNumber(value, fallback) {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : (fallback || 0);
+}
+
+function resCheckInSetMoney(id, value, prefix) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (prefix || '') + formatMoney(value);
+}
+
+function resCheckInToggleRow(id, show) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = !show;
+}
+
+function actualizarDesgloseCheckIn(data, fallbackTotal, estado) {
+    const box = document.getElementById('resCiBreakdown');
+    if (!box) return;
+
+    const info = data || {};
+    const total = Math.max(0, resCheckInNumber(info.total, fallbackTotal));
+    const descuento = Math.max(0, resCheckInNumber(info.descuento_total, 0));
+    const pagos = Math.max(0, resCheckInNumber(info.pagos, 0));
+    const abonos = Math.max(0, resCheckInNumber(info.abonos, 0));
+    const pagado = Math.max(0, resCheckInNumber(info.pagado, pagos + abonos));
+    const saldo = Math.max(0, resCheckInNumber(info.saldo, Math.max(0, total - pagado)));
+    let subtotal = resCheckInNumber(info.subtotal || info.total_antes_descuento, total + descuento);
+
+    if (subtotal <= 0 || subtotal < total) {
+        subtotal = total + descuento;
+    }
+
+    const sub = document.getElementById('resCiBreakdownSub');
+    if (sub) {
+        if (estado && estado.loading) {
+            sub.textContent = 'Consultando anticipos, pagos y descuentos registrados.';
+        } else if (estado && estado.error) {
+            sub.textContent = 'No se pudo cargar el desglose completo; se muestra el total disponible.';
+        } else {
+            sub.textContent = 'Incluye descuentos, anticipos y pagos ya registrados para esta reservacion.';
+        }
+    }
+
+    resCheckInSetMoney('resCiSubtotal', subtotal);
+    resCheckInSetMoney('resCiDiscount', descuento, '-');
+    resCheckInSetMoney('resCiTotalFinal', total);
+    resCheckInSetMoney('resCiAdvances', abonos, '-');
+    resCheckInSetMoney('resCiPayments', pagos, '-');
+    resCheckInSetMoney('resCiDue', saldo);
+
+    resCheckInToggleRow('resCiSubtotalRow', descuento > 0.004);
+    resCheckInToggleRow('resCiDiscountRow', descuento > 0.004);
+    resCheckInToggleRow('resCiAdvanceRow', abonos > 0.004);
+    resCheckInToggleRow('resCiPaymentsRow', pagos > 0.004);
+    box.hidden = false;
+}
+
 function abrirModalCheckIn(id, total) {
     const modal = document.getElementById('modalCheckIn');
     const form = document.getElementById('formCheckInModal');
@@ -5185,6 +5442,7 @@ function abrirModalCheckIn(id, total) {
 
     totalLabel.textContent = formatMoney(totalReservacion);
     if (resumenTotal) resumenTotal.textContent = formatMoney(totalReservacion);
+    actualizarDesgloseCheckIn({ total: totalReservacion, saldo: totalReservacion }, totalReservacion, { loading: true });
 
     const hora = form.querySelector('input[name="hora_entrada"]');
     if (hora) hora.value = new Date().toTimeString().slice(0, 5);
@@ -5202,6 +5460,7 @@ function abrirModalCheckIn(id, total) {
         .then(function (d) {
             if (d && d.success && d.data) {
                 var saldo = parseFloat(d.data.saldo);
+                actualizarDesgloseCheckIn(d.data, totalReservacion);
                 if (!isNaN(saldo) && saldo >= 0 && saldo < totalReservacion - 0.004) {
                     totalReservacion = saldo;
                     totalLabel.textContent = formatMoney(saldo);
@@ -5210,7 +5469,9 @@ function abrirModalCheckIn(id, total) {
                 }
             }
         })
-        .catch(function () {});
+        .catch(function () {
+            actualizarDesgloseCheckIn({ total: totalReservacion, saldo: totalReservacion }, totalReservacion, { error: true });
+        });
 }
 
 function cerrarModalCheckIn() {
@@ -5498,9 +5759,12 @@ function calcularTotalPagado() {
 }
 
 function mostrarMensaje(mensaje, tipo) {
+    // Avisos de validación → toast flotante (no empuja el layout del cobro).
+    if (window.msToast) { window.msToast(tipo || 'info', null, mensaje); return; }
+
+    // Fallback al aviso inline si el toast no está disponible.
     const div = document.getElementById('mensajeValidacion');
     if (!div) return;
-
     div.className = 'res-ci-alert';
     if (tipo === 'warning') div.classList.add('is-warning');
     if (tipo === 'info') div.classList.add('is-info');
@@ -5615,19 +5879,49 @@ function confirmarCheckOut(id) {
         return;
     }
 
-    if (resCheckoutConfirmacion.id === id) {
-        resResetCheckoutConfirmacion();
+    const enviarCheckOut = function() {
         const horaSalida = form.querySelector('input[name="hora_salida"]');
         if (horaSalida) horaSalida.value = new Date().toTimeString().slice(0, 8);
         form.action = baseUrl + '/reservaciones/check-out/' + id;
         form.submit();
+    };
+
+    if (typeof Swal === 'undefined') {
+        if (window.confirm('Registrar check-out de la reservacion #' + id + '?')) {
+            enviarCheckOut();
+        }
         return;
     }
 
-    resResetCheckoutConfirmacion();
-    resCheckoutConfirmacion.id = id;
-    resCheckoutConfirmacion.timer = window.setTimeout(resResetCheckoutConfirmacion, 7000);
-    resIndexToast('Presiona Check-out otra vez para registrar la salida.', 'warning', 7000);
+    Swal.fire({
+        title: 'Confirmar check-out',
+        html: `
+            <div class="res-checkout-confirm">
+                <p class="res-checkout-confirm__lead">Reservacion #${id}. Se registrara la salida del huesped y las habitaciones pasaran a limpieza.</p>
+                <p class="res-checkout-confirm__note">
+                    <i class="fas fa-circle-info"></i>
+                    <span>Esta accion actualiza el estado operativo de la reservacion. Revisa que el huesped ya haya desocupado antes de confirmar.</span>
+                </p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-right-from-bracket"></i> Registrar check-out',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#EA580C',
+        cancelButtonColor: '#6B7280',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            popup: 'res-swal-checkout',
+            confirmButton: 'res-swal-checkout-confirm',
+            cancelButton: 'res-swal-checkout-cancel'
+        }
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            enviarCheckOut();
+        }
+    });
 }
 
 function abrirModalExportarPDF() {

@@ -100,28 +100,53 @@ class Usuario extends Model {
         return $resultado[0] ?? null;
     }
 
-    public function vincularAHotel($hotelId, $usuarioId, $rol, $activo = true) {
-        $stmt = $this->db->query(
-            "INSERT INTO hotel_usuarios
-                (hotel_id, usuario_id, rol, es_principal, activo, created_at, updated_at)
-             VALUES (?, ?, ?, 0, ?, NOW(), NOW())
-             ON DUPLICATE KEY UPDATE
-                rol = VALUES(rol),
-                activo = VALUES(activo),
-                updated_at = NOW()",
-            [(int) $hotelId, (int) $usuarioId, $rol, $activo ? 1 : 0]
-        );
+    public function vincularAHotel($hotelId, $usuarioId, $rol, $activo = true, $roleId = null) {
+        // $roleId solo se incluye cuando se resolvio un rol configurable; asi la
+        // creacion de usuarios sigue funcionando aunque la columna role_id no exista.
+        if ($roleId !== null) {
+            $stmt = $this->db->query(
+                "INSERT INTO hotel_usuarios
+                    (hotel_id, usuario_id, rol, role_id, es_principal, activo, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 0, ?, NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                    rol = VALUES(rol),
+                    role_id = VALUES(role_id),
+                    activo = VALUES(activo),
+                    updated_at = NOW()",
+                [(int) $hotelId, (int) $usuarioId, $rol, (int) $roleId, $activo ? 1 : 0]
+            );
+        } else {
+            $stmt = $this->db->query(
+                "INSERT INTO hotel_usuarios
+                    (hotel_id, usuario_id, rol, es_principal, activo, created_at, updated_at)
+                 VALUES (?, ?, ?, 0, ?, NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                    rol = VALUES(rol),
+                    activo = VALUES(activo),
+                    updated_at = NOW()",
+                [(int) $hotelId, (int) $usuarioId, $rol, $activo ? 1 : 0]
+            );
+        }
 
         return $stmt !== false;
     }
 
-    public function actualizarRolHotel($hotelId, $usuarioId, $rol) {
-        $stmt = $this->db->query(
-            "UPDATE hotel_usuarios
-             SET rol = ?, updated_at = NOW()
-             WHERE hotel_id = ? AND usuario_id = ?",
-            [$rol, (int) $hotelId, (int) $usuarioId]
-        );
+    public function actualizarRolHotel($hotelId, $usuarioId, $rol, $roleId = null) {
+        if ($roleId !== null) {
+            $stmt = $this->db->query(
+                "UPDATE hotel_usuarios
+                 SET rol = ?, role_id = ?, updated_at = NOW()
+                 WHERE hotel_id = ? AND usuario_id = ?",
+                [$rol, (int) $roleId, (int) $hotelId, (int) $usuarioId]
+            );
+        } else {
+            $stmt = $this->db->query(
+                "UPDATE hotel_usuarios
+                 SET rol = ?, updated_at = NOW()
+                 WHERE hotel_id = ? AND usuario_id = ?",
+                [$rol, (int) $hotelId, (int) $usuarioId]
+            );
+        }
 
         return $stmt !== false;
     }

@@ -295,20 +295,6 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
         $totalIngresosHoy = array_sum($ingresosPorMetodo);
         $totalEgresosHoy = array_sum($egresosPorMetodo);
         
-        // Debug para verificar valores
-        error_log("=== ESTADÍSTICAS DASHBOARD CORREGIDAS ===");
-        error_log("Ingresos: Efectivo=" . $ingresosPorMetodo['efectivo'] . 
-                  ", Tarjeta=" . $ingresosPorMetodo['tarjeta'] . 
-                  ", Transfer=" . $ingresosPorMetodo['transferencia']);
-        error_log("Egresos: Efectivo=" . $egresosPorMetodo['efectivo'] . 
-                  ", Tarjeta=" . $egresosPorMetodo['tarjeta'] . 
-                  ", Transfer=" . $egresosPorMetodo['transferencia']);
-        error_log("Devoluciones: Efectivo=" . $devolucionesPorMetodo['efectivo'] . 
-                  ", Tarjeta=" . $devolucionesPorMetodo['tarjeta'] . 
-                  ", Transfer=" . $devolucionesPorMetodo['transferencia']);
-        error_log("Totales: Ingresos=" . $totalIngresosHoy . ", Egresos=" . $totalEgresosHoy);
-        error_log("=== FIN DEBUG ===");
-        
         // 3. ENTRADAS Y SALIDAS DE HOY
         // Entradas (Check-ins) de hoy
         $stmt = $db->query("

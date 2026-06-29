@@ -462,10 +462,11 @@
 
     const pending = await countPendingOfflineData();
     if (!pending) {
-      window.alert(
-        'No se pudo verificar si existen operaciones offline pendientes. ' +
-        'Por seguridad no se limpiaron datos locales.'
-      );
+      if (window.msToast) {
+        window.msToast('warning', 'Datos locales', 'No se pudo verificar si existen operaciones offline pendientes. Por seguridad no se limpiaron datos locales.');
+      } else {
+        window.alert('No se pudo verificar si existen operaciones offline pendientes. Por seguridad no se limpiaron datos locales.');
+      }
       return;
     }
 

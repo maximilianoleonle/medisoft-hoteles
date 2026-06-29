@@ -101,10 +101,294 @@
             // Fallback: copiar al portapapeles
             const shareText = `${titulo}\n${texto}\n${url || window.location.href}`;
             navigator.clipboard.writeText(shareText).then(() => {
-                alert('Enlace copiado al portapapeles');
+                (window.msToast ? window.msToast('success', null, 'Enlace copiado al portapapeles') : alert('Enlace copiado al portapapeles'));
             });
         }
     };
+
+    function initMedisoftSilentDownloads() {
+        if (document.documentElement.dataset.medisoftSilentDownloads === 'ready') {
+            return;
+        }
+
+        document.documentElement.dataset.medisoftSilentDownloads = 'ready';
+
+        document.addEventListener('click', event => {
+            const link = event.target instanceof Element
+                ? event.target.closest('a[data-medisoft-download="silent"]')
+                : null;
+
+            if (!link || event.defaultPrevented || event.button !== 0) {
+                return;
+            }
+
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            const href = link.getAttribute('href') || '';
+            if (!href || href === '#' || href.startsWith('javascript:')) {
+                return;
+            }
+
+            let downloadUrl;
+            try {
+                downloadUrl = new URL(href, window.location.href);
+            } catch (error) {
+                return;
+            }
+
+            if (downloadUrl.origin !== window.location.origin) {
+                return;
+            }
+
+            event.preventDefault();
+            getMedisoftSilentDownloadFrame().src = downloadUrl.href;
+        }, true);
+    }
+
+    function getMedisoftSilentDownloadFrame() {
+        const frameId = 'medisoft-silent-download-frame';
+        let frame = document.getElementById(frameId);
+
+        if (!(frame instanceof HTMLIFrameElement)) {
+            frame = document.createElement('iframe');
+            frame.id = frameId;
+            frame.name = frameId;
+            frame.title = 'Descargas de documentos';
+            frame.hidden = true;
+            frame.tabIndex = -1;
+            frame.style.display = 'none';
+            frame.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(frame);
+        }
+
+        return frame;
+    }
+
+    function initMedisoftScrollMemory() {
+        if (!document.body || !document.body.classList.contains('hotel-layout-scope')) {
+            return;
+        }
+
+        if (document.documentElement.dataset.medisoftScrollMemory === 'ready') {
+            return;
+        }
+
+        document.documentElement.dataset.medisoftScrollMemory = 'ready';
+
+        const scrollTarget = getMedisoftScrollTarget();
+        const storageKey = getMedisoftScrollKey();
+        let saveTimer = 0;
+
+        if ('scrollRestoration' in window.history) {
+            try {
+                window.history.scrollRestoration = 'manual';
+            } catch (error) {}
+        }
+
+        restoreMedisoftScrollIfNeeded(scrollTarget, storageKey);
+
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                restoreMedisoftScrollIfNeeded(scrollTarget, storageKey, true);
+            }
+        });
+
+        const scheduleSave = () => {
+            if (saveTimer) {
+                return;
+            }
+
+            saveTimer = window.setTimeout(() => {
+                saveTimer = 0;
+                saveMedisoftScroll(scrollTarget, storageKey);
+            }, 120);
+        };
+
+        getMedisoftScrollEventTarget(scrollTarget).addEventListener('scroll', scheduleSave, { passive: true });
+        window.addEventListener('pagehide', () => saveMedisoftScroll(scrollTarget, storageKey), { passive: true });
+        window.addEventListener('beforeunload', () => saveMedisoftScroll(scrollTarget, storageKey));
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                saveMedisoftScroll(scrollTarget, storageKey);
+            }
+        });
+
+        document.addEventListener('click', event => {
+            const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+            if (!link || event.defaultPrevented || shouldIgnoreScrollMemoryLink(link, event)) {
+                return;
+            }
+
+            saveMedisoftScroll(scrollTarget, storageKey);
+        }, true);
+
+        document.addEventListener('submit', () => saveMedisoftScroll(scrollTarget, storageKey), true);
+    }
+
+    function getMedisoftScrollTarget() {
+        const mainContent = document.querySelector('.main-content');
+
+        if (mainContent instanceof HTMLElement) {
+            const styles = window.getComputedStyle(mainContent);
+            const canScroll = /auto|scroll|overlay/i.test(styles.overflowY);
+
+            if (canScroll) {
+                return mainContent;
+            }
+        }
+
+        return document.scrollingElement || document.documentElement;
+    }
+
+    function getMedisoftScrollEventTarget(target) {
+        return isMedisoftDocumentScroll(target) ? window : target;
+    }
+
+    function isMedisoftDocumentScroll(target) {
+        return target === document.documentElement
+            || target === document.body
+            || target === document.scrollingElement;
+    }
+
+    function getMedisoftScrollKey() {
+        const hotelId = window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
+            ? String(window.MEDISOFT_CONTEXT.hotel_id)
+            : 'hotel';
+        return 'medisoft:hotel-scroll:v1:' + hotelId + ':' + window.location.pathname + window.location.search;
+    }
+
+    function shouldIgnoreScrollMemoryLink(link, event) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            return true;
+        }
+
+        const href = link.getAttribute('href') || '';
+        if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+            return true;
+        }
+
+        if (link.hasAttribute('download') || String(link.getAttribute('target') || '').toLowerCase() === '_blank') {
+            return true;
+        }
+
+        try {
+            const url = new URL(href, window.location.href);
+            return url.origin !== window.location.origin;
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function saveMedisoftScroll(target, storageKey) {
+        const position = getMedisoftScrollPosition(target);
+
+        try {
+            window.sessionStorage.setItem(storageKey, JSON.stringify({
+                top: position.top,
+                left: position.left,
+                savedAt: Date.now()
+            }));
+        } catch (error) {}
+    }
+
+    function getMedisoftScrollPosition(target) {
+        if (isMedisoftDocumentScroll(target)) {
+            return {
+                top: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0,
+                left: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0
+            };
+        }
+
+        return {
+            top: target.scrollTop || 0,
+            left: target.scrollLeft || 0
+        };
+    }
+
+    function restoreMedisoftScrollIfNeeded(target, storageKey, forceRestore) {
+        if (!forceRestore && !shouldRestoreMedisoftScroll()) {
+            return;
+        }
+
+        const record = readMedisoftScrollRecord(storageKey);
+        if (!record) {
+            return;
+        }
+
+        const restore = attempt => {
+            const maxTop = getMedisoftMaxScrollTop(target);
+            const top = Math.max(0, Math.min(record.top, maxTop));
+            setMedisoftScrollPosition(target, top, record.left);
+
+            if (attempt < 4 && record.top > maxTop + 4) {
+                window.setTimeout(() => restore(attempt + 1), attempt === 0 ? 80 : 180);
+            }
+        };
+
+        window.requestAnimationFrame(() => restore(0));
+    }
+
+    function shouldRestoreMedisoftScroll() {
+        const navigationEntries = typeof performance !== 'undefined' && performance.getEntriesByType
+            ? performance.getEntriesByType('navigation')
+            : [];
+        const navigationType = navigationEntries && navigationEntries[0]
+            ? navigationEntries[0].type
+            : '';
+
+        if (navigationType === 'back_forward') {
+            return true;
+        }
+
+        if (window.performance && window.performance.navigation) {
+            return window.performance.navigation.type === 2;
+        }
+
+        return false;
+    }
+
+    function readMedisoftScrollRecord(storageKey) {
+        try {
+            const raw = window.sessionStorage.getItem(storageKey);
+            if (!raw) {
+                return null;
+            }
+
+            const record = JSON.parse(raw);
+            if (!record || !Number.isFinite(Number(record.top))) {
+                return null;
+            }
+
+            return {
+                top: Number(record.top) || 0,
+                left: Number(record.left) || 0
+            };
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function getMedisoftMaxScrollTop(target) {
+        if (isMedisoftDocumentScroll(target)) {
+            const doc = document.documentElement;
+            const body = document.body;
+            return Math.max(0, Math.max(doc.scrollHeight, body ? body.scrollHeight : 0) - window.innerHeight);
+        }
+
+        return Math.max(0, target.scrollHeight - target.clientHeight);
+    }
+
+    function setMedisoftScrollPosition(target, top, left) {
+        if (isMedisoftDocumentScroll(target)) {
+            window.scrollTo({ top: top, left: left || 0, behavior: 'auto' });
+            return;
+        }
+
+        target.scrollTop = top;
+        target.scrollLeft = left || 0;
+    }
 
 
     // Proteccion transversal de formularios del sistema hotelero:
@@ -2702,10 +2986,14 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
+            initMedisoftSilentDownloads();
+            initMedisoftScrollMemory();
             initHotelFormGuard();
             initHotelInstantSearch();
         });
     } else {
+        initMedisoftSilentDownloads();
+        initMedisoftScrollMemory();
         initHotelFormGuard();
         initHotelInstantSearch();
     }

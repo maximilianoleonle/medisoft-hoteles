@@ -1486,7 +1486,7 @@ function toggleCortesiaModal(habId, element) {
     // Si el checkbox ya está marcado, permitir desmarcarlo
     // Si no está marcado, verificar que no se exceda el límite
     if (!checkbox.checked && cortesiasActualesSeleccionadas >= cortesiasDisponibles) {
-        alert(`Solo puedes seleccionar ${cortesiasDisponibles} habitación${cortesiasDisponibles > 1 ? 'es' : ''} de cortesía`);
+        window.msToast('warning', null, `Solo puedes seleccionar ${cortesiasDisponibles} habitación${cortesiasDisponibles > 1 ? 'es' : ''} de cortesía`);
         return;
     }
 
@@ -1645,7 +1645,7 @@ document.getElementById('formEditarHabitaciones').addEventListener('submit', fun
     const totalHabs = habitacionesSeleccionadas.length;
 
     if (totalHabs === 0) {
-        alert('Debe seleccionar al menos una habitación');
+        window.msToast('warning', null, 'Debe seleccionar al menos una habitación');
         return;
     }
 

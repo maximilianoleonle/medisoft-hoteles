@@ -198,7 +198,7 @@ $entityQuery = $hasEntityContext
                                             Ver
                                         </a>
                                         <?php if ($estado === '' || $estado === 'activo'): ?>
-                                            <a class="de-action" href="<?= url('documentos/' . $documentoId . '/descargar') ?>">
+                                            <a class="de-action" href="<?= url('documentos/' . $documentoId . '/descargar') ?>" download data-medisoft-download="silent">
                                                 <i class="fas fa-download"></i>
                                                 Descargar
                                             </a>

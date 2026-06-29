@@ -370,6 +370,7 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     WHERE r.hotel_id = ?
                       AND r.huesped_id IN ($placeholders)
                       AND r.estado IN ('checked_in', 'confirmada', 'reservada')
+                      AND DATE(r.fecha_entrada) = CURDATE()
                       AND DATE(r.fecha_salida) >= CURDATE()
                     GROUP BY
                         r.id,
@@ -406,9 +407,9 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     $fechaSalida = (string)($reserva['fecha_salida'] ?? '');
                     $tipo = null;
 
-                    if ($estado === 'checked_in' && $fechaEntrada <= $today && $fechaSalida >= $today) {
+                    if ($estado === 'checked_in' && $fechaEntrada === $today && $fechaSalida >= $today) {
                         $tipo = 'ocupado';
-                    } elseif (in_array($estado, ['confirmada', 'reservada'], true) && $fechaSalida >= $today) {
+                    } elseif (in_array($estado, ['confirmada', 'reservada'], true) && $fechaEntrada === $today && $fechaSalida >= $today) {
                         $tipo = 'apartado';
                     }
 
@@ -478,6 +479,8 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     $resumen[$parkingCode]['total']++;
                 } else {
                     $totales['registrados']++;
+                    $resumen[$parkingCode]['registrados']++;
+                    continue;
                 }
 
                 $resumen[$parkingCode]['registrados']++;
@@ -4418,7 +4421,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </div>
                     <div class="parking-vehicle-list" aria-label="Vehiculos vinculados al estacionamiento">
                         <?php if (empty($lista_vehiculos_estacionamiento)): ?>
-                            <div class="empty-state" style="min-height:90px">Sin vehiculos registrados para este hotel.</div>
+                            <div class="empty-state" style="min-height:90px">Sin vehiculos con check-in programado para hoy.</div>
                         <?php else: ?>
                             <?php foreach (array_slice($lista_vehiculos_estacionamiento, 0, 5) as $vehiculoParking): ?>
                                 <?php

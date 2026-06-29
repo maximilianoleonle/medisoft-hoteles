@@ -67,6 +67,13 @@ class SaasAdminController extends Controller {
             $this->redirect('admin/saas/hoteles/crear');
         }
 
+        // Sembrar los roles base del nuevo hotel (no bloquea el alta si falla).
+        try {
+            (new Rol())->sembrarPresetsParaHotel((int) $hotelId);
+        } catch (Throwable $e) {
+            error_log('No se pudieron sembrar roles del hotel nuevo ' . (int) $hotelId . ': ' . $e->getMessage());
+        }
+
         set_mensaje('Hotel creado en estado inactivo. Active el hotel cuando complete su configuracion.', 'success');
         $this->redirect('admin/saas/hoteles/' . (int) $hotelId);
     }

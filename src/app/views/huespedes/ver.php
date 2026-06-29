@@ -95,6 +95,90 @@ if (!function_exists('guest_detail_json_attr')) {
     }
 }
 
+$guestDocuments = array_values(is_array($documentosEntidad ?? null) ? $documentosEntidad : []);
+$guestDocBytes = function ($bytes): string {
+    $bytes = (int)($bytes ?? 0);
+    if ($bytes <= 0) {
+        return '-';
+    }
+
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $size = (float)$bytes;
+    $index = 0;
+    while ($size >= 1024 && $index < count($units) - 1) {
+        $size /= 1024;
+        $index++;
+    }
+
+    return number_format($size, $index === 0 ? 0 : 1) . ' ' . $units[$index];
+};
+$guestDocIcon = function ($documento): array {
+    $mime = strtolower((string)($documento['mime_type'] ?? ''));
+    $name = strtolower((string)(($documento['nombre_original'] ?? '') ?: ($documento['titulo'] ?? '')));
+
+    if (strpos($mime, 'pdf') !== false || substr($name, -4) === '.pdf') {
+        return ['PDF', 'is-pdf', 'fa-file-pdf'];
+    }
+    if (strpos($mime, 'image/') === 0 || preg_match('/\.(jpg|jpeg|png|webp)$/', $name)) {
+        return ['JPG', 'is-image', 'fa-image'];
+    }
+
+    return ['DOC', 'is-file', 'fa-file-lines'];
+};
+$guestDocPreviewKind = function ($documento): string {
+    $mime = strtolower((string)($documento['mime_type'] ?? ''));
+    $name = strtolower((string)(($documento['nombre_original'] ?? '') ?: ($documento['titulo'] ?? '')));
+
+    if (strpos($mime, 'image/') === 0 || preg_match('/\.(jpg|jpeg|png|webp)$/', $name)) {
+        return 'image';
+    }
+    if (strpos($mime, 'pdf') !== false || substr($name, -4) === '.pdf') {
+        return 'pdf';
+    }
+
+    return 'file';
+};
+$guestDocScore = function ($documento): int {
+    $haystack = strtolower(trim(implode(' ', [
+        (string)($documento['titulo'] ?? ''),
+        (string)($documento['nombre_original'] ?? ''),
+        (string)($documento['descripcion'] ?? ''),
+        (string)($documento['etiquetas'] ?? ''),
+        (string)($documento['tipo_nombre'] ?? ''),
+        (string)($documento['tipo_clave'] ?? ''),
+        (string)($documento['relacion'] ?? ''),
+    ])));
+
+    foreach (['ine', 'identificaci', 'id oficial', 'oficial', 'licencia', 'pasaporte'] as $needle) {
+        if (strpos($haystack, $needle) !== false) {
+            return 0;
+        }
+    }
+
+    return 10;
+};
+usort($guestDocuments, function ($a, $b) use ($guestDocScore, $guestDocPreviewKind) {
+    $scoreA = $guestDocScore($a);
+    $scoreB = $guestDocScore($b);
+    if ($scoreA !== $scoreB) {
+        return $scoreA <=> $scoreB;
+    }
+
+    $previewRank = ['image' => 0, 'pdf' => 1, 'file' => 2];
+    $rankA = $previewRank[$guestDocPreviewKind($a)] ?? 2;
+    $rankB = $previewRank[$guestDocPreviewKind($b)] ?? 2;
+    if ($rankA !== $rankB) {
+        return $rankA <=> $rankB;
+    }
+
+    return strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? ''));
+});
+$guestPrimaryDoc = $guestDocuments[0] ?? null;
+$guestDocCount = count($guestDocuments);
+$guestDocPanelClass = 'guest-docs ' . ($guestDocCount > 1 ? 'is-gallery' : ($guestDocCount === 1 ? 'is-single' : 'is-empty'));
+$guestDocEntityId = (int)($huesped['id'] ?? 0);
+$guestDocEntityQuery = $guestDocEntityId > 0 ? '?entidad_tipo=huesped&entidad_id=' . $guestDocEntityId : '';
+
 $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $estacionamientoDefault) {
     $html = '';
     foreach ($estacionamientos as $parkingCode => $parkingLabel) {
@@ -545,6 +629,415 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     margin: 0;
     color: var(--gd-muted);
     line-height: 1.6;
+}
+
+.guest-docs {
+    margin-top: 14px;
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 19%, var(--gd-line-soft));
+    border-radius: 18px;
+    background: linear-gradient(135deg, #FFFFFF, color-mix(in srgb, var(--gd-accent) 5%, #FFFFFF));
+    padding: 14px;
+}
+
+.guest-docs-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.guest-docs-title {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gd-heading);
+    font-size: .9rem;
+    font-weight: 950;
+}
+
+.guest-docs-title i {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: var(--gd-accent-readable);
+    background: color-mix(in srgb, var(--gd-accent) 12%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 20%, transparent);
+}
+
+.guest-docs-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.guest-doc-action {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--gd-line);
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: var(--gd-text-soft);
+    padding: 0 11px;
+    font-size: .76rem;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.guest-doc-action:hover {
+    border-color: color-mix(in srgb, var(--gd-accent) 34%, var(--gd-line));
+    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
+}
+
+.guest-doc-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.guest-doc-feature {
+    width: min(100%, 460px);
+    min-height: 142px;
+    display: grid;
+    grid-template-columns: minmax(118px, 150px) minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 18%, transparent);
+    border-radius: 16px;
+    background: #FFFFFF;
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    position: relative;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.guest-doc-feature:hover {
+    border-color: color-mix(in srgb, var(--gd-accent) 42%, transparent);
+    box-shadow: 0 18px 36px -30px rgba(15, 23, 42, .48);
+    transform: translateY(-1px);
+}
+
+.guest-doc-feature.is-revealable {
+    cursor: default;
+}
+
+.guest-doc-thumb {
+    position: relative;
+    min-height: 116px;
+    display: grid;
+    align-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border: 0;
+    border-radius: 13px;
+    overflow: hidden;
+    color: #FFFFFF;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.14), transparent 40%),
+        linear-gradient(145deg, var(--gd-primary), color-mix(in srgb, var(--gd-primary) 72%, #050812));
+    font-family: inherit;
+    text-align: left;
+}
+
+.guest-doc-thumb::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    bottom: -36px;
+    width: 100px;
+    height: 100px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--gd-accent) 36%, transparent);
+}
+
+.guest-doc-reveal {
+    width: 100%;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: zoom-in;
+}
+
+.guest-doc-reveal:focus-visible,
+.guest-doc-lightbox-close:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--gd-accent) 42%, transparent);
+    outline-offset: 3px;
+}
+
+.guest-doc-brand,
+.guest-doc-seal {
+    position: relative;
+    z-index: 1;
+}
+
+.guest-doc-brand {
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .1em;
+}
+
+.guest-doc-seal {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    color: #FFFFFF;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+.guest-doc-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 13px;
+    opacity: 0;
+    transition: opacity .22s ease;
+    z-index: 2;
+}
+
+.guest-doc-img,
+.guest-doc-lightbox-img {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    pointer-events: none;
+}
+
+.guest-doc-feature.is-revealed .guest-doc-img,
+.guest-doc-reveal:hover .guest-doc-img,
+.guest-doc-reveal:focus-visible .guest-doc-img {
+    opacity: 1;
+}
+
+.guest-doc-eye {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(18,28,42,.68);
+    color: #FFFFFF;
+    font-size: .82rem;
+    backdrop-filter: blur(6px);
+    transition: transform .18s ease, background .18s ease;
+}
+
+.guest-doc-reveal:hover .guest-doc-eye,
+.guest-doc-reveal:focus-visible .guest-doc-eye,
+.guest-doc-feature.is-revealed .guest-doc-eye {
+    transform: translateY(-1px);
+    background: var(--gd-accent-readable);
+}
+
+.guest-doc-copy {
+    min-width: 0;
+    display: grid;
+    align-content: center;
+    gap: 7px;
+    color: var(--gd-text);
+}
+
+.guest-doc-type {
+    width: fit-content;
+    min-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #E8F7EF;
+    color: var(--gd-success);
+    font-size: .68rem;
+    font-weight: 950;
+}
+
+.guest-doc-type.is-pdf { background: #FFF0EF; color: var(--gd-danger); }
+.guest-doc-type.is-file { background: #F1F5F9; color: #475569; }
+
+.guest-doc-copy b {
+    display: block;
+    color: var(--gd-heading);
+    font-size: .96rem;
+    line-height: 1.2;
+    font-weight: 950;
+    overflow-wrap: anywhere;
+}
+
+.guest-doc-copy small {
+    display: block;
+    color: var(--gd-muted);
+    font-size: .72rem;
+    line-height: 1.35;
+    font-weight: 760;
+}
+
+.guest-doc-open {
+    width: max-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gd-accent-readable);
+    font-size: .72rem;
+    font-weight: 950;
+    text-decoration: none;
+}
+
+.guest-doc-open:hover {
+    text-decoration: underline;
+}
+
+.guest-doc-list {
+    flex: 1 1 260px;
+    min-width: 220px;
+    display: grid;
+    gap: 8px;
+    align-content: start;
+}
+
+.guest-doc-chip {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 13px;
+    background: rgba(255,255,255,.82);
+    color: var(--gd-text);
+    padding: 10px 12px;
+    text-decoration: none;
+}
+
+.guest-doc-chip:hover {
+    border-color: color-mix(in srgb, var(--gd-accent) 34%, transparent);
+    box-shadow: 0 14px 28px -25px rgba(15,23,42,.46);
+}
+
+.guest-doc-chip-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: var(--gd-accent-readable);
+    background: color-mix(in srgb, var(--gd-accent) 10%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 16%, transparent);
+}
+
+.guest-doc-chip-title,
+.guest-doc-chip-meta {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guest-doc-chip-title {
+    color: var(--gd-heading);
+    font-size: .78rem;
+    font-weight: 950;
+}
+
+.guest-doc-chip-meta {
+    margin-top: 2px;
+    color: var(--gd-muted);
+    font-size: .67rem;
+    font-weight: 760;
+}
+
+.guest-doc-empty {
+    min-height: 92px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px dashed color-mix(in srgb, var(--gd-accent) 24%, var(--gd-line));
+    border-radius: 14px;
+    background: rgba(255,255,255,.66);
+    color: var(--gd-muted);
+    padding: 14px;
+    font-weight: 800;
+}
+
+.guest-doc-empty i {
+    color: var(--gd-accent-readable);
+    font-size: 1.35rem;
+}
+
+.guest-doc-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    background: rgba(4, 8, 15, .94);
+    backdrop-filter: blur(8px);
+}
+
+.guest-doc-lightbox.hidden,
+.guest-doc-lightbox[hidden] {
+    display: none !important;
+}
+
+.guest-doc-lightbox-frame {
+    position: relative;
+    width: min(1120px, 96vw);
+    max-height: 92dvh;
+    display: grid;
+    place-items: center;
+}
+
+.guest-doc-lightbox-img {
+    display: block;
+    max-width: 100%;
+    max-height: 90dvh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 18px;
+    background: #FFFFFF;
+    box-shadow: 0 30px 90px -34px rgba(0,0,0,.92);
+}
+
+.guest-doc-lightbox-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,253,248,.22);
+    border-radius: 999px;
+    background: rgba(18,28,42,.72);
+    color: #FFFFFF;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: transform .18s ease, background .18s ease;
+}
+
+.guest-doc-lightbox-close:hover {
+    transform: translateY(-1px);
+    background: var(--gd-accent-readable);
 }
 
 .guest-panel-action {
@@ -1356,6 +1849,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
         position: static;
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .guest-doc-feature,
+    .guest-doc-list {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 @media (max-width: 900px) {
@@ -1384,6 +1883,10 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     .guest-vehicle-details {
         margin-top: 0;
     }
+
+    .guest-doc-feature {
+        grid-template-columns: 132px minmax(0, 1fr);
+    }
 }
 
 @media (max-width: 620px) {
@@ -1411,6 +1914,28 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     .guest-panel-head {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .guest-docs-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .guest-docs-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .guest-doc-feature {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-doc-thumb {
+        min-height: 124px;
+    }
+
+    .guest-doc-seal {
+        display: none;
     }
 
     .guest-panel-action,
@@ -1678,6 +2203,121 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                             <?php endforeach; ?>
                         </div>
 
+                        <section class="<?= guest_detail_safe($guestDocPanelClass) ?>" aria-label="Documentos del huesped">
+                            <div class="guest-docs-head">
+                                <div class="guest-docs-title">
+                                    <i class="fas fa-id-card-clip"></i>
+                                    <span>Vista documental del huesped</span>
+                                </div>
+                                <?php if ($guestDocEntityId > 0): ?>
+                                    <div class="guest-docs-actions">
+                                        <a class="guest-doc-action" href="<?= url('documentos/subir' . $guestDocEntityQuery) ?>">
+                                            <i class="fas fa-paperclip"></i>
+                                            Vincular
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (empty($guestDocuments)): ?>
+                                <div class="guest-doc-empty">
+                                    <i class="fas fa-folder-open"></i>
+                                    <div>
+                                        Sin documento vinculado.
+                                        <?php if ($guestDocEntityId > 0): ?>
+                                            <br><a class="guest-doc-open" href="<?= url('documentos/subir' . $guestDocEntityQuery) ?>">Agregar identificacion o archivo</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <?php
+                                    $guestPrimaryDocId = (int)($guestPrimaryDoc['id'] ?? 0);
+                                    $guestPrimaryTitle = trim((string)(($guestPrimaryDoc['titulo'] ?? '') ?: ($guestPrimaryDoc['nombre_original'] ?? 'Documento del huesped')));
+                                    $guestPrimaryMeta = trim(implode(' - ', array_filter([
+                                        (string)($guestPrimaryDoc['tipo_nombre'] ?? ''),
+                                        $guestDocBytes($guestPrimaryDoc['size_bytes'] ?? 0),
+                                    ])));
+                                    [$guestPrimaryDocLabel, $guestPrimaryDocClass, $guestPrimaryDocIcon] = $guestDocIcon($guestPrimaryDoc);
+                                    $guestPrimaryKind = $guestDocPreviewKind($guestPrimaryDoc);
+                                ?>
+                                <div class="guest-doc-grid">
+                                    <?php if ($guestPrimaryKind === 'image' && $guestPrimaryDocId > 0): ?>
+                                        <?php $guestPrimaryPreviewUrl = url('documentos/' . $guestPrimaryDocId . '/descargar') . '?preview=1'; ?>
+                                        <div class="guest-doc-feature is-revealable is-revealed" role="group" aria-label="Documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
+                                            <button type="button"
+                                                    class="guest-doc-thumb guest-doc-reveal"
+                                                    data-doc-src="<?= guest_detail_safe($guestPrimaryPreviewUrl, '') ?>"
+                                                    data-doc-title="<?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?>"
+                                                    aria-label="Ver documento completo del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
+                                                <span class="guest-doc-brand">MEDISOFT</span>
+                                                <span class="guest-doc-seal"><i class="fas fa-file-shield"></i></span>
+                                                <img class="guest-doc-img"
+                                                     src="<?= guest_detail_safe($guestPrimaryPreviewUrl, '') ?>"
+                                                     alt="<?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?>"
+                                                     loading="lazy"
+                                                     decoding="async"
+                                                     draggable="false"
+                                                     oncontextmenu="return false;">
+                                                <span class="guest-doc-eye"><i class="fas fa-eye" aria-hidden="true"></i></span>
+                                            </button>
+                                            <span class="guest-doc-copy">
+                                                <span class="guest-doc-type <?= guest_detail_safe($guestPrimaryDocClass, 'is-file') ?>">
+                                                    <i class="fas <?= guest_detail_safe($guestPrimaryDocIcon, 'fa-file-lines') ?>"></i>
+                                                    <?= guest_detail_safe($guestPrimaryDocLabel, 'DOC') ?>
+                                                </span>
+                                                <b><?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?></b>
+                                                <small><?= guest_detail_safe($guestPrimaryMeta, 'Archivo vinculado') ?></small>
+                                                <a class="guest-doc-open" href="<?= url('documentos/' . $guestPrimaryDocId) ?>">Abrir ficha <i class="fas fa-arrow-up-right-from-square"></i></a>
+                                            </span>
+                                        </div>
+                                    <?php else: ?>
+                                        <a class="guest-doc-feature" href="<?= url('documentos/' . $guestPrimaryDocId) ?>" title="Ver <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
+                                            <span class="guest-doc-thumb" aria-hidden="true">
+                                                <span class="guest-doc-brand">MEDISOFT</span>
+                                                <span class="guest-doc-seal"><i class="fas fa-file-shield"></i></span>
+                                            </span>
+                                            <span class="guest-doc-copy">
+                                                <span class="guest-doc-type <?= guest_detail_safe($guestPrimaryDocClass, 'is-file') ?>">
+                                                    <i class="fas <?= guest_detail_safe($guestPrimaryDocIcon, 'fa-file-lines') ?>"></i>
+                                                    <?= guest_detail_safe($guestPrimaryDocLabel, 'DOC') ?>
+                                                </span>
+                                                <b><?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?></b>
+                                                <small><?= guest_detail_safe($guestPrimaryMeta, 'Archivo vinculado') ?></small>
+                                            </span>
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <?php $guestSecondaryDocs = array_slice($guestDocuments, 1, 4); ?>
+                                    <?php if (!empty($guestSecondaryDocs)): ?>
+                                        <div class="guest-doc-list">
+                                            <?php foreach ($guestSecondaryDocs as $guestDoc): ?>
+                                                <?php
+                                                    $guestDocId = (int)($guestDoc['id'] ?? 0);
+                                                    if ($guestDocId <= 0) {
+                                                        continue;
+                                                    }
+                                                    $guestDocTitle = trim((string)(($guestDoc['titulo'] ?? '') ?: ($guestDoc['nombre_original'] ?? 'Documento')));
+                                                    $guestDocMeta = trim(implode(' - ', array_filter([
+                                                        (string)($guestDoc['tipo_nombre'] ?? ''),
+                                                        (string)($guestDoc['relacion'] ?? ''),
+                                                        $guestDocBytes($guestDoc['size_bytes'] ?? 0),
+                                                    ])));
+                                                    [, , $guestDocListIcon] = $guestDocIcon($guestDoc);
+                                                ?>
+                                                <a class="guest-doc-chip" href="<?= url('documentos/' . $guestDocId) ?>">
+                                                    <span class="guest-doc-chip-icon"><i class="fas <?= guest_detail_safe($guestDocListIcon, 'fa-file-lines') ?>"></i></span>
+                                                    <span>
+                                                        <span class="guest-doc-chip-title"><?= guest_detail_safe($guestDocTitle, 'Documento') ?></span>
+                                                        <span class="guest-doc-chip-meta"><?= guest_detail_safe($guestDocMeta, 'Archivo vinculado') ?></span>
+                                                    </span>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </section>
+
                         <?php if (!empty($huesped['notas'])): ?>
                             <div class="guest-note">
                                 <strong>Notas internas</strong>
@@ -1923,6 +2563,15 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     </div>
 </div>
 
+<div id="guestDocLightbox" class="guest-doc-lightbox hidden" role="dialog" aria-modal="true" aria-label="Vista completa del documento" hidden>
+    <div class="guest-doc-lightbox-frame">
+        <img id="guestDocLightboxImg" class="guest-doc-lightbox-img" src="" alt="Documento del huesped ampliado" draggable="false" oncontextmenu="return false;">
+        <button type="button" id="guestDocLightboxClose" class="guest-doc-lightbox-close" aria-label="Cerrar vista completa del documento">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>
+
 <div id="modalAgregarVehiculo" class="guest-modal hidden">
     <div class="guest-modal-card">
         <div class="guest-modal-head">
@@ -1996,6 +2645,99 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 </div>
 
 <script>
+(function () {
+    var modal = document.getElementById('guestDocLightbox');
+    var modalImg = document.getElementById('guestDocLightboxImg');
+    var closeBtn = document.getElementById('guestDocLightboxClose');
+    var modalFrame = modal ? modal.querySelector('.guest-doc-lightbox-frame') : null;
+    var lastTrigger = null;
+    var previousBodyOverflow = '';
+
+    function ensureSrc(btn) {
+        var img = btn.querySelector('.guest-doc-img');
+        if (img && !img.getAttribute('src') && btn.dataset.docSrc) {
+            img.src = btn.dataset.docSrc;
+        }
+    }
+
+    function blockImageSearch(e) {
+        e.preventDefault();
+    }
+
+    function closeLightbox() {
+        if (!modal || modal.classList.contains('hidden')) {
+            return;
+        }
+        modal.classList.add('hidden');
+        modal.hidden = true;
+        if (modalImg) {
+            modalImg.removeAttribute('src');
+        }
+        document.body.style.overflow = previousBodyOverflow;
+        if (lastTrigger && typeof lastTrigger.focus === 'function') {
+            lastTrigger.focus({ preventScroll: true });
+        }
+        lastTrigger = null;
+    }
+
+    function openLightbox(btn) {
+        if (!modal || !modalImg || !btn.dataset.docSrc) {
+            return;
+        }
+        ensureSrc(btn);
+        lastTrigger = btn;
+        previousBodyOverflow = document.body.style.overflow || '';
+        modalImg.src = btn.dataset.docSrc;
+        modalImg.alt = btn.dataset.docTitle || 'Documento del huesped ampliado';
+        modal.hidden = false;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (closeBtn && typeof closeBtn.focus === 'function') {
+            closeBtn.focus({ preventScroll: true });
+        }
+    }
+
+    document.querySelectorAll('.guest-doc-reveal').forEach(function (btn) {
+        var feature = btn.closest('.guest-doc-feature');
+        btn.addEventListener('mouseenter', function () { ensureSrc(btn); });
+        btn.addEventListener('focus', function () { ensureSrc(btn); });
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            ensureSrc(btn);
+            if (feature) {
+                feature.classList.add('is-revealed');
+            }
+            openLightbox(btn);
+        });
+        btn.addEventListener('contextmenu', blockImageSearch);
+        btn.addEventListener('dragstart', blockImageSearch);
+    });
+
+    if (modal) {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeLightbox();
+            }
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeLightbox);
+    }
+    if (modalImg) {
+        modalImg.addEventListener('contextmenu', blockImageSearch);
+        modalImg.addEventListener('dragstart', blockImageSearch);
+    }
+    if (modalFrame) {
+        modalFrame.addEventListener('contextmenu', blockImageSearch);
+        modalFrame.addEventListener('dragstart', blockImageSearch);
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeLightbox();
+        }
+    });
+})();
+
 function guestShowVehicleFeedback(form, type, message) {
     const alertBox = form ? form.querySelector('[data-vehicle-feedback]') : null;
     if (!alertBox) {

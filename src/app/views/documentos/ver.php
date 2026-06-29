@@ -253,7 +253,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                 </a>
             <?php endif; ?>
             <?php if ($docEstado === 'activo'): ?>
-                <a class="dc-btn dc-btn-dl" href="<?= url('documentos/' . $documentoId . '/descargar') ?>">
+                <a class="dc-btn dc-btn-dl" href="<?= url('documentos/' . $documentoId . '/descargar') ?>" download data-medisoft-download="silent">
                     <i class="fas fa-download"></i>
                     Descargar
                 </a>
@@ -295,7 +295,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                 <div class="dc-panel-head">
                     <div>
                         <h2 class="dc-panel-title">Previsualizaci&oacute;n</h2>
-                        <p class="dc-sub">Disponible para PDF e im&aacute;genes. Se carga solo cuando la solicitas.</p>
+                        <p class="dc-sub">Disponible para PDF e im&aacute;genes. La vista se carga autom&aacute;ticamente.</p>
                     </div>
                     <button type="button" class="dc-btn dc-btn-preview" data-doc-preview-toggle>
                         <i class="fas fa-eye"></i>
@@ -306,12 +306,12 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                     <div class="dc-preview-empty">
                         <i class="fas fa-file-lines"></i>
                         <div>
-                            <strong>Vista lista para cargar</strong>
-                            <p>Presiona el bot&oacute;n para ver el archivo sin descargarlo.</p>
+                            <strong>Cargando vista del documento</strong>
+                            <p>El archivo se mostrar&aacute; aqu&iacute; sin descargarlo.</p>
                         </div>
                         <button type="button" class="dc-btn dc-btn-preview dc-preview-empty-btn" data-doc-preview-load>
                             <i class="fas fa-eye"></i>
-                            Cargar vista
+                            Reintentar vista
                         </button>
                     </div>
                 </div>
@@ -510,6 +510,8 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
 
             loadPreview();
         });
+
+        loadPreview();
     });
 
     document.addEventListener('submit', function(event) {

@@ -254,6 +254,66 @@ function current_hotel_user_role() {
     return $_SESSION['hotel_usuario']['rol'] ?? null;
 }
 
+/**
+ * ID del rol configurable que el usuario tiene EN EL HOTEL actual
+ * (hotel_usuarios.role_id). Lo consume can() para resolver permisos.
+ *
+ * Resolucion perezosa y defensiva: usa el valor cacheado en sesion si existe;
+ * si no, lo consulta de hotel_usuarios y lo cachea. Devuelve null cuando no hay
+ * contexto de hotel, el usuario no tiene role_id (datos legacy) o la columna aun
+ * no existe (migracion pendiente). En esos casos can() usa el esquema legacy.
+ */
+function current_hotel_role_id() {
+    static $cache = [];
+
+    $hotelId = current_hotel_id();
+    $userId = $_SESSION['user_id'] ?? null;
+
+    if (!$hotelId || !$userId) {
+        return null;
+    }
+
+    $key = $hotelId . ':' . $userId;
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    // Preferir el valor ya cacheado en sesion.
+    if (isset($_SESSION['hotel_usuario']['role_id']) && $_SESSION['hotel_usuario']['role_id'] !== null) {
+        return $cache[$key] = (int) $_SESSION['hotel_usuario']['role_id'];
+    }
+
+    $roleId = null;
+
+    if (class_exists('Database')) {
+        try {
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "SELECT role_id FROM hotel_usuarios
+                 WHERE hotel_id = ? AND usuario_id = ? AND activo = 1
+                 LIMIT 1",
+                [(int) $hotelId, (int) $userId]
+            );
+            $row = $stmt ? $stmt->fetch() : null;
+
+            if ($row && $row['role_id'] !== null) {
+                $roleId = (int) $row['role_id'];
+            }
+        } catch (Throwable $e) {
+            error_log('current_hotel_role_id: ' . $e->getMessage());
+        }
+    }
+
+    // Cachear el int resuelto en sesion; el null se reintenta en cada request
+    // hasta que exista role_id (p. ej. tras aplicar la migracion + backfill).
+    if ($roleId !== null && isset($_SESSION['hotel_usuario']) && is_array($_SESSION['hotel_usuario'])) {
+        $_SESSION['hotel_usuario']['role_id'] = $roleId;
+    }
+
+    return $cache[$key] = $roleId;
+}
+
 function has_hotel_context() {
     return current_hotel_id() !== null && current_hotel_slug() !== null;
 }
@@ -381,11 +441,90 @@ function isSaasAdmin() {
 }
 
 /**
- * Verificar si el usuario puede acceder a una funcionalidad
+ * Verificar si el usuario puede acceder a una funcionalidad.
+ *
+ * Sistema de roles configurables: resuelve los permisos del rol que el usuario
+ * tiene EN EL HOTEL actual (hotel_usuarios.role_id -> roles.permisos_json). Si
+ * no hay un rol configurable resoluble (sesion legacy, migracion pendiente o
+ * usuario sin role_id), cae al esquema legacy por rol-string, preservando el
+ * comportamiento previo (paridad).
  */
 function can($permission) {
+    $roleId = current_hotel_role_id();
+
+    if ($roleId) {
+        $permisos = hotel_role_permissions($roleId);
+
+        // null  => no se pudo resolver (tabla ausente/error) -> usar fallback.
+        // array => el rol manda (un rol sin permisos no accede a nada).
+        if (is_array($permisos)) {
+            return permission_in_list($permission, $permisos);
+        }
+    }
+
+    return can_legacy($permission);
+}
+
+/**
+ * Evalua si un permiso esta concedido dentro de una lista. Soporta el comodin
+ * '*' (todo) y wildcards por modulo '<modulo>.all' / '<modulo>.*'.
+ */
+function permission_in_list($permission, array $permisos) {
+    if (in_array('*', $permisos, true)) {
+        return true;
+    }
+
+    if (in_array($permission, $permisos, true)) {
+        return true;
+    }
+
+    $dot = strpos($permission, '.');
+    $modulo = $dot !== false ? substr($permission, 0, $dot) : $permission;
+
+    if (in_array($modulo . '.all', $permisos, true)) {
+        return true;
+    }
+
+    if (in_array($modulo . '.*', $permisos, true)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Permisos efectivos (array) del rol indicado, o null si no se pueden resolver.
+ * Cachea la instancia del modelo; Rol::permisosDeRol cachea por rol en el request.
+ */
+function hotel_role_permissions($roleId) {
+    $roleId = (int) $roleId;
+
+    if ($roleId <= 0 || !class_exists('Rol')) {
+        return null;
+    }
+
+    static $model = null;
+
+    try {
+        if ($model === null) {
+            $model = new Rol();
+        }
+
+        return $model->permisosDeRol($roleId);
+    } catch (Throwable $e) {
+        error_log('hotel_role_permissions: ' . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Esquema de permisos legacy por rol-string. Fallback para sesiones/usuarios sin
+ * rol configurable. Mantiene paridad con el comportamiento previo a los roles
+ * configurables por hotel.
+ */
+function can_legacy($permission) {
     $role = user_role();
-    
+
     // Definir permisos por rol
     $permissions = [
         'gerente' => [
@@ -408,12 +547,12 @@ function can($permission) {
             'llaves.control'
         ]
     ];
-    
+
     // Verificar si el rol tiene el permiso
     if (isset($permissions[$role]) && in_array($permission, $permissions[$role])) {
         return true;
     }
-    
+
     // Verificar permisos con wildcards (ej: habitaciones.all)
     if (isset($permissions[$role])) {
         foreach ($permissions[$role] as $perm) {
@@ -425,7 +564,7 @@ function can($permission) {
             }
         }
     }
-    
+
     return false;
 }
 
@@ -531,6 +670,11 @@ function login($user_id, $remember = false, $hotel = null) {
 
         remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
         bootstrap_tenant_context_from_session();
+    } else {
+        unset($_SESSION['hotel_id'], $_SESSION['hotel_slug'], $_SESSION['hotel_nombre'], $_SESSION['hotel_usuario']);
+        if (class_exists('TenantContext')) {
+            TenantContext::reset();
+        }
     }
     
     // Registrar login en base de datos
@@ -567,6 +711,66 @@ function login($user_id, $remember = false, $hotel = null) {
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
+    }
+}
+
+function resolve_default_hotel_context_for_user($userId, $preferredSlug = null) {
+    $userId = (int) $userId;
+    if ($userId <= 0 || !class_exists('Database')) {
+        return null;
+    }
+
+    $preferredSlug = normalize_hotel_login_slug($preferredSlug);
+    $db = Database::getInstance();
+
+    try {
+        if ($preferredSlug) {
+            $stmt = $db->query(
+                "SELECT h.id, h.slug, h.nombre, hu.id AS hotel_usuario_id, hu.rol
+                 FROM hotel_usuarios hu
+                 INNER JOIN hoteles h ON h.id = hu.hotel_id
+                 WHERE hu.usuario_id = ?
+                   AND hu.activo = 1
+                   AND h.activo = 1
+                   AND h.slug = ?
+                 LIMIT 1",
+                [$userId, $preferredSlug]
+            );
+            $hotel = $stmt ? $stmt->fetch() : null;
+            if ($hotel) {
+                return [
+                    'id' => (int) $hotel['id'],
+                    'slug' => $hotel['slug'] ?? null,
+                    'nombre' => $hotel['nombre'] ?? null,
+                    'rol_hotel' => $hotel['rol'] ?? null,
+                    'hotel_usuario_id' => $hotel['hotel_usuario_id'] ?? null,
+                ];
+            }
+        }
+
+        $stmt = $db->query(
+            "SELECT h.id, h.slug, h.nombre, hu.id AS hotel_usuario_id, hu.rol
+             FROM hotel_usuarios hu
+             INNER JOIN hoteles h ON h.id = hu.hotel_id
+             WHERE hu.usuario_id = ?
+               AND hu.activo = 1
+               AND h.activo = 1
+             ORDER BY hu.es_principal DESC, h.id ASC
+             LIMIT 1",
+            [$userId]
+        );
+        $hotel = $stmt ? $stmt->fetch() : null;
+
+        return $hotel ? [
+            'id' => (int) $hotel['id'],
+            'slug' => $hotel['slug'] ?? null,
+            'nombre' => $hotel['nombre'] ?? null,
+            'rol_hotel' => $hotel['rol'] ?? null,
+            'hotel_usuario_id' => $hotel['hotel_usuario_id'] ?? null,
+        ] : null;
+    } catch (Throwable $e) {
+        error_log('resolve_default_hotel_context_for_user: ' . $e->getMessage());
+        return null;
     }
 }
 

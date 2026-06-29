@@ -1,3 +1,12 @@
+<?php
+$unidadMedidaAjuste = trim((string)($producto['unidad_medida'] ?? 'pzs'));
+if ($unidadMedidaAjuste === '') {
+    $unidadMedidaAjuste = 'pzs';
+}
+$stockActualAjuste = round((float)($producto['stock_actual'] ?? 0), 2);
+$stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
+?>
+
 <!-- Ajustar Stock -->
 <style>
 .inv-form-error {
@@ -49,8 +58,8 @@
                     <div class="text-center">
                         <p class="text-sm text-gray-600 mb-1">Stock Actual</p>
                         <p class="text-3xl font-bold text-gray-800">
-                            <?= number_format($producto['stock_actual'], 0) ?>
-                            <span class="text-lg font-normal text-gray-600">pzs</span>
+                            <?= htmlspecialchars($stockActualAjusteLabel, ENT_QUOTES, 'UTF-8') ?>
+                            <span class="text-lg font-normal text-gray-600"><?= htmlspecialchars($unidadMedidaAjuste, ENT_QUOTES, 'UTF-8') ?></span>
                         </p>
                     </div>
                 </div>
@@ -103,20 +112,22 @@
                 
                 <!-- Cantidad -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="cantidad_ajuste" class="block text-sm font-semibold text-gray-700 mb-2">
                         Cantidad <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <input type="number" 
+                               id="cantidad_ajuste"
                                name="cantidad" 
-                               min="1"
-                               step="1"
+                               min="0.01"
+                               step="0.01"
+                               inputmode="decimal"
                                class="w-full px-4 py-3 pr-12 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
-                               placeholder="0"
+                               placeholder="0.00"
                                value="<?= old('cantidad') ?>"
                                required>
                         <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            pzs
+                            <?= htmlspecialchars($unidadMedidaAjuste, ENT_QUOTES, 'UTF-8') ?>
                         </span>
                     </div>
                     <?php if (form_error('cantidad')): ?>
@@ -160,8 +171,8 @@
                         <div class="text-sm text-amber-800">
                             <p class="font-semibold mb-1">Vista previa del cambio:</p>
                             <p id="preview-text" class="hidden">
-                                Stock actual: <span class="font-semibold"><?= number_format($producto['stock_actual'], 0) ?></span> → 
-                                Stock nuevo: <span class="font-semibold" id="nuevo-stock">?</span> pzs
+                                Stock actual: <span class="font-semibold"><?= htmlspecialchars($stockActualAjusteLabel, ENT_QUOTES, 'UTF-8') ?></span> -&gt;
+                                Stock nuevo: <span class="font-semibold" id="nuevo-stock">?</span> <?= htmlspecialchars($unidadMedidaAjuste, ENT_QUOTES, 'UTF-8') ?>
                             </p>
                         </div>
                     </div>
@@ -190,12 +201,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const tipoInputs = document.querySelectorAll('input[name="tipo"]');
     const cantidadInput = document.querySelector('input[name="cantidad"]');
     const previewText = document.getElementById('preview-text');
-    const nuevoStockSpan = document.getElementById('nuevo-stock');
-    const stockActual = <?= $producto['stock_actual'] ?>;
+    const stockActual = <?= json_encode($stockActualAjuste) ?>;
+    const unidadMedida = <?= json_encode($unidadMedidaAjuste) ?>;
+    const stockActualLabel = stockActual.toFixed(2);
     
     function actualizarPreview() {
         const tipo = document.querySelector('input[name="tipo"]:checked');
-        const cantidad = parseInt(cantidadInput.value) || 0;
+        const cantidad = parseFloat(cantidadInput.value) || 0;
         
         if (tipo && cantidad > 0) {
             let nuevoStock;
@@ -204,9 +216,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 nuevoStock = stockActual - cantidad;
             }
+
+            const nuevoStockLabel = nuevoStock.toFixed(2);
             
-            nuevoStockSpan.textContent = nuevoStock;
+            previewText.innerHTML = `Stock actual: <span class="font-semibold">${stockActualLabel}</span> &rarr; Stock nuevo: <span class="font-semibold" id="nuevo-stock">${nuevoStockLabel}</span> ${unidadMedida}`;
             previewText.classList.remove('hidden');
+            const nuevoStockSpan = document.getElementById('nuevo-stock');
             
             if (nuevoStock < 0) {
                 nuevoStockSpan.classList.add('text-red-600', 'font-bold');

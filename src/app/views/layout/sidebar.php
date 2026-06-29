@@ -34,8 +34,9 @@ $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtra
 $mostrarPersonal = $mostrarUsuariosAdmin;
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
+$mostrarRoles = function_exists('can') && can('roles.manage');
 $mostrarNotificacionesMenu = true;
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
 if ($sidebarNormalizedPath === '/') {
@@ -72,8 +73,9 @@ $sidebarActiveReportes = $sidebarPathStarts('reportes');
 $sidebarActivePersonal = $sidebarPathStarts('trabajadores');
 $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
-$sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas');
+$sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
 $sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
+$sidebarActiveRoles = $sidebarPathStarts('configuracion/roles');
 $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
@@ -272,22 +274,6 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                 <span>RECEPCIÓN</span>
             </div>
 
-            <?php if ($mostrarReservaciones): ?>
-            <a href="<?= url('reservaciones') ?>"
-               class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-calendar-check"></i>
-                    <?php
-                    $pending_reservations = $pending_reservations ?? 0;
-                    if ($pending_reservations > 0):
-                    ?>
-                    <span class="nav-badge"><?= $pending_reservations ?></span>
-                    <?php endif; ?>
-                </div>
-                <span class="nav-text">Reservaciones</span>
-            </a>
-            <?php endif; ?>
-
             <?php if ($mostrarHabitaciones): ?>
             <a href="<?= url('habitaciones') ?>"
                class="nav-item <?= $sidebarActiveHabitaciones ? 'active' : '' ?>">
@@ -301,6 +287,22 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <?php endif; ?>
                 </div>
                 <span class="nav-text">Habitaciones</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarReservaciones): ?>
+            <a href="<?= url('reservaciones') ?>"
+               class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-calendar-check"></i>
+                    <?php
+                    $pending_reservations = $pending_reservations ?? 0;
+                    if ($pending_reservations > 0):
+                    ?>
+                    <span class="nav-badge"><?= $pending_reservations ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="nav-text">Reservaciones</span>
             </a>
             <?php endif; ?>
 
@@ -499,6 +501,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-tags"></i>
                 </div>
                 <span class="nav-text">Tarifas dinámicas</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarRoles): ?>
+            <a href="<?= url('configuracion/roles') ?>"
+               class="nav-item <?= $sidebarActiveRoles ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <span class="nav-text">Roles y permisos</span>
             </a>
             <?php endif; ?>
         </div>

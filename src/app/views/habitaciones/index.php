@@ -2881,19 +2881,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Barra de Filtros Compacta -->
         <!-- Reemplazar toda la sección de "Barra de Filtros Compacta" con esto: -->
 <div class="bg-white rounded-xl shadow-sm p-2 sm:p-3 mb-4 hb-filter-panel">
-    <?php if (!empty($filtros['fecha_consulta']) && !empty($filtros['mostrar_disponibilidad'])): ?>
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2 flex items-center justify-between">
-        <div class="flex items-center flex-1">
-            <i class="fas fa-info-circle text-blue-600 mr-2 text-xs"></i>
-            <span class="text-xs text-blue-800 font-medium">
-                Disponibilidad: <?= format_date($filtros['fecha_consulta']) ?>
-            </span>
-        </div>
-        <a href="<?= url('habitaciones') ?>" class="text-blue-600 hover:text-blue-800 text-xs p-1" title="Quitar filtro de fecha" aria-label="Quitar filtro de fecha">
-            <i class="fas fa-times"></i>
-        </a>
-    </div>
-    <?php endif; ?>
+    <?php $hbFechaActiva = !empty($filtros['fecha_consulta']); ?>
 
     <?php
         $hbChips = [
@@ -2924,7 +2912,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?php endforeach; ?>
             </div>
             <form method="GET" action="<?= url('habitaciones') ?>" class="hb-filter-right" data-auto-filter-form>
-                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date" title="Disponibilidad en fecha">
+                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date<?= $hbFechaActiva ? ' is-active' : '' ?>" title="Disponibilidad en fecha">
                 <input type="hidden" name="mostrar_disponibilidad" value="1">
                 <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today" title="Volver a hoy">
                     <i class="fas fa-calendar-day"></i><span class="hidden sm:inline">Hoy</span>
@@ -2935,6 +2923,22 @@ document.addEventListener('DOMContentLoaded', function() {
             </form>
         </div>
 </div>
+
+<style>
+.hb-filter-panel .filter-date.is-active{
+    border-color:#3B7DD8 !important;
+    background:#EDF4FC !important;
+    box-shadow:0 0 0 2px rgba(59,125,216,.18);
+    font-weight:700;
+}
+</style>
+<?php if (!empty($filtros['fecha_consulta']) && $filtros['fecha_consulta'] != date('Y-m-d')): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    if (window.msToast) window.msToast('info', 'Disponibilidad', 'Mostrando habitaciones para el <?= format_date($filtros['fecha_consulta']) ?>');
+});
+</script>
+<?php endif; ?>
 
         <!-- Movimientos del día -->
         <?php
@@ -9072,6 +9076,76 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     color:#EF4D45!important;
     background:rgba(255,255,255,.7)!important;
   }
+  .habitaciones-view .hb-filter-panel{
+    padding:10px!important;
+    border:1px solid color-mix(in srgb,var(--hb-secondary) 10%,var(--hb-line))!important;
+    border-radius:18px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.56))!important;
+    box-shadow:0 16px 34px -30px rgba(18,22,34,.42)!important;
+  }
+  .habitaciones-view .hb-filterbar{
+    grid-template-columns:minmax(0,1fr) 44px!important;
+    gap:10px!important;
+    align-items:center!important;
+  }
+  .habitaciones-view .hb-search,
+  .habitaciones-view .hb-filter-trigger,
+  .habitaciones-view .filter-date,
+  .habitaciones-view .filter-btn{
+    min-height:44px!important;
+    height:44px!important;
+    border-radius:14px!important;
+    background:#fff!important;
+    border-color:color-mix(in srgb,var(--hb-secondary) 12%,var(--hb-line))!important;
+    box-shadow:0 8px 20px -20px rgba(18,22,34,.5)!important;
+  }
+  .habitaciones-view .hb-search{
+    padding:0 14px!important;
+  }
+  .habitaciones-view .hb-filter-trigger{
+    width:44px!important;
+  }
+  .habitaciones-view .hb-chips{
+    flex-wrap:nowrap!important;
+    gap:8px!important;
+    margin:0 -2px!important;
+    padding:0 2px 3px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:none!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  .habitaciones-view .hb-chips::-webkit-scrollbar{width:0!important;height:0!important;}
+  .habitaciones-view .hb-chip{
+    flex:0 0 auto!important;
+    min-height:34px!important;
+    padding:0 12px!important;
+    background:rgba(255,255,255,.88)!important;
+    border-color:color-mix(in srgb,var(--hb-secondary) 13%,var(--hb-line))!important;
+    font-size:.74rem!important;
+    line-height:1!important;
+  }
+  .habitaciones-view .hb-chip-dot{
+    width:7px!important;
+    height:7px!important;
+  }
+  .habitaciones-view .hb-filter-right{
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
+    gap:8px!important;
+    margin:0!important;
+  }
+  .habitaciones-view .filter-date{
+    min-width:0!important;
+    padding:0 12px!important;
+    font-size:.86rem!important;
+  }
+  .habitaciones-view .filter-btn{
+    font-size:.88rem!important;
+  }
+  .habitaciones-view .filter-btn-reset{
+    color:#E0443E!important;
+    background:color-mix(in srgb,#FFF 88%,#FEE2E2)!important;
+  }
   .habitaciones-view .hb-movements{
     display:grid!important;
     gap:10px!important;
@@ -13575,13 +13649,13 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
                 case '2': tipoIdentificacion = 'licencia'; break;
                 case '3': tipoIdentificacion = 'otro'; break;
                 default:
-                    alert('Opción inválida');
+                    window.msToast('error', null, 'Opción inválida');
                     return;
             }
 
             const nombrePropietario = prompt('Ingrese el nombre del propietario de la identificación:');
             if (!nombrePropietario) {
-                alert('Debe ingresar el nombre del propietario');
+                window.msToast('warning', null, 'Debe ingresar el nombre del propietario');
                 return;
             }
 
@@ -13614,7 +13688,7 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
  */
 function entregarRemotosMultiples(reservacionId, habitaciones) {
     if (typeof Swal === 'undefined') {
-        alert('Esta funcionalidad requiere SweetAlert2');
+        window.msToast('error', null, 'Esta funcionalidad requiere SweetAlert2');
         return;
     }
 
@@ -13808,7 +13882,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
  */
 function recibirRemotosMultiples(reservacionId, habitaciones) {
     if (typeof Swal === 'undefined') {
-        alert('Esta funcionalidad requiere SweetAlert2');
+        window.msToast('error', null, 'Esta funcionalidad requiere SweetAlert2');
         return;
     }
 
@@ -14361,6 +14435,18 @@ function ejecutarCheckOutRapido(reservacionId) {
                 showConfirmButton: false
             }).then(() => {
                 window.location.reload();
+            });
+        } else if (data.saldo_pendiente) {
+            const btnHtml = data.url_reservacion
+                ? `<br><br><a href="${data.url_reservacion}" class="swal2-confirm swal2-styled" style="display:inline-flex;align-items:center;gap:6px;font-size:.9rem;"><i class="fas fa-cash-register"></i> Ir a cobrar</a>`
+                : '';
+            Swal.fire({
+                icon: 'warning',
+                title: 'Saldo pendiente',
+                html: (data.message || 'Hay un saldo pendiente.') + btnHtml,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
             });
         } else {
             throw new Error(data.message || 'Error al procesar check-out');

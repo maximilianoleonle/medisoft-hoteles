@@ -11,6 +11,7 @@ class Inventario extends Model {
     protected $fillable = [
         'codigo',
         'nombre',
+        'descripcion',
         'categoria_id',
         'stock_actual',
         'stock_minimo',

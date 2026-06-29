@@ -87,6 +87,55 @@ class CompraService
         }
     }
 
+    public function crearBorradoresPorProveedor(int $hotelId, array $datos, array $detallesPorProveedor, ?int $usuarioId = null): array
+    {
+        $this->assertTablasDisponibles();
+        $this->assertTransaccionPropia();
+
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+        $grupos = $this->normalizarGruposProveedor($detallesPorProveedor);
+        $totalGrupos = count($grupos);
+        $folioBase = $this->normalizarTextoNullable($datos['folio'] ?? null, 60);
+
+        $this->assertTransactionPolicy();
+        $this->beginTransactionIfManaged();
+
+        try {
+            $worker = new self($this->db, ['manage_transaction' => false]);
+            $compras = [];
+            $index = 1;
+
+            foreach ($grupos as $proveedorId => $detallesGrupo) {
+                $datosGrupo = $datos;
+                $datosGrupo['proveedor_id'] = $proveedorId;
+                $datosGrupo['folio'] = $totalGrupos > 1
+                    ? $this->folioConSufijoGrupo($folioBase, $index)
+                    : $folioBase;
+
+                $compraId = $worker->crearBorrador($hotelId, $datosGrupo, $detallesGrupo, $usuarioId);
+                $compras[] = [
+                    'compra_id' => $compraId,
+                    'proveedor_id' => $proveedorId,
+                    'folio' => $datosGrupo['folio'],
+                    'detalle_count' => count($detallesGrupo),
+                ];
+
+                $index++;
+            }
+
+            $this->commitIfManaged();
+
+            return $compras;
+        } catch (Throwable $e) {
+            if ($this->manageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     public function recibirCompra(int $hotelId, int $compraId, ?int $usuarioId = null): array
     {
         $this->assertTablasDisponibles();
@@ -652,6 +701,56 @@ class CompraService
                 $detalle['subtotal'],
             ]);
         }
+    }
+
+    private function normalizarGruposProveedor(array $detallesPorProveedor): array
+    {
+        $grupos = [];
+
+        foreach ($detallesPorProveedor as $proveedorId => $detalles) {
+            $proveedorId = $this->validarId($proveedorId, 'Proveedor invalido');
+            if (!is_array($detalles) || empty($detalles)) {
+                continue;
+            }
+
+            if (!isset($grupos[$proveedorId])) {
+                $grupos[$proveedorId] = [];
+            }
+
+            foreach ($detalles as $detalle) {
+                if (is_array($detalle)) {
+                    $grupos[$proveedorId][] = $detalle;
+                }
+            }
+        }
+
+        foreach ($grupos as $proveedorId => $detalles) {
+            if (empty($detalles)) {
+                unset($grupos[$proveedorId]);
+            }
+        }
+
+        if (empty($grupos)) {
+            throw new Exception('La compra requiere al menos un producto');
+        }
+
+        return $grupos;
+    }
+
+    private function folioConSufijoGrupo(?string $folio, int $index): ?string
+    {
+        if ($folio === null) {
+            return null;
+        }
+
+        $suffix = '-' . str_pad((string)$index, 2, '0', STR_PAD_LEFT);
+        $limit = max(1, 60 - strlen($suffix));
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($folio, 0, $limit, 'UTF-8') . $suffix;
+        }
+
+        return substr($folio, 0, $limit) . $suffix;
     }
 
     private function normalizarDetalles(int $hotelId, array $detalles, bool $lockProductos): array

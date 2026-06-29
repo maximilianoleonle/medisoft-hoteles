@@ -6227,44 +6227,75 @@ if (configForm) {
     const saveStatusTargets = Array.from(configForm.querySelectorAll('.hc-save-copy, .hc-bottom-note'));
     const originalSaveButtonHtml = new Map(saveButtons.map(button => [button, button.innerHTML]));
     const originalSaveStatusHtml = new Map(saveStatusTargets.map(target => [target, target.innerHTML]));
-    let saveConfirmTimer = null;
 
-    const setSaveConfirmState = (active) => {
+    const setSaveSubmittingState = (active) => {
         saveButtons.forEach(button => {
-            button.classList.toggle('is-confirming', active);
+            button.disabled = active;
+            button.setAttribute('aria-busy', active ? 'true' : 'false');
             button.innerHTML = active
-                ? '<i class="fas fa-check"></i> Confirmar guardado'
+                ? '<i class="fas fa-spinner fa-spin"></i> Guardando cambios'
                 : (originalSaveButtonHtml.get(button) || '<i class="fas fa-save"></i> Guardar cambios');
         });
 
         saveStatusTargets.forEach(target => {
             target.innerHTML = active
-                ? '<i class="fas fa-circle-info"></i> Vuelve a hacer clic para aplicar los cambios inmediatamente.'
+                ? '<i class="fas fa-circle-info"></i> Guardando la configuracion del hotel. Espera un momento.'
                 : (originalSaveStatusHtml.get(target) || target.innerHTML);
         });
     };
 
+    const submitConfigForm = () => {
+        configForm.dataset.confirmedSave = '1';
+        setSaveSubmittingState(true);
+        HTMLFormElement.prototype.submit.call(configForm);
+    };
+
     configForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const submitForm = () => {
-            this.dataset.confirmedSave = '1';
-            this.submit();
-        };
-
         if (this.dataset.confirmedSave === '1') {
-            submitForm();
             return;
         }
 
-        this.dataset.confirmedSave = '1';
-        setSaveConfirmState(true);
+        e.preventDefault();
 
-        window.clearTimeout(saveConfirmTimer);
-        saveConfirmTimer = window.setTimeout(() => {
-            delete this.dataset.confirmedSave;
-            setSaveConfirmState(false);
-        }, 6500);
+        if (this.dataset.awaitingSaveConfirmation === '1') {
+            return;
+        }
+
+        this.dataset.awaitingSaveConfirmation = '1';
+
+        const clearPendingConfirmation = () => {
+            delete this.dataset.awaitingSaveConfirmation;
+        };
+
+        if (typeof Swal === 'undefined') {
+            const confirmed = window.confirm('¿Guardar los cambios de configuracion ahora?');
+            clearPendingConfirmation();
+            if (confirmed) {
+                submitConfigForm();
+            }
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Guardar configuracion?',
+            html: '<p style="margin:0;text-align:left;">Se aplicaran los cambios editables de esta pantalla para el hotel. Revisa que la informacion sea correcta antes de continuar.</p>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Si, guardar cambios',
+            cancelButtonText: 'Seguir revisando',
+            confirmButtonColor: 'var(--brand-primary, #1B2746)',
+            cancelButtonColor: '#6B7280',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+                popup: 'hc-save-confirm-modal'
+            }
+        }).then((result) => {
+            clearPendingConfirmation();
+            if (result.isConfirmed) {
+                submitConfigForm();
+            }
+        });
     });
 }
 

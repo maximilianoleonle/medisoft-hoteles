@@ -149,6 +149,10 @@ class ReportesController extends Controller {
                 continue;
             }
 
+            if ($extension === 'png' && !extension_loaded('gd') && !extension_loaded('imagick')) {
+                continue;
+            }
+
             return $realPath;
         }
 
@@ -531,8 +535,15 @@ private function getMetodosPagoData($fecha_inicio, $fecha_fin) {
 // Método para obtener usuarios activos
 private function getUsuariosActivos() {
     $db = Database::getInstance();
-    $sql = "SELECT id, nombre_completo FROM usuarios WHERE activo = 1 ORDER BY nombre_completo";
-    $stmt = $db->query($sql);
+    $hotel_id = $this->hotelIdActual();
+    $sql = "SELECT DISTINCT u.id, u.nombre_completo
+            FROM hotel_usuarios hu
+            INNER JOIN usuarios u ON u.id = hu.usuario_id
+            WHERE hu.hotel_id = ?
+            AND hu.activo = 1
+            AND u.activo = 1
+            ORDER BY u.nombre_completo";
+    $stmt = $db->query($sql, [$hotel_id]);
     return $stmt->fetchAll();
 }
 
@@ -593,12 +604,19 @@ private function exportarIngresosGastosUsuarioPdf() {
     $db = Database::getInstance();
     
     // Obtener información del usuario
-    $sqlUsuario = "SELECT nombre_completo FROM usuarios WHERE id = ?";
-    $stmtUsuario = $db->query($sqlUsuario, [$usuario_id]);
+    $sqlUsuario = "SELECT u.nombre_completo
+                   FROM hotel_usuarios hu
+                   INNER JOIN usuarios u ON u.id = hu.usuario_id
+                   WHERE hu.hotel_id = ?
+                   AND hu.usuario_id = ?
+                   AND hu.activo = 1
+                   AND u.activo = 1
+                   LIMIT 1";
+    $stmtUsuario = $db->query($sqlUsuario, [$hotel_id, $usuario_id]);
     $usuario = $stmtUsuario->fetch();
     
     if (!$usuario) {
-        set_mensaje('Usuario no encontrado', 'error');
+        set_mensaje('Usuario no encontrado para el hotel activo', 'error');
         $this->redirect('reportes/ingresos-gastos');
         return;
     }
@@ -1696,6 +1714,185 @@ private function exportarIngresosGastosPdf() {
 }
 
 // Agregar también este método para prueba específica de usuario
+private function exportarProcedenciaPdf() {
+    require_once __DIR__ . '/../views/reportes/ReportePDF.php';
+
+    $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-d', strtotime('-1 month')));
+    $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
+    $porEstado = $this->reporteModel->obtenerProcedenciaPorEstado($fecha_inicio, $fecha_fin);
+    $porCiudad = $this->reporteModel->obtenerProcedenciaPorCiudad($fecha_inicio, $fecha_fin);
+    $brand = $this->reportePdfBranding();
+
+    $pdf = new ReportePDF('Procedencia de huespedes', date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)));
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->SetMargins(14, 14, 14);
+    $pdf->SetAutoPageBreak(true, 18);
+    $pdf->AddPage();
+
+    $this->reportePdfSimpleHeader($pdf, $brand, 'PROCEDENCIA DE HUESPEDES', $fecha_inicio, $fecha_fin);
+
+    $totalReservaciones = array_sum(array_map(function($row) {
+        return (int)($row['total_reservaciones'] ?? 0);
+    }, $porEstado));
+    $totalIngresos = array_sum(array_map(function($row) {
+        return (float)($row['ingresos_totales'] ?? 0);
+    }, $porEstado));
+
+    $html = '<h3>Resumen</h3>
+        <table border="1" cellpadding="6" cellspacing="0">
+            <tr><td><b>Estados con datos</b></td><td align="right">' . count($porEstado) . '</td></tr>
+            <tr><td><b>Reservaciones</b></td><td align="right">' . $totalReservaciones . '</td></tr>
+            <tr><td><b>Ingresos</b></td><td align="right">$' . number_format($totalIngresos, 2) . '</td></tr>
+        </table>
+        <br><h3>Top estados</h3>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr style="background-color:' . $brand['primary_soft'] . '; font-weight:bold;">
+                <th>Estado</th><th align="right">Huespedes</th><th align="right">Reservaciones</th><th align="right">Ingresos</th>
+            </tr>';
+
+    foreach (array_slice($porEstado, 0, 20) as $row) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars((string)($row['estado'] ?? 'Sin estado'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td align="right">' . (int)($row['total_huespedes'] ?? 0) . '</td>
+            <td align="right">' . (int)($row['total_reservaciones'] ?? 0) . '</td>
+            <td align="right">$' . number_format((float)($row['ingresos_totales'] ?? 0), 2) . '</td>
+        </tr>';
+    }
+
+    $html .= '</table><br><h3>Top ciudades</h3>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr style="background-color:' . $brand['secondary_soft'] . '; font-weight:bold;">
+                <th>Estado</th><th>Ciudad</th><th align="right">Huespedes</th><th align="right">Reservaciones</th>
+            </tr>';
+
+    foreach (array_slice($porCiudad, 0, 20) as $row) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars((string)($row['estado'] ?? 'Sin estado'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td>' . htmlspecialchars((string)($row['ciudad'] ?? 'Sin ciudad'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td align="right">' . (int)($row['total_huespedes'] ?? 0) . '</td>
+            <td align="right">' . (int)($row['total_reservaciones'] ?? 0) . '</td>
+        </tr>';
+    }
+
+    $html .= '</table>';
+    $pdf->writeHTML($html, true, false, false, false, '');
+
+    $filename = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Reporte_Procedencia', 'pdf')
+        : 'Reporte_Procedencia_' . date('Y-m-d_His') . '.pdf';
+
+    $this->entregarReportePdf($pdf, [
+        'tipo_reporte' => 'procedencia',
+        'titulo' => 'Reporte de procedencia de huespedes',
+        'descripcion' => 'Reporte PDF de procedencia por estado y ciudad.',
+        'archivo_nombre' => $filename,
+        'parametros' => [
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_fin' => $fecha_fin,
+        ],
+    ]);
+}
+
+private function exportarHabitacionesRentablesPdf() {
+    require_once __DIR__ . '/../views/reportes/ReportePDF.php';
+
+    $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
+    $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
+    $rentabilidad = $this->reporteModel->obtenerRentabilidadHabitaciones($fecha_inicio, $fecha_fin);
+    $ocupacionPorTipo = $this->reporteModel->obtenerOcupacionPorTipo($fecha_inicio, $fecha_fin);
+    $brand = $this->reportePdfBranding();
+
+    $pdf = new ReportePDF('Habitaciones rentables', date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)));
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->SetMargins(14, 14, 14);
+    $pdf->SetAutoPageBreak(true, 18);
+    $pdf->AddPage();
+
+    $this->reportePdfSimpleHeader($pdf, $brand, 'HABITACIONES RENTABLES', $fecha_inicio, $fecha_fin);
+
+    $totalIngresos = array_sum(array_map(function($row) {
+        return (float)($row['ingresos_totales'] ?? 0);
+    }, $rentabilidad));
+    $totalReservaciones = array_sum(array_map(function($row) {
+        return (int)($row['total_reservaciones'] ?? 0);
+    }, $rentabilidad));
+
+    $html = '<h3>Resumen</h3>
+        <table border="1" cellpadding="6" cellspacing="0">
+            <tr><td><b>Habitaciones evaluadas</b></td><td align="right">' . count($rentabilidad) . '</td></tr>
+            <tr><td><b>Reservaciones</b></td><td align="right">' . $totalReservaciones . '</td></tr>
+            <tr><td><b>Ingresos</b></td><td align="right">$' . number_format($totalIngresos, 2) . '</td></tr>
+        </table>
+        <br><h3>Top habitaciones</h3>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr style="background-color:' . $brand['primary_soft'] . '; font-weight:bold;">
+                <th>Habitacion</th><th>Tipo</th><th align="right">Reservaciones</th><th align="right">Dias ocupada</th><th align="right">Ingresos</th><th align="right">Ocupacion</th>
+            </tr>';
+
+    foreach (array_slice($rentabilidad, 0, 25) as $row) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars((string)($row['numero'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td>' . htmlspecialchars((string)($row['tipo'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td align="right">' . (int)($row['total_reservaciones'] ?? 0) . '</td>
+            <td align="right">' . (int)($row['dias_ocupada'] ?? 0) . '</td>
+            <td align="right">$' . number_format((float)($row['ingresos_totales'] ?? 0), 2) . '</td>
+            <td align="right">' . number_format((float)($row['porcentaje_ocupacion'] ?? 0), 1) . '%</td>
+        </tr>';
+    }
+
+    $html .= '</table><br><h3>Ocupacion por tipo</h3>
+        <table border="1" cellpadding="5" cellspacing="0">
+            <tr style="background-color:' . $brand['secondary_soft'] . '; font-weight:bold;">
+                <th>Tipo</th><th align="right">Reservaciones</th><th align="right">Ingresos</th><th align="right">Ocupacion</th>
+            </tr>';
+
+    foreach ($ocupacionPorTipo as $row) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars((string)($row['tipo'] ?? '-'), ENT_QUOTES, 'UTF-8') . '</td>
+            <td align="right">' . (int)($row['total_reservaciones'] ?? 0) . '</td>
+            <td align="right">$' . number_format((float)($row['ingresos_totales'] ?? 0), 2) . '</td>
+            <td align="right">' . number_format((float)($row['porcentaje_ocupacion'] ?? 0), 1) . '%</td>
+        </tr>';
+    }
+
+    $html .= '</table>';
+    $pdf->writeHTML($html, true, false, false, false, '');
+
+    $filename = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Reporte_Habitaciones_Rentables', 'pdf')
+        : 'Reporte_Habitaciones_Rentables_' . date('Y-m-d_His') . '.pdf';
+
+    $this->entregarReportePdf($pdf, [
+        'tipo_reporte' => 'habitaciones-rentables',
+        'titulo' => 'Reporte de habitaciones rentables',
+        'descripcion' => 'Reporte PDF de rentabilidad por habitacion.',
+        'archivo_nombre' => $filename,
+        'parametros' => [
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_fin' => $fecha_fin,
+        ],
+    ]);
+}
+
+private function reportePdfSimpleHeader($pdf, array $brand, string $titulo, string $fecha_inicio, string $fecha_fin): void {
+    $primaryRgb = $this->reportePdfRgb($brand['primary']);
+    $textRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['primary']));
+
+    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+    $pdf->Rect(0, 0, 210, 32, 'F');
+    $pdf->SetTextColor($textRgb[0], $textRgb[1], $textRgb[2]);
+    $pdf->SetFont('helvetica', 'B', 17);
+    $pdf->SetXY(14, 8);
+    $pdf->Cell(0, 8, $titulo, 0, 1, 'L');
+    $pdf->SetFont('helvetica', '', 10);
+    $pdf->SetX(14);
+    $pdf->Cell(0, 5, $brand['hotel'] . ' | ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)), 0, 1, 'L');
+    $pdf->SetTextColor(23, 32, 51);
+    $pdf->SetY(42);
+}
+
 public function testUsuarioAction() {
     if (!can('reportes.all')) {
         $this->redirect('dashboard');

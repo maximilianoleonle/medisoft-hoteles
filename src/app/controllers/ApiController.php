@@ -1812,9 +1812,44 @@ public function verificarStockHabitacionAction() {
  */
 public function reservacionResumenPagosAction() {
     $id = (int)($this->route_params['id'] ?? 0);
+    $hotelId = (int)$this->hotelIdActual();
     require_once __DIR__ . '/../models/Reservacion.php';
     $resModel = new Reservacion();
-    $resumen = $resModel->resumenPagos($id, (int)$this->hotelIdActual());
+    $resumen = $resModel->resumenPagos($id, $hotelId);
+
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT precio_total, descuento_total, descuento_detalle_json
+               FROM reservaciones
+              WHERE id = ? AND hotel_id = ?
+              LIMIT 1",
+            [$id, $hotelId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+
+        if ($row) {
+            $total = (float)($resumen['total'] ?? $row['precio_total'] ?? 0);
+            $descuento = max(0.0, (float)($row['descuento_total'] ?? 0));
+            $detalle = json_decode((string)($row['descuento_detalle_json'] ?? ''), true);
+            $subtotal = is_array($detalle) ? (float)($detalle['subtotal'] ?? 0) : 0.0;
+
+            if ($subtotal <= 0 || $subtotal < $total) {
+                $subtotal = $total + $descuento;
+            }
+
+            $resumen['subtotal'] = round($subtotal, 2);
+            $resumen['descuento_total'] = round($descuento, 2);
+            $resumen['total_antes_descuento'] = round($subtotal, 2);
+            $resumen['total_despues_descuento'] = round($total, 2);
+        }
+    } catch (Throwable $e) {
+        $resumen['subtotal'] = $resumen['total'] ?? 0;
+        $resumen['descuento_total'] = 0;
+        $resumen['total_antes_descuento'] = $resumen['total'] ?? 0;
+        $resumen['total_despues_descuento'] = $resumen['total'] ?? 0;
+    }
+
     View::renderJSON(['success' => true, 'data' => $resumen]);
 }
 
