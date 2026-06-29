@@ -67,15 +67,22 @@ if ($msToastMensaje) {
 </div>
 
 <style>
+/* ── Móvil: toasts en la PARTE INFERIOR (no choca con el header) ── */
 #ms-toast-stack{
     position:fixed; z-index:10010;
-    top:calc(env(safe-area-inset-top, 0px) + 72px);
+    bottom:calc(env(safe-area-inset-bottom, 0px) + 14px);
     left:10px; right:10px;
-    display:flex; flex-direction:column; gap:9px;
+    display:flex; flex-direction:column-reverse; gap:8px;
     pointer-events:none;
 }
+/* ── Desktop: debajo del header sticky (~64px) ── */
 @media (min-width:1025px){
-    #ms-toast-stack{ top:18px; right:18px; left:auto; width:380px; max-width:calc(100vw - 36px); }
+    #ms-toast-stack{
+        top:70px; bottom:auto;
+        right:18px; left:auto;
+        width:380px; max-width:calc(100vw - 36px);
+        flex-direction:column;
+    }
 }
 .ms-toast{
     pointer-events:auto;
@@ -85,11 +92,19 @@ if ($msToastMensaje) {
     box-shadow:0 10px 30px rgba(27,39,70,.16);
     position:relative; overflow:hidden;
     font-family:'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    animation:msToastIn .42s cubic-bezier(.22,1,.36,1);
+    animation:msToastIn .38s cubic-bezier(.22,1,.36,1);
 }
-.ms-toast.ms-out{ animation:msToastOut .3s ease forwards; }
-@keyframes msToastIn{ from{ opacity:0; transform:translateY(-16px) scale(.96); } to{ opacity:1; transform:none; } }
-@keyframes msToastOut{ to{ opacity:0; transform:translateY(-12px) scale(.97); } }
+/* Móvil entra desde abajo, desktop desde arriba */
+@keyframes msToastIn{ from{ opacity:0; transform:translateY(18px) scale(.96); } to{ opacity:1; transform:none; } }
+@media (min-width:1025px){
+    @keyframes msToastIn{ from{ opacity:0; transform:translateY(-14px) scale(.96); } to{ opacity:1; transform:none; } }
+}
+.ms-toast.ms-out{ animation:msToastOut .28s ease forwards; }
+@keyframes msToastOut{ to{ opacity:0; transform:translateY(12px) scale(.97); } }
+@media (min-width:1025px){
+    .ms-toast.ms-out{ animation:msToastOut-up .28s ease forwards; }
+    @keyframes msToastOut-up{ to{ opacity:0; transform:translateY(-10px) scale(.97); } }
+}
 
 .ms-toast-ic{ width:34px; height:34px; border-radius:10px; background:var(--ms-bg, #E2F2F6); color:var(--ms-c, #0E96B8); display:grid; place-items:center; flex:none; }
 .ms-toast-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
