@@ -765,11 +765,11 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     margin: 0;
     appearance: none;
     -webkit-appearance: none;
-    cursor: zoom-in;
+    cursor: pointer;
+    text-decoration: none;
 }
 
-.guest-doc-reveal:focus-visible,
-.guest-doc-lightbox-close:focus-visible {
+.guest-doc-reveal:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--gd-accent) 42%, transparent);
     outline-offset: 3px;
 }
@@ -809,8 +809,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     z-index: 2;
 }
 
-.guest-doc-img,
-.guest-doc-lightbox-img {
+.guest-doc-img {
     -webkit-user-drag: none;
     -webkit-touch-callout: none;
     user-select: none;
@@ -979,65 +978,6 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 .guest-doc-empty i {
     color: var(--gd-accent-readable);
     font-size: 1.35rem;
-}
-
-.guest-doc-lightbox {
-    position: fixed;
-    inset: 0;
-    z-index: 10080;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-    background: rgba(4, 8, 15, .94);
-    backdrop-filter: blur(8px);
-}
-
-.guest-doc-lightbox.hidden,
-.guest-doc-lightbox[hidden] {
-    display: none !important;
-}
-
-.guest-doc-lightbox-frame {
-    position: relative;
-    width: min(1120px, 96vw);
-    max-height: 92dvh;
-    display: grid;
-    place-items: center;
-}
-
-.guest-doc-lightbox-img {
-    display: block;
-    max-width: 100%;
-    max-height: 90dvh;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    border-radius: 18px;
-    background: #FFFFFF;
-    box-shadow: 0 30px 90px -34px rgba(0,0,0,.92);
-}
-
-.guest-doc-lightbox-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255,253,248,.22);
-    border-radius: 999px;
-    background: rgba(18,28,42,.72);
-    color: #FFFFFF;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: transform .18s ease, background .18s ease;
-}
-
-.guest-doc-lightbox-close:hover {
-    transform: translateY(-1px);
-    background: var(--gd-accent-readable);
 }
 
 .guest-panel-action {
@@ -2244,11 +2184,9 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                     <?php if ($guestPrimaryKind === 'image' && $guestPrimaryDocId > 0): ?>
                                         <?php $guestPrimaryPreviewUrl = url('documentos/' . $guestPrimaryDocId . '/descargar') . '?preview=1'; ?>
                                         <div class="guest-doc-feature is-revealable is-revealed" role="group" aria-label="Documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
-                                            <button type="button"
+                                            <a href="<?= url('documentos/' . $guestPrimaryDocId) ?>"
                                                     class="guest-doc-thumb guest-doc-reveal"
-                                                    data-doc-src="<?= guest_detail_safe($guestPrimaryPreviewUrl, '') ?>"
-                                                    data-doc-title="<?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?>"
-                                                    aria-label="Ver documento completo del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
+                                                    aria-label="Abrir ficha del documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
                                                 <span class="guest-doc-brand">MEDISOFT</span>
                                                 <span class="guest-doc-seal"><i class="fas fa-file-shield"></i></span>
                                                 <img class="guest-doc-img"
@@ -2259,7 +2197,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                                      draggable="false"
                                                      oncontextmenu="return false;">
                                                 <span class="guest-doc-eye"><i class="fas fa-eye" aria-hidden="true"></i></span>
-                                            </button>
+                                            </a>
                                             <span class="guest-doc-copy">
                                                 <span class="guest-doc-type <?= guest_detail_safe($guestPrimaryDocClass, 'is-file') ?>">
                                                     <i class="fas <?= guest_detail_safe($guestPrimaryDocIcon, 'fa-file-lines') ?>"></i>
@@ -2563,15 +2501,6 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     </div>
 </div>
 
-<div id="guestDocLightbox" class="guest-doc-lightbox hidden" role="dialog" aria-modal="true" aria-label="Vista completa del documento" hidden>
-    <div class="guest-doc-lightbox-frame">
-        <img id="guestDocLightboxImg" class="guest-doc-lightbox-img" src="" alt="Documento del huesped ampliado" draggable="false" oncontextmenu="return false;">
-        <button type="button" id="guestDocLightboxClose" class="guest-doc-lightbox-close" aria-label="Cerrar vista completa del documento">
-            <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
-    </div>
-</div>
-
 <div id="modalAgregarVehiculo" class="guest-modal hidden">
     <div class="guest-modal-card">
         <div class="guest-modal-head">
@@ -2645,99 +2574,6 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 </div>
 
 <script>
-(function () {
-    var modal = document.getElementById('guestDocLightbox');
-    var modalImg = document.getElementById('guestDocLightboxImg');
-    var closeBtn = document.getElementById('guestDocLightboxClose');
-    var modalFrame = modal ? modal.querySelector('.guest-doc-lightbox-frame') : null;
-    var lastTrigger = null;
-    var previousBodyOverflow = '';
-
-    function ensureSrc(btn) {
-        var img = btn.querySelector('.guest-doc-img');
-        if (img && !img.getAttribute('src') && btn.dataset.docSrc) {
-            img.src = btn.dataset.docSrc;
-        }
-    }
-
-    function blockImageSearch(e) {
-        e.preventDefault();
-    }
-
-    function closeLightbox() {
-        if (!modal || modal.classList.contains('hidden')) {
-            return;
-        }
-        modal.classList.add('hidden');
-        modal.hidden = true;
-        if (modalImg) {
-            modalImg.removeAttribute('src');
-        }
-        document.body.style.overflow = previousBodyOverflow;
-        if (lastTrigger && typeof lastTrigger.focus === 'function') {
-            lastTrigger.focus({ preventScroll: true });
-        }
-        lastTrigger = null;
-    }
-
-    function openLightbox(btn) {
-        if (!modal || !modalImg || !btn.dataset.docSrc) {
-            return;
-        }
-        ensureSrc(btn);
-        lastTrigger = btn;
-        previousBodyOverflow = document.body.style.overflow || '';
-        modalImg.src = btn.dataset.docSrc;
-        modalImg.alt = btn.dataset.docTitle || 'Documento del huesped ampliado';
-        modal.hidden = false;
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        if (closeBtn && typeof closeBtn.focus === 'function') {
-            closeBtn.focus({ preventScroll: true });
-        }
-    }
-
-    document.querySelectorAll('.guest-doc-reveal').forEach(function (btn) {
-        var feature = btn.closest('.guest-doc-feature');
-        btn.addEventListener('mouseenter', function () { ensureSrc(btn); });
-        btn.addEventListener('focus', function () { ensureSrc(btn); });
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            ensureSrc(btn);
-            if (feature) {
-                feature.classList.add('is-revealed');
-            }
-            openLightbox(btn);
-        });
-        btn.addEventListener('contextmenu', blockImageSearch);
-        btn.addEventListener('dragstart', blockImageSearch);
-    });
-
-    if (modal) {
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) {
-                closeLightbox();
-            }
-        });
-    }
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeLightbox);
-    }
-    if (modalImg) {
-        modalImg.addEventListener('contextmenu', blockImageSearch);
-        modalImg.addEventListener('dragstart', blockImageSearch);
-    }
-    if (modalFrame) {
-        modalFrame.addEventListener('contextmenu', blockImageSearch);
-        modalFrame.addEventListener('dragstart', blockImageSearch);
-    }
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeLightbox();
-        }
-    });
-})();
-
 function guestShowVehicleFeedback(form, type, message) {
     const alertBox = form ? form.querySelector('[data-vehicle-feedback]') : null;
     if (!alertBox) {

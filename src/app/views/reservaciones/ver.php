@@ -2370,11 +2370,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 .rdv3-guest-doc-brand { position: relative; z-index: 1; font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
 .rdv3-guest-doc-seal { position: relative; z-index: 1; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2); }
-.rdv3-doc-reveal { appearance: none; -webkit-appearance: none; border: 0; width: 100%; margin: 0; text-align: left; font-family: inherit; line-height: inherit; cursor: zoom-in; text-decoration: none; }
+.rdv3-doc-reveal { appearance: none; -webkit-appearance: none; border: 0; width: 100%; margin: 0; text-align: left; font-family: inherit; line-height: inherit; cursor: pointer; text-decoration: none; }
 .rdv3-doc-reveal:focus-visible { outline: 3px solid color-mix(in srgb, var(--rdv3-cyan) 44%, transparent); outline-offset: 3px; }
 .rdv3-guest-doc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; opacity: 0; transition: opacity .22s ease; z-index: 2; }
-.rdv3-guest-doc-img,
-.rdv3-doc-lightbox-img { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; pointer-events: none; }
+.rdv3-guest-doc-img { -webkit-user-drag: none; -webkit-touch-callout: none; user-select: none; pointer-events: none; }
 .rdv3-doc-reveal:hover .rdv3-guest-doc-img,
 .rdv3-guest-doc-feature.is-revealed .rdv3-guest-doc-img { opacity: 1; }
 .rdv3-doc-reveal-hint { position: absolute; top: 10px; right: 10px; z-index: 3; width: 32px; height: 32px; display: inline-grid; place-items: center; padding: 0; border-radius: 999px; background: rgba(18,28,42,.68); color: #fff; font-size: .78rem; font-weight: 900; backdrop-filter: blur(6px); transition: background .18s ease, transform .18s ease; }
@@ -2383,53 +2382,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-guest-doc-feature.is-revealed .rdv3-doc-reveal-hint { background: var(--rdv3-cyan); }
 .rdv3-doc-open { margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; font-weight: 900; color: var(--rdv3-cyan); text-decoration: none; width: max-content; }
 .rdv3-doc-open:hover { text-decoration: underline; }
-.rdv3-doc-lightbox {
-    position: fixed;
-    inset: 0;
-    z-index: 10080;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-    background: rgba(4, 8, 15, .94);
-    backdrop-filter: blur(8px);
-}
-.rdv3-doc-lightbox-frame {
-    position: relative;
-    width: min(1120px, 96vw);
-    max-height: 92dvh;
-    display: grid;
-    place-items: center;
-}
-.rdv3-doc-lightbox-img {
-    display: block;
-    max-width: 100%;
-    max-height: 90dvh;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 30px 90px -34px rgba(0,0,0,.92);
-}
-.rdv3-doc-lightbox-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255,253,248,.22);
-    border-radius: 999px;
-    background: rgba(18,28,42,.72);
-    color: #fff;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: transform .18s ease, background .18s ease;
-}
-.rdv3-doc-lightbox-close:hover,
-.rdv3-doc-lightbox-close:focus-visible { transform: translateY(-1px); background: var(--rdv3-cyan); outline: none; }
 .rdv3-guest-doc-copy { min-width: 0; display: grid; align-content: center; gap: 7px; color: var(--rdv3-primary); }
 .rdv3-guest-doc-copy b { display: block; font-size: .94rem; font-weight: 950; line-height: 1.2; overflow-wrap: anywhere; }
 .rdv3-guest-doc-copy small { display: block; color: #8790a4; font-size: .72rem; font-weight: 760; line-height: 1.35; }
@@ -3903,12 +3855,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                             <?php if ($rdPrimaryKind === 'image' && $rdPrimaryDocId > 0): ?>
                                                 <?php $rdPrimaryPreviewUrl = url('documentos/' . $rdPrimaryDocId . '/descargar') . '?preview=1'; ?>
                                                 <div class="rdv3-guest-doc-feature is-revealable is-revealed" role="group" aria-label="Documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
-                                                    <button type="button" class="rdv3-guest-doc-thumb rdv3-doc-reveal" data-doc-src="<?= $rdSafe($rdPrimaryPreviewUrl) ?>" data-doc-title="<?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?>" aria-label="Ver documento completo del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
+                                                    <a href="<?= url('documentos/' . $rdPrimaryDocId) ?>" class="rdv3-guest-doc-thumb rdv3-doc-reveal" aria-label="Abrir ficha del documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
                                                         <span class="rdv3-guest-doc-brand">MEDISOFT</span>
                                                         <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
                                                         <img class="rdv3-guest-doc-img" src="<?= $rdSafe($rdPrimaryPreviewUrl) ?>" alt="<?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?>" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
                                                         <span class="rdv3-doc-reveal-hint"><i class="fas fa-eye" aria-hidden="true"></i></span>
-                                                    </button>
+                                                    </a>
                                                     <span class="rdv3-guest-doc-copy">
                                                         <span class="rdv3-doc-mini-state"><i class="fas fa-id-card"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
                                                         <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
@@ -4113,15 +4065,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                 </nav>
             </div>
         </main>
-    </div>
-</div>
-
-<div id="rdv3DocLightbox" class="rdv3-doc-lightbox hidden" role="dialog" aria-modal="true" aria-label="Vista completa del documento">
-    <div class="rdv3-doc-lightbox-frame">
-        <img id="rdv3DocLightboxImg" class="rdv3-doc-lightbox-img" src="" alt="Documento del huesped ampliado" draggable="false" oncontextmenu="return false;">
-        <button type="button" id="rdv3DocLightboxClose" class="rdv3-doc-lightbox-close" aria-label="Cerrar vista completa del documento">
-            <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
     </div>
 </div>
 
@@ -9065,100 +9008,6 @@ function mostrarPreviewMDD(tipo, html) {
     el.style.cssText = `display:block; background:${c.bg}; border:1.5px solid ${c.border}; color:${c.color}; border-radius:.625rem; padding:.875rem; margin-bottom:1rem; font-size:.82rem; line-height:1.5;`;
     el.innerHTML = html;
 }
-</script>
-
-<script>
-// Documento del huesped: precarga la imagen y abre una vista completa tipo galeria.
-(function () {
-    var modal = document.getElementById('rdv3DocLightbox');
-    var modalImg = document.getElementById('rdv3DocLightboxImg');
-    var closeBtn = document.getElementById('rdv3DocLightboxClose');
-    var modalFrame = modal ? modal.querySelector('.rdv3-doc-lightbox-frame') : null;
-    var lastTrigger = null;
-    var previousBodyOverflow = '';
-
-    function ensureSrc(btn) {
-        var img = btn.querySelector('.rdv3-guest-doc-img');
-        if (img && !img.getAttribute('src') && btn.dataset.docSrc) {
-            img.src = btn.dataset.docSrc;
-        }
-    }
-
-    function blockImageSearch(e) {
-        e.preventDefault();
-    }
-
-    function openDocLightbox(btn) {
-        if (!modal || !modalImg || !btn.dataset.docSrc) {
-            return;
-        }
-        ensureSrc(btn);
-        lastTrigger = btn;
-        previousBodyOverflow = document.body.style.overflow || '';
-        modalImg.src = btn.dataset.docSrc;
-        modalImg.alt = btn.dataset.docTitle || 'Documento del huesped ampliado';
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        if (closeBtn && typeof closeBtn.focus === 'function') {
-            closeBtn.focus({ preventScroll: true });
-        }
-    }
-
-    window.cerrarRdv3DocLightbox = function () {
-        if (!modal || modal.classList.contains('hidden')) {
-            return;
-        }
-        modal.classList.add('hidden');
-        if (modalImg) {
-            modalImg.removeAttribute('src');
-        }
-        document.body.style.overflow = previousBodyOverflow;
-        if (lastTrigger && typeof lastTrigger.focus === 'function') {
-            lastTrigger.focus({ preventScroll: true });
-        }
-        lastTrigger = null;
-    };
-
-    document.querySelectorAll('.rdv3-doc-reveal').forEach(function (btn) {
-        var feature = btn.closest('.rdv3-guest-doc-feature');
-        btn.addEventListener('mouseenter', function () { ensureSrc(btn); });
-        btn.addEventListener('focus', function () { ensureSrc(btn); });
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            ensureSrc(btn);
-            if (feature) {
-                feature.classList.add('is-revealed');
-            }
-            openDocLightbox(btn);
-        });
-        btn.addEventListener('contextmenu', blockImageSearch);
-        btn.addEventListener('dragstart', blockImageSearch);
-    });
-
-    if (modal) {
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) {
-                window.cerrarRdv3DocLightbox();
-            }
-        });
-    }
-    if (closeBtn) {
-        closeBtn.addEventListener('click', window.cerrarRdv3DocLightbox);
-    }
-    if (modalImg) {
-        modalImg.addEventListener('contextmenu', blockImageSearch);
-        modalImg.addEventListener('dragstart', blockImageSearch);
-    }
-    if (modalFrame) {
-        modalFrame.addEventListener('contextmenu', blockImageSearch);
-        modalFrame.addEventListener('dragstart', blockImageSearch);
-    }
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            window.cerrarRdv3DocLightbox();
-        }
-    });
-})();
 </script>
 
 <style>
