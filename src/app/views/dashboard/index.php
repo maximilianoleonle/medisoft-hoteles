@@ -843,6 +843,53 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     margin: 0 !important;
 }
 
+@media (max-width: 1024px) {
+    html {
+        height: 100%;
+        min-height: 100%;
+    }
+
+    body.hotel-layout-scope.page-dashboard {
+        height: 100%;
+        min-height: 100%;
+        overflow: hidden !important;
+        overscroll-behavior-y: none;
+    }
+
+    body.hotel-layout-scope.page-dashboard > .flex.h-screen.overflow-hidden,
+    body.hotel-layout-scope.page-dashboard > .flex.h-screen.overflow-hidden > .flex-1 {
+        height: calc(100dvh - 64px) !important;
+        min-height: calc(100dvh - 64px) !important;
+        max-height: calc(100dvh - 64px) !important;
+        overflow: hidden !important;
+    }
+
+    body.hotel-layout-scope.page-dashboard .main-content {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+        padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+        scroll-padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    body.hotel-layout-scope.page-dashboard .dashboard-boutique {
+        min-height: 100%;
+    }
+
+    @supports not (height: 100dvh) {
+        body.hotel-layout-scope.page-dashboard > .flex.h-screen.overflow-hidden,
+        body.hotel-layout-scope.page-dashboard > .flex.h-screen.overflow-hidden > .flex-1 {
+            height: calc(100vh - 64px) !important;
+            min-height: calc(100vh - 64px) !important;
+            max-height: calc(100vh - 64px) !important;
+        }
+    }
+}
+
 .dashboard-boutique {
     width: 100%;
     min-height: 100vh;
