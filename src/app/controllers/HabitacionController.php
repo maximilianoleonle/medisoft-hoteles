@@ -2171,8 +2171,11 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         
         // Actualizar estado a disponible
         $actualizado = $this->habitacionModel->update($id, ['estado' => 'disponible']);
-        
+
         if ($actualizado) {
+            // Sincronizar tarea operativa: cerrar la limpieza activa de este cuarto.
+            $this->completarTareaLimpiezaAuto((int)$id);
+
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
@@ -2917,10 +2920,12 @@ public function liberarMultiplesAction() {
             // Solo actualizar si está en limpieza
             if ($hab['estado'] === 'limpieza') {
                 $resultado = $habitacion->cambiarEstado($id, 'disponible');
-                
+
                 if ($resultado) {
                     $actualizadas++;
                     $numeros_habitaciones[] = $hab['numero'];
+                    // Sincronizar tarea operativa: cerrar la limpieza activa de este cuarto.
+                    $this->completarTareaLimpiezaAuto((int)$id);
                 }
             }
         }
@@ -2946,6 +2951,43 @@ public function liberarMultiplesAction() {
     
     exit;
 }
+
+    /**
+     * Sincroniza la tarea operativa de limpieza cuando la habitacion se marca
+     * como limpia: completa la tarea de limpieza activa del cuarto (si existe).
+     * El estado de la habitacion es la accion autoritativa; aqui solo se refleja.
+     * Nunca rompe el flujo principal si Tareas no esta disponible.
+     */
+    private function completarTareaLimpiezaAuto(int $habitacionId): void
+    {
+        try {
+            if (!$this->tareaModel || !$this->tareaModel->tablaDisponible() || !$this->tareaModel->eventosDisponibles()) {
+                return;
+            }
+
+            $hotelId = (int)$this->hotelIdActual();
+            if ($hotelId <= 0 || $habitacionId <= 0) {
+                return;
+            }
+
+            $tarea = $this->tareaModel->buscarTareaActivaLimpiezaPorHabitacionHotel($hotelId, $habitacionId);
+            if (!$tarea || empty($tarea['id'])) {
+                return;
+            }
+
+            $usuarioId = function_exists('user_id') ? user_id() : null;
+            $this->tareaModel->cambiarEstadoManualParaHotel(
+                (int)$tarea['id'],
+                $hotelId,
+                'completar',
+                $usuarioId,
+                'Completada automaticamente al marcar la habitacion como limpia.'
+            );
+        } catch (Throwable $e) {
+            error_log('completarTareaLimpiezaAuto hab #' . $habitacionId . ': ' . $e->getMessage());
+        }
+    }
+
     /**
      * Generar descripción automática de características
      */

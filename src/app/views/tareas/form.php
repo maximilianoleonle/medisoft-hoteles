@@ -119,6 +119,147 @@ $prioridades = [
 .tk-form-page .tk-btn-muted { background: var(--tk-surface); border-color: var(--tk-border); color: var(--tk-muted); }
 .tk-form-page .tk-back { display: inline-flex; align-items: center; gap: 8px; color: var(--tk-muted); text-decoration: none; font-weight: 700; font-size: .85rem; }
 .tk-form-page .tk-back:hover { color: var(--tk-gold-ink); }
+
+.tk-form-page .tk-shell {
+    width: min(100%, 1040px);
+    margin: 0 auto;
+}
+
+.tk-form-page form.tk-panel {
+    padding: 18px;
+}
+
+.tk-form-page form.tk-panel > .flex.flex-wrap {
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 14px;
+    border-top: 1px solid var(--tk-border);
+}
+
+@media (max-width: 720px) {
+    .tk-form-page {
+        padding: 18px 10px 26px !important;
+        background:
+            repeating-linear-gradient(135deg, color-mix(in srgb, var(--tk-gold) 3%, transparent) 0 1px, transparent 1px 22px),
+            linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    }
+
+    .tk-form-page .tk-shell {
+        gap: 9px;
+    }
+
+    .tk-form-page .tk-back {
+        min-height: 32px;
+        padding: 0 4px;
+        font-size: .72rem;
+    }
+
+    .tk-form-page .tk-title-lockup {
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 10px;
+        margin-bottom: 5px;
+    }
+
+    .tk-form-page .tk-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1rem;
+    }
+
+    .tk-form-page .tk-kicker {
+        margin-bottom: 2px;
+        font-size: .61rem;
+        line-height: 1;
+    }
+
+    .tk-form-page .tk-title {
+        font-size: 1.45rem;
+        line-height: .98;
+    }
+
+    .tk-form-page .tk-subtitle {
+        display: -webkit-box;
+        margin-top: 3px;
+        font-size: .72rem;
+        line-height: 1.3;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .tk-form-page form.tk-panel {
+        padding: 10px;
+        border-radius: 15px;
+        box-shadow: 0 10px 24px rgba(24, 33, 46, .07);
+    }
+
+    .tk-form-page .tk-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .tk-form-page label {
+        margin-bottom: 4px;
+        font-size: .58rem;
+        letter-spacing: .045em;
+        line-height: 1.1;
+    }
+
+    .tk-form-page .tk-field {
+        min-height: 44px;
+        border-radius: 11px;
+        padding: 7px 10px;
+        font-size: 13px;
+        line-height: 1.15;
+        font-weight: 650;
+    }
+
+    .tk-form-page select.tk-field {
+        font-size: 12.5px;
+        text-overflow: ellipsis;
+    }
+
+    .tk-form-page textarea.tk-field {
+        min-height: 76px;
+        padding-top: 9px;
+        line-height: 1.32;
+    }
+
+    .tk-form-page .tk-help {
+        display: none;
+    }
+
+    .tk-form-page .tk-form-error {
+        margin-top: 2px;
+        font-size: .66rem;
+        line-height: 1.25;
+    }
+
+    .tk-form-page form.tk-panel > .flex.flex-wrap {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+        gap: 8px;
+        margin-top: 10px !important;
+        padding-top: 9px;
+    }
+
+    .tk-form-page .tk-btn {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 12px;
+        padding: 0 10px;
+        font-size: .72rem;
+        line-height: 1.1;
+    }
+}
+
+@media (max-width: 380px) {
+    .tk-form-page .tk-grid,
+    .tk-form-page form.tk-panel > .flex.flex-wrap {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <div class="tk-form-page p-4 sm:p-6">

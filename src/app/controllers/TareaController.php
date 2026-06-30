@@ -123,14 +123,75 @@ class TareaController extends Controller
         $this->requireWritePermission();
         $hotelId = $this->hotelIdActual();
 
+        $habitaciones = $this->tareaModel->habitacionesOpciones($hotelId);
+
+        $valores = [
+            'categoria' => 'general',
+            'prioridad' => 'media',
+        ];
+
+        // Prefill opcional desde la tarjeta de habitacion (index): ?habitacion_id=&categoria=
+        $habitacionIdQuery = (int)$this->getQuery('habitacion_id', 0);
+        if ($habitacionIdQuery > 0) {
+            foreach ($habitaciones as $hab) {
+                if ((int)($hab['id'] ?? 0) === $habitacionIdQuery) {
+                    $valores['habitacion_id'] = $habitacionIdQuery;
+                    break;
+                }
+            }
+        }
+
+        $categoriaQuery = trim((string)$this->getQuery('categoria', ''));
+        if (in_array($categoriaQuery, ['limpieza', 'mantenimiento', 'general'], true)) {
+            $valores['categoria'] = $categoriaQuery;
+        }
+
         View::renderTemplate('tareas/form', [
             'title' => 'Nueva tarea operativa - ' . current_hotel_display_name(),
-            'habitaciones' => $this->tareaModel->habitacionesOpciones($hotelId),
-            'valores' => [
-                'categoria' => 'general',
-                'prioridad' => 'media',
-            ],
+            'habitaciones' => $habitaciones,
+            'valores' => $valores,
         ]);
+    }
+
+    /**
+     * Endpoint read-only (JSON) para el panel "Tareas del cuarto" del index de
+     * Habitaciones. Reutiliza listarPorEntidadHotel y respeta el hotel activo
+     * (la verificacion de permiso/ hotel ya ocurre en before()).
+     */
+    public function porHabitacionAction(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        if ($id <= 0 || $hotelId <= 0) {
+            echo json_encode(['ok' => false, 'mensaje' => 'Datos incompletos.']);
+            return;
+        }
+
+        if (!$this->tareaModel->tablaDisponible()) {
+            echo json_encode(['ok' => true, 'tareas' => []]);
+            return;
+        }
+
+        $tareas = $this->tareaModel->listarPorEntidadHotel($hotelId, 'habitacion', $id, 12);
+
+        $items = [];
+        foreach ($tareas as $t) {
+            $items[] = [
+                'id' => (int)($t['id'] ?? 0),
+                'titulo' => (string)($t['titulo'] ?? ''),
+                'categoria' => (string)($t['categoria'] ?? 'general'),
+                'estado' => (string)($t['estado'] ?? 'pendiente'),
+                'prioridad' => (string)($t['prioridad'] ?? 'media'),
+                'trabajador_nombre' => $t['trabajador_nombre'] ?? null,
+                'fecha_limite' => $t['fecha_limite'] ?? null,
+                'habitacion_numero' => $t['habitacion_numero'] ?? null,
+            ];
+        }
+
+        echo json_encode(['ok' => true, 'tareas' => $items]);
     }
 
     public function guardarAction(): void

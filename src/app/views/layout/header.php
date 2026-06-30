@@ -62,7 +62,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Sistema de Gestión Hotelera - <?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title ?? $layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></title>
     
@@ -71,13 +71,27 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <meta name="theme-color" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="application-name" content="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-TileColor" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-TileImage" content="<?= htmlspecialchars($layoutPwaIcon192Url ?: asset('img/icons/icon-144x144.png'), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
     <meta name="format-detection" content="telephone=no">
+    <script>
+        (function() {
+            try {
+                var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                    || window.navigator.standalone === true;
+                var alreadySeen = window.sessionStorage.getItem('medisoft_pwa_launch_seen') === '1';
+
+                if (standalone && !alreadySeen) {
+                    window.PwaLaunchSplashStartedAt = Date.now();
+                    document.documentElement.classList.add('pwa-launch-pending');
+                }
+            } catch (error) {}
+        })();
+    </script>
     
     <!-- CSRF Token -->
     <meta name="csrf-token" content="<?= csrf_token() ?>">
@@ -276,6 +290,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 
     <!-- CSS de la pantalla de carga -->
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/loading-screen.css') : asset('css/loading-screen.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/pwa-launch-splash.css') : asset('css/pwa-launch-splash.css') ?>">
 
     <!-- CSS PWA (offline banner, toasts, install btn) -->
     <link rel="stylesheet" href="<?= asset('css/pwa.css') ?>">
@@ -287,6 +302,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     
     <!-- Script de pantalla de carga -->
     <script src="<?= function_exists('asset_version') ? asset_version('js/loading-screen.js') : asset('js/loading-screen.js') ?>"></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/pwa-launch-splash.js') : asset('js/pwa-launch-splash.js') ?>" defer></script>
 
     <!-- JavaScript Global -->
     <script src="<?= function_exists('asset_version') ? asset_version('js/app.js') : asset('js/app.js') ?>" defer></script>
@@ -681,6 +697,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <?php endif; ?>
 </head>
 <body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?><?= htmlspecialchars($layoutPageClass, ENT_QUOTES, 'UTF-8') ?>">
+  <?php include APP_PATH . '/views/components/pwa-launch-splash.php'; ?>
 
   <div class="pwa-portrait-guard" role="alert" aria-live="assertive" aria-label="Modo vertical requerido">
     <div class="pwa-portrait-guard-card">

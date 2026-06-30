@@ -141,7 +141,7 @@ Modo de ejecucion: 2 personas juntas en una PC, guiado desde Codex.
 | DOC-08 Filtros/listado | Los Cedros | `admin` / gerente | Busqueda y filtros por estado deben separar activos/eliminados | `buscar=QA-DOC-20260628` muestra 2 documentos; `estado=activo` muestra solo `#18`; `estado=eliminado` muestra solo `#19` | PASS |  |
 | DOC-09 Vincular documento a CxP | Los Cedros | `admin` / gerente | Cuenta por pagar debe aceptar documento vinculado y mostrarlo en su ficha | Upload crea documento `#21`, vinculo `cuenta_por_pagar #3`, relacion `comprobante_pago_qa`; `/cuentas-por-pagar/3` muestra `QA-DOC-20260628-CXP3` en documentos vinculados | PASS |  |
 | DOC-10 Aislamiento multi-hotel documentos | Maximiliano -> Los Cedros | `adminmax` / administrador | Hotel 4 no debe ver, descargar ni vincular documentos/entidades de Los Cedros | GET `/documentos/18` y descarga redirigen a `/documentos`; `/documentos/entidad/huesped/1065` redirige; busqueda hotel 4 no lista `QA-DOC`; POST a `huesped #1065` no crea documentos ni vinculos | PASS |  |
-| DOC-11 Vincular documento a tarea | Maximiliano | `adminmax` / administrador | Desde una tarea con panel de documentos, la carga debe crear documento y vinculo a tarea | `/tareas/5` muestra boton a `/documentos/subir?entidad_tipo=tarea&entidad_id=5`; el formulario carga, pero POST falla con `SQLSTATE[01000]: Warning: 1265 Data truncated for column 'entidad_tipo'`; no crea documento ni vinculo | FAIL | BUG-016 |
+| DOC-11 Vincular documento a tarea | Maximiliano | `adminmax` / administrador | Desde una tarea con panel de documentos, la carga debe crear documento y vinculo a tarea | Retest post-fix: `POST /documentos/subir` con `entidad_tipo=tarea`, `entidad_id=5`, archivo permitido y titulo `QA-DOC-20260630-TAREA-BUG016` responde `303` a `/documentos/22`; DB crea documento `#22` y vinculo `tarea #5`; `/tareas/5` muestra el titulo. | PASS | BUG-016 FIX VALIDADO |
 | REPORT-01 Centro de reportes | Los Cedros / Maximiliano | `admin`, `adminmax` | `/reportes` debe cargar con branding/contexto del hotel activo | Ambos hoteles responden `200`; Los Cedros queda `MEDISOFT_CONTEXT hotel_id=1`, Maximiliano `hotel_id=4`, sin cruce visual en el indice | PASS |  |
 | REPORT-02 Ingresos vs gastos | Los Cedros / Maximiliano | `admin`, `adminmax` | Totales por fecha deben coincidir con `movimientos_caja` scoped por hotel y zona horaria de la app | Para `2026-06-28`, Los Cedros muestra ingresos `$1,922.34`, gastos `$114.56`; Maximiliano ingresos `$12,600.00`, gastos `$0.00`; ambos cuadran contra DB con `time_zone=-06:00` | PASS |  |
 | REPORT-03 Selector reporte por usuario | Los Cedros / Maximiliano | `admin`, `adminmax` | El selector de usuarios del reporte financiero debe listar solo usuarios vinculados al hotel activo | El selector muestra usuarios de otros hoteles (`Admin Demo SaaS`, `QA Admin Temporal 174223`) en Los Cedros y Maximiliano; ademas Los Cedros permite generar PDF para `usuario_id=22` de Hotel Demo | FAIL | BUG-017 |
@@ -160,17 +160,31 @@ Modo de ejecucion: 2 personas juntas en una PC, guiado desde Codex.
 | REPORT-16R Revalidar estancia/ranking | Los Cedros | `admin` / gerente | `/reportes/estancia` y `/reportes/ranking-estados` deben renderizar vistas funcionales | Ambas rutas responden `200 text/html`; no aparece `Vista no encontrada`, `Fatal error` ni errores SQL en HTML revisado | PASS | BUG-021 FIX VALIDADO |
 | REPORT-17R Regresion reportes centrales | Los Cedros | `admin` / gerente | Reportes aprobados antes del fix deben seguir cargando | `/reportes`, `/reportes/gerencial-diario?fecha=2026-06-28` y `/reportes/ejecutivo?periodo=custom&fecha_desde=2026-06-28&fecha_hasta=2026-06-28` responden `200`; AJAX `datos-grafica` responde JSON `ingresos=1922.34`, `gastos=114.56` | PASS | Regresion post BUG-017..021 |
 | RESP-01 Login responsive base | Los Cedros | Sin sesion | Login debe ajustarse a movil/tablet/desktop sin scroll horizontal | Prueba visual real en 360x740, 390x844, 768x1024 y 1366x768: `scrollWidth == clientWidth`, sin overflow horizontal; formulario principal accesible | PASS |  |
-| RESP-02 Zoom mobile / accesibilidad global | Los Cedros | Sin sesion y paginas autenticadas por HTML | El usuario movil debe poder hacer zoom/pinch cuando lo necesite | Login y layout autenticado tienen `maximum-scale=1.0, user-scalable=no`; login ademas bloquea `touchstart`/`gesturestart`; paginas autenticadas cargan `pwa.js`, que ejecuta `lockMobileZoomGestures()` y bloquea pinch/double-tap zoom | FAIL | BUG-022 |
-| RESP-03 Targets tactiles login | Los Cedros | Sin sesion | Controles interactivos secundarios deben tener area tactil comoda en movil | En 360/390px, boton `Mostrar contrasena` mide aprox. `26x26`, checkbox `Recordarme` `18x18` y link `Olvidaste tu contrasena` queda con alto aprox. `18px` | FAIL | BUG-023 |
+| RESP-02 Zoom mobile / accesibilidad global | Los Cedros | Sin sesion y paginas autenticadas por HTML | El usuario movil debe poder hacer zoom/pinch cuando lo necesite | Retest post-fix: login, layout autenticado y offline usan viewport sin `maximum-scale=1.0` ni `user-scalable=no`; login/offline no registran listeners `gesture*` ni bloqueo global de `touchmove/touchend`; `pwa.js` servido no contiene `lockMobileZoomGestures`; `/dashboard` 390x844 queda sin overflow. | PASS | BUG-022 FIX VALIDADO |
+| RESP-03 Targets tactiles login | Los Cedros | Sin sesion | Controles interactivos secundarios deben tener area tactil comoda en movil | Retest aislado post-fix en `/h/los-cedros/login`: 360x740, 390x844 y 768x1024 sin overflow horizontal; boton `Mostrar contrasena` `44x44`, label `Recordarme` `44px` de alto, checkbox visual `22x22` y link `Olvidaste tu contrasena` `44px` de alto. Click en el ojo cambia password a texto. | PASS | BUG-023 FIX VALIDADO |
 | RESP-04 Paginas autenticadas / estructura responsive | Los Cedros | `admin` / gerente | Pantallas principales deben servir HTML con contexto y patrones responsive para tablas/listados/formularios | 22 rutas autenticadas responden `200` con `MEDISOFT_CONTEXT`; huespedes, compras, facturacion, CxC/CxP y reservaciones tienen tablas desktop con tarjetas moviles o contenedores de scroll; formularios largos tienen breakpoints a una columna; calendario usa scroll interno controlado | PASS (estatico) |  |
 | RESP-05 Validacion visual autenticada base | Los Cedros | `admin` / gerente | Sidebar movil, overlay, scroll real y header auto-hide deben funcionar con sesion activa | En 390x844, dashboard muestra header movil y boton hamburguesa; sidebar abre `active`, overlay cubre pantalla, cierra con overlay; en `/documentos` el scroll ocurre en `.main-content`, el header se oculta al bajar y reaparece al subir | PASS |  |
-| RESP-06 Matriz responsive autenticada | Los Cedros | `admin` / gerente | Pantallas criticas deben responder en movil/tablet/desktop sin romper navegacion | Se probaron dashboard, operacion diaria, habitaciones, huespedes, reservaciones, detalle/crear reservacion, caja, facturacion, inventario, documentos, reportes, ingresos/gastos y calendario en 390x844, 768x1024 y 1366x768; la mayoria mantiene `scrollWidth == clientWidth` o usa scroll interno intencional | PASS CON OBSERVACIONES | BUG-024, BUG-025, BUG-026 |
+| RESP-06 Matriz responsive autenticada | Los Cedros | `admin` / gerente | Pantallas criticas deben responder en movil/tablet/desktop sin romper navegacion | Se probaron dashboard, operacion diaria, habitaciones, huespedes, reservaciones, detalle/crear reservacion, caja, facturacion, inventario, documentos, reportes, ingresos/gastos y calendario en 390x844, 768x1024 y 1366x768; tras fix responsive local, dashboard/documentos/inventario/habitaciones mantienen `scrollWidth == clientWidth` en los retests criticos o usan scroll interno intencional | PASS CON OBSERVACIONES | BUG-022, BUG-023, BUG-024, BUG-025, BUG-026 FIX VALIDADO |
 | RESP-07 Modal caja ingreso movil | Los Cedros | `admin` / gerente | Modal debe abrir/cerrar sin overflow y sin perder acciones en telefono | En 390x844, `Registrar Ingreso` abre `#modalIngreso` como bottom sheet de `370x613`; form tiene scroll interno, campos `336px`, acciones `Cancelar/Guardar` de `163x42`, sin overflow horizontal; se cerro sin enviar formulario | PASS |  |
 | RESP-08 Modal check-in disponible | Los Cedros | `admin` / gerente | Modal de check-in debe validarse sin enviar formulario cuando haya boton visible | No hubo boton visible `abrirModalCheckIn` en listado ni en reservaciones QA confirmadas `#42,#43,#45,#48,#49,#50,#51,#55,#56`; queda no aplicable con datos actuales | N/A | Revalidar cuando exista una reservacion con accion visible de check-in. |
-| RESP-09 Dashboard movil agenda overflow | Los Cedros | `admin` / gerente | Dashboard en movil no debe recortar ni desbordar contenido operativo | En 360px y 390px, dashboard queda con `scrollWidth=453`; elementos `.dm-ag .tm` de agenda quedan en `x=403/right=453`, fuera del viewport, junto con chevrons; nombres largos de huesped empujan horarios | FAIL | BUG-024 |
-| RESP-10 Targets tactiles autenticados | Los Cedros | `admin` / gerente | Acciones operativas en mobile/tablet deben tener area tactil comoda | Se detectan acciones con alto/ancho menor a 32px: inventario `.act-btn` `28x38`, habitaciones filtros `~14px` alto, dashboard links `17-18px`, documentos enlaces/nombres `18px` e iconos `25x34`; no bloquean pero son dificiles de tocar | FAIL | BUG-025 |
-| RESP-11 Documentos tablet hero clipping | Los Cedros | `admin` / gerente | Tablet 768 no debe recortar contenido del hero | En `/documentos` a 768x1024, `.dc-hero-section` mide `853px` y termina en `right=869` dentro de viewport `768`; `.main-content` tiene `overflow-x:hidden`, por lo que parte del hero/title-lockup queda recortada | FAIL | BUG-026 |
-| PWA-03 Smoke `/api/sync` autenticado | Los Cedros | `admin` / gerente | POST autenticado responde HTTP 423 y JSON `sync_temporarily_disabled` | POST JSON `{}` con sesion Los Cedros responde `HTTP/1.1 423 Locked`, `Content-Type: application/json; charset=utf-8`, body con `success=false`, `error=sync_temporarily_disabled`, mensaje de sincronizacion offline temporalmente deshabilitada y `pending_operations_preserved=true` | PASS | Evidencia local: `tmp/qa_pwa_sync_auth_headers.txt` y `tmp/qa_pwa_sync_auth_body.json`. No se tocaron archivos PWA/offline ni `/api/sync`. |
+| RESP-09 Dashboard movil agenda overflow | Los Cedros | `admin` / gerente | Dashboard en movil no debe recortar ni desbordar contenido operativo | Retest post-fix en 360x740: `bodyScrollWidth=360`, `docScrollWidth=360`; `.dm-ag.is-link` `left=23/right=329` y `.dm-ag .tm` `left=268/right=321`. En 390x844: `bodyScrollWidth=390`, `.dm-ag .tm` `left=297/right=351`. Agenda visible dentro del renglon. | PASS | BUG-024 FIX VALIDADO |
+| RESP-10 Targets tactiles autenticados | Los Cedros | `admin` / gerente | Acciones operativas en mobile/tablet deben tener area tactil comoda | Retest post-fix: dashboard links `44px` y acciones `45px`; documentos `.dc-btn/.dc-card-btn` `44px`; inventario `.btn-inv/.btn-config-inv/.inv-search` `44px`; habitaciones `.hb-filter-trigger/.hb-chip/.filter-date/.filter-btn/.btn-action` `44px`. Login queda cubierto aparte por RESP-03. | PASS PARCIAL | BUG-025 FIX VALIDADO en autenticadas; BUG-023 FIX VALIDADO en login |
+| RESP-11 Documentos tablet hero clipping | Los Cedros | `admin` / gerente | Tablet 768 no debe recortar contenido del hero | Retest post-fix en 768x1024: `bodyScrollWidth=768`, `docScrollWidth=768`; `.dc-hero-section` `left=16/right=744`, `.dc-title-lockup` `left=16/right=744`, `.dc-filter-form` `left=33/right=727`. | PASS | BUG-026 FIX VALIDADO |
+| PWA-03 Smoke `/api/sync` autenticado | Los Cedros | `admin` / gerente | POST autenticado responde HTTP 423 y JSON `sync_temporarily_disabled` | Retest post BUG-022 con sesion temporal Los Cedros: POST JSON `{}` responde `HTTP/1.1 423 Locked`, `Content-Type: application/json; charset=utf-8`, body con `success=false`, `error=sync_temporarily_disabled`, mensaje de sincronizacion offline temporalmente deshabilitada y `pending_operations_preserved=true` | PASS | No se tocaron `service-worker.js`, IndexedDB, cache names ni `/api/sync`; BUG-022 solo retiro bloqueo de zoom en viewport/JS. |
+
+## Ronda final - Regresion funcional post-fixes
+
+Fecha de ejecucion: 2026-06-30.
+
+Alcance: regresion de humo profundo, sin registrar nuevos pagos/cobros/check-in/check-out ni movimientos financieros. Se usaron sesiones QA temporales para Los Cedros y Maximiliano.
+
+| Caso | Hotel | Resultado esperado | Resultado real | Estado | Notas |
+|---|---|---|---|---|---|
+| REG-FINAL-01 Rutas operativas Los Cedros | Los Cedros | Modulos centrales deben responder `200` y sin errores PHP/SQL visibles | `32/32` checks totales pasaron; en Los Cedros respondieron `200`: `/dashboard`, `/habitaciones`, `/huespedes`, `/reservaciones`, `/reservaciones/ver/51`, `/reservaciones/crear`, `/facturacion`, `/facturacion/ver/232`, `/inventario`, `/documentos`, `/caja`, CxC/CxP y reportes principales | PASS | Detector reviso `PHP Warning`, `Fatal error`, `SQLSTATE`, `Uncaught`, `ONLY_FULL_GROUP_BY`, `Undefined variable` y patrones equivalentes. |
+| REG-FINAL-02 Rutas documentos/tareas Maximiliano | Maximiliano | Documento `#22` debe seguir ligado a tarea `#5` y ser visible/descargable | Respondieron `200`: `/dashboard`, `/tareas`, `/tareas/5`, `/tareas/reporte`, `/documentos`, `/documentos/22`, `/documentos/entidad/tarea/5`, `/documentos/22/descargar?preview=1`, `/reportes`, `/habitaciones`; preview de documento respondio `image/png` | PASS | Confirma regresion del fix BUG-016. |
+| REG-FINAL-03 PWA sync bloqueado | Los Cedros | `/api/sync` debe seguir bloqueado con `423 sync_temporarily_disabled` | POST autenticado a `/api/sync` respondio `423`, `application/json`, body con `sync_temporarily_disabled` y `pending_operations_preserved` | PASS | No se toco el endpoint ni `service-worker.js`, IndexedDB o cache names. |
+| REG-FINAL-04 Logs post-regresion | App container | La corrida no debe generar warnings/fatals/SQL nuevos | `docker compose logs --since=5m app` sin matches para `PHP Warning`, `PHP Fatal`, `Fatal error`, `SQLSTATE`, `Uncaught`, `Undefined variable`, `ONLY_FULL_GROUP_BY` ni `Call to a member` | PASS | La primera pasada marco falsos positivos por textos JS `warning:`; se repitio con detector de errores reales. |
+| REG-FINAL-05 Checks tecnicos finales | Codigo/DB | Lints, JS y datos de migracion deben quedar correctos | `php -l` OK en `login.php`, `header.php`, `Documento.php`, `DocumentoController.php`, `TareaController.php`; `node --check src/public_html/js/pwa.js` OK; enum `documento_entidades.entidad_tipo` incluye `tarea`; migracion `20260630_001_documento_entidades_tarea_enum.sql` registrada como ejecutada; vinculo documento `#22` -> tarea `#5` existe | PASS | `rg` no encuentra `user-scalable=no`, `maximum-scale=1.0`, `lockMobileZoomGestures` ni listeners globales `gesture*`/bloqueo zoom en `src/app/views` y `src/public_html`. |
 
 ## Datos QA creados
 
@@ -435,7 +449,7 @@ El usuario puede quedar bloqueado o confundido al ajustar productos en litros/ki
 ### BUG-016 - Documentos de tareas no se pueden vincular por incompatibilidad de enum
 
 Severidad: P2
-Estado: ABIERTO / REQUIERE MIGRACION O AJUSTE DE CONTRATO
+Estado: FIX VALIDADO
 Hotel: Maximiliano
 Usuario/Rol: `adminmax` / administrador
 Modulo: Documentos / Tareas
@@ -469,7 +483,16 @@ Impacto:
 
 Los usuarios ven una accion disponible en tareas, pero no pueden adjuntar evidencia documental. Ademas, el error SQL aparece en la UI y se asigna al campo `Tipo de documento`, no al vinculo de entidad.
 
-No se corrigio en esta bateria porque la solucion correcta probablemente requiere cambiar el enum/contrato de base de datos o migracion, zona marcada como critica para no tocar sin autorizacion explicita.
+Validacion del fix:
+
+- Con autorizacion explicita del usuario, se agrego y aplico la migracion `migrations/20260630_001_documento_entidades_tarea_enum.sql`.
+- La migracion modifica solo `documento_entidades.entidad_tipo` para incluir `tarea`, valida el cambio y registra la migracion.
+- Verificacion DB: `entidad_tipo` quedo como `enum('proveedor','compra','cuenta_por_pagar','huesped','reservacion','trabajador','tarea')`; migracion `#49`, batch `40`, estado `ejecutada`.
+- Retest funcional con sesion temporal Maximiliano (`hotel_id=4`, usuario `adminmax`): `POST /documentos/subir` con `entidad_tipo=tarea`, `entidad_id=5`, archivo permitido y titulo `QA-DOC-20260630-TAREA-BUG016` responde `303` a `/documentos/22`.
+- DB creo documento `#22`, `hotel_id=4`, `estado=activo`, `storage_path=documentos/hotel_4/2026/06/doc_20260629_184954_4a8e083554857542.png`.
+- DB creo vinculo `documento_entidades`: `entidad_tipo=tarea`, `entidad_id=5`, `relacion=evidencia_qa`.
+- `/tareas/5` contiene el titulo `QA-DOC-20260630-TAREA-BUG016`, confirmando que la ficha de tarea muestra el documento vinculado.
+- `php -l` sin errores en `Documento.php`, `DocumentoController.php` y `TareaController.php`.
 
 ### BUG-017 - Reporte financiero por usuario lista y exporta usuarios de otros hoteles
 
@@ -599,7 +622,7 @@ El modulo expone reportes historicos que no pueden abrirse.
 ### BUG-022 - La app bloquea zoom/pinch en mobile desde meta viewport y JavaScript
 
 Severidad: P2
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Hotel: Los Cedros / layout global
 Usuario/Rol: sin sesion y paginas autenticadas
 Modulo: Responsive / Accesibilidad mobile / PWA
@@ -626,14 +649,22 @@ Impacto:
 
 En telefonos, el usuario no puede ampliar pantallas densas como reportes, reservaciones, caja o documentos. Esto afecta accesibilidad y uso real en recepcion cuando se trabaja desde PWA o navegador movil.
 
-Nota:
+Validacion del fix:
 
-No se corrigio porque `pwa.js`, PWA/offline y archivos relacionados estan en zona critica marcada como no tocar sin autorizacion explicita.
+- Con autorizacion explicita del usuario, se retiro el bloqueo de zoom solo en `src/app/views/auth/login.php`, `src/app/views/layout/header.php`, `src/public_html/js/pwa.js` y `src/public_html/offline.html`.
+- Login y layout autenticado ahora usan `meta viewport` sin `maximum-scale=1.0` ni `user-scalable=no`.
+- Login ya no registra listeners `touchstart`/`gesturestart` para cancelar pinch.
+- `pwa.js` ya no contiene ni ejecuta `lockMobileZoomGestures()`; el archivo servido reporto `HasZoomLock=false`.
+- `offline.html` ya no contiene la copia del bloqueo por `gesturestart`, `touchmove` multi-touch ni doble toque.
+- Retest Chrome mobile aislado en `390x844`: `/h/los-cedros/login` y `/offline.html` cargan con viewport accesible, sin listeners `gesture*`, sin listeners globales no pasivos de `touchmove/touchend` y sin overflow horizontal.
+- Retest navegador autenticado en `/dashboard` `390x844`: viewport accesible, `scrollWidth=390`, `clientWidth=390`.
+- Smoke `/api/sync` autenticado con sesion temporal Los Cedros: `HTTP/1.1 423 Locked`, `Content-Type: application/json; charset=utf-8`, body `success=false`, `error=sync_temporarily_disabled`, `pending_operations_preserved=true`.
+- No se tocaron `service-worker.js`, `offline-data.js`, `reservaciones-offline.js`, IndexedDB, cache names ni la accion `/api/sync`.
 
 ### BUG-023 - Login tiene controles tactiles secundarios menores a tamano recomendado
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Hotel: Los Cedros
 Usuario/Rol: sin sesion
 Modulo: Auth / Login responsive
@@ -647,7 +678,7 @@ Resultado esperado:
 
 Controles tactiles secundarios deben tener area de toque comoda, idealmente cercana a `44x44px` o con area clicable equivalente.
 
-Resultado real:
+Resultado real previo:
 
 En `360x740` y `390x844`:
 
@@ -659,10 +690,21 @@ Impacto:
 
 No bloquea el inicio de sesion, pero aumenta errores de toque en telefono y empeora accesibilidad. Se agrava por BUG-022 porque el usuario tampoco puede hacer zoom para tocar con mas precision.
 
+Validacion del fix:
+
+- Cambio en `src/app/views/auth/login.php` limitado a CSS de targets tactiles del login.
+- No se cambiaron `action`, `method`, `name`, CSRF, hidden inputs ni flujo de autenticacion.
+- Retest aislado sin sesion en Chrome:
+  - `360x740`: `bodyScrollWidth=360`, `docScrollWidth=360`; boton password `44x44`, `Recordarme` `312x44`, checkbox `22x22`, link recuperacion `163x44`.
+  - `390x844`: `bodyScrollWidth=390`, `docScrollWidth=390`; boton password `44x44`, `Recordarme` `342x44`, checkbox `22x22`, link recuperacion `163x44`.
+  - `768x1024`: `bodyScrollWidth=768`, `docScrollWidth=768`; boton password `44x44`, `Recordarme` `720x44`, checkbox `22x22`, link recuperacion `163x44`.
+- Interaccion validada: click en boton de password cambia el campo de `password` a `text`.
+- `php -l /var/www/html/app/views/auth/login.php` sin errores.
+
 ### BUG-024 - Dashboard movil recorta horarios/acciones de la agenda
 
 Severidad: P2
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Hotel: Los Cedros
 Usuario/Rol: `admin` / gerente
 Modulo: Dashboard / Responsive mobile
@@ -690,10 +732,17 @@ Impacto:
 
 El dashboard movil puede mostrar agenda cortada o generar desplazamiento horizontal. Recepcion pierde parte de la informacion rapida de llegadas/salidas desde telefono.
 
+Validacion del fix:
+
+- CSS local de dashboard ajusta `.dm-ag` para permitir encogimiento de nombre/habitacion y mantener hora/flecha dentro del renglon.
+- Retest 360x740: `bodyScrollWidth=360`, `docScrollWidth=360`; `.dm-ag.is-link` `left=23/right=329`; `.dm-ag .tm` `left=268/right=321`.
+- Retest 390x844: `bodyScrollWidth=390`, `docScrollWidth=390`; `.dm-ag .tm` `left=297/right=351`.
+- Links secundarios y botones del dashboard miden `44px`/`45px` de alto.
+
 ### BUG-025 - Varias pantallas autenticadas tienen targets tactiles menores a 32px
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO PARCIAL LOCAL
 Hotel: Los Cedros
 Usuario/Rol: `admin` / gerente
 Modulo: Responsive / Accesibilidad tactil
@@ -712,10 +761,18 @@ Impacto:
 
 No bloquea el flujo, pero aumenta errores de toque en telefono/tablet y empeora accesibilidad. Se agrava por BUG-022, ya que el usuario tampoco puede hacer zoom.
 
+Validacion del fix:
+
+- CSS local de dashboard, documentos, inventario y habitaciones sube los targets operativos probados a 44px.
+- Retest `/inventario` 390x844: `.btn-inv`, `.btn-config-inv` e `.inv-search` miden `44px` de alto.
+- Retest `/habitaciones` 390x844: `.hb-filter-trigger`, `.hb-chip`, `.filter-date`, `.filter-btn` y `.btn-action` miden `44px` de alto.
+- Retest `/documentos` 768x1024: `.dc-btn` y `.dc-card-btn` miden `44px` de alto.
+- Login/auth queda cubierto por BUG-023, ahora con fix validado.
+
 ### BUG-026 - Centro documental en tablet recorta el hero por ancho interno mayor al viewport
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Hotel: Los Cedros
 Usuario/Rol: `admin` / gerente
 Modulo: Documentos / Responsive tablet
@@ -743,6 +800,12 @@ Como el contenedor principal oculta overflow horizontal, el contenido excedente 
 Impacto:
 
 El encabezado del centro documental puede verse cortado en tablets de 768px, afectando presentacion y lectura de contexto.
+
+Validacion del fix:
+
+- CSS local de documentos limita hero/title a `max-width:100%`, permite encogimiento con `min-width:0`, cambia filtros tablet a dos columnas y usa cards hasta `900px`.
+- Retest 768x1024: `bodyScrollWidth=768`, `docScrollWidth=768`; `.dc-hero-section` y `.dc-title-lockup` quedan dentro de `left=16/right=744`.
+- `.dc-filter-form` queda dentro de `left=33/right=727`; botones `Filtrar/Limpiar` miden `44px`.
 
 ### BUG-009 - Cambiar metodo de pago crea solicitudes de factura duplicadas
 

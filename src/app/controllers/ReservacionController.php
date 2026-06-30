@@ -1119,7 +1119,21 @@ public function checkOutParcialAction() {
             
             // Procesar recogida de controles remotos
             $this->procesarRecogidaRemotosCheckOutParcial($id, $habitaciones_ids);
-            
+
+            // Generar tareas de limpieza para los cuartos liberados (+ responsable opcional)
+            $asignaciones = [];
+            $rawAsign = $this->getPost('limpieza_responsable', []);
+            if (is_array($rawAsign)) {
+                foreach ($rawAsign as $hId => $tId) {
+                    $hId = (int)$hId;
+                    $tId = (int)$tId;
+                    if ($hId > 0 && $tId > 0) {
+                        $asignaciones[$hId] = $tId;
+                    }
+                }
+            }
+            $this->generarTareasLimpiezaCheckOut($id, $habitaciones_ids, $asignaciones);
+
             $mensaje = 'Check-out realizado correctamente. ';
             $mensaje .= 'Se liberaron ' . $resultado['habitaciones_liberadas'] . ' habitación(es): ';
             $mensaje .= implode(', ', $resultado['numeros_liberados']);
@@ -2647,6 +2661,42 @@ public function indexAction() {
 }
     
     /**
+     * Página completa para modificar la estancia (check-in / check-out) de una
+     * reservación. Sustituye al modal "Modificar días" y permite además
+     * desplazar la fecha de llegada en reservaciones confirmadas.
+     */
+    public function editarEstanciaAction() {
+        $id = $this->route_params['id'] ?? 0;
+
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
+
+        if (!$reservacion) {
+            set_mensaje('Reservación no encontrada', 'error');
+            $this->redirect('reservaciones');
+            return;
+        }
+
+        if (!in_array($reservacion['estado'], ['confirmada', 'checked_in'], true)) {
+            set_mensaje('Solo se puede modificar la estancia de reservaciones confirmadas o con check-in activo', 'warning');
+            $this->redirect('reservaciones/ver/' . $id);
+            return;
+        }
+
+        $fecha_inicio = new DateTime($reservacion['fecha_entrada']);
+        $fecha_fin    = new DateTime($reservacion['fecha_salida']);
+        $noches       = (int)$fecha_inicio->diff($fecha_fin)->days;
+        if ($noches < 1) {
+            $noches = 1;
+        }
+
+        View::renderTemplate('reservaciones/editar-estancia', [
+            'title'       => 'Modificar Estancia - Reservación #' . $id,
+            'reservacion' => $reservacion,
+            'noches'      => $noches
+        ]);
+    }
+
+    /**
      * Actualizar habitaciones de una reservación
      */
     public function actualizarHabitacionesAction() {
@@ -2878,12 +2928,27 @@ try {
             $abonos = [];
         }
 
+        // Trabajadores activos para la asignacion opcional de limpieza en el check-out.
+        $trabajadoresLimpieza = [];
+        try {
+            if (!class_exists('TareaOperativa')) {
+                require_once __DIR__ . '/../models/TareaOperativa.php';
+            }
+            $tareaModelTmp = new TareaOperativa();
+            if ($tareaModelTmp->tablaDisponible()) {
+                $trabajadoresLimpieza = $tareaModelTmp->trabajadoresActivosOpciones((int)$this->hotelIdActual());
+            }
+        } catch (Throwable $e) {
+            $trabajadoresLimpieza = [];
+        }
+
         View::renderTemplate('reservaciones/ver', [
     'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
     'reservacion' => $reservacion,
     'huesped' => $huesped,
     'vehiculos' => $vehiculos,
     'habitaciones' => $habitaciones,
+    'trabajadoresLimpieza' => $trabajadoresLimpieza,
     'estados' => Reservacion::getEstados(),
     'pagos' => $pagos,
     'resumenPagos' => $resumenPagos,
@@ -3496,6 +3561,7 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
     if ($resultado) {
         $this->procesarRecogidaLlavesCheckOut($id);
         $this->procesarRecogidaRemotosCheckOut($id);
+        $this->generarTareasLimpiezaCheckOut($id);
         set_mensaje('Check-out realizado exitosamente. Las habitaciones pasaron a limpieza.', 'success');
     } else {
         set_mensaje('Error al realizar check-out', 'error');
@@ -3503,6 +3569,71 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
     
     $this->redirect('reservaciones/ver/' . $id);
 }
+
+    /**
+     * Genera automaticamente una tarea operativa de limpieza por cada habitacion
+     * de la reservacion tras el check-out (las habitaciones quedaron en limpieza).
+     * Idempotente: el modelo evita duplicados y exige estado 'limpieza'.
+     * Nunca rompe el check-out si Tareas no esta disponible.
+     */
+    private function generarTareasLimpiezaCheckOut($reservacion_id, ?array $habitacionIds = null, array $asignaciones = []) {
+        try {
+            if (!class_exists('TareaOperativa')) {
+                require_once __DIR__ . '/../models/TareaOperativa.php';
+            }
+
+            $tareaModel = new TareaOperativa();
+            if (!$tareaModel->tablaDisponible() || !$tareaModel->eventosDisponibles()) {
+                return;
+            }
+
+            $hotelId = (int)$this->hotelIdActual();
+            if ($hotelId <= 0) {
+                return;
+            }
+
+            $usuarioId = function_exists('user_id') ? user_id() : null;
+
+            if ($habitacionIds === null) {
+                $habitacionIds = $this->reservacionModel->obtenerHabitacionIds($reservacion_id);
+            }
+
+            foreach ((array)$habitacionIds as $habId) {
+                $habId = (int)$habId;
+                if ($habId <= 0) {
+                    continue;
+                }
+                try {
+                    $tareaModel->crearDesdeLimpiezaHabitacionParaHotel(
+                        $hotelId,
+                        $habId,
+                        ['titulo' => 'Limpieza tras check-out'],
+                        $usuarioId
+                    );
+                } catch (Throwable $e) {
+                    // Duplicado o cuarto no en limpieza: se ignora sin romper el check-out.
+                    error_log('generarTareasLimpiezaCheckOut hab #' . $habId . ': ' . $e->getMessage());
+                }
+
+                // Asignacion opcional de responsable de limpieza para este cuarto.
+                $trabajadorId = (int)($asignaciones[$habId] ?? 0);
+                if ($trabajadorId > 0) {
+                    try {
+                        $tarea = $tareaModel->buscarTareaActivaLimpiezaPorHabitacionHotel($hotelId, $habId);
+                        if ($tarea && !empty($tarea['id'])) {
+                            $tareaModel->asignarTrabajadorParaHotel((int)$tarea['id'], $hotelId, $trabajadorId, $usuarioId);
+                        }
+                    } catch (Throwable $e) {
+                        // Trabajador invalido / inactivo: no romper el check-out.
+                        error_log('asignar limpieza hab #' . $habId . ': ' . $e->getMessage());
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('generarTareasLimpiezaCheckOut reserva #' . $reservacion_id . ': ' . $e->getMessage());
+        }
+    }
+
     /**
  * Procesar recogida automática de llaves al hacer check-out
  */
@@ -4718,6 +4849,7 @@ public function checkOutRapidoAction() {
         if ($resultado) {
             $this->procesarRecogidaLlavesCheckOut($id);
             $this->procesarRecogidaRemotosCheckOut($id);
+            $this->generarTareasLimpiezaCheckOut($id);
             $response = [
                 'success' => true,
                 'huesped' => $huesped['nombre_completo'],
@@ -5451,8 +5583,9 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
     public function verificarModificarDiasAction() {
         header('Content-Type: application/json');
 
-        $reservacion_id     = intval($this->getPost('reservacion_id'));
-        $nueva_fecha_salida = trim($this->getPost('nueva_fecha_salida', ''));
+        $reservacion_id      = intval($this->getPost('reservacion_id'));
+        $nueva_fecha_salida  = trim($this->getPost('nueva_fecha_salida', ''));
+        $nueva_fecha_entrada = trim($this->getPost('nueva_fecha_entrada', ''));
 
         if (!$reservacion_id || !$nueva_fecha_salida) {
             echo json_encode(['disponible' => false, 'mensaje' => 'Datos incompletos.']);
@@ -5475,7 +5608,17 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 return;
             }
 
-            $fecha_entrada   = new DateTime($reservacion['fecha_entrada']);
+            // El check-in solo se puede desplazar en reservaciones confirmadas (antes de la llegada).
+            $entrada_efectiva = $reservacion['fecha_entrada'];
+            if ($nueva_fecha_entrada !== '' && $nueva_fecha_entrada !== $reservacion['fecha_entrada']) {
+                if ($reservacion['estado'] !== 'confirmada') {
+                    echo json_encode(['disponible' => false, 'mensaje' => 'La fecha de llegada solo se puede cambiar antes del check-in.']);
+                    return;
+                }
+                $entrada_efectiva = $nueva_fecha_entrada;
+            }
+
+            $fecha_entrada   = new DateTime($entrada_efectiva);
             $nueva_salida_dt = new DateTime($nueva_fecha_salida);
 
             if ($nueva_salida_dt <= $fecha_entrada) {
@@ -5492,7 +5635,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
             $disponible = $model->verificarDisponibilidadMultipleExcluyendo(
                 $habitacion_ids,
-                $reservacion['fecha_entrada'],
+                $entrada_efectiva,
                 $nueva_fecha_salida,
                 $reservacion_id
             );
@@ -5504,14 +5647,16 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
             $calculo = $model->calcularPrecioTotal(
                 $habitacion_ids,
-                $reservacion['fecha_entrada'],
+                $entrada_efectiva,
                 $nueva_fecha_salida
             );
 
             echo json_encode([
-                'disponible'   => true,
-                'nuevo_precio' => $calculo['precio_total'],
-                'noches'       => $calculo['noches']
+                'disponible'    => true,
+                'nuevo_precio'  => $calculo['precio_total'],
+                'noches'        => $calculo['noches'],
+                'fecha_entrada' => $entrada_efectiva,
+                'fecha_salida'  => $nueva_fecha_salida
             ]);
 
         } catch (Exception $e) {
@@ -5565,12 +5710,15 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             $params[] = $reservacion['fecha_salida'];
 
             $stmt = $db->query(
-                "SELECT r.id, r.fecha_entrada, h.numero AS habitacion_numero
+                "SELECT r.id, r.fecha_entrada, r.fecha_salida, r.estado,
+                        h.numero AS habitacion_numero, hu.nombre_completo AS huesped_nombre
                  FROM reservaciones r
                  INNER JOIN reservacion_habitaciones rh
                      ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
                  LEFT JOIN habitaciones h
                      ON h.id = rh.habitacion_id AND h.hotel_id = rh.hotel_id
+                 LEFT JOIN huespedes hu
+                     ON hu.id = r.huesped_id
                  WHERE rh.habitacion_id IN ($placeholders)
                    AND r.hotel_id = ?
                    AND r.id != ?
@@ -5598,16 +5746,49 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 $max_noches = 1;
             }
 
+            // Reserva previa (confirmada / check-in) de cualquiera de estas
+            // habitaciones que termine en o antes de la entrada actual: marca el
+            // día más temprano al que se puede adelantar el check-in.
+            $params_prev = $habitacion_ids;
+            $params_prev[] = $hotel_id;
+            $params_prev[] = $reservacion_id;
+            $params_prev[] = $reservacion['fecha_entrada'];
+
+            $stmt_prev = $db->query(
+                "SELECT r.id, r.fecha_salida, h.numero AS habitacion_numero
+                 FROM reservaciones r
+                 INNER JOIN reservacion_habitaciones rh
+                     ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                 LEFT JOIN habitaciones h
+                     ON h.id = rh.habitacion_id AND h.hotel_id = rh.hotel_id
+                 WHERE rh.habitacion_id IN ($placeholders)
+                   AND r.hotel_id = ?
+                   AND r.id != ?
+                   AND r.estado IN ('confirmada', 'checked_in')
+                   AND r.fecha_salida <= ?
+                 ORDER BY r.fecha_salida DESC, r.id DESC
+                 LIMIT 1",
+                $params_prev
+            );
+            $previa = $stmt_prev ? $stmt_prev->fetch(PDO::FETCH_ASSOC) : null;
+            $min_entrada = ($previa && !empty($previa['fecha_salida'])) ? $previa['fecha_salida'] : null;
+
             echo json_encode([
                 'ok'                 => true,
+                'estado'             => $reservacion['estado'],
                 'fecha_entrada'      => $reservacion['fecha_entrada'],
                 'fecha_salida'       => $reservacion['fecha_salida'],
                 'max_noches'         => $max_noches,
                 'max_checkout'       => $max_checkout->format('Y-m-d'),
+                'min_entrada'        => $min_entrada,
+                'previa_habitacion'  => $previa['habitacion_numero'] ?? null,
                 'tiene_limite'       => $proxima ? true : false,
                 'proxima_reserva_id' => $proxima ? (int)$proxima['id'] : null,
                 'proxima_entrada'    => $proxima['fecha_entrada'] ?? null,
+                'proxima_salida'     => $proxima['fecha_salida'] ?? null,
                 'proxima_habitacion' => $proxima['habitacion_numero'] ?? null,
+                'proxima_huesped'    => $proxima['huesped_nombre'] ?? null,
+                'proxima_estado'     => $proxima['estado'] ?? null,
             ]);
 
         } catch (Exception $e) {
@@ -5622,8 +5803,9 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
     public function modificarDiasAction() {
         header('Content-Type: application/json');
 
-        $reservacion_id     = intval($this->getPost('reservacion_id'));
-        $nueva_fecha_salida = trim($this->getPost('nueva_fecha_salida', ''));
+        $reservacion_id      = intval($this->getPost('reservacion_id'));
+        $nueva_fecha_salida  = trim($this->getPost('nueva_fecha_salida', ''));
+        $nueva_fecha_entrada = trim($this->getPost('nueva_fecha_entrada', ''));
 
         if (!$reservacion_id || !$nueva_fecha_salida) {
             echo json_encode(['success' => false, 'mensaje' => 'Datos incompletos.']);
@@ -5647,6 +5829,18 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 return;
             }
 
+            // El check-in solo se puede desplazar en reservaciones confirmadas.
+            $entrada_efectiva = $reservacion['fecha_entrada'];
+            $cambia_entrada   = false;
+            if ($nueva_fecha_entrada !== '' && $nueva_fecha_entrada !== $reservacion['fecha_entrada']) {
+                if ($reservacion['estado'] !== 'confirmada') {
+                    echo json_encode(['success' => false, 'mensaje' => 'La fecha de llegada solo se puede cambiar antes del check-in.']);
+                    return;
+                }
+                $entrada_efectiva = $nueva_fecha_entrada;
+                $cambia_entrada   = true;
+            }
+
             // Si está en checked_in, verificar que haya caja abierta para ajustar
             $corteActual = null;
             if ($reservacion['estado'] === 'checked_in') {
@@ -5663,7 +5857,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 }
             }
 
-            $fecha_entrada   = new DateTime($reservacion['fecha_entrada']);
+            $fecha_entrada   = new DateTime($entrada_efectiva);
             $nueva_salida_dt = new DateTime($nueva_fecha_salida);
 
             if ($nueva_salida_dt <= $fecha_entrada) {
@@ -5675,7 +5869,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
             $disponible = $model->verificarDisponibilidadMultipleExcluyendo(
                 $habitacion_ids,
-                $reservacion['fecha_entrada'],
+                $entrada_efectiva,
                 $nueva_fecha_salida,
                 $reservacion_id
             );
@@ -5687,7 +5881,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
             $calculo = $model->calcularPrecioTotal(
                 $habitacion_ids,
-                $reservacion['fecha_entrada'],
+                $entrada_efectiva,
                 $nueva_fecha_salida
             );
 
@@ -5699,12 +5893,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
             $db->beginTransaction();
 
-            $resultado = $model->modificarFechaSalida(
-                $reservacion_id,
-                $nueva_fecha_salida,
-                $calculo['precio_total'],
-                $calculo['desglose'] ?? []
-            );
+            if ($cambia_entrada) {
+                $resultado = $model->modificarFechas(
+                    $reservacion_id,
+                    $entrada_efectiva,
+                    $nueva_fecha_salida,
+                    $calculo['precio_total'],
+                    $calculo['desglose'] ?? []
+                );
+            } else {
+                $resultado = $model->modificarFechaSalida(
+                    $reservacion_id,
+                    $nueva_fecha_salida,
+                    $calculo['precio_total'],
+                    $calculo['desglose'] ?? []
+                );
+            }
 
             if (!$resultado) {
                 if ($db->enTransaccion()) {
@@ -5825,14 +6029,15 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             }
 
             echo json_encode([
-                'success'      => true,
-                'nuevo_precio' => $calculo['precio_total'],
-                'nueva_fecha'  => $nueva_fecha_salida,
-                'noches'       => $calculo['noches'],
-                'diferencia'   => $diferencia,
-                'saldo_pendiente' => $saldo_pendiente_actual,
-                'requiere_cobro' => ($diferencia > 0.004 && $saldo_pendiente_actual > 0.004),
-                'ajuste_caja'  => $ajuste_caja
+                'success'            => true,
+                'nuevo_precio'       => $calculo['precio_total'],
+                'nueva_fecha'        => $nueva_fecha_salida,
+                'nueva_fecha_entrada'=> $entrada_efectiva,
+                'noches'             => $calculo['noches'],
+                'diferencia'         => $diferencia,
+                'saldo_pendiente'    => $saldo_pendiente_actual,
+                'requiere_cobro'     => ($diferencia > 0.004 && $saldo_pendiente_actual > 0.004),
+                'ajuste_caja'        => $ajuste_caja
             ]);
 
         } catch (Exception $e) {

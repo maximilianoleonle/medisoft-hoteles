@@ -7,8 +7,8 @@
 return [
     'app_name' => 'Hotel Los Cedros',
     'short_name' => 'Los Cedros',
-    'theme_color' => '#5D3A1A',
-    'background_color' => '#7A8B5C',
+    'theme_color' => '#1B2746',
+    'background_color' => '#F8F5ED',
     'display' => 'standalone',
     'orientation' => 'portrait-primary',
     'version' => '1.0.0',

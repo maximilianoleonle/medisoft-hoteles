@@ -1204,6 +1204,149 @@ textarea.ge-control {
     flex: 0 0 auto;
 }
 
+/* Guest-create inspired polish */
+.guest-edit-page .ge-shell {
+    width: min(100%, 1280px);
+    padding: 26px 18px 34px;
+}
+
+.guest-edit-page .ge-breadcrumb {
+    margin-bottom: 18px;
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.guest-edit-page .ge-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.guest-edit-page .ge-hero::after {
+    display: none;
+}
+
+.guest-edit-page .ge-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.guest-edit-page .ge-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 1.45rem;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--ge-brand) 58%, transparent);
+}
+
+.guest-edit-page .ge-kicker {
+    margin-bottom: 4px;
+    font-size: .72rem;
+    letter-spacing: .08em;
+}
+
+.guest-edit-page .ge-title {
+    font-size: clamp(2rem, 3.6vw, 2.75rem);
+    font-weight: 650;
+    line-height: .96;
+}
+
+.guest-edit-page .ge-subtitle {
+    max-width: 62ch;
+    margin-top: 8px;
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.guest-edit-page .ge-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(286px, 318px);
+    gap: 18px;
+}
+
+.guest-edit-page .ge-main {
+    gap: 15px;
+}
+
+.guest-edit-page .ge-panel,
+.guest-edit-page .ge-side-card,
+.guest-edit-page .ge-actions {
+    border-radius: 18px;
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--ge-brand-dark) 4%, transparent),
+        0 14px 32px -24px color-mix(in srgb, var(--ge-brand-dark) 34%, transparent);
+}
+
+.guest-edit-page .ge-panel-head {
+    align-items: center;
+    min-height: 58px;
+    padding: 14px 17px;
+}
+
+.guest-edit-page .ge-panel-title {
+    align-items: center;
+    gap: 10px;
+}
+
+.guest-edit-page .ge-icon-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+}
+
+.guest-edit-page .ge-panel h2,
+.guest-edit-page .ge-side-card h3 {
+    font-size: .95rem;
+}
+
+.guest-edit-page .ge-panel p,
+.guest-edit-page .ge-side-card p {
+    font-size: .75rem;
+}
+
+.guest-edit-page .ge-panel-body {
+    padding: 16px;
+}
+
+.guest-edit-page .ge-grid {
+    gap: 13px;
+}
+
+.guest-edit-page .ge-label {
+    margin-bottom: 5px;
+    font-size: .7rem;
+}
+
+.guest-edit-page .ge-control {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 9px 11px;
+    font-size: .84rem;
+}
+
+.guest-edit-page .ge-control.has-icon {
+    padding-left: 38px;
+}
+
+.guest-edit-page .ge-input-wrap i {
+    left: 12px;
+    font-size: .78rem;
+}
+
+.guest-edit-page textarea.ge-control {
+    min-height: 104px;
+}
+
 @media (max-width: 1100px) {
     .ge-hero,
     .ge-layout {
@@ -1224,8 +1367,17 @@ textarea.ge-control {
 
 @media (max-width: 720px) {
     .ge-shell {
-        width: min(100% - 22px, 1460px);
-        padding: 18px 0 30px;
+        width: 100%;
+        padding: 18px 10px 26px;
+    }
+
+    .ge-breadcrumb {
+        max-width: 100%;
+        margin-bottom: 16px;
+        padding: 0 6px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
     }
 
     .ge-hero,
@@ -1236,21 +1388,44 @@ textarea.ge-control {
     }
 
     .ge-hero {
-        grid-template-columns: 1fr;
-        padding: 18px;
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 6px;
+        margin-bottom: 14px;
     }
 
     .ge-identity {
-        grid-template-columns: 1fr;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
     }
 
     .ge-avatar {
-        width: 72px;
-        border-radius: 21px;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+    }
+
+    .ge-kicker {
+        margin-bottom: 2px;
+        font-size: .61rem;
+        line-height: 1;
     }
 
     .ge-title {
-        font-size: clamp(2.05rem, 12vw, 3.3rem);
+        font-size: 1.45rem;
+        line-height: .98;
+    }
+
+    .ge-subtitle {
+        display: -webkit-box;
+        margin-top: 2px;
+        font-size: .72rem;
+        line-height: 1.3;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .ge-hero-actions,
@@ -1262,7 +1437,32 @@ textarea.ge-control {
     .ge-hero-actions,
     .ge-actions {
         display: grid;
+        gap: 8px;
+    }
+
+    .ge-hero-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ge-actions {
         grid-template-columns: 1fr;
+    }
+
+    .ge-actions-copy {
+        display: none;
+    }
+
+    .ge-link-btn {
+        min-height: 38px;
+        border-radius: 11px;
+        padding: 0 8px;
+        font-size: .68rem;
+        line-height: 1.1;
+    }
+
+    .ge-layout,
+    .ge-main {
+        gap: 9px;
     }
 
     .ge-grid,
@@ -1272,7 +1472,85 @@ textarea.ge-control {
 
     .ge-panel-head,
     .ge-panel-body {
-        padding: 15px;
+        padding: 10px;
+    }
+
+    .ge-panel-head {
+        min-height: 0;
+    }
+
+    .ge-panel-title {
+        gap: 8px;
+    }
+
+    .ge-icon-box {
+        width: 29px;
+        height: 29px;
+        border-radius: 10px;
+        font-size: .78rem;
+    }
+
+    .ge-panel h2 {
+        font-size: .86rem;
+        line-height: 1.1;
+    }
+
+    .ge-panel p,
+    .ge-field-hint,
+    .ge-side {
+        display: none;
+    }
+
+    .ge-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .ge-field-full {
+        grid-column: 1 / -1;
+    }
+
+    .ge-label {
+        margin-bottom: 4px;
+        gap: 4px;
+        font-size: .58rem;
+        line-height: 1.1;
+    }
+
+    .ge-control {
+        min-height: 44px;
+        border-radius: 11px;
+        padding: 7px 10px;
+        font-size: 13px;
+        line-height: 1.15;
+        font-weight: 650;
+    }
+
+    select.ge-control {
+        font-size: 12.5px;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+    }
+
+    .ge-control.has-icon {
+        padding-left: 30px;
+    }
+
+    .ge-input-wrap i {
+        left: 10px;
+        font-size: .68rem;
+    }
+
+    textarea.ge-control {
+        min-height: 76px;
+        padding-top: 9px;
+        line-height: 1.32;
+    }
+
+    .ge-form-error {
+        margin-top: 2px;
+        font-size: .66rem;
+        line-height: 1.25;
     }
 
     .ge-vehicle-card {
@@ -1285,7 +1563,7 @@ textarea.ge-control {
 
     .ge-actions-buttons {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .ge-inline-grid,
@@ -1306,6 +1584,29 @@ textarea.ge-control {
     .ge-btn,
     .ge-link-btn {
         width: 100%;
+        min-height: 44px;
+        border-radius: 12px;
+        padding: 0 10px;
+        font-size: .72rem;
+        line-height: 1.1;
+    }
+
+    .ge-actions {
+        padding: 9px;
+        border-radius: 15px;
+    }
+}
+
+@media (max-width: 380px) {
+    .ge-grid,
+    .ge-actions,
+    .ge-actions-buttons,
+    .ge-radio-options {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-actions-buttons .ge-btn-primary {
+        order: -1;
     }
 }
 

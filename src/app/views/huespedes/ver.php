@@ -1152,13 +1152,13 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 }
 
 .guest-vehicle-icon {
-    width: 40px;
-    height: 40px;
+    width: 26px;
+    height: 26px;
     flex: none;
     display: grid;
     place-items: center;
-    border-radius: 11px;
-    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
+    border-radius: 0;
+    background: transparent;
     color: var(--gd-accent-readable);
 }
 

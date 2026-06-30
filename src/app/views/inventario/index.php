@@ -338,9 +338,15 @@
 .inv-page .btn-inv,
 .inv-page .btn-config-inv,
 .inv-page .act-btn {
-    min-height: 38px;
+    min-height: 44px;
     border-radius: 11px !important;
     transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease !important;
+}
+
+.inv-page .act-btn {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
 }
 
 .inv-page .inv-action-grid {
@@ -367,7 +373,7 @@
 
 .inv-page .inv-action-grid .btn-inv {
     width: 100%;
-    min-height: 42px;
+    min-height: 44px;
     gap: 8px;
     padding: 0 12px;
     white-space: nowrap;
@@ -499,7 +505,7 @@
 }
 
 .inv-page .inv-search {
-    min-height: 38px;
+    min-height: 44px;
     background: rgba(255,255,255,.92) !important;
     border: 1px solid rgba(255,255,255,.58) !important;
     border-radius: 11px !important;
@@ -613,6 +619,7 @@
 }
 
 .inv-page .btn-config-inv {
+    min-height: 44px;
     background: var(--inv-surface-warm) !important;
     color: var(--inv-brand-2) !important;
     border: 1px solid var(--inv-line) !important;
@@ -869,7 +876,7 @@
 }
 
 .inv-page .btn-config-inv {
-    min-height: 42px;
+    min-height: 44px;
     padding-left: 16px;
     padding-right: 16px;
 }
@@ -900,7 +907,7 @@
     }
 
     .inv-page .btn-inv {
-        min-height: 42px;
+        min-height: 44px;
         padding-left: 12px;
         padding-right: 12px;
     }
@@ -996,7 +1003,7 @@
     .inv-page .inv-action-grid .btn-inv {
         min-width: 108px;
         max-width: 132px;
-        min-height: 38px;
+        min-height: 44px;
         padding: 0 9px;
         font-size: .64rem;
     }

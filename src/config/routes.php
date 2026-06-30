@@ -304,6 +304,7 @@ $router->get('/tareas', ['controller' => 'Tarea', 'action' => 'index']);
 $router->get('/tareas/reporte', ['controller' => 'Tarea', 'action' => 'reporte']);
 $router->get('/tareas/agenda', ['controller' => 'Tarea', 'action' => 'agenda']);
 $router->get('/tareas/crear', ['controller' => 'Tarea', 'action' => 'crear']);
+$router->get('/tareas/de-habitacion/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'porHabitacion']);
 $router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
 $router->post('/tareas/desde-limpieza/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'crearDesdeLimpieza']);
 $router->post('/tareas/desde-mantenimiento/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'crearDesdeMantenimiento']);
@@ -424,6 +425,12 @@ $router->get('/reservaciones/exportar-excel', ['controller' => 'Reservacion', 'a
 $router->get('/reservaciones/editar-habitaciones/{id:[0-9]+}', [
     'controller' => 'Reservacion',
     'action' => 'editarHabitaciones'
+]);
+
+// Ruta para modificar la estancia (check-in / check-out) de una reservaciÃ³n (GET)
+$router->get('/reservaciones/editar-estancia/{id:[0-9]+}', [
+    'controller' => 'Reservacion',
+    'action' => 'editarEstancia'
 ]);
 
 // Ruta para actualizar habitaciones (POST)

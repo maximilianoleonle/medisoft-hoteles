@@ -12,6 +12,13 @@ $loginLogoUrl = function_exists('hotel_branding_asset_url')
 $loginFaviconUrl = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($loginBranding['favicon_url'] ?? null)
     : null;
+$loginPwaIcon192Url = function_exists('hotel_branding_pwa_icon_asset_url')
+    ? hotel_branding_pwa_icon_asset_url($loginBranding['pwa_icon_192_url'] ?? null, 192)
+    : null;
+$loginPwaIcon512Url = function_exists('hotel_branding_pwa_icon_asset_url')
+    ? hotel_branding_pwa_icon_asset_url($loginBranding['pwa_icon_512_url'] ?? null, 512)
+    : null;
+$loginAppleTouchIconUrl = $loginPwaIcon192Url ?: $loginLogoUrl;
 $loginBackgroundUrl = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($loginBranding['login_background_url'] ?? null)
     : null;
@@ -29,7 +36,7 @@ $loginDisabled = !empty($login_disabled);
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? ($loginHotelNombre . ' - Sistema de Gestion'), ENT_QUOTES, 'UTF-8') ?></title>
     
     <!-- PWA Meta Tags -->
@@ -37,6 +44,21 @@ $loginDisabled = !empty($login_disabled);
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="manifest" href="<?= htmlspecialchars($loginManifestHref, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($loginAppleTouchIconUrl, ENT_QUOTES, 'UTF-8') ?>">
+    <script>
+        (function() {
+            try {
+                var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                    || window.navigator.standalone === true;
+                var alreadySeen = window.sessionStorage.getItem('medisoft_pwa_launch_seen') === '1';
+
+                if (standalone && !alreadySeen) {
+                    window.PwaLaunchSplashStartedAt = Date.now();
+                    document.documentElement.classList.add('pwa-launch-pending');
+                }
+            } catch (error) {}
+        })();
+    </script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -47,6 +69,8 @@ $loginDisabled = !empty($login_disabled);
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/pwa-launch-splash.css') : asset('css/pwa-launch-splash.css') ?>">
+    <script src="<?= function_exists('asset_version') ? asset_version('js/pwa-launch-splash.js') : asset('js/pwa-launch-splash.js') ?>" defer></script>
     
     <?= function_exists('hotel_branding_css_vars') ? hotel_branding_css_vars($loginBranding) : '' ?>
     <style>
@@ -421,6 +445,11 @@ $loginDisabled = !empty($login_disabled);
         .toggle-password {
             position: absolute;
             right: 18px;
+            top: 50%;
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
             background: none;
             border: none;
             cursor: pointer;
@@ -428,12 +457,21 @@ $loginDisabled = !empty($login_disabled);
             font-size: 18px;
             transition: all 0.3s ease;
             z-index: 2;
-            padding: 4px;
+            padding: 0;
+            transform: translateY(-50%);
+        }
+
+        #password.form-control {
+            padding-right: 64px;
         }
 
         .toggle-password:hover {
             color: var(--olive-green);
-            transform: scale(1.1);
+            transform: translateY(-50%) scale(1.06);
+        }
+
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.96);
         }
 
         /* ========================================
@@ -486,18 +524,21 @@ $loginDisabled = !empty($login_disabled);
         }
 
         .remember-me {
-            display: flex;
+            display: inline-flex;
             align-items: center;
+            min-height: 44px;
+            gap: 10px;
             cursor: pointer;
             user-select: none;
         }
 
         .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
+            flex: 0 0 22px;
             cursor: pointer;
             accent-color: var(--olive-green);
-            margin-right: 8px;
+            margin: 0;
         }
 
         .remember-me span {
@@ -507,6 +548,9 @@ $loginDisabled = !empty($login_disabled);
         }
 
         .forgot-password {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
             color: var(--gold);
             text-decoration: none;
             font-size: 14px;
@@ -535,6 +579,14 @@ $loginDisabled = !empty($login_disabled);
 
         .forgot-password:hover {
             color: var(--olive-green-dark);
+        }
+
+        .toggle-password:focus-visible,
+        .remember-me input[type="checkbox"]:focus-visible,
+        .forgot-password:focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--olive-green) 30%, transparent);
+            outline-offset: 3px;
+            border-radius: 10px;
         }
 
         /* ========================================
@@ -884,7 +936,7 @@ $loginDisabled = !empty($login_disabled);
                 max-width: 100%;
                 box-sizing: border-box;
                 padding: 14px 16px 14px 44px;
-                font-size: 16px; /* Prevent zoom on iOS */
+                font-size: 16px; /* Evita auto-zoom de inputs en iOS */
                 border-radius: 12px;
             }
 
@@ -894,8 +946,14 @@ $loginDisabled = !empty($login_disabled);
             }
 
             .toggle-password {
-                right: 14px;
+                right: 6px;
+                width: 44px;
+                height: 44px;
                 font-size: 16px;
+            }
+
+            #password.form-control {
+                padding-right: 58px;
             }
 
             .form-options {
@@ -906,12 +964,23 @@ $loginDisabled = !empty($login_disabled);
                 align-items: start;
             }
 
+            .remember-me {
+                min-height: 44px;
+            }
+
+            .remember-me input[type="checkbox"] {
+                width: 22px;
+                height: 22px;
+                flex-basis: 22px;
+            }
+
             .remember-me span { font-size: 13px; }
             .forgot-password {
                 font-size: 13px;
                 justify-self: start;
                 min-width: 0;
                 max-width: 100%;
+                min-height: 44px;
                 text-align: left;
                 overflow-wrap: anywhere;
             }
@@ -1049,7 +1118,7 @@ $loginDisabled = !empty($login_disabled);
            ======================================== */
         @supports (-webkit-touch-callout: none) {
             .form-control {
-                font-size: 16px; /* Prevent zoom */
+                font-size: 16px; /* Evita auto-zoom de inputs en iOS */
             }
         }
 
@@ -1092,6 +1161,7 @@ $loginDisabled = !empty($login_disabled);
     </style>
 </head>
 <body class="<?= $loginBackgroundUrl ? 'branding-login-bg' : '' ?>">
+    <?php include APP_PATH . '/views/components/pwa-launch-splash.php'; ?>
     
     <!-- ========================================
          CONTENEDOR PRINCIPAL
@@ -1270,20 +1340,6 @@ $loginDisabled = !empty($login_disabled);
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Conectando...';
-        });
-        
-        // ========================================
-        // Prevenir zoom en mobile
-        // ========================================
-        document.addEventListener('touchstart', function(event) {
-            if (event.touches.length > 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });
-        
-        // Prevenir gesture zoom en iOS
-        document.addEventListener('gesturestart', function(e) {
-            e.preventDefault();
         });
         
         // ========================================

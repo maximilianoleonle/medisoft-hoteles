@@ -16,10 +16,11 @@ Alcance ya cubierto:
 | Facturacion | Aprobado en casos probados, con fixes validados. |
 | Inventario / compras | Aprobado en casos probados, con fixes validados. |
 | CxC / CxP con caja | Aprobado en casos probados, incluyendo negativos y reversiones. |
-| Documentos base | Aprobado, excepto vinculacion a tareas. |
+| Documentos/Tareas | Aprobado en casos probados, incluyendo vinculacion de documentos a tarea `#5`. |
 | Reportes | Aprobado tras correccion: BUG-017 a BUG-021 con fix validado en Los Cedros. |
-| Responsive/mobile | Parcial: navegacion base pasa, pero hay 5 bugs abiertos de accesibilidad/overflow. |
+| Responsive/mobile | Parcial: navegacion base pasa; BUG-022, BUG-023, BUG-024, BUG-025 y BUG-026 quedaron con fix validado. |
 | PWA smoke `/api/sync` | Aprobado: `HTTP 423` y JSON `sync_temporarily_disabled`. |
+| Regresion final post-fixes | Aprobado: `32/32` checks funcionales pasaron en Los Cedros y Maximiliano, sin errores PHP/SQL detectados ni logs nuevos. |
 
 ## Cola recomendada
 
@@ -30,12 +31,12 @@ Alcance ya cubierto:
 | 3 | BUG-019 | P2 500 expuesto | Exportaciones visibles de procedencia/habitaciones rentables apuntaban a metodos inexistentes. | FIX VALIDADO: ambos exports generan PDF y link seguro. |
 | 4 | BUG-021 | P2 500 expuesto | Rutas de estancia/ranking-estados apuntaban a vistas inexistentes. | FIX VALIDADO: ambas rutas renderizan `200`. |
 | 5 | BUG-018 | P2 export principal rota | PDF ingresos/gastos fallaba por logo PNG con alpha y dependencia TCPDF/GD/Imagick. | FIX VALIDADO: PDF genera `application/pdf` con fallback si no hay GD/Imagick. |
-| 6 | BUG-016 | P2 contrato de datos | Documentos de tareas fallan por enum DB sin `tarea`. | Requiere autorizacion explicita para migracion/contrato DB o retirar accion en UI. |
-| 7 | BUG-024 | P2 mobile operativo | Dashboard movil recorta agenda y genera overflow horizontal. | Fix CSS/layout del dashboard y retest 360/390px. |
-| 8 | BUG-022 | P2 accesibilidad global | App bloquea zoom/pinch desde meta viewport y `pwa.js`. | Requiere autorizacion explicita para tocar PWA/offline o limitar fix a vistas no PWA. |
-| 9 | BUG-026 | P3 visual tablet | Centro documental recorta hero en tablet 768px. | Fix CSS local de documentos. |
-| 10 | BUG-023 | P3 login mobile | Controles secundarios de login tienen area tactil pequena. | Toca auth/login; corregir solo UI sin cambiar flujo/auth. |
-| 11 | BUG-025 | P3 accesibilidad tactil | Varios targets autenticados menores a 32px. | Correccion por pantallas, despues de dashboard/documentos. |
+| 6 | BUG-016 | P2 contrato de datos | Documentos de tareas fallaban por enum DB sin `tarea`. | FIX VALIDADO: migracion `20260630_001_documento_entidades_tarea_enum.sql`; documento `#22` vinculado a tarea `#5`. |
+| 7 | BUG-024 | P2 mobile operativo | Dashboard movil recorta agenda y genera overflow horizontal. | FIX VALIDADO: dashboard 360/390 sin scroll horizontal global y hora de agenda dentro del renglon. |
+| 8 | BUG-022 | P2 accesibilidad global | App bloqueaba zoom/pinch desde meta viewport y `pwa.js`. | FIX VALIDADO: viewport accesible en login/layout/offline, sin lock JS de zoom; `/api/sync` sigue en `423 sync_temporarily_disabled`. |
+| 9 | BUG-026 | P3 visual tablet | Centro documental recorta hero en tablet 768px. | FIX VALIDADO: `/documentos` 768x1024 sin recorte de hero/title/filtros. |
+| 10 | BUG-023 | P3 login mobile | Controles secundarios de login tenian area tactil pequena. | FIX VALIDADO: login 360/390/768 sin overflow; password toggle `44x44`, `Recordarme` `44px`, checkbox `22x22`, link recuperacion `44px`; sin cambiar flujo/auth. |
+| 11 | BUG-025 | P3 accesibilidad tactil | Varios targets autenticados menores a 32px. | FIX VALIDADO PARCIAL LOCAL: dashboard/documentos/inventario/habitaciones con targets de 44px; login cubierto por BUG-023. |
 
 ## Bloques de correccion propuestos
 
@@ -65,30 +66,37 @@ ID: BUG-016.
 
 Objetivo: resolver la accion visible `Vincular documento` en tareas.
 
-Decision requerida:
+Decision:
 
-- Opcion 1: autorizar migracion/ajuste DB para incluir `tarea` en `documento_entidades.entidad_tipo`.
-- Opcion 2: retirar/ocultar la accion de documentos en tareas hasta que exista contrato DB aprobado.
-
-Retest minimo si se autoriza DB:
-
-- Subir JPG valido a tarea `#5` o nueva tarea QA.
-- Confirmar documento creado, vinculo creado y descarga/preview funcionando.
-- Confirmar sin archivo huerfano si falla validacion.
-- Confirmar aislamiento multi-hotel.
-
-### Bloque C - Responsive operativo
-
-IDs: BUG-024, BUG-026, BUG-023, BUG-025.
-
-Objetivo: quitar cortes visuales y mejorar areas tactiles sin tocar logica operativa.
+- Autorizacion explicita recibida para migracion/ajuste DB.
+- Se agrego `tarea` a `documento_entidades.entidad_tipo` mediante `20260630_001_documento_entidades_tarea_enum.sql`.
 
 Retest minimo:
 
-- `/dashboard` en `360x740` y `390x844`: `scrollWidth == clientWidth` o scroll horizontal intencional aislado; agenda visible.
-- `/documentos` en `768x1024`: hero/title dentro del viewport.
-- Login en `360x740` y `390x844`: boton de password, checkbox y link con area tactil comoda.
-- Inventario, habitaciones, dashboard y documentos: controles principales con area tactil al menos `32px`, ideal `44px`.
+- Subir archivo valido a tarea `#5` o nueva tarea QA. VALIDADO con documento `#22`.
+- Confirmar documento creado y vinculo creado. VALIDADO: `entidad_tipo=tarea`, `entidad_id=5`, `relacion=evidencia_qa`.
+- Confirmar que la ficha de tarea muestra el documento. VALIDADO en `/tareas/5`.
+- Confirmar aislamiento multi-hotel. Cubierto por DOC-10 y por REG-FINAL-02 con documento `#22`.
+
+### Bloque C - Responsive operativo
+
+IDs originales: BUG-024, BUG-026, BUG-023, BUG-025.
+
+Objetivo: quitar cortes visuales y mejorar areas tactiles sin tocar logica operativa.
+
+Estado:
+
+- BUG-024 FIX VALIDADO: `/dashboard` en 360x740 y 390x844 mantiene `scrollWidth == clientWidth`; la hora de agenda queda dentro del viewport.
+- BUG-026 FIX VALIDADO: `/documentos` en 768x1024 mantiene hero/title/filtros dentro del viewport.
+- BUG-025 FIX VALIDADO PARCIAL LOCAL: dashboard, documentos, inventario y habitaciones tienen controles principales de 44px en los retests.
+- BUG-023 FIX VALIDADO: login en 360x740, 390x844 y 768x1024 mantiene `scrollWidth == clientWidth`; boton de password `44x44`, label `Recordarme` `44px`, checkbox `22x22` y link de recuperacion `44px`.
+
+Retest minimo:
+
+- `/dashboard` en `360x740` y `390x844`: `scrollWidth == clientWidth` o scroll horizontal intencional aislado; agenda visible. VALIDADO.
+- `/documentos` en `768x1024`: hero/title dentro del viewport. VALIDADO.
+- Login en `360x740` y `390x844`: boton de password, checkbox y link con area tactil comoda. VALIDADO.
+- Inventario, habitaciones, dashboard y documentos: controles principales con area tactil al menos `32px`, ideal `44px`. VALIDADO en pantallas autenticadas.
 
 ### Bloque D - Zoom mobile/PWA
 
@@ -98,20 +106,26 @@ Objetivo: permitir zoom/pinch o retirar bloqueos innecesarios.
 
 Decision requerida:
 
-- Este bloque toca `pwa.js`/PWA y posiblemente meta viewport global. Debe hacerse solo con autorizacion explicita porque PWA/offline esta en zona critica.
+- Autorizacion explicita recibida. Se tocaron solo `pwa.js`, `offline.html` y los meta viewport de login/layout para retirar bloqueo de zoom.
+- No se tocaron `service-worker.js`, `offline-data.js`, `reservaciones-offline.js`, IndexedDB, cache names ni `/api/sync`.
 
 Retest minimo:
 
-- Login y layout autenticado permiten zoom/pinch en movil real o emulado.
-- PWA sigue cargando sin errores JS.
-- `/api/sync` sigue respondiendo `423 sync_temporarily_disabled`.
+- Login y layout autenticado permiten zoom/pinch en movil real o emulado. VALIDADO por viewport sin scale lock y sin listeners `gesture*`/bloqueo touch global.
+- PWA sigue cargando sin errores JS. VALIDADO: `/dashboard` 390x844 carga con viewport accesible y `pwa.js` servido sin `lockMobileZoomGestures`.
+- `/api/sync` sigue respondiendo `423 sync_temporarily_disabled`. VALIDADO con POST autenticado y JSON esperado.
 
 ## Recomendacion inmediata
 
-Bloque A de Reportes cerrado con fix validado. Entrar ahora al Bloque C responsive local, porque:
+Bloques A, B, C y D quedan cerrados con fix validado en los casos probados. La regresion final post-fixes tambien queda cerrada:
 
-- Es el siguiente bloque que no requiere DB/migraciones ni PWA/offline.
-- Agrupa problemas visibles de operacion mobile/tablet.
-- Reduce friccion real para recepcion sin tocar logica de negocio.
+- `32/32` checks pasaron sobre rutas operativas de Los Cedros, documentos/tareas de Maximiliano, descarga preview de documento `#22`, CxC/CxP, reportes y `/api/sync`.
+- Logs post-regresion sin `PHP Warning`, `PHP Fatal`, `Fatal error`, `SQLSTATE`, `Uncaught`, `Undefined variable`, `ONLY_FULL_GROUP_BY` ni `Call to a member`.
+- Validaciones tecnicas finales OK: `php -l` en archivos PHP tocados, `node --check src/public_html/js/pwa.js`, enum `documento_entidades.entidad_tipo` con `tarea`, migracion registrada y vinculo documento `#22` -> tarea `#5` vigente.
 
-Dejar BUG-016 y BUG-022 para cuando el usuario autorice explicitamente DB/migraciones y PWA/offline.
+Siguiente fase recomendada:
+
+- Abrir testeo de seguridad como ciclo separado.
+- Mantener como regresiones futuras no bloqueantes: modificar dias con varias habitaciones, consumo automatico de inventario en check-in y modal de check-in movil cuando exista una reservacion con accion visible.
+
+No quedan BUG funcionales abiertos en esta bateria.

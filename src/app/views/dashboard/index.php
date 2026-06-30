@@ -3448,6 +3448,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    min-height: 44px;
+    padding-inline: 4px;
     color: var(--dash-gold);
     font-size: 11.5px;
     font-weight: 800;
@@ -3656,6 +3658,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: flex;
     align-items: center;
     gap: 11px;
+    min-height: 46px;
     padding: 8px 0;
     border-top: 1px solid var(--dash-line-soft);
 }
@@ -3663,6 +3666,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 .dm-rst.is-link {
     margin-inline: -8px;
     padding-inline: 8px;
+    max-width: calc(100% + 16px);
+    box-sizing: border-box;
     border-radius: 12px;
     color: inherit;
     text-decoration: none;
@@ -3752,6 +3757,10 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: flex;
     align-items: center;
     gap: 11px;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 48px;
+    overflow: hidden;
     padding: 8px 0;
     border-top: 1px solid var(--dash-line-soft);
     color: inherit;
@@ -3762,6 +3771,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 .dm-ag.is-link {
     margin-inline: -8px;
     padding-inline: 8px;
+    max-width: calc(100% + 16px);
+    box-sizing: border-box;
     border-radius: 12px;
     cursor: pointer;
 }
@@ -3799,7 +3810,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     color: var(--dash-on-brand);
 }
 
+.dm-ag > .min-w-0,
+.dm-ag > :not(.av):not(.tm) {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
 .dm-ag .nm {
+    display: block;
+    min-width: 0;
     color: var(--dash-navy);
     font-size: 13.5px;
     font-weight: 800;
@@ -3810,15 +3830,22 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .dm-ag .mt {
     margin-top: 1px;
+    min-width: 0;
     color: var(--dash-slate-500);
     font-size: 11.5px;
     font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dm-ag .tm {
     margin-left: auto;
+    flex: 0 0 auto;
+    min-width: 54px;
     display: inline-flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 7px;
     color: var(--dash-navy);
     font-size: 13px;
@@ -3920,7 +3947,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .dm-btn {
     flex: 1;
-    min-height: 42px;
+    min-height: 46px;
     display: inline-flex;
     align-items: center;
     justify-content: center;

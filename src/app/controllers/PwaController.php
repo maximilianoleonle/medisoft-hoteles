@@ -45,8 +45,8 @@ class PwaController extends Controller {
             'start_url' => url('h/' . $slug . '/login'),
             'scope' => rtrim(url(''), '/') . '/',
             'display' => 'standalone',
-            'background_color' => $this->colorSeguro($branding['color_secondary'] ?? null, '#FFFFFF'),
-            'theme_color' => $this->colorSeguro($branding['color_primary'] ?? null, '#9CA777'),
+            'background_color' => $this->splashBackgroundColor($branding),
+            'theme_color' => $this->colorSeguro($branding['color_primary'] ?? null, '#1B2746'),
             'orientation' => 'portrait-primary',
             'lang' => 'es-MX',
             'dir' => 'ltr',
@@ -116,6 +116,16 @@ class PwaController extends Controller {
         }
 
         return preg_match('/^#[0-9A-Fa-f]{6}$/', $color) ? strtoupper($color) : $fallback;
+    }
+
+    private function splashBackgroundColor(array $branding) {
+        $accent = $this->colorSeguro($branding['color_accent'] ?? null, '#BD9441');
+
+        if (function_exists('hotel_branding_mix')) {
+            return hotel_branding_mix($accent, '#F8F5ED', 8);
+        }
+
+        return '#F8F5ED';
     }
 
     private function iconosFallback() {

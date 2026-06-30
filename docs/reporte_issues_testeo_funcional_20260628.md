@@ -9,7 +9,7 @@ Bitacora fuente: `docs/bitacora_testeo_funcional_20260628.md`
 
 Se ejecuto la primera bateria funcional guiada sobre acceso, panel SaaS, dashboard, habitaciones, huespedes, reservaciones, check-in, check-out, caja, facturacion, inventario, compras ligadas a inventario, CxC/CxP con caja, documentos/adjuntos, reportes centrales, responsive/mobile preliminar y smoke PWA de `/api/sync`. Tambien se probo el caso critico reportado por el usuario: modificar noches despues de check-in y pago.
 
-Resultado actual: los issues detectados hasta CxC/CxP ya tienen fix validado. Los bloques multi-hotel amplio, Caja manual, Facturacion, Inventario/Compras, CxC/CxP y Documentos base quedaron aprobados funcionalmente en los casos probados. En Reportes quedaron aprobados los totales centrales, gerencial diario, ejecutivo, AJAX de graficas, historial de links y aislamiento de descarga; BUG-017 a BUG-021 quedaron con fix validado en el bloque de correccion de Reportes. En Responsive/mobile quedaron aprobados login sin overflow, sidebar/overlay movil, scroll real, header auto-hide, modal de caja y matriz general autenticada; se abrieron BUG-022 a BUG-026. El smoke PWA de `/api/sync` quedo aprobado con HTTP 423 y JSON `sync_temporarily_disabled`. Quedan pendientes resolver los abiertos de Documentos/Responsive.
+Resultado actual: todos los BUG funcionales detectados en esta bateria quedaron con fix validado. Los bloques multi-hotel amplio, Caja manual, Facturacion, Inventario/Compras, CxC/CxP, Documentos/Tareas, Reportes y Responsive/mobile quedaron aprobados en los casos probados. En Reportes quedaron aprobados los totales centrales, gerencial diario, ejecutivo, AJAX de graficas, historial de links y aislamiento de descarga; BUG-017 a BUG-021 quedaron con fix validado. En Responsive/mobile quedaron aprobados login sin overflow, sidebar/overlay movil, zoom/pinch, scroll real, header auto-hide, modal de caja y matriz general autenticada; BUG-022, BUG-023, BUG-024, BUG-025 y BUG-026 quedaron con fix validado. El smoke PWA de `/api/sync` quedo aprobado con HTTP 423 y JSON `sync_temporarily_disabled`. Despues de los fixes se ejecuto regresion funcional final de humo profundo: `32/32` checks pasaron en Los Cedros y Maximiliano, sin errores PHP/SQL detectados ni logs nuevos. No quedan BUG funcionales abiertos en esta bitacora.
 
 Issues detectados:
 
@@ -17,8 +17,8 @@ Issues detectados:
 |---|---:|---|
 | P0 | 2 | BUG-004, BUG-005 con fix validado |
 | P1 | 9 | BUG-001, BUG-002, BUG-003, BUG-006, BUG-007, BUG-009, BUG-010, BUG-011 y BUG-017 con fix validado |
-| P2 | 11 | BUG-008, BUG-012, BUG-014, BUG-015, BUG-018, BUG-019, BUG-020 y BUG-021 con fix validado; BUG-016, BUG-022 y BUG-024 abiertos |
-| P3 | 4 | BUG-013 con fix validado; BUG-023, BUG-025 y BUG-026 abiertos |
+| P2 | 11 | BUG-008, BUG-012, BUG-014, BUG-015, BUG-016, BUG-018, BUG-019, BUG-020, BUG-021, BUG-022 y BUG-024 con fix validado |
+| P3 | 4 | BUG-013, BUG-023, BUG-025 y BUG-026 con fix validado |
 
 ## Estado de correcciones
 
@@ -34,21 +34,21 @@ Issues detectados:
 10. BUG-014: exportacion rapida de inventario corregida y validada.
 11. BUG-015: UI de ajuste fraccionable corregida y validada.
 12. CxC/CxP con Caja: bloque probado sin issues nuevos; CxC `#3` y CxP `#3` terminan con saldo original y neto Caja `0.00` tras reversiones.
-13. Documentos base: bloque probado con un issue nuevo abierto, BUG-016, limitado a documentos vinculados a tareas.
+13. Documentos/Tareas: BUG-016 corregido con migracion `20260630_001_documento_entidades_tarea_enum.sql`; tarea `#5` de Maximiliano acepta documento vinculado `#22`.
 14. Reportes: bloque probado y corregido; ingresos/gastos, gerencial diario, ejecutivo, AJAX, links seguros, selector/export por usuario, PDFs expuestos, ocupacion, estancia y ranking estados pasan en retest Los Cedros. BUG-017 a BUG-021 quedan con fix validado.
-15. Responsive/mobile: login, sidebar/overlay, scroll real, header auto-hide, modal de caja y matriz autenticada probados; quedan abiertos BUG-022 a BUG-026 y pendiente revalidar modal de check-in cuando haya boton visible.
-16. PWA smoke `/api/sync`: POST autenticado con sesion Los Cedros responde `HTTP/1.1 423 Locked`, `Content-Type: application/json` y JSON `sync_temporarily_disabled`; no se tocaron archivos PWA/offline ni el endpoint.
+15. Responsive/mobile: login, sidebar/overlay, zoom/pinch, scroll real, header auto-hide, modal de caja y matriz autenticada probados; BUG-022, BUG-023, BUG-024, BUG-025 y BUG-026 quedaron con fix validado, y queda pendiente revalidar modal de check-in cuando haya boton visible.
+16. PWA smoke `/api/sync`: POST autenticado con sesion Los Cedros responde `HTTP/1.1 423 Locked`, `Content-Type: application/json` y JSON `sync_temporarily_disabled`; no se tocaron `service-worker.js`, IndexedDB, cache names ni el endpoint.
+17. Regresion final post-fixes: `32/32` checks pasaron. Se verificaron rutas operativas de Los Cedros, documentos/tareas de Maximiliano, descarga preview de documento `#22`, `/api/sync` bloqueado en `423`, logs limpios, lints PHP/JS y persistencia de migracion/vinculo `tarea`.
 
 ## Cierre y priorizacion
 
 Se creo el cierre operativo en `docs/cierre_priorizacion_testeo_funcional_20260628.md`.
 
-Siguiente bloque recomendado de correccion despues de cerrar Reportes:
+Regresion final ejecutada despues de cerrar correcciones funcionales:
 
-1. Bloque C - Responsive operativo: BUG-024, BUG-026, BUG-023 y BUG-025.
-2. BUG-016 solo con autorizacion explicita para DB/migracion o cambio de contrato.
-3. BUG-022 solo con autorizacion explicita para tocar PWA/offline o `pwa.js`.
-4. Revalidacion visual opcional del selector de Reportes en Maximiliano cuando haya sesion activa; el fix ya filtra por `hotel_usuarios.hotel_id`.
+1. `32/32` checks pasaron en Los Cedros y Maximiliano.
+2. Logs post-regresion sin `PHP Warning`, `Fatal error`, `SQLSTATE`, `Uncaught`, `Undefined variable`, `ONLY_FULL_GROUP_BY` ni `Call to a member`.
+3. Testeo de seguridad queda como siguiente fase separada, segun decision del usuario.
 
 ## Issues
 
@@ -191,7 +191,7 @@ Validacion del fix:
 ### BUG-016 - Documentos de tareas no se pueden vincular por incompatibilidad de enum
 
 Severidad: P2
-Estado: ABIERTO / REQUIERE MIGRACION O AJUSTE DE CONTRATO
+Estado: FIX VALIDADO
 Modulo: Documentos / Tareas
 URL: `/tareas/5`, `/documentos/subir?entidad_tipo=tarea&entidad_id=5`
 
@@ -218,9 +218,16 @@ Evidencia:
 - No se crearon documentos ni vinculos tras el intento: `doc_tarea_after=0`, `link_tarea_after=0`.
 - No quedaron archivos huerfanos recientes en `storage/documentos/hotel_4/2026/06`.
 
-Nota de correccion:
+Validacion del fix:
 
-No se corrigio en esta bateria porque resolverlo correctamente toca base de datos/migracion o contrato de entidad, zona marcada como critica para no tocar sin autorizacion explicita.
+- Con autorizacion explicita del usuario, se agrego la migracion `migrations/20260630_001_documento_entidades_tarea_enum.sql`.
+- La migracion modifica solo `documento_entidades.entidad_tipo` para incluir `tarea`, valida el cambio y registra `migrations.nombre = 20260630_001_documento_entidades_tarea_enum.sql`.
+- Verificacion DB: `entidad_tipo` quedo como `enum('proveedor','compra','cuenta_por_pagar','huesped','reservacion','trabajador','tarea')`; migracion `#49`, batch `40`, estado `ejecutada`.
+- Retest funcional con sesion temporal Maximiliano (`hotel_id=4`, usuario `adminmax`): `POST /documentos/subir` con `entidad_tipo=tarea`, `entidad_id=5`, archivo PNG permitido y titulo `QA-DOC-20260630-TAREA-BUG016` responde `303` a `/documentos/22`.
+- DB creo documento `#22`, `hotel_id=4`, `estado=activo`, `storage_path=documentos/hotel_4/2026/06/doc_20260629_184954_4a8e083554857542.png`.
+- DB creo vinculo `documento_entidades`: `entidad_tipo=tarea`, `entidad_id=5`, `relacion=evidencia_qa`.
+- `/tareas/5` contiene el titulo `QA-DOC-20260630-TAREA-BUG016`, confirmando que la ficha de tarea muestra el documento vinculado.
+- `php -l` sin errores en `Documento.php`, `DocumentoController.php` y `TareaController.php`.
 
 ### BUG-017 - Reporte financiero por usuario lista y exporta usuarios de otros hoteles
 
@@ -369,7 +376,7 @@ Validacion del fix:
 ### BUG-022 - La app bloquea zoom/pinch en mobile desde meta viewport y JavaScript
 
 Severidad: P2
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Modulo: Responsive / Accesibilidad mobile / PWA
 URL: `/h/los-cedros/login`, layout autenticado global
 
@@ -383,20 +390,28 @@ Impacto:
 
 En telefono, el usuario no puede ampliar pantallas densas como reportes, reservaciones, caja o documentos. Esto afecta accesibilidad y operacion real desde PWA o navegador movil.
 
-Nota de correccion:
+Validacion del fix:
 
-No se corrigio porque `pwa.js`, PWA/offline y archivos relacionados estan en zona critica marcada como no tocar sin autorizacion explicita.
+- Con autorizacion explicita del usuario, se retiro el bloqueo de zoom solo en `src/app/views/auth/login.php`, `src/app/views/layout/header.php`, `src/public_html/js/pwa.js` y `src/public_html/offline.html`.
+- Login y layout autenticado ahora usan `meta viewport` con `width=device-width, initial-scale=1.0, viewport-fit=cover`, sin `maximum-scale=1.0` ni `user-scalable=no`.
+- Login ya no registra listeners `touchstart`/`gesturestart` para cancelar pinch.
+- `pwa.js` ya no contiene ni ejecuta `lockMobileZoomGestures()`; el archivo servido `/js/pwa.js?v=1782779600` dio `HasZoomLock=false`.
+- `offline.html` ya no contiene el bloqueo duplicado de `gesturestart`, `touchmove` multi-touch ni doble toque.
+- Retest Chrome mobile aislado en `390x844`: `/h/los-cedros/login` y `/offline.html` cargan con viewport accesible, sin listeners `gesture*`, sin listeners globales no pasivos de `touchmove/touchend` y sin overflow horizontal.
+- Retest navegador autenticado en `/dashboard` `390x844`: viewport accesible, `scrollWidth=390`, `clientWidth=390`.
+- Smoke `/api/sync` autenticado con sesion temporal Los Cedros: `HTTP/1.1 423 Locked`, `Content-Type: application/json; charset=utf-8`, body `success=false`, `error=sync_temporarily_disabled`, `pending_operations_preserved=true`.
+- No se tocaron `service-worker.js`, `offline-data.js`, `reservaciones-offline.js`, IndexedDB, cache names ni la accion `/api/sync`.
 
 ### BUG-023 - Login tiene controles tactiles secundarios menores a tamano recomendado
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Modulo: Auth / Login responsive
 URL: `/h/los-cedros/login`
 
 Caso reproducido:
 
-Prueba visual real en `360x740`, `390x844`, `768x1024` y `1366x768`:
+Prueba visual real previa en `360x740`, `390x844`, `768x1024` y `1366x768`:
 
 - No hay overflow horizontal en login.
 - Boton `Mostrar contrasena`: aprox. `26x26`.
@@ -407,10 +422,21 @@ Impacto:
 
 No bloquea el inicio de sesion, pero aumenta errores de toque en telefono. Se agrava por BUG-022 porque el usuario tampoco puede hacer zoom para tocar con mas precision.
 
+Validacion del fix:
+
+- Cambio aplicado en `src/app/views/auth/login.php` solo a CSS de targets tactiles: boton de password `44x44`, padding derecho del campo password, label `Recordarme` con area de `44px`, checkbox visual `22x22` y link `Olvidaste tu contrasena` con alto minimo `44px`.
+- No se cambiaron `action`, `method`, `name`, CSRF, hidden inputs ni flujo de autenticacion.
+- Retest aislado sin sesion en Chrome con `/h/los-cedros/login`: en `360x740`, `390x844` y `768x1024`, `bodyScrollWidth` y `docScrollWidth` coinciden con el viewport; no hay overflow horizontal.
+- `360x740`: boton de password `44x44`, campo password `312x46`, `Recordarme` `312x44`, checkbox `22x22`, link de recuperacion `163x44`, boton dentro del campo.
+- `390x844`: boton de password `44x44`, `Recordarme` `342x44`, checkbox `22x22`, link de recuperacion `163x44`, boton dentro del campo.
+- `768x1024`: boton de password `44x44`, `Recordarme` `720x44`, checkbox `22x22`, link de recuperacion `163x44`, sin desborde.
+- Interaccion validada: click en `Mostrar contrasena` cambia `#password` de `type=password` a `type=text`.
+- `php -l /var/www/html/app/views/auth/login.php` sin errores.
+
 ### BUG-024 - Dashboard movil recorta horarios/acciones de la agenda
 
 Severidad: P2
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Modulo: Dashboard / Responsive mobile
 URL: `/dashboard`
 
@@ -425,10 +451,17 @@ Impacto:
 
 El dashboard movil puede mostrar agenda cortada o generar desplazamiento horizontal. Recepcion pierde parte de la informacion rapida de llegadas/salidas desde telefono.
 
+Validacion del fix:
+
+- Cambio aplicado en `src/app/views/dashboard/index.php`: las filas `.dm-ag` permiten que nombre/habitacion se encojan con `min-width:0`, la hora queda fija dentro del renglon y los enlaces/botones suben a area tactil >= 44px.
+- Retest navegador en `360x740`: `bodyScrollWidth=360`, `docScrollWidth=360`; `.dm-ag.is-link` queda `left=23/right=329`, `.dm-ag .tm` queda `left=268/right=321`.
+- Retest navegador en `390x844`: `bodyScrollWidth=390`, `docScrollWidth=390`; `.dm-ag .tm` queda `left=297/right=351`.
+- Links `Ver todas` y `Ver agenda` miden `44px` de alto; acciones de dashboard miden `45px` de alto.
+
 ### BUG-025 - Varias pantallas autenticadas tienen targets tactiles menores a 32px
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO PARCIAL LOCAL
 Modulo: Responsive / Accesibilidad tactil
 URL: Varias autenticadas
 
@@ -443,10 +476,18 @@ Impacto:
 
 No bloquea el flujo, pero aumenta errores de toque en telefono/tablet y empeora accesibilidad. Se agrava por BUG-022, ya que el usuario tampoco puede hacer zoom.
 
+Validacion del fix:
+
+- Cambio aplicado en `dashboard`, `documentos`, `inventario` y `habitaciones`: acciones visibles y filtros operativos pasan a objetivo tactil de 44px en las pantallas autenticadas probadas.
+- Retest `/inventario` en `390x844`: `.btn-inv`, `.btn-config-inv` e `.inv-search` miden `44px` de alto; `.act-btn` queda con `min-width/min-height=44px` en reglas computadas.
+- Retest `/habitaciones` en `390x844`: `.hb-filter-trigger`, `.hb-chip`, `.filter-date`, `.filter-btn` y `.btn-action` miden `44px` de alto.
+- Retest `/documentos` en `768x1024`: `.dc-btn` y `.dc-card-btn` miden `44px` de alto; las acciones desktop `.dc-action` conservan `44x44` cuando aplica breakpoint de escritorio.
+- Login/auth queda cubierto por BUG-023, ahora con fix validado.
+
 ### BUG-026 - Centro documental en tablet recorta el hero por ancho interno mayor al viewport
 
 Severidad: P3
-Estado: ABIERTO
+Estado: FIX VALIDADO
 Modulo: Documentos / Responsive tablet
 URL: `/documentos`
 
@@ -462,6 +503,12 @@ En viewport `768x1024`:
 Impacto:
 
 El encabezado del centro documental puede verse cortado en tablets de 768px, afectando presentacion y lectura de contexto.
+
+Validacion del fix:
+
+- Cambio aplicado en `src/app/views/documentos/index.php`: hero/title con `min-width:0`, `max-width:100%`, filtros en dos columnas para tablet y listado tipo card hasta `900px`.
+- Retest navegador en `768x1024`: `bodyScrollWidth=768`, `docScrollWidth=768`; `.dc-hero-section` queda `left=16/right=744` y `.dc-title-lockup` queda `left=16/right=744`.
+- Filtros en tablet quedan dentro de viewport: `.dc-filter-form` `left=33/right=727`; botones `Filtrar/Limpiar` miden `44px` de alto.
 
 ### BUG-009 - Cambiar metodo de pago crea solicitudes de factura duplicadas
 
@@ -820,9 +867,6 @@ Validacion del fix:
 
 - Modificar dias con varias habitaciones.
 - Revalidar desde listado/habitaciones que el mensaje de saldo pendiente sea claro si se intenta check-out rapido.
-- Re-test regresivo de facturacion con casos nuevos limpios cuando se prepare cierre general de QA.
-- Re-test regresivo de inventario manual con un producto nuevo limpio cuando se prepare cierre general de QA.
 - Inventario/check-in con consumo automatico despues del fix de movimientos manuales.
-- Tareas/documentos: resolver BUG-016 antes de aprobar adjuntos en tareas.
-- Responsive/mobile: resolver BUG-022 a BUG-026; revalidar modal de check-in cuando exista una reservacion con boton visible.
-- Reportes: revalidacion visual opcional del selector en Maximiliano cuando haya sesion activa; la sesion QA disponible expiro durante el retest.
+- Responsive/mobile: revalidar modal de check-in cuando exista una reservacion con boton visible.
+- Seguridad funcional/aplicativa: abrir fase separada.

@@ -3497,6 +3497,95 @@ public function paraCalendario($mes = null, $año = null) {
         }
     }
 
+    /**
+     * Modifica tanto la fecha de entrada como la de salida de una reservación
+     * (y su precio/desglose). Reutiliza la lógica de subtotales por habitación de
+     * modificarFechaSalida pero permite desplazar también el check-in.
+     */
+    public function modificarFechas($reservacion_id, $nueva_fecha_entrada, $nueva_fecha_salida, $nuevo_precio_total, array $desglose = []) {
+        try {
+            $hotel_id = $this->hotelIdActual();
+            $inicioTransaccion = !$this->db->enTransaccion();
+
+            if ($inicioTransaccion) {
+                $this->db->beginTransaction();
+            }
+
+            $sql = "UPDATE reservaciones
+                    SET fecha_entrada = ?,
+                        fecha_salida = ?,
+                        precio_total = ?,
+                        updated_at   = NOW()
+                    WHERE id = ?
+                    AND hotel_id = ?";
+
+            $stmt = $this->db->query($sql, [
+                $nueva_fecha_entrada,
+                $nueva_fecha_salida,
+                $nuevo_precio_total,
+                $reservacion_id,
+                $hotel_id
+            ]);
+
+            if (!$stmt) {
+                throw new Exception('No se pudo actualizar la reservacion.');
+            }
+
+            $preciosPorHabitacion = [];
+            foreach ($desglose as $item) {
+                $habitacionId = (int)($item['habitacion_id'] ?? 0);
+                if ($habitacionId <= 0 || !array_key_exists('precio_total', $item)) {
+                    continue;
+                }
+                $preciosPorHabitacion[$habitacionId] = (float)$item['precio_total'];
+            }
+
+            if (!empty($preciosPorHabitacion)) {
+                $stmtCount = $this->db->query(
+                    "SELECT COUNT(*) AS total
+                     FROM reservacion_habitaciones
+                     WHERE reservacion_id = ?
+                     AND hotel_id = ?",
+                    [$reservacion_id, $hotel_id]
+                );
+                $rowCount = $stmtCount ? $stmtCount->fetch() : null;
+                $habitacionesActuales = (int)($rowCount['total'] ?? 0);
+
+                if ($habitacionesActuales !== count($preciosPorHabitacion)) {
+                    throw new Exception('El desglose de habitaciones no coincide con la reservacion.');
+                }
+
+                foreach ($preciosPorHabitacion as $habitacionId => $precioHabitacion) {
+                    $stmtHabitacion = $this->db->query(
+                        "UPDATE reservacion_habitaciones
+                         SET precio = ?
+                         WHERE reservacion_id = ?
+                         AND hotel_id = ?
+                         AND habitacion_id = ?",
+                        [$precioHabitacion, $reservacion_id, $hotel_id, $habitacionId]
+                    );
+
+                    if (!$stmtHabitacion) {
+                        throw new Exception('No se pudo actualizar el subtotal de una habitacion.');
+                    }
+                }
+            }
+
+            if ($inicioTransaccion) {
+                $this->db->commit();
+            }
+
+            return true;
+
+        } catch (Exception $e) {
+            if (isset($inicioTransaccion) && $inicioTransaccion && $this->db->enTransaccion()) {
+                $this->db->rollBack();
+            }
+            error_log("Error en modificarFechas: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function registrarAjustePagoPorDevolucion($reservacion_id, $monto, $metodo_pago = 'efectivo', $hotelId = null) {
         try {
             $reservacion_id = (int)$reservacion_id;

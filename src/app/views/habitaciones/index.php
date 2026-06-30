@@ -1317,7 +1317,8 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     border-radius: 0.5rem;
     background: #f9fafb;
     transition: all 0.2s;
-    height: 32px;
+    min-height: 44px;
+    height: 44px;
 }
 
 .filter-input:focus,
@@ -1387,7 +1388,8 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    height: 32px;
+    min-height: 44px;
+    height: 44px;
     border: 1px solid transparent;
 }
 
@@ -1424,7 +1426,8 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     .filter-date,
     .filter-btn {
         font-size: 0.8125rem;
-        height: 36px;
+        min-height: 44px;
+        height: 44px;
     }
 
     .filter-input {
@@ -2068,6 +2071,70 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     flex-shrink: 0;
 }
 
+/* Chip de tareas vinculadas (abre el panel "Tareas del cuarto") */
+.flip-card-back .hb-tareas-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.6rem;
+    line-height: 1.2;
+    margin: 0.1rem 0 0.2rem;
+    padding: 0.32rem 0.45rem;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s ease, border-color .15s ease;
+}
+.flip-card-back .hb-tareas-chip:hover {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.5);
+}
+.flip-card-back .hb-tareas-chip i { width: 12px; text-align: center; flex-shrink: 0; }
+.flip-card-back .hb-tareas-chip > span { flex: 1; min-width: 0; }
+.flip-card-back .hb-tareas-chip .hb-tareas-detail,
+.flip-card-back .hb-tareas-chip .hb-tareas-venc { opacity: .9; font-weight: 600; }
+.flip-card-back .hb-tareas-chip .hb-tareas-venc { color: #FECACA; }
+.flip-card-back .hb-tareas-chip .hb-tareas-arrow { font-size: .55rem; opacity: .7; }
+.flip-card-back .hb-tareas-chip.is-vencida { border-color: rgba(254,202,202,.7); background: rgba(220,38,38,.30); }
+.flip-card-back .hb-tareas-chip--empty { opacity: .82; border-style: dashed; }
+.flip-card-back .hb-tareas-chip--empty:hover { opacity: 1; }
+
+/* Modal "Tareas del cuarto": posicion robusta, no depende de utilidades Tailwind
+   (se ancla al viewport aunque existan ancestros con transform/perspective) */
+.tc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, .6);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+.tc-modal.hidden { display: none; }
+.tc-dialog {
+    width: min(680px, 94vw);
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(2, 6, 23, .45);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.tc-dialog > #tareasCuartoBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .flip-card-back .action-buttons {
     display: flex;
     gap: 0.35rem;
@@ -2095,7 +2162,7 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     justify-content: center;
     gap: 0.18rem;
     white-space: nowrap;
-    min-height: 26px;
+    min-height: 44px;
     backdrop-filter: blur(6px);
 }
 
@@ -3384,6 +3451,8 @@ if ($tiene_doble_movimiento) {
                         'detail' => implode(' / ', $tareasDetalle),
                     ];
                 }
+                $tareasProxLimite = $tareasResumen['proxima_fecha_limite'] ?? null;
+                $tareasVencida = $tareasProxLimite && strtotime((string)$tareasProxLimite) && strtotime((string)$tareasProxLimite) < time();
                 $habitacionNumeroTexto = (string)($habitacion['numero'] ?? '');
                 $habitacionNumeroLongitud = function_exists('mb_strlen')
                     ? mb_strlen($habitacionNumeroTexto, 'UTF-8')
@@ -3536,10 +3605,28 @@ if ($tiene_doble_movimiento) {
                                 </div>
 
                                 <?php if ($tareasActivas > 0): ?>
-                                    <div class="info-item">
+                                    <button type="button"
+                                            class="hb-tareas-chip<?= $tareasVencida ? ' is-vencida' : '' ?>"
+                                            onclick="event.stopPropagation(); abrirTareasCuarto(<?= (int)$habitacion['id'] ?>, '<?= htmlspecialchars($habitacionNumeroTexto, ENT_QUOTES) ?>', '<?= htmlspecialchars((string)($habitacion['estado'] ?? ''), ENT_QUOTES) ?>')"
+                                            title="Ver tareas de esta habitación">
                                         <i class="fas fa-tasks"></i>
-                                        <span><?= $tareasActivas ?> tarea<?= $tareasActivas === 1 ? '' : 's' ?> activa<?= $tareasActivas === 1 ? '' : 's' ?></span>
-                                    </div>
+                                        <span>
+                                            <?= $tareasActivas ?> tarea<?= $tareasActivas === 1 ? '' : 's' ?> activa<?= $tareasActivas === 1 ? '' : 's' ?>
+                                            <?php if (!empty($tareasDetalle)): ?>
+                                                <small class="hb-tareas-detail">(<?= htmlspecialchars(implode(' · ', $tareasDetalle)) ?>)</small>
+                                            <?php endif; ?>
+                                            <?php if ($tareasVencida): ?><small class="hb-tareas-venc">· vencida</small><?php endif; ?>
+                                        </span>
+                                        <i class="fas fa-chevron-right hb-tareas-arrow"></i>
+                                    </button>
+                                <?php elseif (can('habitaciones.mantenimiento')): ?>
+                                    <button type="button"
+                                            class="hb-tareas-chip hb-tareas-chip--empty"
+                                            onclick="event.stopPropagation(); crearTareaCuarto(<?= (int)$habitacion['id'] ?>, '<?= htmlspecialchars((string)($habitacion['estado'] ?? ''), ENT_QUOTES) ?>')"
+                                            title="Crear tarea para esta habitación">
+                                        <i class="fas fa-plus-circle"></i>
+                                        <span>Sin tareas · Crear</span>
+                                    </button>
                                 <?php endif; ?>
 
                                 <?php if ($tiene_doble_movimiento): ?>
@@ -3618,6 +3705,12 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-user"></i>
                                         <span><?= htmlspecialchars($habitacion['reservacion_pendiente']['nombre_completo']) ?></span>
                                     </div>
+                                    <?php if ($habitacion['estado'] == 'limpieza'): ?>
+                                        <div class="info-item">
+                                            <i class="fas fa-broom"></i>
+                                            <span>En limpieza · prep&aacute;rala para el check-in</span>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if ($es_llegada_tardia): ?>
                                         <div class="info-item">
                                             <i class="fas fa-moon"></i>
@@ -3740,9 +3833,16 @@ if ($tiene_doble_movimiento) {
                                     <?php endif; ?>
 
                                 <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente']) && can('reservaciones.checkin')): ?>
-                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); hacerCheckInRapido(<?= $habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'] ?>)" class="btn-action btn-primary" title="Hacer check-in de la reservación pendiente">
-                                        <i class="fas fa-sign-in-alt mr-1"></i>Check-in
-                                    </a>
+                                    <?php if ($habitacion['estado'] == 'limpieza'): ?>
+                                        <!-- Llega un huésped pero la habitación sigue en limpieza: primero hay que dejarla lista -->
+                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); liberarHabitacion(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Marcar esta habitación como limpia antes del check-in">
+                                            <i class="fas fa-check mr-1"></i>Limpia
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); hacerCheckInRapido(<?= $habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'] ?>)" class="btn-action btn-primary" title="Hacer check-in de la reservación pendiente">
+                                            <i class="fas fa-sign-in-alt mr-1"></i>Check-in
+                                        </a>
+                                    <?php endif; ?>
 
                                 <?php elseif ($habitacion['estado'] == 'limpieza'): ?>
                                     <a href="javascript:void(0)" onclick="event.stopPropagation(); liberarHabitacion(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Marcar esta habitación como limpia">
@@ -4549,6 +4649,174 @@ if ($tiene_doble_movimiento) {
         </div>
     </div>
 </div>
+
+<!-- Modal: Tareas del cuarto (panel read-only que enlaza a la seccion de Tareas) -->
+<div id="modalTareasCuarto" class="tc-modal hidden">
+    <div class="tc-dialog">
+        <div class="bg-gradient-to-r from-slate-700 to-slate-800 text-white p-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg"><i class="fas fa-list-check text-xl"></i></div>
+                <div>
+                    <h3 class="text-lg font-bold">Tareas del cuarto <span id="tareasCuartoTitulo"></span></h3>
+                    <p class="text-xs text-slate-200">Seguimiento operativo. No cambia el estado de la habitación.</p>
+                </div>
+            </div>
+            <button onclick="cerrarTareasCuarto()" class="text-white hover:text-slate-200 transition-colors p-2 hover:bg-white/10 rounded-lg">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-5" id="tareasCuartoBody">
+            <!-- Se llena por JS -->
+        </div>
+
+        <div class="bg-gray-50 px-5 py-4 flex justify-between items-center border-t gap-3">
+            <a id="linkVerTodasTareas" href="#" class="px-4 py-2 text-slate-700 hover:bg-gray-200 rounded-lg transition-colors font-medium text-sm">
+                <i class="fas fa-arrow-up-right-from-square mr-2"></i>Ver todas
+            </a>
+            <button type="button" id="btnCrearTareaCuarto" onclick="crearTareaDesdeModal()"
+                    class="px-5 py-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all font-bold shadow-md text-sm">
+                <i class="fas fa-plus mr-2"></i>Crear tarea
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ── Panel "Tareas del cuarto" (vínculo Habitaciones ↔ Tareas) ───────────── */
+window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : 'false' ?>;
+(function () {
+    const TC = { id: 0, numero: '', estado: '' };
+    const URLS = {
+        fetch: '<?= url('tareas/de-habitacion') ?>',
+        crear: '<?= url('tareas/crear') ?>',
+        lista: '<?= url('tareas') ?>',
+        tarea: '<?= url('tareas') ?>'
+    };
+    const ESTADOS = {
+        pendiente:  ['Pendiente',  'bg-amber-100 text-amber-800'],
+        asignada:   ['Asignada',   'bg-blue-100 text-blue-800'],
+        en_proceso: ['En proceso', 'bg-teal-100 text-teal-800'],
+        completada: ['Completada', 'bg-green-100 text-green-700'],
+        cancelada:  ['Cancelada',  'bg-gray-100 text-gray-500']
+    };
+    const CATS = { limpieza: 'Limpieza', mantenimiento: 'Mantenimiento', general: 'General' };
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function fmtFecha(v) {
+        if (!v) return '—';
+        const t = Date.parse(String(v).replace(' ', 'T'));
+        if (isNaN(t)) return '—';
+        const d = new Date(t);
+        return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ' ' +
+               d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function urlCrear() {
+        let u = URLS.crear + '?habitacion_id=' + encodeURIComponent(TC.id);
+        if (TC.estado === 'limpieza') u += '&categoria=limpieza';
+        return u;
+    }
+
+    window.abrirTareasCuarto = function (id, numero, estado) {
+        TC.id = id; TC.numero = numero || ''; TC.estado = estado || '';
+        document.getElementById('tareasCuartoTitulo').textContent = TC.numero ? ('— Hab. ' + TC.numero) : '';
+        document.getElementById('linkVerTodasTareas').href = URLS.lista + '?buscar=' + encodeURIComponent(TC.numero);
+
+        const btnCrear = document.getElementById('btnCrearTareaCuarto');
+        if (btnCrear) {
+            btnCrear.style.display = window.HB_PUEDE_CREAR_TAREA ? '' : 'none';
+        }
+
+        const modal = document.getElementById('modalTareasCuarto');
+        modal.classList.remove('hidden');
+
+        const body = document.getElementById('tareasCuartoBody');
+        body.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-sm">Cargando tareas…</p></div>';
+
+        fetch(URLS.fetch + '/' + encodeURIComponent(id), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.ok) { throw new Error('respuesta'); }
+                renderTareas(data.tareas || []);
+            })
+            .catch(function () {
+                body.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-triangle-exclamation text-2xl mb-2"></i><p class="text-sm">No se pudieron cargar las tareas.</p></div>';
+            });
+    };
+
+    function renderTareas(tareas) {
+        const body = document.getElementById('tareasCuartoBody');
+        if (!tareas.length) {
+            body.innerHTML = '<div class="text-center py-8 text-gray-500">' +
+                '<i class="fas fa-clipboard-check text-3xl mb-3 text-green-500"></i>' +
+                '<p class="font-medium">Sin tareas vinculadas</p>' +
+                '<p class="text-sm">Este cuarto no tiene tareas registradas.</p></div>';
+            return;
+        }
+        let html = '<div class="space-y-2">';
+        tareas.forEach(function (t) {
+            const est = ESTADOS[t.estado] || [t.estado || 'Sin estado', 'bg-gray-100 text-gray-600'];
+            const cat = CATS[t.categoria] || (t.categoria || 'General');
+            const trab = t.trabajador_nombre ? esc(t.trabajador_nombre) : 'Sin asignar';
+            html +=
+                '<a href="' + URLS.tarea + '/' + (t.id || 0) + '" class="flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 hover:border-slate-400 hover:bg-slate-50 transition-colors">' +
+                    '<div class="min-w-0">' +
+                        '<div class="font-semibold text-gray-800 truncate">' + esc(t.titulo || ('Tarea #' + (t.id || 0))) + '</div>' +
+                        '<div class="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-1">' +
+                            '<span><i class="fas fa-tag mr-1"></i>' + esc(cat) + '</span>' +
+                            '<span><i class="fas fa-user mr-1"></i>' + trab + '</span>' +
+                            '<span><i class="fas fa-clock mr-1"></i>' + fmtFecha(t.fecha_limite) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<span class="shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ' + est[1] + '">' + esc(est[0]) + '</span>' +
+                '</a>';
+        });
+        html += '</div>';
+        body.innerHTML = html;
+    }
+
+    window.cerrarTareasCuarto = function () {
+        document.getElementById('modalTareasCuarto').classList.add('hidden');
+    };
+
+    window.crearTareaDesdeModal = function () {
+        window.location.href = urlCrear();
+    };
+
+    // Acceso directo desde el chip "Sin tareas · Crear"
+    window.crearTareaCuarto = function (id, estado) {
+        TC.id = id; TC.estado = estado || '';
+        window.location.href = urlCrear();
+    };
+
+    // Cerrar al hacer clic en el backdrop
+    document.addEventListener('click', function (e) {
+        const modal = document.getElementById('modalTareasCuarto');
+        if (modal && e.target === modal) { modal.classList.add('hidden'); }
+    });
+
+    // Cerrar con Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modalTareasCuarto');
+            if (modal) { modal.classList.add('hidden'); }
+        }
+    });
+
+    // CLAVE: mover el modal a <body> para que position:fixed se ancle al viewport
+    // y no a un ancestro con transform/perspective (flip-cards).
+    const modalEl = document.getElementById('modalTareasCuarto');
+    if (modalEl && modalEl.parentElement !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+})();
+</script>
+
 <!-- Formulario oculto para check-out rápido -->
 <form id="formCheckOut" method="POST" style="display: none;">
     <?= csrf_field() ?>
@@ -9002,8 +9270,8 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   .habitaciones-view .hb-filter-trigger{
     display:grid!important;
     place-items:center!important;
-    width:40px!important;
-    height:40px!important;
+    width:44px!important;
+    height:44px!important;
     border:1px solid color-mix(in srgb,var(--hb-secondary) 12%,var(--hb-line))!important;
     border-radius:12px!important;
     background:rgba(255,255,255,.66)!important;
@@ -9025,7 +9293,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   .habitaciones-view .hb-chips::-webkit-scrollbar{width:0!important;height:0!important;}
   .habitaciones-view .hb-chip{
     flex:0 0 auto!important;
-    min-height:30px!important;
+    min-height:44px!important;
     padding:0 11px!important;
     border:1px solid color-mix(in srgb,var(--hb-secondary) 10%,var(--hb-line))!important;
     border-radius:999px!important;
@@ -9046,14 +9314,14 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     grid-column:1/-1!important;
     width:100%!important;
     display:grid!important;
-    grid-template-columns:minmax(0,1fr) 40px 40px!important;
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
     gap:8px!important;
     margin:4px 0 0!important;
   }
   .habitaciones-view .filter-date,
   .habitaciones-view .filter-btn{
-    min-height:40px!important;
-    height:40px!important;
+    min-height:44px!important;
+    height:44px!important;
     border-radius:12px!important;
     border:1px solid color-mix(in srgb,var(--hb-secondary) 11%,var(--hb-line))!important;
     background:rgba(255,255,255,.62)!important;
@@ -12782,7 +13050,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     .habitaciones-view .flip-card.flipped .flip-card-back .btn-action,
     .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .btn-action {
         min-width: 0 !important;
-        min-height: 32px !important;
+        min-height: 44px !important;
         padding: 7px 8px !important;
         border-radius: 10px !important;
         font-size: .65rem !important;
@@ -12796,6 +13064,10 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped .flip-card-back .action-buttons {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
+}
+
+.habitaciones-view .hb-chip {
+    min-height: 44px !important;
 }
 </style>
 

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 header('Content-Type: text/html; charset=UTF-8');
 /**
  * Vista de Detalle de Reservación - Diseño Moderno y Colorido
@@ -2216,39 +2216,124 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
 .rdv3-header-badges { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .rdv3-badge--count { color: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 12%, #fff); }
-.rdv3-card--rooms .rdv3-card-header { padding-bottom: 10px; }
-.rdv3-card--rooms .rdv3-card-body { padding-top: 8px; padding-bottom: 24px; }
-.rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 0; border-radius: 13px; border: 1px solid color-mix(in srgb, var(--room-accent) 14%, transparent); background: #FFFFFF; padding: 12px 14px 12px 16px; display: grid; gap: 10px; }
-.rdv3-room::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 0 8px 8px 0; background: var(--room-accent); opacity: .76; }
-.rdv3-room:nth-child(4n+1) { --room-accent: var(--rdv3-blue); }
-.rdv3-room:nth-child(4n+2) { --room-accent: var(--rdv3-gold); }
-.rdv3-room:nth-child(4n+3) { --room-accent: var(--rdv3-violet); }
-.rdv3-room:nth-child(4n+4) { --room-accent: var(--rdv3-green); }
-.rdv3-room.is-courtesy { --room-accent: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 14%, #fff); }
-.rdv3-room-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-width: 0; }
-.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.15rem; line-height: 1; font-weight: 700; }
-.rdv3-room-type { color: #556176; font-size: .82rem; font-weight: 800; margin-top: 4px; overflow-wrap: anywhere; }
-.rdv3-room-sub { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
-.rdv3-room-price { color: color-mix(in srgb, var(--room-accent) 80%, var(--rdv3-primary)); font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-.rdv3-room-price small { display: block; margin-top: 2px; color: #8a93a5; font-size: .62rem; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; }
-.rdv3-room-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
-.rdv3-room-metric { min-height: 42px; padding: 7px 8px; border-radius: 9px; background: color-mix(in srgb, var(--room-accent) 5%, #fff); border: 1px solid color-mix(in srgb, var(--room-accent) 12%, var(--rdv3-line)); }
-.rdv3-room-metric small { display: block; color: #8790a1; font-size: .61rem; font-weight: 950; text-transform: uppercase; letter-spacing: .025em; }
-.rdv3-room-metric b { display: block; margin-top: 2px; color: var(--rdv3-primary); font-size: .78rem; font-weight: 950; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.rdv3-card--rooms .rdv3-card-header { padding-bottom: 14px; }
+.rdv3-card--rooms .rdv3-card-body { padding-top: 10px; padding-bottom: 30px; }
+.rdv3-rooms {
+    display: grid;
+    gap: 16px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.rdv3-room,
+.rdv3-room:nth-child(4n+1),
+.rdv3-room:nth-child(4n+2),
+.rdv3-room:nth-child(4n+3),
+.rdv3-room:nth-child(4n+4) {
+    --room-accent: var(--rdv3-accent);
+}
+.rdv3-room {
+    position: relative;
+    min-height: 0;
+    border: 1px solid #E3D5BF;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #FFFDF9 0%, #FBF6EE 100%);
+    padding: 18px 20px 18px 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(156px, auto);
+    grid-template-areas:
+        "identity price"
+        "metrics metrics";
+    gap: 16px 22px;
+    align-items: stretch;
+}
+.rdv3-room + .rdv3-room { border-top: 1px solid #E3D5BF; }
+.rdv3-room:not(:last-child) { margin-bottom: 0; }
+.rdv3-room::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 14px;
+    bottom: 14px;
+    width: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rdv3-accent) 54%, #CBB78E);
+}
+.rdv3-room.is-courtesy { --room-accent: var(--rdv3-gold); }
+.rdv3-room-top { display: contents; }
+.rdv3-room-top > .min-w-0 {
+    grid-area: identity;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    align-items: center;
+    min-width: 0;
+}
+.rdv3-room-number {
+    grid-row: 1 / 3;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    border: 1px solid #E6DBC8;
+    background: #FFFDF9;
+    color: var(--rdv3-primary);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.42rem;
+    line-height: 1;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.rdv3-room-type { color: var(--rdv3-primary); font-size: .96rem; font-weight: 950; margin-top: 0; overflow-wrap: anywhere; }
+.rdv3-room-sub { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.rdv3-room-price {
+    grid-area: price;
+    align-self: stretch;
+    min-width: 156px;
+    padding: 12px 0 12px 18px;
+    border-left: 1px solid #E6DBC8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: var(--rdv3-primary);
+    font-size: 1.16rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+}
+.rdv3-room-price small { display: block; margin-top: 6px; color: #8a93a5; font-size: .63rem; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
+.rdv3-room-metrics {
+    grid-area: metrics;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.rdv3-room-metric { min-height: 58px; padding: 11px 12px; border-radius: 12px; background: #F7F1E8; border: 1px solid #E7D9C4; }
+.rdv3-room-metric + .rdv3-room-metric { border-left: 1px solid #E7D9C4; }
+.rdv3-room-metric small { display: block; color: #8790a1; font-size: .62rem; font-weight: 950; text-transform: uppercase; letter-spacing: .025em; }
+.rdv3-room-metric b { display: block; margin-top: 5px; color: var(--rdv3-primary); font-size: .86rem; font-weight: 950; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .rdv3-room-discount,
 .rdv3-room-net {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    min-height: 34px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: .74rem;
+    gap: 14px;
+    min-height: 40px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: .78rem;
     font-weight: 900;
 }
 .rdv3-room-discount {
+    grid-column: 1 / -1;
     background: color-mix(in srgb, #B4392B 8%, #fff);
     border: 1px solid color-mix(in srgb, #B4392B 18%, var(--rdv3-line));
     color: color-mix(in srgb, #B4392B 84%, var(--rdv3-primary));
@@ -2269,6 +2354,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     white-space: nowrap;
 }
 .rdv3-room-net {
+    grid-column: 1 / -1;
     background: color-mix(in srgb, var(--rdv3-green) 8%, #fff);
     border: 1px solid color-mix(in srgb, var(--rdv3-green) 18%, var(--rdv3-line));
     color: var(--rdv3-primary);
@@ -2645,6 +2731,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+@media (min-width: 781px) and (max-width: 1360px) {
+    .rdv3-room {
+        grid-template-columns: minmax(0, 1fr) minmax(148px, auto);
+        gap: 15px 18px;
+    }
+    .rdv3-room-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 1360px) {
     .rdv3-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; }
     .rdv3-card-header { padding-left: 36px; padding-right: 36px; }
@@ -2984,34 +3077,48 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         letter-spacing: .04em;
     }
     .rdv3-badge i { display: none; }
-    .rdv3-rooms { display: block; }
-    .rdv3-room {
+    .rdv3-card--rooms .rdv3-card-body { padding: 0 !important; }
+    .rdv3-rooms {
+        display: grid;
+        gap: 12px;
         border: 0;
         border-radius: 0;
         background: transparent;
+        overflow: visible;
+    }
+    .rdv3-room {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "identity"
+            "price"
+            "metrics";
+        border: 1px solid #E3D5BF;
+        border-radius: 14px;
+        background: #FFFDF9;
         box-shadow: none;
-        padding: 14px 0;
-        gap: 0;
-    }
-    .rdv3-room + .rdv3-room { border-top: 1px solid #EFE3D0; }
-    .rdv3-room::before { display: none; }
-    .rdv3-room-top {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 14px;
         gap: 12px;
-        align-items: center;
     }
+    .rdv3-room + .rdv3-room { border-top: 1px solid #E3D5BF; }
+    .rdv3-room:not(:last-child) {
+        margin-bottom: 0;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #E3D5BF;
+    }
+    .rdv3-room::before { display: none; }
+    .rdv3-room-top { display: contents; }
     .rdv3-room-top > .min-w-0 {
-        display: grid;
-        grid-template-columns: 48px minmax(0, 1fr);
-        column-gap: 10px;
+        grid-area: identity;
+        grid-template-columns: 52px minmax(0, 1fr);
+        column-gap: 12px;
         align-items: center;
     }
     .rdv3-room-number {
-        grid-row: 1 / 3;
-        width: 48px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         color: var(--rdv3-primary);
-        font-size: 1.35rem;
+        font-size: 1.22rem;
     }
     .rdv3-room-type {
         margin-top: 0;
@@ -3021,7 +3128,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     }
     .rdv3-room-sub {
         margin-top: 2px;
-        gap: 4px;
+        gap: 4px 8px;
     }
     .rdv3-tag {
         min-height: 0;
@@ -3035,11 +3142,15 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     }
     .rdv3-tag i { display: none; }
     .rdv3-room-price {
-        align-self: center;
-        flex-shrink: 0;
+        grid-area: price;
+        align-self: stretch;
+        min-width: 0;
+        padding: 11px 0 0;
+        border-left: 0;
+        border-top: 1px solid #E6DBC8;
         color: var(--rdv3-primary);
         font-size: .92rem;
-        text-align: right;
+        text-align: left;
     }
     .rdv3-room-price small {
         display: block;
@@ -3052,13 +3163,32 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     }
     .rdv3-room.is-courtesy .rdv3-room-price {
         padding: 5px 9px;
+        border-top: 0;
+        justify-self: start;
+        align-self: start;
         border-radius: 999px;
         background: #FFF2D9;
         color: #B08034;
         font-size: .68rem;
     }
     .rdv3-room.is-courtesy .rdv3-room-price small { display: none; }
-    .rdv3-room-metrics { display: none; }
+    .rdv3-room-metrics {
+        grid-area: metrics;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        border: 0;
+        background: transparent;
+    }
+    .rdv3-room-metric {
+        min-height: 48px;
+        padding: 9px 10px;
+        border: 1px solid #E6DBC8;
+        background: #F8F3EB;
+    }
+    .rdv3-room-metric + .rdv3-room-metric { border-left: 1px solid #E6DBC8; }
+    .rdv3-room-metric small { font-size: .54rem; letter-spacing: .02em; }
+    .rdv3-room-metric b { font-size: .68rem; }
     .rdv3-room-discount,
     .rdv3-room-net {
         min-height: 31px;
@@ -3385,7 +3515,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3 .rdv3-card--guest .rdv3-info-grid,
     .rdv3-contact-actions { grid-template-columns: 1fr; }
     .rdv3-room-top > .min-w-0 { grid-template-columns: 42px minmax(0, 1fr); }
-    .rdv3-room-number { width: 42px; font-size: 1.18rem; }
+    .rdv3-room-number { width: 42px; height: 42px; font-size: 1.12rem; }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -3408,8 +3538,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         border-color: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 16%, #E6DBC8);
     }
     /* Superficies blancas/frías hardcodeadas → cálidas, como en móvil */
-    .rdv3-stay,
-    .rdv3-room { background: #FFFDF9; }
+    .rdv3-stay { background: #FFFDF9; }
     .rdv3-stay { border-color: #E6DBC8; }
     .rdv3-nights {
         background: #F1EDE5;
@@ -3437,17 +3566,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-room:nth-child(4n+4),
     .rdv3-room.is-courtesy { --room-accent: var(--rdv3-accent); }
 
-    .rdv3-card--rooms .rdv3-rooms {
-        gap: 12px;
-    }
+    .rdv3-card--rooms .rdv3-rooms { border: 0; }
     .rdv3-card--rooms .rdv3-room {
-        border-width: 1px;
-        border-color: color-mix(in srgb, var(--room-accent) 24%, #D8CCBA);
-        box-shadow: 0 8px 18px rgba(47, 39, 25, .045);
+        box-shadow: none;
     }
     .rdv3-card--rooms .rdv3-room:hover {
-        border-color: color-mix(in srgb, var(--room-accent) 30%, #C8B79B);
-        box-shadow: 0 10px 20px rgba(47, 39, 25, .06);
+        background: #FFFBF5;
+        box-shadow: none;
     }
 
     /* Iconos de info del huésped: mismo ciclo de colores → uniforme dorado. */
@@ -3536,7 +3661,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             <button type="button" class="rdv3-btn rdv3-btn-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                         <?php endif; ?>
                         <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
-                            <button type="button" class="rdv3-btn rdv3-btn-calendar" onclick="abrirModalModificarDias()"><i class="far fa-calendar"></i>Modificar dias</button>
+                            <button type="button" class="rdv3-btn rdv3-btn-calendar" onclick="window.location.href='<?= url('reservaciones/editar-estancia/' . $reservacion['id']) ?>'"><i class="far fa-calendar"></i>Modificar estancia</button>
                             <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-ban"></i>Cancelar reservacion</button>
                         <?php endif; ?>
                     </div>
@@ -3967,7 +4092,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
                                 <button type="button" class="rdv3-action" onclick="abrirModalCotizacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-blue"><i class="fas fa-clipboard-list"></i></span>Generar cotizacion</span><i class="fas fa-chevron-right"></i></button>
-                                <button type="button" class="rdv3-action" onclick="abrirModalModificarDias()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar dias</span><i class="fas fa-chevron-right"></i></button>
+                                <button type="button" class="rdv3-action" onclick="window.location.href='<?= url('reservaciones/editar-estancia/' . $reservacion['id']) ?>'"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar estancia</span><i class="fas fa-chevron-right"></i></button>
                                 <?php if (!empty($reservacion['metodo_pago'])): ?>
                                     <button type="button" class="rdv3-action" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
@@ -4432,6 +4557,33 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                     >
                 </div>
+
+                <?php if (!empty($trabajadoresLimpieza)): ?>
+                <!-- Asignacion opcional de responsable de limpieza (colapsado por defecto) -->
+                <div class="mb-2">
+                    <button type="button" id="toggleAsignarLimpieza" onclick="toggleAsignarLimpieza()"
+                            class="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-user-pen" style="font-size:.8rem;"></i>
+                        <span>Asignar responsable de limpieza (opcional)</span>
+                        <i class="fas fa-chevron-down" id="iconAsignarLimpieza" style="font-size:.65rem; transition:transform .15s ease;"></i>
+                    </button>
+                    <div id="asignarLimpiezaBox" class="hidden mt-3 space-y-2">
+                        <p class="text-xs text-gray-500">Quién limpiará cada habitación. Puedes dejarlo en blanco.</p>
+                        <?php foreach ($habitaciones as $hab): ?>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-700 shrink-0" style="width:5.5rem;">Hab. <?= htmlspecialchars($hab['numero']) ?></span>
+                                <select name="limpieza_responsable[<?= (int)$hab['habitacion_id'] ?>]"
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brown-500 focus:border-transparent">
+                                    <option value="">— Sin asignar —</option>
+                                    <?php foreach ($trabajadoresLimpieza as $tr): ?>
+                                        <option value="<?= (int)$tr['id'] ?>"><?= htmlspecialchars($tr['nombre_completo']) ?><?= !empty($tr['rol_laboral']) ? ' · ' . htmlspecialchars($tr['rol_laboral']) : '' ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Mensaje de advertencia -->
                 <div id="mensajeSeleccion" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
@@ -5631,109 +5783,6 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
     </div>
 </div>
 
-
-<!-- =====================================================
-     MODAL: Modificar Días de Reservación
-     ===================================================== -->
-<style>
-.mdd-shell{ width:520px; max-width:96vw; border-radius:18px; overflow:hidden; background:#fff; font-family:'Manrope',system-ui,sans-serif; }
-.mdd-head{ display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid #EEF0F4; }
-.mdd-head-ico{ width:40px; height:40px; border-radius:11px; background:#EEF2FF; color:#4F46E5; display:grid; place-items:center; font-size:1.05rem; flex-shrink:0; }
-.mdd-head-tt{ flex:1; min-width:0; }
-.mdd-head-tt strong{ display:block; font-size:.98rem; font-weight:800; color:#1E293B; }
-.mdd-head-tt span{ display:block; font-size:.74rem; font-weight:600; color:#94A3B8; }
-.mdd-head-x{ width:32px; height:32px; border-radius:9px; border:1px solid #E2E8F0; background:#F8FAFC; color:#64748B; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
-.mdd-head-x:hover{ background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5; }
-.mdd-body{ padding:18px; }
-.mdd-daterow{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:11px; font-size:.78rem; color:#64748B; font-weight:600; }
-.mdd-daterow b{ color:#1E293B; font-weight:800; }
-.mdd-track{ display:flex; gap:6px; margin-bottom:12px; }
-.mdd-cell{ flex:1; min-width:0; height:52px; border-radius:9px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:.72rem; font-weight:800; transition:background .15s, border-color .15s, color .15s; }
-.mdd-cell i{ font-size:.8rem; }
-.mdd-cell.is-on{ background:#4F46E5; color:#fff; }
-.mdd-cell.is-add{ border:1.5px dashed #6EE7B7; color:#059669; background:#F0FDF9; }
-.mdd-cell-day{ font-size:.66rem; opacity:.92; }
-.mdd-stop{ width:34px; flex-shrink:0; height:52px; border-radius:9px; background:#FEF2F2; color:#DC2626; display:grid; place-items:center; }
-.mdd-sliderrow{ display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-.mdd-sliderrow i{ color:#94A3B8; font-size:1rem; }
-.mdd-range{ flex:1; accent-color:#4F46E5; height:6px; cursor:pointer; }
-.mdd-nights{ font-size:.86rem; font-weight:800; color:#1E293B; min-width:74px; text-align:right; }
-.mdd-legend{ display:flex; flex-wrap:wrap; gap:14px; margin:12px 0 16px; font-size:.7rem; color:#64748B; font-weight:600; }
-.mdd-legend span{ display:inline-flex; align-items:center; gap:6px; }
-.mdd-legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
-.mdd-limit{ display:none; align-items:center; gap:9px; padding:9px 12px; border-radius:9px; font-size:.78rem; font-weight:700; margin-bottom:15px; }
-.mdd-limit.is-info{ background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; }
-.mdd-limit.is-blocked{ background:#FEF2F2; border:1px solid #FECACA; color:#B91C1C; }
-.mdd-impact{ background:#F8FAFC; border:1px solid #EEF0F4; border-radius:12px; padding:14px; margin-bottom:16px; }
-.mdd-impact-row{ display:flex; justify-content:space-between; font-size:.82rem; color:#64748B; font-weight:600; margin-bottom:8px; }
-.mdd-impact-row b{ color:#1E293B; font-weight:800; }
-.mdd-impact-diff{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E5E9F0; padding-top:10px; margin-top:2px; }
-.mdd-impact-diff span{ font-size:.82rem; font-weight:700; color:#64748B; }
-.mdd-impact-diff strong{ font-size:1.15rem; font-weight:800; }
-.mdd-note{ display:none; padding:10px 12px; border-radius:9px; font-size:.78rem; font-weight:700; line-height:1.45; margin-bottom:15px; }
-.mdd-foot{ display:flex; gap:10px; }
-.mdd-btn{ height:46px; border:none; border-radius:11px; font-family:inherit; font-size:.88rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s, opacity .15s; }
-.mdd-btn-cancel{ flex:1; background:#F1F5F9; color:#475569; }
-.mdd-btn-cancel:hover{ background:#E2E8F0; }
-.mdd-btn-ok{ flex:2; background:#4F46E5; color:#fff; }
-.mdd-btn-ok:hover{ background:#4338CA; }
-.mdd-btn-ok.is-charge{ background:#059669; }
-.mdd-btn-ok.is-charge:hover{ background:#047857; }
-.mdd-btn-ok.is-refund{ background:#2563EB; }
-.mdd-btn-ok:disabled{ opacity:.5; cursor:not-allowed; }
-@media(max-width:560px){ .mdd-shell{ width:100%; border-radius:18px 18px 0 0; } .mdd-cell-day{ display:none; } }
-</style>
-<div id="modalModificarDias" class="modal-overlay" style="display:none;">
-    <div class="mdd-shell">
-        <div class="mdd-head">
-            <span class="mdd-head-ico"><i class="fas fa-calendar-week"></i></span>
-            <div class="mdd-head-tt">
-                <strong>Modificar estancia</strong>
-                <span>Reserva #<?= $reservacion['id'] ?> &middot; <?= htmlspecialchars($huesped['nombre_completo'] ?? 'Huésped', ENT_QUOTES, 'UTF-8') ?></span>
-            </div>
-            <button type="button" class="mdd-head-x" onclick="cerrarModalModificarDias()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
-        </div>
-
-        <div class="mdd-body">
-            <div class="mdd-daterow">
-                <span>Noches de la estancia</span>
-                <span><b id="mdd-checkin">–</b> → <b id="mdd-checkout">–</b></span>
-            </div>
-
-            <div class="mdd-track" id="mdd-track"></div>
-
-            <div class="mdd-sliderrow">
-                <i class="fas fa-bed"></i>
-                <input type="range" id="mdd-range" class="mdd-range" min="1" max="1" value="1" step="1" oninput="mddOnSlide()" aria-label="Número de noches">
-                <span class="mdd-nights" id="mdd-nights">–</span>
-            </div>
-
-            <div class="mdd-legend">
-                <span><i style="background:#4F46E5;"></i>Noche reservada</span>
-                <span><i style="border:1.5px dashed #6EE7B7;"></i>Por agregar</span>
-                <span><i style="background:#FEF2F2;border:1px solid #FECACA;"></i>Siguiente reserva</span>
-            </div>
-
-            <div class="mdd-limit" id="mdd-limit"></div>
-
-            <div class="mdd-impact">
-                <div class="mdd-impact-row"><span>Total actual (<span id="mdd-noches-act">–</span>)</span><b id="mdd-total-actual">–</b></div>
-                <div class="mdd-impact-row"><span>Total nuevo (<span id="mdd-noches-new">–</span>)</span><b id="mdd-total-nuevo">–</b></div>
-                <div class="mdd-impact-diff">
-                    <span id="mdd-diff-label">Sin cambios</span>
-                    <strong id="mdd-diff" style="color:#1E293B;">$0</strong>
-                </div>
-            </div>
-
-            <div class="mdd-note" id="mdd-preview"></div>
-
-            <div class="mdd-foot">
-                <button type="button" class="mdd-btn mdd-btn-cancel" onclick="cerrarModalModificarDias()">Cancelar</button>
-                <button type="button" class="mdd-btn mdd-btn-ok" id="mdd-confirm" onclick="confirmarCambioDias()" disabled>Confirmar cambio</button>
-            </div>
-        </div>
-    </div>
-</div>
 <div id="modalCotizacion" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 420px; border-radius: 16px; overflow: hidden;">
         <!-- Header -->
@@ -7470,6 +7519,14 @@ function cerrarModalCheckOut() {
     document.getElementById('modalCheckOut').classList.add('hidden');
 }
 
+function toggleAsignarLimpieza() {
+    const box = document.getElementById('asignarLimpiezaBox');
+    const icon = document.getElementById('iconAsignarLimpieza');
+    if (!box) return;
+    box.classList.toggle('hidden');
+    if (icon) icon.style.transform = box.classList.contains('hidden') ? '' : 'rotate(180deg)';
+}
+
 function seleccionarTodas(seleccionar) {
     resetCheckoutConfirmacion();
     const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]');
@@ -8717,21 +8774,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 
 // ============================================
-// MODIFICAR DÍAS DE RESERVACIÓN
+// PAGO PENDIENTE TRAS MODIFICAR ESTANCIA
+// (La edición de estancia vive ahora en reservaciones/editar-estancia)
 // ============================================
-const MDD = {
-    fechaEntrada: '<?= $reservacion['fecha_entrada'] ?>',
-    fechaSalida:  '<?= $reservacion['fecha_salida'] ?>',
-    reservacionId: <?= $reservacion['id'] ?>,
-    precioActual: <?= floatval($reservacion['precio_total']) ?>,
-    nochesActuales: 0,
-    nuevaFechaSalida: null,
-    estadoVerificado: false,
-    nuevoPrecioCalculado: 0
-};
+const RDV3_RESERVACION_ID = <?= $reservacion['id'] ?>;
 
 document.addEventListener('DOMContentLoaded', function () {
-    const pendingKey = 'rdv3PendingPayment:' + MDD.reservacionId;
+    const pendingKey = 'rdv3PendingPayment:' + RDV3_RESERVACION_ID;
     const rawPending = sessionStorage.getItem(pendingKey);
     if (!rawPending) {
         return;
@@ -8774,271 +8823,6 @@ document.addEventListener('DOMContentLoaded', function () {
     mostrarAvisoReservacion('Captura el pago pendiente de ' + montoTexto + ' para que caja y la reservacion queden conciliadas.', 'warning', 7200);
 });
 
-/* ── Modal "Modificar estancia" — línea de tiempo interactiva ────── */
-const MDD_MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-let mddVerifyTimer = null;
-
-function mddFechaDesdeNoches(noches) {
-    const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
-    const salida  = new Date(entrada);
-    salida.setDate(salida.getDate() + noches);
-    return salida;
-}
-function mddFmt(d) {
-    return d.getDate() + ' ' + MDD_MESES[d.getMonth()];
-}
-function mddMoney(n) {
-    return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-}
-
-async function abrirModalModificarDias() {
-    const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
-    const salida  = new Date(MDD.fechaSalida + 'T12:00:00');
-    MDD.nochesActuales = Math.round((salida - entrada) / 86400000);
-    MDD.maxNoches = MDD.nochesActuales;     // provisional hasta conocer el tope
-    MDD.precioPorNoche = MDD.nochesActuales > 0 ? MDD.precioActual / MDD.nochesActuales : MDD.precioActual;
-    MDD.proxima = null;
-    MDD.estadoVerificado = false;
-    MDD.nuevoPrecioCalculado = MDD.precioActual;
-
-    document.getElementById('mdd-checkin').textContent     = mddFmt(entrada);
-    document.getElementById('mdd-noches-act').textContent  = MDD.nochesActuales + (MDD.nochesActuales === 1 ? ' noche' : ' noches');
-    document.getElementById('mdd-noches-new').textContent  = MDD.nochesActuales + (MDD.nochesActuales === 1 ? ' noche' : ' noches');
-    document.getElementById('mdd-total-actual').textContent = mddMoney(MDD.precioActual);
-    document.getElementById('mdd-total-nuevo').textContent  = mddMoney(MDD.precioActual);
-    document.getElementById('mdd-preview').style.display = 'none';
-
-    const range = document.getElementById('mdd-range');
-    range.min   = 1;
-    range.max   = MDD.nochesActuales;
-    range.value = MDD.nochesActuales;
-
-    document.getElementById('mdd-limit').style.display = 'none';
-    mddRender();
-
-    document.getElementById('modalModificarDias').style.display = 'flex';
-
-    // Consultar el tope real (sin pisar la siguiente reserva)
-    try {
-        const resp = await fetch(`<?= url('reservaciones/tope-modificar-dias') ?>`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ reservacion_id: MDD.reservacionId })
-        });
-        const data = await resp.json();
-        if (data && data.ok) {
-            MDD.maxNoches = Math.max(MDD.nochesActuales, parseInt(data.max_noches, 10) || MDD.nochesActuales);
-            MDD.proxima = data.tiene_limite ? data : null;
-            range.max = MDD.maxNoches;
-            mddPintarLimite();
-            mddRender();
-        }
-    } catch (e) { /* si falla, se queda con tope = noches actuales */ }
-}
-
-function cerrarModalModificarDias() {
-    document.getElementById('modalModificarDias').style.display = 'none';
-    if (mddVerifyTimer) clearTimeout(mddVerifyTimer);
-}
-
-function mddPintarLimite() {
-    const el = document.getElementById('mdd-limit');
-    if (!MDD.proxima) { el.style.display = 'none'; return; }
-    const fechaTope = new Date(MDD.proxima.proxima_entrada + 'T12:00:00');
-    const hab = MDD.proxima.proxima_habitacion ? ('Hab. ' + MDD.proxima.proxima_habitacion) : ('Reserva #' + MDD.proxima.proxima_reserva_id);
-    const sinMargen = MDD.maxNoches <= MDD.nochesActuales;
-    el.className = 'mdd-limit ' + (sinMargen ? 'is-blocked' : 'is-info');
-    el.innerHTML = sinMargen
-        ? `<i class="fas fa-lock"></i><span>No puedes extender: ${hab} entra el ${mddFmt(fechaTope)}, justo después de esta estancia.</span>`
-        : `<i class="fas fa-circle-info"></i><span>Puedes extender hasta el <b>${mddFmt(fechaTope)}</b>. ${hab} entra ese día.</span>`;
-    el.style.display = 'flex';
-}
-
-function mddRender() {
-    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
-    const track = document.getElementById('mdd-track');
-    const entrada = new Date(MDD.fechaEntrada + 'T12:00:00');
-    const maxCeldas = Math.min(MDD.maxNoches, 14);   // tope visual de fichas
-
-    let html = '';
-    for (let i = 0; i < maxCeldas; i++) {
-        const d = new Date(entrada);
-        d.setDate(d.getDate() + i);
-        const dia = d.getDate();
-        if (i < n) {
-            const icono = (i === 0) ? 'fa-lock' : 'fa-moon';
-            html += `<div class="mdd-cell is-on"><i class="fas ${icono}"></i><span class="mdd-cell-day">${dia}</span></div>`;
-        } else {
-            html += `<div class="mdd-cell is-add"><i class="fas fa-plus"></i><span class="mdd-cell-day">${dia}</span></div>`;
-        }
-    }
-    if (MDD.proxima) {
-        html += `<div class="mdd-stop" title="Siguiente reserva"><i class="fas fa-sign-in-alt"></i></div>`;
-    }
-    track.innerHTML = html;
-
-    const nuevaSalida = mddFechaDesdeNoches(n);
-    MDD.nuevaFechaSalida = nuevaSalida.getFullYear() + '-' +
-        String(nuevaSalida.getMonth() + 1).padStart(2, '0') + '-' +
-        String(nuevaSalida.getDate()).padStart(2, '0');
-
-    document.getElementById('mdd-checkout').textContent   = mddFmt(nuevaSalida);
-    document.getElementById('mdd-nights').textContent     = n + (n === 1 ? ' noche' : ' noches');
-    document.getElementById('mdd-noches-new').textContent = n + (n === 1 ? ' noche' : ' noches');
-
-    // Estimación inmediata (se confirma con el cálculo exacto del servidor)
-    const estimado = n * MDD.precioPorNoche;
-    document.getElementById('mdd-total-nuevo').textContent = mddMoney(estimado);
-    mddPintarDiferencia(estimado, false);
-}
-
-function mddPintarDiferencia(totalNuevo, exacto) {
-    const diff = totalNuevo - MDD.precioActual;
-    const lbl  = document.getElementById('mdd-diff-label');
-    const val  = document.getElementById('mdd-diff');
-    const btn  = document.getElementById('mdd-confirm');
-    const n    = parseInt(document.getElementById('mdd-range').value, 10) || 1;
-
-    if (Math.abs(diff) < 0.004) {
-        lbl.textContent = 'Sin cambios';
-        val.textContent = '$0.00'; val.style.color = '#1E293B';
-        btn.className = 'mdd-btn mdd-btn-ok';
-        btn.textContent = 'Confirmar cambio';
-        btn.disabled = (n === MDD.nochesActuales);
-        return;
-    }
-    if (diff > 0) {
-        lbl.textContent = exacto ? 'A cobrar al huésped' : 'A cobrar (estimado)';
-        val.textContent = '+' + mddMoney(diff); val.style.color = '#059669';
-        btn.className = 'mdd-btn mdd-btn-ok is-charge';
-        btn.textContent = 'Cobrar ' + mddMoney(diff) + ' y guardar';
-    } else {
-        lbl.textContent = exacto ? 'A reembolsar' : 'A reembolsar (estimado)';
-        val.textContent = '−' + mddMoney(-diff); val.style.color = '#2563EB';
-        btn.className = 'mdd-btn mdd-btn-ok is-refund';
-        btn.textContent = 'Reembolsar y guardar';
-    }
-    btn.disabled = false;
-}
-
-function mddOnSlide() {
-    MDD.estadoVerificado = false;
-    document.getElementById('mdd-preview').style.display = 'none';
-    mddRender();
-    // Cálculo exacto con debounce (incluye incrementos de tarifa)
-    if (mddVerifyTimer) clearTimeout(mddVerifyTimer);
-    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
-    if (n === MDD.nochesActuales) return;
-    mddVerifyTimer = setTimeout(mddVerificarExacto, 320);
-}
-
-async function mddVerificarExacto() {
-    const noches = parseInt(document.getElementById('mdd-range').value, 10) || 1;
-    try {
-        const resp = await fetch(`<?= url('reservaciones/verificar-modificar-dias') ?>`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                reservacion_id: MDD.reservacionId,
-                nueva_fecha_salida: MDD.nuevaFechaSalida
-            })
-        });
-        const data = await resp.json();
-        // Ignorar si el usuario ya movió el slider otra vez
-        if (noches !== (parseInt(document.getElementById('mdd-range').value, 10) || 1)) return;
-
-        if (!data.disponible) {
-            mostrarPreviewMDD('error', `<i class="fas fa-ban" style="margin-right:6px"></i>${data.mensaje || 'Alguna habitación no está libre en esas fechas.'}`);
-            document.getElementById('mdd-confirm').disabled = true;
-            MDD.estadoVerificado = false;
-            return;
-        }
-        document.getElementById('mdd-total-nuevo').textContent = mddMoney(data.nuevo_precio);
-        mddPintarDiferencia(data.nuevo_precio, true);
-        MDD.estadoVerificado = true;
-        MDD.nuevoPrecioCalculado = data.nuevo_precio;
-    } catch (e) {
-        /* deja la estimación local; el guardado revalida en el servidor */
-    }
-}
-
-async function confirmarCambioDias() {
-    const btn = document.getElementById('mdd-confirm');
-    const n = parseInt(document.getElementById('mdd-range').value, 10) || 1;
-    if (n === MDD.nochesActuales) {
-        mostrarPreviewMDD('warning', '<i class="fas fa-info-circle" style="margin-right:6px"></i>No hay cambios respecto a la estancia actual.');
-        return;
-    }
-    const textoOriginal = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Guardando…';
-
-    try {
-        const resp = await fetch(`<?= url('reservaciones/modificar-dias') ?>`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                reservacion_id: MDD.reservacionId,
-                nueva_fecha_salida: MDD.nuevaFechaSalida
-            })
-        });
-
-        const data = await resp.json();
-
-        if (data.success) {
-            cerrarModalModificarDias();
-
-            if (data.requiere_cobro) {
-                const montoPendiente = Number(data.saldo_pendiente || data.diferencia || 0);
-                sessionStorage.setItem('rdv3PendingPayment:' + MDD.reservacionId, JSON.stringify({
-                    monto: montoPendiente,
-                    diferencia: Number(data.diferencia || 0)
-                }));
-                const montoTexto = '$' + montoPendiente.toLocaleString('es-MX', { minimumFractionDigits: 2 });
-                mostrarAvisoReservacion('Cambio guardado. Queda un saldo pendiente de ' + montoTexto + ' por cobrar en Pagos y anticipos.', 'warning', 5200);
-                setTimeout(() => window.location.reload(), 1400);
-                return;
-            }
-
-            // Mostrar resumen con ajuste de caja si aplica
-            if (data.ajuste_caja) {
-                const ac = data.ajuste_caja;
-                const metodoTexto = {efectivo:'Efectivo', tarjeta:'Tarjeta', transferencia:'Transferencia'};
-                const esDevolucion = ac.tipo === 'devolucion';
-                const monto = '$' + Number(ac.monto || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-                const metodo = metodoTexto[ac.metodo_pago] || ac.metodo_pago || 'No definido';
-                const mensaje = esDevolucion
-                    ? 'Devolucion registrada en caja por ' + monto + '. Metodo: ' + metodo + '. Recuerda entregar el cambio al huesped.'
-                    : 'Cobro adicional registrado en caja por ' + monto + '. Metodo: ' + metodo + '.';
-                mostrarAvisoReservacion(mensaje + ' La vista se actualizara.', esDevolucion ? 'warning' : 'success', 5200);
-                setTimeout(() => window.location.reload(), 1800);
-            } else {
-                window.location.reload();
-            }
-        } else {
-            mostrarPreviewMDD('error', `<i class="fas fa-times" style="margin-right:6px"></i>${data.mensaje || 'Error al guardar el cambio.'}`);
-            btn.disabled = false;
-            btn.textContent = textoOriginal;
-        }
-    } catch (e) {
-        mostrarPreviewMDD('error', '<i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>Error de conexión.');
-        btn.disabled = false;
-        btn.textContent = textoOriginal;
-    }
-}
-
-function mostrarPreviewMDD(tipo, html) {
-    const colores = {
-        success: { bg: '#ECFDF5', border: '#6EE7B7', color: '#065F46' },
-        error:   { bg: '#FEF2F2', border: '#FECACA', color: '#7F1D1D' },
-        warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E' }
-    };
-    const c = colores[tipo] || colores.warning;
-    const el = document.getElementById('mdd-preview');
-    el.className = 'mdd-note';
-    el.style.cssText = `display:block; background:${c.bg}; border:1px solid ${c.border}; color:${c.color};`;
-    el.innerHTML = html;
-}
 </script>
 
 <style>

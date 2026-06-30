@@ -148,7 +148,7 @@ if (!function_exists('caja_form_error_attrs')) {
 .cj-btn-ghost:hover { background:var(--cj-ivory); }
 
 /* ── Inner container ── */
-.cj-inner { max-width:1340px; margin:0 auto; padding:26px 24px 60px; }
+.cj-inner { max-width:none; margin:0 auto; padding:26px 32px 60px; }
 
 /* ── resh (header card) ── */
 .cj-resh {
@@ -259,8 +259,7 @@ if (!function_exists('caja_form_error_attrs')) {
 .cj-act-income  { background:#1E9E63; color:#ffffff; }
 .cj-act-expense { background:#D04A3E; color:#ffffff; }
 .cj-act-corte   {
-    background:rgba(255,255,255,.12);
-    border:1px solid rgba(255,255,255,.22) !important;
+    background:#2F77E0;
     color:#ffffff;
 }
 
@@ -300,6 +299,13 @@ if (!function_exists('caja_form_error_attrs')) {
     font-size:1.12rem; font-weight:600;
     color:var(--cj-text); line-height:1.2;
     flex:1; min-width:0;
+}
+/* En PC los títulos de bloque ganan un poco más de presencia */
+@media (min-width:769px) {
+    .cj-card-head h2 {
+        font-size:1.26rem; font-weight:700;
+        color:var(--cj-navy);
+    }
 }
 .cj-card-tail { display:flex; align-items:center; gap:6px; margin-left:auto; }
 .cj-card-tail a, .cj-card-tail span {
