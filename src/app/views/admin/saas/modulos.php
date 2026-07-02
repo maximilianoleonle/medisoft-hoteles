@@ -2,8 +2,9 @@
 $modulos = $modulos ?? [];
 $planes = $planes ?? [];
 
+// Sin separador de miles: estos valores van a value="" de <input type="number">.
 $fmtMoney = function ($v): string {
-    return number_format((float) $v, 2);
+    return number_format((float) $v, 2, '.', '');
 };
 
 $modulosCore = array_filter($modulos, function ($m) { return !empty($m['es_core']); });
