@@ -100,8 +100,14 @@ RewriteRule ^(.*)$ index.php?$1 [L,QSA]
     # Política de permisos (ajustar según necesites)
     Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
     
-    # Content Security Policy básica (ajustar según tus necesidades)
-    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self';"
+    # Content Security Policy en modo REPORT-ONLY (SEC-002, 2026-07-02).
+    # No bloquea nada: las violaciones se reportan en la consola del navegador.
+    # Origenes = inventario real de las vistas (jsdelivr, cdnjs, tailwind CDN,
+    # datatables, jquery, google fonts) + 'unsafe-inline'/'unsafe-eval' porque
+    # las vistas PHP usan JS inline y Tailwind CDN compila en el cliente.
+    # Plan: vigilar consola unas semanas; si esta limpia, promover el header a
+    # Content-Security-Policy (enforcement) sin cambiar la politica.
+    Header set Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://cdn.datatables.net https://code.jquery.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.datatables.net; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self'; manifest-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
     
     # Remover información del servidor
     Header unset Server

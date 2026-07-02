@@ -24,7 +24,7 @@ Hallazgos abiertos:
 | ID | Severidad | Estado | Hallazgo |
 |---|---|---|---|
 | SEC-001 | P1 | CORREGIDO (2026-07-02) | Rate limit de login depende de `$_SESSION`, por lo que puede reiniciarse con una cookie/sesion nueva. |
-| SEC-002 | P2 | ABIERTO | Content Security Policy global esta comentada; falta CSP activa o al menos modo report-only. |
+| SEC-002 | P2 | CORREGIDO (2026-07-02, report-only) | Content Security Policy global esta comentada; falta CSP activa o al menos modo report-only. |
 | SEC-003 | P3 | OBSERVACION | Metodos debug/correccion existen en controladores aunque no estan ruteados; conviene removerlos o blindarlos para produccion. |
 | SEC-004 | P3 | OBSERVACION | `medisoft_last_hotel_slug` se emite repetidamente en dashboard; no fue fuga, pero aumenta ruido de headers. |
 
@@ -82,7 +82,13 @@ Persistir intentos fallidos en DB, Redis/cache o tabla dedicada con TTL, usando 
 ### SEC-002 - CSP global no activa
 
 Severidad: P2
-Estado: ABIERTO
+Estado: **CORREGIDO en modo report-only** (2026-07-02).
+`Content-Security-Policy-Report-Only` activa en `src/public_html/.htaccess`
+con el inventario real de origenes de las vistas (jsdelivr, cdnjs, tailwind
+CDN, datatables, jquery, google fonts) + inline/eval que la app requiere hoy.
+Verificado en navegador: 0 violaciones en dashboard, caja y reservaciones.
+Siguiente paso: vigilar consola unas semanas y promover el header a
+`Content-Security-Policy` (enforcement) sin cambiar la politica.
 Modulo: Headers / hardening navegador
 Archivo:
 
