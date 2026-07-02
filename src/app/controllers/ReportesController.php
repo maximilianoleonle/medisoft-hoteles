@@ -581,6 +581,7 @@ private function getUsuariosActivos() {
 // Método modificado para exportarPdfAction - agregar nuevos tipos
 public function exportarPdfAction() {
     $this->requireAuth();
+    require_hotel_module('exportaciones');
     
     $tipo = $this->getQuery('tipo');
     

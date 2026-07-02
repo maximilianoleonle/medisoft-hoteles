@@ -40,7 +40,7 @@ class TrabajadorController extends Controller
         }
 
         if (function_exists('require_hotel_module')) {
-            require_hotel_module('usuarios');
+            require_hotel_module('personal');
         }
 
         if (function_exists('require_permission')) {
@@ -355,6 +355,10 @@ class TrabajadorController extends Controller
 
     public function exportarNominaPeriodosAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosReporteNominaPeriodosDesdeQuery();
 
@@ -385,6 +389,10 @@ class TrabajadorController extends Controller
 
     public function exportarNominaPagosSnapshotAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosReporteNominaPagosSnapshotDesdeQuery();
 
@@ -415,6 +423,10 @@ class TrabajadorController extends Controller
 
     public function exportarAuditoriaNominaAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosAuditoriaNominaDesdeQuery();
 
@@ -445,6 +457,10 @@ class TrabajadorController extends Controller
 
     public function exportarExpedienteNominaAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosExpedienteNominaDesdeQuery();
 
@@ -472,6 +488,10 @@ class TrabajadorController extends Controller
 
     public function exportarNominaPreviewAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosNominaPreviewDesdeQuery();
         $preview = $this->trabajadorModel->nominaPreviewPorHotel($hotelId, $filtros, 500);
@@ -557,6 +577,10 @@ class TrabajadorController extends Controller
 
     public function exportarReportePagosCajaAction(): void
     {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+
         $hotelId = $this->hotelIdActual();
         $filtros = $this->filtrosReportePagosCajaDesdeQuery();
 

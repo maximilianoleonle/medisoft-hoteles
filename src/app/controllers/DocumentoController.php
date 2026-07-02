@@ -428,18 +428,9 @@ class DocumentoController extends Controller
 
     private function requireModuloRelacionado(): void
     {
-        if (!function_exists('hotel_menu_module_enabled')) {
-            return;
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('documentos');
         }
-
-        foreach (['inventario', 'huespedes', 'reservaciones', 'usuarios'] as $clave) {
-            if (hotel_menu_module_enabled($clave)) {
-                return;
-            }
-        }
-
-        set_mensaje('Centro documental no disponible para este hotel.', 'error');
-        $this->redirect('dashboard');
     }
 
     private function etiquetaEntidad(string $entidadTipo): string

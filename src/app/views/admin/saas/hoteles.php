@@ -32,12 +32,20 @@ $fmtFecha = function ($d): string {
             <h1 class="text-2xl font-bold" style="color:var(--ms-text);">Hoteles y clientes</h1>
             <p class="mt-1 text-sm" style="color:var(--ms-muted);">Registro, configuración y seguimiento de clientes SaaS.</p>
         </div>
-        <a href="<?= url('admin/saas/hoteles/crear') ?>"
-           class="inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
-           style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
-            <i class="fas fa-plus text-xs"></i>
-            Nuevo hotel
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="<?= url('admin/saas/modulos') ?>"
+               class="inline-flex items-center justify-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-slate-50"
+               style="border-color:var(--ms-border);color:var(--ms-text);">
+                <i class="fas fa-puzzle-piece text-xs" style="color:var(--ms-muted);"></i>
+                Bloques y precios
+            </a>
+            <a href="<?= url('admin/saas/hoteles/crear') ?>"
+               class="inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+               style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
+                <i class="fas fa-plus text-xs"></i>
+                Nuevo hotel
+            </a>
+        </div>
     </div>
 
     <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">

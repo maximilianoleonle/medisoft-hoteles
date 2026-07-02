@@ -764,6 +764,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      * Exportar movimientos
      */
     public function exportarAction() {
+        require_hotel_module('exportaciones');
         $formato = $this->getQuery('formato', 'excel');
         $corte_id = intval($this->getQuery('corte_id'));
         $hotel_id = obtenerHotelIdActualCompat();

@@ -87,6 +87,7 @@ class SaasAdminController extends Controller {
         $modulosPorPlan = $this->modulosPorPlan($planes);
         $auditoriaPlan = $this->planModel->auditarConsistenciaHotel((int) $hotel['id']);
         $brandingHotel = $this->brandingModel->resolverParaHotel((int) $hotel['id'], $hotel);
+        $resumenCobro = $this->moduloModel->resumenCobroMensual((int) $hotel['id']);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
@@ -97,7 +98,8 @@ class SaasAdminController extends Controller {
             'planActual' => $planActual,
             'modulosPorPlan' => $modulosPorPlan,
             'auditoriaPlan' => $auditoriaPlan,
-            'brandingHotel' => $brandingHotel
+            'brandingHotel' => $brandingHotel,
+            'resumenCobro' => $resumenCobro
         ]);
     }
 
@@ -253,10 +255,12 @@ class SaasAdminController extends Controller {
         $this->validateCSRF();
         $hotel = $this->obtenerHotelORedirigir($id);
         $modulosActivos = $this->normalizarModuloIds($this->getPost('modulos', []));
+        $preciosOverride = $this->getPost('precio_override', []);
         $actualizado = $this->moduloModel->actualizarModulosHotel(
             (int) $hotel['id'],
             $modulosActivos,
-            user_id()
+            user_id(),
+            is_array($preciosOverride) ? $preciosOverride : []
         );
 
         if (!$actualizado) {
@@ -362,6 +366,51 @@ class SaasAdminController extends Controller {
         clear_old_input();
         set_mensaje('Branding basico actualizado correctamente.', 'success');
         $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+    }
+
+    public function modulosCatalogoAction() {
+        $modulos = $this->moduloModel->listarGlobales();
+        $planes = $this->planModel->listarActivos();
+
+        View::renderTemplate('admin/saas/modulos', [
+            'title' => 'Panel Medisoft interno - Bloques y precios',
+            'modulos' => $modulos,
+            'planes' => $planes
+        ]);
+    }
+
+    public function actualizarPreciosModulosAction() {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/modulos');
+        }
+
+        $this->validateCSRF();
+        $precios = $this->getPost('precios', []);
+
+        if (!is_array($precios) || !$this->moduloModel->actualizarPreciosCatalogo($precios)) {
+            set_mensaje('No se pudieron actualizar los precios del catalogo. Verifique que la migracion de precios este aplicada.', 'error');
+            $this->redirect('admin/saas/modulos');
+        }
+
+        set_mensaje('Precios del catalogo de bloques actualizados correctamente.', 'success');
+        $this->redirect('admin/saas/modulos');
+    }
+
+    public function actualizarPreciosPlanesAction() {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/modulos');
+        }
+
+        $this->validateCSRF();
+        $precios = $this->getPost('precios_planes', []);
+
+        if (!is_array($precios) || !$this->planModel->actualizarPreciosPlanes($precios)) {
+            set_mensaje('No se pudieron actualizar los precios de los planes.', 'error');
+            $this->redirect('admin/saas/modulos');
+        }
+
+        set_mensaje('Precios de planes actualizados correctamente.', 'success');
+        $this->redirect('admin/saas/modulos');
     }
 
     private function obtenerHotelORedirigir($id) {

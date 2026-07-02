@@ -1316,6 +1316,7 @@ public function obtenerNotasAction() {
 }
     
     public function exportarPDFAction() {
+    require_hotel_module('exportaciones');
     try {
         $fecha = $this->getQuery('fecha', date('Y-m-d'));
         
@@ -1491,6 +1492,7 @@ public function obtenerNotasAction() {
 }
 
     public function exportarExcelAction() {
+        require_hotel_module('exportaciones');
         try {
             $fecha = $this->getQuery('fecha', date('Y-m-d'));
 

@@ -158,6 +158,35 @@ class Plan extends Model {
         ];
     }
 
+    public function actualizarPreciosPlanes(array $precios) {
+        try {
+            foreach ($precios as $planId => $precio) {
+                $planId = (int) $planId;
+                $precio = trim((string) $precio);
+
+                if ($planId <= 0 || !is_numeric($precio) || (float) $precio < 0) {
+                    continue;
+                }
+
+                $stmt = $this->db->query(
+                    "UPDATE {$this->table}
+                     SET precio_mensual = ?, updated_at = NOW()
+                     WHERE id = ?",
+                    [round((float) $precio, 2), $planId]
+                );
+
+                if ($stmt === false) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            error_log('Error al actualizar precios de planes SaaS: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function actualizarPlanHotel($hotelId, $planId) {
         try {
             $stmt = $this->db->query(

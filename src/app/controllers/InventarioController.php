@@ -435,6 +435,7 @@ public function logInventarioAction() {
  * Vista de exportación
  */
 public function exportarAction() {
+    require_hotel_module('exportaciones');
     $fecha_hoy = date('Y-m-d');
 
     View::renderTemplate('inventario/exportar', [
@@ -448,6 +449,7 @@ public function exportarAction() {
  * Generar PDF de movimientos
  */
 public function generarPdfMovimientosAction() {
+    require_hotel_module('exportaciones');
     if (!$this->isPost()) {
         $this->redirect('inventario');
         return;

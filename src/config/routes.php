@@ -323,6 +323,9 @@ $router->post('/api/pwa-push/test', ['controller' => 'PwaPush', 'action' => 'tes
 
 // Panel Medisoft interno SaaS
 $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'hoteles']);
+$router->get('/admin/saas/modulos', ['controller' => 'SaasAdmin', 'action' => 'modulosCatalogo']);
+$router->post('/admin/saas/modulos/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosModulos']);
+$router->post('/admin/saas/planes/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosPlanes']);
 $router->get('/admin/saas/hoteles/crear', ['controller' => 'SaasAdmin', 'action' => 'crearHotel']);
 $router->post('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'guardarHotel']);
 $router->get('/admin/saas/hoteles/{id:[0-9]+}', ['controller' => 'SaasAdmin', 'action' => 'verHotel']);

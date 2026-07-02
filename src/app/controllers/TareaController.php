@@ -29,7 +29,7 @@ class TareaController extends Controller
         }
 
         if (function_exists('require_hotel_module')) {
-            require_hotel_module('habitaciones');
+            require_hotel_module('tareas');
         }
 
         if (function_exists('require_permission')) {

@@ -622,7 +622,11 @@ $fila = function ($label, $value) {
                 No hay catálogo de módulos disponible. Aplique la migración de módulos antes de configurar esta sección.
             </div>
         <?php else: ?>
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/modulos') ?>">
+            <?php
+            $precioBaseCobro = isset($resumenCobro['precio_base']) ? (float) $resumenCobro['precio_base'] : 0.0;
+            $monedaHotel = $hotel['moneda_codigo'] ?? 'MXN';
+            ?>
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/modulos') ?>" id="form-modulos-hotel">
                 <?= csrf_field() ?>
 
                 <div class="overflow-x-auto">
@@ -632,31 +636,71 @@ $fila = function ($label, $value) {
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activo</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Módulo</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoría</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ruta base</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio/mes</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio especial</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Global</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <?php foreach ($modulosHotel as $modulo): ?>
-                                <?php $globalActivo = !empty($modulo['activo_global']); ?>
+                                <?php
+                                $globalActivo = !empty($modulo['activo_global']);
+                                $esCore = !empty($modulo['es_core']);
+                                $precioCatalogo = (float) ($modulo['precio_mensual'] ?? 0);
+                                $precioOverride = $modulo['precio_override'] ?? null;
+                                $precioAplicado = $precioOverride !== null && $precioOverride !== '' ? (float) $precioOverride : $precioCatalogo;
+                                ?>
                                 <tr class="<?= $globalActivo ? '' : 'bg-gray-50 text-gray-500' ?>">
                                     <td class="px-4 py-3 text-sm">
-                                        <input type="checkbox"
-                                               name="modulos[]"
-                                               value="<?= (int) $modulo['id'] ?>"
-                                               <?= !empty($modulo['activo_hotel']) ? 'checked' : '' ?>
-                                               <?= $globalActivo ? '' : 'disabled' ?>
-                                               class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                                        <?php if ($esCore): ?>
+                                            <input type="checkbox" checked disabled
+                                                   class="rounded border-gray-300 text-gray-400">
+                                        <?php else: ?>
+                                            <input type="checkbox"
+                                                   name="modulos[]"
+                                                   value="<?= (int) $modulo['id'] ?>"
+                                                   data-precio="<?= number_format($precioAplicado, 2, '.', '') ?>"
+                                                   <?= !empty($modulo['activo_hotel']) ? 'checked' : '' ?>
+                                                   <?= $globalActivo ? '' : 'disabled' ?>
+                                                   class="modulo-toggle rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                                        <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-900">
-                                        <div class="font-medium"><?= $escapeCopy($modulo['nombre'] ?? '') ?></div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium"><?= $escapeCopy($modulo['nombre'] ?? '') ?></span>
+                                            <?php if ($esCore): ?>
+                                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style="background:rgba(37,99,235,.10);color:var(--ms-primary);">
+                                                    <i class="fas fa-lock text-[9px]"></i> Básico
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="text-xs text-gray-500"><?= htmlspecialchars($modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                                         <?php if (!empty($modulo['descripcion'])): ?>
                                             <div class="mt-1 text-xs text-gray-500"><?= $escapeCopy($modulo['descripcion']) ?></div>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= $escapeCopy($modulo['categoria'] ?: '-') ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['ruta_base'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-700">
+                                        <?php if ($esCore): ?>
+                                            <span class="text-xs font-semibold" style="color:var(--ms-primary);">Incluido</span>
+                                        <?php else: ?>
+                                            $<?= number_format($precioCatalogo, 2) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <?php if ($esCore): ?>
+                                            <span class="text-xs text-gray-400">—</span>
+                                        <?php else: ?>
+                                            <input type="number" step="0.01" min="0"
+                                                   name="precio_override[<?= (int) $modulo['id'] ?>]"
+                                                   value="<?= $precioOverride !== null && $precioOverride !== '' ? number_format((float) $precioOverride, 2, '.', '') : '' ?>"
+                                                   placeholder="<?= number_format($precioCatalogo, 2, '.', '') ?>"
+                                                   data-modulo="<?= (int) $modulo['id'] ?>"
+                                                   data-precio-catalogo="<?= number_format($precioCatalogo, 2, '.', '') ?>"
+                                                   class="precio-override w-24 rounded-md border-gray-300 text-sm focus:ring-gray-900 focus:border-gray-900"
+                                                   <?= $globalActivo ? '' : 'disabled' ?>>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="px-4 py-3 text-sm">
                                         <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold" style="<?= $globalActivo ? 'background:rgba(22,163,74,.12);color:var(--ms-success);' : 'background:rgba(100,116,139,.10);color:var(--ms-muted);' ?>">
                                             <?= $globalActivo ? 'Activo' : 'Inactivo' ?>
@@ -668,13 +712,52 @@ $fila = function ($label, $value) {
                     </table>
                 </div>
 
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="text-sm" style="color:var(--ms-text);">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cobro mensual estimado</div>
+                        <div class="mt-0.5">
+                            Paquete básico $<span id="cobro-base"><?= number_format($precioBaseCobro, 2) ?></span>
+                            + bloques $<span id="cobro-modulos">0.00</span>
+                            = <span class="text-lg font-bold">$<span id="cobro-total">0.00</span> <?= htmlspecialchars($monedaHotel, ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="text-xs" style="color:var(--ms-muted);">Se recalcula al activar/desactivar bloques o cambiar precios especiales. Precios editables en <a href="<?= url('admin/saas/modulos') ?>" class="underline">Bloques y precios</a>.</div>
+                    </div>
                     <button type="submit" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
                             style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
-                        Guardar módulos
+                        Guardar módulos y precios
                     </button>
                 </div>
             </form>
+
+            <script>
+            (function () {
+                var form = document.getElementById('form-modulos-hotel');
+                if (!form) return;
+                var base = <?= json_encode(round($precioBaseCobro, 2)) ?>;
+
+                function precioDeModulo(toggle) {
+                    var override = form.querySelector('.precio-override[data-modulo="' + toggle.value + '"]');
+                    if (override && override.value !== '' && !isNaN(parseFloat(override.value))) {
+                        return Math.max(0, parseFloat(override.value));
+                    }
+                    return parseFloat(toggle.getAttribute('data-precio')) || 0;
+                }
+
+                function recalcular() {
+                    var totalModulos = 0;
+                    form.querySelectorAll('.modulo-toggle:checked:not(:disabled)').forEach(function (toggle) {
+                        totalModulos += precioDeModulo(toggle);
+                    });
+                    var fmt = function (n) { return n.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
+                    document.getElementById('cobro-modulos').textContent = fmt(totalModulos);
+                    document.getElementById('cobro-total').textContent = fmt(base + totalModulos);
+                }
+
+                form.addEventListener('change', recalcular);
+                form.addEventListener('input', recalcular);
+                recalcular();
+            })();
+            </script>
         <?php endif; ?>
     </div>
     </div>
