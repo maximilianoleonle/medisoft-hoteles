@@ -901,10 +901,12 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                     <a href="<?= url('inventario/exportar') ?>" class="inv-mov-btn primary">
                         <i class="fas fa-file-pdf"></i>
                         Exportar PDF
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -847,6 +847,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                             <h2>Detalle de movimientos</h2>
                             <p>Todos los movimientos registrados en este corte.</p>
                         </div>
+                        <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                         <div class="ccx-export-group" aria-label="Exportar detalle de movimientos">
                             <button onclick="exportarMovimientos('excel')" class="ccx-export" type="button">
                                 <i class="fas fa-file-excel"></i>
@@ -857,6 +858,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                                 <span>PDF</span>
                             </button>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="ccx-table-wrap">

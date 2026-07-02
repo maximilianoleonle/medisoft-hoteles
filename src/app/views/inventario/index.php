@@ -1274,6 +1274,7 @@
     <!-- Top Bar -->
     <div class="inv-topbar bg-white">
         <div class="px-4 sm:px-5 lg:px-8 py-4">
+            <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-3">
 
                 <!-- Title -->
@@ -1306,10 +1307,12 @@
                         <i class="fas fa-exchange-alt text-xs"></i>
                         <span>Movimientos</span>
                     </a>
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                     <a href="<?= url('inventario/exportar') ?>" class="btn-inv pdf">
                         <i class="fas fa-file-pdf text-xs"></i>
                         <span>Exportar PDF</span>
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
 

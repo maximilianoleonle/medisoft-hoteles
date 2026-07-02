@@ -4002,6 +4002,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 
 <div class="res-bookings">
     <div class="res-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <header class="res-topbar">
             <div class="res-title-lockup">
                 <div class="res-hero-icon" aria-hidden="true">
@@ -4028,6 +4029,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <i class="fas fa-calendar-alt"></i>
                     Calendario
                 </a>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                 <button type="button" onclick="abrirModalExportarPDF()" class="res-btn res-btn-danger" title="Exportar reservaciones a PDF">
                     <i class="fas fa-file-pdf"></i>
                     PDF
@@ -4036,6 +4038,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <i class="fas fa-file-excel"></i>
                     Excel
                 </button>
+                <?php endif; ?>
                 <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
                     <i class="fas fa-plus"></i>
                     Nueva reservacion

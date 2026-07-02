@@ -1256,10 +1256,12 @@ foreach ($cortes as $corte_metodo) {
                                             <i class="fas fa-file-pdf"></i>
                                             <span class="cash-action-label">PDF</span>
                                         </a>
+                                        <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                                         <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel" aria-label="Exportar Excel del corte #<?= (int)$corte['id'] ?>">
                                             <i class="fas fa-file-excel"></i>
                                             <span class="cash-action-label">Excel</span>
                                         </button>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -1402,10 +1404,12 @@ foreach ($cortes as $corte_metodo) {
                                                     <i class="fas fa-file-pdf"></i>
                                                     <span class="cash-action-label">PDF</span>
                                                 </a>
+                                                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                                                 <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel">
                                                     <i class="fas fa-file-excel"></i>
                                                     <span class="cash-action-label">Excel</span>
                                                 </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     </td>

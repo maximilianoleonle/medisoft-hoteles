@@ -2180,10 +2180,12 @@ $balance_es_positivo = $balance_total >= 0;
                     <i class="fas fa-filter"></i>
                     <span>Filtros<?= $active_filter_count ? ' (' . (int)$active_filter_count . ')' : '' ?></span>
                 </button>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                 <button type="button" onclick="exportarMovimientos()" class="cash-action is-main">
                     <i class="fas fa-download"></i>
                     <span>Exportar</span>
                 </button>
+                <?php endif; ?>
             </div>
         </header>
 
