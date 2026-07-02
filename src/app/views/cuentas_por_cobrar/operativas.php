@@ -242,7 +242,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                                                 <div class="cx-sub"><?= cxc_op_safe($cuenta['folio'] ?? null, 'Sin folio') ?></div>
                                             </td>
                                             <td><span class="cx-strong" style="font-weight:600"><?= cxc_op_safe($cuenta['concepto'] ?? null) ?></span></td>
-                                            <td><?= cxc_op_safe($cuenta['huesped_nombre'] ?? null, 'Sin hu&eacute;sped') ?></td>
+                                            <td><?= cxc_op_safe($cuenta['huesped_nombre'] ?? null, 'Sin huésped') ?></td>
                                             <td>
                                                 <?= cxc_op_safe($cuenta['origen_tipo'] ?? null) ?>
                                                 <?php if (!empty($cuenta['origen_id'])): ?><div class="cx-sub">#<?= (int)$cuenta['origen_id'] ?></div><?php endif; ?>

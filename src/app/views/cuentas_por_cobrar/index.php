@@ -314,7 +314,7 @@ $visibles = count($cuentas);
                                             </td>
                                             <td>
                                                 <div class="cx-strong"><?= cxc_safe($cuenta['huesped_nombre'] ?? null) ?></div>
-                                                <div class="cx-sub"><?= cxc_safe($cuenta['huesped_telefono'] ?? null, 'Sin tel&eacute;fono') ?></div>
+                                                <div class="cx-sub"><?= cxc_safe($cuenta['huesped_telefono'] ?? null, 'Sin teléfono') ?></div>
                                             </td>
                                             <td><span class="cx-faint"><?= cxc_safe($cuenta['fecha_entrada'] ?? null) ?> &rarr; <?= cxc_safe($cuenta['fecha_salida'] ?? null) ?></span></td>
                                             <td>
@@ -369,7 +369,7 @@ $visibles = count($cuentas);
                                         <div>
                                             <a class="cx-link cx-mcard-id" href="<?= url('reservaciones/ver/' . $reservacionId) ?>">#<?= $reservacionId ?></a>
                                             <div class="cx-mcard-guest"><?= cxc_safe($cuenta['huesped_nombre'] ?? null) ?></div>
-                                            <div class="cx-mcard-phone"><?= cxc_safe($cuenta['huesped_telefono'] ?? null, 'Sin tel&eacute;fono') ?></div>
+                                            <div class="cx-mcard-phone"><?= cxc_safe($cuenta['huesped_telefono'] ?? null, 'Sin teléfono') ?></div>
                                         </div>
                                         <span class="cx-badge <?= $eClass ?>"><i class="fas <?= $eIcon ?>"></i> <?= $eLabel ?></span>
                                     </div>

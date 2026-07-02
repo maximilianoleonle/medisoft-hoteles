@@ -292,8 +292,8 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                 <div><div class="cx-meta-label">Vencimiento</div><div class="cx-meta-value"><?= cxc_op_view_safe($cuenta['fecha_vencimiento'] ?? null, 'Sin vencimiento') ?></div></div>
                 <div>
                     <div class="cx-meta-label">Hu&eacute;sped</div>
-                    <div class="cx-meta-value"><?= cxc_op_view_safe($cuenta['huesped_nombre'] ?? null, 'Sin hu&eacute;sped') ?></div>
-                    <div class="cx-meta-value is-soft" style="font-size:.74rem;margin-top:2px"><?= cxc_op_view_safe($cuenta['huesped_telefono'] ?? null, 'Sin tel&eacute;fono') ?></div>
+                    <div class="cx-meta-value"><?= cxc_op_view_safe($cuenta['huesped_nombre'] ?? null, 'Sin huésped') ?></div>
+                    <div class="cx-meta-value is-soft" style="font-size:.74rem;margin-top:2px"><?= cxc_op_view_safe($cuenta['huesped_telefono'] ?? null, 'Sin teléfono') ?></div>
                 </div>
                 <div><div class="cx-meta-label">Reservaci&oacute;n</div><div class="cx-meta-value"><?php if (!empty($cuenta['reservacion_id'])): ?>#<?= (int)$cuenta['reservacion_id'] ?> <?= cxc_op_view_safe($cuenta['reservacion_estado'] ?? null, '') ?><?php else: ?>Sin reservaci&oacute;n<?php endif; ?></div></div>
                 <div><div class="cx-meta-label">Factura</div><div class="cx-meta-value"><?php if (!empty($cuenta['solicitud_factura_id'])): ?>#<?= (int)$cuenta['solicitud_factura_id'] ?> <?= cxc_op_view_safe($cuenta['numero_factura'] ?? null, '') ?><?php else: ?>Sin factura<?php endif; ?></div></div>

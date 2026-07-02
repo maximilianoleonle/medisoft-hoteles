@@ -178,7 +178,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
             <div class="cx-panel p-5">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div><div class="cx-meta-label">Corte</div><div class="cx-meta-value"><?= !empty($corte) ? '#' . (int)$corte['id'] : 'Sin corte abierto' ?></div></div>
-                    <div><div class="cx-meta-label">Caja</div><div class="cx-meta-value"><?= cxc_cash_safe($corte['caja_nombre'] ?? null, 'No disponible') ?></div><div class="cx-sub"><?= cxc_cash_safe($corte['caja_ubicacion'] ?? null, 'Sin ubicaci&oacute;n') ?></div></div>
+                    <div><div class="cx-meta-label">Caja</div><div class="cx-meta-value"><?= cxc_cash_safe($corte['caja_nombre'] ?? null, 'No disponible') ?></div><div class="cx-sub"><?= cxc_cash_safe($corte['caja_ubicacion'] ?? null, 'Sin ubicación') ?></div></div>
                     <div><div class="cx-meta-label">Apertura</div><div class="cx-meta-value"><?= cxc_cash_safe($corte['fecha_apertura'] ?? null, 'Pendiente') ?></div></div>
                     <div>
                         <div class="cx-meta-label">Cobro en Caja</div>
@@ -243,7 +243,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
                                         <td>
                                             <?php if (!empty($cuenta['huesped_id']) && !empty($cuenta['huesped_nombre'])): ?>
                                                 <a class="cx-link" href="<?= url('huespedes/' . (int)$cuenta['huesped_id']) ?>"><?= cxc_cash_safe($cuenta['huesped_nombre'] ?? null) ?></a>
-                                                <div class="cx-sub"><?= cxc_cash_safe($cuenta['huesped_telefono'] ?? null, 'Sin tel&eacute;fono') ?></div>
+                                                <div class="cx-sub"><?= cxc_cash_safe($cuenta['huesped_telefono'] ?? null, 'Sin teléfono') ?></div>
                                             <?php else: ?>
                                                 <span class="cx-faint">Sin hu&eacute;sped</span>
                                             <?php endif; ?>
