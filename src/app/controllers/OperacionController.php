@@ -28,7 +28,7 @@ class OperacionController extends Controller
         }
 
         if (function_exists('require_hotel_module')) {
-            require_hotel_module('dashboard');
+            require_hotel_module('tablero_ejecutivo');
         }
 
         return true;

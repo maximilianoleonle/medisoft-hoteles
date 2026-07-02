@@ -291,7 +291,7 @@ class NotificacionReglasService {
     }
 
     private function reglaReporteGerencialDiario(): ?int {
-        if (!$this->moduloActivo('reportes') || !$this->reglaActiva('reporte_gerencial_diario')) {
+        if (!$this->moduloActivo('tablero_ejecutivo') || !$this->reglaActiva('reporte_gerencial_diario')) {
             return null;
         }
 

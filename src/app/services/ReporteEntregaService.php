@@ -44,6 +44,13 @@ class ReporteEntregaService {
                 return null;
             }
 
+            // Sin el bloque 'reportes_distribucion' el PDF se descarga normal,
+            // pero no se crean links seguros ni se envian correos.
+            $hotelIdGate = (int)($datos['hotel_id'] ?? obtenerHotelIdActualCompat());
+            if (function_exists('hotel_has_module') && !hotel_has_module('reportes_distribucion', $hotelIdGate)) {
+                return null;
+            }
+
             $rutaRelativa = $this->guardarArchivo($contenido, $nombreArchivo);
             if ($rutaRelativa === null) {
                 return null;

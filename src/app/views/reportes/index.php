@@ -533,6 +533,7 @@
     <!-- Hero Header -->
     <div class="rep-hero">
         <div class="container mx-auto px-5 sm:px-7 py-6 relative z-10">
+            <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div class="flex items-start gap-3">
                     <div class="rep-hero-icon flex-shrink-0">
@@ -666,6 +667,7 @@
             </div>
 
             <!-- 5: Exportaciones y links seguros -->
+            <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('reportes_distribucion')): ?>
             <div class="rep-card" style="--report-color:#0F766E;--report-color-strong:#115E59;--report-color-soft:#CCFBF1;">
                 <div class="card-accent"></div>
                 <div class="card-body">
@@ -687,7 +689,9 @@
                     </a>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('tablero_ejecutivo')): ?>
             <!-- 6: Reporte gerencial diario -->
             <div class="rep-card" style="--report-color:#1F2937;--report-color-strong:#111827;--report-color-soft:#EEF2F7;">
                 <div class="card-accent"></div>
@@ -733,6 +737,7 @@
                     </a>
                 </div>
             </div>
+            <?php endif; ?>
 
         </div><!-- end report-grid -->
 

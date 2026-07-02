@@ -205,6 +205,7 @@ class ReportesController extends Controller {
     
     public function ejecutivoAction() {
         $this->requireAuth();
+        require_hotel_module('tablero_ejecutivo');
 
         $filtros = [
             'periodo' => $this->getQuery('periodo', 'mes'),
@@ -224,6 +225,7 @@ class ReportesController extends Controller {
     // Agregar esta acción al ReportesController.php
     public function gerencialDiarioAction() {
         $this->requireAuth();
+        require_hotel_module('tablero_ejecutivo');
 
         $fecha = trim((string)$this->getQuery('fecha', date('Y-m-d')));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
@@ -243,6 +245,7 @@ class ReportesController extends Controller {
 
     public function gerencialDiarioPdfAction() {
         $this->requireAuth();
+        require_hotel_module('tablero_ejecutivo');
 
         $fecha = trim((string)$this->getQuery('fecha', date('Y-m-d')));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {

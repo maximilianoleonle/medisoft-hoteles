@@ -27,7 +27,7 @@ class ReporteLinkController extends Controller {
             $this->redirect('dashboard');
         }
 
-        require_hotel_module('reportes');
+        require_hotel_module('reportes_distribucion');
     }
 
     public function historialAction(): void {
@@ -115,6 +115,10 @@ class ReporteLinkController extends Controller {
 
         if (function_exists('hotel_report_links_public_enabled') && !hotel_report_links_public_enabled((int)($registro['hotel_id'] ?? 0))) {
             $this->renderPublicMessage(410, 'Links desactivados', 'El hotel desactivo temporalmente el acceso publico a reportes.');
+        }
+
+        if (function_exists('hotel_has_module') && !hotel_has_module('reportes_distribucion', (int)($registro['hotel_id'] ?? 0))) {
+            $this->renderPublicMessage(410, 'Links no disponibles', 'El hotel no tiene habilitada la distribucion de reportes.');
         }
 
         $this->reporteLinkModel->registrarAcceso((int)$registro['id']);

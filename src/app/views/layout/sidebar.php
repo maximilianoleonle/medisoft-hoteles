@@ -5,7 +5,7 @@ $menuModuloActivo = function ($clave) {
 
 $menuModulosSinConfigurar = function_exists('hotel_menu_modules_unconfigured') && hotel_menu_modules_unconfigured();
 $mostrarDashboard = $menuModuloActivo('dashboard');
-$mostrarOperacionDiaria = $mostrarDashboard;
+$mostrarOperacionDiaria = $menuModuloActivo('tablero_ejecutivo');
 $mostrarHabitaciones = $menuModuloActivo('habitaciones');
 $mostrarReservaciones = $menuModuloActivo('reservaciones');
 $mostrarHuespedes = $menuModuloActivo('huespedes');
