@@ -215,11 +215,12 @@ class Plan extends Model {
                         m.orden,
                         m.icono,
                         m.ruta_base
-                 FROM hotel_modulos hm
-                 INNER JOIN modulos m ON m.id = hm.modulo_id
-                 WHERE hm.hotel_id = ?
-                   AND hm.activo = 1
-                   AND m.activo_global = 1
+                 FROM modulos m
+                 LEFT JOIN hotel_modulos hm
+                    ON hm.modulo_id = m.id
+                   AND hm.hotel_id = ?
+                 WHERE m.activo_global = 1
+                   AND (m.es_core = 1 OR hm.activo = 1)
                  ORDER BY m.orden ASC, m.nombre ASC",
                 [(int) $hotelId]
             );
