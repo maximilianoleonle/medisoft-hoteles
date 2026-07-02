@@ -1,5 +1,6 @@
 <?php
 $hoteles = $hoteles ?? [];
+$cobrosMensuales = $cobrosMensuales ?? [];
 $totalHoteles = count($hoteles);
 $hotelesActivos = count(array_filter($hoteles, function ($hotel) {
     return !empty($hotel['activo']);
@@ -100,7 +101,7 @@ $fmtFecha = function ($d): string {
                         <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cliente</th>
                         <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Código</th>
                         <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Estado</th>
-                        <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Moneda</th>
+                        <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cobro/mes</th>
                         <th scope="col" class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Alta</th>
                         <th scope="col" class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Acciones</th>
                     </tr>
@@ -136,7 +137,15 @@ $fmtFecha = function ($d): string {
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-5 py-4 text-sm font-mono" style="color:var(--ms-text);"><?= htmlspecialchars(($hotel['moneda_codigo'] ?? '') ?: '—', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-5 py-4 text-sm" style="color:var(--ms-text);">
+                                    <?php $cobro = $cobrosMensuales[(int) ($hotel['id'] ?? 0)] ?? null; ?>
+                                    <?php if ($cobro !== null): ?>
+                                        <span class="font-semibold">$<?= number_format($cobro, 2) ?></span>
+                                        <span class="text-xs" style="color:var(--ms-muted);"><?= htmlspecialchars(($hotel['moneda_codigo'] ?? '') ?: 'MXN', ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php else: ?>
+                                        <span style="color:var(--ms-muted);">—</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-5 py-4 text-sm" style="color:var(--ms-muted);"><?= htmlspecialchars($fmtFecha($hotel['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-5 py-4 text-sm text-right whitespace-nowrap">
                                     <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id']) ?>"

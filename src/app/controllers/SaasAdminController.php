@@ -27,9 +27,16 @@ class SaasAdminController extends Controller {
     public function hotelesAction() {
         $hoteles = $this->hotelModel->listarParaSaasAdmin();
 
+        $cobrosMensuales = [];
+        foreach ($hoteles as $hotel) {
+            $resumen = $this->moduloModel->resumenCobroMensual((int) $hotel['id']);
+            $cobrosMensuales[(int) $hotel['id']] = $resumen ? (float) $resumen['total'] : null;
+        }
+
         View::renderTemplate('admin/saas/hoteles', [
             'title' => 'Panel Medisoft interno - Hoteles',
-            'hoteles' => $hoteles
+            'hoteles' => $hoteles,
+            'cobrosMensuales' => $cobrosMensuales
         ]);
     }
 
