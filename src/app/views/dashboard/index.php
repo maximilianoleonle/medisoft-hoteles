@@ -4014,6 +4014,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div class="hotel-switch">
                         <span><?= dashboard_safe($hotel_display_name, 'Medisoft Hoteles') ?></span>
                     </div>
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones')): ?>
                     <div class="notification-bell-shell" data-notification-quick>
                         <button type="button"
                                 class="glass-button <?= $notificaciones_pendientes > 0 ? 'has-notifications' : '' ?>"
@@ -4105,6 +4106,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     <div class="avatar" style="border-radius:50%"><?= dashboard_safe($usuario_iniciales, 'M') ?></div>
                 </div>
             </div>

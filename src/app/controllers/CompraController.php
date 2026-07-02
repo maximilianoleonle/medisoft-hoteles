@@ -25,7 +25,7 @@ class CompraController extends Controller
         }
 
         if (function_exists('require_hotel_module')) {
-            require_hotel_module('inventario');
+            require_hotel_module('compras');
         }
 
         return true;

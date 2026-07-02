@@ -3791,6 +3791,14 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             return;
         }
         $this->validateCSRF();
+
+        // El bloque 'anticipos' gatea solo depositos previos a la llegada.
+        // Cobrar saldo pendiente tras check-in/check-out es flujo core y no se bloquea.
+        $reservacionGate = $this->reservacionModel->obtenerPorId($id);
+        $estadoGate = strtolower((string)($reservacionGate['estado'] ?? ''));
+        if (!in_array($estadoGate, ['checked_in', 'checked_out'], true)) {
+            require_hotel_module('anticipos');
+        }
         try {
             require_once __DIR__ . '/../services/AnticipoService.php';
             $hotelId = obtenerHotelIdActualCompat();
@@ -3863,6 +3871,8 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
     /**
      * Revertir un anticipo (contramovimiento de Caja + eliminar abono).
      */
+    // Sin gate de modulo: revertir un anticipo ya cobrado es correccion de dinero
+    // y debe seguir disponible aunque el hotel apague el bloque 'anticipos'.
     public function revertirAnticipoAction() {
         $id = (int)($this->route_params['id'] ?? 0);
         if (!$this->isPost()) {
@@ -4266,6 +4276,10 @@ $cortesias_ids = $this->getPost('cortesias', []);
             // Anticipo inicial opcional: si el operador capturó uno, se registra como abono real.
             // Best-effort: si no hay caja abierta u ocurre un error, la reservación NO se pierde.
             $anticipoInicial = (float) str_replace(',', '', (string) $this->getPost('anticipo_inicial', ''));
+            if ($anticipoInicial > 0 && function_exists('current_hotel_has_module') && !current_hotel_has_module('anticipos')) {
+                $anticipoInicial = 0;
+                set_mensaje('Reservación creada. El anticipo no se registró porque el bloque de anticipos no está contratado.', 'warning');
+            }
             if ($anticipoInicial > 0) {
                 try {
                     require_once __DIR__ . '/../services/AnticipoService.php';

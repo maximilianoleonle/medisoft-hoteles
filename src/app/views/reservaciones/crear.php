@@ -2755,7 +2755,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                         <p style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:2px;">Seleccione habitaciones y configure cortesías del hotel</p>
                     </div>
                 </div>
-                <a href="<?= back_url('reservaciones') ?>" class="btn-back">
+                <?php $back_arrow_href = back_url('reservaciones'); $back_arrow_class = 'ms-back--inline ms-back--glass'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reservaciones') ?>" class="btn-back ms-back-legacy">
                     <i class="fas fa-arrow-left text-xs"></i>
                     <span class="hidden sm:inline">Volver</span>
                 </a>
@@ -3039,6 +3040,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                             </p>
                         </div>
 
+                        <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('anticipos')): ?>
                         <div class="p-5 border-t border-gray-100">
                             <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
                                 <i class="fas fa-hand-holding-dollar mr-1" style="color:var(--lc-gold-dark);"></i>
@@ -3071,6 +3073,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                 Si capturas un anticipo, se registra en caja al crear la reservación (requiere caja abierta).
                             </p>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 

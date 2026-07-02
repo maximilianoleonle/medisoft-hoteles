@@ -3636,7 +3636,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         <main class="rdv3-main">
             <div class="rdv3-page">
                 <div class="rdv3-topbar">
-                    <a class="rdv3-back" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+                    <?php $back_arrow_href = back_url('reservaciones'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                    <a class="rdv3-back ms-back-legacy" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
                     <div class="rdv3-topbar-copy">
                         <div class="rdv3-crumbs"><span class="rdv3-crumb-prefix">Reservaciones / </span><strong>Reservacion #<?= $rdReservationId ?></strong></div>
                         <div class="rdv3-topbar-hotel"><?= $rdSafe($nombreHotelVisible, 'Medisoft Hoteles') ?></div>
@@ -3753,7 +3754,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     </div>
                                 </div>
 
-                                <?php if (!empty($rpEval['elegible'])): ?>
+                                <?php
+                                // El formulario de anticipo requiere el bloque 'anticipos';
+                                // el cobro de saldo tras check-in/out es core y siempre se muestra.
+                                $rpModuloAnticipos = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('anticipos');
+                                $rpPuedeCobrar = !empty($rpEval['elegible']) && ($rpEsPagoPendiente || $rpModuloAnticipos);
+                                ?>
+                                <?php if ($rpPuedeCobrar): ?>
                                     <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
@@ -3810,7 +3817,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     </form>
                                 <?php elseif ($rpSaldoPositivo): ?>
                                     <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;color:#9A3412;font-size:.84rem;">
-                                        <i class="fas fa-circle-info"></i> <?= $rdSafe($rpEval['motivo'] ?: 'No se puede registrar un anticipo ahora.') ?>
+                                        <i class="fas fa-circle-info"></i>
+                                        <?php if (!empty($rpEval['elegible']) && !$rpModuloAnticipos): ?>
+                                            El bloque de anticipos no está contratado; el saldo se cobra al hacer check-in.
+                                        <?php else: ?>
+                                            <?= $rdSafe($rpEval['motivo'] ?: 'No se puede registrar un anticipo ahora.') ?>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
 
@@ -4044,12 +4056,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                             <?php if ($rdPrimaryKind === 'image' && $rdPrimaryDocId > 0): ?>
                                                 <?php $rdPrimaryPreviewUrl = url('documentos/' . $rdPrimaryDocId . '/descargar') . '?preview=1'; ?>
                                                 <div class="rdv3-guest-doc-feature is-revealable is-revealed" role="group" aria-label="Documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
-                                                    <a href="<?= url('documentos/' . $rdPrimaryDocId) ?>" class="rdv3-guest-doc-thumb rdv3-doc-reveal" aria-label="Abrir ficha del documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
+                                                    <button type="button" class="rdv3-guest-doc-thumb rdv3-doc-reveal" onclick="rdv3AbrirDocLightbox(this)" data-doc-src="<?= $rdSafe($rdPrimaryPreviewUrl) ?>" data-doc-title="<?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?>" aria-label="Ver documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?> en pantalla completa" aria-haspopup="dialog">
                                                         <span class="rdv3-guest-doc-brand">MEDISOFT</span>
                                                         <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
                                                         <img class="rdv3-guest-doc-img" src="<?= $rdSafe($rdPrimaryPreviewUrl) ?>" alt="<?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?>" loading="lazy" decoding="async" draggable="false" oncontextmenu="return false;">
                                                         <span class="rdv3-doc-reveal-hint"><i class="fas fa-eye" aria-hidden="true"></i></span>
-                                                    </a>
+                                                    </button>
                                                     <span class="rdv3-guest-doc-copy">
                                                         <span class="rdv3-doc-mini-state"><i class="fas fa-id-card"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
                                                         <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
@@ -4892,6 +4904,88 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         </div>
     </div>
 </div>
+<!-- ── Lightbox del documento del huésped (ver imagen sin salir de la vista) ── -->
+<div id="rdv3DocLightbox" class="rdv3-doc-lightbox" hidden role="dialog" aria-modal="true" aria-label="Documento del huesped en pantalla completa">
+    <figure class="rdv3-doc-lightbox-frame">
+        <img id="rdv3DocLightboxImg" src="" alt="" draggable="false" oncontextmenu="return false;">
+        <figcaption id="rdv3DocLightboxCaption"></figcaption>
+    </figure>
+    <button type="button" class="rdv3-doc-lightbox-close" aria-label="Cerrar vista de documento" onclick="rdv3CerrarDocLightbox()">
+        <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+</div>
+<style>
+.rdv3-doc-lightbox {
+    position: fixed; inset: 0; z-index: 10050;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px;
+    background: rgba(10, 16, 26, .88);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: rdv3DocLbIn .22s ease;
+}
+.rdv3-doc-lightbox[hidden] { display: none; }
+@keyframes rdv3DocLbIn { from { opacity: 0; } to { opacity: 1; } }
+.rdv3-doc-lightbox-frame { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 100%; }
+.rdv3-doc-lightbox-frame img {
+    max-width: min(94vw, 1100px);
+    max-height: 82vh;
+    border-radius: 14px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+    animation: rdv3DocLbImgIn .26s cubic-bezier(.22, 1, .36, 1);
+    user-select: none;
+}
+@keyframes rdv3DocLbImgIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.rdv3-doc-lightbox-frame figcaption { color: rgba(255, 255, 255, .82); font-size: .82rem; font-weight: 700; text-align: center; max-width: 92vw; overflow-wrap: anywhere; }
+.rdv3-doc-lightbox-close {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    right: 14px;
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff; font-size: 1rem; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .16s ease, transform .16s ease;
+}
+.rdv3-doc-lightbox-close:hover, .rdv3-doc-lightbox-close:focus-visible { background: rgba(255, 255, 255, .24); }
+.rdv3-doc-lightbox-close:active { transform: scale(.92); }
+@media (prefers-reduced-motion: reduce) {
+    .rdv3-doc-lightbox, .rdv3-doc-lightbox-frame img { animation: none; }
+}
+</style>
+<script>
+var rdv3DocLbScrollY = 0;
+function rdv3AbrirDocLightbox(btn) {
+    var lb = document.getElementById('rdv3DocLightbox');
+    if (!lb) return;
+    var img = document.getElementById('rdv3DocLightboxImg');
+    var cap = document.getElementById('rdv3DocLightboxCaption');
+    img.src = btn.getAttribute('data-doc-src') || '';
+    img.alt = btn.getAttribute('data-doc-title') || 'Documento del huesped';
+    cap.textContent = btn.getAttribute('data-doc-title') || '';
+    rdv3DocLbScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    lb.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    lb.querySelector('.rdv3-doc-lightbox-close').focus({ preventScroll: true });
+}
+function rdv3CerrarDocLightbox() {
+    var lb = document.getElementById('rdv3DocLightbox');
+    if (!lb || lb.hidden) return;
+    lb.hidden = true;
+    document.getElementById('rdv3DocLightboxImg').src = '';
+    document.documentElement.style.overflow = '';
+    window.scrollTo(0, rdv3DocLbScrollY);
+}
+document.getElementById('rdv3DocLightbox').addEventListener('click', function (ev) {
+    if (ev.target === this) rdv3CerrarDocLightbox();
+});
+document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') rdv3CerrarDocLightbox();
+});
+</script>
 <script>
 function mostrarAvisoReservacion(mensaje, tipo = 'info', duracion = 5200) {
     let aviso = document.getElementById('rdv3InlineToast');

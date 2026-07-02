@@ -15,6 +15,11 @@ class NotificacionService {
                 return null;
             }
 
+            // Bloque comercial: sin 'notificaciones' contratado no se crean eventos ni push.
+            if (function_exists('hotel_has_module') && !hotel_has_module('notificaciones', $hotelId)) {
+                return null;
+            }
+
             $datos['hotel_id'] = $hotelId;
             if (!isset($datos['estado']) || trim((string)$datos['estado']) === '') {
                 $datos['estado'] = self::estadoInicialSugerido($datos);

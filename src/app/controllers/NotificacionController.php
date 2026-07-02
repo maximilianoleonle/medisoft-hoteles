@@ -21,6 +21,10 @@ class NotificacionController extends Controller {
             require_hotel_context();
         }
 
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('notificaciones');
+        }
+
         return true;
     }
 

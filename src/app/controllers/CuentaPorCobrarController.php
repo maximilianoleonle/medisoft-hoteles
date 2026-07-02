@@ -31,7 +31,7 @@ class CuentaPorCobrarController extends Controller
         }
 
         if (function_exists('require_hotel_module')) {
-            require_hotel_module('reservaciones');
+            require_hotel_module('cuentas_cobrar');
         }
 
         return true;
