@@ -110,21 +110,22 @@ class AuthController extends Controller {
         $this->validateCSRF();
 
         $ip = get_client_ip();
-        $intentos_key = 'login_intentos_' . md5($ip . '|' . $hotel['slug']);
-        $bloqueo_key  = 'login_bloqueado_' . md5($ip . '|' . $hotel['slug']);
-
-        if (isset($_SESSION[$bloqueo_key]) && $_SESSION[$bloqueo_key] > time()) {
-            $segundos = $_SESSION[$bloqueo_key] - time();
-            set_mensaje('Demasiados intentos fallidos. Espera ' . ceil($segundos / 60) . ' minuto(s) antes de intentar de nuevo.', 'error');
-            $this->redirect($loginPath);
-        }
-
         $nombre_usuario = trim($this->getPost('nombre_usuario', ''));
         $password = $this->getPost('password', '');
         $remember = $this->getPost('remember') ? true : false;
 
         if (empty($nombre_usuario) || empty($password)) {
             set_mensaje('Por favor complete todos los campos', 'error');
+            $this->redirect($loginPath);
+        }
+
+        // SEC-001: rate limit persistido en DB (ip+usuario+hotel), no
+        // reiniciable con una cookie/sesion nueva.
+        require_once __DIR__ . '/../services/LoginRateLimiter.php';
+        $rateLimiter = new LoginRateLimiter();
+        $segundos = $rateLimiter->segundosBloqueado($ip, $nombre_usuario, $hotel['slug']);
+        if ($segundos > 0) {
+            set_mensaje('Demasiados intentos fallidos. Espera ' . ceil($segundos / 60) . ' minuto(s) antes de intentar de nuevo.', 'error');
             $this->redirect($loginPath);
         }
 
@@ -141,7 +142,7 @@ class AuthController extends Controller {
             : null;
 
         if ($credencialesValidas && $hotelUsuario) {
-            unset($_SESSION[$intentos_key], $_SESSION[$bloqueo_key]);
+            $rateLimiter->registrarExito($ip, $nombre_usuario, $hotel['slug']);
 
             login($usuario['id'], $remember, [
                 'id' => (int) $hotel['hotel_id'],
@@ -157,21 +158,17 @@ class AuthController extends Controller {
             $this->redirect('dashboard');
         }
 
-        $_SESSION[$intentos_key] = ($_SESSION[$intentos_key] ?? 0) + 1;
+        $fallo = $rateLimiter->registrarFallo($ip, $nombre_usuario, $hotel['slug']);
 
-        if ($_SESSION[$intentos_key] >= 5) {
-            $_SESSION[$bloqueo_key] = time() + 900;
-            unset($_SESSION[$intentos_key]);
-            $this->logLogin(null, false, $nombre_usuario);
-            $this->auditLogin(null, false, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
+        $this->logLogin(null, false, $nombre_usuario);
+        $this->auditLogin(null, false, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
+
+        if ($fallo['bloqueado']) {
             set_mensaje('Cuenta bloqueada temporalmente por multiples intentos fallidos. Intenta en 15 minutos.', 'error');
             $this->redirect($loginPath);
         }
 
-        $this->logLogin(null, false, $nombre_usuario);
-        $this->auditLogin(null, false, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
-        $restantes = 5 - $_SESSION[$intentos_key];
-        set_mensaje('Usuario o contrasena no validos para este hotel. Te quedan ' . $restantes . ' intento(s).', 'error');
+        set_mensaje('Usuario o contrasena no validos para este hotel. Te quedan ' . $fallo['restantes'] . ' intento(s).', 'error');
         $this->redirect($loginPath);
     }
 
@@ -184,17 +181,6 @@ class AuthController extends Controller {
         // Verificar token CSRF
         $this->validateCSRF();
 
-        // --- Protección brute force por IP (máx. 5 intentos en 15 min) ---
-        $ip = get_client_ip();
-        $intentos_key = 'login_intentos_' . md5($ip);
-        $bloqueo_key  = 'login_bloqueado_' . md5($ip);
-
-        if (isset($_SESSION[$bloqueo_key]) && $_SESSION[$bloqueo_key] > time()) {
-            $segundos = $_SESSION[$bloqueo_key] - time();
-            set_mensaje('Demasiados intentos fallidos. Espera ' . ceil($segundos / 60) . ' minuto(s) antes de intentar de nuevo.', 'error');
-            $this->redirect('login');
-        }
-
         // Obtener datos del formulario
         $nombre_usuario = trim($this->getPost('nombre_usuario', ''));
         $password = $this->getPost('password', '');
@@ -203,6 +189,17 @@ class AuthController extends Controller {
         // Validar campos requeridos
         if (empty($nombre_usuario) || empty($password)) {
             set_mensaje('Por favor complete todos los campos', 'error');
+            $this->redirect('login');
+        }
+
+        // SEC-001: rate limit persistido en DB (ip+usuario, mas tope global
+        // por IP), no reiniciable con una cookie/sesion nueva.
+        $ip = get_client_ip();
+        require_once __DIR__ . '/../services/LoginRateLimiter.php';
+        $rateLimiter = new LoginRateLimiter();
+        $segundos = $rateLimiter->segundosBloqueado($ip, $nombre_usuario, null);
+        if ($segundos > 0) {
+            set_mensaje('Demasiados intentos fallidos. Espera ' . ceil($segundos / 60) . ' minuto(s) antes de intentar de nuevo.', 'error');
             $this->redirect('login');
         }
 
@@ -218,7 +215,7 @@ class AuthController extends Controller {
         // Verificar si existe el usuario y la contraseña es correcta
         if ($usuario && password_verify($password, $usuario['password'])) {
             // Limpiar contador de intentos al login exitoso
-            unset($_SESSION[$intentos_key], $_SESSION[$bloqueo_key]);
+            $rateLimiter->registrarExito($ip, $nombre_usuario, null);
 
             $preferredSlug = defined('MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE')
                 ? normalize_hotel_login_slug($_COOKIE[MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE] ?? null)
@@ -243,22 +240,18 @@ class AuthController extends Controller {
             $this->redirect('dashboard');
 
         } else {
-            // Incrementar contador de intentos
-            $_SESSION[$intentos_key] = ($_SESSION[$intentos_key] ?? 0) + 1;
+            // Incrementar contador de intentos persistente
+            $fallo = $rateLimiter->registrarFallo($ip, $nombre_usuario, null);
 
-            if ($_SESSION[$intentos_key] >= 5) {
-                $_SESSION[$bloqueo_key] = time() + 900; // 15 minutos
-                unset($_SESSION[$intentos_key]);
-                $this->logLogin(null, false, $nombre_usuario);
-                $this->auditLogin(null, false, $nombre_usuario, null, 'login');
+            $this->logLogin(null, false, $nombre_usuario);
+            $this->auditLogin(null, false, $nombre_usuario, null, 'login');
+
+            if ($fallo['bloqueado']) {
                 set_mensaje('Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intenta en 15 minutos.', 'error');
                 $this->redirect('login');
             }
 
-            $this->logLogin(null, false, $nombre_usuario);
-            $this->auditLogin(null, false, $nombre_usuario, null, 'login');
-            $restantes = 5 - $_SESSION[$intentos_key];
-            set_mensaje('Usuario o contraseña incorrectos. Te quedan ' . $restantes . ' intento(s).', 'error');
+            set_mensaje('Usuario o contraseña incorrectos. Te quedan ' . $fallo['restantes'] . ' intento(s).', 'error');
             $this->redirect('login');
         }
     }

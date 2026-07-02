@@ -23,7 +23,7 @@ Hallazgos abiertos:
 
 | ID | Severidad | Estado | Hallazgo |
 |---|---|---|---|
-| SEC-001 | P1 | ABIERTO | Rate limit de login depende de `$_SESSION`, por lo que puede reiniciarse con una cookie/sesion nueva. |
+| SEC-001 | P1 | CORREGIDO (2026-07-02) | Rate limit de login depende de `$_SESSION`, por lo que puede reiniciarse con una cookie/sesion nueva. |
 | SEC-002 | P2 | ABIERTO | Content Security Policy global esta comentada; falta CSP activa o al menos modo report-only. |
 | SEC-003 | P3 | OBSERVACION | Metodos debug/correccion existen en controladores aunque no estan ruteados; conviene removerlos o blindarlos para produccion. |
 | SEC-004 | P3 | OBSERVACION | `medisoft_last_hotel_slug` se emite repetidamente en dashboard; no fue fuga, pero aumenta ruido de headers. |
@@ -48,7 +48,14 @@ Hallazgos abiertos:
 ### SEC-001 - Rate limit de login reiniciable por sesion nueva
 
 Severidad: P1
-Estado: ABIERTO
+Estado: **CORREGIDO** (2026-07-02). Nueva tabla `login_intentos` (migracion
+`20260702_002`) + servicio `LoginRateLimiter`: contador persistente por
+`ip + usuario (+ hotel_slug)` con 5 intentos / bloqueo 15 min (misma UX),
+mas tope global de 20 intentos por IP contra credential stuffing. Ventana
+de 15 min, poda automatica a 24 h y fail-open si falta la tabla (el login
+nunca se cae por el rate limiter). Verificado E2E con curl: 5 fallos →
+bloqueo; sesion/cookie NUEVA → sigue bloqueado; otro usuario misma IP →
+contador propio.
 Modulo: Auth
 Archivos:
 
