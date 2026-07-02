@@ -43,13 +43,57 @@ if (!function_exists('cxc_op_view_estado_meta')) {
     }
 }
 
+if (!function_exists('cxc_op_view_movimiento_meta')) {
+    function cxc_op_view_movimiento_meta(array $movimiento): array
+    {
+        $tipo = strtoupper(trim((string)($movimiento['tipo_movimiento'] ?? '')));
+        $referencia = strtoupper(trim((string)($movimiento['referencia'] ?? '')));
+        $notas = strtolower(trim((string)($movimiento['notas'] ?? '')));
+
+        if ($tipo === 'AJUSTE' && (strpos($referencia, 'RES-ABONO-') === 0 || strpos($notas, 'pago registrado en la reservacion') !== false)) {
+            return ['Pago desde reservacion', 'is-liquidada', 'fa-calendar-check'];
+        }
+
+        $map = [
+            'CREACION' => ['Creacion', 'is-soft', 'fa-circle-plus'],
+            'AJUSTE' => ['Ajuste', 'is-parcial', 'fa-sliders'],
+            'COBRO' => ['Cobro en CxC', 'is-liquidada', 'fa-cash-register'],
+            'CANCELACION' => ['Reversion', 'is-vencida', 'fa-rotate-left'],
+            'NOTA' => ['Nota', 'is-soft', 'fa-note-sticky'],
+            'RECLASIFICACION' => ['Reclasificacion', 'is-soft', 'fa-arrow-right-arrow-left'],
+        ];
+
+        return $map[$tipo] ?? [ucfirst(strtolower($tipo !== '' ? $tipo : 'Movimiento')), 'is-soft', 'fa-circle-dot'];
+    }
+}
+
 $cuentaId = (int)($cuenta['id'] ?? 0);
 $cxcCobroMontoValor = (string)($cxcOldInput['monto'] ?? ($cobroCaja['monto_maximo'] ?? '0.00'));
 $cxcCobroMetodoValor = (string)($cxcOldInput['metodo_pago'] ?? '');
 $cxcCobroReferenciaValor = (string)($cxcOldInput['referencia'] ?? '');
 $cxcCobroNotasValor = (string)($cxcOldInput['notas'] ?? '');
+$cxcFacturaModoValor = (string)($cxcOldInput['factura_modo_cxc'] ?? 'acumular');
+$cxcFacturaClienteVinculada = !empty($cuenta['solicitud_factura_id'])
+    && (string)($cuenta['factura_requiere_factura'] ?? '') === 'si'
+    && (string)($cuenta['factura_tipo'] ?? '') === 'cliente';
 $cxcReversionOldMovimientoId = (int)($cxcOldInput['reversion_movimiento_id'] ?? 0);
 [$estadoLabel, $estadoClass, $estadoIcon] = cxc_op_view_estado_meta($cuenta['estado'] ?? null);
+$cxcSaldoActual = (float)($cuenta['saldo'] ?? 0);
+$cxcCuentaLiquidada = strtolower((string)($cuenta['estado'] ?? '')) === 'liquidada' || $cxcSaldoActual <= 0.004;
+$cxcMovimientoPagoReservacion = null;
+foreach ($movimientos as $movimiento) {
+    $tipoMovimiento = strtoupper(trim((string)($movimiento['tipo_movimiento'] ?? '')));
+    $referenciaMovimiento = strtoupper(trim((string)($movimiento['referencia'] ?? '')));
+    $notasMovimiento = strtolower(trim((string)($movimiento['notas'] ?? '')));
+    if ($tipoMovimiento === 'AJUSTE' && (strpos($referenciaMovimiento, 'RES-ABONO-') === 0 || strpos($notasMovimiento, 'pago registrado en la reservacion') !== false)) {
+        $cxcMovimientoPagoReservacion = $movimiento;
+        break;
+    }
+}
+$cxcLiquidadaPorReservacion = $cxcCuentaLiquidada && $cxcMovimientoPagoReservacion !== null;
+$cxcSubtitle = $cxcCuentaLiquidada
+    ? 'Cuenta saldada. Aqui queda la trazabilidad del saldo y de como se liquido.'
+    : 'Lo que te debe este huesped. Aqui registras cobros en Caja cuando hay un corte abierto.';
 
 if (!function_exists('cxc_op_form_error')) {
     function cxc_op_form_error(array $errors, string $field): string
@@ -140,6 +184,11 @@ if (!function_exists('cxc_op_form_error_attrs')) {
 .cxc-op-detail .cx-badge.is-incobrable { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
 .cxc-op-detail .cx-badge.is-cancelada, .cxc-op-detail .cx-badge.is-soft { color: var(--cx-muted); background: var(--cx-surface-warm); border-color: var(--cx-border); }
 .cxc-op-detail .cx-badge-ok { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-op-detail .cx-movement-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+.cxc-op-detail .cx-movement-pill.is-liquidada { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-op-detail .cx-movement-pill.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, var(--cx-brand)); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
+.cxc-op-detail .cx-movement-pill.is-vencida { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
+.cxc-op-detail .cx-movement-pill.is-soft { color: var(--cx-muted); background: var(--cx-surface-warm); border-color: var(--cx-border); }
 
 .cxc-op-detail .cx-panel { background: var(--cx-surface); border: 1px solid var(--cx-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .cxc-op-detail .cx-panel-title { font-family: var(--cx-serif); font-size: 1.4rem; font-weight: 700; color: var(--cx-heading); }
@@ -163,6 +212,11 @@ if (!function_exists('cxc_op_form_error_attrs')) {
 .cxc-op-detail .cx-pay-card { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 13px; padding: 14px; }
 .cxc-op-detail form.cx-pay-card { max-width: 880px; }
 .cxc-op-detail .cx-soft-note { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 12px; padding: 14px; font-size: .88rem; color: var(--cx-muted); }
+.cxc-op-detail .cx-resolution { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--cx-success) 22%, var(--cx-border)); border-radius: 14px; background: color-mix(in srgb, var(--cx-success-bg) 72%, #fff); }
+.cxc-op-detail .cx-resolution-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: color-mix(in srgb, var(--cx-success) 82%, var(--cx-brand)); background: rgba(255,255,255,.72); }
+.cxc-op-detail .cx-resolution-title { margin: 0; color: var(--cx-heading); font-weight: 700; font-size: .96rem; line-height: 1.25; }
+.cxc-op-detail .cx-resolution-text { margin: 3px 0 0; color: var(--cx-text); font-size: .86rem; line-height: 1.45; font-weight: 600; }
+.cxc-op-detail .cx-resolution-ref { display: inline-flex; margin-top: 8px; color: color-mix(in srgb, var(--cx-brand) 48%, var(--cx-muted)); font-size: .76rem; font-weight: 700; }
 
 .cxc-op-detail .cx-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--cx-border); }
 .cxc-op-detail .cx-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
@@ -189,7 +243,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                 <div>
                     <p class="cx-kicker">Cobros a hu&eacute;spedes</p>
                     <h1 class="cx-title">Cuenta #<?= $cuentaId ?></h1>
-                    <p class="cx-subtitle">Lo que te debe este hu&eacute;sped. Aqu&iacute; registras cobros en Caja cuando hay un corte abierto.</p>
+                    <p class="cx-subtitle"><?= cxc_op_view_safe($cxcSubtitle) ?></p>
                 </div>
             </div>
             <span class="cx-badge <?= $estadoClass ?>"><i class="fas <?= $estadoIcon ?>"></i> <?= $estadoLabel ?></span>
@@ -215,6 +269,20 @@ if (!function_exists('cxc_op_form_error_attrs')) {
             <?php endif; ?>
         </section>
 
+        <?php if ($cxcLiquidadaPorReservacion): ?>
+            <section class="cx-resolution">
+                <div class="cx-resolution-icon"><i class="fas fa-circle-check"></i></div>
+                <div>
+                    <p class="cx-resolution-title">Liquidada con pago registrado desde la reservaci&oacute;n</p>
+                    <p class="cx-resolution-text">
+                        El hu&eacute;sped ya pag&oacute; este saldo en la reservaci&oacute;n #<?= (int)($cuenta['reservacion_id'] ?? 0) ?>.
+                        Esta cuenta conserva la trazabilidad; no gener&oacute; otro ingreso de Caja desde CxC.
+                    </p>
+                    <span class="cx-resolution-ref">Referencia: <?= cxc_op_view_safe($cxcMovimientoPagoReservacion['referencia'] ?? null, 'Sin referencia') ?></span>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <div class="cx-panel p-5">
             <h2 class="cx-panel-title mb-4">Datos de la cuenta</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -238,8 +306,12 @@ if (!function_exists('cxc_op_form_error_attrs')) {
         <div class="cx-panel p-5">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div>
-                    <h2 class="cx-panel-title">Registrar cobro (en Caja)</h2>
-                    <p class="cx-panel-sub">Al registrar el cobro se crea un ingreso en Caja y se descuenta del saldo de esta cuenta.</p>
+                    <h2 class="cx-panel-title"><?= $cxcCuentaLiquidada ? 'Cobro en Caja' : 'Registrar cobro (en Caja)' ?></h2>
+                    <p class="cx-panel-sub">
+                        <?= $cxcCuentaLiquidada
+                            ? 'Esta cuenta ya no tiene saldo por cobrar. No registres otro cobro para esta misma deuda.'
+                            : 'Al registrar el cobro se crea un ingreso en Caja y se descuenta del saldo de esta cuenta.' ?>
+                    </p>
                 </div>
                 <?php if (!empty($cobroCaja['corte'])): ?>
                     <span class="cx-badge cx-badge-ok"><i class="fas fa-cash-register"></i> Corte #<?= (int)$cobroCaja['corte']['id'] ?> abierto</span>
@@ -276,6 +348,21 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                             <span id="ms-form-error-cxc_referencia" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'referencia') ?></span>
                         <?php endif; ?>
                     </div>
+                    <?php if ($cxcFacturaClienteVinculada): ?>
+                        <div class="md:col-span-4" style="padding:12px 14px;border:1px solid #BFDBFE;border-radius:14px;background:#EFF6FF;">
+                            <div class="cx-meta-label" style="color:#1E40AF;margin-bottom:8px;">Factura vinculada #<?= (int)($cuenta['solicitud_factura_id'] ?? 0) ?></div>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                                <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:750;color:#1E3A8A;cursor:pointer;">
+                                    <input type="radio" name="factura_modo_cxc" value="acumular" <?= $cxcFacturaModoValor !== 'separada' ? 'checked' : '' ?>>
+                                    Sumar a factura pendiente
+                                </label>
+                                <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:750;color:#1E3A8A;cursor:pointer;">
+                                    <input type="radio" name="factura_modo_cxc" value="separada" <?= $cxcFacturaModoValor === 'separada' ? 'checked' : '' ?>>
+                                    Crear factura separada
+                                </label>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <div class="md:col-span-4">
                         <label class="cx-meta-label" for="cxc_notas">Notas</label>
                         <textarea id="cxc_notas" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'notas') ?>" name="notas" maxlength="1000" placeholder="Opcional"<?= cxc_op_form_error_attrs($cxcFieldErrors, 'notas', 'ms-form-error-cxc_notas') ?>><?= cxc_op_view_safe($cxcCobroNotasValor, '') ?></textarea>
@@ -299,13 +386,17 @@ if (!function_exists('cxc_op_form_error_attrs')) {
         <div class="cx-panel p-5">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div>
-                    <h2 class="cx-panel-title">Revertir un cobro</h2>
-                    <p class="cx-panel-sub">Si registraste un cobro por error, puedes revertirlo: crea un gasto en Caja y deshace el movimiento. No borra el cobro original.</p>
+                    <h2 class="cx-panel-title">Revertir cobros registrados</h2>
+                    <p class="cx-panel-sub">Usalo cuando un cobro se registro con metodo, huesped o cuenta incorrecta. La reversion crea una salida en Caja, vuelve a abrir el saldo de esta cuenta y conserva el historial. Si despues registras otro cobro, ese nuevo cobro tambien podra revertirse.</p>
                 </div>
             </div>
 
             <?php if (empty($movimientosCobro)): ?>
-                <div class="cx-soft-note mt-5">Esta cuenta todav&iacute;a no tiene cobros que se puedan revertir.</div>
+                <div class="cx-soft-note mt-5">
+                    <?= $cxcLiquidadaPorReservacion
+                        ? 'No hay cobros CxC que revertir. El saldo se cubrio desde la reservacion; revisa el pago desde el boton Reservacion.'
+                        : 'Esta cuenta todavia no tiene cobros que se puedan revertir.' ?>
+                </div>
             <?php else: ?>
                 <div class="mt-5 space-y-4">
                     <?php foreach ($movimientosCobro as $movimientoCobro): ?>
@@ -326,6 +417,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                             </div>
 
                             <?php if (!empty($reversion['elegible']) && $reversionToken): ?>
+                                <p class="cx-panel-sub mt-3" style="margin-bottom:0">Este cobro puede revertirse. La accion afecta solo al cobro #<?= $movimientoCobroId ?>; otros cobros de esta cuenta se manejan por separado.</p>
                                 <?php
                                     $cxcMotivoError = $cxcReversionOldMovimientoId === $movimientoCobroId
                                         ? cxc_op_form_error($cxcFieldErrors, 'motivo')
@@ -343,13 +435,13 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                                     </div>
                                     <div class="md:col-span-3">
                                         <label class="cx-meta-label" for="cxc_reversion_motivo_<?= $movimientoCobroId ?>">Motivo de la reversi&oacute;n</label>
-                                        <textarea id="cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-input mt-1<?= $cxcMotivoError !== '' ? ' cx-input-error' : '' ?>" name="motivo" maxlength="1000" required placeholder="Explica por qu&eacute; reviertes este cobro"<?= $cxcMotivoError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-cxc_reversion_motivo_' . $movimientoCobroId . '"' : '' ?>><?= cxc_op_view_safe($cxcMotivoValor, '') ?></textarea>
+                                        <textarea id="cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-input mt-1<?= $cxcMotivoError !== '' ? ' cx-input-error' : '' ?>" name="motivo" maxlength="1000" required placeholder="Ej. metodo incorrecto, huesped equivocado o cuenta equivocada"<?= $cxcMotivoError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-cxc_reversion_motivo_' . $movimientoCobroId . '"' : '' ?>><?= cxc_op_view_safe($cxcMotivoValor, '') ?></textarea>
                                         <?php if ($cxcMotivoError !== ''): ?>
                                             <span id="ms-form-error-cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-form-error ms-form-field-error"><?= $cxcMotivoError ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="md:col-span-4 flex justify-end">
-                                        <button class="cx-btn cx-btn-danger" type="submit"><i class="fas fa-rotate-left"></i> Revertir cobro</button>
+                                        <button class="cx-btn cx-btn-danger" type="submit"><i class="fas fa-rotate-left"></i> Revertir este cobro</button>
                                     </div>
                                 </form>
                             <?php else: ?>
@@ -378,9 +470,10 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                         </thead>
                         <tbody>
                             <?php foreach ($movimientos as $movimiento): ?>
+                                <?php [$movimientoLabel, $movimientoClass, $movimientoIcon] = cxc_op_view_movimiento_meta($movimiento); ?>
                                 <tr>
                                     <td><?= cxc_op_view_safe($movimiento['created_at'] ?? null) ?></td>
-                                    <td><?= cxc_op_view_safe($movimiento['tipo_movimiento'] ?? null) ?></td>
+                                    <td><span class="cx-movement-pill <?= cxc_op_view_safe($movimientoClass, 'is-soft') ?>"><i class="fas <?= cxc_op_view_safe($movimientoIcon, 'fa-circle-dot') ?>"></i><?= cxc_op_view_safe($movimientoLabel) ?></span></td>
                                     <td class="is-end"><?= cxc_op_view_money($movimiento['monto'] ?? 0) ?></td>
                                     <td class="is-end"><?= cxc_op_view_money($movimiento['saldo_anterior'] ?? 0) ?></td>
                                     <td class="is-end cx-strong"><?= cxc_op_view_money($movimiento['saldo_posterior'] ?? 0) ?></td>

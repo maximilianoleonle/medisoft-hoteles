@@ -36,7 +36,7 @@ $loginDisabled = !empty($login_disabled);
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? ($loginHotelNombre . ' - Sistema de Gestion'), ENT_QUOTES, 'UTF-8') ?></title>
     
     <!-- PWA Meta Tags -->
@@ -57,6 +57,32 @@ $loginDisabled = !empty($login_disabled);
                     document.documentElement.classList.add('pwa-launch-pending');
                 }
             } catch (error) {}
+        })();
+    </script>
+    <script>
+        (function() {
+            var lastTouchEnd = 0;
+            function blockZoom(event) {
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+            }
+
+            document.addEventListener('gesturestart', blockZoom, { passive: false });
+            document.addEventListener('gesturechange', blockZoom, { passive: false });
+            document.addEventListener('gestureend', blockZoom, { passive: false });
+            document.addEventListener('touchmove', function(event) {
+                if (event.touches && event.touches.length > 1) {
+                    blockZoom(event);
+                }
+            }, { passive: false });
+            document.addEventListener('touchend', function(event) {
+                var now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    blockZoom(event);
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
         })();
     </script>
     
@@ -100,6 +126,20 @@ $loginDisabled = !empty($login_disabled);
             --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             --gradient-gold: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             --gradient-olive: linear-gradient(135deg, var(--olive-green) 0%, var(--olive-green-light) 100%);
+        }
+
+        html {
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
         }
 
         /* ========================================

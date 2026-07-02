@@ -177,6 +177,10 @@ $rdFechaSalidaFormatoJsonAttr = htmlspecialchars(json_encode($rdFechaSalida !== 
 $rdMetodoPagoLabel = !empty($reservacion['metodo_pago'])
     ? ucfirst(str_replace('_', ' ', (string)$reservacion['metodo_pago']))
     : 'Pendiente';
+$rdTipoTarjetaReservacion = strtolower((string)($tipoTarjetaReservacion ?? ''));
+if (strtolower((string)($reservacion['metodo_pago'] ?? '')) === 'tarjeta' && in_array($rdTipoTarjetaReservacion, ['credito', 'debito'], true)) {
+    $rdMetodoPagoLabel = 'Tarjeta de ' . ($rdTipoTarjetaReservacion === 'credito' ? 'crédito' : 'débito');
+}
 $rdNoches = 1;
 if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     $rdEntradaDate = new DateTime($rdFechaEntrada);
@@ -3721,6 +3725,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             $rpEval = $anticipoEval ?? ['elegible' => false, 'motivo' => '', 'metodos_pago' => []];
                             $rpAbonos = $abonos ?? [];
                             $rpSaldoPositivo = ($rpResumen['saldo'] ?? 0) > 0.004;
+                            $rpEsPagoPendiente = in_array($rdEstadoKey, ['checked_in', 'checked_out'], true);
+                            $rpConceptoCobro = $rpEsPagoPendiente ? 'Pago pendiente de reservacion' : 'Anticipo de reservacion';
+                            $rpMontoLabel = $rpEsPagoPendiente ? 'Monto a cobrar' : 'Monto del anticipo';
+                            $rpBotonCobro = $rpEsPagoPendiente ? 'Registrar pago pendiente' : 'Registrar anticipo';
                         ?>
                         <section class="rdv3-card" id="rdv3-payment-section" data-rdv3-payment-balance="<?= number_format((float)($rpResumen['saldo'] ?? 0), 2, '.', '') ?>">
                             <header class="rdv3-card-header">
@@ -3748,17 +3756,31 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?php if (!empty($rpEval['elegible'])): ?>
                                     <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
                                         <?= csrf_field() ?>
+                                        <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
                                         <div style="flex:1;min-width:130px;">
-                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;">Monto del anticipo</label>
+                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;"><?= $rdSafe($rpMontoLabel) ?></label>
                                             <input type="number" name="monto" min="0.01" step="0.01" max="<?= number_format((float)$rpResumen['saldo'], 2, '.', '') ?>" value="<?= $rpSaldoPositivo ? number_format((float)$rpResumen['saldo'], 2, '.', '') : '' ?>" data-money-format="true" placeholder="0.00" required style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
                                         </div>
                                         <div style="min-width:140px;">
                                             <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;">Método</label>
-                                            <select name="metodo_pago" style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
+                                            <select name="metodo_pago" data-rdv3-anticipo-metodo onchange="rdv3ToggleTipoTarjetaAnticipo()" style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
                                                 <?php foreach (($rpEval['metodos_pago'] ?? []) as $mk => $ml): ?>
                                                     <option value="<?= $rdSafe($mk) ?>"><?= $rdSafe($ml) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
+                                        </div>
+                                        <div data-rdv3-anticipo-tarjeta style="display:none;min-width:220px;">
+                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:6px;">Tipo de tarjeta</label>
+                                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                                <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;">
+                                                    <input type="radio" name="tipo_tarjeta_anticipo" value="debito" disabled>
+                                                    <i class="fas fa-money-check-alt"></i> Debito
+                                                </label>
+                                                <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;">
+                                                    <input type="radio" name="tipo_tarjeta_anticipo" value="credito" disabled>
+                                                    <i class="fas fa-credit-card"></i> Credito
+                                                </label>
+                                            </div>
                                         </div>
                                         <div style="width:100%;margin-top:4px;">
                                             <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:6px;">¿Requiere factura?</label>
@@ -3770,8 +3792,21 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                                     <input type="radio" name="requiere_factura" value="si"> Factura para cliente
                                                 </label>
                                             </div>
+                                            <?php if (!empty($anticipoFacturaSolicitud)): ?>
+                                                <div style="margin-top:10px;padding:10px;border:1px solid #BFDBFE;border-radius:10px;background:#EFF6FF;">
+                                                    <div style="font-size:.72rem;color:#1E40AF;font-weight:700;margin-bottom:7px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por <?= $rdMoney($anticipoFacturaSolicitud['monto_total'] ?? 0) ?></div>
+                                                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                                            <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                                        </label>
+                                                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                                            <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
-                                        <button type="submit" class="rdv3-btn rdv3-btn-primary" style="margin-top:4px;"><i class="fas fa-plus"></i> Registrar anticipo</button>
+                                        <button type="submit" class="rdv3-btn rdv3-btn-primary" style="margin-top:4px;"><i class="fas fa-plus"></i> <?= $rdSafe($rpBotonCobro) ?></button>
                                     </form>
                                 <?php elseif ($rpSaldoPositivo): ?>
                                     <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;color:#9A3412;font-size:.84rem;">
@@ -3783,10 +3818,18 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <div style="margin-top:14px;">
                                         <small style="color:#667085;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Anticipos registrados</small>
                                         <?php foreach ($rpAbonos as $ab): ?>
+                                            <?php
+                                                $rpAbonoMetodo = strtolower((string)($ab['metodo_pago'] ?? ''));
+                                                $rpAbonoTipoTarjeta = strtolower((string)($ab['tipo_tarjeta'] ?? ''));
+                                                $rpAbonoMetodoLabel = ucfirst($rpAbonoMetodo);
+                                                if ($rpAbonoMetodo === 'tarjeta' && in_array($rpAbonoTipoTarjeta, ['credito', 'debito'], true)) {
+                                                    $rpAbonoMetodoLabel = 'Tarjeta ' . $rpAbonoTipoTarjeta;
+                                                }
+                                            ?>
                                             <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #EEF1F4;padding:8px 0;">
                                                 <div style="font-size:.85rem;">
                                                     <strong><?= $rdMoney($ab['monto']) ?></strong>
-                                                    <span style="color:#667085;"> &middot; <?= $rdSafe(ucfirst((string)$ab['metodo_pago'])) ?> &middot; <?= $rdSafe(date('d/m/Y H:i', strtotime((string)$ab['created_at']))) ?></span>
+                                                    <span style="color:#667085;"> &middot; <?= $rdSafe($rpAbonoMetodoLabel) ?> &middot; <?= $rdSafe(date('d/m/Y H:i', strtotime((string)$ab['created_at']))) ?></span>
                                                 </div>
                                                 <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" onsubmit="return confirm('¿Revertir este anticipo? Se generará un movimiento de caja de reverso.');" style="margin:0;">
                                                     <?= csrf_field() ?>
@@ -3799,6 +3842,25 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?php endif; ?>
                             </div>
                         </section>
+                        <script>
+                            function rdv3ToggleTipoTarjetaAnticipo() {
+                                const metodo = document.querySelector('[data-rdv3-anticipo-metodo]');
+                                const panel = document.querySelector('[data-rdv3-anticipo-tarjeta]');
+                                if (!metodo || !panel) {
+                                    return;
+                                }
+                                const mostrar = metodo.value === 'tarjeta';
+                                panel.style.display = mostrar ? 'block' : 'none';
+                                panel.querySelectorAll('input[name="tipo_tarjeta_anticipo"]').forEach((input) => {
+                                    input.disabled = !mostrar;
+                                    input.required = mostrar;
+                                    if (!mostrar) {
+                                        input.checked = false;
+                                    }
+                                });
+                            }
+                            document.addEventListener('DOMContentLoaded', rdv3ToggleTipoTarjetaAnticipo);
+                        </script>
 
                         <section class="rdv3-card rdv3-card--rooms">
                             <header class="rdv3-card-header">
@@ -4131,9 +4193,17 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     </div>
                                 <?php else: ?>
                                     <?php foreach ($rdPayments as $payment): ?>
-                                        <?php $paymentMethod = $payment['metodo_pago'] ?? $payment['metodo'] ?? $rdMetodoPagoLabel; ?>
+                                        <?php
+                                            $paymentMethod = $payment['metodo_pago'] ?? $payment['metodo'] ?? $rdMetodoPagoLabel;
+                                            $paymentMethodKey = strtolower((string)$paymentMethod);
+                                            $paymentTipoTarjeta = strtolower((string)($payment['tipo_tarjeta'] ?? $rdTipoTarjetaReservacion ?? ''));
+                                            $paymentMethodLabel = ucfirst(str_replace('_', ' ', (string)$paymentMethod));
+                                            if ($paymentMethodKey === 'tarjeta' && in_array($paymentTipoTarjeta, ['credito', 'debito'], true)) {
+                                                $paymentMethodLabel = 'Tarjeta de ' . ($paymentTipoTarjeta === 'credito' ? 'crédito' : 'débito');
+                                            }
+                                        ?>
                                         <div class="rdv3-payment-row">
-                                            <div class="rdv3-payment-method"><i class="far fa-credit-card"></i><div><b><?= $rdSafe(ucfirst(str_replace('_', ' ', (string)$paymentMethod))) ?></b><small><?= $rdSafe($payment['referencia'] ?? $payment['notas'] ?? 'Recibido en caja') ?></small></div></div>
+                                            <div class="rdv3-payment-method"><i class="far fa-credit-card"></i><div><b><?= $rdSafe($paymentMethodLabel) ?></b><small><?= $rdSafe($payment['referencia'] ?? $payment['notas'] ?? 'Recibido en caja') ?></small></div></div>
                                             <span class="rdv3-payment-amount"><?= $rdMoney($payment['monto'] ?? $payment['cantidad'] ?? 0) ?></span>
                                         </div>
                                     <?php endforeach; ?>
@@ -4901,17 +4971,23 @@ function entregarLlaveRapida(habitacionId, reservacionId) {
 }
 
 // Manejadores de formularios
-document.getElementById('formEntregarLlave').addEventListener('submit', function(e) {
-    e.preventDefault();
-    this.action = '<?= url("reservaciones/entregar-llave") ?>';
-    this.submit();
-});
+const formEntregarLlave = document.getElementById('formEntregarLlave');
+if (formEntregarLlave) {
+    formEntregarLlave.addEventListener('submit', function(e) {
+        e.preventDefault();
+        this.action = '<?= url("reservaciones/entregar-llave") ?>';
+        this.submit();
+    });
+}
 
-document.getElementById('formRecibirLlave').addEventListener('submit', function(e) {
-    e.preventDefault();
-    this.action = '<?= url("reservaciones/recibir-llave") ?>';
-    this.submit();
-});
+const formRecibirLlave = document.getElementById('formRecibirLlave');
+if (formRecibirLlave) {
+    formRecibirLlave.addEventListener('submit', function(e) {
+        e.preventDefault();
+        this.action = '<?= url("reservaciones/recibir-llave") ?>';
+        this.submit();
+    });
+}
 </script>
 
 <!-- Modal de Check-in con Pagos Mixtos -->
@@ -4942,6 +5018,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
     <div class="modal-content rv-checkin-shell" role="dialog" aria-modal="true" aria-labelledby="rvCheckinTitle">
         <form id="formCheckInModal" method="POST" action="" class="rv-checkin-form">
             <?= csrf_field() ?>
+            <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
 
             <div class="rv-checkin-topbar">
                 <div class="rv-checkin-titleblock">
@@ -5007,6 +5084,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
 
                 <section class="form-group rv-payment-section rv-checkin-stage" data-checkin-stage="2" aria-labelledby="rvPagoTitle" aria-hidden="true">
                     <h4 id="rvPagoTitle"><i class="fas fa-wallet"></i> Metodos de pago</h4>
+                    <p class="rv-payment-hint">Registra lo que el huesped paga hoy. Si falta una parte, activa la opcion para dejarla como cuenta pendiente.</p>
 
                     <div class="rv-payment-shortcuts" aria-label="Atajos de pago">
                         <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapido('efectivo')">
@@ -5031,6 +5109,26 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                         </button>
                     </div>
 
+                    <label class="rv-pending-option" for="check_saldo_pendiente">
+                        <input type="checkbox" id="check_saldo_pendiente" onchange="toggleSaldoPendienteCheckIn()">
+                        <span class="rv-pending-option__icon"><i class="fas fa-clock"></i></span>
+                        <span>
+                            <strong>Dejar saldo pendiente</strong>
+                            <small>Permite continuar el check-in con pago parcial. Lo que falte aparecera en Cuentas por cobrar.</small>
+                        </span>
+                    </label>
+
+                    <div id="checkinPendingPreview" class="rv-pending-preview" hidden aria-live="polite">
+                        <div>
+                            <span>Pago de hoy</span>
+                            <strong id="checkinPagoHoy">$0.00</strong>
+                        </div>
+                        <div>
+                            <span>Quedara pendiente</span>
+                            <strong id="checkinQuedaPendiente">$0.00</strong>
+                        </div>
+                    </div>
+
                     <div id="metodosPagoContainer" class="rv-pay-methods">
                         <div class="metodo-pago-item rv-pay-option rv-pay-cash">
                             <label>
@@ -5041,11 +5139,11 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <div id="panel_efectivo" class="hidden rv-pay-panel">
                                 <div class="rv-input-grid">
                                     <div>
-                                        <label>Total a cobrar</label>
-                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly>
+                                        <label id="label_monto_efectivo">Monto a cobrar en efectivo</label>
+                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly oninput="calcularTotales()" onchange="calcularTotales()">
                                     </div>
                                     <div>
-                                        <label>Monto recibido</label>
+                                        <label id="label_recibido_efectivo">Dinero recibido</label>
                                         <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" oninput="calcularCambio()" onchange="calcularCambio()" onkeyup="calcularCambio()" placeholder="0.00">
                                         <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Recibi exacto</button>
                                     </div>
@@ -5073,7 +5171,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 </div>
                                 <div class="rv-input-grid">
                                     <div>
-                                        <label>Monto</label>
+                                        <label id="label_monto_tarjeta">Monto con tarjeta</label>
                                         <input type="number" name="monto_tarjeta" id="monto_tarjeta" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
                                     </div>
                                     <div>
@@ -5093,7 +5191,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <div id="panel_transferencia" class="hidden rv-pay-panel">
                                 <div class="rv-input-grid">
                                     <div>
-                                        <label>Monto</label>
+                                        <label id="label_monto_transferencia">Monto por transferencia</label>
                                         <input type="number" name="monto_transferencia" id="monto_transferencia" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
                                     </div>
                                     <div>
@@ -5139,6 +5237,20 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 </label>
                             </div>
 
+                            <?php if (!empty($anticipoFacturaSolicitud)): ?>
+                                <div style="margin-top:12px;padding:11px 13px;border:1px solid #BFDBFE;border-radius:12px;background:#EFF6FF;">
+                                    <div style="font-size:.74rem;color:#1E40AF;font-weight:700;margin-bottom:8px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por $<?= number_format((float)($anticipoFacturaSolicitud['monto_total'] ?? 0), 2) ?></div>
+                                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                            <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                            <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
                             <div id="facturaResultado" class="rv-invoice-result">
                                 <p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>
                             </div>
@@ -5157,7 +5269,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <div class="rv-summary-row"><span>Total a cobrar</span><strong id="resumenTotal">$0.00</strong></div>
                             <div class="rv-summary-row is-paid"><span>Pagado</span><strong id="resumenPagado">$0.00</strong></div>
                             <div class="rv-summary-row"><span>Metodo elegido</span><strong id="resumenMetodoPago">Sin seleccionar</strong></div>
-                            <div id="divRestante" class="rv-summary-row is-due" style="display: none;"><span>Restante</span><strong id="resumenRestante">$0.00</strong></div>
+                            <div id="divRestante" class="rv-summary-row is-due" style="display: none;"><span>Cuenta pendiente</span><strong id="resumenRestante">$0.00</strong></div>
                             <div id="divCambio" class="rv-summary-row is-change" style="display: none;"><span>Cambio</span><strong id="resumenCambio">$0.00</strong></div>
                         </section>
                     </div>
@@ -5758,6 +5870,19 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                             <span class="xpm-inv-t">Sin factura</span>
                         </label>
                     </div>
+                    <?php if (!empty($anticipoFacturaSolicitud)): ?>
+                        <div style="margin-top:10px;padding:10px;border:1px solid #BFDBFE;border-radius:10px;background:#EFF6FF;">
+                            <div style="font-size:.72rem;color:#1E40AF;font-weight:700;margin-bottom:7px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por $<?= number_format((float)($anticipoFacturaSolicitud['monto_total'] ?? 0), 2) ?></div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                    <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
+                                    <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                </label>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <div id="facturaResultadoTardio" class="xpm-inv-note is-ok rv-invoice-result hidden"></div>
                     <div id="facturaValidacionTardio" class="xpm-inv-note is-err rv-checkin-message hidden"><i class="fas fa-exclamation-circle"></i> Indica si el cliente requiere factura</div>
                     <div id="facturaInfoInternaTardio" class="xpm-inv-note is-info rv-checkin-note hidden"><i class="fas fa-info-circle"></i> Tarjeta/transferencia se registra en facturación interna</div>
@@ -6071,13 +6196,18 @@ function setCotizacionMoneyValue(input, value) {
 
 function abrirModalCotizacion() {
     setCotizacionMoneyValue(document.getElementById('inputAnticipoCotizacion'), 0);
-    document.getElementById('resumenSaldoCotizacion').style.display = 'none';
-    document.getElementById('modalCotizacion').style.display = 'flex';
+    const resumenSaldo = document.getElementById('resumenSaldoCotizacion');
+    const modalCotizacion = document.getElementById('modalCotizacion');
+    if (resumenSaldo) resumenSaldo.style.display = 'none';
+    if (modalCotizacion) modalCotizacion.style.display = 'flex';
 }
 
 function cerrarModalCotizacion() {
-    document.getElementById('modalCotizacion').style.display = 'none';
+    const modalCotizacion = document.getElementById('modalCotizacion');
+    if (modalCotizacion) modalCotizacion.style.display = 'none';
 }
+window.abrirModalCotizacion = abrirModalCotizacion;
+window.cerrarModalCotizacion = cerrarModalCotizacion;
 
 function actualizarSaldoCotizacion() {
     const input = document.getElementById('inputAnticipoCotizacion');
@@ -6117,9 +6247,12 @@ function generarCotizacionPdf() {
 }
 
 // Cerrar modal al hacer click fuera
-document.getElementById('modalCotizacion').addEventListener('click', function(e) {
-    if (e.target === this) cerrarModalCotizacion();
-});
+const modalCotizacionClick = document.getElementById('modalCotizacion');
+if (modalCotizacionClick) {
+    modalCotizacionClick.addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalCotizacion();
+    });
+}
 </script>
 <script>
 
@@ -6230,6 +6363,11 @@ function validarFacturaCheckIn() {
     const facturaNo = document.getElementById('factura_no');
     const validacion = document.getElementById('facturaValidacion');
 
+    if (checkInSinCobroNuevo()) {
+        if (validacion) validacion.classList.add('hidden');
+        return true;
+    }
+
     if (!facturaSi.checked && !facturaNo.checked) {
         if (validacion) validacion.classList.remove('hidden');
         return false;
@@ -6266,11 +6404,18 @@ function resetearFacturaCheckIn() {
 function setCheckInWizardStep(step) {
     const modal = document.getElementById('modalCheckIn');
     const safeStep = Math.max(1, Math.min(3, parseInt(step, 10) || 1));
+    const sinCobroNuevo = checkInSinCobroNuevo();
     checkInWizardStep = safeStep;
 
     if (modal) {
         modal.dataset.checkinStep = String(safeStep);
+        modal.classList.toggle('is-paid-in-advance', sinCobroNuevo);
     }
+
+    const pagoStepLabel = document.querySelector('#modalCheckIn [data-step-indicator="2"] strong');
+    const facturaStepLabel = document.querySelector('#modalCheckIn [data-step-indicator="3"] strong');
+    if (pagoStepLabel) pagoStepLabel.textContent = sinCobroNuevo ? 'Pago cubierto' : 'Pago';
+    if (facturaStepLabel) facturaStepLabel.textContent = sinCobroNuevo ? 'Sin cobro nuevo' : 'Factura';
 
     document.querySelectorAll('#modalCheckIn [data-checkin-stage]').forEach(stage => {
         const stageStep = parseInt(stage.dataset.checkinStage, 10);
@@ -6281,14 +6426,17 @@ function setCheckInWizardStep(step) {
 
     document.querySelectorAll('#modalCheckIn [data-step-indicator]').forEach(indicator => {
         const indicatorStep = parseInt(indicator.dataset.stepIndicator, 10);
-        indicator.classList.toggle('is-current', indicatorStep === safeStep);
-        indicator.classList.toggle('is-complete', indicatorStep < safeStep);
+        const skipped = sinCobroNuevo && indicatorStep > 1;
+        indicator.classList.toggle('is-skipped', skipped);
+        indicator.classList.toggle('is-current', !skipped && indicatorStep === safeStep);
+        indicator.classList.toggle('is-complete', !skipped && indicatorStep < safeStep);
     });
 
     document.querySelectorAll('#modalCheckIn [data-step-line]').forEach(line => {
         const lineStep = parseInt(line.dataset.stepLine, 10);
-        line.classList.toggle('is-complete', lineStep < safeStep);
-        line.classList.toggle('is-current', lineStep === safeStep - 1);
+        const skipped = sinCobroNuevo && lineStep >= 1;
+        line.classList.toggle('is-complete', !skipped && lineStep < safeStep);
+        line.classList.toggle('is-current', !skipped && lineStep === safeStep - 1);
     });
 
     document.querySelectorAll('#modalCheckIn [data-step-dot]').forEach(dot => {
@@ -6307,8 +6455,9 @@ function setCheckInWizardStep(step) {
     if (nextButton) {
         const label = nextButton.querySelector('span');
         const icon = nextButton.querySelector('i');
-        if (label) label.textContent = safeStep === 3 ? 'Confirmar check-in' : 'Continuar';
-        if (icon) icon.className = safeStep === 3 ? 'fas fa-check' : 'fas fa-chevron-right';
+        const isFinalStep = safeStep === 3 || (sinCobroNuevo && safeStep === 1);
+        if (label) label.textContent = isFinalStep ? 'Confirmar check-in' : 'Continuar';
+        if (icon) icon.className = isFinalStep ? 'fas fa-check' : 'fas fa-chevron-right';
         nextButton.disabled = false;
     }
 
@@ -6339,19 +6488,38 @@ function validarLlegadaCheckInWizard() {
     return true;
 }
 
+function checkInSinCobroNuevo() {
+    return Number(totalReservacion || 0) <= 0.01;
+}
+
 function validarPagoCheckInWizard() {
+    if (checkInSinCobroNuevo()) {
+        setSaldoPendienteCheckInHidden(false);
+        ocultarMensaje();
+        return true;
+    }
+
     const metodosSeleccionados = getSelectedCheckInPaymentMethods();
 
-    if (metodosSeleccionados.length === 0) {
+    if (metodosSeleccionados.length === 0 && totalReservacion > 0.01) {
         mostrarMensaje('Debe seleccionar al menos un metodo de pago', 'warning');
         return false;
     }
 
-    const totalPagado = calcularTotalPagado();
-    const diferencia = Math.abs(totalPagado - totalReservacion);
+    ajustarEfectivoPendienteDesdeRecibido();
 
-    if (diferencia > 0.01) {
-        mostrarMensaje('El total pagado no coincide con el monto de la reservacion', 'error');
+    const totalPagado = calcularTotalPagado();
+    const saldoRestante = totalReservacion - totalPagado;
+    const permitirPendiente = isSaldoPendienteCheckInActivo();
+    setSaldoPendienteCheckInHidden(permitirPendiente && saldoRestante > 0.01);
+
+    if (saldoRestante > 0.01 && (!permitirPendiente || totalPagado <= 0.01)) {
+        mostrarMensaje('Para hacer check-in con pago parcial, activa Dejar saldo pendiente y registra el monto recibido.', 'error');
+        return false;
+    }
+
+    if (saldoRestante < -0.01) {
+        mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
         return false;
     }
 
@@ -6391,6 +6559,16 @@ function avanzarCheckInWizard() {
 
     if (checkInWizardStep === 1) {
         if (!validarLlegadaCheckInWizard()) return;
+        if (checkInSinCobroNuevo()) {
+            setSaldoPendienteCheckInHidden(false);
+            if (form && typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else if (form) {
+                sanitizeMoneyForm(form);
+                form.submit();
+            }
+            return;
+        }
         setCheckInWizardStep(2);
         return;
     }
@@ -6570,10 +6748,13 @@ function abrirModalCheckIn(id, total) {
     if (avisoAnticipo) {
         const anticipado = TOTAL_RESERVACION_CHECKIN - saldoACobrar;
         if (anticipado > 0.004) {
+            const mensajeSaldo = saldoACobrar <= 0.004
+                ? '. Saldo cubierto; el check-in no registrara otro cobro.'
+                : '. Solo se cobra el saldo.';
             avisoAnticipo.style.display = '';
             avisoAnticipo.innerHTML = '<i class="fas fa-circle-info"></i> Anticipo ya pagado: <strong>' +
                 formatMoney(anticipado) + '</strong> de ' + formatMoney(TOTAL_RESERVACION_CHECKIN) +
-                '. Solo se cobra el saldo.';
+                mensajeSaldo;
         } else {
             avisoAnticipo.style.display = 'none';
         }
@@ -6585,6 +6766,7 @@ function abrirModalCheckIn(id, total) {
     setCheckInWizardStep(1);
     document.body.style.overflow = 'hidden';
 }
+window.abrirModalCheckIn = abrirModalCheckIn;
 
 // Función de check-out
 function confirmarCheckOut(id) {
@@ -6596,12 +6778,16 @@ function confirmarCheckOut(id) {
 
     console.error('Modal de check-out no encontrado para la reservacion', id);
 }
+window.confirmarCheckOut = confirmarCheckOut;
 
 // Funciones de vehículos
 function cargarVehiculos() {
     const huespedId = <?= json_encode($huesped['id'] ?? 0) ?>;
+    const listaVehiculos = document.getElementById('listaVehiculos');
+    if (!listaVehiculos) return;
+
     if (!huespedId) {
-        document.getElementById('listaVehiculos').innerHTML =
+        listaVehiculos.innerHTML =
             '<p class="text-center text-gray-500 text-sm">No se pudo cargar la información</p>';
         return;
     }
@@ -6625,7 +6811,7 @@ function cargarVehiculos() {
         })
         .catch(error => {
             console.error('Error:', error);
-            document.getElementById('listaVehiculos').innerHTML =
+            listaVehiculos.innerHTML =
                 '<p class="text-center text-gray-500 text-sm">Error al cargar vehículos</p>';
         });
 }
@@ -6633,6 +6819,7 @@ function cargarVehiculos() {
 // Mostrar vehículos con diseño mejorado
 function mostrarVehiculos() {
     const container = document.getElementById('listaVehiculos');
+    if (!container) return;
 
     if (vehiculosHuesped.length === 0) {
         container.innerHTML = `
@@ -6691,14 +6878,22 @@ function mostrarVehiculos() {
 
 // Modal de cancelación
 function mostrarFormularioCancelacion() {
-    document.getElementById('modalCancelacion').style.display = 'flex';
+    const modalCancelacion = document.getElementById('modalCancelacion');
+    if (!modalCancelacion) {
+        console.error('Modal de cancelacion no encontrado');
+        return;
+    }
+    modalCancelacion.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
 
 function cerrarModalCancelacion() {
-    document.getElementById('modalCancelacion').style.display = 'none';
+    const modalCancelacion = document.getElementById('modalCancelacion');
+    if (modalCancelacion) modalCancelacion.style.display = 'none';
     document.body.style.overflow = 'auto';
 }
+window.mostrarFormularioCancelacion = mostrarFormularioCancelacion;
+window.cerrarModalCancelacion = cerrarModalCancelacion;
 
 // Funciones auxiliares
 function formatMoney(amount) {
@@ -6767,6 +6962,104 @@ function cerrarModalCheckIn() {
 }
 
 // Funciones de pago
+function isSaldoPendienteCheckInActivo() {
+    return document.getElementById('check_saldo_pendiente')?.checked === true;
+}
+
+function setSaldoPendienteCheckInHidden(activo) {
+    const hidden = document.getElementById('permitir_saldo_pendiente');
+    if (hidden) hidden.value = activo ? '1' : '0';
+}
+
+function setCheckInText(id, text) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = text;
+}
+
+function actualizarVistaSaldoPendienteCheckIn(totalPagado = null) {
+    const activo = isSaldoPendienteCheckInActivo();
+    const pagoHoy = totalPagado === null ? calcularTotalPagado() : totalPagado;
+    const pendiente = Math.max(0, totalReservacion - pagoHoy);
+    const preview = document.getElementById('checkinPendingPreview');
+
+    setCheckInText('label_monto_efectivo', activo ? 'Pago de hoy en efectivo' : 'Monto a cobrar en efectivo');
+    setCheckInText('label_recibido_efectivo', activo ? 'Dinero recibido hoy' : 'Dinero recibido');
+    setCheckInText('label_monto_tarjeta', activo ? 'Pago de hoy con tarjeta' : 'Monto con tarjeta');
+    setCheckInText('label_monto_transferencia', activo ? 'Pago de hoy por transferencia' : 'Monto por transferencia');
+
+    setCheckInText('checkinPagoHoy', formatMoney(pagoHoy));
+    setCheckInText('checkinQuedaPendiente', formatMoney(pendiente));
+
+    if (preview) {
+        preview.hidden = !activo;
+        preview.style.display = activo ? 'grid' : 'none';
+    }
+}
+
+function ajustarEfectivoPendienteDesdeRecibido() {
+    if (!isSaldoPendienteCheckInActivo()) return false;
+
+    const checkEfectivo = document.getElementById('check_efectivo');
+    const montoInput = document.getElementById('monto_efectivo');
+    const recibidoInput = document.getElementById('recibido_efectivo');
+
+    if (!checkEfectivo || !checkEfectivo.checked || !montoInput || !recibidoInput) return false;
+
+    if (document.activeElement === montoInput) {
+        montoInput.dataset.saldoPendienteManual = '1';
+        return false;
+    }
+
+    const recibido = moneyValue(recibidoInput);
+    const totalPagadoOtros = calcularTotalPagadoSinEfectivo();
+    const maximoEfectivo = Math.max(0, totalReservacion - totalPagadoOtros);
+    const montoActual = moneyValue(montoInput);
+    const montoNuevo = Math.min(recibido, maximoEfectivo);
+    const montoManual = montoInput.dataset.saldoPendienteManual === '1';
+
+    if (document.activeElement === recibidoInput && !montoManual) {
+        if (Math.abs(montoActual - montoNuevo) > 0.01) {
+            setMoneyValue(montoInput, montoNuevo);
+            return true;
+        }
+        return false;
+    }
+
+    if (recibido <= 0 || montoManual) return false;
+
+    const montoCompletoAutomatico = montoActual <= 0.01 || Math.abs(montoActual - maximoEfectivo) < 0.01;
+
+    if (montoNuevo > 0 && recibido < montoActual - 0.01 && montoCompletoAutomatico) {
+        setMoneyValue(montoInput, montoNuevo);
+        return true;
+    }
+
+    if (montoActual <= 0.01 && montoNuevo > 0) {
+        setMoneyValue(montoInput, montoNuevo);
+        return true;
+    }
+
+    return false;
+}
+
+function toggleSaldoPendienteCheckIn() {
+    const activo = isSaldoPendienteCheckInActivo();
+    const montoEfectivo = document.getElementById('monto_efectivo');
+    const checkEfectivo = document.getElementById('check_efectivo');
+    const recibidoEfectivo = document.getElementById('recibido_efectivo');
+    if (montoEfectivo) {
+        montoEfectivo.readOnly = !activo;
+        delete montoEfectivo.dataset.saldoPendienteManual;
+        if (activo && checkEfectivo && checkEfectivo.checked) {
+            const recibido = moneyValue(recibidoEfectivo);
+            setMoneyValue(montoEfectivo, Math.max(0, Math.min(recibido, totalReservacion)));
+        }
+    }
+    setSaldoPendienteCheckInHidden(activo);
+    actualizarVistaSaldoPendienteCheckIn();
+    calcularTotales({ preserveCash: activo });
+}
+
 function toggleMetodoPago(metodo) {
     const checkbox = document.getElementById('check_' + metodo);
     const panel = document.getElementById('panel_' + metodo);
@@ -6785,10 +7078,17 @@ function toggleMetodoPago(metodo) {
         if (metodo === 'efectivo') {
             const totalPagadoOtros = calcularTotalPagadoSinEfectivo();
             const montoRestante = Math.max(0, totalReservacion - totalPagadoOtros);
-
-            setMoneyValue(montoInput, montoRestante);
-
             const recibidoInput = document.getElementById('recibido_efectivo');
+
+            if (isSaldoPendienteCheckInActivo()) {
+                delete montoInput.dataset.saldoPendienteManual;
+                const recibido = moneyValue(recibidoInput);
+                setMoneyValue(montoInput, Math.min(recibido, montoRestante));
+            } else if (moneyValue(montoInput) <= 0) {
+                setMoneyValue(montoInput, montoRestante);
+            }
+            montoInput.readOnly = !isSaldoPendienteCheckInActivo();
+
             if (recibidoInput) {
                 recibidoInput.value = '';
                 if (montoRestante > 0) {
@@ -6848,6 +7148,9 @@ function setCheckInPaymentChecked(metodo, checked, shouldRecalculate = true) {
     if (checked) {
         if (panel) panel.classList.remove('hidden');
         if (card) card.classList.add('is-open');
+        if (metodo === 'efectivo' && montoInput) {
+            montoInput.readOnly = !isSaldoPendienteCheckInActivo();
+        }
     } else {
         if (panel) panel.classList.add('hidden');
         if (card) card.classList.remove('is-open');
@@ -6952,24 +7255,27 @@ function dividirPagoEfectivoTransferencia() {
     mostrarMensaje('Pago dividido entre efectivo y transferencia.', 'success');
 }
 
-document.getElementById('formCheckInModal').addEventListener('submit', function(e) {
-    e.preventDefault();
+const formCheckInModal = document.getElementById('formCheckInModal');
+if (formCheckInModal) {
+    formCheckInModal.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    if (!validarFacturaCheckIn()) {
-        setCheckInWizardStep(3);
-        mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
-        return;
-    }
+        if (!validarFacturaCheckIn()) {
+            setCheckInWizardStep(3);
+            mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
+            return;
+        }
 
-    if (!validarPagoCheckInWizard()) {
-        setCheckInWizardStep(2);
-        validarPagoCheckInWizard();
-        return;
-    }
+        if (!validarPagoCheckInWizard()) {
+            setCheckInWizardStep(2);
+            validarPagoCheckInWizard();
+            return;
+        }
 
-    sanitizeMoneyForm(this);
-    this.submit();
-});
+        sanitizeMoneyForm(this);
+        this.submit();
+    });
+}
 
 function calcularTotalPagadoSinEfectivo() {
     let total = 0;
@@ -6999,6 +7305,9 @@ function actualizarResumenMetodoPago() {
 
 function calcularTotales(options = {}) {
     const preserveCash = options && options.preserveCash === true;
+    const skipCashChange = options && options.skipCashChange === true;
+    const permitirPendiente = isSaldoPendienteCheckInActivo();
+    ajustarEfectivoPendienteDesdeRecibido();
     let totalPagado = 0;
 
     const totalOtros = calcularTotalPagadoSinEfectivo();
@@ -7008,7 +7317,8 @@ function calcularTotales(options = {}) {
     const montoEfectivoInput = document.getElementById('monto_efectivo');
 
     if (checkEfectivo && checkEfectivo.checked && montoEfectivoInput) {
-        if (preserveCash) {
+        montoEfectivoInput.readOnly = !permitirPendiente;
+        if (permitirPendiente || preserveCash) {
             totalPagado += moneyValue(montoEfectivoInput);
         } else {
             const montoRestante = Math.max(0, totalReservacion - totalOtros);
@@ -7024,39 +7334,50 @@ function calcularTotales(options = {}) {
 
     const totalPagadoFinal = calcularTotalPagado();
     const diferencia = totalReservacion - totalPagadoFinal;
+    actualizarVistaSaldoPendienteCheckIn(totalPagadoFinal);
 
     const divRestante = document.getElementById('divRestante');
     const divCambio = document.getElementById('divCambio');
     const btnConfirmar = document.getElementById('btnConfirmarCheckIn');
+    const resumenRestante = document.getElementById('resumenRestante');
+    const haySaldoPendiente = diferencia > 0.01;
 
     if (divRestante) divRestante.style.display = 'none';
     if (divCambio) divCambio.style.display = 'none';
+    setSaldoPendienteCheckInHidden(permitirPendiente && haySaldoPendiente);
 
-    if (Math.abs(diferencia) < 0.01) {
+    if (checkEfectivo && checkEfectivo.checked && !skipCashChange) {
+        calcularCambio();
+    }
+
+    const efectivoInsuficiente = checkEfectivo && checkEfectivo.checked
+        && moneyValue(montoEfectivoInput) > 0
+        && moneyValue(document.getElementById('recibido_efectivo')) < moneyValue(montoEfectivoInput);
+
+    if (efectivoInsuficiente) {
+        mostrarMensaje('El monto recibido en efectivo es insuficiente', 'error');
+        if (btnConfirmar) btnConfirmar.disabled = true;
+    } else if (Math.abs(diferencia) < 0.01) {
         ocultarMensaje();
         if (btnConfirmar) btnConfirmar.disabled = false;
     } else if (diferencia > 0.01) {
-        if (!checkEfectivo || !checkEfectivo.checked) {
-            if (divRestante) {
-                divRestante.style.display = 'flex';
-                const resumenRestante = document.getElementById('resumenRestante');
-                if (resumenRestante) {
-                    resumenRestante.textContent = formatMoney(diferencia);
-                }
+        if (divRestante) {
+            divRestante.style.display = 'flex';
+            if (resumenRestante) {
+                resumenRestante.textContent = formatMoney(diferencia);
             }
-            mostrarMensaje('Falta completar el pago', 'warning');
-            if (btnConfirmar) btnConfirmar.disabled = true;
-        } else {
-            ocultarMensaje();
+        }
+
+        if (permitirPendiente && totalPagadoFinal > 0) {
+            mostrarMensaje('Se hara check-in y el saldo restante quedara en Cuentas por cobrar.', 'info');
             if (btnConfirmar) btnConfirmar.disabled = false;
+        } else {
+            mostrarMensaje('Falta completar el pago. Si el huesped pagara despues, activa Dejar saldo pendiente.', 'warning');
+            if (btnConfirmar) btnConfirmar.disabled = true;
         }
     } else if (diferencia < -0.01) {
         mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
         if (btnConfirmar) btnConfirmar.disabled = true;
-    }
-
-    if (checkEfectivo && checkEfectivo.checked) {
-        calcularCambio();
     }
 
     actualizarResumenMetodoPago();
@@ -7073,6 +7394,7 @@ function calcularCambio() {
 
     if (!montoPagarInput || !montoRecibidoInput || !cambioSpan) return;
 
+    const montoAjustadoPorPendiente = ajustarEfectivoPendienteDesdeRecibido();
     const montoPagar = moneyValue(montoPagarInput);
     const montoRecibido = moneyValue(montoRecibidoInput);
 
@@ -7126,6 +7448,10 @@ function calcularCambio() {
             if (btnConfirmar) btnConfirmar.disabled = true;
         }
     }
+
+    if (montoAjustadoPorPendiente) {
+        calcularTotales({ preserveCash: true, skipCashChange: true });
+    }
 }
 
 function calcularTotalPagado() {
@@ -7172,9 +7498,18 @@ function resetearFormularioPago() {
 
         if (checkbox) checkbox.checked = false;
         if (panel) panel.classList.add('hidden');
-        if (montoInput) montoInput.value = '';
+        if (montoInput) {
+            montoInput.value = '';
+            delete montoInput.dataset.saldoPendienteManual;
+        }
+        if (metodo === 'efectivo' && montoInput) montoInput.readOnly = true;
         if (card) card.classList.remove('is-open');
     });
+
+    const saldoPendienteCheck = document.getElementById('check_saldo_pendiente');
+    if (saldoPendienteCheck) saldoPendienteCheck.checked = false;
+    setSaldoPendienteCheckInHidden(false);
+    actualizarVistaSaldoPendienteCheckIn(0);
 
     const recibidoEfectivo = document.getElementById('recibido_efectivo');
     if (recibidoEfectivo) recibidoEfectivo.value = '';
@@ -7218,17 +7553,23 @@ function resetearFormularioPago() {
 }
 
 // Cerrar modal al hacer clic fuera
-document.getElementById('modalCheckIn').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalCheckIn();
-    }
-});
+const modalCheckInClick = document.getElementById('modalCheckIn');
+if (modalCheckInClick) {
+    modalCheckInClick.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalCheckIn();
+        }
+    });
+}
 
-document.getElementById('modalCancelacion').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalCancelacion();
-    }
-});
+const modalCancelacionClick = document.getElementById('modalCancelacion');
+if (modalCancelacionClick) {
+    modalCancelacionClick.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalCancelacion();
+        }
+    });
+}
 
 // Función helper para escapar HTML
 function htmlspecialchars(text) {
@@ -7510,14 +7851,22 @@ function resetCheckoutConfirmacion() {
 
 function abrirModalCheckOut() {
     resetCheckoutConfirmacion();
-    document.getElementById('modalCheckOut').classList.remove('hidden');
+    const modalCheckOut = document.getElementById('modalCheckOut');
+    if (!modalCheckOut) {
+        console.error('Modal de check-out no encontrado');
+        return;
+    }
+    modalCheckOut.classList.remove('hidden');
     actualizarSeleccion();
 }
 
 function cerrarModalCheckOut() {
     resetCheckoutConfirmacion();
-    document.getElementById('modalCheckOut').classList.add('hidden');
+    const modalCheckOut = document.getElementById('modalCheckOut');
+    if (modalCheckOut) modalCheckOut.classList.add('hidden');
 }
+window.abrirModalCheckOut = abrirModalCheckOut;
+window.cerrarModalCheckOut = cerrarModalCheckOut;
 
 function toggleAsignarLimpieza() {
     const box = document.getElementById('asignarLimpiezaBox');
@@ -7544,10 +7893,11 @@ function actualizarSeleccion() {
     const textoMensaje = document.getElementById('textoMensaje');
 
     // Habilitar/deshabilitar botón
-    btnConfirmar.disabled = seleccionadas.length === 0;
+    if (btnConfirmar) btnConfirmar.disabled = seleccionadas.length === 0;
 
     // Mostrar mensaje informativo
     if (seleccionadas.length > 0) {
+        if (!mensaje || !textoMensaje) return;
         mensaje.classList.remove('hidden');
 
         if (seleccionadas.length === total) {
@@ -7558,98 +7908,101 @@ function actualizarSeleccion() {
             textoMensaje.innerHTML = `<strong>Check-out parcial:</strong> Se liberarán ${seleccionadas.length} de ${total} habitaciones. La reservación permanecerá activa con las habitaciones restantes.`;
         }
     } else {
-        mensaje.classList.add('hidden');
+        if (mensaje) mensaje.classList.add('hidden');
     }
 }
 
 // Confirmar antes de enviar sin obligar a pulsar el mismo boton dos veces.
-document.getElementById('formCheckOut').addEventListener('submit', function(e) {
-    if (checkoutSubmitConfirmado) {
-        return;
-    }
-
-    e.preventDefault();
-
-    const form = this;
-    const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]:checked');
-    const total = document.querySelectorAll('input[name="habitaciones[]"]').length;
-    const mensaje = document.getElementById('mensajeSeleccion');
-    const textoMensaje = document.getElementById('textoMensaje');
-    const btnConfirmar = document.getElementById('btnConfirmarCheckOut');
-    const modalCheckOut = document.getElementById('modalCheckOut');
-
-    if (checkboxes.length === 0) {
-        resetCheckoutConfirmacion();
-        if (mensaje && textoMensaje) {
-            mensaje.className = 'p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
-            mensaje.classList.remove('hidden');
-            textoMensaje.innerHTML = '<strong>Seleccion requerida:</strong> elige al menos una habitacion para hacer check-out.';
+const formCheckOut = document.getElementById('formCheckOut');
+if (formCheckOut) {
+    formCheckOut.addEventListener('submit', function(e) {
+        if (checkoutSubmitConfirmado) {
+            return;
         }
-        return;
-    }
 
-    const esCompleto = checkboxes.length === total;
-    const titulo = esCompleto ? 'Confirmar check-out completo' : 'Confirmar check-out parcial';
-    const resumen = esCompleto
-        ? 'Se liberaran todas las habitaciones y la reservacion se marcara como finalizada.'
-        : `Se liberaran ${checkboxes.length} de ${total} habitaciones. La reservacion seguira activa con las habitaciones restantes.`;
-    const confirmarEnvio = function() {
-        checkoutSubmitConfirmado = true;
-        if (btnConfirmar) {
-            btnConfirmar.disabled = true;
-            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
+        e.preventDefault();
+
+        const form = this;
+        const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]:checked');
+        const total = document.querySelectorAll('input[name="habitaciones[]"]').length;
+        const mensaje = document.getElementById('mensajeSeleccion');
+        const textoMensaje = document.getElementById('textoMensaje');
+        const btnConfirmar = document.getElementById('btnConfirmarCheckOut');
+        const modalCheckOut = document.getElementById('modalCheckOut');
+
+        if (checkboxes.length === 0) {
+            resetCheckoutConfirmacion();
+            if (mensaje && textoMensaje) {
+                mensaje.className = 'p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
+                mensaje.classList.remove('hidden');
+                textoMensaje.innerHTML = '<strong>Seleccion requerida:</strong> elige al menos una habitacion para hacer check-out.';
+            }
+            return;
         }
-        form.submit();
-    };
 
-    if (typeof Swal === 'undefined') {
-        if (window.confirm(titulo + '. ' + resumen)) {
-            confirmarEnvio();
-        }
-        return;
-    }
+        const esCompleto = checkboxes.length === total;
+        const titulo = esCompleto ? 'Confirmar check-out completo' : 'Confirmar check-out parcial';
+        const resumen = esCompleto
+            ? 'Se liberaran todas las habitaciones y la reservacion se marcara como finalizada.'
+            : `Se liberaran ${checkboxes.length} de ${total} habitaciones. La reservacion seguira activa con las habitaciones restantes.`;
+        const confirmarEnvio = function() {
+            checkoutSubmitConfirmado = true;
+            if (btnConfirmar) {
+                btnConfirmar.disabled = true;
+                btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
+            }
+            form.submit();
+        };
 
-    if (modalCheckOut) {
-        modalCheckOut.classList.add('hidden');
-    }
-
-    Swal.fire({
-        title: titulo,
-        html: `
-            <div class="rv-checkout-confirm">
-                <p class="rv-checkout-confirm__lead">${resumen}</p>
-                <div class="rv-checkout-confirm__panel">
-                    <strong>Antes de confirmar</strong>
-                    <span>Verifica que el huesped ya desocupo y que las habitaciones seleccionadas son correctas.</span>
-                </div>
-            </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-right-from-bracket"></i> Registrar check-out',
-        cancelButtonText: 'Volver',
-        confirmButtonColor: '#EA580C',
-        cancelButtonColor: '#6B7280',
-        reverseButtons: true,
-        focusCancel: true,
-        customClass: {
-            container: 'rv-checkout-confirm-container',
-            popup: 'rv-checkout-confirm-swal',
-            confirmButton: 'rv-checkout-confirm-action',
-            cancelButton: 'rv-checkout-confirm-cancel'
-        }
-    }).then(function(result) {
-        if (result.isConfirmed) {
-            confirmarEnvio();
+        if (typeof Swal === 'undefined') {
+            if (window.confirm(titulo + '. ' + resumen)) {
+                confirmarEnvio();
+            }
             return;
         }
 
         if (modalCheckOut) {
-            modalCheckOut.classList.remove('hidden');
-            actualizarSeleccion();
+            modalCheckOut.classList.add('hidden');
         }
+
+        Swal.fire({
+            title: titulo,
+            html: `
+                <div class="rv-checkout-confirm">
+                    <p class="rv-checkout-confirm__lead">${resumen}</p>
+                    <div class="rv-checkout-confirm__panel">
+                        <strong>Antes de confirmar</strong>
+                        <span>Verifica que el huesped ya desocupo y que las habitaciones seleccionadas son correctas.</span>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-right-from-bracket"></i> Registrar check-out',
+            cancelButtonText: 'Volver',
+            confirmButtonColor: '#EA580C',
+            cancelButtonColor: '#6B7280',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+                container: 'rv-checkout-confirm-container',
+                popup: 'rv-checkout-confirm-swal',
+                confirmButton: 'rv-checkout-confirm-action',
+                cancelButton: 'rv-checkout-confirm-cancel'
+            }
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                confirmarEnvio();
+                return;
+            }
+
+            if (modalCheckOut) {
+                modalCheckOut.classList.remove('hidden');
+                actualizarSeleccion();
+            }
+        });
     });
-});
+}
 
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(e) {
@@ -7668,6 +8021,11 @@ let confirmacionExpressTardioLista = false;
 
 function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaSalida, total, tipo, diasRetraso) {
     const modalTardio = document.getElementById('modalCheckInTardio');
+    if (!modalTardio) {
+        console.error('Modal de check-in tardio no encontrado');
+        return;
+    }
+
     if (tipo === 'express') {
         tipo = 'normal_tardio';
     }
@@ -7689,16 +8047,24 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
 
     // Configurar el formulario
     const form = document.getElementById('formCheckInTardio');
-    form.action = '<?= url("reservaciones/check-in/") ?>' + id;
+    if (form) {
+        form.action = '<?= url("reservaciones/check-in/") ?>' + id;
+    }
 
-    document.getElementById('tipo_tardio').value = tipo;
+    const tipoTardio = document.getElementById('tipo_tardio');
+    if (tipoTardio) tipoTardio.value = tipo;
 
     // Llenar información
-    document.getElementById('huesped_tardio').textContent = huesped;
-    document.getElementById('habitaciones_tardio').textContent = habitaciones;
-    document.getElementById('fecha_entrada_tardio').textContent = fechaEntrada;
-    document.getElementById('fecha_salida_tardio').textContent = fechaSalida;
-    document.getElementById('totalACobrarTardio').textContent = formatMoney(total);
+    const huespedTardio = document.getElementById('huesped_tardio');
+    const habitacionesTardio = document.getElementById('habitaciones_tardio');
+    const entradaTardio = document.getElementById('fecha_entrada_tardio');
+    const salidaTardio = document.getElementById('fecha_salida_tardio');
+    const totalTardio = document.getElementById('totalACobrarTardio');
+    if (huespedTardio) huespedTardio.textContent = huesped;
+    if (habitacionesTardio) habitacionesTardio.textContent = habitaciones;
+    if (entradaTardio) entradaTardio.textContent = fechaEntrada;
+    if (salidaTardio) salidaTardio.textContent = fechaSalida;
+    if (totalTardio) totalTardio.textContent = formatMoney(total);
 
     // Configurar según tipo
     const titulo = document.getElementById('tituloModalTardio');
@@ -7707,6 +8073,10 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
     const campoHora = document.getElementById('campo_hora_entrada');
     const notaPagoOpcional = document.getElementById('nota_pago_opcional');
     const checkSinPago = document.getElementById('check_sin_pago');
+    if (!titulo || !alerta || !btnConfirmar || !campoHora || !notaPagoOpcional || !checkSinPago) {
+        console.error('Elementos del modal de check-in tardio no disponibles');
+        return;
+    }
 
     // Mostrar info compacta en el subtitle del header
     const headerSub = document.querySelector('#modalCheckInTardio .xpm-head-sub');
@@ -7750,6 +8120,8 @@ function cerrarModalCheckInTardio() {
     resetearConfirmacionTardio();
     ocultarMensajeTardio();
 }
+window.abrirModalCheckInTardio = abrirModalCheckInTardio;
+window.cerrarModalCheckInTardio = cerrarModalCheckInTardio;
 
 function mostrarMensajeTardio(mensaje, tipo = 'error') {
     const div = document.getElementById('mensajeValidacionTardio');
@@ -8240,10 +8612,16 @@ function imprimirTicketTermico(modo = 'imprimir') {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Ticket #${ticketData.id}</title>
 <style>
     @page { margin: 0; size: 80mm auto; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+        touch-action: pan-x pan-y;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
     body {
         font-family: 'Courier New', monospace;
         width: 80mm;
@@ -8357,6 +8735,32 @@ function imprimirTicketTermico(modo = 'imprimir') {
         .no-print, .ticket-actions { display: none !important; }
     }
 </style>
+<script>
+    (function() {
+        var lastTouchEnd = 0;
+        function blockZoom(event) {
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+        }
+
+        document.addEventListener('gesturestart', blockZoom, { passive: false });
+        document.addEventListener('gesturechange', blockZoom, { passive: false });
+        document.addEventListener('gestureend', blockZoom, { passive: false });
+        document.addEventListener('touchmove', function(event) {
+            if (event.touches && event.touches.length > 1) {
+                blockZoom(event);
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', function(event) {
+            var now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                blockZoom(event);
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+    })();
+<\/script>
 </head>
 <body>
     <div class="ticket-actions no-print">
@@ -8485,22 +8889,33 @@ function abrirModalCambiarPago() {
 
     document.querySelectorAll('input[name="tipo_tarjeta_cp"]').forEach(r => r.checked = false);
 
-    document.getElementById('asignadoCP').textContent = '$0.00';
-    document.getElementById('divPendienteCP').style.display = 'none';
-    document.getElementById('msgValidacionCP').classList.add('hidden');
+    const asignadoCP = document.getElementById('asignadoCP');
+    const pendienteCP = document.getElementById('divPendienteCP');
+    const msgValidacionCP = document.getElementById('msgValidacionCP');
+    if (asignadoCP) asignadoCP.textContent = '$0.00';
+    if (pendienteCP) pendienteCP.style.display = 'none';
+    if (msgValidacionCP) msgValidacionCP.classList.add('hidden');
 
     // Resetear sección de factura
     resetearFacturaCP();
 
-    document.getElementById('modalCambiarPago').style.display = 'flex';
+    const modalCambiarPago = document.getElementById('modalCambiarPago');
+    if (!modalCambiarPago) {
+        console.error('Modal de cambio de pago no encontrado');
+        return;
+    }
+    modalCambiarPago.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
 
 function cerrarModalCambiarPago() {
     resetConfirmacionCambioPago();
-    document.getElementById('modalCambiarPago').style.display = 'none';
+    const modalCambiarPago = document.getElementById('modalCambiarPago');
+    if (modalCambiarPago) modalCambiarPago.style.display = 'none';
     document.body.style.overflow = 'auto';
 }
+window.abrirModalCambiarPago = abrirModalCambiarPago;
+window.cerrarModalCambiarPago = cerrarModalCambiarPago;
 
 function toggleMetodoPagoCP(metodo) {
     resetConfirmacionCambioPago();
@@ -8755,9 +9170,12 @@ function resetearFacturaCP() {
 }
 
 // Cerrar modal con clic fuera
-document.getElementById('modalCambiarPago').addEventListener('click', function(e) {
-    if (e.target === this) cerrarModalCambiarPago();
-});
+const modalCambiarPagoClick = document.getElementById('modalCambiarPago');
+if (modalCambiarPagoClick) {
+    modalCambiarPagoClick.addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalCambiarPago();
+    });
+}
 
 document.querySelectorAll('input[name="tipo_tarjeta_cp"], #referencia_tarjeta_cp, #referencia_transferencia_cp').forEach(control => {
     control.addEventListener('input', resetConfirmacionCambioPago);
@@ -9179,6 +9597,16 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #fff;
 }
 
+#modalCheckIn .rv-checkin-step.is-skipped {
+    color: #64748B;
+}
+
+#modalCheckIn .rv-checkin-step.is-skipped span {
+    border-color: #BBF7D0;
+    background: #ECFDF5;
+    color: #15803D;
+}
+
 #modalCheckIn .rv-checkin-line {
     height: 2px;
     border-radius: 999px;
@@ -9426,6 +9854,14 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #D34B4B;
 }
 
+#modalCheckIn .rv-payment-hint {
+    margin: -3px 0 13px;
+    color: #6E7890;
+    font-size: .78rem;
+    font-weight: 760;
+    line-height: 1.42;
+}
+
 #modalCheckIn .rv-payment-shortcuts {
     position: relative;
     z-index: 1;
@@ -9466,6 +9902,94 @@ document.addEventListener('DOMContentLoaded', function () {
 #modalCheckIn .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7A52E1; }
 #modalCheckIn .rv-money-shortcut.is-split { --rv-shortcut-color: var(--rv-checkin-accent); }
 #modalCheckIn .rv-money-shortcut.is-cash-transfer { --rv-shortcut-color: #0F9F8F; }
+
+#modalCheckIn .rv-pending-option {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 11px;
+    margin: 0 0 13px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, #D97706 28%, var(--rv-checkin-line));
+    border-radius: 14px;
+    background: #FFF8EA;
+    color: #7C4A12;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+#modalCheckIn .rv-pending-option:hover,
+#modalCheckIn .rv-pending-option:focus-within {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, #D97706 50%, var(--rv-checkin-line));
+    background: #FFF5DC;
+    box-shadow: 0 14px 28px -26px rgba(217,119,6,.75);
+}
+
+#modalCheckIn .rv-pending-option input {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    accent-color: #D97706;
+}
+
+#modalCheckIn .rv-pending-option__icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(217,119,6,.12);
+    color: #B45309;
+}
+
+#modalCheckIn .rv-pending-option strong {
+    display: block;
+    color: #6B3B08;
+    font-size: .84rem;
+    font-weight: 950;
+}
+
+#modalCheckIn .rv-pending-option small {
+    display: block;
+    margin-top: 2px;
+    color: #8A5A18;
+    font-size: .73rem;
+    font-weight: 720;
+    line-height: 1.35;
+}
+
+#modalCheckIn .rv-pending-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: -4px 0 13px;
+}
+
+#modalCheckIn .rv-pending-preview[hidden] {
+    display: none !important;
+}
+
+#modalCheckIn .rv-pending-preview > div {
+    min-height: 58px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, #D97706 24%, var(--rv-checkin-line));
+    border-radius: 12px;
+    background: #FFFDF7;
+}
+
+#modalCheckIn .rv-pending-preview span {
+    display: block;
+    margin-bottom: 4px;
+    color: #7C4A12;
+    font-size: .72rem;
+    font-weight: 820;
+}
+
+#modalCheckIn .rv-pending-preview strong {
+    color: #3E4656;
+    font-size: 1rem;
+    font-weight: 950;
+}
 
 #modalCheckInTardio .rv-payment-shortcuts {
     display: grid;

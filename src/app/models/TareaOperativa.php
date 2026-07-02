@@ -29,6 +29,9 @@ class TareaOperativa extends Model
         $limite = max(1, min(300, $limite));
         $where = ['t.hotel_id = ?'];
         $params = [$hotelId];
+        $asignacionesMultiples = $this->trabajadoresTablaDisponible();
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
 
         foreach (['categoria', 'estado', 'prioridad'] as $filtro) {
             $valor = trim((string)($filtros[$filtro] ?? ''));
@@ -38,11 +41,68 @@ class TareaOperativa extends Model
             }
         }
 
+        $trabajadorFiltro = trim((string)($filtros['trabajador_id'] ?? 'todos'));
+        if ($trabajadorFiltro === 'sin_asignar') {
+            if ($asignacionesMultiples) {
+                $where[] = '(t.trabajador_id IS NULL AND COALESCE(tt_agg.trabajadores_total, 0) = 0)';
+            } else {
+                $where[] = 't.trabajador_id IS NULL';
+            }
+        } else {
+            $trabajadorId = $this->normalizarEnteroNullable($trabajadorFiltro);
+            if ($trabajadorId !== null) {
+                $where[] = $this->trabajadorAsignadoFiltroSql();
+                $params[] = $trabajadorId;
+            }
+        }
+
+        $fechaDesdeRaw = trim((string)($filtros['fecha_desde'] ?? ''));
+        $fechaHastaRaw = trim((string)($filtros['fecha_hasta'] ?? ''));
+        if ($fechaDesdeRaw !== '' || $fechaHastaRaw !== '') {
+            $fechaDesde = $fechaDesdeRaw !== '' ? $this->normalizarFechaSimple($fechaDesdeRaw, date('Y-m-d')) : null;
+            $fechaHasta = $fechaHastaRaw !== '' ? $this->normalizarFechaSimple($fechaHastaRaw, date('Y-m-d')) : null;
+
+            if ($fechaDesde !== null && $fechaHasta !== null && strtotime($fechaHasta) < strtotime($fechaDesde)) {
+                [$fechaDesde, $fechaHasta] = [$fechaHasta, $fechaDesde];
+            }
+
+            $condicionesFecha = [];
+            foreach (['t.fecha_programada', 't.fecha_limite'] as $columnaFecha) {
+                $partes = [$columnaFecha . ' IS NOT NULL'];
+                if ($fechaDesde !== null) {
+                    $partes[] = 'DATE(' . $columnaFecha . ') >= ?';
+                    $params[] = $fechaDesde;
+                }
+                if ($fechaHasta !== null) {
+                    $partes[] = 'DATE(' . $columnaFecha . ') <= ?';
+                    $params[] = $fechaHasta;
+                }
+                $condicionesFecha[] = '(' . implode(' AND ', $partes) . ')';
+            }
+
+            $partesCreacion = ['t.fecha_programada IS NULL', 't.fecha_limite IS NULL'];
+            if ($fechaDesde !== null) {
+                $partesCreacion[] = 'DATE(t.created_at) >= ?';
+                $params[] = $fechaDesde;
+            }
+            if ($fechaHasta !== null) {
+                $partesCreacion[] = 'DATE(t.created_at) <= ?';
+                $params[] = $fechaHasta;
+            }
+            $condicionesFecha[] = '(' . implode(' AND ', $partesCreacion) . ')';
+            $where[] = '(' . implode(' OR ', $condicionesFecha) . ')';
+        }
+
         $buscar = trim((string)($filtros['buscar'] ?? ''));
         if ($buscar !== '') {
             $like = '%' . $buscar . '%';
-            $where[] = '(t.titulo LIKE ? OR t.descripcion LIKE ? OR h.numero LIKE ? OR tr.nombre_completo LIKE ?)';
-            array_push($params, $like, $like, $like, $like);
+            if ($asignacionesMultiples) {
+                $where[] = "(t.titulo LIKE ? OR t.descripcion LIKE ? OR h.numero LIKE ? OR tr.nombre_completo LIKE ? OR tt_agg.trabajadores_nombres LIKE ?)";
+                array_push($params, $like, $like, $like, $like, $like);
+            } else {
+                $where[] = '(t.titulo LIKE ? OR t.descripcion LIKE ? OR h.numero LIKE ? OR tr.nombre_completo LIKE ?)';
+                array_push($params, $like, $like, $like, $like);
+            }
         }
 
         $stmt = $this->db->query(
@@ -67,6 +127,7 @@ class TareaOperativa extends Model
                     t.updated_at,
                     h.numero AS habitacion_numero,
                     tr.nombre_completo AS trabajador_nombre,
+{$trabajadoresSelect},
                     m.motivo AS mantenimiento_motivo,
                     NULL AS huesped_nombre
              FROM tareas_operativas t
@@ -76,13 +137,18 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              LEFT JOIN mantenimientos_habitaciones m
                 ON m.id = t.mantenimiento_id
                AND m.hotel_id = t.hotel_id
              WHERE " . implode(' AND ', $where) . "
-             ORDER BY FIELD(t.estado, 'pendiente', 'asignada', 'en_proceso', 'completada', 'cancelada'),
+             ORDER BY CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 0 ELSE 1 END ASC,
+                      CASE WHEN t.fecha_limite IS NULL THEN 1 ELSE 0 END ASC,
+                      t.fecha_limite ASC,
                       FIELD(t.prioridad, 'urgente', 'alta', 'media', 'baja'),
-                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) ASC
+                      FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente', 'completada', 'cancelada'),
+                      COALESCE(t.fecha_programada, t.created_at) ASC,
+                      t.id ASC
              LIMIT {$limite}",
             $params
         );
@@ -179,6 +245,11 @@ class TareaOperativa extends Model
             return [];
         }
 
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
+        $whereEntidad = $entidad === 'trabajador'
+            ? $this->trabajadorAsignadoFiltroSql()
+            : $columnas[$entidad] . ' = ?';
         $limite = max(1, min(30, $limite));
         $stmt = $this->db->query(
             "SELECT t.id,
@@ -197,7 +268,8 @@ class TareaOperativa extends Model
                     t.origen,
                     t.created_at,
                     h.numero AS habitacion_numero,
-                    tr.nombre_completo AS trabajador_nombre
+                    tr.nombre_completo AS trabajador_nombre,
+{$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
@@ -205,8 +277,9 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              WHERE t.hotel_id = ?
-               AND {$columnas[$entidad]} = ?
+               AND {$whereEntidad}
              ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente', 'completada', 'cancelada'),
                       COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) DESC
              LIMIT {$limite}",
@@ -222,6 +295,8 @@ class TareaOperativa extends Model
             return null;
         }
 
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
         $stmt = $this->db->query(
             "SELECT t.id,
                     t.hotel_id,
@@ -237,7 +312,8 @@ class TareaOperativa extends Model
                     t.origen,
                     t.created_at,
                     h.numero AS habitacion_numero,
-                    tr.nombre_completo AS trabajador_nombre
+                    tr.nombre_completo AS trabajador_nombre,
+{$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
@@ -245,6 +321,7 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              WHERE t.hotel_id = ?
                AND t.mantenimiento_id = ?
                AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
@@ -265,6 +342,8 @@ class TareaOperativa extends Model
             return null;
         }
 
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
         $stmt = $this->db->query(
             "SELECT t.id,
                     t.hotel_id,
@@ -279,7 +358,8 @@ class TareaOperativa extends Model
                     t.origen,
                     t.created_at,
                     h.numero AS habitacion_numero,
-                    tr.nombre_completo AS trabajador_nombre
+                    tr.nombre_completo AS trabajador_nombre,
+{$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
@@ -287,6 +367,7 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              WHERE t.hotel_id = ?
                AND t.habitacion_id = ?
                AND t.categoria = 'limpieza'
@@ -462,23 +543,45 @@ class TareaOperativa extends Model
             $reporte['riesgos'][$key] = (int)($riesgos[$key] ?? 0);
         }
 
-        $stmt = $this->db->query(
-            "SELECT t.trabajador_id,
-                    tr.nombre_completo AS trabajador_nombre,
-                    COUNT(*) AS total,
-                    SUM(CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 1 ELSE 0 END) AS activas,
-                    SUM(CASE WHEN t.estado = 'completada' THEN 1 ELSE 0 END) AS completadas
-             FROM tareas_operativas t
-             INNER JOIN trabajadores tr
-                ON tr.id = t.trabajador_id
-               AND tr.hotel_id = t.hotel_id
-             WHERE t.hotel_id = ?
-               AND t.trabajador_id IS NOT NULL
-             GROUP BY t.trabajador_id, tr.nombre_completo
-             ORDER BY activas DESC, total DESC, tr.nombre_completo ASC
-             LIMIT 12",
-            [$hotelId]
-        );
+        if ($this->trabajadoresTablaDisponible()) {
+            $stmt = $this->db->query(
+                "SELECT tt.trabajador_id,
+                        tr.nombre_completo AS trabajador_nombre,
+                        COUNT(DISTINCT t.id) AS total,
+                        SUM(CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 1 ELSE 0 END) AS activas,
+                        SUM(CASE WHEN t.estado = 'completada' THEN 1 ELSE 0 END) AS completadas
+                 FROM tarea_trabajadores tt
+                 INNER JOIN tareas_operativas t
+                    ON t.id = tt.tarea_id
+                   AND t.hotel_id = tt.hotel_id
+                 INNER JOIN trabajadores tr
+                    ON tr.id = tt.trabajador_id
+                   AND tr.hotel_id = tt.hotel_id
+                 WHERE tt.hotel_id = ?
+                 GROUP BY tt.trabajador_id, tr.nombre_completo
+                 ORDER BY activas DESC, total DESC, tr.nombre_completo ASC
+                 LIMIT 12",
+                [$hotelId]
+            );
+        } else {
+            $stmt = $this->db->query(
+                "SELECT t.trabajador_id,
+                        tr.nombre_completo AS trabajador_nombre,
+                        COUNT(*) AS total,
+                        SUM(CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 1 ELSE 0 END) AS activas,
+                        SUM(CASE WHEN t.estado = 'completada' THEN 1 ELSE 0 END) AS completadas
+                 FROM tareas_operativas t
+                 INNER JOIN trabajadores tr
+                    ON tr.id = t.trabajador_id
+                   AND tr.hotel_id = t.hotel_id
+                 WHERE t.hotel_id = ?
+                   AND t.trabajador_id IS NOT NULL
+                 GROUP BY t.trabajador_id, tr.nombre_completo
+                 ORDER BY activas DESC, total DESC, tr.nombre_completo ASC
+                 LIMIT 12",
+                [$hotelId]
+            );
+        }
         $reporte['por_trabajador'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
 
         $stmt = $this->db->query(
@@ -500,6 +603,8 @@ class TareaOperativa extends Model
         );
         $reporte['por_habitacion'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
 
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
         $stmt = $this->db->query(
             "SELECT t.id,
                     t.categoria,
@@ -512,7 +617,8 @@ class TareaOperativa extends Model
                     t.fecha_limite,
                     t.updated_at,
                     h.numero AS habitacion_numero,
-                    tr.nombre_completo AS trabajador_nombre
+                    tr.nombre_completo AS trabajador_nombre,
+{$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
@@ -520,6 +626,7 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              WHERE t.hotel_id = ?
              ORDER BY t.updated_at DESC, t.id DESC
              LIMIT 15",
@@ -627,10 +734,12 @@ class TareaOperativa extends Model
         }
 
         if ($trabajadorId !== null) {
-            $where[] = 't.trabajador_id = ?';
+            $where[] = $this->trabajadorAsignadoFiltroSql();
             $params[] = $trabajadorId;
         }
 
+        $trabajadoresSelect = $this->trabajadoresAsignadosSelectSql();
+        $trabajadoresJoin = $this->trabajadoresAsignadosJoinSql();
         $stmt = $this->db->query(
             "SELECT t.id,
                     t.hotel_id,
@@ -652,6 +761,7 @@ class TareaOperativa extends Model
                     h.estado AS habitacion_estado,
                     tr.nombre_completo AS trabajador_nombre,
                     tr.rol_laboral AS trabajador_rol,
+{$trabajadoresSelect},
                     m.tipo_mantenimiento,
                     m.motivo AS mantenimiento_motivo
              FROM tareas_operativas t
@@ -661,6 +771,7 @@ class TareaOperativa extends Model
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
+{$trabajadoresJoin}
              LEFT JOIN mantenimientos_habitaciones m
                 ON m.id = t.mantenimiento_id
                AND m.hotel_id = t.hotel_id
@@ -682,21 +793,23 @@ class TareaOperativa extends Model
         foreach ($tareas as $tarea) {
             $estadoTarea = (string)($tarea['estado'] ?? 'pendiente');
             $categoriaTarea = (string)($tarea['categoria'] ?? 'general');
-            $trabajadorNombre = trim((string)($tarea['trabajador_nombre'] ?? ''));
-            if ($trabajadorNombre === '') {
-                $trabajadorNombre = 'Sin asignar';
-            }
+            $trabajadorNombres = $this->trabajadoresNombresDesdeFila($tarea);
 
             if (in_array($estadoTarea, ['pendiente', 'asignada', 'en_proceso'], true)) {
                 $agenda['resumen']['activas']++;
-                if (empty($tarea['trabajador_id'])) {
+                if (empty($trabajadorNombres)) {
                     $agenda['resumen']['sin_asignar']++;
                 }
             }
 
             $agenda['resumen']['por_estado'][$estadoTarea] = ($agenda['resumen']['por_estado'][$estadoTarea] ?? 0) + 1;
             $agenda['resumen']['por_categoria'][$categoriaTarea] = ($agenda['resumen']['por_categoria'][$categoriaTarea] ?? 0) + 1;
-            $agenda['resumen']['por_trabajador'][$trabajadorNombre] = ($agenda['resumen']['por_trabajador'][$trabajadorNombre] ?? 0) + 1;
+            if (empty($trabajadorNombres)) {
+                $trabajadorNombres = ['Sin asignar'];
+            }
+            foreach ($trabajadorNombres as $trabajadorNombre) {
+                $agenda['resumen']['por_trabajador'][$trabajadorNombre] = ($agenda['resumen']['por_trabajador'][$trabajadorNombre] ?? 0) + 1;
+            }
         }
 
         arsort($agenda['resumen']['por_trabajador']);
@@ -751,48 +864,221 @@ class TareaOperativa extends Model
         }
 
         $datos = $this->normalizarDatos($datos, $hotelId);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $tareaId = $this->insertarTareaNormalizadaParaHotel($hotelId, $datos, $usuarioId);
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function crearVariasParaHotel(int $hotelId, array $formularios, ?int $usuarioId = null): array
+    {
+        if ($hotelId <= 0) {
+            throw new InvalidArgumentException('Hotel no valido para crear tareas.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        if (empty($formularios)) {
+            throw new InvalidArgumentException('Agregue al menos una tarea.');
+        }
+
+        if (count($formularios) > 20) {
+            throw new InvalidArgumentException('No se pueden crear mas de 20 tareas a la vez.');
+        }
+
+        $normalizadas = [];
+        foreach ($formularios as $datos) {
+            if (!is_array($datos)) {
+                continue;
+            }
+            $normalizadas[] = $this->normalizarDatos($datos, $hotelId);
+        }
+
+        if (empty($normalizadas)) {
+            throw new InvalidArgumentException('Agregue al menos una tarea.');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $ids = [];
+            foreach ($normalizadas as $datos) {
+                $ids[] = $this->insertarTareaNormalizadaParaHotel($hotelId, $datos, $usuarioId);
+            }
+
+            $this->db->safeCommit();
+            return $ids;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    private function insertarTareaNormalizadaParaHotel(int $hotelId, array $datos, ?int $usuarioId): int
+    {
+        $trabajadores = $datos['trabajadores'];
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
+        $lider = !empty($trabajadores) ? (int)$trabajadores[0]['id'] : null;
+        $estadoInicial = $lider !== null ? 'asignada' : 'pendiente';
+        $asignadaPor = $lider !== null ? $usuarioId : null;
+
+        $stmt = $this->db->query(
+            "INSERT INTO tareas_operativas
+                (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                 habitacion_id, trabajador_id, fecha_programada, fecha_limite,
+                 creada_por_usuario_id, asignada_por_usuario_id,
+                 origen, created_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?,
+                 ?, ?, ?, ?,
+                 ?, ?,
+                 'manual', NOW())",
+            [
+                $hotelId,
+                $datos['categoria'],
+                $datos['titulo'],
+                $datos['descripcion'],
+                $datos['prioridad'],
+                $estadoInicial,
+                $datos['habitacion_id'],
+                $lider,
+                $datos['fecha_programada'],
+                $datos['fecha_limite'],
+                $usuarioId,
+                $asignadaPor,
+            ]
+        );
+
+        if (!$stmt) {
+            throw new RuntimeException('No se pudo insertar la tarea operativa.');
+        }
+
+        $tareaId = (int)$this->db->lastInsertId();
+
+        $comentarioCreacion = 'Tarea creada manualmente.';
+        if (!empty($trabajadores)) {
+            $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+            $comentarioCreacion .= ' Asignada a: ' . $this->nombresTrabajadores($trabajadores) . '.';
+        }
+
+        $this->registrarEvento(
+            $hotelId,
+            $tareaId,
+            'creada',
+            null,
+            $estadoInicial,
+            $comentarioCreacion,
+            $usuarioId
+        );
+
+        return $tareaId;
+    }
+
+    public function actualizarParaHotel(int $id, int $hotelId, array $datos, ?int $usuarioId = null): bool
+    {
+        if ($id <= 0 || $hotelId <= 0) {
+            throw new InvalidArgumentException('Tarea no valida para actualizar.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $tarea = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$tarea) {
+            throw new RuntimeException('Tarea no encontrada para el hotel actual.');
+        }
+
+        $datos = $this->normalizarDatos($datos, $hotelId);
+        $trabajadores = $datos['trabajadores'];
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
+        $lider = !empty($trabajadores) ? (int)$trabajadores[0]['id'] : null;
+        $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+        $estadoNuevo = $estadoAnterior;
+
+        if (in_array($estadoAnterior, ['pendiente', 'asignada'], true)) {
+            $estadoNuevo = $lider !== null ? 'asignada' : 'pendiente';
+        }
+
+        $trabajadoresAnteriores = $this->trabajadorIdsActuales($id, $hotelId, (int)($tarea['trabajador_id'] ?? 0));
+        $trabajadoresNuevos = array_map(static function (array $trabajador): int {
+            return (int)($trabajador['id'] ?? 0);
+        }, $trabajadores);
+        $cambioAsignacion = $trabajadoresAnteriores !== $trabajadoresNuevos;
+
+        $asignadaPor = null;
+        if ($lider !== null) {
+            $asignadaPor = $cambioAsignacion ? $usuarioId : ($tarea['asignada_por_usuario_id'] ?? $usuarioId);
+        }
+
         $this->db->safeBeginTransaction();
 
         try {
             $stmt = $this->db->query(
-                "INSERT INTO tareas_operativas
-                    (hotel_id, categoria, titulo, descripcion, prioridad, estado,
-                     habitacion_id, fecha_programada, fecha_limite, creada_por_usuario_id,
-                     origen, created_at)
-                 VALUES
-                    (?, ?, ?, ?, ?, 'pendiente',
-                     ?, ?, ?, ?,
-                     'manual', NOW())",
+                "UPDATE tareas_operativas
+                 SET categoria = ?,
+                     titulo = ?,
+                     descripcion = ?,
+                     prioridad = ?,
+                     habitacion_id = ?,
+                     trabajador_id = ?,
+                     fecha_programada = ?,
+                     fecha_limite = ?,
+                     asignada_por_usuario_id = ?,
+                     estado = ?,
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?",
                 [
-                    $hotelId,
                     $datos['categoria'],
                     $datos['titulo'],
                     $datos['descripcion'],
                     $datos['prioridad'],
                     $datos['habitacion_id'],
+                    $lider,
                     $datos['fecha_programada'],
                     $datos['fecha_limite'],
-                    $usuarioId,
+                    $asignadaPor,
+                    $estadoNuevo,
+                    $id,
+                    $hotelId,
                 ]
             );
 
             if (!$stmt) {
-                throw new RuntimeException('No se pudo insertar la tarea operativa.');
+                throw new RuntimeException('No se pudo actualizar la tarea.');
             }
 
-            $tareaId = (int)$this->db->lastInsertId();
+            $this->reemplazarTrabajadoresPivote($hotelId, $id, $trabajadores, $usuarioId);
+
+            $comentario = 'Tarea actualizada manualmente.';
+            if ($cambioAsignacion) {
+                $comentario .= $lider !== null
+                    ? ' Asignada a: ' . $this->nombresTrabajadores($trabajadores) . '.'
+                    : ' Se dejo sin trabajador asignado.';
+            }
+
             $this->registrarEvento(
                 $hotelId,
-                $tareaId,
-                'creada',
-                null,
-                'pendiente',
-                'Tarea creada manualmente.',
+                $id,
+                'actualizada',
+                $estadoAnterior,
+                $estadoNuevo,
+                $comentario,
                 $usuarioId
             );
 
             $this->db->safeCommit();
-            return $tareaId;
+            return true;
         } catch (Throwable $e) {
             $this->db->safeRollBack();
             throw $e;
@@ -1033,15 +1319,36 @@ class TareaOperativa extends Model
         }
     }
 
+    /**
+     * Asignacion de un solo trabajador. Se conserva por compatibilidad
+     * (ReservacionController y otros flujos) y delega en la version multiple.
+     */
     public function asignarTrabajadorParaHotel(int $id, int $hotelId, int $trabajadorId, ?int $usuarioId = null): bool
+    {
+        if ($trabajadorId <= 0) {
+            throw new InvalidArgumentException('Seleccione un trabajador activo.');
+        }
+
+        return $this->asignarTrabajadoresParaHotel($id, $hotelId, [$trabajadorId], $usuarioId);
+    }
+
+    /**
+     * Asignacion de uno o mas trabajadores a una tarea.
+     * Modelo hibrido: el primero queda como "trabajador lider" en
+     * tareas_operativas.trabajador_id y el conjunto completo se guarda en el
+     * pivote tarea_trabajadores. No genera pagos ni toca la habitacion.
+     */
+    public function asignarTrabajadoresParaHotel(int $id, int $hotelId, array $trabajadorIdsRaw, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0) {
             throw new InvalidArgumentException('Tarea no valida para asignacion.');
         }
 
-        if ($trabajadorId <= 0) {
-            throw new InvalidArgumentException('Seleccione un trabajador activo.');
+        $trabajadores = $this->validarTrabajadoresHotel($trabajadorIdsRaw, $hotelId);
+        if (empty($trabajadores)) {
+            throw new InvalidArgumentException('Seleccione al menos un trabajador activo.');
         }
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
 
         $tarea = $this->buscarPorIdHotel($id, $hotelId);
         if (!$tarea) {
@@ -1053,10 +1360,7 @@ class TareaOperativa extends Model
             throw new RuntimeException('Solo se pueden asignar tareas pendientes o ya asignadas.');
         }
 
-        $trabajador = $this->trabajadorActivoEnHotel($trabajadorId, $hotelId);
-        if (!$trabajador) {
-            throw new RuntimeException('El trabajador seleccionado no esta activo en el hotel actual.');
-        }
+        $lider = (int)$trabajadores[0]['id'];
 
         $this->db->safeBeginTransaction();
 
@@ -1070,12 +1374,14 @@ class TareaOperativa extends Model
                  WHERE id = ?
                    AND hotel_id = ?
                    AND estado IN ('pendiente', 'asignada')",
-                [$trabajadorId, $usuarioId, $id, $hotelId]
+                [$lider, $usuarioId, $id, $hotelId]
             );
 
-            if (!$stmt || $stmt->rowCount() !== 1) {
+            if (!$stmt) {
                 throw new RuntimeException('No se pudo asignar la tarea.');
             }
+
+            $this->reemplazarTrabajadoresPivote($hotelId, $id, $trabajadores, $usuarioId);
 
             $this->registrarEvento(
                 $hotelId,
@@ -1083,7 +1389,7 @@ class TareaOperativa extends Model
                 'asignada',
                 $estadoAnterior,
                 'asignada',
-                'Tarea asignada a ' . (string)($trabajador['nombre_completo'] ?? ('trabajador #' . $trabajadorId)) . '.',
+                'Tarea asignada a: ' . $this->nombresTrabajadores($trabajadores) . '.',
                 $usuarioId
             );
 
@@ -1093,6 +1399,204 @@ class TareaOperativa extends Model
             $this->db->safeRollBack();
             throw $e;
         }
+    }
+
+    public function trabajadoresTablaDisponible(): bool
+    {
+        return $this->tablaExiste('tarea_trabajadores');
+    }
+
+    /**
+     * Lista de trabajadores asignados a una tarea (conjunto completo del pivote).
+     */
+    public function trabajadoresAsignados(int $tareaId, int $hotelId): array
+    {
+        if ($tareaId <= 0 || $hotelId <= 0) {
+            return [];
+        }
+
+        if (!$this->trabajadoresTablaDisponible()) {
+            return $this->trabajadorLiderAsignado($tareaId, $hotelId);
+        }
+
+        $stmt = $this->db->query(
+            "SELECT tt.trabajador_id,
+                    tr.nombre_completo,
+                    tr.rol_laboral,
+                    tr.estado
+             FROM tarea_trabajadores tt
+             INNER JOIN tareas_operativas t
+                ON t.id = tt.tarea_id
+               AND t.hotel_id = tt.hotel_id
+             INNER JOIN trabajadores tr
+                ON tr.id = tt.trabajador_id
+               AND tr.hotel_id = tt.hotel_id
+             WHERE tt.hotel_id = ?
+               AND tt.tarea_id = ?
+             ORDER BY CASE WHEN tt.trabajador_id = t.trabajador_id THEN 0 ELSE 1 END,
+                      tt.id ASC,
+                      tr.nombre_completo ASC",
+            [$hotelId, $tareaId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    private function trabajadorLiderAsignado(int $tareaId, int $hotelId): array
+    {
+        $stmt = $this->db->query(
+            "SELECT t.trabajador_id,
+                    tr.nombre_completo,
+                    tr.rol_laboral,
+                    tr.estado
+             FROM tareas_operativas t
+             INNER JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.id = ?
+               AND t.hotel_id = ?
+               AND t.trabajador_id IS NOT NULL
+             LIMIT 1",
+            [$tareaId, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ? [$row] : [];
+    }
+
+    private function trabajadorIdsActuales(int $tareaId, int $hotelId, int $liderActual): array
+    {
+        $ids = [];
+        foreach ($this->trabajadoresAsignados($tareaId, $hotelId) as $trabajador) {
+            $trabajadorId = (int)($trabajador['trabajador_id'] ?? 0);
+            if ($trabajadorId > 0) {
+                $ids[] = $trabajadorId;
+            }
+        }
+
+        if (empty($ids) && $liderActual > 0) {
+            $ids[] = $liderActual;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Valida y ordena una lista de IDs de trabajadores contra el hotel actual.
+     * Devuelve [['id' => int, 'nombre_completo' => string], ...] preservando el
+     * orden de seleccion (el primero sera el "lider"). Lanza excepcion si algun
+     * trabajador no esta activo en el hotel.
+     */
+    private function validarTrabajadoresHotel(array $rawIds, int $hotelId): array
+    {
+        $ids = [];
+        foreach ($rawIds as $raw) {
+            $tid = (int)$raw;
+            if ($tid > 0) {
+                $ids[$tid] = $tid; // dedupe preservando el primer orden visto
+            }
+        }
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        if (count($ids) > 20) {
+            throw new InvalidArgumentException('No se pueden asignar mas de 20 trabajadores a una tarea.');
+        }
+
+        if (!$this->tablaExiste('trabajadores')) {
+            throw new RuntimeException('El modulo de trabajadores no esta disponible.');
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_merge([$hotelId], array_values($ids));
+        $stmt = $this->db->query(
+            "SELECT id, nombre_completo
+             FROM trabajadores
+             WHERE hotel_id = ?
+               AND id IN ({$placeholders})
+               AND estado = 'activo'",
+            $params
+        );
+        $rows = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $encontrados = [];
+        foreach ($rows as $row) {
+            $encontrados[(int)$row['id']] = $row;
+        }
+
+        $ordenados = [];
+        foreach ($ids as $tid) {
+            if (!isset($encontrados[$tid])) {
+                throw new InvalidArgumentException('Uno de los trabajadores seleccionados no esta activo en el hotel actual.');
+            }
+            $ordenados[] = [
+                'id' => $tid,
+                'nombre_completo' => (string)($encontrados[$tid]['nombre_completo'] ?? ('Trabajador #' . $tid)),
+            ];
+        }
+
+        return $ordenados;
+    }
+
+    private function asegurarSoporteTrabajadoresMultiples(array $trabajadores): void
+    {
+        if (count($trabajadores) <= 1 || $this->trabajadoresTablaDisponible()) {
+            return;
+        }
+
+        throw new RuntimeException(
+            'Para asignar varios trabajadores falta habilitar la tabla de asignaciones multiples de tareas.'
+        );
+    }
+
+    /**
+     * Reemplaza el conjunto de trabajadores de una tarea en el pivote.
+     * Debe ejecutarse dentro de una transaccion abierta por el llamador.
+     * Si el pivote aun no existe, queda solo el "lider" en trabajador_id.
+     */
+    private function reemplazarTrabajadoresPivote(int $hotelId, int $tareaId, array $trabajadores, ?int $usuarioId): void
+    {
+        if (!$this->trabajadoresTablaDisponible()) {
+            return;
+        }
+
+        $this->db->query(
+            "DELETE FROM tarea_trabajadores WHERE hotel_id = ? AND tarea_id = ?",
+            [$hotelId, $tareaId]
+        );
+
+        foreach ($trabajadores as $trabajador) {
+            $trabajadorId = (int)($trabajador['id'] ?? 0);
+            if ($trabajadorId <= 0) {
+                continue;
+            }
+
+            $stmt = $this->db->query(
+                "INSERT INTO tarea_trabajadores
+                    (hotel_id, tarea_id, trabajador_id, asignado_por_usuario_id, created_at)
+                 VALUES (?, ?, ?, ?, NOW())",
+                [$hotelId, $tareaId, $trabajadorId, $usuarioId]
+            );
+
+            if (!$stmt) {
+                throw new RuntimeException('No se pudo registrar la asignacion de trabajadores.');
+            }
+        }
+    }
+
+    private function nombresTrabajadores(array $trabajadores): string
+    {
+        $nombres = [];
+        foreach ($trabajadores as $trabajador) {
+            $nombre = trim((string)($trabajador['nombre_completo'] ?? ''));
+            if ($nombre !== '') {
+                $nombres[] = $nombre;
+            }
+        }
+
+        return $nombres !== [] ? implode(', ', $nombres) : 'sin nombre';
     }
 
     public function cambiarEstadoManualParaHotel(
@@ -1206,6 +1710,11 @@ class TareaOperativa extends Model
 
         $descripcion = trim((string)($datos['descripcion'] ?? ''));
 
+        $trabajadores = $this->validarTrabajadoresHotel(
+            is_array($datos['trabajador_ids'] ?? null) ? $datos['trabajador_ids'] : [],
+            $hotelId
+        );
+
         return [
             'titulo' => $titulo,
             'descripcion' => $descripcion !== '' ? $descripcion : null,
@@ -1214,6 +1723,7 @@ class TareaOperativa extends Model
             'habitacion_id' => $habitacionId,
             'fecha_programada' => $fechaProgramada,
             'fecha_limite' => $fechaLimite,
+            'trabajadores' => $trabajadores,
         ];
     }
 
@@ -1402,6 +1912,81 @@ class TareaOperativa extends Model
         }
 
         return date('Y-m-d', $timestamp ?: time());
+    }
+
+    private function trabajadoresAsignadosSelectSql(string $liderAlias = 'tr'): string
+    {
+        $liderNombre = $liderAlias . '.nombre_completo';
+        $liderRol = $liderAlias . '.rol_laboral';
+
+        if (!$this->trabajadoresTablaDisponible()) {
+            return "                    {$liderNombre} AS trabajadores_nombres,
+                    {$liderNombre} AS trabajadores_nombres_raw,
+                    CAST(t.trabajador_id AS CHAR) AS trabajadores_ids,
+                    {$liderRol} AS trabajadores_roles,
+                    CASE WHEN t.trabajador_id IS NULL THEN 0 ELSE 1 END AS trabajadores_total";
+        }
+
+        return "                    COALESCE(tt_agg.trabajadores_nombres, {$liderNombre}) AS trabajadores_nombres,
+                    COALESCE(tt_agg.trabajadores_nombres_raw, {$liderNombre}) AS trabajadores_nombres_raw,
+                    COALESCE(tt_agg.trabajadores_ids, CAST(t.trabajador_id AS CHAR)) AS trabajadores_ids,
+                    COALESCE(tt_agg.trabajadores_roles, {$liderRol}) AS trabajadores_roles,
+                    COALESCE(tt_agg.trabajadores_total, CASE WHEN t.trabajador_id IS NULL THEN 0 ELSE 1 END) AS trabajadores_total";
+    }
+
+    private function trabajadoresAsignadosJoinSql(): string
+    {
+        if (!$this->trabajadoresTablaDisponible()) {
+            return '';
+        }
+
+        return "              LEFT JOIN (
+                    SELECT tt.hotel_id,
+                           tt.tarea_id,
+                           GROUP_CONCAT(tt.trabajador_id ORDER BY CASE WHEN tt.trabajador_id = t2.trabajador_id THEN 0 ELSE 1 END, tt.id ASC SEPARATOR ',') AS trabajadores_ids,
+                           GROUP_CONCAT(trt.nombre_completo ORDER BY CASE WHEN tt.trabajador_id = t2.trabajador_id THEN 0 ELSE 1 END, tt.id ASC SEPARATOR ', ') AS trabajadores_nombres,
+                           GROUP_CONCAT(trt.nombre_completo ORDER BY CASE WHEN tt.trabajador_id = t2.trabajador_id THEN 0 ELSE 1 END, tt.id ASC SEPARATOR '|||') AS trabajadores_nombres_raw,
+                           GROUP_CONCAT(COALESCE(trt.rol_laboral, '') ORDER BY CASE WHEN tt.trabajador_id = t2.trabajador_id THEN 0 ELSE 1 END, tt.id ASC SEPARATOR '|||') AS trabajadores_roles,
+                           COUNT(*) AS trabajadores_total
+                    FROM tarea_trabajadores tt
+                    INNER JOIN tareas_operativas t2
+                       ON t2.id = tt.tarea_id
+                      AND t2.hotel_id = tt.hotel_id
+                    INNER JOIN trabajadores trt
+                       ON trt.id = tt.trabajador_id
+                      AND trt.hotel_id = tt.hotel_id
+                    GROUP BY tt.hotel_id, tt.tarea_id
+                 ) tt_agg
+                ON tt_agg.tarea_id = t.id
+               AND tt_agg.hotel_id = t.hotel_id";
+    }
+
+    private function trabajadorAsignadoFiltroSql(): string
+    {
+        if (!$this->trabajadoresTablaDisponible()) {
+            return 't.trabajador_id = ?';
+        }
+
+        return "EXISTS (
+                    SELECT 1
+                    FROM tarea_trabajadores tt_filter
+                    WHERE tt_filter.hotel_id = t.hotel_id
+                      AND tt_filter.tarea_id = t.id
+                      AND tt_filter.trabajador_id = ?
+                )";
+    }
+
+    private function trabajadoresNombresDesdeFila(array $tarea): array
+    {
+        $raw = trim((string)($tarea['trabajadores_nombres_raw'] ?? ''));
+        if ($raw !== '') {
+            return array_values(array_filter(array_map('trim', explode('|||', $raw)), static function (string $nombre): bool {
+                return $nombre !== '';
+            }));
+        }
+
+        $nombre = trim((string)($tarea['trabajador_nombre'] ?? ''));
+        return $nombre !== '' ? [$nombre] : [];
     }
 
     private function nullableTexto($value, int $limite): ?string

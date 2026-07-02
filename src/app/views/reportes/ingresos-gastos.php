@@ -6,8 +6,9 @@ $metodosPago = $metodosPago ?? [
     'transferencia' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0]
 ];
 
-$datos = $datos ?? ['ingresos' => [], 'gastos' => []];
-$totales = $totales ?? ['ingresos' => 0, 'gastos' => 0, 'utilidad' => 0];
+$datos = $datos ?? ['ingresos' => [], 'reversos' => [], 'gastos' => []];
+$datos['reversos'] = $datos['reversos'] ?? [];
+$totales = $totales ?? ['ingresos' => 0, 'ingresos_brutos' => 0, 'reversos' => 0, 'gastos' => 0, 'gastos_reales' => 0, 'utilidad' => 0];
 $resumenDiario = $resumenDiario ?? [];
 $usuarios = $usuarios ?? [];
 $fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-01');
@@ -46,6 +47,33 @@ if (!function_exists('rep_ig_safe')) {
     }
 }
 
+if (!function_exists('rep_ig_concept_label')) {
+    function rep_ig_concept_label($value) {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return 'Sin concepto';
+        }
+
+        $key = strtolower($text);
+        $labels = [
+            'cobro cxc' => 'Cobro de cuenta pendiente',
+            'reversion cobro cxc' => 'Cancelacion de cobro pendiente',
+            'anticipo reservacion' => 'Anticipo de reservacion',
+            'reverso anticipo' => 'Cancelacion de anticipo',
+            'reverso de anticipo' => 'Cancelacion de anticipo',
+            'devolucion' => 'Dinero devuelto',
+            'devoluciones' => 'Dinero devuelto',
+            'hospedaje' => 'Pago de hospedaje',
+            'pago proveedor' => 'Pago a proveedor',
+            'reversion pago proveedor' => 'Cancelacion de pago a proveedor',
+            'pago laboral' => 'Pago al personal',
+            'reversion pago laboral' => 'Cancelacion de pago al personal',
+        ];
+
+        return htmlspecialchars($labels[$key] ?? str_replace(['CxC', 'CXC', 'CxP', 'CXP'], ['cuenta pendiente', 'cuenta pendiente', 'cuenta por pagar', 'cuenta por pagar'], $text), ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!function_exists('rep_ig_percent')) {
     function rep_ig_percent($value, $total) {
         $total = (float)($total ?? 0);
@@ -57,15 +85,17 @@ if (!function_exists('rep_ig_percent')) {
     }
 }
 
-$total_ingresos = (float)($totales['ingresos'] ?? 0);
-$total_gastos = (float)($totales['gastos'] ?? 0);
+$total_ingresos_brutos = (float)($totales['ingresos_brutos'] ?? array_sum(array_column($datos['ingresos'] ?? [], 'total')));
+$total_reversos = (float)($totales['reversos'] ?? array_sum(array_column($datos['reversos'] ?? [], 'total')));
+$total_ingresos = (float)($totales['ingresos'] ?? ($total_ingresos_brutos - $total_reversos));
+$total_gastos = (float)($totales['gastos_reales'] ?? ($totales['gastos'] ?? 0));
 $utilidad_neta = (float)($totales['utilidad'] ?? ($total_ingresos - $total_gastos));
 $dias_periodo = max(count($resumenDiario), 1);
 $promedio_ingresos = $total_ingresos / $dias_periodo;
 $promedio_gastos = $total_gastos / $dias_periodo;
 $promedio_utilidad = $utilidad_neta / $dias_periodo;
 $margen_utilidad = $total_ingresos > 0 ? round(($utilidad_neta / $total_ingresos) * 100, 2) : 0;
-$flujo_total = max(1, $total_ingresos + $total_gastos);
+$flujo_total = max(1, $total_ingresos_brutos + $total_reversos + $total_gastos);
 $ingresos_ratio = min(100, max(0, round(($total_ingresos / $flujo_total) * 100)));
 $gastos_ratio = min(100, max(0, 100 - $ingresos_ratio));
 
@@ -678,7 +708,7 @@ $metodoMeta = [
 
 .profit-day-row {
     display: grid;
-    grid-template-columns: minmax(120px, .9fr) repeat(3, minmax(110px, 1fr));
+    grid-template-columns: minmax(120px, .9fr) repeat(4, minmax(100px, 1fr));
     gap: 12px;
     align-items: center;
     padding: 13px;
@@ -889,9 +919,9 @@ $metodoMeta = [
                         <i class="fas fa-balance-scale"></i>
                         Laboratorio de rentabilidad
                     </span>
-                    <h1>Ingresos vs gastos</h1>
+                    <h1>Dinero y gastos</h1>
                     <p>
-                        Lee el periodo como una fotografía financiera: flujo, margen, categorías, métodos de pago y utilidad diaria en una sola vista operativa.
+                        Revisa cuanto dinero entro, cuanto se devolvio, cuanto se gasto y que resultado dejo el periodo.
                     </p>
                     <div class="profit-hero-actions">
                         <button type="button" onclick="exportarPDF()" class="profit-btn is-accent">
@@ -904,7 +934,7 @@ $metodoMeta = [
                         </button>
                         <button type="button" onclick="abrirModalReporteIngresos()" class="profit-btn is-soft">
                             <i class="fas fa-chart-bar"></i>
-                            Ingresos totales
+                            Detalle de ingresos
                         </button>
                     </div>
                 </div>
@@ -916,7 +946,7 @@ $metodoMeta = [
                     <div class="profit-period-value">
                         <?= rep_ig_date($fecha_inicio, 'd/m') ?> - <?= rep_ig_date($fecha_fin) ?>
                     </div>
-                    <p class="profit-note"><?= number_format($dias_periodo) ?> día<?= $dias_periodo === 1 ? '' : 's' ?> con lectura financiera.</p>
+                    <p class="profit-note"><?= number_format($dias_periodo) ?> día<?= $dias_periodo === 1 ? '' : 's' ?> con resumen de dinero.</p>
                 </div>
 
                 <form method="get" action="<?= url('reportes/ingresos-gastos') ?>" class="profit-filter-form" id="reporteFiltrosForm" data-auto-filter-form>
@@ -958,7 +988,7 @@ $metodoMeta = [
         <section class="profit-metric-grid">
             <article class="profit-card is-main">
                 <div class="profit-card-head">
-                    <span class="profit-label">Utilidad neta</span>
+                    <span class="profit-label">Resultado del periodo</span>
                     <span class="profit-card-icon">
                         <i class="fas <?= $utilidad_neta >= 0 ? 'fa-check-circle' : 'fa-exclamation-triangle' ?>"></i>
                     </span>
@@ -971,35 +1001,35 @@ $metodoMeta = [
                     <span></span>
                 </div>
                 <p class="profit-note">
-                    Margen <?= $margen_utilidad ?>%, <?= $ingresos_ratio ?>% ingresos y <?= $gastos_ratio ?>% gastos del flujo.
+                    Calculado con el dinero que quedo despues de devoluciones o cancelaciones.
                 </p>
             </article>
 
             <article class="profit-card">
                 <div class="profit-card-head">
-                    <span class="profit-label">Total ingresos</span>
+                    <span class="profit-label">Dinero que quedo</span>
                     <span class="profit-card-icon"><i class="fas fa-arrow-up"></i></span>
                 </div>
-                <div class="profit-value is-income count-up"><?= format_currency($total_ingresos) ?></div>
-                <p class="profit-note"><?= count($datos['ingresos'] ?? []) ?> categorías, promedio <?= format_currency($promedio_ingresos) ?>/día.</p>
+                <div class="profit-value <?= $total_ingresos >= 0 ? 'is-income' : 'is-expense' ?> count-up"><?= rep_ig_money($total_ingresos, true) ?></div>
+                <p class="profit-note">Entro <?= format_currency($total_ingresos_brutos) ?> y se devolvio/cancelo <?= format_currency($total_reversos) ?>.</p>
             </article>
 
             <article class="profit-card">
                 <div class="profit-card-head">
-                    <span class="profit-label">Total gastos</span>
+                    <span class="profit-label">Devuelto/cancelado</span>
+                    <span class="profit-card-icon"><i class="fas fa-arrow-down"></i></span>
+                </div>
+                <div class="profit-value is-expense count-up"><?= format_currency($total_reversos) ?></div>
+                <p class="profit-note"><?= count($datos['reversos'] ?? []) ?> conceptos con dinero devuelto o cancelado.</p>
+            </article>
+
+            <article class="profit-card">
+                <div class="profit-card-head">
+                    <span class="profit-label">Gastos del hotel</span>
                     <span class="profit-card-icon"><i class="fas fa-arrow-down"></i></span>
                 </div>
                 <div class="profit-value is-expense count-up"><?= format_currency($total_gastos) ?></div>
-                <p class="profit-note"><?= count($datos['gastos'] ?? []) ?> categorías, promedio <?= format_currency($promedio_gastos) ?>/día.</p>
-            </article>
-
-            <article class="profit-card">
-                <div class="profit-card-head">
-                    <span class="profit-label">Promedio utilidad</span>
-                    <span class="profit-card-icon"><i class="fas fa-calendar-day"></i></span>
-                </div>
-                <div class="profit-value <?= $promedio_utilidad >= 0 ? 'is-income' : 'is-expense' ?>"><?= rep_ig_money($promedio_utilidad, true) ?></div>
-                <p class="profit-note">Resultado diario promedio del rango.</p>
+                <p class="profit-note"><?= count($datos['gastos'] ?? []) ?> conceptos, promedio <?= format_currency($promedio_gastos) ?>/dia.</p>
             </article>
         </section>
 
@@ -1009,7 +1039,7 @@ $metodoMeta = [
                 <article class="profit-method">
                     <div class="profit-method-top">
                         <div>
-                            <span class="profit-label">Método de pago</span>
+                            <span class="profit-label">Forma de pago</span>
                             <h3><i class="fas <?= $meta['icon'] ?> mr-2"></i><?= $meta['label'] ?></h3>
                         </div>
                         <div class="profit-method-balance <?= ((float)($metodo['balance'] ?? 0)) >= 0 ? 'is-income' : 'is-expense' ?>">
@@ -1017,11 +1047,15 @@ $metodoMeta = [
                         </div>
                     </div>
                     <div class="profit-method-line">
-                        <span>Ingresos</span>
+                        <span>Dinero que quedo</span>
                         <strong class="profit-money is-income"><?= rep_ig_money($metodo['ingresos'] ?? 0, true) ?></strong>
                     </div>
                     <div class="profit-method-line">
-                        <span>Gastos</span>
+                        <span>Devuelto/cancelado</span>
+                        <strong class="profit-money is-expense">-<?= format_currency(abs((float)($metodo['reversos'] ?? 0))) ?></strong>
+                    </div>
+                    <div class="profit-method-line">
+                        <span>Gastos del hotel</span>
                         <strong class="profit-money is-expense">-<?= format_currency(abs((float)($metodo['gastos'] ?? 0))) ?></strong>
                     </div>
                 </article>
@@ -1031,22 +1065,26 @@ $metodoMeta = [
         <section class="profit-section">
             <div class="profit-section-head">
                 <div>
-                    <span class="profit-section-kicker">Evolución diaria</span>
-                    <h2>Flujo del periodo</h2>
+                        <span class="profit-section-kicker">Movimiento diario</span>
+                        <h2>Dinero por dia</h2>
                 </div>
                 <?php if (!empty($resumenDiario)): ?>
                     <div class="profit-toggle-group">
                         <button id="toggleIngresos" type="button" onclick="toggleDataset(0)" class="dataset-toggle-btn">
                             <i class="fas fa-eye toggle-icon"></i>
-                            Ingresos
+                            Dinero que quedo
                         </button>
                         <button id="toggleGastos" type="button" onclick="toggleDataset(1)" class="dataset-toggle-btn">
                             <i class="fas fa-eye toggle-icon"></i>
-                            Gastos
+                            Gastos del hotel
                         </button>
-                        <button id="toggleUtilidad" type="button" onclick="toggleDataset(2)" class="dataset-toggle-btn">
+                        <button id="toggleReversos" type="button" onclick="toggleDataset(2)" class="dataset-toggle-btn">
                             <i class="fas fa-eye toggle-icon"></i>
-                            Utilidad
+                            Devuelto/cancelado
+                        </button>
+                        <button id="toggleUtilidad" type="button" onclick="toggleDataset(3)" class="dataset-toggle-btn">
+                            <i class="fas fa-eye toggle-icon"></i>
+                            Resultado
                         </button>
                     </div>
                 <?php endif; ?>
@@ -1071,10 +1109,10 @@ $metodoMeta = [
             <article class="profit-section">
                 <div class="profit-section-head">
                     <div>
-                        <span class="profit-section-kicker">Entrada de dinero</span>
-                        <h3>Ingresos por categoría</h3>
+                        <span class="profit-section-kicker">Dinero recibido</span>
+                        <h3>Dinero que entro</h3>
                     </div>
-                    <span class="profit-money is-income"><?= format_currency($total_ingresos) ?></span>
+                    <span class="profit-money is-income"><?= format_currency($total_ingresos_brutos) ?></span>
                 </div>
                 <div class="profit-section-body">
                     <?php if (!empty($datos['ingresos'])): ?>
@@ -1082,7 +1120,7 @@ $metodoMeta = [
                             <table class="profit-table">
                                 <thead>
                                     <tr>
-                                        <th>Categoría</th>
+                                        <th>Concepto</th>
                                         <th class="text-center">Cantidad</th>
                                         <th class="text-right">Total</th>
                                         <th class="text-center">%</th>
@@ -1090,10 +1128,10 @@ $metodoMeta = [
                                 </thead>
                                 <tbody>
                                     <?php foreach ($datos['ingresos'] as $ingreso): ?>
-                                        <?php $porcentaje = rep_ig_percent($ingreso['total'] ?? 0, $total_ingresos); ?>
+                                        <?php $porcentaje = rep_ig_percent($ingreso['total'] ?? 0, $total_ingresos_brutos); ?>
                                         <tr>
                                             <td>
-                                                <strong><?= rep_ig_safe($ingreso['categoria'] ?? '') ?></strong>
+                                                <strong><?= rep_ig_concept_label($ingreso['categoria'] ?? '') ?></strong>
                                                 <div class="profit-bar is-income">
                                                     <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
                                                 </div>
@@ -1108,7 +1146,7 @@ $metodoMeta = [
                                     <tr>
                                         <td>Total</td>
                                         <td class="text-center"><?= number_format(array_sum(array_column($datos['ingresos'], 'cantidad'))) ?></td>
-                                        <td class="text-right"><?= format_currency($total_ingresos) ?></td>
+                                        <td class="text-right"><?= format_currency($total_ingresos_brutos) ?></td>
                                         <td class="text-center">100%</td>
                                     </tr>
                                 </tfoot>
@@ -1128,8 +1166,65 @@ $metodoMeta = [
             <article class="profit-section">
                 <div class="profit-section-head">
                     <div>
-                        <span class="profit-section-kicker">Salida de dinero</span>
-                        <h3>Gastos por categoría</h3>
+                        <span class="profit-section-kicker">Dinero que salio por ajuste</span>
+                        <h3>Devoluciones y cancelaciones</h3>
+                    </div>
+                    <span class="profit-money is-expense"><?= format_currency($total_reversos) ?></span>
+                </div>
+                <div class="profit-section-body">
+                    <?php if (!empty($datos['reversos'])): ?>
+                        <div class="profit-table-wrap">
+                            <table class="profit-table">
+                                <thead>
+                                    <tr>
+                                        <th>Motivo</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-right">Total</th>
+                                        <th class="text-center">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($datos['reversos'] as $reverso): ?>
+                                        <?php $porcentaje = rep_ig_percent($reverso['total'] ?? 0, $total_reversos); ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= rep_ig_concept_label($reverso['categoria'] ?? '') ?></strong>
+                                                <div class="profit-bar is-expense">
+                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center"><?= number_format($reverso['cantidad'] ?? 0) ?></td>
+                                            <td class="text-right profit-money is-expense"><?= format_currency($reverso['total'] ?? 0) ?></td>
+                                            <td class="text-center"><?= $porcentaje ?>%</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['reversos'], 'cantidad'))) ?></td>
+                                        <td class="text-right"><?= format_currency($total_reversos) ?></td>
+                                        <td class="text-center">100%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="profit-empty">
+                            <div>
+                                <i class="fas fa-info-circle"></i>
+                                <p>No hay devoluciones o cancelaciones en este periodo.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="profit-section">
+                <div class="profit-section-head">
+                    <div>
+                        <span class="profit-section-kicker">Gastos del negocio</span>
+                        <h3>Gastos del hotel por concepto</h3>
                     </div>
                     <span class="profit-money is-expense"><?= format_currency($total_gastos) ?></span>
                 </div>
@@ -1139,7 +1234,7 @@ $metodoMeta = [
                             <table class="profit-table">
                                 <thead>
                                     <tr>
-                                        <th>Categoría</th>
+                                        <th>Concepto</th>
                                         <th class="text-center">Cantidad</th>
                                         <th class="text-right">Total</th>
                                         <th class="text-center">%</th>
@@ -1150,7 +1245,7 @@ $metodoMeta = [
                                         <?php $porcentaje = rep_ig_percent($gasto['total'] ?? 0, $total_gastos); ?>
                                         <tr>
                                             <td>
-                                                <strong><?= rep_ig_safe($gasto['categoria'] ?? '') ?></strong>
+                                                <strong><?= rep_ig_concept_label($gasto['categoria'] ?? '') ?></strong>
                                                 <div class="profit-bar is-expense">
                                                     <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
                                                 </div>
@@ -1206,15 +1301,19 @@ $metodoMeta = [
                                     <div class="profit-day-week"><?= $diaSemana ?><?= $esFinSemana ? ' · fin de semana' : '' ?></div>
                                 </div>
                                 <div>
-                                    <span class="profit-mini-label">Ingresos</span>
-                                    <strong class="profit-money is-income"><?= format_currency($dia['ingresos'] ?? 0) ?></strong>
+                                    <span class="profit-mini-label">Dinero que quedo</span>
+                                    <strong class="profit-money <?= ($dia['ingresos'] ?? 0) >= 0 ? 'is-income' : 'is-expense' ?>"><?= rep_ig_money($dia['ingresos'] ?? 0, true) ?></strong>
                                 </div>
                                 <div>
-                                    <span class="profit-mini-label">Gastos</span>
+                                    <span class="profit-mini-label">Devuelto/cancelado</span>
+                                    <strong class="profit-money is-expense"><?= format_currency($dia['reversos'] ?? 0) ?></strong>
+                                </div>
+                                <div>
+                                    <span class="profit-mini-label">Gastos del hotel</span>
                                     <strong class="profit-money is-expense"><?= format_currency($dia['gastos'] ?? 0) ?></strong>
                                 </div>
                                 <div>
-                                    <span class="profit-mini-label">Utilidad</span>
+                                    <span class="profit-mini-label">Resultado</span>
                                     <strong class="profit-money <?= ($dia['utilidad'] ?? 0) >= 0 ? 'is-income' : 'is-expense' ?>">
                                         <?= rep_ig_money($dia['utilidad'] ?? 0, true) ?>
                                     </strong>
@@ -1226,7 +1325,7 @@ $metodoMeta = [
             </section>
         <?php endif; ?>
 
-        <?php if (!empty($datos['ingresos']) || !empty($datos['gastos'])): ?>
+        <?php if (!empty($datos['ingresos']) || !empty($datos['reversos']) || !empty($datos['gastos'])): ?>
             <section class="profit-section">
                 <div class="profit-section-head">
                     <div>
@@ -1238,28 +1337,28 @@ $metodoMeta = [
                     <div class="profit-insights">
                         <?php if ($maxIngreso): ?>
                             <article class="profit-insight">
-                                <span class="profit-label">Mayor ingreso</span>
-                                <p><strong><?= rep_ig_safe($maxIngreso['categoria'] ?? '') ?></strong> representa <strong><?= rep_ig_percent($maxIngreso['total'] ?? 0, $total_ingresos) ?>%</strong> de los ingresos.</p>
+                                <span class="profit-label">Mayor entrada de dinero</span>
+                                <p><strong><?= rep_ig_concept_label($maxIngreso['categoria'] ?? '') ?></strong> representa <strong><?= rep_ig_percent($maxIngreso['total'] ?? 0, $total_ingresos_brutos) ?>%</strong> del dinero que entro.</p>
                             </article>
                         <?php endif; ?>
 
                         <?php if ($maxGasto): ?>
                             <article class="profit-insight">
                                 <span class="profit-label">Mayor gasto</span>
-                                <p><strong><?= rep_ig_safe($maxGasto['categoria'] ?? '') ?></strong> concentra <strong><?= rep_ig_percent($maxGasto['total'] ?? 0, $total_gastos) ?>%</strong> de los gastos.</p>
+                                <p><strong><?= rep_ig_concept_label($maxGasto['categoria'] ?? '') ?></strong> concentra <strong><?= rep_ig_percent($maxGasto['total'] ?? 0, $total_gastos) ?>%</strong> de los gastos.</p>
                             </article>
                         <?php endif; ?>
 
                         <?php if ($mejorDia): ?>
                             <article class="profit-insight">
-                                <span class="profit-label">Mejor día</span>
-                                <p><strong><?= rep_ig_date($mejorDia['fecha'] ?? null) ?></strong> cerró con utilidad de <strong><?= rep_ig_money($mejorDia['utilidad'] ?? 0, true) ?></strong>.</p>
+                                <span class="profit-label">Mejor dia</span>
+                                <p><strong><?= rep_ig_date($mejorDia['fecha'] ?? null) ?></strong> dejo un resultado de <strong><?= rep_ig_money($mejorDia['utilidad'] ?? 0, true) ?></strong>.</p>
                             </article>
                         <?php endif; ?>
 
                         <article class="profit-insight">
-                            <span class="profit-label">Promedio diario</span>
-                            <p>La utilidad promedio del rango fue <strong><?= rep_ig_money($promedio_utilidad, true) ?></strong> por día.</p>
+                            <span class="profit-label">Resultado promedio</span>
+                            <p>El resultado promedio del rango fue <strong><?= rep_ig_money($promedio_utilidad, true) ?></strong> por dia.</p>
                         </article>
                     </div>
                 </div>
@@ -1272,7 +1371,7 @@ $metodoMeta = [
     <div class="profit-modal">
         <div class="profit-modal-head">
             <span class="profit-section-kicker">Exportación por usuario</span>
-            <h3>Reporte de ingresos y gastos por usuario</h3>
+            <h3>Reporte de dinero y gastos por usuario</h3>
         </div>
         <form id="formReporteUsuario">
             <div class="profit-modal-body">
@@ -1323,11 +1422,11 @@ $metodoMeta = [
                     <div class="profit-check-list">
                         <label>
                             <input type="checkbox" name="desglose[]" value="categoria" checked>
-                            <span>Categoría</span>
+                            <span>Concepto</span>
                         </label>
                         <label>
                             <input type="checkbox" name="desglose[]" value="metodo_pago" checked>
-                            <span>Método de pago</span>
+                            <span>Forma de pago</span>
                         </label>
                         <label>
                             <input type="checkbox" name="desglose[]" value="diario">
@@ -1356,6 +1455,7 @@ if (datosGrafica && datosGrafica.length > 0) {
         const incomeColor = styles.getPropertyValue('--pr-income').trim() || '#16824E';
         const expenseColor = styles.getPropertyValue('--pr-expense').trim() || '#B93A32';
         const infoColor = styles.getPropertyValue('--pr-info').trim() || '#2563A7';
+        const reverseColor = styles.getPropertyValue('--pr-accent').trim() || '#9A6A2F';
         const textColor = styles.getPropertyValue('--pr-text').trim() || '#17233E';
         const gridColor = styles.getPropertyValue('--pr-line-soft').trim() || '#F0E7DB';
 
@@ -1367,8 +1467,8 @@ if (datosGrafica && datosGrafica.length > 0) {
                     return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
                 }),
                 datasets: [{
-                    label: 'Ingresos',
-                    data: datosGrafica.map(d => d.ingresos),
+                    label: 'Dinero que quedo',
+                    data: datosGrafica.map(d => Number(d.ingresos || 0)),
                     borderColor: incomeColor,
                     backgroundColor: 'rgba(22, 130, 78, 0.10)',
                     tension: 0.36,
@@ -1377,8 +1477,8 @@ if (datosGrafica && datosGrafica.length > 0) {
                     pointHoverRadius: 5,
                     fill: true
                 }, {
-                    label: 'Gastos',
-                    data: datosGrafica.map(d => d.gastos),
+                    label: 'Gastos del hotel',
+                    data: datosGrafica.map(d => Number(d.gastos || 0)),
                     borderColor: expenseColor,
                     backgroundColor: 'rgba(185, 58, 50, 0.08)',
                     tension: 0.36,
@@ -1387,8 +1487,19 @@ if (datosGrafica && datosGrafica.length > 0) {
                     pointHoverRadius: 5,
                     fill: true
                 }, {
-                    label: 'Utilidad',
-                    data: datosGrafica.map(d => d.utilidad),
+                    label: 'Devuelto/cancelado',
+                    data: datosGrafica.map(d => Number(d.reversos || 0)),
+                    borderColor: reverseColor,
+                    backgroundColor: 'rgba(154, 106, 47, 0.08)',
+                    borderDash: [5, 5],
+                    tension: 0.36,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: false
+                }, {
+                    label: 'Resultado',
+                    data: datosGrafica.map(d => Number(d.utilidad || 0)),
                     borderColor: infoColor,
                     backgroundColor: 'rgba(37, 99, 167, 0.08)',
                     tension: 0.36,
@@ -1450,7 +1561,7 @@ if (datosGrafica && datosGrafica.length > 0) {
             dataset.hidden = !dataset.hidden;
             myChart.update();
 
-            const buttons = ['toggleIngresos', 'toggleGastos', 'toggleUtilidad'];
+            const buttons = ['toggleIngresos', 'toggleGastos', 'toggleReversos', 'toggleUtilidad'];
             const button = document.getElementById(buttons[index]);
             if (!button) return;
 

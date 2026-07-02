@@ -32,6 +32,88 @@ if (!function_exists('tlm_date')) {
     }
 }
 
+if (!function_exists('tk_detail_can_view_start_delay')) {
+    function tk_detail_can_view_start_delay(): bool
+    {
+        $rolesAdmin = ['superadmin', 'propietario', 'gerente', 'administrador'];
+        $rolHotel = function_exists('current_hotel_user_role') ? strtolower((string)current_hotel_user_role()) : '';
+        $rolGlobal = function_exists('user_role') ? strtolower((string)user_role()) : '';
+
+        return in_array($rolHotel, $rolesAdmin, true)
+            || in_array($rolGlobal, $rolesAdmin, true)
+            || (function_exists('is_gerente') && is_gerente())
+            || (function_exists('is_admin') && is_admin());
+    }
+}
+
+if (!function_exists('tk_detail_minute_timestamp')) {
+    function tk_detail_minute_timestamp($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $timestamp = strtotime((string)$value);
+        if ($timestamp === false) {
+            return null;
+        }
+
+        $minuteTimestamp = strtotime(date('Y-m-d H:i:00', $timestamp));
+        return $minuteTimestamp === false ? null : $minuteTimestamp;
+    }
+}
+
+if (!function_exists('tk_detail_minutes_text')) {
+    function tk_detail_minutes_text(int $minutes): string
+    {
+        $minutes = abs($minutes);
+        return $minutes === 1 ? '1 minuto' : $minutes . ' minutos';
+    }
+}
+
+if (!function_exists('tk_detail_start_delay_meta')) {
+    function tk_detail_start_delay_meta(array $tarea)
+    {
+        $programada = tk_detail_minute_timestamp($tarea['fecha_programada'] ?? null);
+        $inicio = tk_detail_minute_timestamp($tarea['fecha_inicio'] ?? null);
+
+        if ($programada === null || $inicio === null) {
+            return null;
+        }
+
+        $diffMinutes = intdiv($inicio - $programada, 60);
+        $title = 'Programada ' . tlm_date($tarea['fecha_programada'] ?? null) . ' - Inicio ' . tlm_date($tarea['fecha_inicio'] ?? null);
+
+        if ($diffMinutes > 0) {
+            return [
+                'label' => 'Retraso al iniciar',
+                'text' => tk_detail_minutes_text($diffMinutes) . ' tarde',
+                'class' => 'is-late',
+                'icon' => 'fa-triangle-exclamation',
+                'title' => $title,
+            ];
+        }
+
+        if ($diffMinutes < 0) {
+            return [
+                'label' => 'Inicio vs programa',
+                'text' => tk_detail_minutes_text($diffMinutes) . ' antes',
+                'class' => 'is-early',
+                'icon' => 'fa-circle-check',
+                'title' => $title,
+            ];
+        }
+
+        return [
+            'label' => 'Inicio vs programa',
+            'text' => 'A tiempo',
+            'class' => 'is-on-time',
+            'icon' => 'fa-circle-check',
+            'title' => $title,
+        ];
+    }
+}
+
 if (!function_exists('tk_estado_meta')) {
     function tk_estado_meta($estado): array
     {
@@ -78,8 +160,10 @@ $tarea = is_array($tarea ?? null) ? $tarea : [];
 $eventos = is_array($eventos ?? null) ? $eventos : [];
 $eventosDisponibles = (bool)($eventosDisponibles ?? false);
 $trabajadoresActivos = is_array($trabajadoresActivos ?? null) ? $trabajadoresActivos : [];
+$trabajadoresAsignados = is_array($trabajadoresAsignados ?? null) ? $trabajadoresAsignados : [];
 $puedeAsignar = (bool)($puedeAsignar ?? false);
 $puedeCambiarEstado = (bool)($puedeCambiarEstado ?? false);
+$puedeEditar = function_exists('can') && can('habitaciones.mantenimiento');
 $documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 $tareaDetailFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
@@ -88,11 +172,28 @@ $tareaId = (int)($tarea['id'] ?? 0);
 [$eLabel, $eClass, $eIcon] = tk_estado_meta($estado);
 [$pLabel, $pClass, $pIcon] = tk_prioridad_meta($tarea['prioridad'] ?? 'media');
 [$cLabel, $cIcon] = tk_categoria_meta($tarea['categoria'] ?? 'general');
+$puedeVerRetrasoInicio = tk_detail_can_view_start_delay();
+$retrasoInicioMeta = $puedeVerRetrasoInicio ? tk_detail_start_delay_meta($tarea) : null;
 
 $tareaDetailOldAction = (string)old('tarea_form_action', '');
-$trabajadorSeleccionado = $tareaDetailOldAction === 'asignar'
-    ? (string)old('trabajador_id', (string)($tarea['trabajador_id'] ?? ''))
-    : (string)($tarea['trabajador_id'] ?? '');
+
+// IDs de trabajadores preseleccionados en el formulario de asignacion.
+$trabajadoresSeleccionados = [];
+if ($tareaDetailOldAction === 'asignar' && is_array($_SESSION['old_input']['trabajador_ids'] ?? null)) {
+    foreach ($_SESSION['old_input']['trabajador_ids'] as $tid) {
+        $tid = (int)$tid;
+        if ($tid > 0) {
+            $trabajadoresSeleccionados[$tid] = true;
+        }
+    }
+} else {
+    foreach ($trabajadoresAsignados as $asignado) {
+        $tid = (int)($asignado['trabajador_id'] ?? 0);
+        if ($tid > 0) {
+            $trabajadoresSeleccionados[$tid] = true;
+        }
+    }
+}
 $comentarioCompletarValor = $tareaDetailOldAction === 'completar' ? old('comentario', '') : '';
 $comentarioCancelarValor = $tareaDetailOldAction === 'cancelar' ? old('comentario', '') : '';
 $asignarGlobalError = $tareaDetailOldAction === 'asignar' ? tk_detail_form_error($tareaDetailFieldErrors, '_global') : '';
@@ -133,8 +234,28 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 .tk-detail .tk-shell { display: grid; gap: 14px; }
+.tk-detail.tk-detail--case {
+    --tk-view-accent: var(--tk-brand);
+    --tk-view-soft: color-mix(in srgb, var(--tk-brand) 7%, #FFFFFF);
+    background:
+        radial-gradient(860px 360px at 8% -8%, color-mix(in srgb, var(--tk-brand) 10%, transparent), transparent 62%),
+        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+}
+.tk-detail .tk-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .tk-detail .tk-back { display: inline-flex; align-items: center; gap: 8px; color: var(--tk-muted); text-decoration: none; font-weight: 700; font-size: .85rem; }
 .tk-detail .tk-back:hover { color: var(--tk-gold-ink); }
+.tk-detail.tk-detail--case .tk-title-lockup {
+    padding: 15px 16px;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.72)),
+        linear-gradient(90deg, color-mix(in srgb, var(--tk-brand) 10%, transparent), transparent);
+    border: 1px solid color-mix(in srgb, var(--tk-brand) 14%, var(--tk-border));
+    box-shadow: 0 14px 32px -28px color-mix(in srgb, var(--tk-brand) 70%, transparent);
+}
+.tk-detail.tk-detail--case .tk-hero-icon {
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.25), transparent 34%), linear-gradient(145deg, var(--tk-brand), color-mix(in srgb, var(--tk-brand) 70%, var(--tk-gold)));
+}
 .tk-detail .tk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .tk-detail .tk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
     background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, var(--brand-accent, #BD9441)));
@@ -142,6 +263,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail .tk-kicker { margin: 0 0 2px; color: var(--tk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .tk-detail .tk-title { margin: 0; font-family: var(--tk-serif); color: var(--tk-heading); font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.02; }
 .tk-detail .tk-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tk-detail .tk-view-chip { display: inline-flex; align-items: center; gap: 7px; width: fit-content; margin-top: 10px; padding: 6px 10px; border-radius: 999px; background: var(--tk-view-soft); border: 1px solid color-mix(in srgb, var(--tk-view-accent) 18%, #fff); color: color-mix(in srgb, var(--tk-view-accent) 74%, #000); font-size: .72rem; font-weight: 700; line-height: 1; }
 
 .tk-detail .tk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .76rem; font-weight: 700; border: 1px solid transparent; }
 .tk-detail .tk-badge.is-pendiente { color: color-mix(in srgb, var(--tk-warning) 82%, #000); background: var(--tk-warning-bg); border-color: color-mix(in srgb, var(--tk-warning) 28%, #fff); }
@@ -157,7 +279,9 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 
 .tk-detail .tk-grid { display: grid; grid-template-columns: 1.4fr .9fr; gap: 14px; align-items: start; }
 .tk-detail .tk-col { display: grid; gap: 14px; }
-.tk-detail .tk-card { background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.tk-detail .tk-card { position: relative; overflow: hidden; background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.tk-detail.tk-detail--case .tk-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: color-mix(in srgb, var(--tk-view-accent) 26%, transparent); }
+.tk-detail.tk-detail--case .tk-card:hover::before { background: color-mix(in srgb, var(--tk-gold) 55%, var(--tk-view-accent)); }
 .tk-detail .tk-card h2 { font-family: var(--tk-serif); font-size: 1.35rem; font-weight: 700; color: var(--tk-heading); margin: 0 0 12px; }
 .tk-detail .tk-desc { color: var(--tk-text-soft); line-height: 1.6; white-space: pre-wrap; }
 .tk-detail .tk-defs { display: grid; grid-template-columns: 150px 1fr; gap: 9px 14px; font-size: .88rem; }
@@ -166,6 +290,10 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail .tk-defs a { color: var(--tk-info); text-decoration: none; font-weight: 700; }
 .tk-detail .tk-defs a:hover { text-decoration: underline; }
 .tk-detail .tk-faint { color: var(--tk-muted); font-weight: 500; }
+.tk-detail .tk-start-delay { display: inline-flex; align-items: center; gap: 7px; width: fit-content; max-width: 100%; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--tk-border); background: var(--tk-surface-warm); color: var(--tk-text); font-size: .82rem; font-weight: 700; line-height: 1.15; }
+.tk-detail .tk-start-delay.is-late { color: color-mix(in srgb, var(--tk-warning) 82%, #000); background: var(--tk-warning-bg); border-color: color-mix(in srgb, var(--tk-warning) 32%, #fff); }
+.tk-detail .tk-start-delay.is-on-time { color: color-mix(in srgb, var(--tk-success) 78%, #000); background: var(--tk-success-bg); border-color: color-mix(in srgb, var(--tk-success) 28%, #fff); }
+.tk-detail .tk-start-delay.is-early { color: color-mix(in srgb, var(--tk-info) 80%, #000); background: var(--tk-info-bg); border-color: color-mix(in srgb, var(--tk-info) 28%, #fff); }
 
 .tk-detail .tk-empty-box { padding: 22px; text-align: center; color: var(--tk-muted); border: 1px dashed var(--tk-border); border-radius: 12px; background: var(--tk-surface-warm); font-size: .88rem; }
 .tk-detail .tk-label { display: block; font-size: .72rem; font-weight: 700; color: var(--tk-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
@@ -178,6 +306,13 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail .tk-form-error { display: block; margin-top: 7px; color: var(--tk-danger); font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .tk-detail .tk-error-summary { padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--tk-danger) 32%, #fff); border-radius: 12px; background: #FFF7F6; color: color-mix(in srgb, var(--tk-danger) 86%, #000); font-size: .84rem; font-weight: 800; }
 .tk-detail .tk-form-row { display: grid; gap: 10px; }
+.tk-detail .tk-workers { display: grid; gap: 7px; max-height: 260px; overflow-y: auto; padding: 4px; }
+.tk-detail .tk-worker { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border: 1px solid var(--tk-border); border-radius: 10px; background: var(--tk-surface-warm); cursor: pointer; transition: border-color .14s ease, box-shadow .14s ease, background .14s ease; }
+.tk-detail .tk-worker:hover { border-color: var(--tk-gold-line); }
+.tk-detail .tk-worker input { width: 17px; height: 17px; accent-color: var(--tk-gold); cursor: pointer; flex: 0 0 auto; }
+.tk-detail .tk-worker:has(input:checked) { border-color: var(--tk-gold); background: var(--tk-gold-soft); box-shadow: 0 0 0 2px var(--tk-ring); }
+.tk-detail .tk-worker-name { font-size: .85rem; font-weight: 700; color: var(--tk-text); line-height: 1.2; min-width: 0; }
+.tk-detail .tk-worker-role { display: block; font-size: .72rem; font-weight: 600; color: var(--tk-muted); }
 .tk-detail .tk-stack { display: grid; gap: 14px; }
 
 .tk-detail .tk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 42px; padding: 0 16px;
@@ -191,21 +326,28 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 
 .tk-detail .tk-timeline { display: grid; gap: 10px; }
 .tk-detail .tk-event { border: 1px solid var(--tk-border); border-radius: 12px; padding: 12px; background: var(--tk-surface-warm); }
+.tk-detail.tk-detail--case .tk-event { border-left: 4px solid color-mix(in srgb, var(--tk-gold) 50%, var(--tk-border)); }
 .tk-detail .tk-event strong { display: block; color: var(--tk-text); font-weight: 700; }
 .tk-detail .tk-event .tk-faint { font-size: .78rem; }
 
 @media (max-width: 900px) { .tk-detail .tk-grid { grid-template-columns: 1fr; } .tk-detail .tk-defs { grid-template-columns: 1fr; } .tk-detail .tk-title { font-size: 1.8rem; } }
 </style>
 
-<div class="tk-detail p-4 sm:p-6">
+<div class="tk-detail tk-detail--case p-4 sm:p-6">
     <div class="tk-shell">
-        <a class="tk-back" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+        <div class="tk-topbar">
+            <a class="tk-back" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+            <?php if ($puedeEditar && $tareaId > 0): ?>
+                <a class="tk-btn tk-btn-muted" href="<?= url('tareas/' . $tareaId . '/editar') ?>"><i class="fas fa-pen"></i> Editar tarea</a>
+            <?php endif; ?>
+        </div>
 
         <section class="tk-title-lockup">
             <div class="tk-hero-icon"><i class="fas <?= $cIcon ?>"></i></div>
             <div>
                 <p class="tk-kicker">Tarea #<?= $tareaId ?></p>
                 <h1 class="tk-title"><?= tlm_safe($tarea['titulo'] ?? '', 'Tarea operativa') ?></h1>
+                <div class="tk-view-chip"><i class="fas fa-folder-open"></i> Expediente de tarea</div>
                 <div class="tk-chips">
                     <span class="tk-badge is-cat"><i class="fas <?= $cIcon ?>"></i> <?= $cLabel ?></span>
                     <span class="tk-badge <?= $eClass ?>"><i class="fas <?= $eIcon ?>"></i> <?= $eLabel ?></span>
@@ -238,9 +380,14 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
                                 <span class="tk-faint">Sin habitaci&oacute;n</span>
                             <?php endif; ?>
                         </dd>
-                        <dt>Trabajador</dt>
+                        <dt>Trabajadores</dt>
                         <dd>
-                            <?php if (!empty($tarea['trabajador_id'])): ?>
+                            <?php if (!empty($trabajadoresAsignados)): ?>
+                                <?php foreach ($trabajadoresAsignados as $i => $asignado): ?>
+                                    <?php $taId = (int)($asignado['trabajador_id'] ?? 0); ?>
+                                    <a href="<?= url('trabajadores/' . $taId) ?>"><?= tlm_safe($asignado['nombre_completo'] ?? ('Trabajador #' . $taId)) ?></a><?php if ($i === 0): ?> <span class="tk-faint">(responsable)</span><?php endif; ?><?= $i < count($trabajadoresAsignados) - 1 ? ', ' : '' ?>
+                                <?php endforeach; ?>
+                            <?php elseif (!empty($tarea['trabajador_id'])): ?>
                                 <a href="<?= url('trabajadores/' . (int)$tarea['trabajador_id']) ?>"><?= tlm_safe($tarea['trabajador_nombre'] ?? 'Trabajador #' . (int)$tarea['trabajador_id']) ?></a>
                                 <span class="tk-faint">(<?= tlm_safe($tarea['trabajador_estado'] ?? '-') ?>)</span>
                             <?php else: ?>
@@ -269,6 +416,15 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
                         <dt>Programada</dt><dd><?= tlm_safe(tlm_date($tarea['fecha_programada'] ?? null)) ?></dd>
                         <dt>L&iacute;mite</dt><dd><?= tlm_safe(tlm_date($tarea['fecha_limite'] ?? null)) ?></dd>
                         <dt>Inicio</dt><dd><?= tlm_safe(tlm_date($tarea['fecha_inicio'] ?? null)) ?></dd>
+                        <?php if ($retrasoInicioMeta !== null): ?>
+                            <dt><?= tlm_safe($retrasoInicioMeta['label'] ?? 'Inicio vs programa') ?></dt>
+                            <dd>
+                                <span class="tk-start-delay <?= tlm_safe($retrasoInicioMeta['class'] ?? '') ?>" title="<?= tlm_safe($retrasoInicioMeta['title'] ?? '') ?>" aria-label="<?= tlm_safe(($retrasoInicioMeta['label'] ?? 'Inicio vs programa') . ': ' . ($retrasoInicioMeta['text'] ?? '')) ?>">
+                                    <i class="fas <?= tlm_safe($retrasoInicioMeta['icon'] ?? 'fa-clock') ?>"></i>
+                                    <?= tlm_safe($retrasoInicioMeta['text'] ?? '') ?>
+                                </span>
+                            </dd>
+                        <?php endif; ?>
                         <dt>Cierre</dt><dd><?= tlm_safe(tlm_date($tarea['fecha_cierre'] ?? null)) ?></dd>
                         <dt>Creada por</dt><dd><?= !empty($tarea['creada_por_nombre']) ? tlm_safe($tarea['creada_por_nombre']) : '<span class="tk-faint">-</span>' ?></dd>
                         <dt>Asignada por</dt><dd><?= !empty($tarea['asignada_por_nombre']) ? tlm_safe($tarea['asignada_por_nombre']) : '<span class="tk-faint">-</span>' ?></dd>
@@ -300,7 +456,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 
             <div class="tk-col">
                 <section class="tk-card">
-                    <h2>Asignar a un trabajador</h2>
+                    <h2>Asignar trabajadores</h2>
                     <?php if (!$puedeAsignar): ?>
                         <div class="tk-empty-box">Esta tarea no se puede asignar en su estado actual.</div>
                     <?php elseif (empty($trabajadoresActivos)): ?>
@@ -312,22 +468,28 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
                                 <div class="tk-error-summary ms-form-error-summary" role="alert"><?= $asignarGlobalError ?></div>
                             <?php endif; ?>
                             <div>
-                                <label class="tk-label" for="tk_trabajador">Trabajador</label>
-                                <select class="tk-field<?= $trabajadorError !== '' ? ' tk-field-error' : '' ?>" id="tk_trabajador" name="trabajador_id" required<?= $trabajadorError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-tk_trabajador"' : '' ?>>
-                                    <option value="">Elige un trabajador</option>
+                                <label class="tk-label">Trabajadores</label>
+                                <div class="tk-workers<?= $trabajadorError !== '' ? ' tk-field-error' : '' ?>" role="group" aria-label="Trabajadores disponibles"<?= $trabajadorError !== '' ? ' aria-describedby="ms-form-error-tk_trabajador"' : '' ?>>
                                     <?php foreach ($trabajadoresActivos as $trabajador): ?>
                                         <?php $trabajadorId = (int)($trabajador['id'] ?? 0); ?>
-                                        <option value="<?= $trabajadorId ?>" <?= (string)$trabajadorId === $trabajadorSeleccionado ? 'selected' : '' ?>>
-                                            <?= tlm_safe($trabajador['nombre_completo'] ?? ('Trabajador #' . $trabajadorId)) ?><?= !empty($trabajador['rol_laboral']) ? ' - ' . tlm_safe($trabajador['rol_laboral']) : '' ?>
-                                        </option>
+                                        <?php if ($trabajadorId <= 0) { continue; } ?>
+                                        <label class="tk-worker">
+                                            <input type="checkbox" name="trabajador_ids[]" value="<?= $trabajadorId ?>"<?= isset($trabajadoresSeleccionados[$trabajadorId]) ? ' checked' : '' ?>>
+                                            <span class="tk-worker-name">
+                                                <?= tlm_safe($trabajador['nombre_completo'] ?? ('Trabajador #' . $trabajadorId)) ?>
+                                                <?php if (!empty($trabajador['rol_laboral'])): ?>
+                                                    <span class="tk-worker-role"><?= tlm_safe($trabajador['rol_laboral']) ?></span>
+                                                <?php endif; ?>
+                                            </span>
+                                        </label>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                                 <?php if ($trabajadorError !== ''): ?>
                                     <span id="ms-form-error-tk_trabajador" class="tk-form-error ms-form-field-error"><?= $trabajadorError ?></span>
                                 <?php endif; ?>
                             </div>
-                            <button class="tk-btn tk-btn-gold" type="submit"><i class="fas fa-user-check"></i> Asignar</button>
-                            <div class="tk-help">Solo trabajadores activos. Asignarla no genera pagos ni cambia la habitaci&oacute;n.</div>
+                            <button class="tk-btn tk-btn-gold" type="submit"><i class="fas fa-user-check"></i> Guardar asignaci&oacute;n</button>
+                            <div class="tk-help">Elige uno o varios. El primero queda como responsable principal. No genera pagos ni cambia la habitaci&oacute;n.</div>
                         </form>
                     <?php endif; ?>
                 </section>

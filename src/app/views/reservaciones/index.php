@@ -1098,6 +1098,76 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-ci-shortcut--transfer { --res-shortcut-color: #7C3AED; }
 .res-ci-shortcut--split { --res-shortcut-color: var(--res-accent); }
 .res-ci-shortcut--cash-transfer { --res-shortcut-color: #0F9F8F; }
+.res-ci-pending-option {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 11px;
+    margin: 0 0 12px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, #D97706 25%, #E7DDD1);
+    border-radius: 15px;
+    background: #FFF8EA;
+    color: #7C4A12;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.res-ci-pending-option:hover,
+.res-ci-pending-option:focus-within {
+    border-color: color-mix(in srgb, #D97706 48%, #E7DDD1);
+    background: #FFF5DC;
+    box-shadow: 0 14px 28px -26px rgba(217,119,6,.75);
+    transform: translateY(-1px);
+}
+.res-ci-pending-option input { width: 18px; height: 18px; accent-color: #D97706; }
+.res-ci-pending-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(217,119,6,.12);
+    color: #B45309;
+}
+.res-ci-pending-option strong {
+    display: block;
+    color: #6B3B08;
+    font-size: .84rem;
+    font-weight: 950;
+}
+.res-ci-pending-option small {
+    display: block;
+    margin-top: 2px;
+    color: #8A5A18;
+    font-size: .73rem;
+    font-weight: 720;
+    line-height: 1.35;
+}
+.res-ci-pending-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: -2px 0 12px;
+}
+.res-ci-pending-preview[hidden] { display: none !important; }
+.res-ci-pending-preview > div {
+    min-height: 58px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, #D97706 24%, #E7DDD1);
+    border-radius: 12px;
+    background: #FFFDF7;
+}
+.res-ci-pending-preview span {
+    display: block;
+    margin-bottom: 4px;
+    color: #7C4A12;
+    font-size: .72rem;
+    font-weight: 820;
+}
+.res-ci-pending-preview strong {
+    color: #263247;
+    font-size: 1rem;
+    font-weight: 950;
+}
 .res-ci-methods { display: grid; gap: 10px; }
 .res-pay-method {
     --res-pay-color: var(--res-brand);
@@ -4440,6 +4510,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 
         <form id="formCheckInModal" method="POST" action="" class="res-checkin-form">
             <?= csrf_field() ?>
+            <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
             <div class="res-checkin-body">
                 <div class="res-checkin-summary">
                     <div class="res-ci-total">
@@ -4457,7 +4528,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         <h4><i class="fas fa-wallet"></i>Metodos de pago</h4>
                         <span>Uno o varios</span>
                     </div>
-                    <p class="res-ci-prompt">Elige una forma rapida o ajusta los montos por metodo. El total pagado debe cuadrar con el total de la reservacion antes de confirmar.</p>
+                    <p class="res-ci-prompt">Elige como esta pagando el huesped. Si solo pagara una parte hoy, activa la opcion de dejar el resto pendiente.</p>
 
                     <div id="resCiBreakdown" class="res-ci-breakdown" aria-live="polite" hidden>
                         <div class="res-ci-breakdown-head">
@@ -4513,6 +4584,26 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         </button>
                     </div>
 
+                    <label class="res-ci-pending-option" for="check_saldo_pendiente">
+                        <input type="checkbox" id="check_saldo_pendiente" onchange="toggleSaldoPendienteCheckIn()">
+                        <span class="res-ci-pending-icon"><i class="fas fa-clock"></i></span>
+                        <span>
+                            <strong>Dejar saldo pendiente</strong>
+                            <small>Permite hacer check-in con pago parcial. Lo que falte aparecera en Cuentas por cobrar.</small>
+                        </span>
+                    </label>
+
+                    <div id="checkinPendingPreview" class="res-ci-pending-preview" hidden aria-live="polite">
+                        <div>
+                            <span>Pago de hoy</span>
+                            <strong id="checkinPagoHoy">$0.00</strong>
+                        </div>
+                        <div>
+                            <span>Quedara pendiente</span>
+                            <strong id="checkinQuedaPendiente">$0.00</strong>
+                        </div>
+                    </div>
+
                     <div id="metodosPagoContainer" class="res-ci-methods">
                         <article class="res-pay-method res-pay-cash">
                             <label class="res-pay-toggle">
@@ -4523,11 +4614,11 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                             <div id="panel_efectivo" class="res-pay-panel hidden">
                                 <div class="res-ci-grid">
                                     <div>
-                                        <label for="monto_efectivo" class="res-ci-label">Total a cobrar</label>
-                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly class="res-ci-input">
+                                        <label for="monto_efectivo" id="label_monto_efectivo" class="res-ci-label">Monto a cobrar en efectivo</label>
+                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly oninput="calcularTotales()" onchange="calcularTotales()" class="res-ci-input">
                                     </div>
                                     <div>
-                                        <label for="recibido_efectivo" class="res-ci-label">Monto recibido</label>
+                                        <label for="recibido_efectivo" id="label_recibido_efectivo" class="res-ci-label">Dinero recibido</label>
                                         <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" placeholder="0.00" oninput="calcularCambio()" onchange="calcularCambio()" class="res-ci-input">
                                         <button type="button" class="res-ci-shortcut res-ci-shortcut--cash" style="width:100%; min-height:36px; margin-top:8px;" onclick="marcarEfectivoExacto()">Recibi exacto</button>
                                     </div>
@@ -4560,7 +4651,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                                 </div>
                                 <div class="res-ci-grid">
                                     <div>
-                                        <label for="monto_tarjeta" class="res-ci-label">Monto</label>
+                                        <label for="monto_tarjeta" id="label_monto_tarjeta" class="res-ci-label">Monto con tarjeta</label>
                                         <input type="number" name="monto_tarjeta" id="monto_tarjeta" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()" class="res-ci-input">
                                     </div>
                                     <div>
@@ -4580,7 +4671,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                             <div id="panel_transferencia" class="res-pay-panel hidden">
                                 <div class="res-ci-grid">
                                     <div>
-                                        <label for="monto_transferencia" class="res-ci-label">Monto</label>
+                                        <label for="monto_transferencia" id="label_monto_transferencia" class="res-ci-label">Monto por transferencia</label>
                                         <input type="number" name="monto_transferencia" id="monto_transferencia" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()" class="res-ci-input">
                                     </div>
                                     <div>
@@ -4643,7 +4734,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         <strong id="resumenMetodoPago">Sin seleccionar</strong>
                     </div>
                     <div id="divRestante" class="res-ci-row is-due" style="display:none;">
-                        <span>Restante</span>
+                        <span>Cuenta pendiente</span>
                         <strong id="resumenRestante">$0.00</strong>
                     </div>
                     <div id="divCambio" class="res-ci-row is-change" style="display:none;">
@@ -5487,6 +5578,104 @@ function cerrarModalCheckIn() {
     resetearFacturaCheckIn();
 }
 
+function isSaldoPendienteCheckInActivo() {
+    return document.getElementById('check_saldo_pendiente')?.checked === true;
+}
+
+function setSaldoPendienteCheckInHidden(activo) {
+    const hidden = document.getElementById('permitir_saldo_pendiente');
+    if (hidden) hidden.value = activo ? '1' : '0';
+}
+
+function setCheckInText(id, text) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = text;
+}
+
+function actualizarVistaSaldoPendienteCheckIn(totalPagado = null) {
+    const activo = isSaldoPendienteCheckInActivo();
+    const pagoHoy = totalPagado === null ? calcularTotalPagado() : totalPagado;
+    const pendiente = Math.max(0, totalReservacion - pagoHoy);
+    const preview = document.getElementById('checkinPendingPreview');
+
+    setCheckInText('label_monto_efectivo', activo ? 'Pago de hoy en efectivo' : 'Monto a cobrar en efectivo');
+    setCheckInText('label_recibido_efectivo', activo ? 'Dinero recibido hoy' : 'Dinero recibido');
+    setCheckInText('label_monto_tarjeta', activo ? 'Pago de hoy con tarjeta' : 'Monto con tarjeta');
+    setCheckInText('label_monto_transferencia', activo ? 'Pago de hoy por transferencia' : 'Monto por transferencia');
+
+    setCheckInText('checkinPagoHoy', formatMoney(pagoHoy));
+    setCheckInText('checkinQuedaPendiente', formatMoney(pendiente));
+
+    if (preview) {
+        preview.hidden = !activo;
+        preview.style.display = activo ? 'grid' : 'none';
+    }
+}
+
+function ajustarEfectivoPendienteDesdeRecibido() {
+    if (!isSaldoPendienteCheckInActivo()) return false;
+
+    const checkEfectivo = document.getElementById('check_efectivo');
+    const montoInput = document.getElementById('monto_efectivo');
+    const recibidoInput = document.getElementById('recibido_efectivo');
+
+    if (!checkEfectivo?.checked || !montoInput || !recibidoInput) return false;
+
+    if (document.activeElement === montoInput) {
+        montoInput.dataset.saldoPendienteManual = '1';
+        return false;
+    }
+
+    const recibido = resMoneyRead(recibidoInput);
+    const totalPagadoOtros = calcularTotalPagadoSinEfectivo();
+    const maximoEfectivo = Math.max(0, totalReservacion - totalPagadoOtros);
+    const montoActual = resMoneyRead(montoInput);
+    const montoNuevo = Math.min(recibido, maximoEfectivo);
+    const montoManual = montoInput.dataset.saldoPendienteManual === '1';
+
+    if (document.activeElement === recibidoInput && !montoManual) {
+        if (Math.abs(montoActual - montoNuevo) > 0.01) {
+            resMoneySet(montoInput, montoNuevo);
+            return true;
+        }
+        return false;
+    }
+
+    if (recibido <= 0 || montoManual) return false;
+
+    const montoCompletoAutomatico = montoActual <= 0.01 || Math.abs(montoActual - maximoEfectivo) < 0.01;
+
+    if (montoNuevo > 0 && recibido < montoActual - 0.01 && montoCompletoAutomatico) {
+        resMoneySet(montoInput, montoNuevo);
+        return true;
+    }
+
+    if (montoActual <= 0.01 && montoNuevo > 0) {
+        resMoneySet(montoInput, montoNuevo);
+        return true;
+    }
+
+    return false;
+}
+
+function toggleSaldoPendienteCheckIn() {
+    const activo = isSaldoPendienteCheckInActivo();
+    const montoEfectivo = document.getElementById('monto_efectivo');
+    const checkEfectivo = document.getElementById('check_efectivo');
+    const recibidoEfectivo = document.getElementById('recibido_efectivo');
+    if (montoEfectivo) {
+        montoEfectivo.readOnly = !activo;
+        delete montoEfectivo.dataset.saldoPendienteManual;
+        if (activo && checkEfectivo?.checked) {
+            const recibido = resMoneyRead(recibidoEfectivo);
+            resMoneySet(montoEfectivo, Math.max(0, Math.min(recibido, totalReservacion)));
+        }
+    }
+    setSaldoPendienteCheckInHidden(activo);
+    actualizarVistaSaldoPendienteCheckIn();
+    calcularTotales({ preserveCash: activo });
+}
+
 function toggleMetodoPago(metodo) {
     const checkbox = document.getElementById('check_' + metodo);
     const panel = document.getElementById('panel_' + metodo);
@@ -5501,8 +5690,15 @@ function toggleMetodoPago(metodo) {
         if (metodo === 'efectivo') {
             const totalPagadoOtros = calcularTotalPagadoSinEfectivo();
             const montoRestante = Math.max(0, totalReservacion - totalPagadoOtros);
-            resMoneySet(montoInput, montoRestante);
             const recibidoInput = document.getElementById('recibido_efectivo');
+            if (isSaldoPendienteCheckInActivo()) {
+                delete montoInput.dataset.saldoPendienteManual;
+                const recibido = resMoneyRead(recibidoInput);
+                resMoneySet(montoInput, Math.min(recibido, montoRestante));
+            } else if (resMoneyRead(montoInput) <= 0) {
+                resMoneySet(montoInput, montoRestante);
+            }
+            montoInput.readOnly = !isSaldoPendienteCheckInActivo();
             if (recibidoInput) recibidoInput.value = '';
         } else {
             montoInput.focus();
@@ -5538,10 +5734,16 @@ function setCheckInPaymentChecked(metodo, checked, shouldRecalculate = true) {
     if (checked) {
         if (panel) panel.classList.remove('hidden');
         if (card) card.classList.add('is-open');
+        if (metodo === 'efectivo' && montoInput) {
+            montoInput.readOnly = !isSaldoPendienteCheckInActivo();
+        }
     } else {
         if (panel) panel.classList.add('hidden');
         if (card) card.classList.remove('is-open');
-        if (montoInput) montoInput.value = '';
+        if (montoInput) {
+            montoInput.value = '';
+            delete montoInput.dataset.saldoPendienteManual;
+        }
 
         if (metodo === 'efectivo') {
             const recibidoInput = document.getElementById('recibido_efectivo');
@@ -5643,16 +5845,25 @@ function actualizarResumenMetodoPago() {
     resumenMetodo.textContent = metodos.length ? metodos.map(metodo => labels[metodo] || metodo).join(' + ') : 'Sin seleccionar';
 }
 
-function calcularTotales() {
+function calcularTotales(options = {}) {
+    const preserveCash = options && options.preserveCash === true;
+    const skipCashChange = options && options.skipCashChange === true;
+    const permitirPendiente = isSaldoPendienteCheckInActivo();
+    ajustarEfectivoPendienteDesdeRecibido();
     const totalOtros = calcularTotalPagadoSinEfectivo();
     let totalPagado = totalOtros;
     const checkEfectivo = document.getElementById('check_efectivo');
     const montoEfectivoInput = document.getElementById('monto_efectivo');
 
     if (checkEfectivo?.checked && montoEfectivoInput) {
-        const montoRestante = Math.max(0, totalReservacion - totalOtros);
-        resMoneySet(montoEfectivoInput, montoRestante);
-        totalPagado += montoRestante;
+        montoEfectivoInput.readOnly = !permitirPendiente;
+        if (permitirPendiente || preserveCash) {
+            totalPagado += resMoneyRead(montoEfectivoInput);
+        } else {
+            const montoRestante = Math.max(0, totalReservacion - totalOtros);
+            resMoneySet(montoEfectivoInput, montoRestante);
+            totalPagado += montoRestante;
+        }
     }
 
     const resumenPagado = document.getElementById('resumenPagado');
@@ -5660,35 +5871,46 @@ function calcularTotales() {
 
     const totalPagadoFinal = calcularTotalPagado();
     const diferencia = totalReservacion - totalPagadoFinal;
+    actualizarVistaSaldoPendienteCheckIn(totalPagadoFinal);
     const divRestante = document.getElementById('divRestante');
     const divCambio = document.getElementById('divCambio');
     const btnConfirmar = document.getElementById('btnConfirmarCheckIn');
+    const resumenRestante = document.getElementById('resumenRestante');
+    const haySaldoPendiente = diferencia > 0.01;
 
     if (divRestante) divRestante.style.display = 'none';
     if (divCambio) divCambio.style.display = 'none';
+    setSaldoPendienteCheckInHidden(permitirPendiente && haySaldoPendiente);
 
-    if (Math.abs(diferencia) < 0.01) {
+    if (checkEfectivo?.checked && !skipCashChange) calcularCambio();
+    const efectivoInsuficiente = checkEfectivo?.checked && montoEfectivoInput
+        && resMoneyRead(montoEfectivoInput) > 0
+        && resMoneyRead(document.getElementById('recibido_efectivo')) < resMoneyRead(montoEfectivoInput);
+
+    if (efectivoInsuficiente) {
+        mostrarMensaje('El monto recibido en efectivo es insuficiente', 'error');
+        if (btnConfirmar) btnConfirmar.disabled = true;
+    } else if (Math.abs(diferencia) < 0.01) {
         ocultarMensaje();
         if (btnConfirmar) btnConfirmar.disabled = false;
     } else if (diferencia > 0.01) {
-        if (!checkEfectivo?.checked) {
-            if (divRestante) {
-                divRestante.style.display = 'flex';
-                const resumenRestante = document.getElementById('resumenRestante');
-                if (resumenRestante) resumenRestante.textContent = formatMoney(diferencia);
-            }
-            mostrarMensaje('Falta completar el pago', 'warning');
-            if (btnConfirmar) btnConfirmar.disabled = true;
-        } else {
-            ocultarMensaje();
+        if (divRestante) {
+            divRestante.style.display = 'flex';
+            if (resumenRestante) resumenRestante.textContent = formatMoney(diferencia);
+        }
+
+        if (permitirPendiente && totalPagadoFinal > 0) {
+            mostrarMensaje('Se hara check-in y el saldo restante quedara en Cuentas por cobrar.', 'info');
             if (btnConfirmar) btnConfirmar.disabled = false;
+        } else {
+            mostrarMensaje('Falta completar el pago. Si el huesped pagara despues, activa Dejar saldo pendiente.', 'warning');
+            if (btnConfirmar) btnConfirmar.disabled = true;
         }
     } else {
         mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
         if (btnConfirmar) btnConfirmar.disabled = true;
     }
 
-    if (checkEfectivo?.checked) calcularCambio();
     actualizarResumenMetodoPago();
     actualizarResultadoFacturaCheckIn();
 }
@@ -5705,6 +5927,7 @@ function calcularCambio() {
     const btnConfirmar = document.getElementById('btnConfirmarCheckIn');
     if (!montoPagarInput || !montoRecibidoInput || !cambioSpan) return;
 
+    const montoAjustadoPorPendiente = ajustarEfectivoPendienteDesdeRecibido();
     const montoPagar = resMoneyRead(montoPagarInput);
     const montoRecibido = resMoneyRead(montoRecibidoInput);
 
@@ -5746,6 +5969,10 @@ function calcularCambio() {
             if (btnConfirmar) btnConfirmar.disabled = true;
         }
     }
+
+    if (montoAjustadoPorPendiente) {
+        calcularTotales({ preserveCash: true, skipCashChange: true });
+    }
 }
 
 function calcularTotalPagado() {
@@ -5786,9 +6013,18 @@ function resetearFormularioPago() {
 
         if (checkbox) checkbox.checked = false;
         if (panel) panel.classList.add('hidden');
-        if (montoInput) montoInput.value = '';
+        if (montoInput) {
+            montoInput.value = '';
+            delete montoInput.dataset.saldoPendienteManual;
+        }
+        if (metodo === 'efectivo' && montoInput) montoInput.readOnly = true;
         if (card) card.classList.remove('is-open');
     });
+
+    const saldoPendienteCheck = document.getElementById('check_saldo_pendiente');
+    if (saldoPendienteCheck) saldoPendienteCheck.checked = false;
+    setSaldoPendienteCheckInHidden(false);
+    actualizarVistaSaldoPendienteCheckIn(0);
 
     const recibidoEfectivo = document.getElementById('recibido_efectivo');
     if (recibidoEfectivo) recibidoEfectivo.value = '';
@@ -5836,7 +6072,7 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
         return checkbox && checkbox.checked;
     });
 
-    if (metodosSeleccionados.length === 0) {
+    if (metodosSeleccionados.length === 0 && totalReservacion > 0.01) {
         mostrarMensaje('Debe seleccionar al menos un metodo de pago', 'error');
         return;
     }
@@ -5851,9 +6087,20 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
         }
     }
 
+    ajustarEfectivoPendienteDesdeRecibido();
+
     const totalPagado = calcularTotalPagado();
-    if (Math.abs(totalPagado - totalReservacion) > 0.01) {
-        mostrarMensaje('El total pagado no coincide con el monto de la reservacion', 'error');
+    const saldoRestante = totalReservacion - totalPagado;
+    const permitirPendiente = isSaldoPendienteCheckInActivo();
+    setSaldoPendienteCheckInHidden(permitirPendiente && saldoRestante > 0.01);
+
+    if (saldoRestante > 0.01 && (!permitirPendiente || totalPagado <= 0.01)) {
+        mostrarMensaje('Para hacer check-in con pago parcial, activa Dejar saldo pendiente y registra el monto recibido.', 'error');
+        return;
+    }
+
+    if (saldoRestante < -0.01) {
+        mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
         return;
     }
 

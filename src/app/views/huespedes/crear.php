@@ -166,7 +166,7 @@ $gcRenderVehicleFields = function ($indexToken, array $values = []) use ($gcVehi
         $name = $storage === 'column'
             ? 'vehiculos[' . $indexToken . '][' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . ']'
             : 'vehiculos[' . $indexToken . '][extras][' . htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8') . ']';
-        $requiredHtml = $required ? ' required' : '';
+        $requiredHtml = $required ? ' data-vehicle-required="1"' : '';
         $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
         $valueHtml = htmlspecialchars($currentValue, ENT_QUOTES, 'UTF-8');
         $fieldError = form_error($errorKey);
@@ -176,7 +176,7 @@ $gcRenderVehicleFields = function ($indexToken, array $values = []) use ($gcVehi
         }
         ?>
         <div class="gc-field<?= $wide ? ' gc-field-full' : '' ?>">
-            <label class="gc-label"><?= $label ?><?= $required ? ' <span class="gc-required">*</span>' : '' ?></label>
+            <label class="gc-label"><?= $label ?><?= $required ? ' <span class="gc-required gc-vehicle-required-mark" title="Obligatorio solo si registra este vehiculo">*</span>' : '' ?></label>
             <?php if ($input === 'parking'): ?>
                 <div class="gc-radio-grid">
                     <?= str_replace('__PARKING_NAME__', $name, $gcParkingOptionsTemplate) ?>
@@ -496,6 +496,10 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 
 .gc-required {
     color: var(--gc-danger);
+}
+
+.vehiculo-item.is-empty .gc-vehicle-required-mark {
+    display: none;
 }
 
 .gc-form-error {
@@ -1849,7 +1853,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 
                             <p class="gc-note">
                                 <i class="fas fa-info-circle"></i>
-                                Puede registrar multiples vehiculos por huesped. Si no tiene vehiculo, deje los campos en blanco.
+                                Puede registrar multiples vehiculos por huesped. Si no tiene vehiculo, deje los campos en blanco; los campos obligatorios del vehiculo solo aplican si captura algun dato.
                             </p>
                         </div>
                     </section>
@@ -1926,6 +1930,50 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 let vehiculoIndex = <?= count($gcVehicleRows) ?>;
 const vehicleFieldsTemplate = <?= json_encode($gcVehicleFieldsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
+function controlVehiculoCuentaComoDato(control) {
+    if (!control || control.disabled || !control.name || !control.name.includes('vehiculos[')) {
+        return false;
+    }
+
+    if (control.name.includes('[estacionamiento]')) {
+        return false;
+    }
+
+    if (control.type === 'radio' || control.type === 'checkbox') {
+        return control.checked && String(control.value || '').trim() !== '';
+    }
+
+    if (control.type === 'file') {
+        return control.files && control.files.length > 0;
+    }
+
+    return String(control.value || '').trim() !== '';
+}
+
+function vehiculoTieneDatosCapturados(vehiculo) {
+    return Array.from(vehiculo.querySelectorAll('input, select, textarea')).some(controlVehiculoCuentaComoDato);
+}
+
+function sincronizarVehiculoOpcional(vehiculo) {
+    if (!vehiculo) return;
+
+    const tieneDatos = vehiculoTieneDatosCapturados(vehiculo);
+    vehiculo.classList.toggle('is-empty', !tieneDatos);
+
+    vehiculo.querySelectorAll('[data-vehicle-required="1"]').forEach(function(control) {
+        control.required = tieneDatos;
+        if (tieneDatos) {
+            control.setAttribute('aria-required', 'true');
+        } else {
+            control.removeAttribute('aria-required');
+        }
+    });
+}
+
+function sincronizarVehiculosOpcionales(root = document) {
+    root.querySelectorAll('.vehiculo-item').forEach(sincronizarVehiculoOpcional);
+}
+
 document.querySelectorAll('.gc-document-input').forEach(function(input) {
     input.addEventListener('change', function() {
         const label = document.getElementById(this.dataset.fileLabel || '');
@@ -1962,6 +2010,7 @@ function agregarVehiculo() {
     `;
 
     container.insertAdjacentHTML('beforeend', vehiculoHtml);
+    sincronizarVehiculoOpcional(container.lastElementChild);
     vehiculoIndex++;
 
     // Mostrar boton de eliminar en el primer vehiculo si hay mas de uno
@@ -2017,39 +2066,32 @@ document.addEventListener('input', function(e) {
     if (e.target.name && e.target.name.includes('[placas]')) {
         e.target.value = e.target.value.toUpperCase();
     }
+
+    if (e.target.name && e.target.name.includes('vehiculos[')) {
+        sincronizarVehiculoOpcional(e.target.closest('.vehiculo-item'));
+    }
+});
+
+document.addEventListener('change', function(e) {
+    if (e.target.name && e.target.name.includes('vehiculos[')) {
+        sincronizarVehiculoOpcional(e.target.closest('.vehiculo-item'));
+    }
 });
 
 // Validacion del formulario
 document.querySelector('form').addEventListener('submit', function(e) {
-    // Verificar si hay al menos un vehiculo con datos completos
     const vehiculos = document.querySelectorAll('.vehiculo-item');
-    let hayVehiculoCompleto = false;
+    vehiculos.forEach(sincronizarVehiculoOpcional);
 
-    vehiculos.forEach(vehiculo => {
-        const marca = vehiculo.querySelector('input[name*="[marca]"]')?.value || '';
-        const placas = vehiculo.querySelector('input[name*="[placas]"]')?.value || '';
+    const vehiculoInvalido = this.querySelector('.vehiculo-item [data-vehicle-required="1"]:invalid');
+    if (vehiculoInvalido) {
+        e.preventDefault();
+        vehiculoInvalido.closest('.vehiculo-item')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        vehiculoInvalido.reportValidity();
+        return;
+    }
 
-        if (marca && placas) {
-            hayVehiculoCompleto = true;
-        }
-    });
-
-    // Si hay datos parciales en algun vehiculo, mostrar advertencia
-    vehiculos.forEach(vehiculo => {
-        const inputs = vehiculo.querySelectorAll('input[type="text"]');
-        let hayDatosParciales = false;
-        let camposLlenos = 0;
-
-        inputs.forEach(input => {
-            if (input.value.trim()) camposLlenos++;
-        });
-
-        if (camposLlenos > 0 && camposLlenos < 4) {
-            vehiculo.style.border = '2px solid #D64539';
-            setTimeout(() => {
-                vehiculo.style.border = '';
-            }, 3000);
-        }
-    });
 });
+
+sincronizarVehiculosOpcionales();
 </script>

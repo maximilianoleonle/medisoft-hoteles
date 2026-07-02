@@ -41,6 +41,20 @@ if (!function_exists('tk_report_estado_meta')) {
     }
 }
 
+if (!function_exists('tk_report_workers_text')) {
+    function tk_report_workers_text(array $tarea): string
+    {
+        foreach (['trabajadores_nombres', 'trabajadores_asignados', 'trabajador_nombre'] as $campo) {
+            $texto = trim((string)($tarea[$campo] ?? ''));
+            if ($texto !== '') {
+                return $texto;
+            }
+        }
+
+        return '';
+    }
+}
+
 $reporte = is_array($reporte ?? null) ? $reporte : [];
 $tablaDisponible = (bool)($tablaDisponible ?? false);
 $resumen = is_array($reporte['resumen'] ?? null) ? $reporte['resumen'] : [];
@@ -91,6 +105,28 @@ $prioridadLabels = [
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 .tk-report .tk-shell { display: grid; gap: 14px; }
+.tk-report.tk-report--insights {
+    --tk-view-accent: var(--tk-proc);
+    --tk-view-soft: color-mix(in srgb, var(--tk-proc) 10%, #FFFFFF);
+    background:
+        radial-gradient(780px 360px at 8% -6%, color-mix(in srgb, var(--tk-proc) 10%, transparent), transparent 62%),
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 7%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+}
+.tk-report.tk-report--insights .tk-title-lockup {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--tk-brand) 92%, #000), color-mix(in srgb, var(--tk-proc) 32%, var(--tk-brand)));
+    box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--tk-brand) 72%, transparent);
+}
+.tk-report.tk-report--insights .tk-title,
+.tk-report.tk-report--insights .tk-title-lockup .tk-kicker,
+.tk-report.tk-report--insights .tk-title-lockup .tk-subtitle { color: #fff; }
+.tk-report.tk-report--insights .tk-title-lockup .tk-subtitle { opacity: .78; }
+.tk-report.tk-report--insights .tk-hero-icon {
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.26), transparent 34%), linear-gradient(145deg, var(--tk-proc), var(--tk-gold));
+    box-shadow: 0 14px 26px -14px rgba(0,0,0,.48);
+}
 .tk-report .tk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .tk-report .tk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
     background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, var(--brand-accent, #BD9441)));
@@ -98,6 +134,7 @@ $prioridadLabels = [
 .tk-report .tk-kicker { margin: 0 0 2px; color: var(--tk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .tk-report .tk-title { margin: 0; font-family: var(--tk-serif); color: var(--tk-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
 .tk-report .tk-subtitle { max-width: 50rem; margin: 8px 0 0; color: var(--tk-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
+.tk-report .tk-view-chip { display: inline-flex; align-items: center; gap: 7px; width: fit-content; margin-top: 10px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.28); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1; }
 
 .tk-report .tk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 16px;
     border-radius: 11px; border: 1px solid var(--tk-border); background: var(--tk-surface); color: var(--tk-muted); font-weight: 700; font-size: .85rem; text-decoration: none;
@@ -105,13 +142,15 @@ $prioridadLabels = [
 .tk-report .tk-btn:hover { transform: translateY(-1px); border-color: var(--tk-gold-line); color: var(--tk-gold-ink); }
 
 .tk-report .tk-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.tk-report .tk-summary-item { background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
+.tk-report .tk-summary-item { position: relative; overflow: hidden; background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
+.tk-report.tk-report--insights .tk-summary-item::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, var(--tk-view-accent), color-mix(in srgb, var(--tk-gold) 70%, var(--tk-view-accent))); }
 .tk-report .tk-summary-label { color: var(--tk-muted); font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .tk-report .tk-summary-value { margin-top: 2px; font-family: var(--tk-serif); font-size: 1.6rem; font-weight: 700; line-height: 1.1; color: var(--tk-heading); }
 
 .tk-report .tk-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .tk-report .tk-panel { background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); overflow: hidden; }
 .tk-report .tk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--tk-border); }
+.tk-report.tk-report--insights .tk-panel-head { background: linear-gradient(90deg, var(--tk-view-soft), transparent); }
 .tk-report .tk-panel-title { font-family: var(--tk-serif); font-size: 1.3rem; font-weight: 700; color: var(--tk-heading); margin: 0; }
 .tk-report .tk-panel-sub { font-size: .78rem; color: var(--tk-muted); margin: 3px 0 0; }
 .tk-report .tk-list { padding: 8px 18px; }
@@ -151,7 +190,7 @@ $prioridadLabels = [
 @media (max-width: 900px) { .tk-report .tk-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tk-report .tk-stack { grid-template-columns: 1fr; } .tk-report .tk-title { font-size: 1.8rem; } }
 </style>
 
-<div class="tk-report p-4 sm:p-6">
+<div class="tk-report tk-report--insights p-4 sm:p-6">
     <div class="tk-shell">
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="tk-title-lockup">
@@ -160,6 +199,7 @@ $prioridadLabels = [
                     <p class="tk-kicker">Operaci&oacute;n del hotel</p>
                     <h1 class="tk-title">Reporte de tareas</h1>
                     <p class="tk-subtitle">Resumen de tus tareas por estado, prioridad, categor&iacute;a, trabajador y habitaci&oacute;n. Solo para consultar.</p>
+                    <div class="tk-view-chip"><i class="fas fa-chart-line"></i> Vista de an&aacute;lisis</div>
                 </div>
             </div>
             <a class="tk-btn" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
@@ -270,6 +310,7 @@ $prioridadLabels = [
                                     [$eLabel, $eClass, $eIcon] = tk_report_estado_meta($tarea['estado'] ?? 'pendiente');
                                     $categoria = (string)($tarea['categoria'] ?? 'general');
                                     $prioridad = (string)($tarea['prioridad'] ?? 'media');
+                                    $trabajadoresTexto = tk_report_workers_text($tarea);
                                     ?>
                                     <tr>
                                         <td>
@@ -283,8 +324,8 @@ $prioridadLabels = [
                                             <?php if (!empty($tarea['habitacion_id'])): ?>
                                                 Hab. <?= tlm_report_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?><br>
                                             <?php endif; ?>
-                                            <?php if (!empty($tarea['trabajador_id'])): ?>
-                                                <?= tlm_report_safe($tarea['trabajador_nombre'] ?? 'Trabajador #' . (int)$tarea['trabajador_id']) ?>
+                                            <?php if ($trabajadoresTexto !== ''): ?>
+                                                <?= tlm_report_safe($trabajadoresTexto) ?>
                                             <?php elseif (empty($tarea['habitacion_id'])): ?>
                                                 <span class="tk-sub" style="margin:0">Sin contexto</span>
                                             <?php endif; ?>

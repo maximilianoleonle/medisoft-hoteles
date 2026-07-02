@@ -446,6 +446,23 @@ class ReportesController extends Controller {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 
+private function condicionReversoIngresoCaja(string $alias = 'mc'): string {
+    $prefix = $alias !== '' ? $alias . '.' : '';
+
+    return "(
+        {$prefix}tipo = 'gasto'
+        AND (
+            LOWER(COALESCE({$prefix}categoria, '')) IN ('devolucion', 'devoluciones', 'reverso anticipo', 'reverso de anticipo', 'reversion cobro cxc')
+            OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'devoluc%'
+            OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso anticipo%'
+            OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso de anticipo%'
+            OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reversion cobro cxc%'
+            OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reverso de anticipo%'
+            OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reversion cobro cxc%'
+        )
+    )";
+}
+
 public function ingresosGastosAction() {
     $this->requireAuth();
     
@@ -466,13 +483,19 @@ public function ingresosGastosAction() {
     $resumenDiario = $reporteModel->getResumenDiario($fecha_inicio, $fecha_fin);
     
     // Calcular totales
+    $totalIngresosBrutos = array_sum(array_column($datos['ingresos'] ?? [], 'total'));
+    $totalReversos = array_sum(array_column($datos['reversos'] ?? [], 'total'));
+    $totalIngresosNetos = $totalIngresosBrutos - $totalReversos;
+    $totalGastosReales = array_sum(array_column($datos['gastos'] ?? [], 'total'));
+
     $totales = [
-        'ingresos' => array_sum(array_column($datos['ingresos'], 'total')),
-        'gastos' => array_sum(array_column($datos['gastos'], 'total')),
-        'utilidad' => 0
+        'ingresos' => $totalIngresosNetos,
+        'ingresos_brutos' => $totalIngresosBrutos,
+        'reversos' => $totalReversos,
+        'gastos' => $totalGastosReales,
+        'gastos_reales' => $totalGastosReales,
+        'utilidad' => $totalIngresosNetos - $totalGastosReales
     ];
-    
-    $totales['utilidad'] = $totales['ingresos'] - $totales['gastos'];
     
     // Obtener datos por método de pago
     $metodosPago = $this->getMetodosPagoData($fecha_inicio, $fecha_fin);
@@ -497,31 +520,39 @@ public function ingresosGastosAction() {
 private function getMetodosPagoData($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
+    $condicionReverso = $this->condicionReversoIngresoCaja('mc');
     
     $sql = "SELECT 
-                metodo_pago,
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
-                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
-            FROM movimientos_caja 
-            WHERE hotel_id = ?
-            AND DATE(created_at) BETWEEN ? AND ?
-            GROUP BY metodo_pago";
+                mc.metodo_pago,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_brutos,
+                SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as reversos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as total_ingresos,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as total_gastos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as balance
+            FROM movimientos_caja mc
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) BETWEEN ? AND ?
+            GROUP BY mc.metodo_pago";
     
     $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $results = $stmt->fetchAll();
     
     // Estructurar los datos por método de pago
     $metodosPago = [
-        'efectivo' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0],
-        'tarjeta' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0],
-        'transferencia' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0]
+        'efectivo' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'balance' => 0],
+        'tarjeta' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'balance' => 0],
+        'transferencia' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'balance' => 0]
     ];
     
     foreach ($results as $row) {
         $metodo = $row['metodo_pago'];
         if (isset($metodosPago[$metodo])) {
             $metodosPago[$metodo] = [
+                'ingresos_brutos' => floatval($row['ingresos_brutos']),
+                'reversos' => floatval($row['reversos']),
                 'ingresos' => floatval($row['total_ingresos']),
                 'gastos' => floatval($row['total_gastos']),
                 'balance' => floatval($row['balance'])
@@ -1470,8 +1501,10 @@ private function exportarIngresosGastosPdf() {
     $reporteModel = new Reporte();
     $datos = $reporteModel->getIngresosVsGastos($fecha_inicio, $fecha_fin);
     
-    $totalIngresos = array_sum(array_column($datos['ingresos'], 'total'));
-    $totalGastos = array_sum(array_column($datos['gastos'], 'total'));
+    $totalIngresosBrutos = array_sum(array_column($datos['ingresos'] ?? [], 'total'));
+    $totalReversos = array_sum(array_column($datos['reversos'] ?? [], 'total'));
+    $totalIngresos = $totalIngresosBrutos - $totalReversos;
+    $totalGastos = array_sum(array_column($datos['gastos'] ?? [], 'total'));
     $utilidad = $totalIngresos - $totalGastos;
     
     // Datos por método de pago

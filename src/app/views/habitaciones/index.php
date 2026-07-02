@@ -2071,6 +2071,26 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     flex-shrink: 0;
 }
 
+/* Indicador de saldo en la tarjeta de habitación ocupada.
+   El reverso usa gradiente con texto blanco, por eso usamos fondos
+   translúcidos + acento brillante para que resalte sobre cualquier color. */
+.flip-card-back .info-item.hb-saldo-pendiente {
+    background: rgba(251, 191, 36, 0.22);
+    border: 1px solid rgba(251, 191, 36, 0.55);
+    border-radius: 8px;
+    padding: 3px 7px;
+    font-weight: 700;
+}
+.flip-card-back .info-item.hb-saldo-pendiente i {
+    color: #fde68a;
+}
+.flip-card-back .info-item.hb-saldo-cubierto {
+    opacity: 0.85;
+}
+.flip-card-back .info-item.hb-saldo-cubierto i {
+    color: #bbf7d0;
+}
+
 /* Chip de tareas vinculadas (abre el panel "Tareas del cuarto") */
 .flip-card-back .hb-tareas-chip {
     display: flex;
@@ -3405,6 +3425,12 @@ if ($tiene_doble_movimiento) {
                     $reservacion_detalle_id = $habitacion['ocupacion_actual']['id'] ?? ($habitacion['ocupacion_actual']['reservacion_id'] ?? null);
                 }
                 $reservacion_detalle_id = $reservacion_detalle_id && (int) $reservacion_detalle_id > 0 ? (int) $reservacion_detalle_id : null;
+                $puede_checkout_ocupada = $reservacion_detalle_id
+                    && !$tiene_checkout_vencido
+                    && $habitacion['estado'] == 'ocupada'
+                    && isset($habitacion['ocupacion_actual'])
+                    && $estado_actual !== 'ocupada_fecha'
+                    && can('habitaciones.checkout');
                 $hbIncidencias = [];
                 if ($es_checkin_vencido && $info_checkin_vencido) {
                     $diasRetraso = (int)($info_checkin_vencido['dias_retraso'] ?? 0);
@@ -3449,6 +3475,17 @@ if ($tiene_doble_movimiento) {
                         'icon' => 'tasks',
                         'label' => $tareasActivas . ' tarea' . ($tareasActivas === 1 ? '' : 's'),
                         'detail' => implode(' / ', $tareasDetalle),
+                    ];
+                }
+                // Saldo pendiente: chip visible en la cara frontal de la tarjeta
+                // (no requiere voltear). Solo aplica a habitaciones ocupadas.
+                $saldoOcupFront = (float)($habitacion['ocupacion_actual']['saldo'] ?? 0);
+                if ($habitacion['estado'] == 'ocupada' && $saldoOcupFront > 0.004) {
+                    $hbIncidencias[] = [
+                        'type' => 'warning',
+                        'icon' => 'dollar-sign',
+                        'label' => 'Saldo pendiente',
+                        'detail' => format_money($saldoOcupFront),
                     ];
                 }
                 $tareasProxLimite = $tareasResumen['proxima_fecha_limite'] ?? null;
@@ -3760,6 +3797,18 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-calendar-times"></i>
                                         <span>Salida: <?= format_date($habitacion['ocupacion_actual']['fecha_salida']) ?></span>
                                     </div>
+                                    <?php $saldoOcup = (float)($habitacion['ocupacion_actual']['saldo'] ?? 0); ?>
+                                    <?php if ($saldoOcup > 0.004): ?>
+                                    <div class="info-item hb-saldo-pendiente" title="Esta reservación tiene saldo pendiente. No se podrá hacer check-out hasta cobrarlo.">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>Saldo pendiente: <strong><?= format_money($saldoOcup) ?></strong></span>
+                                    </div>
+                                    <?php else: ?>
+                                    <div class="info-item hb-saldo-cubierto" title="Cuenta cubierta. Lista para check-out.">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Cuenta cubierta</span>
+                                    </div>
+                                    <?php endif; ?>
 
                                 <?php elseif ($habitacion['estado'] == 'limpieza'): ?>
                                     <div class="info-item">
@@ -3804,6 +3853,12 @@ if ($tiene_doble_movimiento) {
     <?php if ($reservacion_detalle_id && !($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id']))): ?>
         <a href="<?= url('reservaciones/ver/' . $reservacion_detalle_id) ?>" class="btn-action" onclick="event.stopPropagation();" title="Ver detalle de la reservación">
             <i class="fas fa-file-alt mr-1"></i>Reservacion
+        </a>
+    <?php endif; ?>
+
+    <?php if ($puede_checkout_ocupada): ?>
+        <a href="javascript:void(0)" onclick="event.stopPropagation(); confirmarCheckOut(<?= (int)$reservacion_detalle_id ?>)" class="btn-action btn-primary hb-card-checkout-action" title="Realizar check-out de esta reservacion">
+            <i class="fas fa-sign-out-alt mr-1"></i>Check-out
         </a>
     <?php endif; ?>
 
@@ -14653,6 +14708,31 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
 // ========================================
 
 // ========================================
+// MODAL "CUENTA PENDIENTE" (reutilizable)
+// Se muestra cuando el check-out se bloquea por saldo pendiente.
+// ========================================
+function mostrarModalSaldoPendiente(data) {
+    const mensaje = data.message || 'Esta reservación tiene un saldo pendiente. Cobra el saldo antes de registrar la salida.';
+    const irCobrar = data.url_reservacion
+        ? `<a href="${data.url_reservacion}" class="swal2-confirm swal2-styled" style="display:inline-flex;align-items:center;gap:8px;background:#F97316;margin-top:6px;"><i class="fas fa-cash-register"></i> Ir a cobrar</a>`
+        : '';
+    Swal.fire({
+        icon: 'warning',
+        title: 'Cuenta pendiente',
+        html: `
+            <div class="text-center" style="max-width:420px;margin:0 auto;">
+                <p style="margin-bottom:14px;color:#374151;">${mensaje}</p>
+                ${irCobrar}
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cerrar',
+        cancelButtonColor: '#6B7280',
+    });
+}
+
+// ========================================
 // CHECK-OUT RÁPIDO (todas las habitaciones)
 // ========================================
 function ejecutarCheckOutRapido(reservacionId) {
@@ -14674,6 +14754,10 @@ function ejecutarCheckOutRapido(reservacionId) {
 
     fetch(endpoint, {
         method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
         body: formData,
         redirect: 'follow'
     })
@@ -14709,17 +14793,7 @@ function ejecutarCheckOutRapido(reservacionId) {
                 window.location.reload();
             });
         } else if (data.saldo_pendiente) {
-            const btnHtml = data.url_reservacion
-                ? `<br><br><a href="${data.url_reservacion}" class="swal2-confirm swal2-styled" style="display:inline-flex;align-items:center;gap:6px;font-size:.9rem;"><i class="fas fa-cash-register"></i> Ir a cobrar</a>`
-                : '';
-            Swal.fire({
-                icon: 'warning',
-                title: 'Saldo pendiente',
-                html: (data.message || 'Hay un saldo pendiente.') + btnHtml,
-                showConfirmButton: false,
-                showCancelButton: true,
-                cancelButtonText: 'Cerrar',
-            });
+            mostrarModalSaldoPendiente(data);
         } else {
             throw new Error(data.message || 'Error al procesar check-out');
         }
@@ -14884,6 +14958,10 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
 
     fetch(endpoint, {
         method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
         body: formData,
         redirect: 'follow'
     })
@@ -14911,6 +14989,11 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
     })
     .then(data => {
         if (!data) return; // Ya manejado (redirect)
+
+        if (data.saldo_pendiente) {
+            mostrarModalSaldoPendiente(data);
+            return;
+        }
 
         if (data.success) {
             let htmlContent = `

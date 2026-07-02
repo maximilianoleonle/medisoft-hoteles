@@ -21,6 +21,23 @@ class Reporte extends Model {
         return obtenerHotelIdActualCompat();
     }
 
+    private function condicionReversoIngresoCaja(string $alias = 'mc'): string {
+        $prefix = $alias !== '' ? $alias . '.' : '';
+
+        return "(
+            {$prefix}tipo = 'gasto'
+            AND (
+                LOWER(COALESCE({$prefix}categoria, '')) IN ('devolucion', 'devoluciones', 'reverso anticipo', 'reverso de anticipo', 'reversion cobro cxc')
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'devoluc%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reversion cobro cxc%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reversion cobro cxc%'
+            )
+        )";
+    }
+
     private function totalHabitacionesActivasHotel($hotel_id = null): int {
         $db = Database::getInstance();
         $hotel_id = $hotel_id ?? $this->hotelIdActual();
@@ -33,11 +50,13 @@ class Reporte extends Model {
 
         return (int)($resultado['total'] ?? 0);
     }
-    
+
     /**
      * Obtener Ingresos vs Gastos
      */
     public function obtenerIngresosGastos($fecha_inicio, $fecha_fin) {
+        return $this->getIngresosVsGastos($fecha_inicio, $fecha_fin);
+
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         
@@ -81,6 +100,56 @@ class Reporte extends Model {
 public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
+    $condicionReverso = $this->condicionReversoIngresoCaja('mc');
+
+    $sqlIngresosNeto = "SELECT
+                        COALESCE(mc.categoria, 'Sin categoria') as categoria,
+                        COUNT(*) as cantidad,
+                        SUM(mc.monto) as total
+                    FROM movimientos_caja mc
+                    WHERE mc.hotel_id = ?
+                    AND mc.tipo = 'ingreso'
+                    AND DATE(mc.created_at) BETWEEN ? AND ?
+                    GROUP BY COALESCE(mc.categoria, 'Sin categoria')
+                    ORDER BY total DESC";
+
+    $stmtIngresosNeto = $db->query($sqlIngresosNeto, [$hotel_id, $fecha_inicio, $fecha_fin]);
+    $ingresosNeto = $stmtIngresosNeto->fetchAll();
+
+    $sqlReversos = "SELECT
+                        COALESCE(mc.categoria, 'Sin categoria') as categoria,
+                        COUNT(*) as cantidad,
+                        SUM(mc.monto) as total
+                    FROM movimientos_caja mc
+                    WHERE mc.hotel_id = ?
+                    AND {$condicionReverso}
+                    AND DATE(mc.created_at) BETWEEN ? AND ?
+                    GROUP BY COALESCE(mc.categoria, 'Sin categoria')
+                    ORDER BY total DESC";
+
+    $stmtReversos = $db->query($sqlReversos, [$hotel_id, $fecha_inicio, $fecha_fin]);
+    $reversos = $stmtReversos->fetchAll();
+
+    $sqlGastosReales = "SELECT
+                      COALESCE(mc.categoria, 'Sin categoria') as categoria,
+                      COUNT(*) as cantidad,
+                      SUM(mc.monto) as total
+                  FROM movimientos_caja mc
+                  WHERE mc.hotel_id = ?
+                  AND mc.tipo IN ('gasto', 'egreso')
+                  AND NOT {$condicionReverso}
+                  AND DATE(mc.created_at) BETWEEN ? AND ?
+                  GROUP BY COALESCE(mc.categoria, 'Sin categoria')
+                  ORDER BY total DESC";
+
+    $stmtGastosReales = $db->query($sqlGastosReales, [$hotel_id, $fecha_inicio, $fecha_fin]);
+    $gastosReales = $stmtGastosReales->fetchAll();
+
+    return [
+        'ingresos' => $ingresosNeto ?: [],
+        'reversos' => $reversos ?: [],
+        'gastos' => $gastosReales ?: []
+    ];
     
     // Obtener ingresos por categoría
     $sqlIngresos = "SELECT 
@@ -123,16 +192,22 @@ public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
 public function getResumenDiario($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
-    
+    $condicionReverso = $this->condicionReversoIngresoCaja('mc');
+
     $sql = "SELECT 
-                DATE(created_at) as fecha,
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
-                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos,
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as utilidad
-            FROM movimientos_caja 
-            WHERE hotel_id = ?
-            AND DATE(created_at) BETWEEN ? AND ?
-            GROUP BY DATE(created_at)
+                DATE(mc.created_at) as fecha,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_brutos,
+                SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as reversos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as ingresos,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as gastos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as utilidad
+            FROM movimientos_caja mc
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) BETWEEN ? AND ?
+            GROUP BY DATE(mc.created_at)
             ORDER BY fecha";
     
     $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
@@ -147,6 +222,8 @@ public function getResumenDiario($fecha_inicio, $fecha_fin) {
         while ($fecha_actual <= $fecha_final) {
             $resumen[] = [
                 'fecha' => $fecha_actual->format('Y-m-d'),
+                'ingresos_brutos' => 0,
+                'reversos' => 0,
                 'ingresos' => 0,
                 'gastos' => 0,
                 'utilidad' => 0
@@ -172,6 +249,8 @@ public function getResumenDiario($fecha_inicio, $fecha_fin) {
             } else {
                 $resumenCompleto[] = [
                     'fecha' => $fechaStr,
+                    'ingresos_brutos' => 0,
+                    'reversos' => 0,
                     'ingresos' => 0,
                     'gastos' => 0,
                     'utilidad' => 0
@@ -190,47 +269,51 @@ public function getResumenDiario($fecha_inicio, $fecha_fin) {
 public function getIngresosPorMetodoPago($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
-    
-    $sql = "SELECT 
-                metodo_pago,
-                tipo,
-                COUNT(*) as cantidad,
-                SUM(monto) as total
-            FROM movimientos_caja 
-            WHERE hotel_id = ?
-            AND DATE(created_at) BETWEEN ? AND ?
-            GROUP BY metodo_pago, tipo
-            ORDER BY metodo_pago, tipo";
+    $condicionReverso = $this->condicionReversoIngresoCaja('mc');
+    $sql = "SELECT
+                mc.metodo_pago,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_brutos,
+                SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as reversos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as ingresos,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as gastos,
+                COUNT(CASE WHEN mc.tipo = 'ingreso' THEN 1 END) as cantidad_ingresos,
+                COUNT(CASE WHEN {$condicionReverso} THEN 1 END) as cantidad_reversos,
+                COUNT(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN 1 END) as cantidad_gastos
+            FROM movimientos_caja mc
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) BETWEEN ? AND ?
+            GROUP BY mc.metodo_pago
+            ORDER BY mc.metodo_pago";
     
     $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $results = $stmt->fetchAll();
     
     // Estructurar los datos
     $metodosPago = [
-        'efectivo' => ['ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_gastos' => 0],
-        'tarjeta' => ['ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_gastos' => 0],
-        'transferencia' => ['ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_gastos' => 0]
+        'efectivo' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_reversos' => 0, 'cantidad_gastos' => 0],
+        'tarjeta' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_reversos' => 0, 'cantidad_gastos' => 0],
+        'transferencia' => ['ingresos_brutos' => 0, 'reversos' => 0, 'ingresos' => 0, 'gastos' => 0, 'cantidad_ingresos' => 0, 'cantidad_reversos' => 0, 'cantidad_gastos' => 0]
     ];
     
     foreach ($results as $row) {
         $metodo = $row['metodo_pago'];
-        $tipo = $row['tipo'];
         
         if (isset($metodosPago[$metodo])) {
-            if ($tipo == 'ingreso') {
-                $metodosPago[$metodo]['ingresos'] = floatval($row['total']);
-                $metodosPago[$metodo]['cantidad_ingresos'] = intval($row['cantidad']);
-            } else {
-                $metodosPago[$metodo]['gastos'] = floatval($row['total']);
-                $metodosPago[$metodo]['cantidad_gastos'] = intval($row['cantidad']);
-            }
+            $metodosPago[$metodo]['ingresos_brutos'] = floatval($row['ingresos_brutos']);
+            $metodosPago[$metodo]['reversos'] = floatval($row['reversos']);
+            $metodosPago[$metodo]['ingresos'] = floatval($row['ingresos']);
+            $metodosPago[$metodo]['gastos'] = floatval($row['gastos']);
+            $metodosPago[$metodo]['cantidad_ingresos'] = intval($row['cantidad_ingresos']);
+            $metodosPago[$metodo]['cantidad_reversos'] = intval($row['cantidad_reversos']);
+            $metodosPago[$metodo]['cantidad_gastos'] = intval($row['cantidad_gastos']);
         }
     }
     
     // Calcular balances
     foreach ($metodosPago as &$metodo) {
         $metodo['balance'] = $metodo['ingresos'] - $metodo['gastos'];
-        $metodo['cantidad_total'] = $metodo['cantidad_ingresos'] + $metodo['cantidad_gastos'];
+        $metodo['cantidad_total'] = $metodo['cantidad_ingresos'] + $metodo['cantidad_reversos'] + $metodo['cantidad_gastos'];
     }
     
     return $metodosPago;
@@ -1356,15 +1439,19 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
     public function obtenerDatosGraficaIngresosGastos($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
+        $condicionReverso = $this->condicionReversoIngresoCaja('mc');
         
         $sql = "SELECT 
-                DATE(created_at) as fecha,
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
-                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos
-                FROM movimientos_caja
-                WHERE hotel_id = ?
-                AND DATE(created_at) BETWEEN ? AND ?
-                GROUP BY DATE(created_at)
+                DATE(mc.created_at) as fecha,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_brutos,
+                SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as reversos,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) -
+                    SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as ingresos,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as gastos
+                FROM movimientos_caja mc
+                WHERE mc.hotel_id = ?
+                AND DATE(mc.created_at) BETWEEN ? AND ?
+                GROUP BY DATE(mc.created_at)
                 ORDER BY fecha";
         
         $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
@@ -1373,6 +1460,8 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         return [
             'labels' => array_column($datos, 'fecha'),
             'ingresos' => array_column($datos, 'ingresos'),
+            'ingresos_brutos' => array_column($datos, 'ingresos_brutos'),
+            'reversos' => array_column($datos, 'reversos'),
             'gastos' => array_column($datos, 'gastos')
         ];
     }
@@ -1486,22 +1575,30 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     private function generarPDFIngresosGastos($pdf, $fecha_inicio, $fecha_fin) {
         $datos = $this->obtenerIngresosGastos($fecha_inicio, $fecha_fin);
+        $totalIngresosBrutos = array_sum(array_column($datos['ingresos'] ?? [], 'total'));
+        $totalReversos = array_sum(array_column($datos['reversos'] ?? [], 'total'));
+        $totalIngresosNetos = $totalIngresosBrutos - $totalReversos;
+        $totalGastosReales = array_sum(array_column($datos['gastos'] ?? [], 'total'));
         $totales = [
-            'ingresos' => array_sum(array_column($datos['ingresos'], 'total')),
-            'gastos' => array_sum(array_column($datos['gastos'], 'total')),
-            'utilidad' => 0
+            'ingresos' => $totalIngresosNetos,
+            'ingresos_brutos' => $totalIngresosBrutos,
+            'reversos' => $totalReversos,
+            'gastos' => $totalGastosReales,
+            'utilidad' => $totalIngresosNetos - $totalGastosReales
         ];
-        $totales['utilidad'] = $totales['ingresos'] - $totales['gastos'];
         
         // Resumen
         $pdf->SetFont('helvetica', 'B', 12);
         $pdf->Cell(0, 8, 'RESUMEN GENERAL', 0, 1, 'L');
         $pdf->SetFont('helvetica', '', 10);
         
-        $pdf->Cell(60, 6, 'Total Ingresos:', 1, 0, 'L');
+        $pdf->Cell(60, 6, 'Ingresos netos:', 1, 0, 'L');
         $pdf->Cell(0, 6, '$' . number_format($totales['ingresos'], 2), 1, 1, 'R');
+
+        $pdf->Cell(60, 6, 'Reversos:', 1, 0, 'L');
+        $pdf->Cell(0, 6, '$' . number_format($totales['reversos'], 2), 1, 1, 'R');
         
-        $pdf->Cell(60, 6, 'Total Gastos:', 1, 0, 'L');
+        $pdf->Cell(60, 6, 'Gastos reales:', 1, 0, 'L');
         $pdf->Cell(0, 6, '$' . number_format($totales['gastos'], 2), 1, 1, 'R');
         
         $pdf->SetFont('helvetica', 'B', 10);
@@ -1512,7 +1609,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         
         // Detalle de ingresos
         $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(0, 7, 'DETALLE DE INGRESOS', 0, 1, 'L');
+        $pdf->Cell(0, 7, 'DETALLE DE ENTRADAS REGISTRADAS', 0, 1, 'L');
         $pdf->SetFont('helvetica', '', 9);
         
         foreach ($datos['ingresos'] as $ingreso) {
@@ -1522,10 +1619,24 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         }
         
         $pdf->Ln(3);
+
+        if (!empty($datos['reversos'])) {
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(0, 7, 'DETALLE DE REVERSOS', 0, 1, 'L');
+            $pdf->SetFont('helvetica', '', 9);
+
+            foreach ($datos['reversos'] as $reverso) {
+                $pdf->Cell(100, 5, $reverso['categoria'], 0, 0, 'L');
+                $pdf->Cell(30, 5, $reverso['cantidad'] . ' movimientos', 0, 0, 'C');
+                $pdf->Cell(0, 5, '$' . number_format($reverso['total'], 2), 0, 1, 'R');
+            }
+
+            $pdf->Ln(3);
+        }
         
         // Detalle de gastos
         $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(0, 7, 'DETALLE DE GASTOS', 0, 1, 'L');
+        $pdf->Cell(0, 7, 'DETALLE DE GASTOS REALES', 0, 1, 'L');
         $pdf->SetFont('helvetica', '', 9);
         
         foreach ($datos['gastos'] as $gasto) {

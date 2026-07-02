@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>404 - Página No Encontrada | Medisoft Hoteles</title>
     
     <!-- Tailwind CSS -->
@@ -33,6 +33,39 @@
                 }
             }
         }
+    </script>
+    <style>
+        html {
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    </style>
+    <script>
+        (function() {
+            var lastTouchEnd = 0;
+            function blockZoom(event) {
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+            }
+
+            document.addEventListener('gesturestart', blockZoom, { passive: false });
+            document.addEventListener('gesturechange', blockZoom, { passive: false });
+            document.addEventListener('gestureend', blockZoom, { passive: false });
+            document.addEventListener('touchmove', function(event) {
+                if (event.touches && event.touches.length > 1) {
+                    blockZoom(event);
+                }
+            }, { passive: false });
+            document.addEventListener('touchend', function(event) {
+                var now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    blockZoom(event);
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+        })();
     </script>
 </head>
 <body class="min-h-screen bg-hotel-cream flex items-center justify-center p-4 font-inter">

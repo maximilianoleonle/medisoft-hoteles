@@ -8,7 +8,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Corrección de precios - Medisoft Hoteles</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,6 +31,18 @@
             --co-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html {
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        @media (max-width: 1024px) {
+            input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
         body {
             font-family: var(--co-sans);
             color: var(--co-text);
@@ -94,6 +106,32 @@
         .actions p { color: var(--co-muted); margin-bottom: 18px; font-size: .9rem; line-height: 1.5; }
         .actions form { display: inline-flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     </style>
+    <script>
+        (function() {
+            var lastTouchEnd = 0;
+            function blockZoom(event) {
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+            }
+
+            document.addEventListener('gesturestart', blockZoom, { passive: false });
+            document.addEventListener('gesturechange', blockZoom, { passive: false });
+            document.addEventListener('gestureend', blockZoom, { passive: false });
+            document.addEventListener('touchmove', function(event) {
+                if (event.touches && event.touches.length > 1) {
+                    blockZoom(event);
+                }
+            }, { passive: false });
+            document.addEventListener('touchend', function(event) {
+                var now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    blockZoom(event);
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+        })();
+    </script>
 </head>
 <body>
     <div class="container">

@@ -159,8 +159,8 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                 <div class="cx-hero-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                 <div>
                     <p class="cx-kicker">Cobros a hu&eacute;spedes</p>
-                    <h1 class="cx-title">Cuentas por cobrar</h1>
-                    <p class="cx-subtitle">Lo que te deben tus clientes: cu&aacute;nto, cu&aacute;ndo vence y cu&aacute;nto falta por cobrar. Los cobros se registran desde el detalle de cada cuenta.</p>
+                    <h1 class="cx-title">Cuentas operativas</h1>
+                    <p class="cx-subtitle">Cuentas por cobrar ya generadas. Revisa saldo, vencimiento y entra al detalle para cobrar o auditar movimientos.</p>
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
@@ -211,15 +211,15 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                 <?php if (empty($cuentas)): ?>
                     <section class="cx-empty">
                         <div class="cx-empty-icon"><i class="fas fa-table-list"></i></div>
-                        <h2>A&uacute;n no hay cuentas por cobrar</h2>
-                        <p>No encontramos cuentas con estos filtros. Se generan desde tus reservaciones con saldo.</p>
+                        <h2>A&uacute;n no hay cuentas operativas</h2>
+                        <p>No encontramos cuentas con estos filtros. Se generan desde tus reservaciones con saldo pendiente.</p>
                     </section>
                 <?php else: ?>
                     <section class="cx-panel overflow-hidden">
                         <div class="cx-panel-head">
                             <div>
-                                <div class="cx-panel-title">Lista de cuentas por cobrar</div>
-                                <div class="cx-panel-sub">Concepto, huésped, vencimiento y saldo.</div>
+                                <div class="cx-panel-title">Lista de cuentas operativas</div>
+                                <div class="cx-panel-sub">Cuentas ya generadas desde reservaciones: estado, vencimiento y saldo.</div>
                             </div>
                             <span class="cx-count-pill"><i class="fas fa-list"></i> <?= number_format($visibles) ?></span>
                         </div>

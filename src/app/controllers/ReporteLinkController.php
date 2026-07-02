@@ -196,9 +196,10 @@ class ReporteLinkController extends Controller {
         $tituloSeguro = htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8');
         $mensajeSeguro = htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8');
 
-        echo '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
+        echo '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">';
         echo '<title>' . $tituloSeguro . '</title>';
-        echo '<style>body{margin:0;font-family:Inter,Arial,sans-serif;background:#f6f7fb;color:#172033;display:grid;place-items:center;min-height:100vh}main{width:min(520px,calc(100% - 32px));background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px;box-shadow:0 24px 70px rgba(15,23,42,.12)}h1{font-size:24px;margin:0 0 10px}p{margin:0;color:#667085;line-height:1.55}</style>';
+        echo '<style>html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f6f7fb;color:#172033;display:grid;place-items:center;min-height:100vh}main{width:min(520px,calc(100% - 32px));background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px;box-shadow:0 24px 70px rgba(15,23,42,.12)}h1{font-size:24px;margin:0 0 10px}p{margin:0;color:#667085;line-height:1.55}</style>';
+        echo '<script>(function(){var lastTouchEnd=0;function blockZoom(event){if(event.cancelable){event.preventDefault();}}document.addEventListener("gesturestart",blockZoom,{passive:false});document.addEventListener("gesturechange",blockZoom,{passive:false});document.addEventListener("gestureend",blockZoom,{passive:false});document.addEventListener("touchmove",function(event){if(event.touches&&event.touches.length>1){blockZoom(event);}}, {passive:false});document.addEventListener("touchend",function(event){var now=Date.now();if(now-lastTouchEnd<=300){blockZoom(event);}lastTouchEnd=now;},{passive:false});})();</script>';
         echo '</head><body><main><h1>' . $tituloSeguro . '</h1><p>' . $mensajeSeguro . '</p></main></body></html>';
         exit;
     }

@@ -1298,6 +1298,10 @@
         }
 
         const type = String(field.type || '').toLowerCase();
+        if (['radio', 'checkbox', 'file', 'button', 'submit', 'reset', 'hidden'].includes(type)) {
+            return false;
+        }
+
         return type === 'number' || /(^|[_\[\]-])(monto|importe|total|precio|costo|tarifa|cantidad|anticipo|abono|deposito|descuento|salario|horas|plazo)([_\]\[-]|$)/i.test(String(field.name || ''));
     }
 
@@ -1541,7 +1545,12 @@
     }
 
     function readPreventiveNumber(field) {
-        const value = String(field && field.value || '').trim().replace(/,/g, '.');
+        const rawValue = String(field && field.value || '').trim();
+        const isMoneyManaged = field
+            && (field.matches('[data-money-format="true"]') || field.dataset.moneyReady === '1');
+        const value = isMoneyManaged
+            ? rawValue.replace(/,/g, '')
+            : rawValue.replace(/,/g, '.');
         const numberValue = Number(value);
         return Number.isFinite(numberValue) ? numberValue : 0;
     }

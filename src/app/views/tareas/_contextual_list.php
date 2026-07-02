@@ -38,6 +38,20 @@ if (!function_exists('tk_context_estado_meta')) {
     }
 }
 
+if (!function_exists('tk_context_workers_text')) {
+    function tk_context_workers_text(array $tarea): string
+    {
+        foreach (['trabajadores_nombres', 'trabajadores_asignados', 'trabajador_nombre'] as $campo) {
+            $texto = trim((string)($tarea[$campo] ?? ''));
+            if ($texto !== '') {
+                return $texto;
+            }
+        }
+
+        return '';
+    }
+}
+
 $tlmCategoriaLabels = [
     'limpieza' => 'Limpieza',
     'mantenimiento' => 'Mantenimiento',
@@ -106,6 +120,7 @@ $tlmCategoriaLabels = [
                 <?php
                 [$eLabel, $eClass] = tk_context_estado_meta($tareaContextual['estado'] ?? 'pendiente');
                 $categoria = (string)($tareaContextual['categoria'] ?? 'general');
+                $trabajadoresTexto = tk_context_workers_text($tareaContextual);
                 ?>
                 <article class="tk-ctx-item">
                     <div>
@@ -118,8 +133,8 @@ $tlmCategoriaLabels = [
                             <?php if (!empty($tareaContextual['habitacion_numero'])): ?>
                                 <span>Hab. <?= tlm_context_safe($tareaContextual['habitacion_numero']) ?></span>
                             <?php endif; ?>
-                            <?php if (!empty($tareaContextual['trabajador_nombre'])): ?>
-                                <span><?= tlm_context_safe($tareaContextual['trabajador_nombre']) ?></span>
+                            <?php if ($trabajadoresTexto !== ''): ?>
+                                <span><?= tlm_context_safe($trabajadoresTexto) ?></span>
                             <?php endif; ?>
                         </div>
                     </div>

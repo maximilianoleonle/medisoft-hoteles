@@ -305,6 +305,7 @@ $visibles = count($cuentas);
                                         <?php
                                         $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
                                         $facturaId = (int)($cuenta['solicitud_factura_id'] ?? 0);
+                                        $cxcCobros = (float)($cuenta['cxc_cobros_total'] ?? 0);
                                         [$eLabel, $eClass, $eIcon] = cxc_estado_meta($cuenta['estado_saldo'] ?? null);
                                         ?>
                                         <tr>
@@ -323,7 +324,12 @@ $visibles = count($cuentas);
                                             <td class="is-end"><?= cxc_money($cuenta['precio_total'] ?? 0) ?></td>
                                             <td class="is-end">
                                                 <span class="cx-strong" style="color:var(--cx-success)"><?= cxc_money($cuenta['monto_cubierto'] ?? 0) ?></span>
-                                                <div class="cx-sub">Pagos <?= cxc_money($cuenta['pagos_total'] ?? 0) ?> &middot; Abonos <?= cxc_money($cuenta['abonos_total'] ?? 0) ?></div>
+                                                <div class="cx-sub">
+                                                    Pagos <?= cxc_money($cuenta['pagos_total'] ?? 0) ?> &middot; Abonos <?= cxc_money($cuenta['abonos_total'] ?? 0) ?>
+                                                    <?php if ($cxcCobros > 0.004): ?>
+                                                        &middot; CxC <?= cxc_money($cxcCobros) ?>
+                                                    <?php endif; ?>
+                                                </div>
                                             </td>
                                             <td class="is-end cx-strong"><?= cxc_money($cuenta['saldo_estimado'] ?? 0) ?></td>
                                             <td class="is-end">
@@ -355,6 +361,7 @@ $visibles = count($cuentas);
                                 <?php
                                 $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
                                 $facturaId = (int)($cuenta['solicitud_factura_id'] ?? 0);
+                                $cxcCobros = (float)($cuenta['cxc_cobros_total'] ?? 0);
                                 [$eLabel, $eClass, $eIcon] = cxc_estado_meta($cuenta['estado_saldo'] ?? null);
                                 ?>
                                 <article class="cx-mcard">
@@ -382,12 +389,18 @@ $visibles = count($cuentas);
                                         </div>
                                     </div>
 
-                                    <div class="cx-mcard-dates">
-                                        <i class="fas fa-calendar-day"></i>
-                                        <?= cxc_safe($cuenta['fecha_entrada'] ?? null) ?> &rarr; <?= cxc_safe($cuenta['fecha_salida'] ?? null) ?>
-                                    </div>
+                                        <div class="cx-mcard-dates">
+                                            <i class="fas fa-calendar-day"></i>
+                                            <?= cxc_safe($cuenta['fecha_entrada'] ?? null) ?> &rarr; <?= cxc_safe($cuenta['fecha_salida'] ?? null) ?>
+                                        </div>
+                                        <?php if ($cxcCobros > 0.004): ?>
+                                            <div class="cx-mcard-dates">
+                                                <i class="fas fa-table-list"></i>
+                                                Cobro CxC <?= cxc_money($cxcCobros) ?>
+                                            </div>
+                                        <?php endif; ?>
 
-                                    <div class="cx-mcard-acts">
+                                        <div class="cx-mcard-acts">
                                         <a class="cx-act" href="<?= url('reservaciones/ver/' . $reservacionId) ?>"><i class="fas fa-eye"></i> Reservaci&oacute;n</a>
                                         <?php if ($facturaId > 0): ?>
                                             <a class="cx-act" href="<?= url('facturacion/ver/' . $facturaId) ?>"><i class="fas fa-file-invoice"></i> Factura</a>

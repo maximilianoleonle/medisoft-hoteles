@@ -308,6 +308,8 @@ $router->get('/tareas/de-habitacion/{id:[0-9]+}', ['controller' => 'Tarea', 'act
 $router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
 $router->post('/tareas/desde-limpieza/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'crearDesdeLimpieza']);
 $router->post('/tareas/desde-mantenimiento/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'crearDesdeMantenimiento']);
+$router->get('/tareas/{id:[0-9]+}/editar', ['controller' => 'Tarea', 'action' => 'editar']);
+$router->post('/tareas/{id:[0-9]+}/actualizar', ['controller' => 'Tarea', 'action' => 'actualizar']);
 $router->post('/tareas/{id:[0-9]+}/asignar', ['controller' => 'Tarea', 'action' => 'asignar']);
 $router->post('/tareas/{id:[0-9]+}/iniciar', ['controller' => 'Tarea', 'action' => 'iniciar']);
 $router->post('/tareas/{id:[0-9]+}/completar', ['controller' => 'Tarea', 'action' => 'completar']);

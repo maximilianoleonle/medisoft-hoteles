@@ -3045,13 +3045,26 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                 Anticipo inicial (opcional)
                             </label>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <input type="number" name="anticipo_inicial" min="0.01" step="0.01" data-money-format="true"
+                                <input type="number" name="anticipo_inicial" min="0.01" step="0.01" data-money-format="true" data-anticipo-inicial-monto oninput="toggleTipoTarjetaAnticipoInicial()"
                                        placeholder="0.00" class="lc-input" style="flex:1;min-width:120px;" value="<?= old('anticipo_inicial') ?>">
-                                <select name="anticipo_metodo" class="lc-input" style="min-width:140px;">
+                                <select name="anticipo_metodo" class="lc-input" data-anticipo-inicial-metodo onchange="toggleTipoTarjetaAnticipoInicial()" style="min-width:140px;">
                                     <option value="efectivo">Efectivo</option>
                                     <option value="tarjeta">Tarjeta</option>
                                     <option value="transferencia">Transferencia</option>
                                 </select>
+                                <div data-anticipo-inicial-tarjeta style="display:none;width:100%;margin-top:6px;">
+                                    <span class="block text-xs font-bold mb-2" style="color:#6B7280;">Tipo de tarjeta</span>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                        <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:10px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;color:#334155;">
+                                            <input type="radio" name="tipo_tarjeta_anticipo_inicial" value="debito" disabled>
+                                            <i class="fas fa-money-check-alt"></i> Debito
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:10px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;color:#334155;">
+                                            <input type="radio" name="tipo_tarjeta_anticipo_inicial" value="credito" disabled>
+                                            <i class="fas fa-credit-card"></i> Credito
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                             <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
                                 <i class="fas fa-info-circle"></i>
@@ -4648,5 +4661,28 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     form.submit();
     document.body.removeChild(form);
 });
+
+window.toggleTipoTarjetaAnticipoInicial = function() {
+    const metodo = document.querySelector('[data-anticipo-inicial-metodo]');
+    const panel = document.querySelector('[data-anticipo-inicial-tarjeta]');
+    if (!metodo || !panel) {
+        return;
+    }
+
+    const montoInput = document.querySelector('[data-anticipo-inicial-monto]');
+    const monto = montoInput ? parseFloat(String(montoInput.value || '').replace(/,/g, '')) : 0;
+    const mostrar = metodo.value === 'tarjeta';
+    const requerir = mostrar && isFinite(monto) && monto > 0;
+    panel.style.display = mostrar ? 'block' : 'none';
+    panel.querySelectorAll('input[name="tipo_tarjeta_anticipo_inicial"]').forEach((input) => {
+        input.disabled = !mostrar;
+        input.required = requerir;
+        if (!mostrar) {
+            input.checked = false;
+        }
+    });
+};
+
+window.toggleTipoTarjetaAnticipoInicial();
 });
 </script>
