@@ -682,6 +682,7 @@ public function debugMovimientosAction() {
  * Actualizar vehículo (AJAX)
  */
 public function actualizarVehiculoAction() {
+    require_hotel_module('vehiculos');
     if (!$this->isAjax() || !$this->isPost()) {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
         return;
@@ -768,6 +769,12 @@ public function actualizarVehiculoAction() {
  * Devuelve [descuento_tipo, descuento_valor] o NULL/NULL si no hay descuento valido.
  */
 private function descuentoHuespedDesdePost() {
+    // Sin el bloque 'descuentos' no se capturan ni modifican descuentos;
+    // devolver [] preserva el valor existente del huesped al editar.
+    if (function_exists('current_hotel_has_module') && !current_hotel_has_module('descuentos')) {
+        return [];
+    }
+
     $tipo = trim((string)$this->getPost('descuento_tipo', ''));
     $valorRaw = str_replace(',', '', (string)$this->getPost('descuento_valor', ''));
     $valor = is_numeric($valorRaw) ? (float)$valorRaw : 0;
@@ -1029,6 +1036,7 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
     }
     
     public function agregarVehiculoAction() {
+    require_hotel_module('vehiculos');
     if (!$this->isAjax() || !$this->isPost()) {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
     }
@@ -1098,6 +1106,7 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
  * Eliminar vehículo (soft delete - AJAX)
  */
 public function eliminarVehiculoAction() {
+    require_hotel_module('vehiculos');
     if (!$this->isAjax() || !$this->isPost()) {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
         return;

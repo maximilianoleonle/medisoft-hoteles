@@ -1655,7 +1655,8 @@ textarea.ge-control {
                     <i class="fas fa-eye"></i>
                     Ver expediente
                 </a>
-                <a href="<?= back_url('huespedes') ?>" class="ge-link-btn">
+                <?php $back_arrow_href = back_url('huespedes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('huespedes') ?>" class="ge-link-btn ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Directorio
                 </a>
@@ -1744,6 +1745,7 @@ textarea.ge-control {
                         $geDescuentoTipo = old('descuento_tipo', (string)($huesped['descuento_tipo'] ?? ''));
                         $geDescuentoValor = old('descuento_valor', guest_edit_safe($huesped['descuento_valor'] ?? '', ''));
                     ?>
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('descuentos')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
@@ -1781,6 +1783,7 @@ textarea.ge-control {
                             </div>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <?php if ($geGuestFieldVisible('procedencia_estado') || $geGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="ge-panel">
@@ -1870,7 +1873,7 @@ textarea.ge-control {
                         </section>
                     <?php endif; ?>
 
-                    <?php if (!empty($geVehicleVisibleFields)): ?>
+                    <?php if (!empty($geVehicleVisibleFields) && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('vehiculos'))): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">

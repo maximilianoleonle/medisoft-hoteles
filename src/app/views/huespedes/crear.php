@@ -1618,6 +1618,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                         </div>
                     </section>
 
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('descuentos')): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">
@@ -1655,6 +1656,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                             </div>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <?php if ($gcGuestFieldVisible('procedencia_estado') || $gcGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="gc-section">
@@ -1812,7 +1814,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                         </div>
                     </section>
 
-                    <?php if (!empty($gcVehicleVisibleFields)): ?>
+                    <?php if (!empty($gcVehicleVisibleFields) && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('vehiculos'))): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">

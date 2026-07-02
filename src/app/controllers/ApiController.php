@@ -52,7 +52,7 @@ class ApiController extends Controller {
             'reservacionResumenPagos' => 'reservaciones',
             'todasConOcupacion' => 'habitaciones',
             'validarImagen' => 'habitaciones',
-            'vehiculosHuesped' => 'huespedes',
+            'vehiculosHuesped' => 'vehiculos',
             'verificarDisponibilidad' => 'reservaciones',
             'buscarHuespedes' => 'huespedes',
             'alertasInventario' => 'inventario',

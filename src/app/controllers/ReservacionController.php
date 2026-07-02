@@ -3038,6 +3038,7 @@ try {
  * Entregar llave al huésped
  */
 public function entregarLlaveAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3080,6 +3081,7 @@ public function entregarLlaveAction() {
  * Recibir llave del huésped
  */
 public function recibirLlaveAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3123,6 +3125,7 @@ public function recibirLlaveAction() {
  * Entregar control remoto al huésped
  */
 public function entregarRemotoAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3182,6 +3185,7 @@ public function entregarRemotoAction() {
  * NUEVA FUNCIÓN
  */
 public function entregarRemotosMultiplesAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3264,6 +3268,7 @@ public function entregarRemotosMultiplesAction() {
  * NUEVA FUNCIÓN
  */
 public function recibirRemotosMultiplesAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3329,6 +3334,7 @@ public function recibirRemotosMultiplesAction() {
  * Recibir control remoto del huésped
  */
 public function recibirRemotoAction() {
+    require_hotel_module('llaves_remotos');
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;

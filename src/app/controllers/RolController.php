@@ -18,6 +18,10 @@ class RolController extends Controller {
         require_auth();
         require_hotel_context();
 
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('roles_avanzados');
+        }
+
         if (!can('roles.manage')) {
             set_mensaje('No tiene permisos para gestionar roles.', 'error');
             $this->redirect('dashboard');

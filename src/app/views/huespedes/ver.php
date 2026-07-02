@@ -763,6 +763,11 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 .guest-doc-reveal {
     width: 100%;
     margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -1977,7 +1982,8 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                     <span><i class="fas fa-pen"></i> Editar información</span>
                     <i class="fas fa-arrow-right"></i>
                 </a>
-                <a href="<?= back_url('huespedes') ?>" class="guest-action">
+                <?php $back_arrow_href = back_url('huespedes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('huespedes') ?>" class="guest-action ms-back-legacy">
                     <span><i class="fas fa-arrow-left"></i> Volver al directorio</span>
                     <i class="fas fa-list"></i>
                 </a>
@@ -2184,9 +2190,13 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                     <?php if ($guestPrimaryKind === 'image' && $guestPrimaryDocId > 0): ?>
                                         <?php $guestPrimaryPreviewUrl = url('documentos/' . $guestPrimaryDocId . '/descargar') . '?preview=1'; ?>
                                         <div class="guest-doc-feature is-revealable is-revealed" role="group" aria-label="Documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
-                                            <a href="<?= url('documentos/' . $guestPrimaryDocId) ?>"
+                                            <button type="button"
                                                     class="guest-doc-thumb guest-doc-reveal"
-                                                    aria-label="Abrir ficha del documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?>">
+                                                    onclick="guestAbrirDocLightbox(this)"
+                                                    data-doc-src="<?= guest_detail_safe($guestPrimaryPreviewUrl, '') ?>"
+                                                    data-doc-title="<?= guest_detail_safe($guestPrimaryTitle, 'Documento del huesped') ?>"
+                                                    aria-label="Ver documento del huesped <?= guest_detail_safe($guestPrimaryTitle, 'documento') ?> en pantalla completa"
+                                                    aria-haspopup="dialog">
                                                 <span class="guest-doc-brand">MEDISOFT</span>
                                                 <span class="guest-doc-seal"><i class="fas fa-file-shield"></i></span>
                                                 <img class="guest-doc-img"
@@ -2197,7 +2207,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                                      draggable="false"
                                                      oncontextmenu="return false;">
                                                 <span class="guest-doc-eye"><i class="fas fa-eye" aria-hidden="true"></i></span>
-                                            </a>
+                                            </button>
                                             <span class="guest-doc-copy">
                                                 <span class="guest-doc-type <?= guest_detail_safe($guestPrimaryDocClass, 'is-file') ?>">
                                                     <i class="fas <?= guest_detail_safe($guestPrimaryDocIcon, 'fa-file-lines') ?>"></i>
@@ -2265,6 +2275,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                     </div>
                 </section>
 
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('vehiculos')): ?>
                 <section id="vehiculos" class="guest-panel guest-vehicles-panel">
                     <div class="guest-panel-head">
                         <div>
@@ -2355,6 +2366,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                         <?php endif; ?>
                     </div>
                 </section>
+                <?php endif; ?>
 
                 <section class="guest-panel guest-history-panel">
                     <div class="guest-panel-head">
@@ -2573,6 +2585,88 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     </div>
 </div>
 
+<!-- ── Lightbox del documento del huésped (ver imagen sin salir de la vista) ── -->
+<div id="guestDocLightbox" class="guest-doc-lightbox" hidden role="dialog" aria-modal="true" aria-label="Documento del huesped en pantalla completa">
+    <figure class="guest-doc-lightbox-frame">
+        <img id="guestDocLightboxImg" src="" alt="" draggable="false" oncontextmenu="return false;">
+        <figcaption id="guestDocLightboxCaption"></figcaption>
+    </figure>
+    <button type="button" class="guest-doc-lightbox-close" aria-label="Cerrar vista de documento" onclick="guestCerrarDocLightbox()">
+        <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+</div>
+<style>
+.guest-doc-lightbox {
+    position: fixed; inset: 0; z-index: 10050;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px;
+    background: rgba(10, 16, 26, .88);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: guestDocLbIn .22s ease;
+}
+.guest-doc-lightbox[hidden] { display: none; }
+@keyframes guestDocLbIn { from { opacity: 0; } to { opacity: 1; } }
+.guest-doc-lightbox-frame { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 100%; }
+.guest-doc-lightbox-frame img {
+    max-width: min(94vw, 1100px);
+    max-height: 82vh;
+    border-radius: 14px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+    animation: guestDocLbImgIn .26s cubic-bezier(.22, 1, .36, 1);
+    user-select: none;
+}
+@keyframes guestDocLbImgIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.guest-doc-lightbox-frame figcaption { color: rgba(255, 255, 255, .82); font-size: .82rem; font-weight: 700; text-align: center; max-width: 92vw; overflow-wrap: anywhere; }
+.guest-doc-lightbox-close {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    right: 14px;
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff; font-size: 1rem; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .16s ease, transform .16s ease;
+}
+.guest-doc-lightbox-close:hover, .guest-doc-lightbox-close:focus-visible { background: rgba(255, 255, 255, .24); }
+.guest-doc-lightbox-close:active { transform: scale(.92); }
+@media (prefers-reduced-motion: reduce) {
+    .guest-doc-lightbox, .guest-doc-lightbox-frame img { animation: none; }
+}
+</style>
+<script>
+var guestDocLbScrollY = 0;
+function guestAbrirDocLightbox(btn) {
+    var lb = document.getElementById('guestDocLightbox');
+    if (!lb) return;
+    var img = document.getElementById('guestDocLightboxImg');
+    var cap = document.getElementById('guestDocLightboxCaption');
+    img.src = btn.getAttribute('data-doc-src') || '';
+    img.alt = btn.getAttribute('data-doc-title') || 'Documento del huesped';
+    cap.textContent = btn.getAttribute('data-doc-title') || '';
+    guestDocLbScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    lb.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    lb.querySelector('.guest-doc-lightbox-close').focus({ preventScroll: true });
+}
+function guestCerrarDocLightbox() {
+    var lb = document.getElementById('guestDocLightbox');
+    if (!lb || lb.hidden) return;
+    lb.hidden = true;
+    document.getElementById('guestDocLightboxImg').src = '';
+    document.documentElement.style.overflow = '';
+    window.scrollTo(0, guestDocLbScrollY);
+}
+document.getElementById('guestDocLightbox').addEventListener('click', function (ev) {
+    if (ev.target === this) guestCerrarDocLightbox();
+});
+document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') guestCerrarDocLightbox();
+});
+</script>
 <script>
 function guestShowVehicleFeedback(form, type, message) {
     const alertBox = form ? form.querySelector('[data-vehicle-feedback]') : null;
