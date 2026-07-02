@@ -7420,19 +7420,292 @@ if (!is_file($routesPath)) {
         }
     }
 
+    // ------------------------------------------------------------------
+    // FIN-A: invariantes financieras (auditoria de logica 2026-07-01).
+    // Todos los bugs LOG-001..LOG-006 son de esta familia; estos checks
+    // los detectan en datos antes de que un hotel los sufra.
+    // ------------------------------------------------------------------
+
+    $finMoneyTables = [
+        'movimientos_caja',
+        'cortes_caja',
+        'cajas',
+        'reservacion_pagos',
+        'reservacion_abonos',
+        'cuentas_por_cobrar',
+        'cuentas_por_cobrar_movimientos',
+        'solicitudes_factura',
+    ];
+    foreach ($finMoneyTables as $finTable) {
+        if (!hcTableExists($pdo, $database, $finTable) || !hcColumnExists($pdo, $database, $finTable, 'hotel_id')) {
+            continue;
+        }
+        $finNull = hcNullHotelRows($pdo, $finTable);
+        if ($finNull === 0) {
+            hcOk('FIN-A datos: ' . $finTable . ' con hotel_id NULL = 0.');
+        } elseif ($finNull === null) {
+            hcWarning('FIN-A no pudo contar hotel_id NULL en ' . $finTable . '.');
+        } else {
+            hcError(
+                'FIN-A datos: ' . $finTable . ' con hotel_id NULL = ' . (string)$finNull . ' (dinero invisible para consultas por hotel).',
+                'Backfillear hotel_id en ' . $finTable . ' antes de operar; ver migracion 20260526_009.'
+            );
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'movimientos_caja') && hcTableExists($pdo, $database, 'cortes_caja')) {
+        $finCrossCorte = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*)
+             FROM movimientos_caja mc
+             JOIN cortes_caja cc ON cc.id = mc.corte_id
+             WHERE mc.corte_id IS NOT NULL
+               AND mc.hotel_id IS NOT NULL
+               AND cc.hotel_id IS NOT NULL
+               AND mc.hotel_id <> cc.hotel_id'
+        );
+        if ($finCrossCorte === 0) {
+            hcOk('FIN-A datos: movimientos de caja colgados de un corte de OTRO hotel = 0.');
+        } elseif ($finCrossCorte === null) {
+            hcWarning('FIN-A no pudo validar movimientos de caja vs hotel del corte.');
+        } else {
+            hcError(
+                'FIN-A datos: movimientos de caja colgados de un corte de OTRO hotel = ' . (string)$finCrossCorte . '.',
+                'Reasignar corte_id al corte del hotel correcto (familia LOG-001).'
+            );
+        }
+
+        $finCorteHuerfano = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*)
+             FROM movimientos_caja mc
+             LEFT JOIN cortes_caja cc ON cc.id = mc.corte_id
+             WHERE mc.corte_id IS NOT NULL AND cc.id IS NULL'
+        );
+        if ($finCorteHuerfano === 0) {
+            hcOk('FIN-A datos: movimientos de caja con corte inexistente = 0.');
+        } elseif ($finCorteHuerfano !== null && $finCorteHuerfano > 0) {
+            hcWarning(
+                'FIN-A datos: movimientos de caja con corte inexistente = ' . (string)$finCorteHuerfano . '.',
+                'Reconciliar corte_id huerfanos en movimientos_caja.'
+            );
+        }
+
+        $finCortesDescuadrados = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM (
+                SELECT cc.id,
+                    COALESCE(cc.total_ingresos_efectivo, 0) ti_e,
+                    COALESCE(cc.total_ingresos_tarjeta, 0) ti_t,
+                    COALESCE(cc.total_ingresos_transferencia, 0) ti_r,
+                    COALESCE(cc.total_gastos_efectivo, 0) tg_e,
+                    COALESCE(cc.total_gastos_tarjeta, 0) tg_t,
+                    COALESCE(cc.total_gastos_transferencia, 0) tg_r,
+                    COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'efectivo' THEN mc.monto END), 0) mi_e,
+                    COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'tarjeta' THEN mc.monto END), 0) mi_t,
+                    COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'transferencia' THEN mc.monto END), 0) mi_r,
+                    COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto','egreso') AND mc.metodo_pago = 'efectivo' THEN mc.monto END), 0) mg_e,
+                    COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto','egreso') AND mc.metodo_pago = 'tarjeta' THEN mc.monto END), 0) mg_t,
+                    COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto','egreso') AND mc.metodo_pago = 'transferencia' THEN mc.monto END), 0) mg_r
+                FROM cortes_caja cc
+                LEFT JOIN movimientos_caja mc
+                    ON mc.corte_id = cc.id AND mc.hotel_id = cc.hotel_id
+                WHERE cc.estado = 'cerrado'
+                GROUP BY cc.id, cc.total_ingresos_efectivo, cc.total_ingresos_tarjeta, cc.total_ingresos_transferencia,
+                         cc.total_gastos_efectivo, cc.total_gastos_tarjeta, cc.total_gastos_transferencia
+            ) x
+            WHERE ABS(x.ti_e - x.mi_e) > 0.01 OR ABS(x.ti_t - x.mi_t) > 0.01 OR ABS(x.ti_r - x.mi_r) > 0.01
+               OR ABS(x.tg_e - x.mg_e) > 0.01 OR ABS(x.tg_t - x.mg_t) > 0.01 OR ABS(x.tg_r - x.mg_r) > 0.01"
+        );
+        if ($finCortesDescuadrados === 0) {
+            hcOk('FIN-A datos: cortes cerrados cuyo resumen guardado no cuadra con sus movimientos = 0.');
+        } elseif ($finCortesDescuadrados !== null && $finCortesDescuadrados > 0) {
+            hcWarning(
+                'FIN-A datos: cortes cerrados cuyo resumen guardado no cuadra con sus movimientos = ' . (string)$finCortesDescuadrados . '.',
+                'Auditar cortes descuadrados: totales guardados al cierre vs SUM(movimientos_caja) por metodo (familia LOG-006).'
+            );
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'cuentas_por_cobrar')) {
+        // Comparaciones exactas: saldo/total son DECIMAL(12,2). No usar tolerancias
+        // con mas decimales que la columna (MySQL redondea el literal al tipo de la
+        // columna en el WHERE y saldo < -0.004 termina matcheando saldo = 0.00).
+        $finCxcFueraRango = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*) FROM cuentas_por_cobrar
+             WHERE saldo < 0 OR saldo > total'
+        );
+        if ($finCxcFueraRango === 0) {
+            hcOk('FIN-A datos: cuentas por cobrar con saldo fuera de rango (saldo < 0 o saldo > total) = 0.');
+        } elseif ($finCxcFueraRango === null) {
+            hcWarning('FIN-A no pudo validar saldos de cuentas por cobrar.');
+        } else {
+            hcError(
+                'FIN-A datos: cuentas por cobrar con saldo fuera de rango (saldo < 0 o saldo > total) = ' . (string)$finCxcFueraRango . '.',
+                'Corregir saldos de CxC con AJUSTE auditado (familia LOG-002).'
+            );
+        }
+
+        $finCxcEstadoInconsistente = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM cuentas_por_cobrar
+             WHERE (estado = 'liquidada' AND saldo > 0)
+                OR (estado IN ('pendiente', 'parcial', 'vencida') AND saldo <= 0 AND total > 0)"
+        );
+        if ($finCxcEstadoInconsistente === 0) {
+            hcOk('FIN-A datos: cuentas por cobrar con estado inconsistente vs saldo = 0.');
+        } elseif ($finCxcEstadoInconsistente !== null && $finCxcEstadoInconsistente > 0) {
+            hcWarning(
+                'FIN-A datos: cuentas por cobrar con estado inconsistente vs saldo = ' . (string)$finCxcEstadoInconsistente . '.',
+                'Reconciliar estado/saldo de CxC (liquidada con saldo, o abierta en cero).'
+            );
+        }
+
+        if (hcTableExists($pdo, $database, 'cuentas_por_cobrar_movimientos')) {
+            $finCxcSaldoVsUltimoMov = hcCountScalar(
+                $pdo,
+                'SELECT COUNT(*)
+                 FROM cuentas_por_cobrar c
+                 JOIN cuentas_por_cobrar_movimientos m ON m.id = (
+                     SELECT m2.id FROM cuentas_por_cobrar_movimientos m2
+                     WHERE m2.cuenta_por_cobrar_id = c.id
+                     ORDER BY m2.id DESC LIMIT 1
+                 )
+                 WHERE ABS(m.saldo_posterior - c.saldo) > 0.01'
+            );
+            if ($finCxcSaldoVsUltimoMov === 0) {
+                hcOk('FIN-A datos: CxC cuyo saldo difiere del ultimo movimiento auditado = 0.');
+            } elseif ($finCxcSaldoVsUltimoMov !== null && $finCxcSaldoVsUltimoMov > 0) {
+                hcWarning(
+                    'FIN-A datos: CxC cuyo saldo difiere del ultimo movimiento auditado = ' . (string)$finCxcSaldoVsUltimoMov . '.',
+                    'Revisar cuentas con saldo editado fuera del flujo de movimientos.'
+                );
+            }
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'reservaciones')) {
+        $finPagosJoin = hcTableExists($pdo, $database, 'reservacion_pagos')
+            ? "LEFT JOIN (SELECT reservacion_id, hotel_id, SUM(monto) t FROM reservacion_pagos GROUP BY reservacion_id, hotel_id) p
+                 ON p.reservacion_id = r.id AND p.hotel_id = r.hotel_id"
+            : 'LEFT JOIN (SELECT NULL reservacion_id, NULL hotel_id, 0 t) p ON 1 = 0';
+        $finAbonosJoin = hcTableExists($pdo, $database, 'reservacion_abonos')
+            ? "LEFT JOIN (SELECT reservacion_id, hotel_id, SUM(monto) t FROM reservacion_abonos GROUP BY reservacion_id, hotel_id) a
+                 ON a.reservacion_id = r.id AND a.hotel_id = r.hotel_id"
+            : 'LEFT JOIN (SELECT NULL reservacion_id, NULL hotel_id, 0 t) a ON 1 = 0';
+        $finCxcJoin = (hcTableExists($pdo, $database, 'cuentas_por_cobrar') && hcTableExists($pdo, $database, 'cuentas_por_cobrar_movimientos'))
+            ? "LEFT JOIN (
+                   SELECT c.hotel_id, COALESCE(c.reservacion_id, c.origen_id) rid,
+                          GREATEST(SUM(CASE WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                                            WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto
+                                            ELSE 0 END), 0) t
+                   FROM cuentas_por_cobrar c
+                   JOIN cuentas_por_cobrar_movimientos m
+                       ON m.cuenta_por_cobrar_id = c.id AND m.hotel_id = c.hotel_id
+                   WHERE c.reservacion_id IS NOT NULL OR c.origen_tipo = 'reservacion'
+                   GROUP BY c.hotel_id, COALESCE(c.reservacion_id, c.origen_id)
+               ) cx ON cx.rid = r.id AND cx.hotel_id = r.hotel_id"
+            : 'LEFT JOIN (SELECT NULL rid, NULL hotel_id, 0 t) cx ON 1 = 0';
+
+        $finSobreCobro = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM (
+                SELECT r.id, r.precio_total,
+                       COALESCE(p.t, 0) + COALESCE(a.t, 0) + COALESCE(cx.t, 0) pagado
+                FROM reservaciones r
+                {$finPagosJoin}
+                {$finAbonosJoin}
+                {$finCxcJoin}
+                WHERE r.estado <> 'cancelada'
+            ) x
+            WHERE x.pagado > x.precio_total + 0.01"
+        );
+        if ($finSobreCobro === 0) {
+            hcOk('FIN-A datos: reservaciones con pagado (pagos+abonos+cobros CxC) mayor al precio total = 0.');
+        } elseif ($finSobreCobro === null) {
+            hcWarning('FIN-A no pudo validar sobre-cobros de reservaciones.');
+        } else {
+            hcError(
+                'FIN-A datos: reservaciones con pagado (pagos+abonos+cobros CxC) mayor al precio total = ' . (string)$finSobreCobro . '.',
+                'Investigar sobre-cobros: mismo criterio de saldo en ficha y panel de anticipos (familia LOG-003).'
+            );
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'solicitudes_factura')) {
+        $finFacturaNegativa = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*) FROM solicitudes_factura WHERE monto_total < 0'
+        );
+        if ($finFacturaNegativa === 0) {
+            hcOk('FIN-A datos: solicitudes de factura con monto negativo = 0.');
+        } elseif ($finFacturaNegativa === null) {
+            hcWarning('FIN-A no pudo validar montos de solicitudes de factura.');
+        } else {
+            hcError(
+                'FIN-A datos: solicitudes de factura con monto negativo = ' . (string)$finFacturaNegativa . '.',
+                'Un ajuste por reversion dejo la solicitud en negativo: revisar acumulacion (familia LOG-004/LOG-005).'
+            );
+        }
+
+        if (hcTableExists($pdo, $database, 'reservaciones')) {
+            $finFacturaExcedida = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM solicitudes_factura sf
+                 JOIN reservaciones r ON r.id = sf.reservacion_id
+                 WHERE sf.estatus <> 'cancelada'
+                   AND sf.monto_total > r.precio_total + 0.01"
+            );
+            if ($finFacturaExcedida === 0) {
+                hcOk('FIN-A datos: solicitudes de factura con monto mayor al precio de la reservacion = 0.');
+            } elseif ($finFacturaExcedida !== null && $finFacturaExcedida > 0) {
+                hcWarning(
+                    'FIN-A datos: solicitudes de factura con monto mayor al precio de la reservacion = ' . (string)$finFacturaExcedida . '.',
+                    'Revisar acumulacion de solicitudes de factura vs precio de reservacion.'
+                );
+            }
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'reservacion_abonos') && hcTableExists($pdo, $database, 'movimientos_caja')) {
+        $finAbonosSinCaja = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*)
+             FROM reservacion_abonos ra
+             LEFT JOIN movimientos_caja mc ON mc.id = ra.movimiento_caja_id
+             WHERE ra.movimiento_caja_id IS NOT NULL AND mc.id IS NULL'
+        );
+        if ($finAbonosSinCaja === 0) {
+            hcOk('FIN-A datos: abonos ligados a un movimiento de caja inexistente = 0.');
+        } elseif ($finAbonosSinCaja !== null && $finAbonosSinCaja > 0) {
+            hcWarning(
+                'FIN-A datos: abonos ligados a un movimiento de caja inexistente = ' . (string)$finAbonosSinCaja . '.',
+                'Reconciliar reservacion_abonos.movimiento_caja_id huerfanos.'
+            );
+        }
+    }
+
     if (hcRouteExists($routes, 'api/sync', 'post')) {
         $apiController = $controllersDir . '/ApiController.php';
         $apiCode = is_file($apiController) ? (string) file_get_contents($apiController) : '';
+        $syncBody = hcMethodBody($apiCode, 'syncAction');
         if (
-            strpos($apiCode, 'sync_temporarily_disabled') !== false
-            && preg_match('/function\s+syncAction\s*\([^)]*\).*?renderJSON\s*\(.*?423/s', $apiCode)
+            strpos($apiCode, 'SYNC_TIPOS_DINERO') !== false
+            && strpos($syncBody, 'validateCSRF') !== false
+            && strpos($syncBody, 'hotelIdActual') !== false
+            && strpos($syncBody, 'sync_temporarily_disabled') === false
         ) {
-            hcOk('/api/sync sigue registrado y bloqueado con sync_temporarily_disabled + HTTP 423 en codigo.');
+            hcOk('/api/sync activo con CSRF + hotel explicito; pago_caja/gasto_caja rechazados (dinero online-only).');
         } else {
-            hcError('/api/sync no muestra bloqueo estatico con HTTP 423.', 'No continuar hasta restaurar bloqueo temporal de sync.');
+            hcError(
+                '/api/sync no cumple la politica de sincronizacion: CSRF + hotel explicito + rechazo de operaciones de dinero.',
+                'Restaurar syncAction segun politica 2026-07-02: validateCSRF, procesarLote con hotelIdActual y SYNC_TIPOS_DINERO rechazados.'
+            );
         }
     } else {
-        hcError('No existe ruta POST /api/sync.', 'Restaurar ruta bloqueada antes de probar PWA/offline.');
+        hcError('No existe ruta POST /api/sync.', 'Restaurar ruta de sincronizacion PWA (ops sin dinero).');
     }
 }
 
