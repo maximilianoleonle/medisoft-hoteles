@@ -1163,18 +1163,66 @@ public function vehiculosHuespedAction() {
         }
     }
 
+    /**
+     * Sincroniza operaciones capturadas offline (IndexedDB → Sync::procesarLote).
+     *
+     * Política (2026-07-02): solo operaciones SIN dinero. Los cobros y gastos
+     * (pago_caja/gasto_caja) son online-only — se rechazan con error explícito
+     * para que el cliente los marque y la recepcionista los vea, en vez de
+     * aplicarse a caja fuera del flujo normal.
+     */
+    private const SYNC_TIPOS_DINERO = ['pago_caja', 'gasto_caja'];
+    private const SYNC_MAX_OPERACIONES = 200;
+
     public function syncAction() {
         if (!$this->isPost()) {
             View::renderJSON(['success' => false, 'message' => 'Metodo no permitido. Usa POST.'], 405);
             return;
         }
+        $this->validateCSRF();
 
-        View::renderJSON([
-            'success' => false,
-            'error' => 'sync_temporarily_disabled',
-            'message' => 'La sincronización offline está temporalmente deshabilitada por seguridad.',
-            'pending_operations_preserved' => true,
-        ], 423);
+        $body = json_decode(file_get_contents('php://input') ?: '', true);
+        $operaciones = is_array($body['operaciones'] ?? null) ? $body['operaciones'] : [];
+
+        if (empty($operaciones)) {
+            View::renderJSON(['success' => true, 'exitosas' => [], 'fallidas' => []]);
+            return;
+        }
+        if (count($operaciones) > self::SYNC_MAX_OPERACIONES) {
+            View::renderJSON([
+                'success' => false,
+                'message' => 'Lote demasiado grande (max ' . self::SYNC_MAX_OPERACIONES . ' operaciones).',
+            ], 400);
+            return;
+        }
+
+        $permitidas = [];
+        $fallidas = [];
+        foreach ($operaciones as $op) {
+            if (in_array((string)($op['tipo'] ?? ''), self::SYNC_TIPOS_DINERO, true)) {
+                $fallidas[] = [
+                    'uuid' => $op['uuid'] ?? 'sin-uuid',
+                    'error' => 'Los cobros y gastos no se sincronizan offline. Registra este movimiento directamente en Caja con conexión.',
+                ];
+            } else {
+                $permitidas[] = $op;
+            }
+        }
+
+        try {
+            require_once __DIR__ . '/../models/Sync.php';
+            $sync = new Sync();
+            $resultado = $sync->procesarLote($permitidas, user_id(), $this->hotelIdActual());
+
+            View::renderJSON([
+                'success' => true,
+                'exitosas' => $resultado['exitosas'],
+                'fallidas' => array_merge($fallidas, $resultado['fallidas']),
+            ]);
+        } catch (Throwable $e) {
+            error_log('[API sync] ' . $e->getMessage());
+            View::renderJSON(['success' => false, 'message' => 'Error interno al sincronizar'], 500);
+        }
     }
 
     public function buscarHuespedesAction() {

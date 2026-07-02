@@ -1,18 +1,19 @@
 /**
  * caja-offline.js — Los Cedros
  *
- * Intercepta los formularios de la vista de caja para que
- * funcionen sin internet:
+ * Intercepta los formularios de la vista de caja:
  *
  *   - Formulario "Registrar Ingreso" (#modalIngreso form)
  *   - Formulario "Registrar Gasto"   (#modalGasto form)
  *
  * Cuando hay internet:   el formulario se envía al servidor normalmente (sin tocar nada).
- * Cuando no hay internet: se previene el envío, los datos se encolan en IndexedDB
- *                          con UUID, y la UI muestra el movimiento pendiente.
+ * Cuando no hay internet: se BLOQUEA el registro con un aviso claro. El dinero es
+ *                          online-only (política 2026-07-02): un cobro encolado que
+ *                          falla al sincronizar descuadra la caja sin que nadie lo note.
+ *                          El servidor también rechaza pago_caja/gasto_caja en /api/sync.
  *
- * Al volver internet:   offline-data.js detecta el evento 'online' y llama
- *                        sincronizar() → POST /api/sync → Sync.php aplica.
+ * El panel de pendientes se conserva para que los movimientos encolados por versiones
+ * anteriores sigan visibles hasta que sincronicen (el servidor los marcará con error).
  *
  * Depende de: offline-data.js (window.OfflineData) y pwa.js (window.PWA)
  */
@@ -53,21 +54,14 @@
     const form = modal.querySelector('form');
     if (!form) return;
 
-    form.addEventListener('submit', async function (e) {
+    form.addEventListener('submit', function (e) {
       // Online → dejar pasar al servidor
       if (navigator.onLine) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      const datos = _extraerDatosForm(form, 'ingreso');
-      if (!datos) return;  // validación falló, el form lo muestra
-
-      await _encolarMovimiento('pago_caja', datos, 'ingreso');
-
-      // Cerrar modal y mostrar feedback
-      if (typeof cerrarModalIngreso === 'function') cerrarModalIngreso();
-      form.reset();
+      _bloquearRegistroOffline('cobro');
     });
   }
 
@@ -82,108 +76,48 @@
     const form = modal.querySelector('form');
     if (!form) return;
 
-    form.addEventListener('submit', async function (e) {
+    form.addEventListener('submit', function (e) {
       if (navigator.onLine) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      const datos = _extraerDatosForm(form, 'gasto');
-      if (!datos) return;
-
-      await _encolarMovimiento('gasto_caja', datos, 'gasto');
-
-      if (typeof cerrarModalGasto === 'function') cerrarModalGasto();
-      form.reset();
+      _bloquearRegistroOffline('gasto');
     });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3. EXTRACCIÓN Y VALIDACIÓN DE DATOS DEL FORMULARIO
+  // 3. BLOQUEO DE DINERO OFFLINE
   // ═══════════════════════════════════════════════════════════════════════════
 
   /**
-   * Lee los campos del formulario y devuelve un objeto limpio para IndexedDB.
-   * Devuelve null si hay errores de validación.
+   * El dinero es online-only: avisa que el movimiento NO quedó guardado.
+   * El formulario conserva lo capturado para reintentarlo al volver internet.
    */
-  function _extraerDatosForm(form, tipo) {
-    const monto       = parseFloat(form.querySelector('[name="monto"]')?.value || '0');
-    const descripcion = (form.querySelector('[name="descripcion"]')?.value || '').trim();
-    const metodoPago  = form.querySelector('[name="metodo_pago"]')?.value || 'efectivo';
-    const referencia  = (form.querySelector('[name="referencia"]')?.value || '').trim();
-    const comprobante = (form.querySelector('[name="comprobante"]')?.value || '').trim();
+  function _bloquearRegistroOffline(tipoLabel) {
+    const titulo = tipoLabel === 'cobro' ? 'Cobro no registrado' : 'Gasto no registrado';
+    const texto  = 'Sin conexión a internet. Los cobros y gastos solo se registran en línea ' +
+                   'para no descuadrar la caja. Este movimiento NO quedó guardado — ' +
+                   'vuelve a registrarlo cuando regrese la conexión.';
 
-    // Obtener nombre de categoría desde el <select> (no solo el ID)
-    const catSelect   = form.querySelector('[name="categoria_id"]');
-    const categoriaId = catSelect?.value || '';
-    const categoriaNombre = catSelect?.options[catSelect.selectedIndex]?.text?.trim() || '';
-
-    // Validaciones mínimas
-    if (!monto || monto <= 0) {
-      _mostrarError('El monto debe ser mayor a $0');
-      return null;
+    if (window.Swal) {
+      Swal.fire({
+        icon:              'warning',
+        title:             titulo,
+        text:              texto,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor:'#B45309',
+      });
+    } else {
+      window.PWA?.showToast(`${titulo}: ${texto}`, 'error', 8000);
     }
-    if (!descripcion) {
-      _mostrarError('La descripción es obligatoria');
-      return null;
-    }
-
-    return {
-      monto,
-      descripcion,
-      metodo_pago:  metodoPago,
-      categoria:    categoriaNombre || (tipo === 'ingreso' ? 'Hospedaje' : 'Gastos Generales'),
-      categoria_id: categoriaId,
-      referencia:   referencia  || null,
-      comprobante:  comprobante || null,
-    };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 4. ENCOLAR Y ACTUALIZAR UI
+  // 5. UI: LISTA DE MOVIMIENTOS PENDIENTES OFFLINE (legacy)
+  //    Solo muestra operaciones encoladas por versiones anteriores de la PWA,
+  //    hasta que el servidor las marque (error) al sincronizar.
   // ═══════════════════════════════════════════════════════════════════════════
-
-  async function _encolarMovimiento(tipo, datos, tipoLabel) {
-    if (!window.OfflineData) {
-      _mostrarError('Módulo offline no disponible. Recarga la página.');
-      return;
-    }
-
-    const label = tipoLabel === 'ingreso'
-      ? `Ingreso $${datos.monto.toFixed(2)} — ${datos.descripcion}`
-      : `Gasto $${datos.monto.toFixed(2)} — ${datos.descripcion}`;
-
-    await window.OfflineData.encolarOperacion(tipo, datos, label);
-
-    // Mostrar el movimiento en la lista de pendientes offline de la UI
-    _agregarMovimientoPendienteUI(datos, tipoLabel);
-
-    // Toast de confirmación
-    const simbolo = tipoLabel === 'ingreso' ? '+' : '-';
-    window.PWA?.showToast(
-      `${simbolo}$${datos.monto.toFixed(2)} guardado sin conexión (${datos.metodo_pago}) — se sincronizará al volver internet.`,
-      'warning',
-      5000
-    );
-
-    _actualizarContadorPendientes();
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. UI: LISTA DE MOVIMIENTOS PENDIENTES OFFLINE
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Inserta una fila visual en la lista de movimientos de la página
-   * para que la recepcionista vea lo que quedó pendiente.
-   */
-  function _agregarMovimientoPendienteUI(datos, tipo) {
-    // Buscar el contenedor de movimientos recientes
-    const tabla = document.querySelector('.movimientos-list, [data-movimientos], tbody');
-
-    // Si no encontramos la tabla, al menos creamos el panel de pendientes
-    _actualizarPanelPendientes(datos, tipo);
-  }
 
   /**
    * Crea o actualiza un panel flotante que muestra los movimientos
@@ -221,7 +155,7 @@
         <div id="caja-offline-list" style="overflow-y:auto;max-height:240px;padding:6px 8px;"></div>
         <div style="padding:6px 10px;border-top:1px solid #fde68a;background:#fffbeb;
                     font-size:0.75em;color:#92400e;text-align:center;">
-          Se enviarán automáticamente al volver internet
+          Al volver internet revisa estos movimientos en Caja: deberás registrarlos manualmente
         </div>
       `;
       document.body.appendChild(panel);
@@ -378,14 +312,6 @@
   // ═══════════════════════════════════════════════════════════════════════════
   // 7. HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
-
-  function _mostrarError(mensaje) {
-    if (window.Swal) {
-      Swal.fire({ icon: 'error', title: 'Error', text: mensaje, timer: 3000, showConfirmButton: false });
-    } else {
-      window.PWA?.showToast(mensaje, 'error');
-    }
-  }
 
   function _truncar(texto, max) {
     return texto.length > max ? texto.substring(0, max) + '…' : texto;

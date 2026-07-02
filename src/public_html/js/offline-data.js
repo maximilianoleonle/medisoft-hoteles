@@ -600,8 +600,10 @@
   /**
    * Encola una operación para sincronizar con el servidor.
    *
-   * @param {string} tipo     - 'checkin' | 'checkout' | 'cambiar_estado_habitacion' | 'pago_caja'
-   * @param {object} payload  - Datos específicos del tipo (ver api/sync.php)
+   * @param {string} tipo     - 'checkin' | 'checkout' | 'cambiar_estado_habitacion' | 'crear_reservacion'
+   *                            (pago_caja/gasto_caja ya NO se encolan: el dinero es online-only
+   *                            y el servidor los rechaza en /api/sync)
+   * @param {object} payload  - Datos específicos del tipo (ver ApiController::syncAction)
    * @param {string} [label]  - Descripción legible para mostrar en UI
    * @returns {string}        - UUID de la operación creada
    */
