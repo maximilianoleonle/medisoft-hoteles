@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/CuentaPorCobrar.php';
+require_once __DIR__ . '/../models/Reservacion.php';
 require_once __DIR__ . '/../services/CuentaPorCobrarCobroService.php';
 require_once __DIR__ . '/../services/CuentaPorCobrarReversionCobroService.php';
 
@@ -83,7 +84,7 @@ class CuentaPorCobrarController extends Controller
             ];
 
         View::renderTemplate('cuentas_por_cobrar/operativas', [
-            'title' => 'CxC operativa read-only - ' . current_hotel_display_name(),
+            'title' => 'Cuentas operativas - ' . current_hotel_display_name(),
             'cuentas' => $cuentas,
             'resumen' => $resumen,
             'filtros' => $filtros,
@@ -248,9 +249,12 @@ class CuentaPorCobrarController extends Controller
                 $this->usuarioIdActual()
             );
 
+            $advertenciaFactura = $this->sincronizarFacturaPorCobroCxc($cuentaId, $resultado);
+
             set_mensaje(
                 'Cobro CxC registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.'
+                . ($advertenciaFactura ?? ''),
                 'success'
             );
             clear_old_input();
@@ -294,9 +298,12 @@ class CuentaPorCobrarController extends Controller
                 $this->usuarioIdActual()
             );
 
+            $advertenciaFactura = $this->sincronizarFacturaPorReversionCxc($cuentaId, $resultado);
+
             set_mensaje(
                 'Reversion CxC registrada. Gasto Caja #' . (int)$resultado['movimiento_caja_reversion_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.'
+                . ($advertenciaFactura ?? ''),
                 'success'
             );
             clear_old_input();
@@ -309,6 +316,118 @@ class CuentaPorCobrarController extends Controller
         }
 
         $this->redirect($cuentaId > 0 ? 'cuentas-por-cobrar/operativas/' . $cuentaId : 'cuentas-por-cobrar/operativas');
+    }
+
+    private function sincronizarFacturaPorCobroCxc(int $cuentaId, array $resultado): ?string
+    {
+        try {
+            $hotelId = $this->hotelIdActual();
+            $cuenta = $this->cuentaModel->buscarOperativaPorIdHotel($cuentaId, $hotelId);
+
+            if (
+                !$cuenta
+                || empty($cuenta['reservacion_id'])
+                || empty($cuenta['solicitud_factura_id'])
+                || (string)($cuenta['factura_requiere_factura'] ?? '') !== 'si'
+                || (string)($cuenta['factura_tipo'] ?? '') !== 'cliente'
+            ) {
+                return null;
+            }
+
+            $monto = round((float)($resultado['monto'] ?? 0), 2);
+            if ($monto <= 0.004) {
+                return null;
+            }
+
+            $metodoPago = strtolower(trim((string)$this->getPost('metodo_pago', 'efectivo')));
+            if (!in_array($metodoPago, ['efectivo', 'tarjeta', 'transferencia'], true)) {
+                $metodoPago = 'efectivo';
+            }
+
+            $referencia = trim((string)$this->getPost('referencia', ''));
+            $movimientoCxcId = (int)($resultado['cuenta_por_cobrar_movimiento_id'] ?? 0);
+            $nota = 'Cobro CxC #' . $cuentaId
+                . ' aplicado a factura - Movimiento CxC #'
+                . $movimientoCxcId;
+            if ($referencia !== '') {
+                $nota .= ' | Ref: ' . $referencia;
+            }
+
+            $reservacionModel = new Reservacion();
+            $resultadoFactura = $reservacionModel->crearSolicitudFactura([
+                'reservacion_id' => (int)$cuenta['reservacion_id'],
+                'hotel_id' => $hotelId,
+                'requiere_factura' => 'si',
+                'tipo' => 'cliente',
+                'estatus' => 'pendiente',
+                'metodo_pago_principal' => $metodoPago,
+                'monto_total' => $monto,
+                'usuario_registro_id' => $this->usuarioIdActual(),
+                'notas' => $nota,
+                'modo_monto' => 'acumular',
+                'modo_solicitud' => $this->modoSolicitudFactura($this->getPost('factura_modo_cxc', 'acumular')),
+            ]);
+
+            if (!$resultadoFactura) {
+                return ' La factura vinculada no se actualizo automaticamente; revisa Facturacion.';
+            }
+        } catch (Throwable $e) {
+            error_log('No se pudo sincronizar factura desde cobro CxC #' . $cuentaId . ': ' . $e->getMessage());
+            return ' La factura vinculada no se actualizo automaticamente; revisa Facturacion.';
+        }
+
+        return null;
+    }
+
+    private function sincronizarFacturaPorReversionCxc(int $cuentaId, array $resultado): ?string
+    {
+        try {
+            $hotelId = $this->hotelIdActual();
+            $cuenta = $this->cuentaModel->buscarOperativaPorIdHotel($cuentaId, $hotelId);
+
+            if (
+                !$cuenta
+                || empty($cuenta['reservacion_id'])
+                || empty($cuenta['solicitud_factura_id'])
+                || (string)($cuenta['factura_requiere_factura'] ?? '') !== 'si'
+                || (string)($cuenta['factura_tipo'] ?? '') !== 'cliente'
+            ) {
+                return null;
+            }
+
+            $monto = round((float)($resultado['monto'] ?? 0), 2);
+            if ($monto <= 0.004) {
+                return null;
+            }
+
+            $nota = 'Reversion de cobro CxC #' . $cuentaId
+                . ' - Movimiento CxC #'
+                . (int)($resultado['movimiento_cobro_id'] ?? 0);
+
+            $reservacionModel = new Reservacion();
+            $resultadoFactura = $reservacionModel->crearSolicitudFactura([
+                'reservacion_id' => (int)$cuenta['reservacion_id'],
+                'hotel_id' => $hotelId,
+                'requiere_factura' => 'si',
+                'tipo' => 'cliente',
+                'estatus' => 'pendiente',
+                'metodo_pago_principal' => 'efectivo',
+                'monto_total' => -1 * $monto,
+                'usuario_registro_id' => $this->usuarioIdActual(),
+                'notas' => $nota,
+                'modo_monto' => 'acumular',
+                'referencia_nota' => 'Movimiento CxC #' . (int)($resultado['movimiento_cobro_id'] ?? 0),
+            ]);
+
+            if (!$resultadoFactura) {
+                return ' La factura vinculada no se ajusto automaticamente (puede estar ya facturada); revisala en Facturacion.';
+            }
+        } catch (Throwable $e) {
+            error_log('No se pudo ajustar factura desde reversion CxC #' . $cuentaId . ': ' . $e->getMessage());
+            return ' La factura vinculada no se ajusto automaticamente; revisa Facturacion.';
+        }
+
+        return null;
     }
 
     private function erroresCamposCobro(array $errores): array
@@ -376,6 +495,11 @@ class CuentaPorCobrarController extends Controller
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
         return $usuarioId ? (int)$usuarioId : null;
+    }
+
+    private function modoSolicitudFactura($valor): string
+    {
+        return trim((string)$valor) === 'separada' ? 'separada' : 'actualizar';
     }
 
     private function generarCobroToken(int $cuentaId): string

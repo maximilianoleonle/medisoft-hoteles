@@ -189,9 +189,9 @@ class ArqueoMetodosPago extends Model
                 SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END) AS mov_ingresos_efectivo,
                 SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'tarjeta' THEN mc.monto ELSE 0 END) AS mov_ingresos_tarjeta,
                 SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'transferencia' THEN mc.monto ELSE 0 END) AS mov_ingresos_transferencia,
-                SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END) AS mov_gastos_efectivo,
-                SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'tarjeta' THEN mc.monto ELSE 0 END) AS mov_gastos_tarjeta,
-                SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'transferencia' THEN mc.monto ELSE 0 END) AS mov_gastos_transferencia,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END) AS mov_gastos_efectivo,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND mc.metodo_pago = 'tarjeta' THEN mc.monto ELSE 0 END) AS mov_gastos_tarjeta,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND mc.metodo_pago = 'transferencia' THEN mc.monto ELSE 0 END) AS mov_gastos_transferencia,
                 COUNT(mc.id) AS movimientos_total
             FROM cortes_caja cc
             LEFT JOIN cajas c
@@ -324,7 +324,7 @@ class ArqueoMetodosPago extends Model
             "SELECT
                 COUNT(*) AS movimientos_total,
                 COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END), 0) AS ingresos_total,
-                COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' THEN mc.monto ELSE 0 END), 0) AS gastos_total
+                COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') THEN mc.monto ELSE 0 END), 0) AS gastos_total
              FROM movimientos_caja mc
              LEFT JOIN cortes_caja cc
                ON cc.id = mc.corte_id
@@ -359,8 +359,8 @@ class ArqueoMetodosPago extends Model
                 mc.metodo_pago,
                 SUM(CASE WHEN mc.tipo = 'ingreso' THEN 1 ELSE 0 END) AS ingresos_count,
                 COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END), 0) AS ingresos_total,
-                SUM(CASE WHEN mc.tipo = 'gasto' THEN 1 ELSE 0 END) AS gastos_count,
-                COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' THEN mc.monto ELSE 0 END), 0) AS gastos_total
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') THEN 1 ELSE 0 END) AS gastos_count,
+                COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') THEN mc.monto ELSE 0 END), 0) AS gastos_total
              FROM movimientos_caja mc
              INNER JOIN cortes_caja cc
                ON cc.id = mc.corte_id

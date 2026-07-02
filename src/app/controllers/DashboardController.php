@@ -150,6 +150,23 @@ class DashboardController extends Controller {
     /**
      * Obtener estadísticas completas mejoradas
      */
+    private function condicionReversoIngresoCaja(string $alias = 'mc'): string {
+        $prefix = $alias !== '' ? $alias . '.' : '';
+
+        return "(
+            {$prefix}tipo = 'gasto'
+            AND (
+                LOWER(COALESCE({$prefix}categoria, '')) IN ('devolucion', 'devoluciones', 'reverso anticipo', 'reverso de anticipo', 'reversion cobro cxc')
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'devoluc%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reversion cobro cxc%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reversion cobro cxc%'
+            )
+        )";
+    }
+
     private function getEstadisticasCompletas() {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
@@ -294,6 +311,58 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
         // Calcular totales
         $totalIngresosHoy = array_sum($ingresosPorMetodo);
         $totalEgresosHoy = array_sum($egresosPorMetodo);
+
+        $ingresosBrutosPorMetodo = [
+            'efectivo' => 0,
+            'tarjeta' => 0,
+            'transferencia' => 0
+        ];
+
+        $reversosPorMetodo = [
+            'efectivo' => 0,
+            'tarjeta' => 0,
+            'transferencia' => 0
+        ];
+
+        $gastosRealesPorMetodo = [
+            'efectivo' => 0,
+            'tarjeta' => 0,
+            'transferencia' => 0
+        ];
+
+        $condicionReverso = $this->condicionReversoIngresoCaja('mc');
+
+        $stmt = $db->query("
+            SELECT
+                mc.metodo_pago,
+                SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_brutos,
+                SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END) as reversos,
+                SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END) as gastos_reales
+            FROM movimientos_caja mc
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) = CURDATE()
+            GROUP BY mc.metodo_pago
+        ", [$hotel_id]);
+
+        while ($row = $stmt->fetch()) {
+            $metodo = $row['metodo_pago'];
+            if (isset($ingresosBrutosPorMetodo[$metodo])) {
+                $ingresosBrutosPorMetodo[$metodo] = floatval($row['ingresos_brutos']);
+                $reversosPorMetodo[$metodo] = floatval($row['reversos']);
+                $gastosRealesPorMetodo[$metodo] = floatval($row['gastos_reales']);
+            }
+        }
+
+        foreach ($ingresosBrutosPorMetodo as $metodo => $monto) {
+            $ingresosPorMetodo[$metodo] = $monto - ($reversosPorMetodo[$metodo] ?? 0);
+            $egresosPorMetodo[$metodo] = $gastosRealesPorMetodo[$metodo] ?? 0;
+        }
+
+        $totalIngresosBrutosHoy = array_sum($ingresosBrutosPorMetodo);
+        $totalReversosHoy = array_sum($reversosPorMetodo);
+        $totalIngresosHoy = array_sum($ingresosPorMetodo);
+        $totalEgresosHoy = array_sum($egresosPorMetodo);
+        $balanceFinancieroHoy = $totalIngresosHoy - $totalEgresosHoy;
         
         // 3. ENTRADAS Y SALIDAS DE HOY
         // Entradas (Check-ins) de hoy
@@ -349,15 +418,33 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
             ],
             'ingresos' => [
                 'total_dia' => $totalIngresosHoy,
+                'brutos_total_dia' => $totalIngresosBrutosHoy,
+                'reversos_total_dia' => $totalReversosHoy,
                 'efectivo_dia' => $ingresosPorMetodo['efectivo'],
                 'tarjeta_dia' => $ingresosPorMetodo['tarjeta'],
-                'transferencia_dia' => $ingresosPorMetodo['transferencia']
+                'transferencia_dia' => $ingresosPorMetodo['transferencia'],
+                'brutos_por_metodo' => $ingresosBrutosPorMetodo,
+                'reversos_por_metodo' => $reversosPorMetodo
+            ],
+            'reversos' => [
+                'total_dia' => $totalReversosHoy,
+                'efectivo_dia' => $reversosPorMetodo['efectivo'],
+                'tarjeta_dia' => $reversosPorMetodo['tarjeta'],
+                'transferencia_dia' => $reversosPorMetodo['transferencia']
             ],
             'egresos' => [
                 'total_dia' => $totalEgresosHoy,
                 'efectivo_dia' => $egresosPorMetodo['efectivo'],
                 'tarjeta_dia' => $egresosPorMetodo['tarjeta'],
-                'transferencia_dia' => $egresosPorMetodo['transferencia']
+                'transferencia_dia' => $egresosPorMetodo['transferencia'],
+                'gastos_reales_total_dia' => $totalEgresosHoy
+            ],
+            'finanzas' => [
+                'entradas_brutas' => $totalIngresosBrutosHoy,
+                'reversos' => $totalReversosHoy,
+                'ingreso_neto' => $totalIngresosHoy,
+                'gastos_reales' => $totalEgresosHoy,
+                'balance' => $balanceFinancieroHoy
             ],
             'entradas' => [
                 'total' => $entradasHoy['total'] ?? 0,
@@ -488,6 +575,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
     private function getCajaInfo() {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
+        $condicionReverso = $this->condicionReversoIngresoCaja('mc');
         
         $stmt = $db->query("
             SELECT 
@@ -495,10 +583,14 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 cc.fecha_apertura,
                 cc.monto_inicial,
                 COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END), 0) as total_ingresos,
-                COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' THEN mc.monto ELSE 0 END), 0) as total_gastos,
-                cc.monto_inicial + 
+                COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') THEN mc.monto ELSE 0 END), 0) as total_gastos,
+                COALESCE(SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END), 0) as total_reversos,
+                COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso} THEN mc.monto ELSE 0 END), 0) as total_gastos_reales,
+                COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END), 0) -
+                    COALESCE(SUM(CASE WHEN {$condicionReverso} THEN mc.monto ELSE 0 END), 0) as total_ingresos_netos,
+                cc.monto_inicial +
                     COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0) as efectivo_esperado
+                    COALESCE(SUM(CASE WHEN mc.tipo IN ('gasto', 'egreso') AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0) as efectivo_esperado
             FROM cortes_caja cc
             LEFT JOIN movimientos_caja mc ON cc.id = mc.corte_id AND mc.hotel_id = cc.hotel_id
             WHERE cc.hotel_id = ?

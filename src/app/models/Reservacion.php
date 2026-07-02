@@ -702,23 +702,57 @@ private function registrarPagosMixtos($reservacion_id, $pagos, $monto_recibido =
     // Eliminar pagos anteriores si existen
     $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ? AND hotel_id = ?";
     $db->query($sql, [$reservacion_id, $hotel_id]);
-    
-    // Insertar nuevos pagos
-    $sql = "INSERT INTO reservacion_pagos 
+
+    // Insertar nuevos pagos (tipo_tarjeta solo si la migracion ya agrego la columna)
+    $conTipoTarjeta = $this->pagosSoportanTipoTarjeta();
+    $sql = $conTipoTarjeta
+        ? "INSERT INTO reservacion_pagos
+            (reservacion_id, hotel_id, metodo_pago, monto, referencia, tipo_tarjeta, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())"
+        : "INSERT INTO reservacion_pagos
             (reservacion_id, hotel_id, metodo_pago, monto, referencia, created_at)
             VALUES (?, ?, ?, ?, ?, NOW())";
-    
+
     foreach ($pagos as $pago) {
         if ($pago['monto'] > 0) {
-            $db->query($sql, [
+            $params = [
                 $reservacion_id,
                 $hotel_id,
                 $pago['metodo'],
                 $pago['monto'],
                 $pago['referencia'] ?? null
-            ]);
+            ];
+            if ($conTipoTarjeta) {
+                $params[] = $this->normalizarTipoTarjetaPago($pago['metodo'] ?? '', $pago['tipo_tarjeta'] ?? '');
+            }
+            $db->query($sql, $params);
         }
     }
+}
+
+/** La columna reservacion_pagos.tipo_tarjeta existe (migracion 20260702_001). */
+private function pagosSoportanTipoTarjeta(): bool {
+    static $soporta = null;
+    if ($soporta !== null) {
+        return $soporta;
+    }
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query("SHOW COLUMNS FROM reservacion_pagos LIKE 'tipo_tarjeta'");
+        $soporta = $stmt && $stmt->rowCount() > 0;
+    } catch (\Throwable $e) {
+        $soporta = false;
+    }
+    return $soporta;
+}
+
+/** credito/debito solo para pagos con tarjeta; cualquier otro caso queda ''. */
+private function normalizarTipoTarjetaPago($metodo, $tipoTarjeta): string {
+    if ((string)$metodo !== 'tarjeta') {
+        return '';
+    }
+    $tipo = strtolower(trim((string)$tipoTarjeta));
+    return in_array($tipo, ['credito', 'debito'], true) ? $tipo : '';
 }
 
 /**
@@ -737,9 +771,10 @@ public function obtenerPagos($reservacion_id) {
 }
 
 /**
- * Resumen de cobro de una reservación: total, pagado (pagos + abonos) y saldo pendiente.
- * Reusa las dos mismas fuentes que Cuentas por Cobrar (reservacion_pagos + reservacion_abonos),
- * de forma defensiva por si alguna tabla no existe en algún hotel.
+ * Resumen de cobro de una reservación: total, pagado y saldo pendiente.
+ * Reusa las fuentes de cobro de reservacion y, si existe, los cobros operativos
+ * de CxC ligados a la misma reservacion. CxC ya registra su propio movimiento de
+ * Caja, por eso aqui solo se suma para saldo; no se crea otro ingreso.
  */
 public function resumenPagos($reservacion_id, $hotelId = null) {
     $db = Database::getInstance();
@@ -770,18 +805,173 @@ public function resumenPagos($reservacion_id, $hotelId = null) {
         }
     };
 
+    $sumarCobrosCxc = function () use ($db, $reservacion_id, $hotelId) {
+        try {
+            foreach (['cuentas_por_cobrar', 'cuentas_por_cobrar_movimientos'] as $tabla) {
+                $chk = $db->query("SHOW TABLES LIKE '" . $tabla . "'");
+                if (!$chk || $chk->rowCount() === 0) {
+                    return 0.0;
+                }
+            }
+
+            $stmt = $db->query(
+                "SELECT COALESCE(SUM(CASE
+                            WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                            WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto
+                            ELSE 0
+                        END), 0) AS t
+                 FROM cuentas_por_cobrar c
+                 INNER JOIN cuentas_por_cobrar_movimientos m
+                    ON m.cuenta_por_cobrar_id = c.id
+                   AND m.hotel_id = c.hotel_id
+                 WHERE c.hotel_id = ?
+                   AND (
+                        c.reservacion_id = ?
+                        OR (c.origen_tipo = 'reservacion' AND c.origen_id = ?)
+                   )
+                   AND m.tipo_movimiento IN ('COBRO', 'CANCELACION')",
+                [$hotelId, $reservacion_id, $reservacion_id]
+            );
+            $r = $stmt ? $stmt->fetch() : null;
+            return max(0.0, (float)($r['t'] ?? 0));
+        } catch (\Throwable $e) {
+            return 0.0;
+        }
+    };
+
     $pagos = $sumarTabla('reservacion_pagos');
     $abonos = $sumarTabla('reservacion_abonos');
-    $pagado = $pagos + $abonos;
+    $cxcCobros = $sumarCobrosCxc();
+    $pagado = $pagos + $abonos + $cxcCobros;
     $saldo = max(0, round($total - $pagado, 2));
 
     return [
         'total'  => round($total, 2),
         'pagos'  => round($pagos, 2),
         'abonos' => round($abonos, 2),
+        'cxc_cobros' => round($cxcCobros, 2),
         'pagado' => round($pagado, 2),
         'saldo'  => $saldo,
     ];
+}
+
+/**
+ * Version en lote de resumenPagos(): mapa reservacion_id => resumen con una
+ * consulta agregada por fuente (pagos, abonos, cobros CxC) en lugar de ~5
+ * consultas por reservacion. Mismo criterio de calculo que resumenPagos().
+ */
+public function resumenPagosLote(array $reservacionIds, $hotelId = null): array {
+    $db = Database::getInstance();
+    $hotelId = $hotelId !== null ? (int)$hotelId : (int)$this->hotelIdActual();
+
+    $ids = [];
+    foreach ($reservacionIds as $rid) {
+        $rid = (int)$rid;
+        if ($rid > 0) {
+            $ids[$rid] = $rid;
+        }
+    }
+    if (empty($ids) || $hotelId <= 0) {
+        return [];
+    }
+    $ids = array_values($ids);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+    $resumenes = [];
+    $stmt = $db->query(
+        "SELECT id, precio_total FROM reservaciones WHERE hotel_id = ? AND id IN ($placeholders)",
+        array_merge([$hotelId], $ids)
+    );
+    foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+        $resumenes[(int)$row['id']] = [
+            'total' => (float)($row['precio_total'] ?? 0),
+            'pagos' => 0.0,
+            'abonos' => 0.0,
+            'cxc_cobros' => 0.0,
+        ];
+    }
+    if (empty($resumenes)) {
+        return [];
+    }
+
+    $tablaExiste = function ($tabla) use ($db) {
+        try {
+            $chk = $db->query("SHOW TABLES LIKE '" . $tabla . "'");
+            return $chk && $chk->rowCount() > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    };
+
+    foreach (['reservacion_pagos' => 'pagos', 'reservacion_abonos' => 'abonos'] as $tabla => $clave) {
+        if (!$tablaExiste($tabla)) {
+            continue;
+        }
+        try {
+            $stmt = $db->query(
+                "SELECT reservacion_id, COALESCE(SUM(monto), 0) AS t
+                 FROM {$tabla}
+                 WHERE hotel_id = ? AND reservacion_id IN ($placeholders)
+                 GROUP BY reservacion_id",
+                array_merge([$hotelId], $ids)
+            );
+            foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+                $rid = (int)($row['reservacion_id'] ?? 0);
+                if (isset($resumenes[$rid])) {
+                    $resumenes[$rid][$clave] = (float)($row['t'] ?? 0);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fuente opcional: se queda en 0, igual que resumenPagos().
+        }
+    }
+
+    if ($tablaExiste('cuentas_por_cobrar') && $tablaExiste('cuentas_por_cobrar_movimientos')) {
+        try {
+            $stmt = $db->query(
+                "SELECT COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END) AS reservacion_id,
+                        COALESCE(SUM(CASE
+                            WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                            WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto
+                            ELSE 0
+                        END), 0) AS t
+                 FROM cuentas_por_cobrar c
+                 INNER JOIN cuentas_por_cobrar_movimientos m
+                    ON m.cuenta_por_cobrar_id = c.id
+                   AND m.hotel_id = c.hotel_id
+                 WHERE c.hotel_id = ?
+                   AND (
+                        c.reservacion_id IN ($placeholders)
+                        OR (c.origen_tipo = 'reservacion' AND c.origen_id IN ($placeholders))
+                   )
+                   AND m.tipo_movimiento IN ('COBRO', 'CANCELACION')
+                 GROUP BY COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END)",
+                array_merge([$hotelId], $ids, $ids)
+            );
+            foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+                $rid = (int)($row['reservacion_id'] ?? 0);
+                if (isset($resumenes[$rid])) {
+                    $resumenes[$rid]['cxc_cobros'] = max(0.0, (float)($row['t'] ?? 0));
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fuente opcional: se queda en 0.
+        }
+    }
+
+    foreach ($resumenes as $rid => $r) {
+        $pagado = $r['pagos'] + $r['abonos'] + $r['cxc_cobros'];
+        $resumenes[$rid] = [
+            'total'  => round($r['total'], 2),
+            'pagos'  => round($r['pagos'], 2),
+            'abonos' => round($r['abonos'], 2),
+            'cxc_cobros' => round($r['cxc_cobros'], 2),
+            'pagado' => round($pagado, 2),
+            'saldo'  => max(0, round($r['total'] - $pagado, 2)),
+        ];
+    }
+
+    return $resumenes;
 }
 
 /**
@@ -870,7 +1060,7 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         }
         
         // Determinar el método de pago principal (el de mayor monto)
-        $metodo_principal = 'efectivo';
+        $metodo_principal = null;
         $monto_mayor = 0;
         
         foreach ($pagos as $pago) {
@@ -1399,63 +1589,6 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         error_log("ERROR en actualizarHabitaciones: " . $e->getMessage());
         error_log("Stack trace: " . $e->getTraceAsString());
         throw $e;
-    }
-}
-/**
- * Intentar registrar pagos mixtos si la tabla existe
- * MÉTODO ÚNICO - NO DUPLICAR
- */
-private function intentarRegistrarPagosMixtos($reservacion_id, $pagos, $monto_recibido = null, $cambio = null) {
-    $db = Database::getInstance();
-    
-    try {
-        // Verificar si la tabla existe
-        $sql = "SHOW TABLES LIKE 'reservacion_pagos'";
-        $stmt = $db->query($sql);
-        
-        if (!$stmt || $stmt->rowCount() == 0) {
-            // La tabla no existe
-            error_log("Tabla reservacion_pagos no existe");
-            return;
-        }
-        
-        // Primero intentar actualizar las columnas de monto_recibido y cambio
-        try {
-            $sql = "UPDATE reservaciones 
-                    SET monto_recibido = ?, cambio = ? 
-                    WHERE id = ?";
-            $db->query($sql, [$monto_recibido, $cambio, $reservacion_id]);
-        } catch (Exception $e) {
-            // Si falla, las columnas no existen, continuar
-            error_log("Columnas monto_recibido/cambio no existen en reservaciones");
-        }
-        
-        // Eliminar pagos anteriores
-        $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ?";
-        $db->query($sql, [$reservacion_id]);
-        
-        // Insertar nuevos pagos
-        $sql = "INSERT INTO reservacion_pagos (reservacion_id, metodo_pago, monto, referencia, created_at) 
-                VALUES (?, ?, ?, ?, NOW())";
-        
-        foreach ($pagos as $pago) {
-            if ($pago['monto'] > 0) {
-                $result = $db->query($sql, [
-                    $reservacion_id,
-                    $pago['metodo'],
-                    $pago['monto'],
-                    $pago['referencia'] ?? null
-                ]);
-                
-                if (!$result) {
-                    error_log("Error al insertar en reservacion_pagos: " . print_r($db->getConnection()->errorInfo(), true));
-                }
-            }
-        }
-        
-    } catch (Exception $e) {
-        // Si hay algún error, registrarlo pero no fallar el check-in
-        error_log("Error al registrar pagos mixtos (no crítico): " . $e->getMessage());
     }
 }
    public function obtenerPorId($id) {
@@ -3028,6 +3161,21 @@ public function paraCalendario($mes = null, $año = null) {
         }
     }
 
+    private function combinarNotasFactura($notasActuales, $notaNueva, string $modoMonto): ?string {
+        $actuales = trim((string)($notasActuales ?? ''));
+        $nueva = trim((string)($notaNueva ?? ''));
+
+        if ($modoMonto !== 'acumular' || $actuales === '') {
+            return $nueva !== '' ? $nueva : ($actuales !== '' ? $actuales : null);
+        }
+
+        if ($nueva === '' || strpos($actuales, $nueva) !== false) {
+            return $actuales;
+        }
+
+        return $actuales . "\n" . $nueva;
+    }
+
     /**
      * Realizar check-in y check-out EXPRESS cuando ya pasó la fecha
      */
@@ -3209,7 +3357,7 @@ public function paraCalendario($mes = null, $año = null) {
         
         try {
             $stmt_reservacion = $db->query(
-                "SELECT id, hotel_id, created_at FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                "SELECT id, hotel_id, precio_total, created_at FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
                 [$datos['reservacion_id'], $hotel_id]
             );
             $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch(PDO::FETCH_ASSOC) : null;
@@ -3222,32 +3370,64 @@ public function paraCalendario($mes = null, $año = null) {
             $tipo = $datos['tipo'] ?? 'cliente';
             $estatus = $datos['estatus'] ?? 'pendiente';
             $metodo_principal = $datos['metodo_pago_principal'] ?? 'efectivo';
-            $monto_total = $datos['monto_total'] ?? 0;
+            $monto_total = round((float)($datos['monto_total'] ?? 0), 2);
             $usuario_id = $datos['usuario_registro_id'] ?? null;
             $notas = $datos['notas'] ?? null;
+            $modo_monto = (($datos['modo_monto'] ?? 'reemplazar') === 'acumular') ? 'acumular' : 'reemplazar';
+            $modo_solicitud = (($datos['modo_solicitud'] ?? 'actualizar') === 'separada') ? 'separada' : 'actualizar';
+            $referencia_nota = trim((string)($datos['referencia_nota'] ?? ''));
 
-            $stmt_existente = $db->query(
-                "SELECT sf.id
-                 FROM solicitudes_factura sf
-                 WHERE sf.reservacion_id = ?
-                   AND sf.hotel_id = ?
-                   AND sf.requiere_factura = ?
-                   AND sf.tipo = ?
-                   AND sf.estatus IN ('pendiente', 'en_proceso')
-                   AND sf.created_at >= ?
-                 ORDER BY sf.created_at DESC, sf.id DESC
-                 LIMIT 1",
-                [
+            $existente = null;
+            if ($modo_solicitud !== 'separada') {
+                $sql_existente = "SELECT sf.id,
+                                         sf.monto_total,
+                                         sf.metodo_pago_principal,
+                                         sf.notas
+                                  FROM solicitudes_factura sf
+                                  WHERE sf.reservacion_id = ?
+                                    AND sf.hotel_id = ?
+                                    AND sf.requiere_factura = ?
+                                    AND sf.tipo = ?
+                                    AND sf.estatus IN ('pendiente', 'en_proceso')
+                                    AND sf.created_at >= ?";
+                $params_existente = [
                     $datos['reservacion_id'],
                     $hotel_id,
                     $requiere_factura,
                     $tipo,
                     $reservacion['created_at']
-                ]
-            );
-            $existente = $stmt_existente ? $stmt_existente->fetch(PDO::FETCH_ASSOC) : null;
+                ];
+                if ($referencia_nota !== '') {
+                    // Frontera de ID: 'Abono #5' no debe matchear 'Abono #52'.
+                    // La referencia debe terminar en no-digito o fin de nota.
+                    $referencia_regexp = preg_replace('/[.^$*+?()\[\]{}|\\\\]/', '\\\\$0', $referencia_nota);
+                    $sql_existente .= " AND sf.notas REGEXP ?";
+                    $params_existente[] = $referencia_regexp . '([^0-9]|$)';
+                }
+                $sql_existente .= " ORDER BY sf.created_at DESC, sf.id DESC LIMIT 1";
+
+                $stmt_existente = $db->query($sql_existente, $params_existente);
+                $existente = $stmt_existente ? $stmt_existente->fetch(PDO::FETCH_ASSOC) : null;
+            }
 
             if ($existente) {
+                $monto_actual = round((float)($existente['monto_total'] ?? 0), 2);
+                $monto_guardar = $modo_monto === 'acumular'
+                    ? max(0, round($monto_actual + $monto_total, 2))
+                    : max(0, $monto_total);
+                $limite_reservacion = round((float)($reservacion['precio_total'] ?? 0), 2);
+                if ($limite_reservacion > 0.004) {
+                    $monto_guardar = min($monto_guardar, $limite_reservacion);
+                }
+                $metodo_guardar = $modo_monto === 'acumular' && $monto_total < $monto_actual
+                    ? ($existente['metodo_pago_principal'] ?? $metodo_principal)
+                    : $metodo_principal;
+                $notas_guardar = $this->combinarNotasFactura(
+                    $existente['notas'] ?? null,
+                    $notas,
+                    $modo_monto
+                );
+
                 $stmt = $db->query(
                     "UPDATE solicitudes_factura
                      SET metodo_pago_principal = ?,
@@ -3258,10 +3438,10 @@ public function paraCalendario($mes = null, $año = null) {
                      WHERE id = ?
                        AND hotel_id = ?",
                     [
-                        $metodo_principal,
-                        $monto_total,
+                        $metodo_guardar,
+                        $monto_guardar,
                         $usuario_id,
-                        $notas,
+                        $notas_guardar,
                         $existente['id'],
                         $hotel_id
                     ]
@@ -3272,6 +3452,15 @@ public function paraCalendario($mes = null, $año = null) {
                 }
 
                 return false;
+            }
+
+            if ($monto_total <= 0.004) {
+                return false;
+            }
+
+            $limite_reservacion = round((float)($reservacion['precio_total'] ?? 0), 2);
+            if ($limite_reservacion > 0.004) {
+                $monto_total = min($monto_total, $limite_reservacion);
             }
 
             $sql = "INSERT INTO solicitudes_factura 

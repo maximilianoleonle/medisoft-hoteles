@@ -1,16 +1,20 @@
 <?php
 /**
  * Modelo Sync — Procesamiento de operaciones offline
- * Los Cedros
  *
  * Aplica operaciones encoladas en el cliente (IndexedDB) cuando
  * el dispositivo recupera conexión. Usa UUID para idempotencia:
  * si la misma operación llega dos veces, la segunda se ignora.
+ *
+ * Multi-hotel: todas las operaciones se ejecutan contra el hotel de la
+ * sesión que sincroniza. Si no se puede determinar el hotel, el lote
+ * completo se rechaza sin escribir nada.
  */
 class Sync
 {
     private Database $db;
     private array $reservacionesTemporales = [];
+    private int $hotelId = 0;
 
     public function __construct()
     {
@@ -28,10 +32,25 @@ class Sync
      * @param  array $operaciones  Array de operaciones con formato:
      *   [{ uuid, tipo, payload, timestamp, usuario_id }, ...]
      * @param  int|null $usuarioActualId Usuario autenticado que solicita la sincronizacion.
+     * @param  int|null $hotelId Hotel de la sesion; si es null se resuelve con el helper compat.
      * @return array  { exitosas: [...uuids], fallidas: [{uuid, error}] }
      */
-    public function procesarLote(array $operaciones, ?int $usuarioActualId = null): array
+    public function procesarLote(array $operaciones, ?int $usuarioActualId = null, ?int $hotelId = null): array
     {
+        $this->hotelId = $this->resolverHotelId($hotelId);
+        if ($this->hotelId <= 0) {
+            return [
+                'exitosas' => [],
+                'fallidas' => array_map(
+                    fn($op) => [
+                        'uuid' => $op['uuid'] ?? 'sin-uuid',
+                        'error' => 'Sincronizacion rechazada: no se pudo determinar el hotel de la sesion',
+                    ],
+                    $operaciones
+                ),
+            ];
+        }
+
         // Ordenar por timestamp del cliente para respetar el orden real
         usort($operaciones, fn($a, $b) => ($a['timestamp'] ?? 0) <=> ($b['timestamp'] ?? 0));
 
@@ -166,13 +185,13 @@ class Sync
 
         $placeholders = implode(',', array_fill(0, count($habitaciones_ids), '?'));
         $stmt = $this->db->query(
-            "SELECT * FROM habitaciones WHERE id IN ($placeholders) AND activa = 1",
-            $habitaciones_ids
+            "SELECT * FROM habitaciones WHERE id IN ($placeholders) AND hotel_id = ? AND activa = 1",
+            array_merge($habitaciones_ids, [$this->hotelId])
         );
         $habitaciones = $stmt ? $stmt->fetchAll() : [];
 
         if (count($habitaciones) !== count($habitaciones_ids)) {
-            throw new RuntimeException('Una o mas habitaciones no existen o estan inactivas');
+            throw new RuntimeException('Una o mas habitaciones no existen, estan inactivas o no pertenecen al hotel actual');
         }
 
         $hora_llegada = $p['hora_llegada'] ?? $p['hora_llegada_estimada'] ?? '14:00';
@@ -200,12 +219,21 @@ class Sync
         }
 
         $stmt = $this->db->query(
+            "SELECT id FROM huespedes WHERE id = ? AND hotel_id = ? LIMIT 1",
+            [(int) $p['huesped_id'], $this->hotelId]
+        );
+        if (!$stmt || !$stmt->fetch()) {
+            throw new RuntimeException('El huesped no existe o no pertenece al hotel actual');
+        }
+
+        $stmt = $this->db->query(
             "INSERT INTO reservaciones (
-                huesped_id, fecha_entrada, fecha_salida, hora_llegada_estimada,
+                hotel_id, huesped_id, fecha_entrada, fecha_salida, hora_llegada_estimada,
                 precio_total, estado, notas, usuario_registro_id,
                 total_habitaciones, habitaciones_cortesia, created_at, updated_at
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
             [
+                $this->hotelId,
                 (int) $p['huesped_id'],
                 $p['fecha_entrada'],
                 $p['fecha_salida'],
@@ -234,9 +262,9 @@ class Sync
 
             $ok = $this->db->query(
                 "INSERT INTO reservacion_habitaciones
-                 (reservacion_id, habitacion_id, precio, es_cortesia)
-                 VALUES (?, ?, ?, ?)",
-                [$reservacion_id, (int) $habitacion['id'], $precio, $es_cortesia]
+                 (hotel_id, reservacion_id, habitacion_id, precio, es_cortesia)
+                 VALUES (?, ?, ?, ?, ?)",
+                [$this->hotelId, $reservacion_id, (int) $habitacion['id'], $precio, $es_cortesia]
             );
 
             if (!$ok) {
@@ -262,18 +290,18 @@ class Sync
         }
 
         $stmt = $this->db->query(
-            "SELECT id, estado FROM habitaciones WHERE id = ? AND activa = 1",
-            [(int) $p['habitacion_id']]
+            "SELECT id, estado FROM habitaciones WHERE id = ? AND hotel_id = ? AND activa = 1",
+            [(int) $p['habitacion_id'], $this->hotelId]
         );
         $hab = $stmt ? $stmt->fetch() : null;
 
         if (!$hab) {
-            throw new RuntimeException("Habitación {$p['habitacion_id']} no encontrada o inactiva");
+            throw new RuntimeException("Habitación {$p['habitacion_id']} no encontrada para el hotel actual o inactiva");
         }
 
         $this->db->query(
-            "UPDATE habitaciones SET estado = ?, updated_at = NOW() WHERE id = ?",
-            [$p['estado_nuevo'], (int) $p['habitacion_id']]
+            "UPDATE habitaciones SET estado = ?, updated_at = NOW() WHERE id = ? AND hotel_id = ?",
+            [$p['estado_nuevo'], (int) $p['habitacion_id'], $this->hotelId]
         );
 
         return "Habitación {$p['habitacion_id']}: {$hab['estado']} → {$p['estado_nuevo']}";
@@ -288,13 +316,13 @@ class Sync
         $this->requerir($p, ['reservacion_id']);
 
         $stmt = $this->db->query(
-            "SELECT id, estado FROM reservaciones WHERE id = ?",
-            [(int) $p['reservacion_id']]
+            "SELECT id, estado FROM reservaciones WHERE id = ? AND hotel_id = ?",
+            [(int) $p['reservacion_id'], $this->hotelId]
         );
         $res = $stmt ? $stmt->fetch() : null;
 
         if (!$res) {
-            throw new RuntimeException("Reservación {$p['reservacion_id']} no encontrada");
+            throw new RuntimeException("Reservación {$p['reservacion_id']} no encontrada para el hotel actual");
         }
 
         // Si ya hizo check-in (sincronización duplicada), lo aceptamos silenciosamente
@@ -309,17 +337,20 @@ class Sync
         }
 
         $this->db->query(
-            "UPDATE reservaciones SET estado = 'checked_in', updated_at = NOW() WHERE id = ?",
-            [(int) $p['reservacion_id']]
+            "UPDATE reservaciones SET estado = 'checked_in', updated_at = NOW() WHERE id = ? AND hotel_id = ?",
+            [(int) $p['reservacion_id'], $this->hotelId]
         );
 
         // Marcar habitaciones como ocupadas
         $this->db->query(
             "UPDATE habitaciones h
-             INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+             INNER JOIN reservacion_habitaciones rh
+                ON h.id = rh.habitacion_id
+                AND h.hotel_id = rh.hotel_id
              SET h.estado = 'ocupada', h.updated_at = NOW()
-             WHERE rh.reservacion_id = ?",
-            [(int) $p['reservacion_id']]
+             WHERE rh.reservacion_id = ?
+             AND rh.hotel_id = ?",
+            [(int) $p['reservacion_id'], $this->hotelId]
         );
 
         return "Check-in reservación {$p['reservacion_id']} aplicado";
@@ -335,13 +366,13 @@ class Sync
         $this->requerir($p, ['reservacion_id']);
 
         $stmt = $this->db->query(
-            "SELECT id, estado FROM reservaciones WHERE id = ?",
-            [(int) $p['reservacion_id']]
+            "SELECT id, estado FROM reservaciones WHERE id = ? AND hotel_id = ?",
+            [(int) $p['reservacion_id'], $this->hotelId]
         );
         $res = $stmt ? $stmt->fetch() : null;
 
         if (!$res) {
-            throw new RuntimeException("Reservación {$p['reservacion_id']} no encontrada");
+            throw new RuntimeException("Reservación {$p['reservacion_id']} no encontrada para el hotel actual");
         }
 
         if ($res['estado'] === 'completada') {
@@ -355,8 +386,8 @@ class Sync
         }
 
         $this->db->query(
-            "UPDATE reservaciones SET estado = 'completada', updated_at = NOW() WHERE id = ?",
-            [(int) $p['reservacion_id']]
+            "UPDATE reservaciones SET estado = 'completada', updated_at = NOW() WHERE id = ? AND hotel_id = ?",
+            [(int) $p['reservacion_id'], $this->hotelId]
         );
 
         // El estado destino de la habitación tras el checkout
@@ -366,10 +397,13 @@ class Sync
 
         $this->db->query(
             "UPDATE habitaciones h
-             INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+             INNER JOIN reservacion_habitaciones rh
+                ON h.id = rh.habitacion_id
+                AND h.hotel_id = rh.hotel_id
              SET h.estado = ?, h.updated_at = NOW()
-             WHERE rh.reservacion_id = ?",
-            [$estado_destino, (int) $p['reservacion_id']]
+             WHERE rh.reservacion_id = ?
+             AND rh.hotel_id = ?",
+            [$estado_destino, (int) $p['reservacion_id'], $this->hotelId]
         );
 
         return "Check-out reservación {$p['reservacion_id']} — habitaciones → $estado_destino";
@@ -402,14 +436,29 @@ class Sync
             throw new InvalidArgumentException("Método de pago inválido: '{$p['metodo_pago']}'");
         }
 
-        // Obtener el corte de caja abierto
+        // Obtener el corte de caja abierto DEL HOTEL de la sesion
         $stmt = $this->db->query(
-            "SELECT id FROM cortes_caja WHERE estado = 'abierto' ORDER BY fecha_apertura DESC LIMIT 1"
+            "SELECT id FROM cortes_caja
+             WHERE hotel_id = ? AND estado = 'abierto'
+             ORDER BY fecha_apertura DESC LIMIT 1",
+            [$this->hotelId]
         );
         $corte = $stmt ? $stmt->fetch() : null;
 
         if (!$corte) {
-            throw new RuntimeException("No hay corte de caja abierto. Abre la caja antes de sincronizar.");
+            throw new RuntimeException("No hay corte de caja abierto en el hotel actual. Abre la caja antes de sincronizar.");
+        }
+
+        // Si el pago viene ligado a una reservacion, debe pertenecer al hotel
+        $reservacion_id = isset($p['reservacion_id']) ? (int) $p['reservacion_id'] : null;
+        if ($reservacion_id) {
+            $stmt = $this->db->query(
+                "SELECT id FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                [$reservacion_id, $this->hotelId]
+            );
+            if (!$stmt || !$stmt->fetch()) {
+                throw new RuntimeException("Reservación {$reservacion_id} no encontrada para el hotel actual");
+            }
         }
 
         $categoria_default = $tipo_movimiento === 'ingreso' ? 'Hospedaje' : 'Gastos Generales';
@@ -431,10 +480,11 @@ class Sync
 
         $this->db->query(
             "INSERT INTO movimientos_caja
-             (tipo, categoria, categoria_id, descripcion, monto, metodo_pago, referencia,
+             (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago, referencia,
               comprobante, proveedor, reservacion_id, usuario_id, corte_id, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
             [
+                $this->hotelId,
                 $tipo_movimiento,
                 $categoria,
                 $categoria_id,
@@ -444,7 +494,7 @@ class Sync
                 $p['referencia']    ?? null,
                 $p['comprobante']   ?? null,
                 $p['proveedor']     ?? null,
-                isset($p['reservacion_id']) ? (int) $p['reservacion_id'] : null,
+                $reservacion_id,
                 $usuario_id,
                 (int) $corte['id'],
             ]
@@ -457,6 +507,31 @@ class Sync
     // =========================================================================
     // HELPERS INTERNOS
     // =========================================================================
+
+    /**
+     * Resuelve el hotel de la sesion: parametro explicito o helper compat
+     * (TenantContext / sesion). Devuelve 0 si no se puede determinar.
+     */
+    private function resolverHotelId(?int $hotelId): int
+    {
+        $id = (int) ($hotelId ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+
+        if (!function_exists('obtenerHotelIdActualCompat')) {
+            $helper = __DIR__ . '/../helpers/hotel_config.php';
+            if (is_file($helper)) {
+                require_once $helper;
+            }
+        }
+
+        if (function_exists('obtenerHotelIdActualCompat')) {
+            return (int) obtenerHotelIdActualCompat();
+        }
+
+        return 0;
+    }
 
     /** Crea la tabla de idempotencia si la instalacion aun no la tiene. */
     private function asegurarTablaOperacionesSync(): void

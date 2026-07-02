@@ -66,6 +66,47 @@ if (!function_exists('caja_form_error_attrs')) {
         return ' aria-invalid="true" aria-describedby="' . caja_form_safe($errorId) . '"';
     }
 }
+if (!function_exists('cj_finance_label')) {
+    function cj_finance_label($value) {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return 'Sin concepto';
+        }
+
+        $key = strtolower($text);
+        $labels = [
+            'cobro cxc' => 'Cobro de cuenta pendiente',
+            'reversion cobro cxc' => 'Cancelacion de cobro pendiente',
+            'anticipo reservacion' => 'Anticipo de reservacion',
+            'reverso anticipo' => 'Cancelacion de anticipo',
+            'reverso de anticipo' => 'Cancelacion de anticipo',
+            'devolucion' => 'Dinero devuelto',
+            'devoluciones' => 'Dinero devuelto',
+            'hospedaje' => 'Pago de hospedaje',
+            'pago proveedor' => 'Pago a proveedor',
+            'reversion pago proveedor' => 'Cancelacion de pago a proveedor',
+            'pago laboral' => 'Pago al personal',
+            'reversion pago laboral' => 'Cancelacion de pago al personal',
+        ];
+
+        return $labels[$key] ?? str_replace(['CxC', 'CXC', 'CxP', 'CXP'], ['cuenta pendiente', 'cuenta pendiente', 'cuenta por pagar', 'cuenta por pagar'], $text);
+    }
+}
+
+if (!function_exists('cj_finance_sentence')) {
+    function cj_finance_sentence($value) {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return '';
+        }
+
+        return str_ireplace(
+            ['Cobro CxC', 'Reversion Cobro CxC', 'Anticipo reservacion', 'Reverso de anticipo', 'Reverso anticipo', 'Devoluciones'],
+            ['Cobro de cuenta pendiente', 'Cancelacion de cobro pendiente', 'Anticipo de reservacion', 'Cancelacion de anticipo', 'Cancelacion de anticipo', 'Dinero devuelto'],
+            $text
+        );
+    }
+}
 ?>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -320,7 +361,7 @@ if (!function_exists('caja_form_error_attrs')) {
 /* ── KPI tiles ── */
 .cj-kpis {
     display:grid;
-    grid-template-columns:repeat(4, minmax(0,1fr));
+    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
     gap:12px;
 }
 .cj-kpi {
@@ -398,6 +439,89 @@ if (!function_exists('caja_form_error_attrs')) {
 
 /* ── Movements feed ── */
 .cj-mov-list { display:flex; flex-direction:column; }
+.cj-cut-divider {
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    margin:18px -20px 12px;
+    padding:14px 18px 14px 54px;
+    border-top:2px solid color-mix(in srgb, var(--cj-navy) 36%, var(--cj-line));
+    border-bottom:1px solid color-mix(in srgb, var(--cj-navy) 10%, var(--cj-line));
+    border-radius:0;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--cj-navy) 9%, var(--cj-surface)), var(--cj-surface) 68%),
+        var(--cj-surface);
+}
+.cj-cut-divider.is-current {
+    border-top-color:color-mix(in srgb, var(--cj-green) 50%, var(--cj-line));
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--cj-green) 10%, var(--cj-surface)), var(--cj-surface) 68%),
+        var(--cj-surface);
+}
+.cj-cut-mark {
+    position:absolute;
+    left:18px;
+    top:50%;
+    width:24px;
+    height:24px;
+    display:grid;
+    place-items:center;
+    transform:translateY(-50%);
+    border-radius:8px;
+    color:#fff;
+    background:var(--cj-navy);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--cj-navy) 9%, transparent);
+    font-size:.66rem;
+}
+.cj-cut-divider.is-current .cj-cut-mark {
+    background:var(--cj-green);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--cj-green) 12%, transparent);
+}
+.cj-cut-info { min-width:0; flex:1; }
+.cj-cut-eyebrow {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:4px;
+    font-size:.62rem;
+    font-weight:700;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--cj-navy);
+}
+.cj-cut-divider.is-current .cj-cut-eyebrow { color:var(--cj-green); }
+.cj-cut-title {
+    font-size:.9rem;
+    font-weight:700;
+    color:var(--cj-text);
+    line-height:1.2;
+}
+.cj-cut-note {
+    margin-top:3px;
+    font-size:.72rem;
+    font-weight:600;
+    color:var(--cj-muted);
+    line-height:1.25;
+}
+.cj-cut-chip {
+    justify-self:end;
+    align-self:center;
+    padding:5px 9px;
+    border-radius:var(--cj-r-pill);
+    border:1px solid color-mix(in srgb, var(--cj-navy) 16%, var(--cj-line));
+    background:color-mix(in srgb, var(--cj-navy) 5%, #fff);
+    color:var(--cj-navy);
+    font-size:.66rem;
+    font-weight:700;
+    white-space:nowrap;
+}
+.cj-cut-divider.is-current .cj-cut-chip {
+    color:var(--cj-green);
+    border-color:color-mix(in srgb, var(--cj-green) 20%, var(--cj-line));
+    background:color-mix(in srgb, var(--cj-green) 7%, #fff);
+}
 .cj-mov {
     display:grid;
     grid-template-columns:36px minmax(0,1fr) auto;
@@ -449,7 +573,7 @@ if (!function_exists('caja_form_error_attrs')) {
 .cj-empty i { font-size:1.5rem; opacity:.28; display:block; }
 
 /* ── Categories breakdown ── */
-.cj-cats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
+.cj-cats { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px; }
 .cj-cat-hd {
     font-size:.68rem; font-weight:700; text-transform:uppercase;
     letter-spacing:.07em; color:var(--cj-muted); margin:0 0 10px;
@@ -683,6 +807,18 @@ if (!function_exists('caja_form_error_attrs')) {
     .cj-kpis      { grid-template-columns:repeat(2, minmax(0,1fr)); }
     .cj-cats      { grid-template-columns:1fr; }
     .cj-shortcuts { grid-template-columns:1fr; }
+    .cj-cut-divider {
+        grid-template-columns:1fr;
+        align-items:start;
+        gap:8px;
+        margin:16px -16px 10px;
+        padding:12px 14px 12px 46px;
+    }
+    .cj-cut-mark { left:14px; width:22px; height:22px; font-size:.62rem; }
+    .cj-cut-eyebrow { font-size:.58rem; letter-spacing:.1em; }
+    .cj-cut-title { font-size:.82rem; }
+    .cj-cut-note { font-size:.68rem; }
+    .cj-cut-chip { justify-self:start; padding:4px 8px; font-size:.62rem; }
     #modalIngreso, #modalGasto { padding:10px; }
     #modalIngreso .cash-modal-shell, #modalGasto .cash-modal-shell { place-items:end center; }
     #modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog {
@@ -698,10 +834,13 @@ if (!function_exists('caja_form_error_attrs')) {
 
 <?php
 // Distribución de ingresos por método de pago
-$cash_ing_efectivo      = (float) ($resumen['ingresos']['efectivo']['total'] ?? 0);
-$cash_ing_tarjeta       = (float) ($resumen['ingresos']['tarjeta']['total'] ?? 0);
-$cash_ing_transferencia = (float) ($resumen['ingresos']['transferencia']['total'] ?? 0);
+$cash_ing_efectivo      = (float) ($resumen['ingreso_neto']['efectivo']['total'] ?? ($resumen['ingresos']['efectivo']['total'] ?? 0));
+$cash_ing_tarjeta       = (float) ($resumen['ingreso_neto']['tarjeta']['total'] ?? ($resumen['ingresos']['tarjeta']['total'] ?? 0));
+$cash_ing_transferencia = (float) ($resumen['ingreso_neto']['transferencia']['total'] ?? ($resumen['ingresos']['transferencia']['total'] ?? 0));
 $cash_ing_total_metodos = $cash_ing_efectivo + $cash_ing_tarjeta + $cash_ing_transferencia;
+$cash_ing_bruto_total   = (float) ($resumen['ingresos']['total'] ?? 0);
+$cash_reversos_total    = (float) ($resumen['reversos']['total'] ?? 0);
+$cash_gastos_reales_total = (float) ($resumen['gastos_reales']['total'] ?? ($resumen['gastos']['total'] ?? 0));
 
 $cash_pct_efectivo = $cash_pct_tarjeta = $cash_pct_transferencia = 0;
 if ($cash_ing_total_metodos > 0) {
@@ -745,7 +884,7 @@ $cash_methods = [
         <div class="cj-topbar-acts">
             <?php if (user_role() == 'gerente'): ?>
             <a href="<?= url('caja/categorias') ?>" class="cj-btn-ghost">
-                <i class="fas fa-tags"></i> Categorías
+                <i class="fas fa-tags"></i> Conceptos
             </a>
             <?php endif; ?>
         </div>
@@ -804,12 +943,18 @@ $cash_methods = [
                                 <strong class="cj-kpi-value">$<?= number_format($resumen['monto_inicial'] ?? 0, 2) ?></strong>
                             </div>
                             <div class="cj-kpi">
-                                <span class="cj-kpi-label">Ingresos</span>
-                                <strong class="cj-kpi-value is-income">+$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?></strong>
+                                <span class="cj-kpi-label">Dinero que quedo</span>
+                                <strong class="cj-kpi-value <?= $cash_ing_total_metodos >= 0 ? 'is-income' : 'is-expense' ?>">
+                                    <?= $cash_ing_total_metodos >= 0 ? '+' : '-' ?>$<?= number_format(abs($cash_ing_total_metodos), 2) ?>
+                                </strong>
                             </div>
                             <div class="cj-kpi">
-                                <span class="cj-kpi-label">Gastos</span>
-                                <strong class="cj-kpi-value is-expense">-$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?></strong>
+                                <span class="cj-kpi-label">Devuelto/cancelado</span>
+                                <strong class="cj-kpi-value is-expense">-$<?= number_format($cash_reversos_total, 2) ?></strong>
+                            </div>
+                            <div class="cj-kpi">
+                                <span class="cj-kpi-label">Gastos del hotel</span>
+                                <strong class="cj-kpi-value is-expense">-$<?= number_format($cash_gastos_reales_total, 2) ?></strong>
                             </div>
                             <div class="cj-kpi">
                                 <span class="cj-kpi-label">Efectivo en caja</span>
@@ -825,17 +970,17 @@ $cash_methods = [
                 <div class="cj-card">
                     <div class="cj-card-head">
                         <div class="cj-card-ico"><i class="fas fa-credit-card"></i></div>
-                        <h2>Métodos de pago</h2>
+                        <h2>Por forma de pago</h2>
                         <div class="cj-card-tail">
-                            <span>Total $<?= number_format($cash_ing_total_metodos, 2) ?></span>
+                            <span>Entro $<?= number_format($cash_ing_bruto_total, 2) ?> &middot; Devuelto/cancelado $<?= number_format($cash_reversos_total, 2) ?></span>
                         </div>
                     </div>
                     <div class="cj-card-body">
                         <div class="cj-methods">
                             <?php foreach ($cash_methods as $key => $method):
                                 $pct_var = "cash_pct_{$key}";
-                                $pct     = $$pct_var ?? 0;
-                                $total   = (float) ($resumen['ingresos'][$key]['total'] ?? 0);
+                                $pct     = max(0, min(100, $$pct_var ?? 0));
+                                $total   = (float) ($resumen['ingreso_neto'][$key]['total'] ?? ($resumen['ingresos'][$key]['total'] ?? 0));
                             ?>
                             <div class="cj-method">
                                 <div class="cj-method-ico m-<?= $key ?>">
@@ -847,9 +992,9 @@ $cash_methods = [
                                     <div class="cj-method-bar">
                                         <div class="cj-method-fill m-<?= $key ?>" style="width:<?= $pct ?>%"></div>
                                     </div>
-                                    <div class="cj-method-pct"><?= $pct ?>% del total</div>
+                                    <div class="cj-method-pct"><?= $pct ?>% del dinero que quedo</div>
                                 </div>
-                                <div class="cj-method-amount">$<?= number_format($total, 2) ?></div>
+                                <div class="cj-method-amount"><?= $total < 0 ? '-' : '' ?>$<?= number_format(abs($total), 2) ?></div>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -860,12 +1005,12 @@ $cash_methods = [
                 <div class="cj-card">
                     <div class="cj-card-head">
                         <div class="cj-card-ico"><i class="fas fa-tags"></i></div>
-                        <h2>Por categoría</h2>
+                        <h2>Por concepto</h2>
                     </div>
                     <div class="cj-card-body">
                         <div class="cj-cats">
                             <div>
-                                <p class="cj-cat-hd income">Ingresos</p>
+                                <p class="cj-cat-hd income">Entradas</p>
                                 <div class="cj-cat-list">
                                     <?php if (!empty($movimientos_categoria['ingresos'])): ?>
                                         <?php foreach ($movimientos_categoria['ingresos'] as $cat): ?>
@@ -875,7 +1020,7 @@ $cash_methods = [
                                                 <i class="fas fa-<?= htmlspecialchars($cat['icono'] ?? 'circle') ?>"></i>
                                             </div>
                                             <div class="cj-cat-info">
-                                                <div class="cj-cat-name"><?= htmlspecialchars($cat['categoria'] ?? '') ?></div>
+                                                <div class="cj-cat-name"><?= htmlspecialchars(cj_finance_label($cat['categoria'] ?? '')) ?></div>
                                                 <div class="cj-cat-count"><?= $cat['cantidad'] ?? 0 ?> mov.</div>
                                             </div>
                                             <div class="cj-cat-total" style="color:var(--cj-green)">
@@ -889,17 +1034,17 @@ $cash_methods = [
                                 </div>
                             </div>
                             <div>
-                                <p class="cj-cat-hd expense">Gastos</p>
+                                <p class="cj-cat-hd expense">Devuelto/cancelado</p>
                                 <div class="cj-cat-list">
-                                    <?php if (!empty($movimientos_categoria['gastos'])): ?>
-                                        <?php foreach ($movimientos_categoria['gastos'] as $cat): ?>
+                                    <?php if (!empty($movimientos_categoria['reversos'])): ?>
+                                        <?php foreach ($movimientos_categoria['reversos'] as $cat): ?>
                                         <div class="cj-cat-item">
                                             <div class="cj-cat-ico"
                                                  style="background:<?= htmlspecialchars($cat['color'] ?? '#e5e7eb') ?>1a;color:<?= htmlspecialchars($cat['color'] ?? '#6b7280') ?>">
                                                 <i class="fas fa-<?= htmlspecialchars($cat['icono'] ?? 'circle') ?>"></i>
                                             </div>
                                             <div class="cj-cat-info">
-                                                <div class="cj-cat-name"><?= htmlspecialchars($cat['categoria'] ?? '') ?></div>
+                                                <div class="cj-cat-name"><?= htmlspecialchars(cj_finance_label($cat['categoria'] ?? '')) ?></div>
                                                 <div class="cj-cat-count"><?= $cat['cantidad'] ?? 0 ?> mov.</div>
                                             </div>
                                             <div class="cj-cat-total" style="color:var(--cj-red)">
@@ -908,7 +1053,31 @@ $cash_methods = [
                                         </div>
                                         <?php endforeach; ?>
                                     <?php else: ?>
-                                        <div class="cj-empty" style="min-height:70px"><i class="fas fa-inbox"></i>Sin gastos</div>
+                                        <div class="cj-empty" style="min-height:70px"><i class="fas fa-inbox"></i>Sin dinero devuelto</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="cj-cat-hd expense">Gastos del hotel</p>
+                                <div class="cj-cat-list">
+                                    <?php if (!empty($movimientos_categoria['gastos_reales'])): ?>
+                                        <?php foreach ($movimientos_categoria['gastos_reales'] as $cat): ?>
+                                        <div class="cj-cat-item">
+                                            <div class="cj-cat-ico"
+                                                 style="background:<?= htmlspecialchars($cat['color'] ?? '#e5e7eb') ?>1a;color:<?= htmlspecialchars($cat['color'] ?? '#6b7280') ?>">
+                                                <i class="fas fa-<?= htmlspecialchars($cat['icono'] ?? 'circle') ?>"></i>
+                                            </div>
+                                            <div class="cj-cat-info">
+                                                <div class="cj-cat-name"><?= htmlspecialchars(cj_finance_label($cat['categoria'] ?? '')) ?></div>
+                                                <div class="cj-cat-count"><?= $cat['cantidad'] ?? 0 ?> mov.</div>
+                                            </div>
+                                            <div class="cj-cat-total" style="color:var(--cj-red)">
+                                                $<?= number_format($cat['total'] ?? 0, 2) ?>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="cj-empty" style="min-height:70px"><i class="fas fa-inbox"></i>Sin gastos del hotel</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -934,12 +1103,12 @@ $cash_methods = [
                             </a>
                             <a href="<?= url('caja/reporte-metodos') ?>" class="cj-shortcut">
                                 <div class="cj-shortcut-ico"><i class="fas fa-chart-bar"></i></div>
-                                Reporte de métodos
+                                Reporte por forma de pago
                             </a>
                             <?php if (user_role() == 'gerente'): ?>
                             <a href="<?= url('caja/categorias') ?>" class="cj-shortcut">
                                 <div class="cj-shortcut-ico"><i class="fas fa-tags"></i></div>
-                                Categorías
+                                Conceptos
                             </a>
                             <?php endif; ?>
                         </div>
@@ -961,8 +1130,38 @@ $cash_methods = [
                     <div class="cj-card-body">
                         <?php if (!empty($ultimos_movimientos)): ?>
                         <div class="cj-mov-list">
+                            <?php $cj_last_cut_key = null; ?>
                             <?php foreach ($ultimos_movimientos as $mov):
+                                $cj_current_cut_id = (int)($corte['id'] ?? 0);
+                                $cj_mov_cut_id = (int)($mov['corte_id'] ?? 0);
+                                $cj_cut_key = $cj_mov_cut_id > 0 ? (string)$cj_mov_cut_id : 'sin-corte';
+                                $cj_is_current_cut = $cj_mov_cut_id > 0 && $cj_mov_cut_id === $cj_current_cut_id;
+                                $cj_cut_date = !empty($mov['created_at']) ? date('d/m/Y', strtotime($mov['created_at'])) : '';
+                                $cj_cut_eyebrow = $cj_is_current_cut
+                                    ? 'Movimientos del corte actual'
+                                    : ($cj_mov_cut_id > 0 ? 'Aqui empieza otro corte' : 'Movimientos fuera de corte');
+                                $cj_cut_title = $cj_mov_cut_id > 0
+                                    ? 'Corte #' . $cj_mov_cut_id
+                                    : 'Movimientos sin corte asignado';
+                                $cj_cut_note = $cj_is_current_cut
+                                    ? 'Turno que esta abierto ahora'
+                                    : 'Los siguientes movimientos pertenecen a otro turno de caja';
+                                if ($cj_cut_date !== '') {
+                                    $cj_cut_note .= ' - ' . $cj_cut_date;
+                                }
+                                $cj_cut_chip = $cj_is_current_cut ? 'Activo' : ($cj_mov_cut_id > 0 ? 'Corte anterior' : 'Sin corte');
                                 $es_ingreso = ($mov['tipo'] ?? '') === 'ingreso';
+                                $cj_mov_categoria = strtolower(trim((string)($mov['categoria_nombre'] ?? ($mov['categoria'] ?? ''))));
+                                $cj_mov_desc = strtolower(trim((string)($mov['descripcion'] ?? '')));
+                                $es_reverso = !$es_ingreso && (
+                                    strpos($cj_mov_categoria, 'devoluc') === 0 ||
+                                    strpos($cj_mov_categoria, 'reverso anticipo') === 0 ||
+                                    strpos($cj_mov_categoria, 'reverso de anticipo') === 0 ||
+                                    strpos($cj_mov_categoria, 'reversion cobro cxc') === 0 ||
+                                    strpos($cj_mov_desc, 'reverso de anticipo') === 0 ||
+                                    strpos($cj_mov_desc, 'reversion cobro cxc') === 0
+                                );
+                                $cj_mov_label = $es_ingreso ? 'Entrada' : ($es_reverso ? 'Devuelto/cancelado' : 'Gasto');
                                 // Destino al clic: reservacion -> su detalle; pago laboral -> ficha del trabajador.
                                 $cj_mov_href = '';
                                 if (!empty($mov['reservacion_id'])) {
@@ -971,18 +1170,30 @@ $cash_methods = [
                                     $cj_mov_href = url('trabajadores/' . (int)$mov['trabajador_id']);
                                 }
                             ?>
+                            <?php if ($cj_cut_key !== $cj_last_cut_key): ?>
+                            <div class="cj-cut-divider<?= $cj_is_current_cut ? ' is-current' : '' ?>">
+                                <div class="cj-cut-mark" aria-hidden="true"><i class="fas fa-cash-register"></i></div>
+                                <div class="cj-cut-info">
+                                    <div class="cj-cut-eyebrow"><?= htmlspecialchars($cj_cut_eyebrow) ?></div>
+                                    <div class="cj-cut-title"><?= htmlspecialchars($cj_cut_title) ?></div>
+                                    <div class="cj-cut-note"><?= htmlspecialchars($cj_cut_note) ?></div>
+                                </div>
+                                <div class="cj-cut-chip"><?= htmlspecialchars($cj_cut_chip) ?></div>
+                            </div>
+                            <?php $cj_last_cut_key = $cj_cut_key; ?>
+                            <?php endif; ?>
                             <div class="cj-mov<?= $cj_mov_href !== '' ? ' is-linked' : '' ?>"<?= $cj_mov_href !== '' ? ' data-href="' . htmlspecialchars($cj_mov_href, ENT_QUOTES, 'UTF-8') . '" role="link" tabindex="0" title="Abrir detalle"' : '' ?>>
                                 <div class="cj-mov-ico <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
                                     <i class="fas fa-<?= !empty($mov['categoria_icono']) ? htmlspecialchars($mov['categoria_icono']) : ($es_ingreso ? 'plus' : 'minus') ?>"></i>
                                 </div>
                                 <div class="cj-mov-body">
-                                    <div class="cj-mov-title"><?= htmlspecialchars($mov['descripcion'] ?? '') ?></div>
+                                    <div class="cj-mov-title"><?= htmlspecialchars(cj_finance_sentence($mov['descripcion'] ?? '')) ?></div>
                                     <div class="cj-mov-sub">
                                         <span class="cj-badge <?= $es_ingreso ? 'income' : 'expense' ?>">
-                                            <?= $es_ingreso ? 'Ingreso' : 'Gasto' ?>
+                                            <?= $cj_mov_label ?>
                                         </span>
                                         <?php if (!empty($mov['categoria_nombre'])): ?>
-                                        <span><?= htmlspecialchars($mov['categoria_nombre']) ?></span>
+                                        <span><?= htmlspecialchars(cj_finance_label($mov['categoria_nombre'])) ?></span>
                                         <?php endif; ?>
                                         <?php if (!empty($mov['metodo_pago'])): ?>
                                         <span><i class="fas fa-credit-card" style="font-size:.6rem"></i> <?= htmlspecialchars(ucfirst($mov['metodo_pago'])) ?></span>
@@ -1052,12 +1263,12 @@ $cash_methods = [
                     <?php endif; ?>
                     <!-- Categoría -->
                     <div class="cash-field">
-                        <label class="modal-label">Categoría <span class="text-red-400">*</span></label>
+                        <label class="modal-label">Concepto <span class="text-red-400">*</span></label>
                         <select name="categoria_id" id="categoria_ingreso" class="modal-input<?= caja_form_error_class($cajaIngresoErrors, 'categoria_id') ?>" required<?= caja_form_error_attrs($cajaIngresoErrors, 'categoria_id', 'ms-form-error-caja_ingreso_categoria') ?>>
-                            <option value="">Seleccione una categoría</option>
+                            <option value="">Seleccione un concepto</option>
                             <?php foreach ($categorias['ingreso'] as $cat): ?>
                                 <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>"<?= caja_form_selected($cajaIngresoOld, 'categoria_id', (string)($cat['id'] ?? '')) ?>>
-                                    <?= htmlspecialchars($cat['nombre'] ?? '') ?>
+                                    <?= htmlspecialchars(cj_finance_label($cat['nombre'] ?? '')) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -1090,7 +1301,7 @@ $cash_methods = [
                             <?php endif; ?>
                         </div>
                         <div class="cash-field">
-                            <label class="modal-label">Método de Pago <span class="text-red-400">*</span></label>
+                            <label class="modal-label">Forma de pago <span class="text-red-400">*</span></label>
                             <select name="metodo_pago" id="metodo_pago_ingreso" class="modal-input<?= caja_form_error_class($cajaIngresoErrors, 'metodo_pago') ?>" required<?= caja_form_error_attrs($cajaIngresoErrors, 'metodo_pago', 'ms-form-error-caja_ingreso_metodo') ?>>
                                 <?php foreach ($metodos_pago as $key => $metodo): ?>
                                     <option value="<?= $key ?>"<?= caja_form_selected($cajaIngresoOld, 'metodo_pago', (string)$key) ?>><?= htmlspecialchars($metodo['label'] ?? '') ?></option>
@@ -1171,12 +1382,12 @@ $cash_methods = [
                     <?php endif; ?>
                     <!-- Categoría -->
                     <div class="cash-field">
-                        <label class="modal-label modal-label-red">Categoría <span class="text-red-400">*</span></label>
+                        <label class="modal-label modal-label-red">Concepto <span class="text-red-400">*</span></label>
                         <select name="categoria_id" id="categoria_gasto" class="modal-input modal-input-red<?= caja_form_error_class($cajaGastoErrors, 'categoria_id') ?>" required<?= caja_form_error_attrs($cajaGastoErrors, 'categoria_id', 'ms-form-error-caja_gasto_categoria') ?>>
-                            <option value="">Seleccione una categoría</option>
+                            <option value="">Seleccione un concepto</option>
                             <?php foreach ($categorias['gasto'] as $cat): ?>
                                 <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>"<?= caja_form_selected($cajaGastoOld, 'categoria_id', (string)($cat['id'] ?? '')) ?>>
-                                    <?= htmlspecialchars($cat['nombre'] ?? '') ?>
+                                    <?= htmlspecialchars(cj_finance_label($cat['nombre'] ?? '')) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -1221,7 +1432,7 @@ $cash_methods = [
                         </div>
 
                         <div class="cash-field">
-                            <label class="modal-label modal-label-red">Método <span class="text-red-400">*</span></label>
+                            <label class="modal-label modal-label-red">Forma de pago <span class="text-red-400">*</span></label>
                             <select name="metodo_pago" id="metodo_pago_gasto"
                                     class="modal-input modal-input-red<?= caja_form_error_class($cajaGastoErrors, 'metodo_pago') ?>" required<?= caja_form_error_attrs($cajaGastoErrors, 'metodo_pago', 'ms-form-error-caja_gasto_metodo') ?>>
                                 <?php foreach ($metodos_pago as $key => $metodo): ?>

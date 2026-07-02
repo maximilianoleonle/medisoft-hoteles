@@ -605,9 +605,11 @@ $habitaciones_limpieza = (int)($stats['habitaciones']['limpieza'] ?? 0);
 $ocupacion_pct = min(100, max(0, (float)($stats['habitaciones']['porcentaje_ocupacion'] ?? 0)));
 $habitaciones_libres = max(0, $habitaciones_total - $habitaciones_ocupadas);
 
-$ingresos_total = (float)($stats['ingresos']['total_dia'] ?? 0);
-$egresos_total = (float)($stats['egresos']['total_dia'] ?? 0);
-$balance_dia = $ingresos_total - $egresos_total;
+$ingresos_total = (float)($stats['finanzas']['ingreso_neto'] ?? ($stats['ingresos']['total_dia'] ?? 0));
+$ingresos_brutos_total = (float)($stats['finanzas']['entradas_brutas'] ?? ($stats['ingresos']['brutos_total_dia'] ?? $ingresos_total));
+$reversos_total = (float)($stats['finanzas']['reversos'] ?? ($stats['reversos']['total_dia'] ?? ($stats['ingresos']['reversos_total_dia'] ?? 0)));
+$egresos_total = (float)($stats['finanzas']['gastos_reales'] ?? ($stats['egresos']['total_dia'] ?? 0));
+$balance_dia = (float)($stats['finanzas']['balance'] ?? ($ingresos_total - $egresos_total));
 $entradas_total = (int)($stats['entradas']['total'] ?? 0);
 $entradas_pendientes = (int)($stats['entradas']['pendientes'] ?? 0);
 $salidas_total = (int)($stats['salidas']['total'] ?? 0);
@@ -4143,14 +4145,14 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div>
                         <div class="card-title">Movimientos del día</div>
                         <div class="cash-day-total"><?= format_money($balance_dia) ?></div>
-                        <div class="cash-day-subtitle">Balance neto de la jornada</div>
+                        <div class="cash-day-subtitle">Resultado de hoy</div>
                     </div>
                 </div>
                 <div class="cash-day-groups">
                     <div class="cash-day-group">
                         <div class="cash-day-group-title income">
                             <i class="fas fa-arrow-trend-up" aria-hidden="true"></i>
-                            Ingresos
+                            Dinero que quedo
                         </div>
                         <div class="cash-day-row"><span>Efectivo</span><strong><?= format_money($stats['ingresos']['efectivo_dia'] ?? 0) ?></strong></div>
                         <div class="cash-day-row"><span>Tarjeta</span><strong><?= format_money($stats['ingresos']['tarjeta_dia'] ?? 0) ?></strong></div>
@@ -4159,13 +4161,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div class="cash-day-group">
                         <div class="cash-day-group-title expense">
                             <i class="fas fa-arrow-trend-down" aria-hidden="true"></i>
-                            Egresos
+                            Gastos del hotel
                         </div>
                         <div class="cash-day-row"><span>Efectivo</span><strong><?= format_money($stats['egresos']['efectivo_dia'] ?? 0) ?></strong></div>
+                        <div class="cash-day-row"><span>Tarjeta</span><strong><?= format_money($stats['egresos']['tarjeta_dia'] ?? 0) ?></strong></div>
                         <div class="cash-day-row"><span>Transferencia</span><strong><?= format_money($stats['egresos']['transferencia_dia'] ?? 0) ?></strong></div>
                     </div>
                 </div>
-                <div class="cash-day-balance"><span>Balance</span><strong><?= format_money($balance_dia) ?></strong></div>
+                <div class="cash-day-balance"><span>Dinero que entro</span><strong><?= format_money($ingresos_brutos_total) ?></strong></div>
+                <div class="cash-day-balance"><span>Devuelto/cancelado</span><strong>-<?= format_money(abs($reversos_total)) ?></strong></div>
+                <div class="cash-day-balance"><span>Resultado</span><strong><?= format_money($balance_dia) ?></strong></div>
                 <a class="card-kicker-link" href="<?= url('caja') ?>" title="Ir a caja para revisar movimientos">
                     Revisar caja
                     <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -4386,17 +4391,26 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </span>
                 </div>
                 <div class="cash-grid">
+                    <?php
+                    $dash_caja_ingreso_neto = (float)($caja_info['total_ingresos_netos'] ?? $ingresos_total);
+                    $dash_caja_reversos = (float)($caja_info['total_reversos'] ?? $reversos_total);
+                    $dash_caja_gastos_reales = (float)($caja_info['total_gastos_reales'] ?? $egresos_total);
+                    ?>
                     <div class="cash-box">
                         <div class="label">Inicial</div>
                         <div class="amount"><?= format_money($caja_info['monto_inicial'] ?? 0) ?></div>
                     </div>
                     <div class="cash-box">
-                        <div class="label">Ingresos</div>
-                        <div class="amount" style="color:var(--dash-available)">+<?= format_money($caja_info['total_ingresos'] ?? $ingresos_total) ?></div>
+                        <div class="label">Dinero que quedo</div>
+                        <div class="amount" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                     </div>
                     <div class="cash-box">
-                        <div class="label">Gastos</div>
-                        <div class="amount" style="color:var(--dash-critical)">-<?= format_money($caja_info['total_gastos'] ?? $egresos_total) ?></div>
+                        <div class="label">Devuelto/cancelado</div>
+                        <div class="amount" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_reversos)) ?></div>
+                    </div>
+                    <div class="cash-box">
+                        <div class="label">Gastos del hotel</div>
+                        <div class="amount" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_gastos_reales)) ?></div>
                     </div>
                     <div class="cash-box dark">
                         <div class="label">Esperado</div>
@@ -4581,12 +4595,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </div>
                     <div class="dm-split">
                         <div class="b">
-                            <div class="t" style="color:var(--dash-available)">Ingresos</div>
+                            <div class="t" style="color:var(--dash-available)">Dinero que quedo</div>
                             <div class="v" style="color:var(--dash-available)"><?= format_money($ingresos_total) ?></div>
                         </div>
                         <div class="b">
-                            <div class="t" style="color:var(--dash-critical)">Egresos</div>
+                            <div class="t" style="color:var(--dash-critical)">Gastos del hotel</div>
                             <div class="v" style="color:var(--dash-critical)"><?= format_money($egresos_total) ?></div>
+                        </div>
+                        <div class="b">
+                            <div class="t" style="color:var(--dash-critical)">Devuelto/cancelado</div>
+                            <div class="v" style="color:var(--dash-critical)">-<?= format_money(abs($reversos_total)) ?></div>
                         </div>
                     </div>
                 </div>
@@ -4656,12 +4674,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             <div class="v"><?= format_money($caja_info['monto_inicial'] ?? 0) ?></div>
                         </div>
                         <div class="dm-cbox">
-                            <div class="t">Ingresos</div>
-                            <div class="v" style="color:var(--dash-available)">+<?= format_money($caja_info['total_ingresos'] ?? $ingresos_total) ?></div>
+                            <div class="t">Dinero que quedo</div>
+                            <div class="v" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                         </div>
                         <div class="dm-cbox">
-                            <div class="t">Gastos</div>
-                            <div class="v" style="color:var(--dash-critical)">-<?= format_money($caja_info['total_gastos'] ?? $egresos_total) ?></div>
+                            <div class="t">Devuelto/cancelado</div>
+                            <div class="v" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_reversos)) ?></div>
+                        </div>
+                        <div class="dm-cbox">
+                            <div class="t">Gastos del hotel</div>
+                            <div class="v" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_gastos_reales)) ?></div>
                         </div>
                         <div class="dm-cbox dark">
                             <div class="t">Esperado</div>

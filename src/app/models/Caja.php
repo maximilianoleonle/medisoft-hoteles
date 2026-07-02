@@ -232,6 +232,32 @@ class Caja extends Model {
     /**
      * Obtener resumen de caja actual
      */
+    private function grupoResumenMetodos(): array {
+        return [
+            'efectivo' => ['cantidad' => 0, 'total' => 0],
+            'tarjeta' => ['cantidad' => 0, 'total' => 0],
+            'transferencia' => ['cantidad' => 0, 'total' => 0],
+            'total' => 0
+        ];
+    }
+
+    private function condicionReversoIngresoSql(string $alias = 'mc'): string {
+        $prefix = $alias !== '' ? $alias . '.' : '';
+
+        return "(
+            {$prefix}tipo = 'gasto'
+            AND (
+                LOWER(COALESCE({$prefix}categoria, '')) IN ('devolucion', 'devoluciones', 'reverso anticipo', 'reverso de anticipo', 'reversion cobro cxc')
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'devoluc%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}categoria, '')) LIKE 'reversion cobro cxc%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reverso de anticipo%'
+                OR LOWER(COALESCE({$prefix}descripcion, '')) LIKE 'reversion cobro cxc%'
+            )
+        )";
+    }
+
    public function obtenerResumenCaja($corte_id = null) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
@@ -245,35 +271,31 @@ class Caja extends Model {
     $corte = $this->obtenerCortePorId($corte_id, $hotel_id);
     if (!$corte) return null;
     
-    // Obtener TODOS los movimientos del corte
-    $sql = "SELECT 
+    // Obtener TODOS los movimientos del corte. La marca es_reverso usa la MISMA
+    // condicion SQL que el listado por categorias (condicionReversoIngresoSql),
+    // para que tarjetas de resumen y listado nunca clasifiquen distinto.
+    $condicionReverso = $this->condicionReversoIngresoSql('');
+    $sql = "SELECT
             tipo,
             metodo_pago,
-            categoria,
+            CASE WHEN {$condicionReverso} THEN 1 ELSE 0 END as es_reverso,
             SUM(monto) as total,
             COUNT(*) as cantidad
-            FROM movimientos_caja 
+            FROM movimientos_caja
             WHERE corte_id = ?
             AND hotel_id = ?
-            GROUP BY tipo, metodo_pago, categoria";
+            GROUP BY tipo, metodo_pago, es_reverso";
     
     $stmt = $db->query($sql, [$corte_id, $hotel_id]);
     $movimientos = $stmt->fetchAll();
     
     // Inicializar totales
     $resumen = [
-        'ingresos' => [
-            'efectivo' => ['cantidad' => 0, 'total' => 0],
-            'tarjeta' => ['cantidad' => 0, 'total' => 0],
-            'transferencia' => ['cantidad' => 0, 'total' => 0],
-            'total' => 0
-        ],
-        'gastos' => [
-            'efectivo' => ['cantidad' => 0, 'total' => 0],
-            'tarjeta' => ['cantidad' => 0, 'total' => 0],
-            'transferencia' => ['cantidad' => 0, 'total' => 0],
-            'total' => 0
-        ]
+        'ingresos' => $this->grupoResumenMetodos(),
+        'reversos' => $this->grupoResumenMetodos(),
+        'gastos' => $this->grupoResumenMetodos(),
+        'gastos_reales' => $this->grupoResumenMetodos(),
+        'ingreso_neto' => $this->grupoResumenMetodos()
     ];
     
     // Procesar movimientos
@@ -282,23 +304,36 @@ class Caja extends Model {
         $metodo = $mov['metodo_pago'];
         $monto = floatval($mov['total']);
         $cantidad = intval($mov['cantidad']);
-        
+
         if ($tipo == 'ingreso') {
-            // Sumar ingresos
             if (isset($resumen['ingresos'][$metodo])) {
                 $resumen['ingresos'][$metodo]['cantidad'] += $cantidad;
                 $resumen['ingresos'][$metodo]['total'] += $monto;
                 $resumen['ingresos']['total'] += $monto;
             }
-        } elseif ($tipo == 'gasto') {
-            // Sumar TODOS los gastos (incluyendo devoluciones)
-            // Las devoluciones son gastos, NO se restan de ingresos
+        } elseif (in_array($tipo, ['gasto', 'egreso'], true)) {
             if (isset($resumen['gastos'][$metodo])) {
                 $resumen['gastos'][$metodo]['cantidad'] += $cantidad;
                 $resumen['gastos'][$metodo]['total'] += $monto;
                 $resumen['gastos']['total'] += $monto;
             }
+
+            $grupoDestino = !empty($mov['es_reverso']) ? 'reversos' : 'gastos_reales';
+
+            if (isset($resumen[$grupoDestino][$metodo])) {
+                $resumen[$grupoDestino][$metodo]['cantidad'] += $cantidad;
+                $resumen[$grupoDestino][$metodo]['total'] += $monto;
+                $resumen[$grupoDestino]['total'] += $monto;
+            }
         }
+    }
+
+    foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo) {
+        $resumen['ingreso_neto'][$metodo]['cantidad'] =
+            $resumen['ingresos'][$metodo]['cantidad'] + $resumen['reversos'][$metodo]['cantidad'];
+        $resumen['ingreso_neto'][$metodo]['total'] =
+            $resumen['ingresos'][$metodo]['total'] - $resumen['reversos'][$metodo]['total'];
+        $resumen['ingreso_neto']['total'] += $resumen['ingreso_neto'][$metodo]['total'];
     }
     
     // Obtener monto inicial del corte
@@ -318,6 +353,7 @@ class Caja extends Model {
     
     // Balance general
     $resumen['balance_general'] = $resumen['ingresos']['total'] - $resumen['gastos']['total'];
+    $resumen['balance_operativo'] = $resumen['ingreso_neto']['total'] - $resumen['gastos_reales']['total'];
     
     // Agregar información adicional
     $resumen['total_movimientos'] = array_sum([
@@ -344,9 +380,9 @@ class Caja extends Model {
     }
     
     $sql = "SELECT 
-            cm.nombre as categoria,
-            cm.icono,
-            cm.color,
+            COALESCE(cm.nombre, mc.categoria, 'Sin categoria') as categoria,
+            COALESCE(cm.icono, 'circle') as icono,
+            COALESCE(cm.color, '#6B7280') as color,
             COUNT(mc.id) as cantidad,
             SUM(mc.monto) as total
             FROM movimientos_caja mc
@@ -357,16 +393,21 @@ class Caja extends Model {
     $params = [$corte_id, $hotel_id];
     
     if ($tipo) {
+        $condicionReverso = $this->condicionReversoIngresoSql('mc');
         // Si se especifica 'gasto', incluir también 'egreso'
         if ($tipo == 'gasto') {
             $sql .= " AND mc.tipo IN ('gasto', 'egreso')";
+        } elseif ($tipo == 'gasto_real') {
+            $sql .= " AND mc.tipo IN ('gasto', 'egreso') AND NOT {$condicionReverso}";
+        } elseif ($tipo == 'reverso_ingreso') {
+            $sql .= " AND {$condicionReverso}";
         } elseif ($tipo == 'ingreso') {
             $sql .= " AND mc.tipo = ?";
             $params[] = $tipo;
         }
     }
     
-    $sql .= " GROUP BY cm.id, cm.nombre, cm.icono, cm.color
+    $sql .= " GROUP BY COALESCE(cm.nombre, mc.categoria, 'Sin categoria'), COALESCE(cm.icono, 'circle'), COALESCE(cm.color, '#6B7280')
               ORDER BY total DESC";
     
     $stmt = $db->query($sql, $params);

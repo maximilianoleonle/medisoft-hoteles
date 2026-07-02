@@ -187,6 +187,9 @@ public function indexAction() {
     // Cargar modelo de tarifas
     require_once __DIR__ . '/../models/IncrementoTarifa.php';
     $tarifaModel = new IncrementoTarifa();
+    // Modelo de reservaciones para anexar el saldo pendiente a las ocupadas (badge en tarjeta).
+    $reservacionModel = new Reservacion();
+    $reservaciones_ocupadas = [];
     $fecha_consulta = date('Y-m-d');
     
     // Procesar cada habitación
@@ -216,11 +219,46 @@ public function indexAction() {
             // Información adicional según estado
             if ($habitacion['estado'] == 'ocupada') {
                 $habitacion['ocupacion_actual'] = $this->habitacionModel->getOcupacionActual($habitacion['id']);
+
+                if (is_array($habitacion['ocupacion_actual'])) {
+                    $reservacion_id_ocup = (int)($habitacion['ocupacion_actual']['id']
+                        ?? $habitacion['ocupacion_actual']['reservacion_id'] ?? 0);
+                    if ($reservacion_id_ocup > 0) {
+                        $reservaciones_ocupadas[$reservacion_id_ocup] = $reservacion_id_ocup;
+                    }
+                }
             }
             if (in_array($habitacion['estado'], ['ocupada', 'limpieza'])) {
                 $habitacion['proxima_salida'] = $this->habitacionModel->getProximaSalida($habitacion['id']);
             }
         }
+    }
+    unset($habitacion);
+
+    // Anexar resumen de cobro (total/pagado/saldo) para el indicador de saldo
+    // pendiente en la tarjeta. En lote: una consulta por fuente, no por habitación.
+    // Defensivo: si algo falla, queda en 0.
+    $resumenes_ocupadas = [];
+    if (!empty($reservaciones_ocupadas)) {
+        try {
+            $resumenes_ocupadas = $reservacionModel->resumenPagosLote(array_values($reservaciones_ocupadas), $hotelId);
+        } catch (\Throwable $e) {
+            $resumenes_ocupadas = [];
+        }
+    }
+    foreach ($habitaciones as &$habitacion) {
+        if (!is_array($habitacion['ocupacion_actual'] ?? null)) {
+            continue;
+        }
+        $reservacion_id_ocup = (int)($habitacion['ocupacion_actual']['id']
+            ?? $habitacion['ocupacion_actual']['reservacion_id'] ?? 0);
+        if ($reservacion_id_ocup <= 0) {
+            continue;
+        }
+        $resumenOcup = $resumenes_ocupadas[$reservacion_id_ocup] ?? [];
+        $habitacion['ocupacion_actual']['saldo']  = (float)($resumenOcup['saldo'] ?? 0);
+        $habitacion['ocupacion_actual']['pagado'] = (float)($resumenOcup['pagado'] ?? 0);
+        $habitacion['ocupacion_actual']['total']  = (float)($resumenOcup['total'] ?? 0);
     }
     unset($habitacion);
 

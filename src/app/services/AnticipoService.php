@@ -92,6 +92,7 @@ class AnticipoService
 
         $monto = $this->normalizarMonto($datos['monto'] ?? null);
         $metodoPago = $this->normalizarMetodoPago($datos['metodo_pago'] ?? null);
+        $tipoTarjeta = $this->normalizarTipoTarjeta($datos['tipo_tarjeta'] ?? null, $metodoPago);
         $referencia = $this->normalizarTextoNullable($datos['referencia'] ?? null, 100);
         $concepto = $this->normalizarTextoNullable($datos['concepto'] ?? null, 255) ?? 'Anticipo de reservacion';
         $requiereFactura = (($datos['requiere_factura'] ?? 'no') === 'si') ? 'si' : 'no';
@@ -158,7 +159,7 @@ class AnticipoService
                      concepto, referencia, usuario_id, corte_id, movimiento_caja_id,
                      created_at, requiere_factura, tipo_tarjeta)
                  VALUES
-                    (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW(), ?, '')"
+                    (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW(), ?, ?)"
             );
             $stmt->execute([
                 $hotelId,
@@ -171,6 +172,7 @@ class AnticipoService
                 (int)$corte['id'],
                 $movimientoCajaId,
                 $requiereFactura,
+                $tipoTarjeta,
             ]);
             $abonoId = (int)$this->pdo->lastInsertId();
 
@@ -184,6 +186,7 @@ class AnticipoService
                 'corte_id' => (int)$corte['id'],
                 'monto' => round($monto, 2),
                 'metodo_pago' => $metodoPago,
+                'tipo_tarjeta' => $tipoTarjeta,
                 'requiere_factura' => $requiereFactura,
                 'saldo_anterior' => round($saldoAnterior, 2),
                 'saldo_posterior' => $saldoPosterior,
@@ -270,6 +273,9 @@ class AnticipoService
                 'abono_id' => $abonoId,
                 'movimiento_reverso_id' => $movimientoReversoId,
                 'monto' => round($monto, 2),
+                'metodo_pago' => (string)($abono['metodo_pago'] ?? 'efectivo'),
+                'tipo_tarjeta' => (string)($abono['tipo_tarjeta'] ?? ''),
+                'requiere_factura' => (string)($abono['requiere_factura'] ?? 'no'),
             ];
         } catch (Throwable $e) {
             if ($this->pdo->inTransaction()) {
@@ -294,7 +300,12 @@ class AnticipoService
         return $reservacion ?: null;
     }
 
-    /** Saldo pendiente = precio_total - (reservacion_pagos + reservacion_abonos). */
+    /**
+     * Saldo pendiente = precio_total - (reservacion_pagos + reservacion_abonos + cobros CxC).
+     * Mismo criterio que Reservacion::resumenPagos(): los cobros operativos de CxC
+     * ligados a la reservacion ya cubrieron saldo (y registraron su propio ingreso
+     * en Caja), por lo que el anticipo no puede volver a cobrar esa parte.
+     */
     private function saldoPendiente(int $hotelId, int $reservacionId, float $total): float
     {
         $sumar = function ($tabla) use ($hotelId, $reservacionId) {
@@ -309,8 +320,43 @@ class AnticipoService
             return (float)($row['t'] ?? 0);
         };
 
-        $pagado = $sumar('reservacion_pagos') + $sumar('reservacion_abonos');
+        $pagado = $sumar('reservacion_pagos') + $sumar('reservacion_abonos') + $this->sumarCobrosCxc($hotelId, $reservacionId);
         return max(0, round($total - $pagado, 2));
+    }
+
+    /** Cobros operativos de CxC de la reservacion (COBRO - CANCELACION), nunca negativo. */
+    private function sumarCobrosCxc(int $hotelId, int $reservacionId): float
+    {
+        foreach (['cuentas_por_cobrar', 'cuentas_por_cobrar_movimientos'] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return 0.0;
+            }
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COALESCE(SUM(CASE
+                            WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                            WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto
+                            ELSE 0
+                        END), 0) AS t
+                 FROM cuentas_por_cobrar c
+                 INNER JOIN cuentas_por_cobrar_movimientos m
+                    ON m.cuenta_por_cobrar_id = c.id
+                   AND m.hotel_id = c.hotel_id
+                 WHERE c.hotel_id = ?
+                   AND (
+                        c.reservacion_id = ?
+                        OR (c.origen_tipo = 'reservacion' AND c.origen_id = ?)
+                   )
+                   AND m.tipo_movimiento IN ('COBRO', 'CANCELACION')"
+            );
+            $stmt->execute([$hotelId, $reservacionId, $reservacionId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return max(0.0, (float)($row['t'] ?? 0));
+        } catch (Throwable $e) {
+            return 0.0;
+        }
     }
 
     private function obtenerCorteAbierto(int $hotelId, bool $forUpdate): ?array
@@ -341,6 +387,20 @@ class AnticipoService
             throw new Exception('Metodo de pago invalido.');
         }
         return $metodo;
+    }
+
+    private function normalizarTipoTarjeta($value, string $metodoPago): string
+    {
+        if ($metodoPago !== 'tarjeta') {
+            return '';
+        }
+
+        $tipo = strtolower(trim((string)($value ?? '')));
+        if (!in_array($tipo, ['credito', 'debito'], true)) {
+            throw new Exception('Selecciona si la tarjeta es de credito o debito.');
+        }
+
+        return $tipo;
     }
 
     private function normalizarMonto($value): float

@@ -11,6 +11,7 @@ require_once __DIR__ . '/../models/Habitacion.php';
 require_once __DIR__ . '/../models/Huesped.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../models/Caja.php';
+require_once __DIR__ . '/../models/CuentaPorCobrar.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class ReservacionController extends Controller {
@@ -1107,9 +1108,36 @@ public function checkOutParcialAction() {
             throw new Exception('Reservación no encontrada para el hotel actual');
         }
 
+        // Guard de saldo ANTES del check-out: si hay saldo pendiente devolvemos una
+        // respuesta estructurada para mostrar el modal "Cuenta pendiente" con acción
+        // de cobro, en vez de dejar que el modelo lance una excepción cruda (que se
+        // veía como un error genérico). El guard del modelo se mantiene como red de
+        // seguridad.
+        $resumenPagos = $this->reservacionModel->resumenPagos($id, $this->hotelIdActual());
+        $saldoPendiente = (float)($resumenPagos['saldo'] ?? 0);
+        if ($saldoPendiente > 0.004) {
+            $mensajeSaldo = 'Hay un saldo pendiente de $' . number_format($saldoPendiente, 2) . '. Cobra el saldo antes de registrar la salida.';
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'saldo_pendiente' => true,
+                    'saldo' => $saldoPendiente,
+                    'message' => $mensajeSaldo,
+                    'url_reservacion' => function_exists('url') ? url('reservaciones/ver/' . $id) : null,
+                ]);
+                exit;
+            }
+            $_SESSION['flash_message'] = [
+                'tipo' => 'error',
+                'texto' => $mensajeSaldo
+            ];
+            return $this->redirect('/reservaciones/ver/' . $id);
+        }
+
         // Obtener hora de salida
         $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
-        
+
         // Ejecutar check-out parcial
         $resultado = $this->reservacionModel->checkOutParcial($id, $habitaciones_ids, $hora_salida);
         
@@ -1784,6 +1812,7 @@ private function generarHTMLReservacionesPersonalizado(
     <html>
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
         <title>Reservaciones - <?= htmlspecialchars($fecha_bonita) ?></title>
         <style>
             :root {
@@ -1814,6 +1843,11 @@ private function generarHTMLReservacionesPersonalizado(
                 thead { display: table-header-group; }
             }
             * { box-sizing: border-box; }
+            /* Documento de lectura con fuente muy chica: el zoom debe quedar libre. */
+            html {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
             body {
                 font-family: Arial, Helvetica, sans-serif;
                 font-size: 7.4pt;
@@ -2900,12 +2934,13 @@ try {
         $anticipoEval = (new AnticipoService())->evaluar($hotelIdAnticipo, (int)$id);
         $abonos = [];
         $anticipoFacturaSolicitud = null;
+        $tipoTarjetaReservacion = '';
         try {
             $dbAbonos = Database::getInstance();
             $chkAbonos = $dbAbonos->query("SHOW TABLES LIKE 'reservacion_abonos'");
             if ($chkAbonos && $chkAbonos->rowCount() > 0) {
                 $stmtAbonos = $dbAbonos->query(
-                    "SELECT id, monto, metodo_pago, concepto, referencia, corte_id, created_at
+                    "SELECT id, monto, metodo_pago, tipo_tarjeta, concepto, referencia, corte_id, created_at
                      FROM reservacion_abonos WHERE reservacion_id = ? AND hotel_id = ? ORDER BY id DESC",
                     [(int)$id, $hotelIdAnticipo]
                 );
@@ -2914,6 +2949,25 @@ try {
             // Solicitud de factura pendiente originada por un anticipo
             $chkSf = $dbAbonos->query("SHOW TABLES LIKE 'solicitudes_factura'");
             if ($chkSf && $chkSf->rowCount() > 0) {
+                $stmtTipoTarjeta = $dbAbonos->query(
+                    "SELECT notas
+                     FROM solicitudes_factura
+                     WHERE reservacion_id = ? AND hotel_id = ?
+                       AND metodo_pago_principal = 'tarjeta'
+                       AND notas LIKE '%Tarjeta de%'
+                     ORDER BY id DESC LIMIT 1",
+                    [(int)$id, $hotelIdAnticipo]
+                );
+                $tipoTarjetaRow = $stmtTipoTarjeta ? $stmtTipoTarjeta->fetch(PDO::FETCH_ASSOC) : null;
+                $tipoTarjetaNotas = is_array($tipoTarjetaRow) ? (string)($tipoTarjetaRow['notas'] ?? '') : '';
+                if ($tipoTarjetaNotas !== '') {
+                    if (preg_match('/tarjeta\s+de\s+cr.?dito/iu', $tipoTarjetaNotas)) {
+                        $tipoTarjetaReservacion = 'credito';
+                    } elseif (preg_match('/tarjeta\s+de\s+d.?bito/iu', $tipoTarjetaNotas)) {
+                        $tipoTarjetaReservacion = 'debito';
+                    }
+                }
+
                 $stmtSf = $dbAbonos->query(
                     "SELECT id, monto_total, metodo_pago_principal, estatus, created_at
                      FROM solicitudes_factura
@@ -2926,6 +2980,15 @@ try {
             }
         } catch (Throwable $e) {
             $abonos = [];
+        }
+
+        if ($tipoTarjetaReservacion !== '') {
+            foreach ($pagos as &$pagoReservacion) {
+                if (($pagoReservacion['metodo_pago'] ?? '') === 'tarjeta' && empty($pagoReservacion['tipo_tarjeta'])) {
+                    $pagoReservacion['tipo_tarjeta'] = $tipoTarjetaReservacion;
+                }
+            }
+            unset($pagoReservacion);
         }
 
         // Trabajadores activos para la asignacion opcional de limpieza en el check-out.
@@ -2955,6 +3018,7 @@ try {
     'abonos' => $abonos,
     'anticipoEval' => $anticipoEval,
     'anticipoFacturaSolicitud' => $anticipoFacturaSolicitud,
+    'tipoTarjetaReservacion' => $tipoTarjetaReservacion,
     'notas' => $notas,
     'total_notas' => $total_notas,
     'documentosEntidad' => $documentosEntidad,
@@ -3355,6 +3419,7 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             $pagos = [];
             $monto_recibido_total = 0;
             $cambio_total = 0;
+            $permitirSaldoPendiente = $this->getPost('permitir_saldo_pendiente', '0') === '1';
             
             // Obtener la reservación para saber el precio
             $reservacion = $this->reservacionModel->obtenerPorId($id);
@@ -3384,7 +3449,12 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
                         $referencia = trim($this->getPost('referencia_' . $metodo, ''));
                         $pago['referencia'] = $referencia ?: null;
                     }
-                    
+
+                    if ($metodo === 'tarjeta') {
+                        // Mismo campo que lee procesarSolicitudFactura; el modelo lo sanitiza.
+                        $pago['tipo_tarjeta'] = $this->getPost('tipo_tarjeta', '');
+                    }
+
                     if ($metodo === 'efectivo') {
                         $recibido = floatval($this->getPost('recibido_efectivo', $monto));
                         $monto_recibido_total += $recibido;
@@ -3402,6 +3472,9 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             // Si el saldo ya es 0 (cubierto por anticipos), no se agrega ningún pago.
             if (empty($pagos)) {
                 if ($saldoCheckin > 0.004) {
+                    if ($permitirSaldoPendiente) {
+                        throw new Exception('Para dejar saldo pendiente registra al menos un pago parcial.');
+                    }
                     $pagos[] = [
                         'metodo' => 'efectivo',
                         'monto' => $saldoCheckin,
@@ -3428,6 +3501,14 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             }
 
             // Usar el método del modelo para check-in con pagos mixtos
+            if ($totalCobrado < $saldoCheckin - 0.01 && !$permitirSaldoPendiente) {
+                throw new Exception(sprintf(
+                    'El cobro ($%s) no cubre el saldo pendiente ($%s). Para continuar con pago parcial, marca la opcion de dejar saldo pendiente.',
+                    number_format($totalCobrado, 2),
+                    number_format($saldoCheckin, 2)
+                ));
+            }
+
             if (method_exists($this->reservacionModel, 'checkInConPagosMixtos')) {
                 $resultado = $this->reservacionModel->checkInConPagosMixtos(
                     $id, 
@@ -3446,11 +3527,16 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
                 $this->procesarEntregaLlavesCheckIn($id);
                 
                 // ========== PROCESAR SOLICITUD DE FACTURA ==========
-                $this->procesarSolicitudFactura($id, $pagos, $reservacion['precio_total']);
+                $this->procesarSolicitudFactura($id, $pagos, $totalCobrado);
                 // ========== FIN FACTURA ==========
                 $mensaje = 'Check-in realizado exitosamente';
                 if ($cambio_total > 0) {
                     $mensaje .= sprintf('. Cambio a devolver: $%s', number_format($cambio_total, 2));
+                }
+                $resumenPosterior = $this->reservacionModel->resumenPagos((int)$id, (int)($reservacion['hotel_id'] ?? $this->hotelIdActual()));
+                $saldoPosterior = (float)($resumenPosterior['saldo'] ?? 0);
+                if ($saldoPosterior > 0.004) {
+                    $mensaje .= sprintf('. Saldo pendiente: $%s. Aparecera en Cuentas por cobrar.', number_format($saldoPosterior, 2));
                 }
                 set_mensaje($mensaje, 'success');
             } else {
@@ -3707,16 +3793,41 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             require_once __DIR__ . '/../services/AnticipoService.php';
             $hotelId = obtenerHotelIdActualCompat();
             $requiereFactura = ($this->getPost('requiere_factura') === 'si') ? 'si' : 'no';
+            $modoSolicitudFactura = $this->modoSolicitudFactura($this->getPost('factura_modo', 'acumular'));
+            $conceptoCobro = trim((string)$this->getPost('concepto'));
+            $esPagoPendiente = stripos($conceptoCobro, 'pago pendiente') !== false;
+            $etiquetaCobro = $esPagoPendiente ? 'Pago pendiente' : 'Anticipo';
             $svc = new AnticipoService();
             $resultado = $svc->registrar($hotelId, $id, [
                 'monto'            => $this->getPost('monto'),
                 'metodo_pago'      => $this->getPost('metodo_pago'),
+                'tipo_tarjeta'     => $this->getPost('tipo_tarjeta_anticipo'),
                 'referencia'       => $this->getPost('referencia'),
-                'concepto'         => $this->getPost('concepto'),
+                'concepto'         => $conceptoCobro,
                 'requiere_factura' => $requiereFactura,
             ], user_id());
 
+            $sincronizacionCxc = null;
+            $advertenciaCxc = '';
+            try {
+                $cuentaPorCobrar = new CuentaPorCobrar();
+                $sincronizacionCxc = $cuentaPorCobrar->sincronizarPagoReservacion(
+                    $hotelId,
+                    $id,
+                    (float)$resultado['monto'],
+                    'RES-ABONO-' . $id . '-' . (int)$resultado['abono_id'],
+                    user_id()
+                );
+            } catch (Throwable $syncError) {
+                error_log('No se pudo sincronizar CxC con pago de reservacion #' . $id . ': ' . $syncError->getMessage());
+                $advertenciaCxc = ' No se pudo sincronizar CxC automaticamente; revisa Cuentas por cobrar.';
+            }
+
             if ($requiereFactura === 'si') {
+                $notaTipoTarjeta = '';
+                if (($resultado['metodo_pago'] ?? '') === 'tarjeta' && !empty($resultado['tipo_tarjeta'])) {
+                    $notaTipoTarjeta = ' | Tarjeta de ' . (($resultado['tipo_tarjeta'] ?? '') === 'credito' ? 'CREDITO' : 'DEBITO');
+                }
                 $this->reservacionModel->crearSolicitudFactura([
                     'reservacion_id'      => $id,
                     'hotel_id'            => $hotelId,
@@ -3725,18 +3836,24 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
                     'metodo_pago_principal' => $resultado['metodo_pago'],
                     'monto_total'         => $resultado['monto'],
                     'usuario_registro_id' => user_id(),
-                    'notas'               => 'Anticipo registrado - Abono #' . $resultado['abono_id'],
+                    'notas'               => $etiquetaCobro . ' registrado - Abono #' . $resultado['abono_id'] . $notaTipoTarjeta,
+                    'modo_monto'          => 'acumular',
+                    'modo_solicitud'      => $modoSolicitudFactura,
                 ]);
             }
 
-            $msg = 'Anticipo de $' . number_format($resultado['monto'], 2) .
+            $msg = $etiquetaCobro . ' de $' . number_format($resultado['monto'], 2) .
                    ' registrado. Saldo pendiente: $' . number_format($resultado['saldo_posterior'], 2);
+            if (!empty($sincronizacionCxc['cuentas_actualizadas'])) {
+                $msg .= '. CxC sincronizada: $' . number_format((float)$sincronizacionCxc['monto_aplicado'], 2);
+            }
             if ($requiereFactura === 'si') {
                 $msg .= '. Solicitud de factura creada.';
             }
+            $msg .= $advertenciaCxc;
             set_mensaje($msg, 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el anticipo: ' . $e->getMessage(), 'error');
+            set_mensaje('No se pudo registrar el cobro: ' . $e->getMessage(), 'error');
         }
         $this->redirect('reservaciones/ver/' . $id);
     }
@@ -3756,8 +3873,57 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             $hotelId = obtenerHotelIdActualCompat();
             $abonoId = (int)$this->getPost('abono_id');
             $svc = new AnticipoService();
-            $svc->reversar($hotelId, $id, $abonoId, user_id());
-            set_mensaje('Anticipo revertido correctamente.', 'success');
+            $resultado = $svc->reversar($hotelId, $id, $abonoId, user_id());
+
+            // Restaurar el saldo de CxC que este pago habia liquidado via
+            // sincronizarPagoReservacion (misma referencia con la que se aplico).
+            $restauracionCxc = null;
+            $advertenciaCxc = '';
+            try {
+                $cuentaPorCobrar = new CuentaPorCobrar();
+                $restauracionCxc = $cuentaPorCobrar->revertirSincronizacionPagoReservacion(
+                    $hotelId,
+                    $id,
+                    'RES-ABONO-' . $id . '-' . $abonoId,
+                    user_id()
+                );
+            } catch (Throwable $syncError) {
+                error_log('No se pudo restaurar CxC al revertir abono #' . $abonoId . ' de reservacion #' . $id . ': ' . $syncError->getMessage());
+                $advertenciaCxc = ' No se pudo restaurar la cuenta por cobrar automaticamente; revisa Cuentas por cobrar.';
+            }
+
+            $advertenciaFactura = '';
+            if (($resultado['requiere_factura'] ?? 'no') === 'si') {
+                // El ajuste de factura no debe convertir una reversion exitosa
+                // en un error: se aisla y solo genera advertencia.
+                $ajusteFactura = false;
+                try {
+                    $ajusteFactura = $this->reservacionModel->crearSolicitudFactura([
+                        'reservacion_id'      => $id,
+                        'hotel_id'            => $hotelId,
+                        'requiere_factura'    => 'si',
+                        'tipo'                => 'cliente',
+                        'metodo_pago_principal' => $resultado['metodo_pago'] ?? 'efectivo',
+                        'monto_total'         => -1 * (float)($resultado['monto'] ?? 0),
+                        'usuario_registro_id' => user_id(),
+                        'notas'               => 'Reversion de anticipo - Abono #' . $abonoId,
+                        'modo_monto'          => 'acumular',
+                        'referencia_nota'     => 'Abono #' . $abonoId,
+                    ]);
+                } catch (Throwable $facturaError) {
+                    error_log('Error al ajustar factura por reversion de abono #' . $abonoId . ': ' . $facturaError->getMessage());
+                }
+                if (!$ajusteFactura) {
+                    $advertenciaFactura = ' La solicitud de factura no se ajusto automaticamente (puede estar ya facturada); revisala en Facturacion.';
+                }
+            }
+            $msg = 'Anticipo revertido correctamente.';
+            if (!empty($restauracionCxc['cuentas_actualizadas'])) {
+                $msg .= ' Saldo restaurado en Cuentas por cobrar: $'
+                    . number_format((float)$restauracionCxc['monto_restaurado'], 2) . '.';
+            }
+            $msg .= $advertenciaCxc . $advertenciaFactura;
+            set_mensaje($msg, 'success');
         } catch (Throwable $e) {
             set_mensaje('No se pudo revertir el anticipo: ' . $e->getMessage(), 'error');
         }
@@ -4105,6 +4271,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
                     $resAnticipo = $svcAnticipo->registrar((int)$this->hotelIdActual(), (int)$reservacion['id'], [
                         'monto'       => $anticipoInicial,
                         'metodo_pago' => $this->getPost('anticipo_metodo', 'efectivo'),
+                        'tipo_tarjeta' => $this->getPost('tipo_tarjeta_anticipo_inicial'),
                         'concepto'    => 'Anticipo inicial',
                     ], user_id());
                     set_mensaje(
@@ -5023,7 +5190,7 @@ public function checkOutRapidoAction() {
                         throw new Exception('Reservación no encontrada para el hotel actual');
                     }
                     $pagos_tardio = $this->obtenerPagosDelPost();
-                    $this->procesarSolicitudFactura($id, $pagos_tardio, $reservacion['precio_total']);
+                    $this->procesarSolicitudFactura($id, $pagos_tardio, $this->sumarMontoPagos($pagos_tardio));
                     // ========== FIN FACTURA ==========
                     
                     $mensaje = "✓ Check-in tardío realizado exitosamente";
@@ -5110,7 +5277,7 @@ public function checkOutRapidoAction() {
                     if (!$reservacion_express) {
                         throw new Exception('Reservación no encontrada para el hotel actual');
                     }
-                    $this->procesarSolicitudFactura($id, $pagos, $reservacion_express['precio_total']);
+                    $this->procesarSolicitudFactura($id, $pagos, $this->sumarMontoPagos($pagos));
                     // ========== FIN FACTURA ==========
                     $mensaje = "✓ Proceso EXPRESS completado: Check-in y Check-out registrados automáticamente";
                     
@@ -5223,6 +5390,18 @@ public function checkOutRapidoAction() {
         exit;
     }
     
+    private function sumarMontoPagos(array $pagos): float {
+        $total = 0.0;
+        foreach ($pagos as $pago) {
+            $total += (float)($pago['monto'] ?? 0);
+        }
+        return round($total, 2);
+    }
+
+    private function modoSolicitudFactura($valor): string {
+        return trim((string)$valor) === 'separada' ? 'separada' : 'actualizar';
+    }
+
     /**
      * Procesar solicitud de factura durante el check-in
      * 
@@ -5231,8 +5410,13 @@ public function checkOutRapidoAction() {
      * - Cliente NO quiere factura + SOLO efectivo → NO crear nada
      * - Cliente NO quiere factura + tarjeta/transferencia → Crear solicitud tipo 'uso_interno'
      */
-    private function procesarSolicitudFactura($reservacion_id, $pagos, $monto_total, $requiere_factura = null) {
+    private function procesarSolicitudFactura($reservacion_id, $pagos, $monto_total, $requiere_factura = null, string $modoMonto = 'acumular', ?string $modoSolicitud = null) {
         try {
+            $monto_total = round((float)$monto_total, 2);
+            if ($monto_total <= 0.004) {
+                return;
+            }
+
             // Si no se pasó como parámetro, intentar leerlo del POST (check-in normal usa form POST)
             if ($requiere_factura === null) {
                 $requiere_factura = $this->getPost('requiere_factura', '');
@@ -5242,6 +5426,9 @@ public function checkOutRapidoAction() {
             if (empty($requiere_factura)) {
                 return;
             }
+            $modoSolicitud = $modoSolicitud !== null
+                ? $this->modoSolicitudFactura($modoSolicitud)
+                : $this->modoSolicitudFactura($this->getPost('factura_modo', 'acumular'));
 
             $hotel_id = obtenerHotelIdActualCompat();
             $reservacion = $this->reservacionModel->obtenerPorId($reservacion_id);
@@ -5290,6 +5477,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                     'metodo_pago_principal' => $metodo_principal,
                     'monto_total' => $monto_total,
                     'usuario_registro_id' => $usuario_id,
+                    'modo_monto' => $modoMonto,
+                    'modo_solicitud' => $modoSolicitud,
                     'notas' => 'Cliente solicitó factura al momento del check-in' . $nota_tipo_tarjeta
                 ]);
                 
@@ -5314,6 +5503,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                         'metodo_pago_principal' => $metodo_principal,
                         'monto_total' => $monto_total,
                         'usuario_registro_id' => $usuario_id,
+                        'modo_monto' => $modoMonto,
+                        'modo_solicitud' => $modoSolicitud,
 'notas' => 'Factura de uso interno - Pago con ' . implode(' y ', $metodos_usados) . $nota_tipo_tarjeta . '. Cliente no requiere factura.'
                     ]);
                 }
@@ -5422,18 +5613,30 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([$id, $hotel_id]);
                 
-                // 3. Insertar nuevos pagos
-                $sql = "INSERT INTO reservacion_pagos (reservacion_id, hotel_id, metodo_pago, monto, referencia, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
+                // 3. Insertar nuevos pagos (tipo_tarjeta solo si la migracion ya agrego la columna)
+                $chk_tipo = $this->db->query("SHOW COLUMNS FROM reservacion_pagos LIKE 'tipo_tarjeta'");
+                $con_tipo_tarjeta = $chk_tipo && $chk_tipo->fetch();
+                $sql = $con_tipo_tarjeta
+                    ? "INSERT INTO reservacion_pagos (reservacion_id, hotel_id, metodo_pago, monto, referencia, tipo_tarjeta, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())"
+                    : "INSERT INTO reservacion_pagos (reservacion_id, hotel_id, metodo_pago, monto, referencia, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
                 foreach ($pagos as $pago) {
                     if (floatval($pago['monto']) > 0) {
-                        $stmt = $this->db->prepare($sql);
-                        $stmt->execute([
+                        $params = [
                             $id,
                             $hotel_id,
                             $pago['metodo'],
                             floatval($pago['monto']),
                             $pago['referencia'] ?? null
-                        ]);
+                        ];
+                        if ($con_tipo_tarjeta) {
+                            $tipo_tarjeta = strtolower(trim((string)($pago['tipo_tarjeta'] ?? '')));
+                            if (($pago['metodo'] ?? '') !== 'tarjeta' || !in_array($tipo_tarjeta, ['credito', 'debito'], true)) {
+                                $tipo_tarjeta = '';
+                            }
+                            $params[] = $tipo_tarjeta;
+                        }
+                        $stmt = $this->db->prepare($sql);
+                        $stmt->execute($params);
                     }
                 }
             }
@@ -5526,7 +5729,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                     ];
                 }, $pagos);
                 
-                $this->procesarSolicitudFactura($id, $pagos_para_factura, $total, $requiere_factura);
+                $this->procesarSolicitudFactura($id, $pagos_para_factura, $total, $requiere_factura, 'reemplazar');
             }
             
             // Log

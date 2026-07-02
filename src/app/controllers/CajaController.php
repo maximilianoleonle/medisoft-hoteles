@@ -63,6 +63,8 @@ class CajaController extends Controller {
     // Obtener movimientos por categoría (actualizado para incluir egresos como gastos)
     $movimientosPorCategoria = [
         'ingresos' => $this->cajaModel->obtenerMovimientosPorCategoria($corteActual['id'], 'ingreso'),
+        'reversos' => $this->cajaModel->obtenerMovimientosPorCategoria($corteActual['id'], 'reverso_ingreso'),
+        'gastos_reales' => $this->cajaModel->obtenerMovimientosPorCategoria($corteActual['id'], 'gasto_real'),
         'gastos' => $this->cajaModel->obtenerMovimientosPorCategoria($corteActual['id'], 'gasto') // Incluirá egresos
     ];
     

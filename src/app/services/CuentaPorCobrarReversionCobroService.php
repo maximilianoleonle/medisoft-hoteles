@@ -367,11 +367,11 @@ class CuentaPorCobrarReversionCobroService
         }
 
         if ($movimientoCobro && (float)($cuenta['saldo'] ?? 0) + (float)($movimientoCobro['monto'] ?? 0) > (float)($cuenta['total'] ?? 0) + 0.004) {
-            $bloqueos[] = 'La reversion dejaria saldo mayor al total de la cuenta.';
+            $bloqueos[] = 'No se puede revertir este cobro ahora porque duplicaria el saldo pendiente de la cuenta.';
         }
 
         if ($this->existeReversionPrevia($cuenta ? (int)$cuenta['hotel_id'] : 0, $cuenta ? (int)$cuenta['id'] : 0, $referenciaReversion, $forUpdate)) {
-            $bloqueos[] = 'Este cobro ya tiene reversion registrada.';
+            $bloqueos[] = 'Este cobro ya fue revertido. Si registras otro cobro, ese nuevo movimiento tambien podra revertirse.';
         }
 
         return $bloqueos;

@@ -161,6 +161,7 @@ class CuentaPorCobrar extends Model
 
         $filas = $stmt ? ($stmt->fetchAll() ?: []) : [];
         $cuentas = array_map([$this, 'normalizarCuentaDerivada'], $filas);
+        $cuentas = $this->aplicarCobrosOperativosReservacion($cuentas, $hotelId);
         $estadoSaldo = $this->normalizarEstadoSaldo($filtros['estado_saldo'] ?? 'todas');
 
         if ($estadoSaldo !== 'todas') {
@@ -275,7 +276,9 @@ class CuentaPorCobrar extends Model
                     r.fecha_entrada,
                     r.fecha_salida,
                     sf.numero_factura,
-                    sf.estatus AS factura_estatus
+                    sf.estatus AS factura_estatus,
+                    sf.requiere_factura AS factura_requiere_factura,
+                    sf.tipo AS factura_tipo
              FROM cuentas_por_cobrar cxc
              LEFT JOIN huespedes h
                 ON h.id = cxc.huesped_id
@@ -316,7 +319,9 @@ class CuentaPorCobrar extends Model
                     r.fecha_entrada,
                     r.fecha_salida,
                     sf.numero_factura,
-                    sf.estatus AS factura_estatus
+                    sf.estatus AS factura_estatus,
+                    sf.requiere_factura AS factura_requiere_factura,
+                    sf.tipo AS factura_tipo
              FROM cuentas_por_cobrar cxc
              LEFT JOIN huespedes h
                 ON h.id = cxc.huesped_id
@@ -554,6 +559,323 @@ class CuentaPorCobrar extends Model
         }
     }
 
+    public function sincronizarPagoReservacion(int $hotelId, int $reservacionId, float $monto, string $referencia, ?int $usuarioId = null): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $reservacionId = $this->validarId($reservacionId, 'Reservacion invalida');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+        $montoDisponible = round($monto, 2);
+
+        if ($montoDisponible <= 0.004) {
+            return ['cuentas_actualizadas' => 0, 'monto_aplicado' => '0.00', 'cuentas' => []];
+        }
+
+        if (!$this->tablaOperativaDisponible() || !$this->movimientosOperativosDisponibles()) {
+            throw new Exception('Tablas operativas de CxC no disponibles para sincronizar el pago');
+        }
+
+        $pdo = $this->db->getConnection();
+        if ($pdo->inTransaction()) {
+            throw new Exception('La sincronizacion de CxC debe controlar su propia transaccion');
+        }
+
+        $referencia = trim($referencia) !== '' ? substr(trim($referencia), 0, 120) : ('RES-PAGO-' . $reservacionId);
+        $pdo->beginTransaction();
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT id, saldo, estado
+                 FROM cuentas_por_cobrar
+                 WHERE hotel_id = ?
+                   AND saldo > 0
+                   AND estado IN ('pendiente', 'parcial', 'vencida')
+                   AND (
+                        reservacion_id = ?
+                        OR (origen_tipo = 'reservacion' AND origen_id = ?)
+                   )
+                 ORDER BY id ASC
+                 FOR UPDATE"
+            );
+            $stmt->execute([$hotelId, $reservacionId, $reservacionId]);
+            $cuentas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $actualizadas = [];
+            $montoAplicado = 0.0;
+
+            foreach ($cuentas as $cuenta) {
+                if ($montoDisponible <= 0.004) {
+                    break;
+                }
+
+                $cuentaId = (int)$cuenta['id'];
+                $saldoAnterior = (float)$cuenta['saldo'];
+                if ($cuentaId <= 0 || $saldoAnterior <= 0.004) {
+                    continue;
+                }
+
+                $aplicar = min($saldoAnterior, $montoDisponible);
+                $saldoPosterior = max(0, round($saldoAnterior - $aplicar, 2));
+                $estadoPosterior = $saldoPosterior <= 0.004 ? 'liquidada' : 'parcial';
+
+                $stmtMov = $pdo->prepare(
+                    "INSERT INTO cuentas_por_cobrar_movimientos
+                        (hotel_id, cuenta_por_cobrar_id, tipo_movimiento, monto,
+                         saldo_anterior, saldo_posterior, referencia, notas, usuario_id, created_at)
+                     VALUES
+                        (?, ?, 'AJUSTE', ?, ?, ?, ?, ?, ?, NOW())"
+                );
+                $stmtMov->execute([
+                    $hotelId,
+                    $cuentaId,
+                    $this->decimal($aplicar),
+                    $this->decimal($saldoAnterior),
+                    $this->decimal($saldoPosterior),
+                    $referencia,
+                    'Sin Caja en CxC: saldo cubierto por pago registrado en la reservacion #' . $reservacionId . '.',
+                    $usuarioId,
+                ]);
+                $movimientoId = (int)$pdo->lastInsertId();
+
+                $stmtUpd = $pdo->prepare(
+                    "UPDATE cuentas_por_cobrar
+                     SET saldo = ?,
+                         estado = ?,
+                         actualizado_por_usuario_id = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?"
+                );
+                $stmtUpd->execute([
+                    $this->decimal($saldoPosterior),
+                    $estadoPosterior,
+                    $usuarioId,
+                    $cuentaId,
+                    $hotelId,
+                ]);
+
+                if ($stmtUpd->rowCount() !== 1) {
+                    throw new Exception('No se pudo actualizar la cuenta por cobrar #' . $cuentaId);
+                }
+
+                $montoDisponible = round($montoDisponible - $aplicar, 2);
+                $montoAplicado = round($montoAplicado + $aplicar, 2);
+                $actualizadas[] = [
+                    'cxc_id' => $cuentaId,
+                    'movimiento_id' => $movimientoId,
+                    'monto_aplicado' => $this->decimal($aplicar),
+                    'saldo_anterior' => $this->decimal($saldoAnterior),
+                    'saldo_posterior' => $this->decimal($saldoPosterior),
+                    'estado' => $estadoPosterior,
+                ];
+            }
+
+            if ($montoAplicado > 0) {
+                AuditService::record('cuentas_por_cobrar.sincronizada_pago_reservacion', [
+                    'hotel_id' => $hotelId,
+                    'usuario_id' => $usuarioId,
+                    'entidad_tipo' => 'reservacion',
+                    'entidad_id' => (string)$reservacionId,
+                    'descripcion' => 'CxC sincronizada por pago registrado desde reservacion',
+                    'datos_despues' => [
+                        'reservacion_id' => $reservacionId,
+                        'referencia' => $referencia,
+                        'monto_aplicado' => $this->decimal($montoAplicado),
+                        'cuentas' => $actualizadas,
+                        'sin_caja_cxc' => true,
+                    ],
+                ]);
+            }
+
+            $pdo->commit();
+
+            return [
+                'cuentas_actualizadas' => count($actualizadas),
+                'monto_aplicado' => $this->decimal($montoAplicado),
+                'cuentas' => $actualizadas,
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Contraparte de sincronizarPagoReservacion(): cuando el pago que liquidó
+     * la CxC se revierte (p. ej. reverso de anticipo), restaura el saldo que
+     * aquel AJUSTE cubrió. Busca los AJUSTE con la referencia original, resta
+     * los ya revertidos (referencia REV-...) para ser idempotente, y repone
+     * saldo/estado con un AJUSTE inverso documentado.
+     */
+    public function revertirSincronizacionPagoReservacion(int $hotelId, int $reservacionId, string $referencia, ?int $usuarioId = null): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $reservacionId = $this->validarId($reservacionId, 'Reservacion invalida');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+        $referencia = substr(trim($referencia), 0, 120);
+        $referenciaReverso = substr('REV-' . $referencia, 0, 120);
+
+        $sinCambios = ['cuentas_actualizadas' => 0, 'monto_restaurado' => '0.00', 'cuentas' => []];
+
+        if ($referencia === '' || !$this->tablaOperativaDisponible() || !$this->movimientosOperativosDisponibles()) {
+            return $sinCambios;
+        }
+
+        $pdo = $this->db->getConnection();
+        if ($pdo->inTransaction()) {
+            throw new Exception('La reversion de sincronizacion de CxC debe controlar su propia transaccion');
+        }
+
+        $pdo->beginTransaction();
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT m.cuenta_por_cobrar_id AS cxc_id,
+                        m.monto,
+                        m.referencia
+                 FROM cuentas_por_cobrar_movimientos m
+                 INNER JOIN cuentas_por_cobrar c
+                    ON c.id = m.cuenta_por_cobrar_id
+                   AND c.hotel_id = m.hotel_id
+                 WHERE m.hotel_id = ?
+                   AND m.tipo_movimiento = 'AJUSTE'
+                   AND m.referencia IN (?, ?)
+                   AND (
+                        c.reservacion_id = ?
+                        OR (c.origen_tipo = 'reservacion' AND c.origen_id = ?)
+                   )"
+            );
+            $stmt->execute([$hotelId, $referencia, $referenciaReverso, $reservacionId, $reservacionId]);
+            $movimientos = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            // Neto por cuenta: lo aplicado con la referencia original menos lo ya revertido.
+            $netoPorCuenta = [];
+            foreach ($movimientos as $mov) {
+                $cuentaId = (int)($mov['cxc_id'] ?? 0);
+                if ($cuentaId <= 0) {
+                    continue;
+                }
+                $signo = ((string)$mov['referencia'] === $referencia) ? 1 : -1;
+                $netoPorCuenta[$cuentaId] = round(($netoPorCuenta[$cuentaId] ?? 0.0) + $signo * (float)$mov['monto'], 2);
+            }
+
+            $restauradas = [];
+            $montoRestaurado = 0.0;
+
+            foreach ($netoPorCuenta as $cuentaId => $neto) {
+                if ($neto <= 0.004) {
+                    continue;
+                }
+
+                $stmtCuenta = $pdo->prepare(
+                    "SELECT id, total, saldo, estado
+                     FROM cuentas_por_cobrar
+                     WHERE id = ?
+                       AND hotel_id = ?
+                     FOR UPDATE"
+                );
+                $stmtCuenta->execute([$cuentaId, $hotelId]);
+                $cuenta = $stmtCuenta->fetch(PDO::FETCH_ASSOC);
+                if (!$cuenta) {
+                    continue;
+                }
+
+                $total = (float)$cuenta['total'];
+                $saldoAnterior = (float)$cuenta['saldo'];
+                $restaurar = round(min($neto, max(0, $total - $saldoAnterior)), 2);
+                if ($restaurar <= 0.004) {
+                    continue;
+                }
+
+                $saldoPosterior = round($saldoAnterior + $restaurar, 2);
+                $estadoPosterior = $saldoPosterior >= $total - 0.004 ? 'pendiente' : 'parcial';
+
+                $stmtMov = $pdo->prepare(
+                    "INSERT INTO cuentas_por_cobrar_movimientos
+                        (hotel_id, cuenta_por_cobrar_id, tipo_movimiento, monto,
+                         saldo_anterior, saldo_posterior, referencia, notas, usuario_id, created_at)
+                     VALUES
+                        (?, ?, 'AJUSTE', ?, ?, ?, ?, ?, ?, NOW())"
+                );
+                $stmtMov->execute([
+                    $hotelId,
+                    $cuentaId,
+                    $this->decimal($restaurar),
+                    $this->decimal($saldoAnterior),
+                    $this->decimal($saldoPosterior),
+                    $referenciaReverso,
+                    'Saldo restaurado: se revirtio el pago de la reservacion #' . $reservacionId . ' que habia cubierto esta cuenta.',
+                    $usuarioId,
+                ]);
+                $movimientoId = (int)$pdo->lastInsertId();
+
+                $stmtUpd = $pdo->prepare(
+                    "UPDATE cuentas_por_cobrar
+                     SET saldo = ?,
+                         estado = ?,
+                         actualizado_por_usuario_id = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?"
+                );
+                $stmtUpd->execute([
+                    $this->decimal($saldoPosterior),
+                    $estadoPosterior,
+                    $usuarioId,
+                    $cuentaId,
+                    $hotelId,
+                ]);
+
+                if ($stmtUpd->rowCount() !== 1) {
+                    throw new Exception('No se pudo restaurar la cuenta por cobrar #' . $cuentaId);
+                }
+
+                $montoRestaurado = round($montoRestaurado + $restaurar, 2);
+                $restauradas[] = [
+                    'cxc_id' => $cuentaId,
+                    'movimiento_id' => $movimientoId,
+                    'monto_restaurado' => $this->decimal($restaurar),
+                    'saldo_anterior' => $this->decimal($saldoAnterior),
+                    'saldo_posterior' => $this->decimal($saldoPosterior),
+                    'estado' => $estadoPosterior,
+                ];
+            }
+
+            if ($montoRestaurado > 0) {
+                AuditService::record('cuentas_por_cobrar.reversion_sincronizacion_pago', [
+                    'hotel_id' => $hotelId,
+                    'usuario_id' => $usuarioId,
+                    'entidad_tipo' => 'reservacion',
+                    'entidad_id' => (string)$reservacionId,
+                    'descripcion' => 'CxC restaurada por reversion del pago de la reservacion',
+                    'datos_despues' => [
+                        'reservacion_id' => $reservacionId,
+                        'referencia' => $referencia,
+                        'monto_restaurado' => $this->decimal($montoRestaurado),
+                        'cuentas' => $restauradas,
+                        'sin_caja_cxc' => true,
+                    ],
+                ]);
+            }
+
+            $pdo->commit();
+
+            return [
+                'cuentas_actualizadas' => count($restauradas),
+                'monto_restaurado' => $this->decimal($montoRestaurado),
+                'cuentas' => $restauradas,
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     private function anotarGeneracionManual(array $cuentas, int $hotelId): array
     {
         if (empty($cuentas) || $hotelId <= 0) {
@@ -771,7 +1093,8 @@ class CuentaPorCobrar extends Model
         $total = (float)($cuenta['precio_total'] ?? 0);
         $pagos = (float)($cuenta['pagos_total'] ?? 0);
         $abonos = (float)($cuenta['abonos_total'] ?? 0);
-        $cubierto = $pagos + $abonos;
+        $cobrosOperativos = (float)($cuenta['cxc_cobros_total'] ?? 0);
+        $cubierto = $pagos + $abonos + max(0, $cobrosOperativos);
         $saldoRaw = $total - $cubierto;
         $saldo = max(0, $saldoRaw);
 
@@ -786,12 +1109,94 @@ class CuentaPorCobrar extends Model
         $cuenta['precio_total'] = $this->decimal($total);
         $cuenta['pagos_total'] = $this->decimal($pagos);
         $cuenta['abonos_total'] = $this->decimal($abonos);
+        $cuenta['cxc_cobros_total'] = $this->decimal(max(0, $cobrosOperativos));
         $cuenta['monto_cubierto'] = $this->decimal($cubierto);
         $cuenta['saldo_estimado'] = $this->decimal($saldo);
         $cuenta['saldo_estimado_raw'] = $this->decimal($saldoRaw);
         $cuenta['estado_saldo'] = $estadoSaldo;
 
         return $cuenta;
+    }
+
+    private function aplicarCobrosOperativosReservacion(array $cuentas, int $hotelId): array
+    {
+        if (empty($cuentas) || $hotelId <= 0 || !$this->tablaOperativaDisponible() || !$this->movimientosOperativosDisponibles()) {
+            return $cuentas;
+        }
+
+        $reservacionIds = [];
+        foreach ($cuentas as $cuenta) {
+            $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
+            if ($reservacionId > 0) {
+                $reservacionIds[$reservacionId] = $reservacionId;
+            }
+        }
+
+        if (empty($reservacionIds)) {
+            return $cuentas;
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($reservacionIds), '?'));
+        $params = array_merge([$hotelId], array_values($reservacionIds), array_values($reservacionIds));
+        $stmt = $this->db->query(
+            "SELECT cxc_res.reservacion_id,
+                    COALESCE(SUM(CASE
+                        WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                        WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto
+                        ELSE 0
+                    END), 0) AS cxc_cobros_total,
+                    COUNT(DISTINCT cxc_res.id) AS cxc_cuentas_count
+             FROM (
+                 SELECT cxc.id,
+                        cxc.hotel_id,
+                        COALESCE(
+                            cxc.reservacion_id,
+                            CASE WHEN cxc.origen_tipo = 'reservacion' THEN cxc.origen_id ELSE NULL END
+                        ) AS reservacion_id
+                 FROM cuentas_por_cobrar cxc
+                 WHERE cxc.hotel_id = ?
+                   AND (
+                        cxc.reservacion_id IN ({$placeholders})
+                        OR (cxc.origen_tipo = 'reservacion' AND cxc.origen_id IN ({$placeholders}))
+                   )
+             ) cxc_res
+             LEFT JOIN cuentas_por_cobrar_movimientos m
+                ON m.cuenta_por_cobrar_id = cxc_res.id
+               AND m.hotel_id = cxc_res.hotel_id
+             WHERE cxc_res.reservacion_id IS NOT NULL
+             GROUP BY cxc_res.reservacion_id",
+            $params
+        );
+
+        $cobrosPorReservacion = [];
+        foreach ($stmt ? ($stmt->fetchAll() ?: []) : [] as $row) {
+            $reservacionId = (int)($row['reservacion_id'] ?? 0);
+            if ($reservacionId <= 0) {
+                continue;
+            }
+
+            $cobrosPorReservacion[$reservacionId] = [
+                'cxc_cobros_total' => max(0, (float)($row['cxc_cobros_total'] ?? 0)),
+                'cxc_cuentas_count' => (int)($row['cxc_cuentas_count'] ?? 0),
+            ];
+        }
+
+        foreach ($cuentas as &$cuenta) {
+            $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
+            $cobro = $cobrosPorReservacion[$reservacionId] ?? null;
+            if (!$cobro) {
+                $cuenta['cxc_cobros_total'] = $this->decimal($cuenta['cxc_cobros_total'] ?? 0);
+                $cuenta['cxc_cuentas_count'] = 0;
+                continue;
+            }
+
+            $cuenta['cxc_cobros_total'] = $this->decimal($cobro['cxc_cobros_total']);
+            $cuenta['cxc_cuentas_count'] = $cobro['cxc_cuentas_count'];
+            $cuenta = $this->normalizarCuentaDerivada($cuenta);
+        }
+        unset($cuenta);
+
+        return $cuentas;
     }
 
     private function normalizarEstadoReservacion($value): string
