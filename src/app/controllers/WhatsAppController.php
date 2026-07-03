@@ -81,6 +81,9 @@ class WhatsAppController extends Controller {
                     [$hotelId, $clave, $valor]
                 );
             }
+            if (function_exists('hotel_config_cache_invalidar')) {
+                hotel_config_cache_invalidar($hotelId);
+            }
         } catch (Throwable $e) {
             error_log('WhatsApp: error al guardar toggles: ' . $e->getMessage());
             $ok = false;

@@ -41,6 +41,10 @@ class IcalCanalesService
             [$hotelId, $token]
         );
 
+        if (function_exists('hotel_config_cache_invalidar')) {
+            hotel_config_cache_invalidar($hotelId);
+        }
+
         return $token;
     }
 

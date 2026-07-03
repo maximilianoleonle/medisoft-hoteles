@@ -208,17 +208,17 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Fix para layout del dashboard - Cargar al final -->
-    <link rel="stylesheet" href="<?= asset('css/dashboard-layout-fix.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dashboard-layout-fix.css') : asset('css/dashboard-layout-fix.css') ?>">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- CSS del sidebar -->
-    <link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-styles.css') : asset('css/sidebar-styles.css') ?>">
     <!-- NUEVO: Tamaño grande del sidebar -->
-    <link rel="stylesheet" href="<?= asset('css/sidebar-size-override.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-size-override.css') : asset('css/sidebar-size-override.css') ?>">
 
-    <link rel="stylesheet" href="<?= asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/performance-optimization.css') : asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -363,18 +363,18 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <meta name="api-url" content="<?= url('api') ?>">
     
     <!-- CSS Personalizado -->
-    <link rel="stylesheet" href="<?= asset('css/custom.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/custom.css') : asset('css/custom.css') ?>">
 
     <!-- CSS de la pantalla de carga -->
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/loading-screen.css') : asset('css/loading-screen.css') ?>">
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/pwa-launch-splash.css') : asset('css/pwa-launch-splash.css') ?>">
 
     <!-- CSS PWA (offline banner, toasts, install btn) -->
-    <link rel="stylesheet" href="<?= asset('css/pwa.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/pwa.css') : asset('css/pwa.css') ?>">
     
     <!-- Solo en el dashboard -->
     <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
-    <link rel="stylesheet" href="<?= asset('css/dashboard.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dashboard.css') : asset('css/dashboard.css') ?>">
     <?php endif; ?>
     
     <!-- Script de pantalla de carga -->

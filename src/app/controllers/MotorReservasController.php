@@ -203,6 +203,9 @@ class MotorReservasController extends Controller {
                     [$hotelId, $clave, $valor, $tipo]
                 );
             }
+            if (function_exists('hotel_config_cache_invalidar')) {
+                hotel_config_cache_invalidar($hotelId);
+            }
         } catch (Throwable $e) {
             error_log('Motor interno: error al guardar configuracion: ' . $e->getMessage());
             set_mensaje('No se pudo guardar la configuracion del motor.', 'error');

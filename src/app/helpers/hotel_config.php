@@ -734,6 +734,8 @@ if (!function_exists('hotel_config_save_editable_values')) {
             }
         }
 
+        hotel_config_cache_invalidar($hotelId);
+
         return true;
     }
 }
@@ -782,6 +784,9 @@ if (!function_exists('hotel_config_save_value')) {
         if (!$stmt) {
             throw new RuntimeException('No se pudo guardar la configuracion ' . $clave . '.');
         }
+
+        // El cache por request queda obsoleto tras escribir: invalidar.
+        hotel_config_cache_invalidar($hotelId);
 
         return true;
     }
@@ -1943,6 +1948,58 @@ if (!function_exists('hotel_general_catalog_save_values')) {
     }
 }
 
+if (!function_exists('hotel_config_cache_por_hotel')) {
+    /**
+     * Cache por request de TODA la configuracion activa de un hotel.
+     * Antes cada hotel_config_get() era una query (15+ por pagina); ahora la
+     * primera lectura carga todas las claves del hotel en una sola query.
+     * Devuelve null si la carga fallo (para caer al comportamiento anterior).
+     */
+    function hotel_config_cache_por_hotel($hotelId, $invalidar = false)
+    {
+        static $cache = [];
+
+        $hotelId = (int) $hotelId;
+
+        if ($invalidar) {
+            unset($cache[$hotelId]);
+            return null;
+        }
+
+        if (array_key_exists($hotelId, $cache)) {
+            return $cache[$hotelId];
+        }
+
+        $stmt = Database::getInstance()->query(
+            "SELECT clave, valor, tipo FROM hotel_configuracion WHERE hotel_id = ? AND activo = 1",
+            [$hotelId]
+        );
+
+        if (!$stmt) {
+            return null; // No cachear el fallo: reintentar en la proxima lectura
+        }
+
+        $mapa = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $mapa[(string) $row['clave']] = ['valor' => $row['valor'], 'tipo' => $row['tipo']];
+        }
+
+        $cache[$hotelId] = $mapa;
+        return $mapa;
+    }
+}
+
+if (!function_exists('hotel_config_cache_invalidar')) {
+    function hotel_config_cache_invalidar($hotelId = null)
+    {
+        $hotelId = hotel_config_resolve_hotel_id($hotelId);
+
+        if ($hotelId) {
+            hotel_config_cache_por_hotel($hotelId, true);
+        }
+    }
+}
+
 if (!function_exists('hotel_config_get')) {
     function hotel_config_get($clave, $default = null, $hotelId = null)
     {
@@ -1952,6 +2009,17 @@ if (!function_exists('hotel_config_get')) {
             return $default;
         }
 
+        $mapa = hotel_config_cache_por_hotel($hotelId);
+
+        if ($mapa !== null) {
+            if (!array_key_exists((string) $clave, $mapa)) {
+                return $default;
+            }
+            $row = $mapa[(string) $clave];
+            return hotel_config_cast_value($row['valor'], $row['tipo'], $default);
+        }
+
+        // Fallback (la carga en lote fallo): lectura individual como antes.
         $db = Database::getInstance();
         $stmt = $db->query(
             "SELECT valor, tipo FROM hotel_configuracion WHERE hotel_id = ? AND clave = ? AND activo = 1 LIMIT 1",
