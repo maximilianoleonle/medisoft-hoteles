@@ -205,6 +205,9 @@ class WhatsAppHotelService
                     . "🛏 Habitacion: {$r['tipo']}\n"
                     . "💳 Anticipo pagado: {$fmt($r['anticipo'])}\n"
                     . "💰 Pagas al llegar: {$fmt($r['saldo'])}\n\n"
+                    . (!empty($r['checkin_url'])
+                        ? "⚡ Adelanta tu llegada: completa tu pre-registro aqui (1 minuto):\n{$r['checkin_url']}\n\n"
+                        : '')
                     . "Presenta tu folio al llegar. ¡Te esperamos!";
                 $this->enviarMensaje($hotelId, (string) $r['telefono'], $msj);
             }

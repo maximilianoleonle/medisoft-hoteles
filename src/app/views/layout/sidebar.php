@@ -39,6 +39,7 @@ $mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -79,6 +80,7 @@ $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
+$sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
 $sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
 $sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
 $sidebarActiveRoles = $sidebarPathStarts('configuracion/roles');
@@ -474,6 +476,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCheckinDigital): ?>
+            <a href="<?= url('checkin-digital') ?>"
+               class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-id-badge"></i>
+                </div>
+                <span class="nav-text">Check-in digital</span>
             </a>
             <?php endif; ?>
 

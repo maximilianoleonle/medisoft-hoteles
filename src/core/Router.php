@@ -23,6 +23,7 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/reservar$/i',              // Motor de reservas publico
             '/^\/h\/[a-z0-9-]+\/reservar\/api\/disponibilidad$/i', // Disponibilidad publica del motor
             '/^\/h\/[a-z0-9-]+\/reservar\/confirmacion\/[a-f0-9]+$/i', // Confirmacion publica de pago del motor
+            '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+$/i',    // Pre-registro publico (check-in digital)
             '/^\/reportes\/link\/[a-f0-9]+$/i', // Link publico seguro de reporte PDF
             '/^\/manifest\.json$/i',      // PWA manifest
             '/^\/service-worker\.js$/i',  // Service worker
@@ -32,7 +33,8 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/login\/authenticate$/i', // Proceso de autenticacion scoped por hotel
             '/^\/login\/authenticate$/i',  // Proceso de autenticación
             '/^\/h\/[a-z0-9-]+\/reservar\/iniciar-pago$/i', // Motor: iniciar pago publico
-            '/^\/h\/[a-z0-9-]+\/reservar\/webhook\/[a-z]+$/i' // Motor: webhook de pasarela (verificado por firma)
+            '/^\/h\/[a-z0-9-]+\/reservar\/webhook\/[a-z]+$/i', // Motor: webhook de pasarela (verificado por firma)
+            '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+\/completar$/i' // Pre-registro publico: envio del formulario
         ]
     ];
     

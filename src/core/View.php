@@ -35,9 +35,10 @@ class View {
         // Buffer de salida
         ob_start();
 
-        // Vistas standalone: sin layout interno (login, errores y paginas publicas del motor).
+        // Vistas standalone: sin layout interno (login, errores y paginas publicas motor/checkin).
         $esVistaStandalone = in_array($view, ['auth/login', 'errors/404', 'errors/500'])
-            || strpos($view, 'motor/') === 0;
+            || strpos($view, 'motor/') === 0
+            || strpos($view, 'checkin/') === 0;
 
         // Incluir header si no es una vista standalone
         if (!$esVistaStandalone) {

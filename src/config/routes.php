@@ -199,6 +199,15 @@ $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'Mo
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
 
+// Check-in digital publico (bloque checkin_digital; token = credencial)
+$router->get('/h/{slug:[a-z0-9-]+}/checkin/{token:[a-f0-9]+}', ['controller' => 'CheckinDigitalPublico', 'action' => 'formulario']);
+$router->post('/h/{slug:[a-z0-9-]+}/checkin/{token:[a-f0-9]+}/completar', ['controller' => 'CheckinDigitalPublico', 'action' => 'completar']);
+
+// Check-in digital interno: tablero, generar link y descarga de ID
+$router->get('/checkin-digital', ['controller' => 'CheckinDigital', 'action' => 'index']);
+$router->post('/checkin-digital/generar/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'generar']);
+$router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'descargarId']);
+
 // WhatsApp del hotel (bloque whatsapp): conexion y toggles
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
 $router->post('/whatsapp/guardar', ['controller' => 'WhatsApp', 'action' => 'guardar']);

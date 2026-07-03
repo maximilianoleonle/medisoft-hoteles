@@ -292,7 +292,22 @@ class MotorReservaOnlineService
                     require_once __DIR__ . '/WhatsAppHotelService.php';
                 }
                 $hotelCtx = class_exists('TenantContext') ? (TenantContext::hotel() ?: []) : [];
+
+                // Sinergia con checkin_digital: incluir el link de pre-registro si el bloque esta activo.
+                $checkinUrl = '';
+                if (function_exists('hotel_has_module') && hotel_has_module('checkin_digital', $hotelId)
+                    && !empty($hotelCtx['slug']) && function_exists('url')) {
+                    if (!class_exists('CheckinDigitalService')) {
+                        require_once __DIR__ . '/CheckinDigitalService.php';
+                    }
+                    $tokenCheckin = (new CheckinDigitalService($this->db))->generarLink($hotelId, (int) $reservacionId);
+                    if ($tokenCheckin) {
+                        $checkinUrl = url('h/' . $hotelCtx['slug'] . '/checkin/' . $tokenCheckin);
+                    }
+                }
+
                 (new WhatsAppHotelService($this->db))->notificarReservaOnline($hotelId, [
+                    'checkin_url' => $checkinUrl,
                     'nombre' => (string) ($pago['huesped_nombre'] ?? ''),
                     'telefono' => (string) ($pago['huesped_telefono'] ?? ''),
                     'folio' => (int) $reservacionId,
