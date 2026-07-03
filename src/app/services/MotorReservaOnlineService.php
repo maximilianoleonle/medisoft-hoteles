@@ -181,6 +181,17 @@ class MotorReservaOnlineService
             return ['success' => true, 'message' => 'Pago ya procesado.', 'reservacion_id' => (int) ($pago['reservacion_id'] ?? 0)];
         }
 
+        // Claim atomico: solo un webhook concurrente puede pasar de aqui. Evita que
+        // dos entregas simultaneas de la pasarela creen dos reservaciones para el mismo pago.
+        $claim = $this->pdo->prepare(
+            "UPDATE motor_pagos_online SET estado = 'procesando', updated_at = NOW()
+             WHERE id = ? AND estado = 'pendiente'"
+        );
+        $claim->execute([(int) $pago['id']]);
+        if ($claim->rowCount() !== 1) {
+            return ['success' => true, 'message' => 'Pago en proceso o ya procesado.', 'reservacion_id' => (int) ($pago['reservacion_id'] ?? 0)];
+        }
+
         $payload = json_decode((string) ($pago['payload_json'] ?? ''), true) ?: [];
         $habitacionId = (int) ($payload['habitacion_id'] ?? 0);
         $entrada = (string) ($payload['entrada'] ?? '');
@@ -189,6 +200,21 @@ class MotorReservaOnlineService
         if ($habitacionId <= 0 || $entrada === '' || $salida === '') {
             $this->actualizarEstadoPago((int) $pago['id'], 'fallido', $evento);
             return ['success' => false, 'message' => 'Pago con datos incompletos.'];
+        }
+
+        // Defensa en profundidad: verificar que lo realmente cobrado por la pasarela no
+        // sea menor al anticipo esperado (el monto lo fija el servidor; una discrepancia
+        // a la baja es sospechosa). Sobrepago se acepta; formato desconocido no bloquea.
+        $pagado = $this->montoPagadoDelEvento($evento);
+        $esperado = (float) $pago['monto'];
+        if ($pagado !== null && $pagado + 0.01 < $esperado) {
+            $this->actualizarEstadoPago((int) $pago['id'], 'fallido', $evento + [
+                'motivo' => 'Monto cobrado ($' . number_format($pagado, 2) . ') menor al anticipo esperado ($' . number_format($esperado, 2) . ').',
+                'referencia_cobro' => $referenciaCobro,
+            ]);
+            $this->eliminarHold($holdToken);
+            error_log('Motor online: pago ' . $pago['id'] . ' con monto insuficiente (cobrado ' . $pagado . ' < esperado ' . $esperado . '); atencion manual.');
+            return ['success' => false, 'message' => 'Monto cobrado insuficiente; requiere atencion manual.'];
         }
 
         // Re-verificacion final de disponibilidad (carrera entre dos pagos).
@@ -250,7 +276,7 @@ class MotorReservaOnlineService
                 "UPDATE motor_pagos_online
                  SET estado = 'pagado', reservacion_id = ?,
                      payload_json = ?, updated_at = NOW()
-                 WHERE id = ? AND estado = 'pendiente'"
+                 WHERE id = ? AND estado = 'procesando'"
             );
             $stmt->execute([
                 (int) $reservacionId,
@@ -263,7 +289,16 @@ class MotorReservaOnlineService
             return ['success' => true, 'reservacion_id' => (int) $reservacionId];
         } catch (Throwable $e) {
             error_log('Motor online: error al confirmar pago ' . $pago['id'] . ': ' . $e->getMessage());
-            // El pago queda 'pendiente': el tablero interno (F5) lo mostrara para atencion manual.
+            // Devolver el pago a 'pendiente' (solo si seguimos duenos del claim) para que
+            // el tablero interno (F5) lo muestre y un reintento del webhook lo reprocese.
+            try {
+                $this->pdo->prepare(
+                    "UPDATE motor_pagos_online SET estado = 'pendiente', updated_at = NOW()
+                     WHERE id = ? AND estado = 'procesando'"
+                )->execute([(int) $pago['id']]);
+            } catch (Throwable $e2) {
+                error_log('Motor online: no se pudo revertir el claim del pago ' . $pago['id'] . ': ' . $e2->getMessage());
+            }
             return ['success' => false, 'message' => 'Error al crear la reservacion; requiere atencion manual.'];
         }
     }
@@ -461,6 +496,26 @@ class MotorReservaOnlineService
         } catch (Throwable $e) {
             error_log('Motor online: no se pudieron liberar holds expirados: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Monto realmente cobrado segun el evento de la pasarela, en unidades mayores
+     * (pesos, no centavos). Devuelve null si el formato no se reconoce (no bloquear).
+     * Stripe: data.object.amount_total en centavos. MercadoPago: transaction_amount ya en pesos.
+     */
+    private function montoPagadoDelEvento(array $evento): ?float
+    {
+        $stripe = $evento['data']['object']['amount_total'] ?? null;
+        if ($stripe !== null && is_numeric($stripe)) {
+            return round(((float) $stripe) / 100, 2);
+        }
+
+        $mp = $evento['transaction_amount'] ?? null;
+        if ($mp !== null && is_numeric($mp)) {
+            return round((float) $mp, 2);
+        }
+
+        return null;
     }
 
     /** Solo lo esencial del evento (los payloads de pasarela son enormes). */

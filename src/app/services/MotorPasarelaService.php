@@ -31,7 +31,6 @@ class MotorPasarelaService
             );
             $row = $stmt ? $stmt->fetch() : null;
             if (!$row) {
-                error_log('DEBUG pasarela: sin fila para hotel ' . $hotelId); // TEMP
                 return null;
             }
 
@@ -40,7 +39,6 @@ class MotorPasarelaService
             unset($row['secret_key_encrypted'], $row['webhook_secret_encrypted']);
 
             if ($row['secret_key'] === null || $row['secret_key'] === '') {
-                error_log('DEBUG pasarela: descifrado nulo; key_env=' . var_export(getenv('MOTOR_PASARELA_KEY'), true)); // TEMP
                 return null;
             }
 
@@ -200,6 +198,13 @@ class MotorPasarelaService
      */
     public function verificarWebhookStripe(string $payload, string $sigHeader, string $webhookSecret): ?array
     {
+        // Sin secreto de webhook la firma se validaria contra clave vacia (conocida)
+        // y cualquiera podria falsificar un evento 'pagado'. Rechazar de plano.
+        if (trim($webhookSecret) === '') {
+            error_log('Motor pasarela: webhook Stripe rechazado, hotel sin webhook_secret configurado.');
+            return null;
+        }
+
         $partes = [];
         foreach (explode(',', $sigHeader) as $par) {
             $kv = explode('=', trim($par), 2);
