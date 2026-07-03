@@ -192,6 +192,9 @@ $router->post('/login/authenticate', ['controller' => 'Auth', 'action' => 'authe
 $router->get('/h/{slug:[a-z0-9-]+}/login', ['controller' => 'Auth', 'action' => 'hotelLogin']);
 $router->post('/h/{slug:[a-z0-9-]+}/login/authenticate', ['controller' => 'Auth', 'action' => 'hotelAuthenticate']);
 $router->get('/h/{slug:[a-z0-9-]+}/manifest.webmanifest', ['controller' => 'Pwa', 'action' => 'manifest']);
+// Motor de reservas publico (bloque motor_reservas; sin login)
+$router->get('/h/{slug:[a-z0-9-]+}/reservar', ['controller' => 'MotorReservasPublico', 'action' => 'reservar']);
+$router->get('/h/{slug:[a-z0-9-]+}/reservar/api/disponibilidad', ['controller' => 'MotorReservasPublico', 'action' => 'disponibilidad']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
