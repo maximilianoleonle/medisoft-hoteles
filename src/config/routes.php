@@ -217,6 +217,10 @@ $router->post('/canales/feed/guardar', ['controller' => 'Canales', 'action' => '
 $router->post('/canales/feed/eliminar/{id:[0-9]+}', ['controller' => 'Canales', 'action' => 'eliminarFeed']);
 $router->post('/canales/sincronizar', ['controller' => 'Canales', 'action' => 'sincronizar']);
 
+// App de camarista (bloque camarista): tablero movil de limpieza
+$router->get('/camarista', ['controller' => 'Camarista', 'action' => 'index']);
+$router->post('/camarista/marcar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'marcar']);
+
 // WhatsApp del hotel (bloque whatsapp): conexion y toggles
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
 $router->post('/whatsapp/guardar', ['controller' => 'WhatsApp', 'action' => 'guardar']);
