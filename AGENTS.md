@@ -180,3 +180,17 @@ Checklist obligatorio para implementar algo nuevo:
 
 8. **Inputs de dinero en el panel**: `number_format($v, 2, '.', '')` (sin
    separador de miles) para `value` de `<input type="number">`.
+
+## Regla: dinero online (motor de reservas y futuros canales de pago)
+
+- El dinero cobrado por pasarela NUNCA entra directo a Caja. Va al ledger
+  `motor_pagos_online` (estado pagado) y recepcion lo CONCILIA despues via
+  `AnticipoService::registrar()` (que exige corte de Caja abierto y usuario).
+- Los webhooks jamás insertan en `movimientos_caja` / `reservacion_abonos`.
+- Montos SIEMPRE recalculados en servidor; nunca confiar en el navegador.
+- Webhooks: Stripe se verifica por firma (t/v1 HMAC); MercadoPago consultando
+  el pago a su API. Idempotencia obligatoria (los webhooks se reintentan).
+- Secrets de pasarela: cifrados AES-256-GCM con `MOTOR_PASARELA_KEY` (env,
+  fuera de git); nunca en texto plano ni re-mostrados en UI.
+- Paginas publicas del motor: vistas `motor/*` son standalone (View.php no
+  les pone layout interno) y sus rutas van en la whitelist de `core/Router.php`.

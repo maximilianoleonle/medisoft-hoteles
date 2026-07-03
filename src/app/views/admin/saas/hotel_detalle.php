@@ -242,13 +242,14 @@ $fila = function ($label, $value) {
             $fila('Zona horaria', $hotel['zona_horaria'] ?? null);
             $fila('Moneda', trim(($hotel['moneda_codigo'] ?? '') . ' ' . ($hotel['moneda_simbolo'] ?? '')));
             $fila('Plan comercial', $copyVisible($planActual['nombre'] ?? 'Sin plan'));
+            $fila('Motor de reservas (link publico)', url('h/' . ($hotel['slug'] ?? '') . '/reservar'));
             $fila('Creado', $hotel['created_at'] ?? null);
             $fila('Actualizado', $hotel['updated_at'] ?? null);
             ?>
         </dl>
 
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/estado') ?>" onsubmit="return confirm('Confirmar <?= $activo ? 'suspender' : 'activar' ?> este hotel?');">
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/estado') ?>" data-ms-confirm data-ms-type="<?= $activo ? 'error' : 'success' ?>" data-ms-icon="<?= $activo ? 'logout' : 'login' ?>" data-ms-title="<?= $activo ? '¿Suspender hotel?' : '¿Activar hotel?' ?>" data-ms-msg="<?= $activo ? 'El hotel quedará suspendido y sus usuarios no podrán entrar al sistema.' : 'El hotel quedará activo y sus usuarios podrán volver a entrar.' ?>" data-ms-ok="<?= $activo ? 'Suspender hotel' : 'Activar hotel' ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="activo" value="<?= $activo ? '0' : '1' ?>">
                 <button type="submit"
@@ -276,7 +277,7 @@ $fila = function ($label, $value) {
                 No hay catálogo de planes disponible. Aplique la migración de planes antes de configurar esta sección.
             </div>
         <?php else: ?>
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="var aplicar=this.querySelector('[name=aplicar_modulos]'); if (aplicar && aplicar.checked) { return confirm('Guardar este plan aplicando el preset puede activar o desactivar módulos. ¿Continuar?'); } return true;">
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" id="form-plan-hotel">
                 <?= csrf_field() ?>
 
                 <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -361,7 +362,7 @@ $fila = function ($label, $value) {
                     <?php endif; ?>
                     <p class="mt-1 text-xs text-amber-800">Esto no es un error: puedes dejarlo así (se cobra lo encendido) o alinear los bloques al plan.</p>
                 </div>
-                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" class="flex-shrink-0" onsubmit="return confirm('Esto encenderá/apagará bloques para coincidir con el plan actual. ¿Continuar?');">
+                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" class="flex-shrink-0" data-ms-confirm data-ms-type="warning" data-ms-icon="alert" data-ms-title="¿Alinear bloques al plan?" data-ms-msg="Esto encenderá/apagará bloques para coincidir con el plan actual." data-ms-ok="Alinear al plan">
                     <?= csrf_field() ?>
                     <input type="hidden" name="plan_id" value="<?= (int) $planActual['id'] ?>">
                     <input type="hidden" name="aplicar_modulos" value="1">
@@ -875,3 +876,29 @@ $fila = function ($label, $value) {
     </div>
 
 </div>
+
+<script>
+// Confirmar guardado del plan solo cuando se aplicará el preset de módulos.
+(function () {
+    var form = document.getElementById('form-plan-hotel');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+        var aplicar = form.querySelector('[name=aplicar_modulos]');
+        if (!aplicar || !aplicar.checked) return;
+        if (form.dataset.msOk === '1') { delete form.dataset.msOk; return; }
+        e.preventDefault();
+        msConfirm({
+            type: 'warning',
+            icon: 'alert',
+            title: '¿Aplicar preset del plan?',
+            msg: 'Guardar este plan aplicando el preset puede activar o desactivar módulos del hotel.',
+            confirmLabel: 'Guardar y aplicar'
+        }).then(function (ok) {
+            if (!ok) return;
+            form.dataset.msOk = '1';
+            if (form.requestSubmit) form.requestSubmit();
+            else form.submit();
+        });
+    });
+})();
+</script>
