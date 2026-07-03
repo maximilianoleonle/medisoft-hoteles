@@ -911,7 +911,8 @@ $hotelNombre = function_exists('current_hotel_display_name')
     <main class="disc-shell">
         <section class="disc-hero">
             <div class="disc-hero-main">
-                <a href="<?= back_url('inventario') ?>" class="disc-back">
+                <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('inventario') ?>" class="disc-back ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Inventario
                 </a>
@@ -1292,12 +1293,18 @@ document.getElementById('formConfiguracion')?.addEventListener('submit', functio
 
     if (!hayConfiguracionActiva() && this.dataset.confirmEmptyConfig !== '1') {
         event.preventDefault();
-        this.dataset.confirmEmptyConfig = '1';
-        configInlineNotice('No hay cantidades configuradas. Presiona Guardar configuracion otra vez para guardar todo en 0.');
-        window.clearTimeout(this._confirmEmptyConfigTimer);
-        this._confirmEmptyConfigTimer = window.setTimeout(() => {
-            delete this.dataset.confirmEmptyConfig;
-        }, 7000);
+        const form = this;
+        msConfirm({
+            type: 'warning',
+            icon: 'alert',
+            title: '¿Guardar todo en 0?',
+            msg: 'No hay cantidades configuradas. Se guardará la configuración con todos los productos en 0.',
+            confirmLabel: 'Guardar en 0'
+        }).then(ok => {
+            if (!ok) return;
+            form.dataset.confirmEmptyConfig = '1';
+            form.requestSubmit ? form.requestSubmit() : form.submit();
+        });
     }
 });
 
@@ -1369,34 +1376,20 @@ function actualizarConsumoDiario() {
 }
 
 function resetAll() {
-    const form = document.getElementById('formConfiguracion');
-    if (form && form.dataset.confirmResetAll !== '1') {
-        form.dataset.confirmResetAll = '1';
-        configInlineNotice('Presiona Restablecer otra vez para poner todas las cantidades en 0.');
-        window.clearTimeout(form._confirmResetAllTimer);
-        form._confirmResetAllTimer = window.setTimeout(() => {
-            delete form.dataset.confirmResetAll;
-        }, 7000);
-        return;
-    }
-
-    if (form) {
-        delete form.dataset.confirmResetAll;
-        window.clearTimeout(form._confirmResetAllTimer);
-    }
-
-    document.querySelectorAll('.cantidad-input').forEach(input => {
-        input.value = 0;
+    msConfirm({
+        type: 'warning',
+        icon: 'alert',
+        title: '¿Restablecer todo a 0?',
+        msg: 'Todas las cantidades configuradas se pondrán en 0. Deberás guardar para aplicar el cambio.',
+        confirmLabel: 'Restablecer'
+    }).then(ok => {
+        if (!ok) return;
+        document.querySelectorAll('.cantidad-input').forEach(input => {
+            input.value = 0;
+        });
+        actualizarTotales();
+        configInlineNotice('Configuracion restablecida a 0. Revisa y guarda para aplicar el cambio.');
     });
-    actualizarTotales();
-    if (form) {
-        form.dataset.confirmEmptyConfig = '1';
-        window.clearTimeout(form._confirmEmptyConfigTimer);
-        form._confirmEmptyConfigTimer = window.setTimeout(() => {
-            delete form.dataset.confirmEmptyConfig;
-        }, 12000);
-    }
-    configInlineNotice('Configuracion restablecida a 0. Revisa y guarda para aplicar el cambio.');
 }
 
 document.getElementById('btnReset')?.addEventListener('click', resetAll);

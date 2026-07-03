@@ -202,7 +202,8 @@ $prioridadLabels = [
                     <div class="tk-view-chip"><i class="fas fa-chart-line"></i> Vista de an&aacute;lisis</div>
                 </div>
             </div>
-            <a class="tk-btn" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+            <?php $back_arrow_href = back_url('tareas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="tk-btn ms-back-legacy" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
         </section>
 
         <?php if (!$tablaDisponible): ?>

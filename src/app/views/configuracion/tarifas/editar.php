@@ -369,7 +369,8 @@ input:checked + .toggle-slider:before {
                 <h1 class="text-2xl font-bold text-gray-900">Editar Incremento de Tarifa</h1>
                 <p class="text-gray-600 mt-1">Modifique los parámetros del incremento</p>
             </div>
-            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
+            <?php $back_arrow_href = back_url('configuracion/tarifas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary ms-back-legacy">
                 <i class="fas fa-arrow-left"></i>
                 Regresar
             </a>

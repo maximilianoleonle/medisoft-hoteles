@@ -225,6 +225,7 @@ $visibles = count($cuentas);
 
 <div class="cxc-page p-4 sm:p-6">
     <div class="cx-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="cx-title-lockup">
                 <div class="cx-hero-icon"><i class="fas fa-hand-holding-dollar"></i></div>
@@ -304,11 +305,12 @@ $visibles = count($cuentas);
                                     <?php foreach ($cuentas as $cuenta): ?>
                                         <?php
                                         $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
+                                        $reservacionUrl = url('reservaciones/ver/' . $reservacionId);
                                         $facturaId = (int)($cuenta['solicitud_factura_id'] ?? 0);
                                         $cxcCobros = (float)($cuenta['cxc_cobros_total'] ?? 0);
                                         [$eLabel, $eClass, $eIcon] = cxc_estado_meta($cuenta['estado_saldo'] ?? null);
                                         ?>
-                                        <tr>
+                                        <tr data-easy-href="<?= cxc_safe($reservacionUrl, '') ?>" role="link" tabindex="0" title="Abrir reservacion #<?= $reservacionId ?>" aria-label="Abrir reservacion #<?= $reservacionId ?>">
                                             <td>
                                                 <a class="cx-link" href="<?= url('reservaciones/ver/' . $reservacionId) ?>">#<?= $reservacionId ?></a>
                                             </td>
@@ -360,11 +362,12 @@ $visibles = count($cuentas);
                             <?php foreach ($cuentas as $cuenta): ?>
                                 <?php
                                 $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
+                                $reservacionUrl = url('reservaciones/ver/' . $reservacionId);
                                 $facturaId = (int)($cuenta['solicitud_factura_id'] ?? 0);
                                 $cxcCobros = (float)($cuenta['cxc_cobros_total'] ?? 0);
                                 [$eLabel, $eClass, $eIcon] = cxc_estado_meta($cuenta['estado_saldo'] ?? null);
                                 ?>
-                                <article class="cx-mcard">
+                                <article class="cx-mcard" data-easy-href="<?= cxc_safe($reservacionUrl, '') ?>" role="link" tabindex="0" title="Abrir reservacion #<?= $reservacionId ?>" aria-label="Abrir reservacion #<?= $reservacionId ?>">
                                     <div class="cx-mcard-top">
                                         <div>
                                             <a class="cx-link cx-mcard-id" href="<?= url('reservaciones/ver/' . $reservacionId) ?>">#<?= $reservacionId ?></a>

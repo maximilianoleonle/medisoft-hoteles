@@ -19,7 +19,8 @@ $reservacion_id = $reservacion['id'];
                 </h1>
                 <p class="text-gray-600 mt-1">Reservación #<?= $reservacion_id ?></p>
             </div>
-            <a href="<?= back_url('reservaciones/ver/' . $reservacion_id) ?>" class="text-blue-600 hover:text-blue-800">
+            <?php $back_arrow_href = back_url('reservaciones/ver/' . $reservacion_id); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('reservaciones/ver/' . $reservacion_id) ?>" class="text-blue-600 hover:text-blue-800 ms-back-legacy">
                 ← Volver
             </a>
         </div>
@@ -398,13 +399,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (total < totalReservacion && !mixedShortConfirmationArmed) {
                 e.preventDefault();
-                mixedShortConfirmationArmed = true;
-                <?php if ($es_express): ?>
-                expressConfirmationArmed = true;
-                showFormMessage('El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservacion (' + formatoMoneda(totalReservacion) + ') y el proceso express hara check-in y check-out en un solo paso. Si deseas continuar, presiona guardar otra vez.', 'warning');
-                <?php else: ?>
-                showFormMessage('El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservacion (' + formatoMoneda(totalReservacion) + '). Si deseas continuar de todas formas, presiona guardar otra vez.', 'warning');
-                <?php endif; ?>
+                msConfirm({
+                    type: 'warning',
+                    icon: 'wallet',
+                    title: '¿Continuar con pago menor?',
+                    <?php if ($es_express): ?>
+                    msg: 'El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservación (' + formatoMoneda(totalReservacion) + ') y el proceso express hará check-in y check-out en un solo paso.',
+                    <?php else: ?>
+                    msg: 'El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservación (' + formatoMoneda(totalReservacion) + ').',
+                    <?php endif; ?>
+                    confirmLabel: 'Continuar'
+                }).then(ok => {
+                    if (!ok) return;
+                    mixedShortConfirmationArmed = true;
+                    <?php if ($es_express): ?>
+                    expressConfirmationArmed = true;
+                    <?php endif; ?>
+                    form.requestSubmit ? form.requestSubmit() : form.submit();
+                });
                 return false;
             }
         } else {
@@ -415,8 +427,17 @@ document.addEventListener('DOMContentLoaded', function() {
         <?php if ($es_express): ?>
         if (!expressConfirmationArmed) {
             e.preventDefault();
-            expressConfirmationArmed = true;
-            showFormMessage('Proceso express listo para confirmar: se registrara check-in y check-out en un solo paso. Presiona guardar otra vez para procesarlo.', 'warning');
+            msConfirm({
+                type: 'warning',
+                icon: 'login',
+                title: '¿Procesar check-in express?',
+                msg: 'Se registrará el check-in y el check-out en un solo paso.',
+                confirmLabel: 'Procesar express'
+            }).then(ok => {
+                if (!ok) return;
+                expressConfirmationArmed = true;
+                form.requestSubmit ? form.requestSubmit() : form.submit();
+            });
             return false;
         }
         <?php endif; ?>

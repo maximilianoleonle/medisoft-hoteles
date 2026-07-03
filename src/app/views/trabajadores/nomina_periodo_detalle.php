@@ -255,7 +255,8 @@ if (!function_exists('trab_nom_det_status_label')) {
     <section class="p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a class="nom-det-btn" href="<?= back_url('trabajadores/nomina/periodos') ?>">
+                <?php $back_arrow_href = back_url('trabajadores/nomina/periodos'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="nom-det-btn ms-back-legacy" href="<?= back_url('trabajadores/nomina/periodos') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Periodos
                 </a>

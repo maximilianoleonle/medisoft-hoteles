@@ -1138,6 +1138,7 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
     <!-- Hero Header -->
     <div class="usr-hero">
         <div class="container mx-auto px-5 sm:px-7 py-5 relative z-10">
+            <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-1.5">
@@ -1464,40 +1465,6 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 </div>
 
 <script>
-let userStatePending = null;
-let userStateTimer = null;
-
-function resetUserStateConfirmation() {
-    window.clearTimeout(userStateTimer);
-    document.querySelectorAll('.act-btn.is-confirming, .usr-cardbtn.is-confirming').forEach(btn => {
-        btn.classList.remove('is-confirming');
-        btn.disabled = false;
-        const activating = btn.classList.contains('act-act');
-        btn.title = activating ? 'Activar' : 'Desactivar';
-        btn.innerHTML = activating
-            ? '<i class="fas fa-user-check"></i>' + (btn.classList.contains('usr-cardbtn') ? ' Activar' : '')
-            : '<i class="fas fa-user-slash"></i>' + (btn.classList.contains('usr-cardbtn') ? ' Desactivar' : '');
-    });
-    userStatePending = null;
-    const notice = document.getElementById('usuarios-action-notice');
-    if (notice) {
-        notice.hidden = true;
-        notice.classList.remove('is-danger', 'is-success');
-    }
-}
-
-function showUserStateNotice(message, activar) {
-    const notice = document.getElementById('usuarios-action-notice');
-    if (!notice) return;
-    const icon = notice.querySelector('i');
-    const text = notice.querySelector('span');
-    notice.classList.toggle('is-success', !!activar);
-    notice.classList.toggle('is-danger', !activar);
-    if (icon) icon.className = activar ? 'fas fa-circle-check' : 'fas fa-triangle-exclamation';
-    if (text) text.textContent = message;
-    notice.hidden = false;
-}
-
 function submitUserStateChange(id) {
     const form = document.createElement('form');
     form.method = 'POST';
@@ -1512,34 +1479,23 @@ function submitUserStateChange(id) {
 }
 
 function cambiarEstadoUsuario(id, activar, nombre, trigger) {
-    const actionKey = `${id}:${activar ? 'activar' : 'desactivar'}`;
-
-    if (userStatePending === actionKey) {
+    const persona = nombre || 'este usuario';
+    msConfirm({
+        type: activar ? 'success' : 'error',
+        icon: activar ? 'login' : 'logout',
+        title: activar ? '¿Habilitar acceso?' : '¿Bloquear acceso?',
+        msg: activar
+            ? `Se habilitará el acceso de ${persona} al sistema.`
+            : `${persona} ya no podrá iniciar sesión hasta que vuelvas a activarlo.`,
+        confirmLabel: activar ? 'Habilitar acceso' : 'Bloquear acceso'
+    }).then(ok => {
+        if (!ok) return;
         if (trigger) {
             trigger.disabled = true;
             trigger.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         }
         submitUserStateChange(id);
-        return;
-    }
-
-    resetUserStateConfirmation();
-    userStatePending = actionKey;
-
-    if (trigger) {
-        trigger.classList.add('is-confirming');
-        trigger.title = activar ? 'Confirmar activacion' : 'Confirmar desactivacion';
-        trigger.innerHTML = '<i class="fas fa-check"></i>' + (trigger.classList.contains('usr-cardbtn') ? ' Confirmar' : '');
-    }
-
-    const persona = nombre || 'este usuario';
-    showUserStateNotice(
-        activar
-            ? `Presiona otra vez para habilitar el acceso de ${persona}.`
-            : `Presiona otra vez para bloquear el acceso de ${persona}.`,
-        activar
-    );
-    userStateTimer = window.setTimeout(() => resetUserStateConfirmation(), 7000);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

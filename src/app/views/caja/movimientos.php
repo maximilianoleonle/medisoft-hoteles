@@ -2172,7 +2172,8 @@ $balance_es_positivo = $balance_total >= 0;
             </div>
 
             <div class="cash-hero-actions">
-                <a href="<?= back_url('caja') ?>" class="cash-action">
+                <?php $back_arrow_href = back_url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('caja') ?>" class="cash-action ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     <span>Volver</span>
                 </a>

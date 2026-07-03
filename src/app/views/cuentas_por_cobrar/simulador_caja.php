@@ -154,7 +154,8 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
         <section class="cx-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cx-btn cx-btn-muted" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver a cuentas por cobrar</a>
+                <?php $back_arrow_href = back_url('cuentas-por-cobrar/operativas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="cx-btn cx-btn-muted ms-back-legacy" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver a cuentas por cobrar</a>
                 <a class="cx-btn cx-btn-muted" href="<?= url('caja') ?>"><i class="fas fa-cash-register"></i> Ver Caja</a>
             </div>
         </section>

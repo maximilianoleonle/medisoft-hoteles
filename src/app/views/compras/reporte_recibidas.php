@@ -157,6 +157,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
 
 <div class="purchase-report-page p-4 sm:p-6">
     <div class="cp-shell">
+        <?php $back_arrow_href = back_url('compras?estado=recibida'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="cp-title-lockup">
                 <div class="cp-hero-icon"><i class="fas fa-chart-column"></i></div>
@@ -190,7 +191,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                 <div class="cp-stat"><p class="cp-stat-label">Total</p><p class="cp-stat-value"><?= comp_report_money($resumen['total_lineas'] ?? 0) ?></p></div>
             </section>
 
-            <section class="cp-toolbar">
+            <section class="cp-toolbar ms-back-legacy">
                 <a class="cp-btn cp-btn-muted" href="<?= back_url('compras?estado=recibida') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver a compras

@@ -153,7 +153,8 @@ $docUploadMaxBytes = 10485760;
         </section>
 
         <div class="flex items-center justify-between gap-3">
-            <a class="dc-btn dc-btn-muted" href="<?= back_url('documentos') ?>" style="min-height:40px">
+            <?php $back_arrow_href = back_url('documentos'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="dc-btn dc-btn-muted ms-back-legacy" href="<?= back_url('documentos') ?>" style="min-height:40px">
                 <i class="fas fa-arrow-left"></i>
                 Volver a documentos
             </a>

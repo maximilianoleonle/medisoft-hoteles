@@ -142,6 +142,7 @@ if (!function_exists('prov_form_error_attrs')) {
 
 <div class="provider-form-page p-4 sm:p-6">
     <div class="pv-shell">
+        <?php $back_arrow_href = back_url('proveedores'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="pv-title-lockup">
             <div class="pv-hero-icon"><i class="fas fa-truck-field"></i></div>
             <div>

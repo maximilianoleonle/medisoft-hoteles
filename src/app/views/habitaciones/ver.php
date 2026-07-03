@@ -1093,6 +1093,7 @@ $mantenimientos_count = count($mantenimientos_programados);
 
     <!-- Breadcrumb -->
     <nav class="hdv-crumb" aria-label="Ruta de navegacion">
+        <?php $back_arrow_href = back_url('habitaciones'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <a href="<?= url('habitaciones') ?>"><i class="fas fa-bed"></i> Habitaciones</a>
         <i class="fas fa-chevron-right"></i>
         <span>Habitaci&oacute;n <?= room_detail_safe($habitacion_numero) ?></span>
@@ -1353,7 +1354,12 @@ $mantenimientos_count = count($mantenimientos_programados);
                                     </div>
                                     <form method="POST"
                                           action="<?= url('habitaciones/cancelar-mantenimiento-programado/' . $mp['id']) ?>"
-                                          onsubmit="return confirm('¿Cancelar este mantenimiento programado?')">
+                                          data-ms-confirm
+                                          data-ms-type="error"
+                                          data-ms-icon="x"
+                                          data-ms-title="¿Cancelar mantenimiento programado?"
+                                          data-ms-msg="El mantenimiento programado quedará cancelado."
+                                          data-ms-ok="Sí, cancelar">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="motivo_cancelacion" value="Cancelado manualmente">
                                         <button type="submit" class="hdv-btn hdv-btn-danger hdv-btn-sm">
@@ -2172,8 +2178,15 @@ if (modalProgramar) {
     }
 }
 
-function realizarCheckout(reservacionId) {
-    if (confirm('¿Realizar check-out de esta habitacion?')) {
+async function realizarCheckout(reservacionId) {
+    const ok = await msConfirm({
+        type: 'warning',
+        icon: 'logout',
+        title: '¿Realizar check-out?',
+        msg: 'Se registrará la salida del huésped y la habitación pasará a limpieza.',
+        confirmLabel: 'Registrar check-out'
+    });
+    if (ok) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '<?= url('reservaciones/check-out/') ?>' + reservacionId;

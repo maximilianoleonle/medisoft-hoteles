@@ -236,7 +236,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                                         [$eLabel, $eClass, $eIcon] = cxc_op_estado_meta($cuenta['estado'] ?? null);
                                         $esVencida = strtolower(trim((string)($cuenta['estado'] ?? ''))) === 'vencida';
                                         ?>
-                                        <tr>
+                                        <tr data-easy-href="<?= cxc_op_safe($cuentaUrl, '') ?>" role="link" tabindex="0" title="Abrir cuenta #<?= $cuentaId ?>" aria-label="Abrir cuenta por cobrar #<?= $cuentaId ?>">
                                             <td>
                                                 <a class="cx-link" href="<?= $cuentaUrl ?>">#<?= $cuentaId ?></a>
                                                 <div class="cx-sub"><?= cxc_op_safe($cuenta['folio'] ?? null, 'Sin folio') ?></div>

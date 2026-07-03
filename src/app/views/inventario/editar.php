@@ -63,8 +63,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                     <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
                         ID: <?= $producto['id'] ?>
                     </span>
+                    <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline ms-back--glass'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
                     <a href="<?= back_url('inventario') ?>"
-                       class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2">
+                       class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2 ms-back-legacy">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>
@@ -379,37 +380,32 @@ document.querySelector('input[name="codigo"]').addEventListener('input', functio
     this.value = this.value.toUpperCase();
 });
 
-// Confirmación antes de guardar si cambia descuento automático - FUNCIÓN ORIGINAL
+// Confirmación antes de guardar si cambia descuento automático (modal global msConfirm)
 document.getElementById('formEditarProducto').addEventListener('submit', function(e) {
     const descuentoOriginal = <?= $producto['descuento_automatico'] ? 'true' : 'false' ?>;
     const descuentoActual = document.getElementById('descuento_automatico').checked;
-    const aviso = document.getElementById('descuentoCambioAviso');
 
-    if (descuentoOriginal !== descuentoActual) {
-        if (this.dataset.confirmCambioDescuento !== '1') {
-            e.preventDefault();
-            this.dataset.confirmCambioDescuento = '1';
-            if (aviso) {
-                aviso.textContent = 'Cambiaste el descuento automatico. Presiona Guardar Cambios otra vez para confirmar.';
-                aviso.classList.remove('hidden');
-            }
-            window.clearTimeout(this._confirmCambioDescuentoTimer);
-            this._confirmCambioDescuentoTimer = window.setTimeout(() => {
-                delete this.dataset.confirmCambioDescuento;
-                aviso?.classList.add('hidden');
-            }, 7000);
-            document.getElementById('descuento_automatico')?.focus();
-        }
+    if (descuentoOriginal === descuentoActual) return;
+    if (this.dataset.confirmCambioDescuento === '1') {
+        delete this.dataset.confirmCambioDescuento;
+        return;
     }
-});
 
-document.getElementById('descuento_automatico')?.addEventListener('change', function() {
-    const form = document.getElementById('formEditarProducto');
-    const aviso = document.getElementById('descuentoCambioAviso');
-    if (form) {
-        delete form.dataset.confirmCambioDescuento;
-    }
-    aviso?.classList.add('hidden');
+    e.preventDefault();
+    const form = this;
+    msConfirm({
+        type: 'warning',
+        icon: 'alert',
+        title: '¿Cambiar descuento automático?',
+        msg: descuentoActual
+            ? 'El producto empezará a descontarse del inventario en cada check-in.'
+            : 'El producto dejará de descontarse automáticamente en los check-in.',
+        confirmLabel: 'Guardar cambios'
+    }).then(ok => {
+        if (!ok) return;
+        form.dataset.confirmCambioDescuento = '1';
+        form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
 });
 
 // Animación de carga

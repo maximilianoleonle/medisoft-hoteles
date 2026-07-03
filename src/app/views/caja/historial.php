@@ -1105,7 +1105,8 @@ foreach ($cortes as $corte_metodo) {
                     </button>
                 </form>
 
-                <a href="<?= back_url('caja') ?>" class="cash-history-link">
+                <?php $back_arrow_href = back_url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('caja') ?>" class="cash-history-link ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Volver a caja
                 </a>

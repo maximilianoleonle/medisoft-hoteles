@@ -593,6 +593,7 @@ $visibles = count($documentos);
 
 <div class="docs-page p-4 sm:p-6">
     <div class="dc-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="dc-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="dc-title-lockup">
                 <div class="dc-hero-icon"><i class="fas fa-folder-open"></i></div>
@@ -743,7 +744,7 @@ $visibles = count($documentos);
                                             ? url('documentos/' . $docId . '/descargar') . '?preview=1'
                                             : null;
                                         ?>
-                                        <tr class="dc-row">
+                                        <tr class="dc-row" data-easy-href="<?= doc_safe($docUrl, '') ?>" role="link" tabindex="0" title="Abrir documento #<?= $docId ?>" aria-label="Abrir documento #<?= $docId ?>">
                                             <td>
                                                 <div class="dc-doc-cell">
                                                     <div class="dc-fileicon <?= $fileClass ?>"><i class="fas <?= $fileIcon ?>"></i></div>
@@ -804,7 +805,7 @@ $visibles = count($documentos);
                                     ? url('documentos/' . $docId . '/descargar') . '?preview=1'
                                     : null;
                                 ?>
-                                <article class="dc-mobile-card">
+                                <article class="dc-mobile-card" data-easy-href="<?= doc_safe($docUrl, '') ?>" role="link" tabindex="0" title="Abrir documento #<?= $docId ?>" aria-label="Abrir documento #<?= $docId ?>">
                                     <div class="dc-mobile-top">
                                         <div class="dc-fileicon <?= $fileClass ?>"><i class="fas <?= $fileIcon ?>"></i></div>
                                         <div class="min-w-0">

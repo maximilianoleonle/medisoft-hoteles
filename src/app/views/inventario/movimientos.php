@@ -897,7 +897,8 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                 </div>
 
                 <div class="inv-mov-actions">
-                    <a href="<?= back_url('inventario') ?>" class="inv-mov-btn ghost">
+                    <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                    <a href="<?= back_url('inventario') ?>" class="inv-mov-btn ghost ms-back-legacy">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>

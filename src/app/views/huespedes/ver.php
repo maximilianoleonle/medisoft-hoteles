@@ -2917,31 +2917,20 @@ document.getElementById('formEditarVehiculo')?.addEventListener('submit', functi
     });
 });
 
-let guestVehicleDeletePending = null;
-let guestVehicleDeleteTimer = null;
-
-function limpiarConfirmacionEliminarVehiculo() {
-    document.querySelectorAll('.guest-icon-btn.danger.is-confirming').forEach(button => {
-        button.classList.remove('is-confirming');
+function confirmarEliminarVehiculo(trigger, vehiculoId, descripcion) {
+    msConfirm({
+        type: 'error',
+        icon: 'trash',
+        title: 'Eliminar vehículo',
+        msg: `Se quitará ${descripcion} del huésped. Esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar'
+    }).then(ok => {
+        if (!ok) return;
+        eliminarVehiculoConfirmado(trigger, vehiculoId);
     });
-    guestVehicleDeletePending = null;
 }
 
-function confirmarEliminarVehiculo(trigger, vehiculoId, descripcion) {
-    const pendingKey = String(vehiculoId);
-    if (guestVehicleDeletePending !== pendingKey) {
-        limpiarConfirmacionEliminarVehiculo();
-        guestVehicleDeletePending = pendingKey;
-        if (trigger) {
-            trigger.classList.add('is-confirming');
-        }
-        guestShowActionNotice(`Haz clic otra vez para eliminar el vehiculo: ${descripcion}.`, 'warning');
-        window.clearTimeout(guestVehicleDeleteTimer);
-        guestVehicleDeleteTimer = window.setTimeout(limpiarConfirmacionEliminarVehiculo, 7000);
-        return;
-    }
-
-    limpiarConfirmacionEliminarVehiculo();
+function eliminarVehiculoConfirmado(trigger, vehiculoId) {
     if (trigger) {
         trigger.disabled = true;
     }

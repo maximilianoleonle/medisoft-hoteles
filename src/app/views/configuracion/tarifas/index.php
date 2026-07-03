@@ -1581,6 +1581,7 @@ input.toggle-activo:checked ~ div {
     <!-- Top Bar -->
     <div class="tar-topbar tarifa-index-hero bg-white">
         <div class="px-3 sm:px-5 lg:px-7 py-4">
+            <?php $back_arrow_href = back_url('configuracion'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <div class="tarifa-index-hero-inner">
 
                 <!-- Title -->
@@ -2182,29 +2183,18 @@ $(document).ready(function() {
     }
 
     // Eliminar
-    let tarifaPendienteEliminar = null;
-    let tarifaPendienteTimer = null;
-
-    function limpiarConfirmacionEliminarTarifa() {
-        $('.btn-eliminar.is-confirming').removeClass('is-confirming');
-        tarifaPendienteEliminar = null;
-    }
-
-    $('.btn-eliminar').click(function() {
+    $('.btn-eliminar').click(async function() {
         const $btn = $(this), id = $btn.data('id');
         if ($btn.prop('disabled')) return;
 
-        if (tarifaPendienteEliminar !== String(id)) {
-            limpiarConfirmacionEliminarTarifa();
-            tarifaPendienteEliminar = String(id);
-            $btn.addClass('is-confirming');
-            toastr.warning('Haz clic otra vez para eliminar esta tarifa. Esta accion no se puede deshacer.');
-            clearTimeout(tarifaPendienteTimer);
-            tarifaPendienteTimer = setTimeout(limpiarConfirmacionEliminarTarifa, 7000);
-            return;
-        }
-
-        limpiarConfirmacionEliminarTarifa();
+        const ok = await msConfirm({
+            type: 'error',
+            icon: 'trash',
+            title: '¿Eliminar tarifa?',
+            msg: 'Esta acción no se puede deshacer.',
+            confirmLabel: 'Sí, eliminar'
+        });
+        if (!ok) return;
         $btn.prop('disabled', true);
 
         $.post('<?= url("configuracion/tarifas/eliminar") ?>', { id:id, csrf_token:'<?= csrf_token() ?>' })

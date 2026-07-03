@@ -739,7 +739,8 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
             <p class="mant-prog-subtitle">Lectura de mantenimientos vencidos o proximos para el hotel actual. Esta pantalla no activa mantenimientos, no cambia habitaciones y no ejecuta automatizaciones.</p>
         </div>
         <div class="mant-prog-actions">
-            <a class="mant-prog-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="mant-prog-btn ms-back-legacy" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
             <a class="mant-prog-btn" href="<?= url('reportes/mantenimiento') ?>"><i class="fas fa-chart-line"></i> Reporte general</a>
         </div>
     </div>
@@ -827,9 +828,12 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('habitaciones/activar-mantenimiento-programado/' . (int)($item['id'] ?? 0)) ?>"
-                                              data-mant-confirm="1"
-                                              data-confirm-label="Confirmar activacion"
-                                              data-confirm-message="Se activara el mantenimiento programado y la habitacion quedara en mantenimiento.">
+                                              data-ms-confirm
+                                              data-ms-type="warning"
+                                              data-ms-icon="alert"
+                                              data-ms-title="¿Activar mantenimiento programado?"
+                                              data-ms-msg="Se activará el mantenimiento programado y la habitación quedará en mantenimiento."
+                                              data-ms-ok="Confirmar activación">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <input type="hidden" name="return_to" value="preview">
@@ -865,9 +869,12 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('tareas/desde-mantenimiento/' . (int)($item['id'] ?? 0)) ?>"
-                                              data-mant-confirm="1"
-                                              data-confirm-label="Confirmar tarea"
-                                              data-confirm-message="Se creara una tarea operativa vinculada a este mantenimiento.">
+                                              data-ms-confirm
+                                              data-ms-type="info"
+                                              data-ms-icon="check"
+                                              data-ms-title="¿Crear tarea operativa?"
+                                              data-ms-msg="Se creará una tarea operativa vinculada a este mantenimiento."
+                                              data-ms-ok="Confirmar tarea">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <button type="submit" class="mant-prog-task-create">
@@ -952,9 +959,12 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('habitaciones/activar-mantenimiento-programado/' . (int)($item['id'] ?? 0)) ?>"
-                                              data-mant-confirm="1"
-                                              data-confirm-label="Confirmar activacion"
-                                              data-confirm-message="Se activara el mantenimiento programado y la habitacion quedara en mantenimiento.">
+                                              data-ms-confirm
+                                              data-ms-type="warning"
+                                              data-ms-icon="alert"
+                                              data-ms-title="¿Activar mantenimiento programado?"
+                                              data-ms-msg="Se activará el mantenimiento programado y la habitación quedará en mantenimiento."
+                                              data-ms-ok="Confirmar activación">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <input type="hidden" name="return_to" value="preview">
@@ -969,9 +979,12 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('tareas/desde-mantenimiento/' . (int)($item['id'] ?? 0)) ?>"
-                                              data-mant-confirm="1"
-                                              data-confirm-label="Confirmar tarea"
-                                              data-confirm-message="Se creara una tarea operativa vinculada a este mantenimiento.">
+                                              data-ms-confirm
+                                              data-ms-type="info"
+                                              data-ms-icon="check"
+                                              data-ms-title="¿Crear tarea operativa?"
+                                              data-ms-msg="Se creará una tarea operativa vinculada a este mantenimiento."
+                                              data-ms-ok="Confirmar tarea">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <button type="submit" class="mant-prog-task-create">
@@ -1017,59 +1030,5 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 </div>
 
 <script>
-(function() {
-    function showMantToast(message, duration = 7000) {
-        let toast = document.getElementById('mantProgToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'mantProgToast';
-            toast.className = 'mant-prog-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetMantConfirm(form) {
-        if (!form) return;
-
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.mantConfirm !== '1') return;
-        if (form.dataset.confirmedAction === '1') return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-mant-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetMantConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
-        }
-
-        showMantToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetMantConfirm(form), 7000);
-    }, true);
-})();
+/* Las confirmaciones usan el modal global msConfirm (data-ms-confirm en los forms). */
 </script>

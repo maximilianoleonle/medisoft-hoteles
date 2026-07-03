@@ -135,6 +135,7 @@
 </head>
 <body>
     <div class="container">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <div class="co-head">
             <div class="co-head-icon"><i class="fas fa-scale-balanced"></i></div>
             <div>
@@ -235,7 +236,7 @@
                     Esto actualizará <?= count($incorrectas) ?> reservaciones en la base de datos.<br>
                     <strong>Asegúrate de haber revisado los detalles antes de continuar.</strong>
                 </p>
-                <form method="POST" action="<?= BASE_URL ?>/correccion/aplicar" onsubmit="return confirm('¿Estás seguro de aplicar estas correcciones? Esta acción modificará la base de datos.');">
+                <form method="POST" action="<?= BASE_URL ?>/correccion/aplicar" data-ms-confirm data-ms-type="error" data-ms-icon="alert" data-ms-title="¿Aplicar correcciones?" data-ms-msg="Esta acción modificará la base de datos y no se puede deshacer." data-ms-ok="Aplicar correcciones">
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-check"></i> Aplicar correcciones
                     </button>

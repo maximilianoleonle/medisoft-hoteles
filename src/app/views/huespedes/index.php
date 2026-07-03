@@ -985,6 +985,7 @@ select.guest-control {
 
 <div class="guests-page hotel-page p-4 sm:p-6">
     <div class="guest-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="guest-hero hotel-page-header">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="guest-title-lockup">
@@ -1092,7 +1093,7 @@ select.guest-control {
                             $huespedEditUrl = url('huespedes/' . $huesped['id'] . '/edit');
                             $huespedBookUrl = url('reservaciones/crear?huesped_id=' . $huesped['id']);
                             ?>
-                            <tr class="guest-row">
+                            <tr class="guest-row" data-easy-href="<?= htmlspecialchars($huespedUrl, ENT_QUOTES, 'UTF-8') ?>" role="link" tabindex="0" title="Abrir huesped <?= htmlspecialchars($huesped['nombre_completo']) ?>" aria-label="Abrir huesped <?= htmlspecialchars($huesped['nombre_completo']) ?>">
                                 <td>
                                     <div class="flex items-center gap-3 min-w-0">
                                         <div class="guest-avatar">
@@ -1220,7 +1221,7 @@ select.guest-control {
                     $huespedEditUrl = url('huespedes/' . $huesped['id'] . '/edit');
                     $huespedBookUrl = url('reservaciones/crear?huesped_id=' . $huesped['id']);
                     ?>
-                    <article class="guest-card hotel-mobile-card">
+                    <article class="guest-card hotel-mobile-card" data-easy-href="<?= htmlspecialchars($huespedUrl, ENT_QUOTES, 'UTF-8') ?>" role="link" tabindex="0" title="Abrir huesped <?= htmlspecialchars($huesped['nombre_completo']) ?>" aria-label="Abrir huesped <?= htmlspecialchars($huesped['nombre_completo']) ?>">
                         <div class="guest-card-top">
                             <div class="guest-avatar">
                                 <?= htmlspecialchars(strtoupper(substr(trim($huesped['nombre_completo'] ?? 'H'), 0, 1))) ?>

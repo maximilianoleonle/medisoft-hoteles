@@ -336,7 +336,8 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 <div class="tk-detail tk-detail--case p-4 sm:p-6">
     <div class="tk-shell">
         <div class="tk-topbar">
-            <a class="tk-back" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+            <?php $back_arrow_href = back_url('tareas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="tk-back ms-back-legacy" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
             <?php if ($puedeEditar && $tareaId > 0): ?>
                 <a class="tk-btn tk-btn-muted" href="<?= url('tareas/' . $tareaId . '/editar') ?>"><i class="fas fa-pen"></i> Editar tarea</a>
             <?php endif; ?>

@@ -31,6 +31,7 @@ class MotorPasarelaService
             );
             $row = $stmt ? $stmt->fetch() : null;
             if (!$row) {
+                error_log('DEBUG pasarela: sin fila para hotel ' . $hotelId); // TEMP
                 return null;
             }
 
@@ -39,6 +40,7 @@ class MotorPasarelaService
             unset($row['secret_key_encrypted'], $row['webhook_secret_encrypted']);
 
             if ($row['secret_key'] === null || $row['secret_key'] === '') {
+                error_log('DEBUG pasarela: descifrado nulo; key_env=' . var_export(getenv('MOTOR_PASARELA_KEY'), true)); // TEMP
                 return null;
             }
 

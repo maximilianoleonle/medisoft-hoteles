@@ -180,7 +180,8 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
                 </div>
 
                 <div class="cj-actions">
-                    <a href="<?= back_url('caja') ?>" class="cj-btn cj-btn-muted"><i class="fas fa-arrow-left"></i> Volver</a>
+                    <?php $back_arrow_href = back_url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                    <a href="<?= back_url('caja') ?>" class="cj-btn cj-btn-muted ms-back-legacy"><i class="fas fa-arrow-left"></i> Volver</a>
                     <button type="submit" class="cj-btn cj-btn-gold"><i class="fas fa-unlock"></i> Abrir caja</button>
                 </div>
             </form>

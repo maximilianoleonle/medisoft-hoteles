@@ -471,7 +471,8 @@ $estadoReservacionLabels = [
             <p class="op-daily-subtitle">Lectura consolidada del hotel actual. No cambia reservaciones, habitaciones, tareas, documentos, Caja, nomina ni sincronizacion offline.</p>
         </div>
         <div class="op-daily-actions">
-            <a class="op-daily-btn" href="<?= back_url('dashboard') ?>"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <?php $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="op-daily-btn ms-back-legacy" href="<?= back_url('dashboard') ?>"><i class="fas fa-arrow-left"></i> Dashboard</a>
             <a class="op-daily-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-shield-alt"></i> Conciliacion financiera</a>
             <a class="op-daily-btn" href="<?= url('tareas/reporte') ?>"><i class="fas fa-tasks"></i> Reporte TLM</a>
         </div>

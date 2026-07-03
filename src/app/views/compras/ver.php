@@ -135,6 +135,7 @@ foreach ($detalles as $detalle) {
 
 <div class="purchase-detail-page p-4 sm:p-6">
     <div class="cp-shell">
+        <?php $back_arrow_href = back_url('compras?estado=' . urlencode($estado ?: 'todos')); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="cp-title-lockup">
                 <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
@@ -167,7 +168,7 @@ foreach ($detalles as $detalle) {
 
         <section class="cp-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cp-btn" href="<?= back_url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
+                <a class="cp-btn ms-back-legacy" href="<?= back_url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

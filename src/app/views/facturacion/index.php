@@ -1048,6 +1048,7 @@ a.billing-name:hover {
 
 <div class="billing-page hotel-page p-4 sm:p-6">
     <div class="billing-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="billing-hero hotel-page-header">
             <div>
                 <span class="billing-kicker">
@@ -1188,7 +1189,7 @@ a.billing-name:hover {
                                     $rfc = (string)($sol['rfc'] ?? '');
                                     $createdAt = (string)($sol['created_at'] ?? '');
                                     ?>
-                                    <tr class="billing-row">
+                                    <tr class="billing-row" data-easy-href="<?= htmlspecialchars(url('facturacion/ver/' . $id), ENT_QUOTES, 'UTF-8') ?>" role="link" tabindex="0" title="Abrir solicitud #<?= $id ?>" aria-label="Abrir solicitud fiscal #<?= $id ?>">
                                         <td>
                                             <div class="billing-request-cell">
                                                 <span class="billing-icon-box" aria-hidden="true">
@@ -1279,7 +1280,7 @@ a.billing-name:hover {
                             $rfc = (string)($sol['rfc'] ?? '');
                             $createdAt = (string)($sol['created_at'] ?? '');
                             ?>
-                            <article class="billing-card">
+                            <article class="billing-card" data-easy-href="<?= htmlspecialchars(url('facturacion/ver/' . $id), ENT_QUOTES, 'UTF-8') ?>" role="link" tabindex="0" title="Abrir solicitud #<?= $id ?>" aria-label="Abrir solicitud fiscal #<?= $id ?>">
                                 <div class="billing-card-head">
                                     <div class="billing-guest-cell">
                                         <span class="billing-avatar" aria-hidden="true">

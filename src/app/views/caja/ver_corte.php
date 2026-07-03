@@ -1096,7 +1096,8 @@ if ($diferencia > 0) {
 <div class="cut-detail-page">
     <main class="cut-shell">
         <nav class="cut-backbar no-print" aria-label="Navegacion de corte">
-            <a href="<?= back_url('caja/historial') ?>" class="cut-back" title="Volver">
+            <?php $back_arrow_href = back_url('caja/historial'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('caja/historial') ?>" class="cut-back ms-back-legacy" title="Volver">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <span class="cut-breadcrumb">Caja / Historial / <strong>Corte #<?= (int)($corte['id'] ?? 0) ?></strong></span>

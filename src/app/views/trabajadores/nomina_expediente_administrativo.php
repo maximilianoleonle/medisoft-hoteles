@@ -278,7 +278,8 @@ $exportUrl = url('trabajadores/nomina/expediente/exportar' . ($exportQuery !== '
     <div class="p-5 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a class="exp-btn" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
+                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="exp-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
                 <a class="exp-btn" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Periodos</a>
                 <a class="exp-btn" href="<?= url('trabajadores/nomina/auditoria') ?>"><i class="fas fa-clipboard-check"></i> Auditoria nomina</a>
                 <a class="exp-btn exp-btn-primary" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a>

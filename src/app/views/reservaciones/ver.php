@@ -121,12 +121,16 @@ if (function_exists('hotel_branding_asset_url')) {
 }
 $ticketLogoSrc = $ticketLogoDataUri ?: ($ticketLogoAssetUrl ?: '');
 
-// Detectar si acaba de hacerse un check-in exitoso para auto-descargar ticket
+// Detectar si acaba de hacerse un check-in exitoso (pantalla de éxito + auto-descarga de ticket).
+// El header ya consumió el flash para el toast; toast.php lo expone en $GLOBALS['ms_flash_consumido'].
 $auto_imprimir_ticket = false;
-if (isset($_SESSION['flash_message']) &&
-    $_SESSION['flash_message']['tipo'] === 'success' &&
-    stripos($_SESSION['flash_message']['texto'], 'Check-in') !== false) {
+$rdCheckinFlashTexto = null;
+$rdFlashConsumido = $GLOBALS['ms_flash_consumido'] ?? ($_SESSION['flash_message'] ?? null);
+if (is_array($rdFlashConsumido) &&
+    ($rdFlashConsumido['tipo'] ?? '') === 'success' &&
+    stripos((string)($rdFlashConsumido['texto'] ?? ''), 'Check-in') !== false) {
     $auto_imprimir_ticket = true;
+    $rdCheckinFlashTexto = (string)$rdFlashConsumido['texto'];
 }
 
 $rdHabitacionesTexto = implode(', ', array_filter(array_map(function($habitacion) {
@@ -3843,7 +3847,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                                     <strong><?= $rdMoney($ab['monto']) ?></strong>
                                                     <span style="color:#667085;"> &middot; <?= $rdSafe($rpAbonoMetodoLabel) ?> &middot; <?= $rdSafe(date('d/m/Y H:i', strtotime((string)$ab['created_at']))) ?></span>
                                                 </div>
-                                                <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" onsubmit="return confirm('¿Revertir este anticipo? Se generará un movimiento de caja de reverso.');" style="margin:0;">
+                                                <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" data-ms-confirm data-ms-type="error" data-ms-icon="wallet" data-ms-title="¿Revertir anticipo?" data-ms-msg="Se generará un movimiento de caja de reverso por este anticipo." data-ms-ok="Sí, revertir" style="margin:0;">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="abono_id" value="<?= (int)$ab['id'] ?>">
                                                     <button type="submit" style="background:none;border:none;color:#B4392B;cursor:pointer;font-size:.8rem;font-weight:600;"><i class="fas fa-rotate-left"></i> Revertir</button>
@@ -9131,11 +9135,20 @@ function confirmarCambioPago() {
     }
 
     if (!cambioPagoConfirmacionLista) {
-        cambioPagoConfirmacionLista = true;
-        mostrarMsgCP('Cambio listo para confirmar. Presiona Confirmar Cambio otra vez para actualizar el metodo de pago.', 'warning');
-        setTimeout(resetConfirmacionCambioPago, 7000);
+        msConfirm({
+            type: 'warning',
+            icon: 'wallet',
+            title: '¿Cambiar método de pago?',
+            msg: 'Se actualizará el método de pago de esta reservación y sus movimientos de caja.',
+            confirmLabel: 'Confirmar cambio'
+        }).then(ok => {
+            if (!ok) return;
+            cambioPagoConfirmacionLista = true;
+            confirmarCambioPago();
+        });
         return;
     }
+    resetConfirmacionCambioPago();
 
     const requiereFactura = document.querySelector('input[name="requiere_factura_cp"]:checked').value;
 
@@ -9276,9 +9289,36 @@ document.querySelectorAll('input[name="tipo_tarjeta_cp"], #referencia_tarjeta_cp
     control.addEventListener('change', resetConfirmacionCambioPago);
 });
 
-// Auto-imprimir ticket después de un check-in exitoso
+// Check-in exitoso: pantalla de éxito + auto-descarga del ticket
 <?php if ($auto_imprimir_ticket): ?>
+<?php
+$rdCheckinHabsCount = count($habitaciones ?? []);
+$rdCheckinPageMsg = $rdHabitacionesTexto !== ''
+    ? ($rdCheckinHabsCount > 1
+        ? "Las habitaciones {$rdHabitacionesTexto} ya están ocupadas."
+        : "La habitación {$rdHabitacionesTexto} ya está ocupada.")
+    : 'La llegada del huésped quedó registrada.';
+$rdCheckinExtra = '';
+if ($rdCheckinFlashTexto !== null && ($rdCheckinPos = stripos($rdCheckinFlashTexto, 'exitosamente')) !== false) {
+    $rdCheckinExtra = trim(substr($rdCheckinFlashTexto, $rdCheckinPos + strlen('exitosamente')), " .\t\n");
+}
+if ($rdCheckinExtra !== '') {
+    $rdCheckinPageMsg .= ' ' . $rdCheckinExtra . '.';
+}
+?>
 document.addEventListener('DOMContentLoaded', function() {
+    // El estado de página sustituye al toast para este flujo.
+    document.querySelectorAll('#ms-toast-stack .ms-toast').forEach(function(t){ t.remove(); });
+    if (typeof msPageState === 'function') {
+        msPageState({
+            type: 'success',
+            icon: 'check',
+            title: '¡Check-in completado!',
+            msg: <?= json_encode($rdCheckinPageMsg, JSON_UNESCAPED_UNICODE) ?>,
+            primary: { label: 'Ver reservación' },
+            secondary: { label: 'Volver al inicio', href: '<?= url('dashboard') ?>' }
+        });
+    }
     setTimeout(function() {
         imprimirTicketTermico('descargar');
     }, 1500);

@@ -79,6 +79,57 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
     <meta name="format-detection" content="telephone=no">
     <script>
+        /* Tema de color (light | auto | dark). Corre antes de cargar CSS para evitar flash. */
+        (function() {
+            var KEY = 'medisoft:theme';
+            var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+            function readMode() {
+                var mode = null;
+                try { mode = window.localStorage.getItem(KEY); } catch (error) {}
+                return (mode === 'dark' || mode === 'auto' || mode === 'light') ? mode : 'light';
+            }
+
+            function apply() {
+                var mode = readMode();
+                var dark = mode === 'dark' || (mode === 'auto' && media && media.matches);
+                if (dark) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+            }
+
+            window.MedisoftTheme = {
+                get: readMode,
+                set: function(mode) {
+                    if (mode !== 'dark' && mode !== 'auto' && mode !== 'light') {
+                        mode = 'light';
+                    }
+                    try { window.localStorage.setItem(KEY, mode); } catch (error) {}
+                    apply();
+                    document.dispatchEvent(new CustomEvent('medisoft:theme-change', { detail: { mode: mode } }));
+                },
+                apply: apply
+            };
+
+            if (media) {
+                var onSchemeChange = function() {
+                    if (readMode() === 'auto') {
+                        apply();
+                    }
+                };
+                if (media.addEventListener) {
+                    media.addEventListener('change', onSchemeChange);
+                } else if (media.addListener) {
+                    media.addListener(onSchemeChange);
+                }
+            }
+
+            apply();
+        })();
+    </script>
+    <script>
         (function() {
             try {
                 var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
@@ -734,6 +785,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     </style>
     <?php if (!$layoutEsPanelSaas): ?>
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dark-theme.css') : asset('css/dark-theme.css') ?>">
     <?php endif; ?>
 </head>
 <body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?><?= htmlspecialchars($layoutPageClass, ENT_QUOTES, 'UTF-8') ?>">
@@ -768,6 +820,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 
   <!-- ── Toast / alertas flotantes (siempre visibles, no se pierden con el scroll) ── -->
   <?php include APP_PATH . '/views/partials/toast.php'; ?>
+
+  <!-- ── Modal de confirmación global + estados de página (msConfirm / msPageState) ── -->
+  <?php include APP_PATH . '/views/partials/confirm.php'; ?>
 
     <!-- Incluir pantalla de carga -->
     <?php include APP_PATH . '/views/components/loading-screen.php'; ?>

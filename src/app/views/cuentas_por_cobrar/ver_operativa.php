@@ -256,7 +256,8 @@ if (!function_exists('cxc_op_form_error_attrs')) {
         </section>
 
         <section class="cx-toolbar">
-            <a class="cx-btn" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+            <?php $back_arrow_href = back_url('cuentas-por-cobrar/operativas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="cx-btn ms-back-legacy" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
             <a class="cx-btn" href="<?= url('cuentas-por-cobrar/simulador-caja') ?>"><i class="fas fa-cash-register"></i> Simulador de cobros</a>
             <?php if (!empty($cuenta['reservacion_id'])): ?>
                 <a class="cx-btn" href="<?= url('reservaciones/ver/' . (int)$cuenta['reservacion_id']) ?>"><i class="fas fa-calendar-check"></i> Reservaci&oacute;n</a>

@@ -1103,6 +1103,7 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
 
 <main class="ntx-page">
     <div class="ntx-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <?php if ($mensajeFlash): ?>
             <div class="ntx-alert <?= ntx_class($mensajeFlash['tipo'] ?? 'info', 'info') ?>">
                 <?= ntx_safe($mensajeFlash['texto'] ?? '') ?>

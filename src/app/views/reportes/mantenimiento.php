@@ -1015,7 +1015,8 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     <main class="mant-shell">
         <section class="mant-hero">
             <div class="mant-hero-main">
-                <a href="<?= back_url('reportes') ?>" class="mant-back">
+                <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reportes') ?>" class="mant-back ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Reportes
                 </a>

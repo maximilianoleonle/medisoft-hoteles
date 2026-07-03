@@ -183,6 +183,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
 
 <div class="cxp-page p-4 sm:p-6">
     <div class="cx-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="cx-title-lockup">
                 <div class="cx-hero-icon"><i class="fas fa-file-invoice-dollar"></i></div>
@@ -314,7 +315,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                                         $cuentaUrl = url('cuentas-por-pagar/' . $cuentaId);
                                         $esVencida = strtolower(trim((string)($cuenta['estado'] ?? ''))) === 'vencida';
                                         ?>
-                                        <tr class="cx-row">
+                                        <tr class="cx-row" data-easy-href="<?= cxp_safe($cuentaUrl, '') ?>" role="link" tabindex="0" title="Abrir cuenta #<?= $cuentaId ?>" aria-label="Abrir cuenta por pagar #<?= $cuentaId ?>">
                                             <td>
                                                 <a class="cx-id cx-id-link" href="<?= $cuentaUrl ?>">#<?= $cuentaId ?></a>
                                                 <div class="cx-sub"><?= cxp_safe($cuenta['folio'] ?? null, 'Sin folio') ?></div>
@@ -345,7 +346,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                                 $cuentaUrl = url('cuentas-por-pagar/' . $cuentaId);
                                 $esVencida = strtolower(trim((string)($cuenta['estado'] ?? ''))) === 'vencida';
                                 ?>
-                                <article class="cx-mobile-card">
+                                <article class="cx-mobile-card" data-easy-href="<?= cxp_safe($cuentaUrl, '') ?>" role="link" tabindex="0" title="Abrir cuenta #<?= $cuentaId ?>" aria-label="Abrir cuenta por pagar #<?= $cuentaId ?>">
                                     <div class="cx-mobile-top">
                                         <div class="min-w-0">
                                             <a class="cx-id cx-id-link" href="<?= $cuentaUrl ?>">#<?= $cuentaId ?></a>

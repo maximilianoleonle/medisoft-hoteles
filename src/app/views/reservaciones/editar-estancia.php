@@ -210,7 +210,8 @@ $habitaciones    = $reservacion['habitaciones'] ?? [];
                     <?php endif; ?>
                 </p>
             </div>
-            <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>" class="ee-btn-ghost" style="width:auto; padding:12px 18px; border-radius:14px; min-height:auto; display:inline-flex; align-items:center; gap:8px; font-weight:600;">
+            <?php $back_arrow_href = back_url('reservaciones/ver/' . $reservacion['id']); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>" class="ee-btn-ghost ms-back-legacy" style="width:auto; padding:12px 18px; border-radius:14px; min-height:auto; display:inline-flex; align-items:center; gap:8px; font-weight:600;">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
         </div>

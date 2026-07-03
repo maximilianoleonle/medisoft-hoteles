@@ -152,7 +152,8 @@ if (!function_exists('trab_report_estado_meta')) {
             <div class="wk-contract-row">
                 <span class="wk-contract-pill"><i class="fas fa-lock"></i> read-only</span>
                 <span class="wk-contract-pill"><i class="fas fa-file-circle-xmark"></i> No genera nomina</span>
-                <a class="wk-btn" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
+                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
             </div>
         </section>
 

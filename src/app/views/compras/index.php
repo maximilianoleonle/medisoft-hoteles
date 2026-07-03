@@ -208,6 +208,7 @@ $visibles = count($compras);
 
 <div class="purchases-page p-4 sm:p-6">
     <div class="cp-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div class="cp-title-lockup">
                 <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
@@ -335,7 +336,7 @@ $visibles = count($compras);
                                         $compraId = (int)($compra['id'] ?? 0);
                                         $compraUrl = url('compras/' . $compraId);
                                         ?>
-                                        <tr class="cp-row">
+                                        <tr class="cp-row" data-easy-href="<?= comp_safe($compraUrl, '') ?>" role="link" tabindex="0" title="Abrir compra #<?= $compraId ?>" aria-label="Abrir compra #<?= $compraId ?>">
                                             <td>
                                                 <a class="cp-id cp-id-link" href="<?= $compraUrl ?>">#<?= $compraId ?></a>
                                                 <div class="cp-sub"><?= comp_safe($compra['folio'] ?? null, 'Sin folio') ?></div>
@@ -381,7 +382,7 @@ $visibles = count($compras);
                                 $compraId = (int)($compra['id'] ?? 0);
                                 $compraUrl = url('compras/' . $compraId);
                                 ?>
-                                <article class="cp-mobile-card">
+                                <article class="cp-mobile-card" data-easy-href="<?= comp_safe($compraUrl, '') ?>" role="link" tabindex="0" title="Abrir compra #<?= $compraId ?>" aria-label="Abrir compra #<?= $compraId ?>">
                                     <div class="cp-mobile-top">
                                         <div class="min-w-0">
                                             <a class="cp-id cp-id-link" href="<?= $compraUrl ?>">#<?= $compraId ?></a>

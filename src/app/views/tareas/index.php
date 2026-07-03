@@ -136,6 +136,27 @@ $visibles = count($tareas);
 .tk-page .tk-btn-gold { background: linear-gradient(135deg, var(--tk-gold), color-mix(in srgb, var(--tk-gold) 76%, #000)); color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--tk-gold) 58%, transparent); }
 .tk-page .tk-btn-brand { background: linear-gradient(135deg, var(--tk-brand), var(--tk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--tk-brand) 60%, transparent); }
 .tk-page .tk-btn-muted { background: var(--tk-surface); border-color: var(--tk-border); color: var(--tk-muted); }
+.tk-page .tk-btn-agenda,
+.tk-page .tk-btn-report {
+    border-color: var(--tk-action-line, var(--tk-border));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--tk-action, var(--tk-info)) 16%, #FFFFFF), color-mix(in srgb, var(--tk-action, var(--tk-info)) 7%, #FFFFFF));
+    color: color-mix(in srgb, var(--tk-action, var(--tk-info)) 76%, #1F2937);
+    box-shadow: 0 12px 24px -18px color-mix(in srgb, var(--tk-action, var(--tk-info)) 72%, transparent);
+}
+.tk-page .tk-btn-agenda { --tk-action: var(--tk-info); --tk-action-line: color-mix(in srgb, var(--tk-info) 34%, #FFFFFF); }
+.tk-page .tk-btn-report { --tk-action: var(--tk-proc); --tk-action-line: color-mix(in srgb, var(--tk-proc) 34%, #FFFFFF); }
+.tk-page .tk-btn-agenda i,
+.tk-page .tk-btn-report i {
+    color: var(--tk-action);
+}
+.tk-page .tk-btn-agenda:hover,
+.tk-page .tk-btn-report:hover {
+    border-color: color-mix(in srgb, var(--tk-action) 52%, #FFFFFF);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--tk-action) 22%, #FFFFFF), color-mix(in srgb, var(--tk-action) 10%, #FFFFFF));
+    box-shadow: 0 16px 30px -20px color-mix(in srgb, var(--tk-action) 82%, transparent);
+}
 
 .tk-page .tk-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .tk-page .tk-summary-item { position: relative; overflow: hidden; background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 14px; padding: 12px 14px 12px 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
@@ -288,6 +309,7 @@ $visibles = count($tareas);
 
 <div class="tk-page tk-page--board p-4 sm:p-6">
     <div class="tk-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="tk-title-lockup">
                 <div class="tk-hero-icon"><i class="fas fa-list-check"></i></div>
@@ -305,11 +327,11 @@ $visibles = count($tareas);
                         Nueva tarea
                     </a>
                 <?php endif; ?>
-                <a class="tk-btn tk-btn-muted" href="<?= url('tareas/agenda') ?>">
+                <a class="tk-btn tk-btn-muted tk-btn-agenda" href="<?= url('tareas/agenda') ?>">
                     <i class="fas fa-calendar-day"></i>
                     Agenda
                 </a>
-                <a class="tk-btn tk-btn-muted" href="<?= url('tareas/reporte') ?>">
+                <a class="tk-btn tk-btn-muted tk-btn-report" href="<?= url('tareas/reporte') ?>">
                     <i class="fas fa-chart-pie"></i>
                     Reporte
                 </a>

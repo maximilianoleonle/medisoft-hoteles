@@ -1667,67 +1667,19 @@ document.getElementById('buscarProducto').addEventListener('keyup', function() {
     });
 });
 
-let productoPendienteEliminar = null;
-let productoPendienteTimer = null;
-
-function mostrarAvisoInventario(message) {
-    let aviso = document.querySelector('[data-inv-delete-notice]');
-    if (!aviso) {
-        aviso = document.createElement('div');
-        aviso.setAttribute('data-inv-delete-notice', '1');
-        aviso.setAttribute('role', 'status');
-        aviso.style.position = 'fixed';
-        aviso.style.right = '24px';
-        aviso.style.bottom = '24px';
-        aviso.style.zIndex = '9999';
-        aviso.style.maxWidth = '360px';
-        aviso.style.padding = '12px 14px';
-        aviso.style.border = '1px solid rgba(220, 38, 38, .24)';
-        aviso.style.borderRadius = '14px';
-        aviso.style.background = 'rgba(254, 242, 242, .98)';
-        aviso.style.color = '#991b1b';
-        aviso.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
-        aviso.style.fontSize = '14px';
-        aviso.style.fontWeight = '800';
-        document.body.appendChild(aviso);
-    }
-
-    aviso.textContent = message;
-    aviso.style.display = 'block';
-    window.clearTimeout(aviso._hideTimer);
-    aviso._hideTimer = window.setTimeout(() => {
-        aviso.style.display = 'none';
-    }, 4200);
-}
-
-function limpiarConfirmacionEliminarProducto() {
-    document.querySelectorAll('.act-btn.del.is-confirming').forEach(btn => {
-        btn.classList.remove('is-confirming');
-    });
-    productoPendienteEliminar = null;
-}
-
 function confirmarEliminarProducto(trigger, id, nombre, stock) {
-    const pendingKey = `${id}`;
-    if (productoPendienteEliminar === pendingKey) {
-        limpiarConfirmacionEliminarProducto();
-        eliminarProducto(id);
-        return;
-    }
-
-    limpiarConfirmacionEliminarProducto();
-    productoPendienteEliminar = pendingKey;
-    if (trigger) {
-        trigger.classList.add('is-confirming');
-    }
-
     const stockMessage = stock > 0
-        ? `${nombre} tiene ${stock} unidades. Se perdera el registro de stock y movimientos asociados.`
-        : `Se eliminara ${nombre}. Esta accion no se puede deshacer.`;
-    mostrarAvisoInventario(`${stockMessage} Haz clic otra vez para confirmar.`);
-
-    window.clearTimeout(productoPendienteTimer);
-    productoPendienteTimer = window.setTimeout(limpiarConfirmacionEliminarProducto, 7000);
+        ? `${nombre} tiene ${stock} unidades. Se perderá el registro de stock y movimientos asociados.`
+        : `Se eliminará ${nombre}. Esta acción no se puede deshacer.`;
+    msConfirm({
+        type: 'error',
+        icon: 'trash',
+        title: '¿Eliminar producto?',
+        msg: stockMessage,
+        confirmLabel: 'Sí, eliminar'
+    }).then(ok => {
+        if (ok) eliminarProducto(id);
+    });
 }
 
 function eliminarProducto(id) {

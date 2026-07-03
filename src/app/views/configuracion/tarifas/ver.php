@@ -433,7 +433,8 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-between items-center mb-6">
-            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
+            <?php $back_arrow_href = back_url('configuracion/tarifas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary ms-back-legacy">
                 <i class="fas fa-arrow-left"></i>
                 Volver al listado
             </a>
@@ -833,62 +834,16 @@ function showTab(tabName) {
     event.currentTarget.classList.add('active');
 }
 
-let incrementoPendienteEliminar = null;
-let incrementoPendienteTimer = null;
-
-function mostrarAvisoTarifa(message) {
-    let aviso = document.querySelector('[data-tarifa-delete-notice]');
-    if (!aviso) {
-        aviso = document.createElement('div');
-        aviso.setAttribute('data-tarifa-delete-notice', '1');
-        aviso.setAttribute('role', 'status');
-        aviso.style.position = 'fixed';
-        aviso.style.right = '24px';
-        aviso.style.bottom = '24px';
-        aviso.style.zIndex = '9999';
-        aviso.style.maxWidth = '360px';
-        aviso.style.padding = '12px 14px';
-        aviso.style.border = '1px solid rgba(220, 38, 38, .24)';
-        aviso.style.borderRadius = '14px';
-        aviso.style.background = 'rgba(254, 242, 242, .98)';
-        aviso.style.color = '#991b1b';
-        aviso.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
-        aviso.style.fontSize = '14px';
-        aviso.style.fontWeight = '800';
-        document.body.appendChild(aviso);
-    }
-
-    aviso.textContent = message;
-    aviso.style.display = 'block';
-    window.clearTimeout(aviso._hideTimer);
-    aviso._hideTimer = window.setTimeout(() => {
-        aviso.style.display = 'none';
-    }, 4200);
-}
-
-function limpiarConfirmacionEliminarIncremento() {
-    document.querySelectorAll('.btn-danger.is-confirming').forEach(btn => {
-        btn.classList.remove('is-confirming');
-    });
-    incrementoPendienteEliminar = null;
-}
-
 // Eliminar incremento
-function eliminarIncremento(trigger, id) {
-    const pendingKey = `${id}`;
-    if (incrementoPendienteEliminar !== pendingKey) {
-        limpiarConfirmacionEliminarIncremento();
-        incrementoPendienteEliminar = pendingKey;
-        if (trigger) {
-            trigger.classList.add('is-confirming');
-        }
-        mostrarAvisoTarifa('Esta accion eliminara permanentemente el incremento. Haz clic otra vez para confirmar.');
-        window.clearTimeout(incrementoPendienteTimer);
-        incrementoPendienteTimer = window.setTimeout(limpiarConfirmacionEliminarIncremento, 7000);
-        return;
-    }
-
-    limpiarConfirmacionEliminarIncremento();
+async function eliminarIncremento(trigger, id) {
+    const ok = await msConfirm({
+        type: 'error',
+        icon: 'trash',
+        title: '¿Eliminar incremento?',
+        msg: 'Esta acción eliminará permanentemente el incremento. No se puede deshacer.',
+        confirmLabel: 'Sí, eliminar'
+    });
+    if (!ok) return;
 
     const form = document.createElement('form');
     form.method = 'POST';

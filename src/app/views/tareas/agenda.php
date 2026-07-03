@@ -266,7 +266,8 @@ $rangosRapidos = [
                 </div>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a class="tk-btn tk-btn-muted" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Tareas</a>
+                <?php $back_arrow_href = back_url('tareas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="tk-btn tk-btn-muted ms-back-legacy" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Tareas</a>
                 <a class="tk-btn tk-btn-muted" href="<?= url('tareas/reporte') ?>"><i class="fas fa-chart-pie"></i> Reporte</a>
             </div>
         </section>

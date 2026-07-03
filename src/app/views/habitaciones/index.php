@@ -867,59 +867,6 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     box-shadow: var(--shadow-sm) !important;
 }
 
-/* ── Alert panel redesign ── */
-.alert-panel {
-    border-radius: var(--radius-xl) !important;
-    border: 1px solid rgba(220, 80, 60, 0.12) !important;
-    border-left: 5px solid #D45B5B !important;
-    box-shadow: var(--shadow-md) !important;
-    overflow: hidden !important;
-    background: white !important;
-}
-
-.alert-header {
-    background: linear-gradient(135deg, #FFF0EF 0%, #FFE6E4 100%) !important;
-    border-bottom: 1px solid rgba(220, 80, 60, 0.1) !important;
-    padding: 1rem 1.25rem !important;
-}
-
-.alert-badge {
-    background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%) !important;
-    border-radius: 20px !important;
-    box-shadow: 0 2px 6px rgba(212, 91, 91, 0.3) !important;
-}
-
-.alert-item {
-    border-radius: var(--radius-md) !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.alert-item:hover {
-    box-shadow: var(--shadow-md) !important;
-    transform: translateX(3px) !important;
-}
-
-.btn-alert {
-    border-radius: var(--radius-sm) !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-}
-
-.btn-alert-primary {
-    background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%) !important;
-    box-shadow: 0 2px 6px rgba(212, 91, 91, 0.25) !important;
-}
-
-.btn-alert-warning {
-    background: linear-gradient(135deg, #E89E40 0%, #F0B060 100%) !important;
-    box-shadow: 0 2px 6px rgba(232, 158, 64, 0.25) !important;
-}
-
-.btn-alert-info {
-    background: linear-gradient(135deg, #3B7DD8 0%, #5B93E0 100%) !important;
-    box-shadow: 0 2px 6px rgba(59, 125, 216, 0.25) !important;
-}
-
 /* ── Quick view modal redesign ── */
 #vistaRapidaModal .bg-white.rounded-xl {
     border-radius: var(--radius-xl) !important;
@@ -2471,7 +2418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="hidden sm:inline">Vista Rápida</span>
                     </button>
                     <?php if ($tiene_limpieza): ?>
-                    <button onclick="mostrarModalLimpieza()" title="Marcar habitaciones en limpieza" class="btn-modern btn-brand-soft relative">
+                    <button onclick="mostrarModalLimpieza()" title="Marcar habitaciones en limpieza" class="btn-modern btn-brand-soft hb-cleaning-btn relative">
                         <i class="fas fa-broom text-sm"></i>
                         <span>Limpieza</span>
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"><?= count($habitaciones_limpieza) ?></span>
@@ -2493,6 +2440,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="container mx-auto px-4 py-4 max-w-7xl">
+    <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
     <!-- Header móvil (solo visible en móvil ≤767px) -->
     <div class="hb-page-header">
         <div class="hb-page-header__top">
@@ -2524,7 +2472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <?php if ($tiene_limpieza): ?>
             <button onclick="mostrarModalLimpieza()"
                     title="Marcar habitaciones en limpieza"
-                    class="hb-action-btn hb-action-btn--soft hb-action-btn--badge"
+                    class="hb-action-btn hb-action-btn--soft hb-action-btn--badge hb-cleaning-btn"
                     data-badge="<?= count($habitaciones_limpieza) ?>">
                 <i class="fas fa-broom"></i>
                 <span>Limpieza</span>
@@ -2617,351 +2565,482 @@ document.addEventListener('DOMContentLoaded', function() {
         ?>
 
         <style>
-        /* Estilos del panel de alertas */
-        .alert-panel {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(212, 91, 91, 0.08), 0 2px 4px rgba(0,0,0,0.04);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-            border-left: 5px solid #D45B5B;
-            border: 1px solid rgba(212, 91, 91, 0.1);
-            border-left: 5px solid #D45B5B;
+        /* Alertas pendientes: misma familia visual que los paneles hb-move (check-ins/outs del día).
+           Acordeón siempre cerrado al cargar; el resumen por tipo queda visible en la cabecera. */
+        .habitaciones-view .hb-alerts{
+            margin-bottom: 1rem;
+            border-color: color-mix(in srgb, var(--hb-late, #C9322B) 32%, var(--hb-line, #E2D9C8)) !important;
+            border-left: 4px solid color-mix(in srgb, var(--hb-late, #C9322B) 78%, var(--hb-line, #E2D9C8)) !important;
+            background:
+                radial-gradient(circle at 97% 0%, color-mix(in srgb, var(--hb-late, #C9322B) 10%, transparent), transparent 11rem),
+                linear-gradient(135deg, #FFFDFC, color-mix(in srgb, var(--hb-late, #C9322B) 5%, #FFF8F5)) !important;
+            box-shadow: 0 16px 32px -26px color-mix(in srgb, var(--hb-late, #C9322B) 60%, transparent) !important;
         }
-
-        .alert-header {
-            background: linear-gradient(135deg, #FFF5F4 0%, #FFECEB 100%);
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid rgba(212, 91, 91, 0.08);
+        .habitaciones-view .hb-alerts-toggle{
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-        }
-
-        .alert-badge {
-            background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%);
-            color: white;
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            min-width: 24px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(212, 91, 91, 0.3);
-        }
-
-        .alert-content {
-            padding: 1rem 1.25rem;
-        }
-
-        .alert-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .alert-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .alert-section-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .alert-item {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 0.875rem;
-            margin-bottom: 0.625rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 4px solid;
-        }
-
-        .alert-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transform: translateX(3px);
-        }
-
-        .alert-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .alert-critical {
-            border-left-color: #f44336;
-            background: #fff5f5;
-        }
-
-        .alert-warning {
-            border-left-color: #ff9800;
-            background: #fffbf5;
-        }
-
-        .alert-info {
-            border-left-color: #2196f3;
-            background: #f5f9ff;
-        }
-
-        .alert-info-text {
-            flex: 1;
-        }
-
-        .alert-info-text strong {
-            display: block;
-            color: #1f2937;
-            margin-bottom: 0.25rem;
-            font-size: 0.95rem;
-        }
-
-        .alert-info-text small {
-            color: #6b7280;
-            font-size: 0.8rem;
-            line-height: 1.4;
-        }
-
-        .alert-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-
-        .btn-alert {
-            padding: 0.5rem 1rem;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 14px;
+            border: 0;
+            background: transparent;
+            font-family: inherit;
+            text-align: left;
             cursor: pointer;
-            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color .16s ease;
+        }
+        .habitaciones-view .hb-alerts-toggle:hover{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 4%, transparent);
+        }
+        .habitaciones-view .hb-alerts-toggle .hb-move-title strong{
+            color: color-mix(in srgb, var(--hb-late, #C9322B) 46%, var(--hb-primary, #1B2746));
+        }
+        .habitaciones-view .hb-alerts-toggle .hb-move-title small{
+            color: color-mix(in srgb, var(--hb-late, #C9322B) 30%, var(--hb-slate-400, #94A3B8));
+        }
+        .habitaciones-view .hb-alerts-toggle:focus-visible{
+            outline: 2px solid color-mix(in srgb, var(--hb-accent, #BD9441) 72%, #fff);
+            outline-offset: -2px;
+            border-radius: 14px;
+        }
+        .habitaciones-view .hb-alerts.is-open .hb-alerts-toggle{
+            border-bottom: 1px solid var(--hb-line, #E2D9C8);
+        }
+        .habitaciones-view .hb-alerts-mark-wrap{
+            position: relative;
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: var(--hb-late, #C9322B);
+            color: #FFFDFB;
+            font-size: .82rem;
+            box-shadow: 0 10px 18px -12px color-mix(in srgb, var(--hb-late, #C9322B) 90%, transparent);
+        }
+        .habitaciones-view .hb-alerts-mark-wrap::after{
+            content: "";
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--hb-accent, #BD9441);
+            box-shadow: 0 0 0 2px #fff;
+            animation: hbAlertsPing 2.4s ease-out infinite;
+        }
+        @keyframes hbAlertsPing{
+            0%, 72%, 100% { outline: 0 solid transparent; }
+            36% { outline: 5px solid color-mix(in srgb, var(--hb-accent, #BD9441) 30%, transparent); }
+        }
+        @media (prefers-reduced-motion: reduce){
+            .habitaciones-view .hb-alerts-mark-wrap::after{ animation: none; }
+        }
+        .habitaciones-view .hb-alerts-sum{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
+        }
+        .habitaciones-view .hb-alerts-chip{
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 5px;
+            min-height: 26px;
+            padding: 0 10px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
-
-        .btn-alert-primary {
-            background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%);
-            color: white;
-            box-shadow: 0 2px 6px rgba(212, 91, 91, 0.25);
+        .habitaciones-view .hb-alerts-chip i{ font-size: .64rem; }
+        .habitaciones-view .hb-alerts-chip em{ font-style: normal; font-weight: 650; }
+        .habitaciones-view .hb-alerts-chip--late{
+            background: #fff;
+            border-color: color-mix(in srgb, var(--hb-late, #C9322B) 34%, #fff);
+            color: var(--hb-late, #C9322B);
+            box-shadow: 0 8px 16px -14px color-mix(in srgb, var(--hb-late, #C9322B) 80%, transparent);
         }
-
-        .btn-alert-primary:hover {
-            box-shadow: 0 4px 12px rgba(212, 91, 91, 0.35);
-            transform: translateY(-1px);
+        .habitaciones-view .hb-alerts-chip--pending{
+            background: #fff;
+            border-color: color-mix(in srgb, var(--c-maint, #D97706) 36%, #fff);
+            color: color-mix(in srgb, var(--c-maint, #D97706) 86%, #000);
+            box-shadow: 0 8px 16px -14px color-mix(in srgb, var(--c-maint, #D97706) 70%, transparent);
         }
-
-        .btn-alert-warning {
-            background: linear-gradient(135deg, #E89E40 0%, #F0B060 100%);
-            color: white;
-            box-shadow: 0 2px 6px rgba(232, 158, 64, 0.25);
+        .habitaciones-view .hb-alerts-chip--today{
+            background: #fff;
+            border-color: color-mix(in srgb, var(--c-arriving, #7C3AED) 32%, #fff);
+            color: var(--c-arriving, #7C3AED);
+            box-shadow: 0 8px 16px -14px color-mix(in srgb, var(--c-arriving, #7C3AED) 70%, transparent);
         }
-
-        .btn-alert-warning:hover {
-            box-shadow: 0 4px 12px rgba(232, 158, 64, 0.35);
-            transform: translateY(-1px);
+        .habitaciones-view .hb-alerts-chev{
+            flex: 0 0 auto;
+            width: 26px;
+            height: 26px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--hb-line, #E2D9C8);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--hb-slate-400, #94A3B8);
+            font-size: .62rem;
+            transition: transform .28s ease, color .16s ease;
         }
-
-        .btn-alert-info {
-            background: linear-gradient(135deg, #3B7DD8 0%, #5B93E0 100%);
-            color: white;
-            box-shadow: 0 2px 6px rgba(59, 125, 216, 0.25);
+        .habitaciones-view .hb-alerts.is-open .hb-alerts-chev{
+            transform: rotate(180deg);
+            color: var(--hb-primary, #1B2746);
         }
-
-        .btn-alert-info:hover {
-            box-shadow: 0 4px 12px rgba(59, 125, 216, 0.35);
-            transform: translateY(-1px);
+        .habitaciones-view .hb-alerts-collapse{
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows .3s ease;
         }
-
-        .btn-alert-secondary {
-            background: linear-gradient(135deg, #7A8B7A 0%, #8A9B8A 100%);
-            color: white;
+        .habitaciones-view .hb-alerts.is-open .hb-alerts-collapse{
+            grid-template-rows: 1fr;
         }
-
-        .btn-alert-secondary:hover {
-            background: #757575;
+        .habitaciones-view .hb-alerts-collapse-inner{
+            overflow: hidden;
+            min-height: 0;
         }
-
-        .alert-collapse {
+        .habitaciones-view .hb-alerts-body{
+            max-height: 264px;
+        }
+        @media (max-width: 640px){
+            .habitaciones-view .hb-alerts-chip em{ display: none; }
+            .habitaciones-view .hb-alerts-toggle .hb-move-title small{ display: none; }
+        }
+        .habitaciones-view .hb-alerts-kicker{
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin: 10px 6px 5px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--hb-slate-400, #94A3B8);
+        }
+        .habitaciones-view .hb-alerts-kicker:first-child{ margin-top: 4px; }
+        .habitaciones-view .hb-alerts-kicker i{ font-size: .66rem; }
+        .habitaciones-view .hb-alerts-kicker--late i{ color: var(--hb-late, #C9322B); }
+        .habitaciones-view .hb-alerts-kicker--pending i{ color: var(--c-maint, #D97706); }
+        .habitaciones-view .hb-alerts-kicker--today i{ color: var(--c-arriving, #7C3AED); }
+        .habitaciones-view .hb-alerts-item{
+            gap: 10px;
+        }
+        .habitaciones-view .hb-alerts-item[data-href]{
             cursor: pointer;
-            user-select: none;
-            background: none;
-            border: none;
-            padding: 0.5rem;
-            color: #6b7280;
+            transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
         }
-
-        .alert-collapse:hover {
-            color: #1f2937;
+        .habitaciones-view .hb-alerts-item[data-href]:hover{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 4%, #fff);
+            border-color: color-mix(in srgb, var(--hb-late, #C9322B) 18%, var(--hb-line, #E2D9C8));
         }
-
-        .alert-collapse i {
-            transition: transform 0.2s;
+        .habitaciones-view .hb-alerts-item[data-href]:focus-visible{
+            outline: 2px solid color-mix(in srgb, var(--hb-accent, #BD9441) 70%, transparent);
+            outline-offset: -2px;
+            border-radius: 12px;
         }
-
-        .alert-collapse.collapsed i {
-            transform: rotate(-90deg);
+        .habitaciones-view .hb-alerts-ico{
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            font-size: .74rem;
         }
-
-        @media (max-width: 640px) {
-            .alert-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .alert-actions {
-                width: 100%;
-                flex-direction: column;
-            }
-
-            .btn-alert {
-                width: 100%;
-                text-align: center;
+        .habitaciones-view .hb-alerts-ico--late{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 10%, #fff);
+            color: var(--hb-late, #C9322B);
+        }
+        .habitaciones-view .hb-alerts-ico--pending{
+            background: color-mix(in srgb, var(--c-maint, #D97706) 10%, #fff);
+            color: var(--c-maint, #D97706);
+        }
+        .habitaciones-view .hb-alerts-ico--today{
+            background: color-mix(in srgb, var(--c-arriving, #7C3AED) 10%, #fff);
+            color: var(--c-arriving, #7C3AED);
+        }
+        .habitaciones-view .hb-alerts-item .hb-alerts-info{ flex: 1; min-width: 0; }
+        .habitaciones-view .hb-alerts-item p:first-child{
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .habitaciones-view .hb-alerts-item p:last-child b{
+            font-weight: 700;
+            color: var(--hb-late, #C9322B);
+        }
+        .habitaciones-view .hb-alerts-item p:last-child a{
+            color: inherit;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .habitaciones-view .hb-alerts-btn{
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 32px;
+            padding: 0 11px;
+            border: 1px solid var(--hb-line, #E2D9C8);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--hb-primary, #1B2746);
+            font-size: .74rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+        }
+        .habitaciones-view .hb-alerts-btn--late{
+            border-color: color-mix(in srgb, var(--hb-late, #C9322B) 32%, var(--hb-line, #E2D9C8));
+            color: var(--hb-late, #C9322B);
+        }
+        .habitaciones-view .hb-alerts-btn--late:hover{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 8%, #fff);
+        }
+        .habitaciones-view .hb-alerts-btn--pending{
+            border-color: color-mix(in srgb, var(--c-maint, #D97706) 32%, var(--hb-line, #E2D9C8));
+            color: color-mix(in srgb, var(--c-maint, #D97706) 86%, #000);
+        }
+        .habitaciones-view .hb-alerts-btn--pending:hover{
+            background: color-mix(in srgb, var(--c-maint, #D97706) 8%, #fff);
+        }
+        @media (max-width: 640px){
+            .habitaciones-view .hb-alerts-btn span{ display: none; }
+            .habitaciones-view .hb-alerts-btn{
+                width: 34px;
                 justify-content: center;
+                padding: 0;
             }
         }
         </style>
 
-        <div class="alert-panel">
-            <!-- Header -->
-            <div class="alert-header">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
-                    <h3 class="text-base font-bold text-gray-800 m-0">Alertas Pendientes</h3>
-                    <span class="alert-badge"><?= $total_alertas ?></span>
-                </div>
-                <button onclick="toggleAlertas()" class="alert-collapse collapsed" id="alertCollapseBtn" title="Mostrar u ocultar alertas pendientes" aria-label="Mostrar u ocultar alertas pendientes">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </div>
+        <div class="hb-move-card hb-alerts" id="hbAlertsCard" role="region" aria-label="Alertas pendientes">
+            <button type="button"
+                    class="hb-alerts-toggle"
+                    aria-expanded="false"
+                    aria-controls="hbAlertsCollapse"
+                    onclick="hbToggleAlertas()">
+                <span class="hb-move-title">
+                    <span class="hb-alerts-mark-wrap"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span>
+                        <strong>Alertas pendientes</strong>
+                        <small>Toca para revisar el detalle</small>
+                    </span>
+                </span>
+                <span class="hb-alerts-sum">
+                    <?php if (!empty($checkouts_vencidos)): ?>
+                    <span class="hb-alerts-chip hb-alerts-chip--late" title="Check-outs vencidos">
+                        <i class="fas fa-door-open"></i><?= count($checkouts_vencidos) ?> <em>vencido<?= count($checkouts_vencidos) > 1 ? 's' : '' ?></em>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($checkins_pendientes)): ?>
+                    <span class="hb-alerts-chip hb-alerts-chip--pending" title="Check-ins pendientes">
+                        <i class="fas fa-user-clock"></i><?= count($checkins_pendientes) ?> <em>sin check-in</em>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($llegadas_tardias)): ?>
+                    <span class="hb-alerts-chip hb-alerts-chip--today" title="Llegadas tardías hoy">
+                        <i class="fas fa-clock"></i><?= count($llegadas_tardias) ?> <em>hoy</em>
+                    </span>
+                    <?php endif; ?>
+                    <span class="hb-alerts-chev"><i class="fas fa-chevron-down"></i></span>
+                </span>
+            </button>
 
-            <!-- Content -->
-            <div class="alert-content" id="alertContent" style="display: none;">
+            <div class="hb-alerts-collapse" id="hbAlertsCollapse">
+            <div class="hb-alerts-collapse-inner">
+            <div class="hb-move-body hb-alerts-body">
 
-                <!-- CHECK-OUTS VENCIDOS -->
                 <?php if (!empty($checkouts_vencidos)): ?>
-                <div class="alert-section alert-section-critical">
-                    <div class="alert-section-title">
-                        <i class="fas fa-door-open"></i>
-                        <span>Check-outs Vencidos (<?= count($checkouts_vencidos) ?>)</span>
+                <p class="hb-alerts-kicker hb-alerts-kicker--late">
+                    <i class="fas fa-door-open"></i>
+                    Check-outs vencidos · <?= count($checkouts_vencidos) ?>
+                </p>
+                <?php foreach ($checkouts_vencidos as $checkout): ?>
+                <div class="hb-move-item hb-alerts-item"
+                     data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$checkout['id']), ENT_QUOTES, 'UTF-8') ?>"
+                     role="link"
+                     tabindex="0"
+                     title="Abrir reservacion"
+                     aria-label="Abrir reservacion de <?= htmlspecialchars($checkout['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="hb-alerts-ico hb-alerts-ico--late"><i class="fas fa-sign-out-alt"></i></span>
+                    <div class="hb-alerts-info">
+                        <p><?= htmlspecialchars($checkout['nombre_completo']) ?></p>
+                        <p>
+                            Hab. <?= htmlspecialchars($checkout['habitaciones']) ?>
+                            · Salida <?= date('d/m/Y', strtotime($checkout['fecha_salida'])) ?>
+                            · <b><?= $checkout['dias_retraso'] ?> día<?= $checkout['dias_retraso'] > 1 ? 's' : '' ?> de retraso</b>
+                        </p>
                     </div>
-
-                    <?php foreach ($checkouts_vencidos as $checkout): ?>
-                    <div class="alert-item alert-critical">
-                        <div class="alert-info-text">
-                            <strong><?= htmlspecialchars($checkout['nombre_completo']) ?></strong>
-                            <small>
-                                <i class="fas fa-bed"></i> Hab. <?= htmlspecialchars($checkout['habitaciones']) ?> •
-                                <i class="fas fa-calendar"></i> Salida: <?= date('d/m/Y', strtotime($checkout['fecha_salida'])) ?> •
-                                <i class="fas fa-clock"></i> <strong><?= $checkout['dias_retraso'] ?> día<?= $checkout['dias_retraso'] > 1 ? 's' : '' ?> de retraso</strong>
-                            </small>
-                        </div>
-                        <div class="alert-actions">
-                            <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)"
-                               title="Realizar check-out de esta reservación"
-                               class="btn-alert btn-alert-primary" style="border: none; cursor: pointer;">
-                                <i class="fas fa-sign-out-alt"></i> <span>Check-out</span>
-                            </button>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                    <button type="button"
+                            onclick="confirmarCheckOut(<?= $checkout['id'] ?>)"
+                            title="Realizar check-out de esta reservación"
+                            class="hb-alerts-btn hb-alerts-btn--late">
+                        <i class="fas fa-sign-out-alt"></i><span>Check-out</span>
+                    </button>
                 </div>
+                <?php endforeach; ?>
                 <?php endif; ?>
 
-                <!-- CHECK-INS PENDIENTES -->
                 <?php if (!empty($checkins_pendientes)): ?>
-                <div class="alert-section alert-section-warning">
-                    <div class="alert-section-title">
-                        <i class="fas fa-user-clock"></i>
-                        <span>Check-ins Pendientes (<?= count($checkins_pendientes) ?>)</span>
+                <p class="hb-alerts-kicker hb-alerts-kicker--pending">
+                    <i class="fas fa-user-clock"></i>
+                    Check-ins pendientes · <?= count($checkins_pendientes) ?>
+                </p>
+                <?php foreach ($checkins_pendientes as $checkin): ?>
+                <div class="hb-move-item hb-alerts-item"
+                     data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$checkin['id']), ENT_QUOTES, 'UTF-8') ?>"
+                     role="link"
+                     tabindex="0"
+                     title="Abrir reservacion"
+                     aria-label="Abrir reservacion de <?= htmlspecialchars($checkin['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="hb-alerts-ico hb-alerts-ico--pending"><i class="fas fa-user-clock"></i></span>
+                    <div class="hb-alerts-info">
+                        <p><?= htmlspecialchars($checkin['nombre_completo']) ?></p>
+                        <p>
+                            Hab. <?= htmlspecialchars($checkin['habitaciones']) ?>
+                            · Llegada <?= date('d/m/Y', strtotime($checkin['fecha_entrada'])) ?>
+                            · <?= $checkin['dias_retraso'] ?> día<?= $checkin['dias_retraso'] > 1 ? 's' : '' ?> sin check-in
+                            <?php if ($checkin['telefono']): ?>
+                                · <a href="tel:<?= htmlspecialchars($checkin['telefono']) ?>"><?= htmlspecialchars($checkin['telefono']) ?></a>
+                            <?php endif; ?>
+                        </p>
                     </div>
-
-                    <?php foreach ($checkins_pendientes as $checkin): ?>
-                    <div class="alert-item alert-warning">
-                        <div class="alert-info-text">
-                            <strong><?= htmlspecialchars($checkin['nombre_completo']) ?></strong>
-                            <small>
-                                <i class="fas fa-bed"></i> Hab. <?= htmlspecialchars($checkin['habitaciones']) ?> •
-                                <i class="fas fa-calendar"></i> Llegada: <?= date('d/m/Y', strtotime($checkin['fecha_entrada'])) ?> •
-                                <i class="fas fa-hourglass-half"></i> <?= $checkin['dias_retraso'] ?> día<?= $checkin['dias_retraso'] > 1 ? 's' : '' ?> sin check-in
-                                <?php if ($checkin['telefono']): ?>
-                                    • <i class="fas fa-phone"></i> <a href="tel:<?= htmlspecialchars($checkin['telefono']) ?>" class="text-orange-600 hover:underline"><?= htmlspecialchars($checkin['telefono']) ?></a>
-                                <?php endif; ?>
-                            </small>
-                        </div>
-                        <div class="alert-actions">
-                            <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
-                               title="Abrir reservación para hacer check-in"
-                               class="btn-alert btn-alert-warning">
-                                <i class="fas fa-sign-in-alt"></i> <span>Check-in</span>
-                            </a>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                    <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
+                       title="Abrir reservación para hacer check-in"
+                       class="hb-alerts-btn hb-alerts-btn--pending">
+                        <i class="fas fa-sign-in-alt"></i><span>Check-in</span>
+                    </a>
                 </div>
+                <?php endforeach; ?>
                 <?php endif; ?>
 
-                <!-- LLEGADAS TARDÍAS HOY -->
                 <?php if (!empty($llegadas_tardias)): ?>
-                <div class="alert-section alert-section-info">
-                    <div class="alert-section-title">
-                        <i class="fas fa-phone-alt"></i>
-                        <span>Llegadas Tardías Hoy (<?= count($llegadas_tardias) ?>)</span>
+                <p class="hb-alerts-kicker hb-alerts-kicker--today">
+                    <i class="fas fa-clock"></i>
+                    Llegadas tardías hoy · <?= count($llegadas_tardias) ?>
+                </p>
+                <?php foreach ($llegadas_tardias as $tardio): ?>
+                <div class="hb-move-item hb-alerts-item"
+                     data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$tardio['id']), ENT_QUOTES, 'UTF-8') ?>"
+                     role="link"
+                     tabindex="0"
+                     title="Abrir reservacion"
+                     aria-label="Abrir reservacion de <?= htmlspecialchars($tardio['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="hb-alerts-ico hb-alerts-ico--today"><i class="fas fa-clock"></i></span>
+                    <div class="hb-alerts-info">
+                        <p><?= htmlspecialchars($tardio['nombre_completo']) ?></p>
+                        <p>
+                            Hab. <?= htmlspecialchars($tardio['habitaciones']) ?>
+                            · Hora estimada <?= substr($tardio['hora_llegada_estimada'], 0, 5) ?>
+                            <?php if ($tardio['telefono']): ?>
+                                · <a href="tel:<?= htmlspecialchars($tardio['telefono']) ?>"><?= htmlspecialchars($tardio['telefono']) ?></a>
+                            <?php endif; ?>
+                        </p>
                     </div>
-
-                    <?php foreach ($llegadas_tardias as $tardio): ?>
-                    <div class="alert-item alert-info">
-                        <div class="alert-info-text">
-                            <strong><?= htmlspecialchars($tardio['nombre_completo']) ?></strong>
-                            <small>
-                                <i class="fas fa-bed"></i> Hab. <?= htmlspecialchars($tardio['habitaciones']) ?> •
-                                <i class="fas fa-clock"></i> Hora estimada: <?= substr($tardio['hora_llegada_estimada'], 0, 5) ?>
-                                <?php if ($tardio['telefono']): ?>
-                                    • <i class="fas fa-phone"></i> <a href="tel:<?= htmlspecialchars($tardio['telefono']) ?>" class="text-blue-600 hover:underline"><?= htmlspecialchars($tardio['telefono']) ?></a>
-                                <?php endif; ?>
-                            </small>
-                        </div>
-                        <div class="alert-actions">
-                            <a href="<?= url('reservaciones/ver/' . $tardio['id']) ?>"
-                               title="Ver detalle de la reservación"
-                               class="btn-alert btn-alert-info">
-                                <i class="fas fa-eye"></i> <span>Ver</span>
-                            </a>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+                    <a href="<?= url('reservaciones/ver/' . $tardio['id']) ?>"
+                       title="Ver detalle de la reservación"
+                       class="hb-move-action hb-alerts-go" aria-label="Ver reservación">
+                        <i class="fas fa-arrow-right text-sm"></i>
+                    </a>
                 </div>
+                <?php endforeach; ?>
                 <?php endif; ?>
 
+            </div>
+            </div>
             </div>
         </div>
 
         <script>
-        function toggleAlertas() {
-            const content = document.getElementById('alertContent');
-            const btn = document.getElementById('alertCollapseBtn');
+        function hbToggleAlertas() {
+            const card = document.getElementById('hbAlertsCard');
+            const btn = card.querySelector('.hb-alerts-toggle');
+            const open = card.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
 
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                btn.classList.remove('collapsed');
-            } else {
-                content.style.display = 'none';
-                btn.classList.add('collapsed');
+        (function () {
+            const card = document.getElementById('hbAlertsCard');
+            if (!card) {
+                return;
             }
-        }
 
-        // Auto-collapse en móvil si hay muchas alertas
-        if (window.innerWidth < 768 && <?= $total_alertas ?> > 3) {
-            document.getElementById('alertContent').style.display = 'none';
-            document.getElementById('alertCollapseBtn').classList.add('collapsed');
-        }
+            function alertRowFromTarget(target) {
+                if (!(target instanceof Element)) {
+                    return null;
+                }
+
+                if (target.closest('a, button, input, textarea, select, label')) {
+                    return null;
+                }
+
+                return target.closest('.hb-alerts-item[data-href]');
+            }
+
+            function openAlertRow(row, event) {
+                const href = row.getAttribute('data-href');
+                if (!href) {
+                    return;
+                }
+
+                if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
+                    window.open(href, '_blank', 'noopener');
+                    return;
+                }
+
+                window.location.href = href;
+            }
+
+            card.addEventListener('click', function (event) {
+                const row = alertRowFromTarget(event.target);
+                if (!row) {
+                    return;
+                }
+
+                openAlertRow(row, event);
+            });
+
+            card.addEventListener('auxclick', function (event) {
+                if (event.button !== 1) {
+                    return;
+                }
+
+                const row = alertRowFromTarget(event.target);
+                if (!row) {
+                    return;
+                }
+
+                event.preventDefault();
+                openAlertRow(row, event);
+            });
+
+            card.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+
+                const row = event.target.closest && event.target.closest('.hb-alerts-item[data-href]');
+                if (!row || row !== event.target) {
+                    return;
+                }
+
+                event.preventDefault();
+                openAlertRow(row, event);
+            });
+        })();
         </script>
 
         <?php endif; ?>
@@ -5038,19 +5117,6 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .flip-card-back .btn-primary{ background:#fff!important; color:var(--sheet-c, var(--hb-primary))!important; border-color:#fff!important; }
 .habitaciones-view .flip-card-back .btn-primary:hover{ background:rgba(255,255,255,.92)!important; }
 
-/* ── Alertas ── */
-.habitaciones-view .alert-panel{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important; }
-.habitaciones-view .alert-header{ background:linear-gradient(120deg, var(--bg-critical), color-mix(in srgb, var(--bg-critical) 35%, #fff))!important; border-bottom:1px solid var(--hb-line)!important; }
-.habitaciones-view .alert-badge{ background:var(--c-critical)!important; box-shadow:0 6px 14px -6px var(--c-critical)!important; }
-.habitaciones-view .alert-item{ border-radius:12px!important; border:1px solid var(--hb-line)!important; border-left:4px solid!important; }
-.habitaciones-view .alert-critical{ border-left-color:var(--c-critical)!important; background:var(--bg-critical)!important; }
-.habitaciones-view .alert-warning{ border-left-color:var(--c-maint)!important; background:var(--bg-maint)!important; }
-.habitaciones-view .alert-info{ border-left-color:var(--c-cleaning)!important; background:var(--bg-cleaning)!important; }
-.habitaciones-view .btn-alert{ border-radius:10px!important; font-weight:700!important; }
-.habitaciones-view .btn-alert-primary{ background:var(--c-critical)!important; color:#fff!important; }
-.habitaciones-view .btn-alert-warning{ background:var(--c-maint)!important; color:#fff!important; }
-.habitaciones-view .btn-alert-info{ background:var(--c-cleaning)!important; color:#fff!important; }
-
 /* ── TARJETAS DE HABITACIÓN (rediseño boutique) ── */
 .habitaciones-view #habitaciones-grid{ gap:15px!important; }
 .habitaciones-view .room-card-compact{ border-radius:var(--hb-radius)!important; }
@@ -6257,16 +6323,6 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   .habitaciones-view .hb-mobile-lg b{ color:var(--hb-primary); font-weight:900; }
   .habitaciones-view .hb-mobile-lg.is-active{ color:var(--hb-primary); }
 
-  .habitaciones-view .alert-panel{
-    margin:0 0 10px!important;
-    border:1px solid color-mix(in srgb,var(--c-critical) 22%,var(--hb-line))!important;
-    border-left-width:1px!important;
-    border-radius:15px!important;
-    overflow:hidden;
-  }
-  .habitaciones-view .alert-header{ padding:11px 12px!important; }
-  .habitaciones-view .alert-header h3{ font-size:.88rem!important; }
-
   .habitaciones-view .hb-filter-panel{
     padding:0!important;
     margin:0 0 14px!important;
@@ -7135,8 +7191,6 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 .habitaciones-view .hb-mobile-lg,
 .habitaciones-view .room-card-compact,
 .habitaciones-view .room-quick-view,
-.habitaciones-view .alert-collapse,
-.habitaciones-view .btn-alert,
 .habitaciones-view .flip-card-back .btn-action,
 .habitaciones-view .hb-stat[role="button"]{
   -webkit-tap-highlight-color:transparent;
@@ -7147,8 +7201,6 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 .habitaciones-view .hb-mobile-lg:focus-visible,
 .habitaciones-view .room-card-compact:focus-visible,
 .habitaciones-view .room-quick-view:focus-visible,
-.habitaciones-view .alert-collapse:focus-visible,
-.habitaciones-view .btn-alert:focus-visible,
 .habitaciones-view .flip-card-back .btn-action:focus-visible,
 .habitaciones-view .hb-stat[role="button"]:focus-visible{
   outline:2px solid color-mix(in srgb,var(--hb-accent) 72%,#fff);
@@ -7213,19 +7265,15 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 }
 .habitaciones-view .flip-card-back .btn-action:active,
 .habitaciones-view .btn-modern:active,
-.habitaciones-view .filter-btn:active,
-.habitaciones-view .btn-alert:active{
+.habitaciones-view .filter-btn:active{
   transform:translateY(0) scale(.99)!important;
 }
 .habitaciones-view .flip-card-back .btn-action i,
-.habitaciones-view .btn-alert i,
 .habitaciones-view .btn-modern i{
   transition:transform .18s ease;
 }
 .habitaciones-view .flip-card-back .btn-action:hover i,
-.habitaciones-view .flip-card-back .btn-action:focus-visible i,
-.habitaciones-view .btn-alert:hover i,
-.habitaciones-view .btn-alert:focus-visible i{
+.habitaciones-view .flip-card-back .btn-action:focus-visible i{
   transform:translateX(1px);
 }
 #vistaRapidaContainer .room-quick-view{
@@ -7248,399 +7296,6 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   opacity:1;
   transform:translateX(2px) rotate(-45deg);
 }
-.habitaciones-view .alert-info-text a{
-  font-weight:800;
-  text-underline-offset:3px;
-}
-.habitaciones-view .alert-info-text a:hover,
-.habitaciones-view .alert-info-text a:focus-visible{
-  text-decoration:underline;
-}
-
-/* Alertas pendientes: panel minimalista inspirado en Configuracion del hotel. */
-.habitaciones-view .alert-panel{
-  --alert-ink: color-mix(in srgb,var(--hb-primary, #1f3f46) 56%, #445160);
-  --alert-muted: #738093;
-  --alert-line: color-mix(in srgb,var(--hb-primary, #1f3f46) 10%, #e8dfd2);
-  --alert-surface: rgba(255,255,255,.9);
-  --alert-soft: color-mix(in srgb,var(--hb-accent, #b58a3c) 4%, #fffdf8);
-  --alert-critical: #d73531;
-  --alert-critical-dark: #7f1d1d;
-  --alert-warning: #b98a35;
-  --alert-checkin: #405564;
-  --alert-checkin-warm: #9a7a4f;
-  --alert-checkin-line: #ded6c8;
-  --alert-checkin-soft: #faf8f3;
-  --alert-info: #58728f;
-  --alert-accent: var(--alert-critical);
-  margin:0 0 1.45rem!important;
-  overflow:hidden!important;
-  border:1px solid color-mix(in srgb,var(--alert-accent) 30%, var(--alert-line))!important;
-  border-left:4px solid color-mix(in srgb,var(--alert-critical) 82%, var(--alert-line))!important;
-  border-radius:18px!important;
-  background:
-    radial-gradient(circle at 95% 0%, color-mix(in srgb,var(--alert-accent) 20%, transparent), transparent 16rem),
-    radial-gradient(circle at 0% 0%, color-mix(in srgb,var(--alert-warning) 9%, transparent), transparent 13rem),
-    linear-gradient(180deg, rgba(255,255,255,.96), color-mix(in srgb,var(--alert-accent) 4%, #fffdf8))!important;
-  box-shadow:
-    0 22px 48px -34px color-mix(in srgb,var(--alert-accent) 70%, transparent),
-    0 1px 0 rgba(255,255,255,.72) inset!important;
-}
-
-.habitaciones-view .alert-panel::before{
-  content:"";
-  display:block;
-  height:6px;
-  background:linear-gradient(90deg,
-    color-mix(in srgb,var(--alert-critical) 96%, var(--alert-line)),
-    color-mix(in srgb,var(--alert-warning) 62%, transparent),
-    color-mix(in srgb,var(--alert-info) 38%, transparent));
-}
-
-.habitaciones-view .alert-header{
-  min-height:70px!important;
-  padding:15px 18px!important;
-  border-bottom:1px solid color-mix(in srgb,var(--alert-accent) 24%, var(--alert-line))!important;
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--alert-accent) 18%, transparent), transparent 13rem),
-    linear-gradient(135deg, color-mix(in srgb,var(--alert-accent) 13%, #fff), color-mix(in srgb,var(--alert-warning) 5%, #fffdf8))!important;
-}
-
-.habitaciones-view .alert-header .flex{
-  min-width:0;
-  gap:11px!important;
-}
-
-.habitaciones-view .alert-header .fa-exclamation-triangle{
-  width:34px;
-  height:34px;
-  display:inline-grid;
-  place-items:center;
-  border:1px solid color-mix(in srgb,var(--alert-critical-dark) 28%, var(--alert-accent));
-  border-radius:12px;
-  background:linear-gradient(135deg, var(--alert-accent), color-mix(in srgb,var(--alert-critical-dark) 72%, var(--alert-accent)))!important;
-  color:#fffdf8!important;
-  box-shadow:0 12px 20px -12px color-mix(in srgb,var(--alert-accent) 95%, transparent);
-  font-size:.88rem!important;
-}
-
-.habitaciones-view .alert-header h3{
-  color:var(--alert-ink)!important;
-  font-size:.98rem!important;
-  line-height:1.2!important;
-  font-weight:720!important;
-  letter-spacing:0!important;
-}
-
-.habitaciones-view .alert-badge{
-  min-width:30px!important;
-  height:30px!important;
-  display:inline-grid!important;
-  place-items:center!important;
-  padding:0 10px!important;
-  border:1px solid color-mix(in srgb,var(--alert-critical-dark) 22%, var(--alert-accent))!important;
-  border-radius:999px!important;
-  background:linear-gradient(135deg, var(--alert-accent), color-mix(in srgb,var(--alert-critical-dark) 68%, var(--alert-accent)))!important;
-  color:#fffdf8!important;
-  box-shadow:0 12px 20px -12px color-mix(in srgb,var(--alert-accent) 92%, transparent)!important;
-  font-size:.76rem!important;
-  font-weight:760!important;
-  font-variant-numeric:tabular-nums;
-}
-
-.habitaciones-view .alert-collapse{
-  width:36px;
-  height:36px;
-  display:grid;
-  place-items:center;
-  border:1px solid var(--alert-line)!important;
-  border-radius:12px!important;
-  background:#fff!important;
-  color:var(--alert-muted)!important;
-  transition:background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
-}
-
-.habitaciones-view .alert-collapse:hover,
-.habitaciones-view .alert-collapse:focus-visible{
-  border-color:color-mix(in srgb,var(--alert-accent) 28%, var(--alert-line))!important;
-  background:color-mix(in srgb,var(--alert-accent) 7%, #fff)!important;
-  color:var(--alert-ink)!important;
-  transform:translateY(-1px);
-}
-
-.habitaciones-view .alert-content{
-  padding:16px 18px 18px!important;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.48), color-mix(in srgb,var(--alert-accent) 2%, rgba(255,255,255,.28)))!important;
-}
-
-.habitaciones-view .alert-section{
-  --section-accent: var(--alert-warning);
-  --section-aux: var(--section-accent);
-  position:relative;
-  margin:0 0 16px!important;
-  padding:14px!important;
-  border:1px solid color-mix(in srgb,var(--section-accent) 15%, var(--alert-line))!important;
-  border-left:4px solid color-mix(in srgb,var(--section-accent) 58%, var(--alert-line))!important;
-  border-radius:15px!important;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--section-accent) 8%, transparent), transparent 9rem),
-    linear-gradient(135deg, color-mix(in srgb,var(--section-accent) 5%, rgba(255,255,255,.9)), rgba(255,255,255,.82))!important;
-}
-
-.habitaciones-view .alert-section-critical{ --section-accent: var(--alert-critical); }
-.habitaciones-view .alert-section-warning{
-  --section-accent: var(--alert-checkin);
-  --section-aux: var(--alert-checkin-warm);
-  padding:15px 16px 16px!important;
-  border-left:0!important;
-  border-color:var(--alert-checkin-line)!important;
-  border-radius:16px!important;
-  background:
-    linear-gradient(90deg, rgba(255,255,255,.98), rgba(255,255,255,.88)),
-    linear-gradient(180deg, var(--alert-checkin-soft), #fff)!important;
-  box-shadow:
-    0 16px 36px -34px rgba(38, 55, 70, .34),
-    0 1px 0 rgba(255,255,255,.82) inset!important;
-}
-.habitaciones-view .alert-section-info{ --section-accent: var(--alert-info); }
-
-.habitaciones-view .alert-section-warning::before{
-  content:"";
-  position:absolute;
-  inset:16px auto 16px 0;
-  width:4px;
-  height:auto;
-  border-radius:0 999px 999px 0;
-  background:linear-gradient(180deg,
-    color-mix(in srgb,var(--section-accent) 86%, #fff),
-    color-mix(in srgb,var(--section-aux) 72%, #fff));
-}
-
-.habitaciones-view .alert-section:last-child{
-  margin-bottom:0!important;
-}
-
-.habitaciones-view .alert-section-title{
-  margin:0 0 12px!important;
-  color:color-mix(in srgb,var(--section-accent) 76%, #475569)!important;
-  font-size:.88rem!important;
-  line-height:1.25!important;
-  font-weight:720!important;
-}
-
-.habitaciones-view .alert-section-title i{
-  width:28px;
-  height:28px;
-  display:inline-grid;
-  place-items:center;
-  border-radius:10px;
-  background:color-mix(in srgb,var(--section-accent) 12%, #fff);
-  color:color-mix(in srgb,var(--section-accent) 78%, #475569);
-}
-
-.habitaciones-view .alert-section-warning .alert-section-title{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:0 0 11px!important;
-  border-bottom:1px solid color-mix(in srgb,var(--alert-checkin-line) 78%, transparent);
-  color:color-mix(in srgb,var(--section-accent) 76%, var(--alert-ink))!important;
-}
-
-.habitaciones-view .alert-section-warning .alert-section-title i{
-  width:30px;
-  height:30px;
-  border:1px solid color-mix(in srgb,var(--section-accent) 16%, var(--alert-checkin-line));
-  border-radius:9px;
-  background:#fff!important;
-  color:color-mix(in srgb,var(--section-accent) 86%, #334155);
-  box-shadow:0 10px 20px -18px rgba(38,55,70,.48);
-}
-
-.habitaciones-view .alert-item{
-  position:relative;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:14px!important;
-  align-items:center!important;
-  margin:0 0 10px!important;
-  padding:13px 14px!important;
-  border:1px solid color-mix(in srgb,var(--section-accent) 15%, var(--alert-line))!important;
-  border-left:0!important;
-  border-radius:14px!important;
-  background:rgba(255,255,255,.78)!important;
-  box-shadow:0 10px 24px -24px color-mix(in srgb,var(--section-accent) 36%, transparent)!important;
-  transform:none!important;
-}
-
-.habitaciones-view .alert-item::before{
-  content:"";
-  position:absolute;
-  inset:12px auto 12px 0;
-  width:3px;
-  border-radius:0 999px 999px 0;
-  background:color-mix(in srgb,var(--section-accent) 72%, var(--alert-line));
-}
-
-.habitaciones-view .alert-section-warning .alert-item{
-  margin-bottom:9px!important;
-  padding:14px 14px 14px 17px!important;
-  border-color:color-mix(in srgb,var(--alert-checkin-line) 88%, #fff)!important;
-  border-radius:13px!important;
-  background:
-    linear-gradient(90deg, color-mix(in srgb,var(--section-accent) 2%, #fff) 0%, #fff 44%),
-    #fff!important;
-  box-shadow:0 12px 24px -26px rgba(38,55,70,.42)!important;
-}
-
-.habitaciones-view .alert-section-warning .alert-item::before{
-  inset:18px auto 18px 0;
-  width:3px;
-  background:color-mix(in srgb,var(--section-accent) 68%, var(--alert-checkin-line));
-}
-
-.habitaciones-view .alert-section-warning .alert-item::after{
-  content:"";
-  position:absolute;
-  left:12px;
-  top:18px;
-  width:6px;
-  height:6px;
-  border-radius:999px;
-  background:color-mix(in srgb,var(--section-aux) 78%, #fff);
-  box-shadow:0 0 0 4px color-mix(in srgb,var(--section-aux) 12%, transparent);
-}
-
-.habitaciones-view .alert-section-warning .alert-info-text{
-  padding-left:7px;
-}
-
-.habitaciones-view .alert-section-warning .alert-info-text strong{
-  color:color-mix(in srgb,var(--section-accent) 78%, #26313c)!important;
-}
-
-.habitaciones-view .alert-section-warning .alert-info-text small{
-  color:#6d7786!important;
-}
-
-.habitaciones-view .alert-section-warning .alert-info-text small i{
-  color:color-mix(in srgb,var(--section-accent) 58%, #8a94a3)!important;
-}
-
-.habitaciones-view .alert-section-warning .alert-info-text a{
-  color:color-mix(in srgb,var(--section-aux) 78%, #334155)!important;
-}
-
-.habitaciones-view .alert-item:hover{
-  border-color:color-mix(in srgb,var(--section-accent) 28%, var(--alert-line))!important;
-  background:color-mix(in srgb,var(--section-accent) 4%, #fff)!important;
-  box-shadow:0 16px 30px -28px color-mix(in srgb,var(--section-accent) 42%, transparent)!important;
-  transform:translateY(-1px)!important;
-}
-
-.habitaciones-view .alert-info-text{
-  min-width:0;
-}
-
-.habitaciones-view .alert-info-text strong{
-  margin:0 0 6px!important;
-  color:var(--alert-ink)!important;
-  font-size:.93rem!important;
-  line-height:1.25!important;
-  font-weight:720!important;
-}
-
-.habitaciones-view .alert-info-text small{
-  display:flex!important;
-  flex-wrap:wrap;
-  align-items:center;
-  gap:6px;
-  color:var(--alert-muted)!important;
-  font-size:.79rem!important;
-  line-height:1.35!important;
-  font-weight:500!important;
-}
-
-.habitaciones-view .alert-info-text small i{
-  color:color-mix(in srgb,var(--section-accent) 62%, var(--alert-muted));
-}
-
-.habitaciones-view .alert-info-text a{
-  color:color-mix(in srgb,var(--section-accent) 82%, #334155)!important;
-  font-weight:760!important;
-}
-
-.habitaciones-view .alert-actions{
-  align-items:center;
-  justify-content:flex-end;
-}
-
-.habitaciones-view .btn-alert{
-  min-height:38px!important;
-  padding:0 13px!important;
-  border:1px solid color-mix(in srgb,var(--section-accent) 24%, var(--alert-line))!important;
-  border-radius:11px!important;
-  background:color-mix(in srgb,var(--section-accent) 10%, #fff)!important;
-  color:color-mix(in srgb,var(--section-accent) 78%, #334155)!important;
-  box-shadow:none!important;
-  font-size:.78rem!important;
-  font-weight:760!important;
-  letter-spacing:0!important;
-}
-
-.habitaciones-view .btn-alert:hover,
-.habitaciones-view .btn-alert:focus-visible{
-  border-color:color-mix(in srgb,var(--section-accent) 38%, var(--alert-line))!important;
-  background:color-mix(in srgb,var(--section-accent) 15%, #fff)!important;
-  transform:translateY(-1px)!important;
-}
-
-.habitaciones-view .btn-alert-primary,
-.habitaciones-view .btn-alert-warning,
-.habitaciones-view .btn-alert-info{
-  color:color-mix(in srgb,var(--section-accent) 78%, #334155)!important;
-}
-
-.habitaciones-view .alert-section-warning .btn-alert-warning{
-  border-color:var(--alert-checkin-line)!important;
-  background:#fff!important;
-  color:color-mix(in srgb,var(--section-accent) 82%, #273744)!important;
-  box-shadow:0 1px 0 rgba(255,255,255,.86) inset!important;
-}
-
-.habitaciones-view .alert-section-warning .btn-alert-warning:hover,
-.habitaciones-view .alert-section-warning .btn-alert-warning:focus-visible{
-  border-color:color-mix(in srgb,var(--section-accent) 34%, var(--alert-checkin-line))!important;
-  background:color-mix(in srgb,var(--section-accent) 8%, #fff)!important;
-  color:color-mix(in srgb,var(--section-accent) 92%, #18212b)!important;
-}
-
-@media (max-width:640px){
-  .habitaciones-view .alert-content{
-    padding:12px!important;
-  }
-
-  .habitaciones-view .alert-section{
-    padding:12px!important;
-  }
-
-  .habitaciones-view .alert-item{
-    grid-template-columns:1fr;
-  }
-
-  .habitaciones-view .alert-actions{
-    width:100%;
-    justify-content:stretch;
-  }
-
-  .habitaciones-view .btn-alert{
-    width:100%;
-    justify-content:center;
-  }
-}
-
 /* Estado "No llego": alerta clara sin borde griton ni datos encimados. */
 .habitaciones-view .room-card-compact.has-checkin-vencido{
   --hb-late:#C9322B;
@@ -9580,6 +9235,34 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     font-size:.8rem!important;
     text-align:center!important;
   }
+}
+</style>
+
+<style id="hb-cleaning-button-polish">
+.habitaciones-view .btn-modern.hb-cleaning-btn,
+.habitaciones-view .hb-action-btn.hb-cleaning-btn{
+    background:linear-gradient(135deg,#E0F2FE 0%,#BAE6FD 100%)!important;
+    color:#075985!important;
+    border-color:#7DD3FC!important;
+    box-shadow:0 10px 22px -16px rgba(2,132,199,.72)!important;
+}
+.habitaciones-view .btn-modern.hb-cleaning-btn i,
+.habitaciones-view .hb-action-btn.hb-cleaning-btn i{
+    color:#0284C7!important;
+}
+.habitaciones-view .btn-modern.hb-cleaning-btn:hover,
+.habitaciones-view .hb-action-btn.hb-cleaning-btn:hover{
+    background:linear-gradient(135deg,#D8F0FF 0%,#A7DDFB 100%)!important;
+    border-color:#38BDF8!important;
+    color:#075985!important;
+    box-shadow:0 14px 26px -17px rgba(2,132,199,.86)!important;
+    transform:translateY(-1px)!important;
+}
+.habitaciones-view .btn-modern.hb-cleaning-btn > span.absolute,
+.habitaciones-view .hb-action-btn.hb-cleaning-btn::after{
+    background:#0369A1!important;
+    color:#FFFFFF!important;
+    box-shadow:0 8px 16px -10px rgba(3,105,161,.9)!important;
 }
 </style>
 

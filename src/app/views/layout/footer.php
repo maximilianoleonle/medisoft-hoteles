@@ -15,6 +15,9 @@
         </div>
     </div>
 
+    <!-- Barra inferior de accesos rápidos (solo móvil, configurable por hotel) -->
+    <?php include APP_PATH . '/views/layout/footer-nav.php'; ?>
+
     <!-- Scripts adicionales para vistas específicas -->
     <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
     <script src="<?= asset('js/dashboard.js') ?>"></script>
@@ -49,6 +52,115 @@
 
             form.submit();
         });
+    </script>
+
+    <style>
+        [data-easy-href] {
+            cursor: pointer;
+        }
+
+        [data-easy-href]:focus-visible {
+            outline: 2px solid color-mix(in srgb, var(--brand-accent, #BD9441) 52%, transparent);
+            outline-offset: -2px;
+        }
+    </style>
+
+    <script>
+        (function() {
+            if (window.__hotelEasyHrefReady) {
+                return;
+            }
+
+            window.__hotelEasyHrefReady = true;
+
+            var interactiveSelector = [
+                'a',
+                'button',
+                'input',
+                'select',
+                'textarea',
+                'form',
+                'label',
+                'summary',
+                'iframe',
+                'audio',
+                'video',
+                '[role="button"]',
+                '[role="menuitem"]',
+                '[role="link"]:not([data-easy-href])',
+                '[contenteditable="true"]',
+                '[data-easy-href-ignore]',
+                '[data-no-row-click]'
+            ].join(',');
+
+            function closestEasyHref(target) {
+                return target instanceof Element ? target.closest('[data-easy-href]') : null;
+            }
+
+            function isInsideInteractive(target, row) {
+                if (!(target instanceof Element)) {
+                    return false;
+                }
+
+                var interactive = target.closest(interactiveSelector);
+                return !!interactive && row.contains(interactive);
+            }
+
+            function openEasyHref(row, event) {
+                var href = row.getAttribute('data-easy-href');
+                if (!href) {
+                    return;
+                }
+
+                if (event && (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1)) {
+                    window.open(href, '_blank', 'noopener');
+                    return;
+                }
+
+                window.location.href = href;
+            }
+
+            document.addEventListener('click', function(event) {
+                if (event.defaultPrevented || event.button !== 0) {
+                    return;
+                }
+
+                var row = closestEasyHref(event.target);
+                if (!row || isInsideInteractive(event.target, row)) {
+                    return;
+                }
+
+                openEasyHref(row, event);
+            });
+
+            document.addEventListener('auxclick', function(event) {
+                if (event.defaultPrevented || event.button !== 1) {
+                    return;
+                }
+
+                var row = closestEasyHref(event.target);
+                if (!row || isInsideInteractive(event.target, row)) {
+                    return;
+                }
+
+                event.preventDefault();
+                openEasyHref(row, event);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.defaultPrevented || (event.key !== 'Enter' && event.key !== ' ')) {
+                    return;
+                }
+
+                var row = closestEasyHref(event.target);
+                if (!row || isInsideInteractive(event.target, row)) {
+                    return;
+                }
+
+                event.preventDefault();
+                openEasyHref(row, event);
+            });
+        })();
     </script>
 
     <!-- Offline: caché de lectura para reservaciones del día -->

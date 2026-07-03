@@ -271,7 +271,8 @@ $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Y
     <section class="p-6 space-y-4">
         <div class="receipt-no-print flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a class="receipt-btn" href="<?= $volverUrl ?>">
+                <?php $back_arrow_href = $volverUrl; $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="receipt-btn ms-back-legacy" href="<?= $volverUrl ?>">
                     <i class="fas fa-arrow-left"></i>
                     Trabajador
                 </a>

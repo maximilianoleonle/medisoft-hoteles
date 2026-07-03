@@ -684,7 +684,8 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                 </p>
             </div>
 
-            <a href="<?= back_url('caja') ?>" class="ccx-back">
+            <?php $back_arrow_href = back_url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('caja') ?>" class="ccx-back ms-back-legacy">
                 <i class="fas fa-arrow-left"></i>
                 <span>Volver a caja</span>
             </a>

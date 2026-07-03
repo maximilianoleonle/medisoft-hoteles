@@ -131,7 +131,8 @@ $valoresFormulario = [
 
 <div class="worker-form-page p-4 sm:p-6">
     <div class="wk-shell">
-        <a class="wk-back" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+        <?php $back_arrow_href = back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <a class="wk-back ms-back-legacy" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
 
         <section class="wk-title-lockup">
             <div class="wk-hero-icon"><i class="fas fa-user-plus"></i></div>

@@ -169,7 +169,8 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
             <p class="lim-rep-subtitle">Vista operativa de habitaciones en limpieza y tareas activas asociadas al hotel actual. No libera habitaciones ni ejecuta automatizaciones; la tarea manual requiere permiso.</p>
         </div>
         <div class="lim-rep-actions">
-            <a class="lim-rep-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="lim-rep-btn ms-back-legacy" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
             <a class="lim-rep-btn" href="<?= url('habitaciones?estado=limpieza') ?>"><i class="fas fa-broom"></i> Habitaciones</a>
         </div>
     </div>
@@ -237,8 +238,12 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
                                                 <form class="lim-rep-inline-form"
                                                       method="POST"
                                                       action="<?= url('tareas/desde-limpieza/' . (int)($habitacion['id'] ?? 0)) ?>"
-                                                      data-lim-confirm="1"
-                                                      data-confirm-message="Se creara una tarea manual de limpieza para esta habitacion.">
+                                                      data-ms-confirm
+                                                      data-ms-type="info"
+                                                      data-ms-icon="check"
+                                                      data-ms-title="¿Crear tarea de limpieza?"
+                                                      data-ms-msg="Se creará una tarea manual de limpieza para esta habitación."
+                                                      data-ms-ok="Crear tarea">
                                                     <?= csrf_field() ?>
                                                     <button type="submit" class="lim-rep-task-create">
                                                         <i class="fas fa-tasks"></i>
@@ -303,8 +308,12 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
                                             <form class="lim-rep-inline-form"
                                                   method="POST"
                                                   action="<?= url('tareas/desde-limpieza/' . (int)($habitacion['id'] ?? 0)) ?>"
-                                                  data-lim-confirm="1"
-                                                  data-confirm-message="Se creara una tarea manual de limpieza para esta habitacion.">
+                                                  data-ms-confirm
+                                                  data-ms-type="info"
+                                                  data-ms-icon="check"
+                                                  data-ms-title="¿Crear tarea de limpieza?"
+                                                  data-ms-msg="Se creará una tarea manual de limpieza para esta habitación."
+                                                  data-ms-ok="Crear tarea">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="lim-rep-task-create">
                                                     <i class="fas fa-tasks"></i>
@@ -376,59 +385,5 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
 </div>
 
 <script>
-(function() {
-    function showLimToast(message, duration = 7000) {
-        let toast = document.getElementById('limRepToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'limRepToast';
-            toast.className = 'lim-rep-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetLimConfirm(form) {
-        if (!form) return;
-
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.limConfirm !== '1') return;
-        if (form.dataset.confirmedAction === '1') return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-lim-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetLimConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = '<i class="fas fa-check"></i> Confirmar tarea';
-        }
-
-        showLimToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetLimConfirm(form), 7000);
-    }, true);
-})();
+/* Las confirmaciones usan el modal global msConfirm (data-ms-confirm en los forms). */
 </script>

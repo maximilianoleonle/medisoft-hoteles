@@ -1,0 +1,421 @@
+/* ===================================================================
+   MODO OSCURO MEDISOFT — Fase D0 (shell + dashboard + configuración)
+   Se activa con html[data-theme="dark"], controlado por MedisoftTheme
+   (script inline en layout/header.php, persistido en localStorage).
+   Cobertura D0: sidebar, headers, footer-nav, toast/confirm, skeleton,
+   dashboard (tokens --dash-*) y configuración (tokens --hc-*).
+   Las demás vistas se cubren por pases (D1+).
+   =================================================================== */
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+/* ── Shell hotelero: re-mapeo de tokens --hotel-* ─────────────────── */
+html[data-theme="dark"] body.hotel-layout-scope {
+    --hotel-bg: #191813;
+    --hotel-panel: #201F19;
+    --hotel-text: #EFE9DC;
+    --hotel-muted: #A69F8E;
+    --hotel-border: #38352C;
+    --hotel-line: #403C31;
+    --hotel-brand-soft: color-mix(in srgb, var(--hotel-primary) 26%, #201F19);
+    background:
+        radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--hotel-accent) 8%, transparent), transparent 32rem),
+        var(--hotel-bg);
+    color: var(--hotel-text);
+}
+
+/* Header desktop (usa literal claro + !important en hotel-layout-shell.css) */
+@media (min-width: 1025px) {
+    html[data-theme="dark"] body.hotel-layout-scope .hotel-header {
+        background: rgba(26, 25, 20, .94) !important;
+        border-bottom-color: var(--hotel-border) !important;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .35) !important;
+    }
+}
+
+html[data-theme="dark"] .hotel-layout-scope .hotel-header-status,
+html[data-theme="dark"] .hotel-layout-scope .hotel-header-user {
+    color: var(--hotel-text);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+html[data-theme="dark"] body.hotel-layout-scope {
+    --sidebar-bg: #1D1C17;
+    --sidebar-border: #35322A;
+    --sidebar-text: #DAD4C6;
+    --sidebar-text-muted: #8F897B;
+    --sidebar-hover: #26241E;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .sidebar-main {
+    background: linear-gradient(180deg, #1D1C17 0%, #191813 100%);
+    border-right-color: var(--sidebar-border);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, .4);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .sidebar-header {
+    border-bottom-color: rgba(156, 167, 119, .14);
+    background: linear-gradient(135deg, rgba(156, 167, 119, .10) 0%, rgba(184, 196, 154, .04) 100%);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .logo-title {
+    color: var(--hotel-text);
+    text-shadow: none;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .search-box {
+    background: #26241E;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .search-box:focus-within {
+    background: #2B2922;
+    box-shadow: 0 0 0 3px rgba(156, 167, 119, .16);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-section-title span {
+    color: #B9C29D;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-item:hover,
+html[data-theme="dark"] body.hotel-layout-scope .nav-item.active {
+    color: var(--sidebar-text);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-item.active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-badge {
+    box-shadow: 0 2px 6px rgba(239, 68, 68, .4), 0 0 0 2px #1D1C17;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .sidebar-footer {
+    border-top-color: rgba(156, 167, 119, .14);
+    background: linear-gradient(180deg, #191813 0%, #1D1C17 100%);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .user-section {
+    background: rgba(38, 36, 30, .92);
+    border-color: rgba(156, 167, 119, .18);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .user-dropdown {
+    background: rgba(30, 29, 24, .98);
+    border-color: #35322A;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, .4);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .user-avatar {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35), 0 0 0 2px rgba(255, 255, 255, .08);
+}
+
+/* ── Footer nav (barra inferior móvil) ────────────────────────────── */
+html[data-theme="dark"] body.hotel-layout-scope .hotel-bottom-nav .hbn-item.is-active {
+    color: var(--hotel-text);
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .hotel-bottom-nav .hbn-item.is-active .hbn-pill {
+    background: color-mix(in srgb, var(--hotel-brand, #1B2746) 34%, #201F19);
+    color: var(--hotel-text);
+}
+
+/* ── Flecha de regreso ────────────────────────────────────────────── */
+html[data-theme="dark"] body.hotel-layout-scope .ms-back-btn {
+    background: rgba(32, 31, 25, .92);
+    color: #C9C3B4;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .ms-back-btn:active {
+    background: #2B2922;
+    color: #EFE9DC;
+}
+
+/* ── Skeleton de carga ────────────────────────────────────────────── */
+html[data-theme="dark"] #psk {
+    background: #191813;
+}
+
+html[data-theme="dark"] .psk-bone {
+    background: linear-gradient(90deg, #26241E 25%, #2E2B24 50%, #26241E 75%);
+    background-size: 1200px 100%;
+}
+
+/* ── Toast global (msToast) ───────────────────────────────────────── */
+html[data-theme="dark"] .ms-toast {
+    background: #24221C;
+    border-color: #38352C;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+}
+
+html[data-theme="dark"] .ms-toast-t { color: #EFE9DC; }
+html[data-theme="dark"] .ms-toast-m { color: #A69F8E; }
+html[data-theme="dark"] .ms-toast-x { color: #8F897B; }
+html[data-theme="dark"] .ms-toast-x:hover { background: #2E2B24; color: #C9C3B4; }
+
+html[data-theme="dark"] .ms-toast[data-type="success"] { --ms-bg: rgba(30, 158, 99, .18); }
+html[data-theme="dark"] .ms-toast[data-type="error"]   { --ms-bg: rgba(214, 69, 57, .18); }
+html[data-theme="dark"] .ms-toast[data-type="warning"] { --ms-bg: rgba(194, 132, 28, .18); }
+html[data-theme="dark"] .ms-toast[data-type="info"]    { --ms-bg: rgba(14, 150, 184, .18); }
+
+/* ── Confirm global (msConfirm) + estados de página ───────────────── */
+html[data-theme="dark"] .ms-cf-modal {
+    background: #221F1A;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, .5);
+}
+
+html[data-theme="dark"] .ms-cf-grab { background: #3A362C; }
+html[data-theme="dark"] .ms-cf-t { color: #EFE9DC; }
+html[data-theme="dark"] .ms-cf-m { color: #A69F8E; }
+
+html[data-theme="dark"] .ms-cf-btn.ghost {
+    background: #2A2721;
+    color: #C9C3B4;
+    border-color: #3A362C;
+}
+
+html[data-theme="dark"] .ms-cf-btn.ghost:hover {
+    border-color: #4A4536;
+    color: #EFE9DC;
+}
+
+html[data-theme="dark"] .ms-cf-x {
+    background: #2A2721;
+    border-color: #3A362C;
+    color: #A69F8E;
+}
+
+html[data-theme="dark"] .ms-cf-btns {
+    background: #1D1B16;
+    border-top-color: #38352C;
+}
+
+html[data-theme="dark"] .ms-cf-ov[data-type="error"] .ms-cf-modal   { --ms-bg: rgba(214, 69, 57, .18); }
+html[data-theme="dark"] .ms-cf-ov[data-type="warning"] .ms-cf-modal { --ms-bg: rgba(194, 132, 28, .18); }
+html[data-theme="dark"] .ms-cf-ov[data-type="success"] .ms-cf-modal { --ms-bg: rgba(30, 158, 99, .18); }
+html[data-theme="dark"] .ms-cf-ov[data-type="info"] .ms-cf-modal    { --ms-bg: rgba(14, 150, 184, .18); }
+
+html[data-theme="dark"] .ms-pagestate-modal { background: #191813; }
+html[data-theme="dark"] .ms-ps-t { color: #EFE9DC; }
+html[data-theme="dark"] .ms-ps-m { color: #A69F8E; }
+
+html[data-theme="dark"] .ms-ps-x {
+    background: #2A2721;
+    border-color: #3A362C;
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .ms-ps-x svg { color: #EFE9DC; }
+
+html[data-theme="dark"] .ms-pagestate-modal[data-type="error"]   { --ms-bg: rgba(214, 69, 57, .18); }
+html[data-theme="dark"] .ms-pagestate-modal[data-type="success"] { --ms-bg: rgba(30, 158, 99, .18); }
+html[data-theme="dark"] .ms-pagestate-modal[data-type="warning"] { --ms-bg: rgba(194, 132, 28, .18); }
+html[data-theme="dark"] .ms-pagestate-modal[data-type="info"]    { --ms-bg: rgba(14, 150, 184, .18); }
+
+/* ── Dashboard: re-mapeo de tokens --dash-* ───────────────────────── */
+html[data-theme="dark"] {
+    --dash-ivory: #191813;
+    --dash-ivory-2: #1D1C16;
+    --dash-surface: #201F19;
+    --dash-surface-warm: #242118;
+    --dash-line: #3A362C;
+    --dash-line-soft: #2C2A23;
+    --dash-ink: #EFE9DC;
+    --dash-muted: #A69F8E;
+    --dash-slate-700: #C9C3B4;
+    --dash-slate-500: #A69F8E;
+    --dash-slate-400: #7E786B;
+    /* Navy se usa 43× como color de texto sobre superficie: en oscuro es tinta clara */
+    --dash-navy: #EFE9DC;
+    --dash-gold-mid: color-mix(in srgb, var(--dash-accent) 84%, #201F19);
+    --dash-gold-soft: color-mix(in srgb, var(--dash-accent) 62%, #201F19);
+    --dash-gold-bg: color-mix(in srgb, var(--dash-accent) 20%, #201F19);
+    --dash-gold-line: color-mix(in srgb, var(--dash-accent) 34%, #3A362C);
+    --dash-bg-available: rgba(30, 158, 99, .16);
+    --dash-bg-occupied: rgba(194, 96, 60, .16);
+    --dash-bg-arriving: rgba(90, 87, 210, .18);
+    --dash-bg-cleaning: rgba(47, 119, 224, .16);
+    --dash-bg-maint: rgba(194, 132, 28, .16);
+    --dash-bg-critical: rgba(214, 69, 57, .16);
+    --dash-shadow: 0 2px 8px rgba(0, 0, 0, .3), 0 12px 28px rgba(0, 0, 0, .25);
+    --dash-shadow-lg: 0 18px 48px rgba(0, 0, 0, .45);
+}
+
+/* Los 3 usos de --dash-navy como fondo vuelven al navy de marca */
+html[data-theme="dark"] .notification-quick-push-btn,
+html[data-theme="dark"] .weekly-line-dot,
+html[data-theme="dark"] .weekly-line-label.is-today .d::after {
+    background: var(--dash-primary, #1B2746);
+}
+
+/* ── Dashboard: superficies con blanco hardcodeado (no pasan por tokens) ── */
+
+/* Tarjeta "Ocupación semanal": era un gradiente marfil casi blanco */
+html[data-theme="dark"] .weekly-occupancy-card {
+    background:
+        radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--dash-gold) 12%, transparent), transparent 18rem),
+        linear-gradient(180deg, #23211B, #1E1D17);
+}
+
+html[data-theme="dark"] .weekly-summary-chip {
+    background: rgba(32, 31, 25, .82);
+}
+
+html[data-theme="dark"] .weekly-line-plot {
+    background-color: rgba(25, 24, 19, .6);
+}
+
+/* Mancha decorativa clara de la tarjeta de ocupación */
+html[data-theme="dark"] .occ-wave {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0));
+}
+
+/* Estacionamiento: pills de estado y filas por tipo de vehículo */
+html[data-theme="dark"] .parking-status-pill {
+    background: #24221C;
+}
+
+html[data-theme="dark"] .parking-status-pill.is-occupied {
+    background: color-mix(in srgb, var(--dash-occupied) 16%, #24221C);
+}
+
+html[data-theme="dark"] .parking-status-pill.is-reserved {
+    background: color-mix(in srgb, var(--dash-arriving) 17%, #24221C);
+}
+
+html[data-theme="dark"] .parking-status-pill.is-free {
+    background: color-mix(in srgb, var(--dash-available) 16%, #24221C);
+}
+
+html[data-theme="dark"] .parking-breakdown-item {
+    background: color-mix(in srgb, var(--dash-gold) 9%, #201F19);
+}
+
+html[data-theme="dark"] .parking-breakdown-item strong {
+    background: #2A2721;
+}
+
+html[data-theme="dark"] .parking-breakdown-item.has-vehicles {
+    background: color-mix(in srgb, var(--dash-gold) 17%, #201F19);
+}
+
+html[data-theme="dark"] .parking-breakdown-item.is-full {
+    background: color-mix(in srgb, var(--dash-maint) 16%, #201F19);
+}
+
+html[data-theme="dark"] .parking-breakdown-item.is-over-capacity {
+    background: color-mix(in srgb, var(--dash-critical) 15%, #201F19);
+}
+
+html[data-theme="dark"] .parking-breakdown-item.is-unconfigured:not(.has-vehicles) {
+    background: color-mix(in srgb, var(--dash-slate-400) 10%, #201F19);
+}
+
+html[data-theme="dark"] .parking-vehicle-row {
+    background: #24221C;
+}
+
+html[data-theme="dark"] .parking-vehicle-row.is-occupied .parking-vehicle-meta b {
+    background: color-mix(in srgb, var(--dash-occupied) 18%, #24221C);
+}
+
+html[data-theme="dark"] .parking-vehicle-row.is-reserved .parking-vehicle-meta b {
+    background: color-mix(in srgb, var(--dash-arriving) 18%, #24221C);
+}
+
+/* Botones fantasma ("Ver corte", acciones secundarias) */
+html[data-theme="dark"] .dash-btn.ghost,
+html[data-theme="dark"] .dm-btn.ghost {
+    background: #2A2721;
+}
+
+/* Iconos de acción en listas ("Ver habitaciones →") */
+html[data-theme="dark"] .list-action-icon {
+    background: #2A2721;
+}
+
+html[data-theme="dark"] .list-row.is-action:focus-visible .list-action-icon {
+    background: color-mix(in srgb, var(--dash-gold) 16%, #2A2721);
+}
+
+/* Popover de notificaciones rápidas */
+html[data-theme="dark"] .notification-quick-panel {
+    background: rgba(32, 30, 26, .98);
+}
+
+html[data-theme="dark"] .notification-quick-head {
+    background: color-mix(in srgb, var(--dash-gold) 11%, #201F19);
+}
+
+html[data-theme="dark"] .notification-quick-row:focus-visible {
+    background: color-mix(in srgb, var(--dash-gold) 13%, #201F19);
+}
+
+html[data-theme="dark"] .notification-quick-icon {
+    background: color-mix(in srgb, var(--dash-gold) 18%, #201F19);
+}
+
+html[data-theme="dark"] .notification-quick-push {
+    background: linear-gradient(180deg, #24221C, color-mix(in srgb, var(--dash-gold) 10%, #201F19));
+}
+
+html[data-theme="dark"] .notification-quick-push-btn.secondary,
+html[data-theme="dark"] .notification-quick-all {
+    background: #2A2721;
+}
+
+html[data-theme="dark"] .notification-quick-all:focus-visible {
+    background: color-mix(in srgb, var(--dash-gold) 12%, #2A2721);
+}
+
+/* Panel de notificaciones del dashboard */
+html[data-theme="dark"] .notification-panel-link {
+    background: color-mix(in srgb, var(--dash-gold) 13%, #201F19);
+}
+
+html[data-theme="dark"] .notification-summary-item {
+    background: color-mix(in srgb, var(--dash-navy-700, #C9C3B4) 6%, #201F19);
+}
+
+html[data-theme="dark"] .notification-row {
+    background: #24221C;
+}
+
+html[data-theme="dark"] .notification-row:focus-visible {
+    background: color-mix(in srgb, var(--dash-gold) 13%, #24221C);
+}
+
+html[data-theme="dark"] .notification-row-icon {
+    background: color-mix(in srgb, var(--dash-gold) 18%, #201F19);
+}
+
+/* ── Configuración: re-mapeo de tokens --hc-* ─────────────────────── */
+/* --hc-paper / --hc-ink-mix: tokens con fallback claro; la vista los usa
+   en lugar de blancos (#fff/#fffffd) y tinta slate (#334155) hardcodeados */
+html[data-theme="dark"] .hc-page {
+    --hc-paper: #201F19;
+    --hc-ink-mix: #E6E0D2;
+    --hc-accent-soft: color-mix(in srgb, var(--hc-accent) 20%, #221F1A);
+    --hc-bg: #191813;
+    --hc-bg-deep: #14130F;
+    --hc-surface: #201F19;
+    --hc-surface-muted: color-mix(in srgb, var(--hc-brand) 10%, #201F19);
+    --hc-ink: #EFE9DC;
+    --hc-ink-soft: #B4AD9D;
+    --hc-ink-faint: #8F897B;
+    --hc-line: color-mix(in srgb, var(--hc-brand) 16%, #3A362C);
+    --hc-line-strong: color-mix(in srgb, var(--hc-brand) 26%, #4A4536);
+    --hc-shadow: 0 18px 48px -36px rgba(0, 0, 0, .8);
+}
+
+/* Los "wash" por sección mezclan con blanco: en oscuro mezclan con superficie */
+html[data-theme="dark"] .hc-page [data-hc-section] {
+    --hc-section-wash: color-mix(in srgb, var(--hc-section-accent, var(--hc-accent)) 9%, #201F19);
+}
+
+/* Título grande: usa el navy fuerte de marca, invisible sobre fondo oscuro */
+html[data-theme="dark"] .hc-page .hc-title {
+    color: var(--hc-ink);
+}

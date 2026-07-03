@@ -211,7 +211,8 @@ if (!function_exists('cxp_form_error_attrs')) {
 
         <section class="cx-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cx-btn" href="<?= back_url('cuentas-por-pagar') ?>">
+                <?php $back_arrow_href = back_url('cuentas-por-pagar'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="cx-btn ms-back-legacy" href="<?= back_url('cuentas-por-pagar') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

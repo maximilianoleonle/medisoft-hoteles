@@ -21,8 +21,9 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-2">
-                    <a href="<?= url('caja') ?>" 
-                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
+                    <?php $back_arrow_href = url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                    <a href="<?= url('caja') ?>"
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2 ms-back-legacy">
                         <i class="fas fa-arrow-left"></i>
                         <span>Volver</span>
                     </a>

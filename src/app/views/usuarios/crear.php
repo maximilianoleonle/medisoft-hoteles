@@ -627,7 +627,8 @@ if (!function_exists('usuario_form_error_attrs')) {
                     </p>
                 </div>
             </div>
-            <a href="<?= back_url('usuarios') ?>" class="worker-back-btn">
+            <?php $back_arrow_href = back_url('usuarios'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('usuarios') ?>" class="worker-back-btn ms-back-legacy">
                 <i class="fas fa-arrow-left"></i>
                 Volver
             </a>
@@ -1127,9 +1128,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('createUserForm');
     const submitBtn = document.getElementById('submitBtn');
     const formAlert = document.getElementById('user-form-alert');
-    let submitArmed = false;
-    let submitResetTimer = null;
-
     function setFormAlert(message, type = 'info') {
         if (!formAlert) return;
         const icon = formAlert.querySelector('i');
@@ -1152,24 +1150,12 @@ document.addEventListener('DOMContentLoaded', function() {
         formAlert.classList.remove('is-error', 'is-success');
     }
 
-    function resetSubmitConfirmation(keepAlert = false) {
-        submitArmed = false;
-        window.clearTimeout(submitResetTimer);
-        if (submitBtn) {
-            submitBtn.classList.remove('is-confirming');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear <?= htmlspecialchars($workerLabel, ENT_QUOTES, 'UTF-8') ?>';
-        }
-        if (!keepAlert) clearFormAlert();
-    }
-
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             if (submitBtn?.disabled) return;
             if (!form.checkValidity()) {
-                resetSubmitConfirmation(true);
                 setFormAlert('Revisa los campos obligatorios antes de crear el acceso.', 'error');
                 form.reportValidity();
                 return;
@@ -1181,38 +1167,28 @@ document.addEventListener('DOMContentLoaded', function() {
             const nombreUsuario = document.getElementById('nombre_usuario')?.value || '';
 
             if (password !== confirmation) {
-                resetSubmitConfirmation(true);
                 setFormAlert('Las contrasenas no coinciden. Corrige la confirmacion y vuelve a intentar.', 'error');
                 document.getElementById('password_confirmation')?.focus();
                 return;
             }
 
-            if (!submitArmed) {
-                submitArmed = true;
+            msConfirm({
+                type: 'success',
+                icon: 'login',
+                title: '¿Crear acceso?',
+                msg: nombreCompleto && nombreUsuario
+                    ? `Se creará el acceso de ${nombreCompleto} (@${nombreUsuario}) al sistema.`
+                    : 'Se creará el nuevo acceso al sistema.',
+                confirmLabel: 'Crear acceso'
+            }).then(ok => {
+                if (!ok) return;
                 if (submitBtn) {
-                    submitBtn.classList.add('is-confirming');
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar creacion';
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
                 }
-                const resumen = nombreCompleto && nombreUsuario
-                    ? `Vuelve a presionar para crear el acceso de ${nombreCompleto} (@${nombreUsuario}).`
-                    : 'Vuelve a presionar para confirmar la creacion del acceso.';
-                setFormAlert(resumen, 'info');
-                submitResetTimer = window.setTimeout(() => resetSubmitConfirmation(), 7000);
-                return;
-            }
-
-            window.clearTimeout(submitResetTimer);
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
-            }
-            clearFormAlert();
-            this.submit();
-        });
-
-        form.querySelectorAll('input, select, textarea').forEach(field => {
-            field.addEventListener('input', () => resetSubmitConfirmation());
-            field.addEventListener('change', () => resetSubmitConfirmation());
+                clearFormAlert();
+                form.submit();
+            });
         });
     }
 

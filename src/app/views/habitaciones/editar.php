@@ -307,6 +307,7 @@ textarea.s-inp{height:auto;padding-top:10px;padding-bottom:10px;resize:vertical;
 <div class="s-shell">
 
 <nav class="s-crumb">
+    <?php $back_arrow_href = back_url('habitaciones/' . $habitacion['id']); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
     <a href="<?= url('habitaciones') ?>"><i class="fas fa-bed"></i> Habitaciones</a>
     <span class="s-crumb-sep"><i class="fas fa-chevron-right"></i></span>
     <a href="<?= url('habitaciones/' . $habitacion['id']) ?>">Hab. <?= htmlspecialchars($habitacion['numero'], ENT_QUOTES, 'UTF-8') ?></a>

@@ -315,7 +315,8 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                 <p>Control interno de PDFs guardados para compartir por link con expiracion, revocacion, correo y conteo de accesos.</p>
             </section>
             <div class="report-link-actions">
-                <a href="<?= back_url('reportes') ?>" class="report-link-btn">
+                <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline ms-back--glass'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reportes') ?>" class="report-link-btn ms-back-legacy">
                     <i class="fas fa-arrow-left"></i> Reportes
                 </a>
             </div>
@@ -457,7 +458,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
                                             <?php if ($estado !== 'revocado'): ?>
-                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/enviar-correo') ?>" data-report-link-confirm="1" data-confirm-message="Se enviara este reporte por correo con un link seguro nuevo.">
+                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/enviar-correo') ?>" data-ms-confirm data-ms-type="info" data-ms-icon="check" data-ms-title="¿Enviar reporte por correo?" data-ms-msg="Se enviará este reporte por correo con un link seguro nuevo." data-ms-ok="Enviar correo">
                                                     <?= csrf_field() ?>
                                                     <button class="report-link-icon-btn" type="submit" title="<?= rep_link_safe($correoTitle) ?>" <?= $puedeEnviarCorreo ? '' : 'disabled' ?>>
                                                         <i class="fas fa-envelope"></i>
@@ -465,7 +466,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                                                 </form>
                                             <?php endif; ?>
                                             <?php if ($estado === 'activo'): ?>
-                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/revocar') ?>" data-report-link-confirm="1" data-confirm-message="Revocar este link impedira nuevos accesos con esta URL.">
+                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/revocar') ?>" data-ms-confirm data-ms-type="error" data-ms-icon="x" data-ms-title="¿Revocar link?" data-ms-msg="Revocar este link impedirá nuevos accesos con esta URL." data-ms-ok="Sí, revocar">
                                                     <?= csrf_field() ?>
                                                     <button class="report-link-icon-btn danger" type="submit" title="Revocar link">
                                                         <i class="fas fa-ban"></i>
@@ -485,64 +486,5 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
 </div>
 
 <script>
-(function() {
-    function showReportLinkToast(message, duration = 7000) {
-        let toast = document.getElementById('reportLinkToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'reportLinkToast';
-            toast.className = 'report-link-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetReportLinkConfirm(form) {
-        if (!form) return;
-
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.reportLinkConfirm !== '1') {
-            return;
-        }
-
-        if (form.dataset.confirmedAction === '1') {
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-report-link-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetReportLinkConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = '<i class="fas fa-check"></i>';
-        }
-
-        showReportLinkToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetReportLinkConfirm(form), 7000);
-    }, true);
-})();
+/* Las confirmaciones (enviar correo / revocar) usan el modal global msConfirm. */
 </script>

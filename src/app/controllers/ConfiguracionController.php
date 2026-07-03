@@ -95,6 +95,10 @@ class ConfiguracionController extends Controller {
             'guestFieldPolicy' => function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($hotelId) : [],
             'ownerDistributionConfig' => function_exists('hotel_owner_distribution_config') ? hotel_owner_distribution_config($hotelId) : [],
             'pwaPushDevices' => $pwaPushDevices,
+            'footerNavCatalog' => function_exists('hotel_footer_nav_available_catalog') ? hotel_footer_nav_available_catalog() : [],
+            'footerNavSelected' => function_exists('hotel_footer_nav_items') ? array_keys(hotel_footer_nav_items()) : [],
+            'footerNavMax' => function_exists('hotel_footer_nav_max') ? hotel_footer_nav_max() : 4,
+            'footerNavMin' => function_exists('hotel_footer_nav_min') ? hotel_footer_nav_min() : 2,
             'ultimo_backup' => $ultimo_backup,
             'espacio' => $espacio
         ]);
@@ -175,6 +179,20 @@ class ConfiguracionController extends Controller {
             }
 
             $ownerDistributionValues = $ownerDistributionResult['values'];
+        }
+
+        $footerNavValues = null;
+
+        if (isset($_POST['footer_nav_submitted']) && function_exists('hotel_footer_nav_normalize_payload')) {
+            $footerNavResult = hotel_footer_nav_normalize_payload($_POST['footer_nav'] ?? []);
+
+            if (!empty($footerNavResult['errors'])) {
+                set_mensaje(implode('<br>', $footerNavResult['errors']), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $footerNavValues = $footerNavResult['values'];
         }
 
         $brandingValues = null;
@@ -262,6 +280,10 @@ class ConfiguracionController extends Controller {
 
             if (is_array($ownerDistributionValues) && function_exists('hotel_owner_distribution_save')) {
                 hotel_owner_distribution_save($ownerDistributionValues);
+            }
+
+            if (is_array($footerNavValues) && function_exists('hotel_footer_nav_save')) {
+                hotel_footer_nav_save($footerNavValues);
             }
 
             if (is_array($brandingValues) && !empty($brandingContext['id'])) {

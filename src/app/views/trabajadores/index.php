@@ -326,6 +326,7 @@ $visibles = count($trabajadores);
 
 <div class="workers-page p-4 sm:p-6">
     <div class="wk-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
             <div class="wk-title-lockup">
                 <div class="wk-hero-icon"><i class="fas fa-users-gear"></i></div>
@@ -421,7 +422,7 @@ $visibles = count($trabajadores);
                                         $tTel = trim((string)($trabajador['telefono'] ?? '')) !== '';
                                         $tMail = trim((string)($trabajador['email'] ?? '')) !== '';
                                         ?>
-                                        <tr class="wk-row">
+                                        <tr class="wk-row" data-easy-href="<?= trab_safe($tUrl, '') ?>" role="link" tabindex="0" title="Abrir trabajador <?= trab_safe($trabajador['nombre_completo'] ?? null) ?>" aria-label="Abrir trabajador <?= trab_safe($trabajador['nombre_completo'] ?? null) ?>">
                                             <td>
                                                 <div class="wk-id-cell">
                                                     <div class="wk-avatar"><?= trab_inicial($trabajador['nombre_completo'] ?? '') ?></div>
@@ -449,7 +450,7 @@ $visibles = count($trabajadores);
                                                             <button class="wk-action wk-action-on" type="submit" title="Reactivar" aria-label="Reactivar trabajador"><i class="fas fa-rotate-left"></i></button>
                                                         </form>
                                                     <?php else: ?>
-                                                        <form method="POST" action="<?= url('trabajadores/' . $tId . '/baja-logica') ?>" data-worker-confirm="1" data-confirm-label="Confirmar baja" data-confirm-message="La baja conserva el registro del trabajador; podras reactivarlo despues.">
+                                                        <form method="POST" action="<?= url('trabajadores/' . $tId . '/baja-logica') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Dar de baja al trabajador?" data-ms-msg="La baja conserva el registro del trabajador; podrás reactivarlo después." data-ms-ok="Confirmar baja">
                                                             <?= csrf_field() ?>
                                                             <button class="wk-action wk-action-off" type="submit" title="Dar de baja" aria-label="Dar de baja trabajador"><i class="fas fa-user-slash"></i></button>
                                                         </form>
@@ -470,7 +471,7 @@ $visibles = count($trabajadores);
                                 $tEstado = (string)($trabajador['estado'] ?? '');
                                 [$eLabel, $eClass, $eIcon] = wk_estado_meta($tEstado);
                                 ?>
-                                <article class="wk-mcard">
+                                <article class="wk-mcard" data-easy-href="<?= trab_safe($tUrl, '') ?>" role="link" tabindex="0" title="Abrir trabajador <?= trab_safe($trabajador['nombre_completo'] ?? null) ?>" aria-label="Abrir trabajador <?= trab_safe($trabajador['nombre_completo'] ?? null) ?>">
                                     <div class="wk-mtop">
                                         <div class="wk-avatar"><?= trab_inicial($trabajador['nombre_completo'] ?? '') ?></div>
                                         <div class="min-w-0">
@@ -492,7 +493,7 @@ $visibles = count($trabajadores);
                                                 <button class="wk-cardbtn is-on" type="submit"><i class="fas fa-rotate-left"></i> Reactivar</button>
                                             </form>
                                         <?php else: ?>
-                                            <form method="POST" action="<?= url('trabajadores/' . $tId . '/baja-logica') ?>" data-worker-confirm="1" data-confirm-label="Confirmar baja" data-confirm-message="La baja conserva el registro del trabajador; podras reactivarlo despues.">
+                                            <form method="POST" action="<?= url('trabajadores/' . $tId . '/baja-logica') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Dar de baja al trabajador?" data-ms-msg="La baja conserva el registro del trabajador; podrás reactivarlo después." data-ms-ok="Confirmar baja">
                                                 <?= csrf_field() ?>
                                                 <button class="wk-cardbtn is-off" type="submit"><i class="fas fa-user-slash"></i> Baja</button>
                                             </form>
@@ -509,60 +510,7 @@ $visibles = count($trabajadores);
 </div>
 
 <script>
-(function() {
-    function showWorkerToast(message, duration = 7000) {
-        let toast = document.getElementById('workerActionToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'workerActionToast';
-            toast.className = 'worker-action-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetWorkerConfirm(form) {
-        if (!form) return;
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.workerConfirm !== '1') return;
-        if (form.dataset.confirmedAction === '1') return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-worker-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetWorkerConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
-        }
-
-        showWorkerToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetWorkerConfirm(form), 7000);
-    }, true);
-})();
-
+/* La confirmación de baja usa el modal global msConfirm (data-ms-confirm en el form). */
 (() => {
     const form = document.querySelector('[data-wk-live-search-form]');
     const input = document.querySelector('[data-wk-live-search-input]');

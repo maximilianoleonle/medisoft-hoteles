@@ -887,7 +887,8 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     <main class="rent-shell">
         <section class="rent-hero">
             <div class="rent-hero-main">
-                <a href="<?= back_url('reportes') ?>" class="rent-back">
+                <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reportes') ?>" class="rent-back ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Reportes
                 </a>

@@ -70,10 +70,13 @@ $resumenPermisos = static function ($permisosJson) {
 .roles-view .rv-empty p { color: var(--rv-muted); font-size: .85rem; margin-bottom: 1rem; }
 .roles-view .rv-back { display: inline-flex; align-items: center; gap: .4rem; color: var(--rv-muted); font-size: .82rem; font-weight: 600; text-decoration: none; margin-bottom: .85rem; }
 .roles-view .rv-back:hover { color: var(--rv-brand); }
+/* En móvil el regreso lo cubre la flecha minimalista global (partials/back_arrow.php) */
+@media (max-width: 768px) { .roles-view .rv-back { display: none; } }
 </style>
 
 <div class="roles-view">
     <div class="rv-wrap">
+        <?php $back_arrow_href = back_url('configuracion'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <a href="<?= url('configuracion') ?>" class="rv-back"><i class="fas fa-arrow-left"></i> Volver a Configuración</a>
 
         <div class="rv-hero">
@@ -146,9 +149,17 @@ $resumenPermisos = static function ($permisosJson) {
 
 <script>
 function rolEliminar(id, nombre) {
-    if (!window.confirm('¿Eliminar el rol "' + nombre + '"? Esta acción no se puede deshacer.')) return;
-    const form = document.getElementById('rol-eliminar-form');
-    form.action = '<?= url('configuracion/roles/') ?>' + id + '/eliminar';
-    form.submit();
+    msConfirm({
+        type: 'error',
+        icon: 'trash',
+        title: '¿Eliminar rol?',
+        msg: 'Se eliminará el rol "' + nombre + '". Esta acción no se puede deshacer.',
+        confirmLabel: 'Sí, eliminar'
+    }).then(ok => {
+        if (!ok) return;
+        const form = document.getElementById('rol-eliminar-form');
+        form.action = '<?= url('configuracion/roles/') ?>' + id + '/eliminar';
+        form.submit();
+    });
 }
 </script>

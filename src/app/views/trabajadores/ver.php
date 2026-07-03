@@ -368,7 +368,8 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 
         <!-- Acciones -->
         <section class="wk-toolbar">
-            <a class="wk-btn" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+            <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
             <a class="wk-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>"><i class="fas fa-pen"></i> Editar datos</a>
             <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>"><i class="fas fa-cash-register"></i> Simulador de pagos</a>
             <?php if ($estadoTrabajador === 'baja'): ?>
@@ -377,7 +378,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     <button class="wk-btn wk-btn-on" type="submit"><i class="fas fa-rotate-left"></i> Reactivar</button>
                 </form>
             <?php else: ?>
-                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" data-worker-confirm="1" data-confirm-label="Confirmar baja" data-confirm-message="La baja conserva el registro del trabajador; podras reactivarlo despues.">
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Dar de baja al trabajador?" data-ms-msg="La baja conserva el registro del trabajador; podrás reactivarlo después." data-ms-ok="Confirmar baja">
                     <?= csrf_field() ?>
                     <button class="wk-btn wk-btn-off" type="submit"><i class="fas fa-user-slash"></i> Dar de baja</button>
                 </form>
@@ -878,64 +879,5 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 </div>
 
 <script>
-(function() {
-    function showWorkerToast(message, duration = 7000) {
-        let toast = document.getElementById('workerActionToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'workerActionToast';
-            toast.className = 'worker-action-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetWorkerConfirm(form) {
-        if (!form) return;
-
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.workerConfirm !== '1') {
-            return;
-        }
-
-        if (form.dataset.confirmedAction === '1') {
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-worker-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetWorkerConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
-        }
-
-        showWorkerToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetWorkerConfirm(form), 7000);
-    }, true);
-})();
+/* La confirmación de baja usa el modal global msConfirm (data-ms-confirm en el form). */
 </script>

@@ -659,7 +659,8 @@ if (!function_exists('usuario_form_error_attrs')) {
                     </p>
                 </div>
             </div>
-            <a href="<?= back_url('usuarios') ?>" class="worker-back-btn">
+            <?php $back_arrow_href = back_url('usuarios'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('usuarios') ?>" class="worker-back-btn ms-back-legacy">
                 <i class="fas fa-arrow-left"></i>
                 Volver al listado
             </a>
@@ -1067,9 +1068,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('editUserForm');
     const submitBtn = document.getElementById('submitBtn');
     const formAlert = document.getElementById('user-form-alert');
-    let submitArmed = false;
-    let submitResetTimer = null;
-
     function setFormAlert(message, type = 'info') {
         if (!formAlert) return;
         const icon = formAlert.querySelector('i');
@@ -1092,52 +1090,32 @@ document.addEventListener('DOMContentLoaded', function() {
         formAlert.classList.remove('is-error', 'is-success');
     }
 
-    function resetSubmitConfirmation(keepAlert = false) {
-        submitArmed = false;
-        window.clearTimeout(submitResetTimer);
-        if (submitBtn) {
-            submitBtn.classList.remove('is-confirming');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar <?= htmlspecialchars($workerLabel, ENT_QUOTES, 'UTF-8') ?>';
-        }
-        if (!keepAlert) clearFormAlert();
-    }
-
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             if (submitBtn?.disabled) return;
             if (!form.checkValidity()) {
-                resetSubmitConfirmation(true);
                 setFormAlert('Revisa los campos marcados antes de guardar los cambios.', 'error');
                 form.reportValidity();
                 return;
             }
 
-            if (!submitArmed) {
-                submitArmed = true;
+            msConfirm({
+                type: 'warning',
+                icon: 'alert',
+                title: '¿Guardar cambios del acceso?',
+                msg: 'Se actualizarán los datos y permisos de este acceso al sistema.',
+                confirmLabel: 'Guardar cambios'
+            }).then(ok => {
+                if (!ok) return;
                 if (submitBtn) {
-                    submitBtn.classList.add('is-confirming');
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar cambios';
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                 }
-                setFormAlert('Vuelve a presionar para guardar los cambios de este acceso.', 'info');
-                submitResetTimer = window.setTimeout(() => resetSubmitConfirmation(), 7000);
-                return;
-            }
-
-            window.clearTimeout(submitResetTimer);
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-            }
-            clearFormAlert();
-            this.submit();
-        });
-
-        form.querySelectorAll('input, select, textarea').forEach(field => {
-            field.addEventListener('input', () => resetSubmitConfirmation());
-            field.addEventListener('change', () => resetSubmitConfirmation());
+                clearFormAlert();
+                form.submit();
+            });
         });
     }
 

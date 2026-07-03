@@ -988,7 +988,8 @@ input:checked + .toggle-slider:before {
                         </div>
                     </div>
 
-                    <a href="<?= back_url('configuracion/tarifas') ?>" class="tarifa-back-btn" title="Regresar a tarifas dinámicas">
+                    <?php $back_arrow_href = back_url('configuracion/tarifas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                    <a href="<?= back_url('configuracion/tarifas') ?>" class="tarifa-back-btn ms-back-legacy" title="Regresar a tarifas dinámicas">
                         <i class="fas fa-arrow-left"></i>
                         Regresar
                     </a>

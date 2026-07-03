@@ -1018,7 +1018,8 @@ foreach ($porEstado as $estadoDato) {
     <main class="geo-shell">
         <section class="geo-hero">
             <div class="geo-hero-main">
-                <a href="<?= back_url('reportes') ?>" class="geo-btn is-soft">
+                <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reportes') ?>" class="geo-btn is-soft ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Volver a reportes
                 </a>

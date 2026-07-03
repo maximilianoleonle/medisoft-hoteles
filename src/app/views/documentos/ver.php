@@ -242,7 +242,8 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
         </section>
 
         <section class="dc-toolbar">
-            <a class="dc-btn" href="<?= back_url('documentos') ?>">
+            <?php $back_arrow_href = back_url('documentos'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="dc-btn ms-back-legacy" href="<?= back_url('documentos') ?>">
                 <i class="fas fa-arrow-left"></i>
                 Volver
             </a>
@@ -263,7 +264,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                         Abrir preview
                     </a>
                 <?php endif; ?>
-                <form method="POST" action="<?= url('documentos/' . $documentoId . '/archivar') ?>" data-doc-confirm="1" data-confirm-label="Confirmar archivar" data-confirm-message="Archivar quita el documento de los activos. Podras restaurarlo cuando quieras.">
+                <form method="POST" action="<?= url('documentos/' . $documentoId . '/archivar') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Archivar documento?" data-ms-msg="Archivar quita el documento de los activos. Podrás restaurarlo cuando quieras." data-ms-ok="Confirmar archivar">
                     <?= csrf_field() ?>
                     <button class="dc-btn dc-act dc-act-warn" type="submit">
                         <i class="fas fa-box-archive"></i>
@@ -271,7 +272,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                     </button>
                 </form>
             <?php elseif ($docEstado === 'archivado'): ?>
-                <form method="POST" action="<?= url('documentos/' . $documentoId . '/restaurar') ?>" data-doc-confirm="1" data-confirm-label="Confirmar restaurar" data-confirm-message="Restaurar regresa el documento a los activos.">
+                <form method="POST" action="<?= url('documentos/' . $documentoId . '/restaurar') ?>" data-ms-confirm data-ms-type="success" data-ms-icon="login" data-ms-title="¿Restaurar documento?" data-ms-msg="Restaurar regresa el documento a los activos." data-ms-ok="Confirmar restaurar">
                     <?= csrf_field() ?>
                     <button class="dc-btn dc-act dc-act-ok" type="submit">
                         <i class="fas fa-rotate-left"></i>
@@ -280,7 +281,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
                 </form>
             <?php endif; ?>
             <?php if (in_array($docEstado, ['activo', 'archivado'], true)): ?>
-                <form method="POST" action="<?= url('documentos/' . $documentoId . '/eliminar') ?>" data-doc-confirm="1" data-confirm-label="Confirmar baja" data-confirm-message="Dar de baja oculta el documento, pero no borra el archivo ni sus vinculos. Lo veras en Eliminados.">
+                <form method="POST" action="<?= url('documentos/' . $documentoId . '/eliminar') ?>" data-ms-confirm data-ms-type="error" data-ms-icon="trash" data-ms-title="¿Dar de baja el documento?" data-ms-msg="Dar de baja oculta el documento, pero no borra el archivo ni sus vínculos. Lo verás en Eliminados." data-ms-ok="Confirmar baja">
                     <?= csrf_field() ?>
                     <button class="dc-btn dc-act dc-act-danger" type="submit">
                         <i class="fas fa-ban"></i>
@@ -407,36 +408,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
 
 <script>
 (function() {
-    function showDocToast(message, duration = 7000) {
-        let toast = document.getElementById('docActionToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'docActionToast';
-            toast.className = 'doc-action-toast';
-            toast.setAttribute('role', 'status');
-            toast.setAttribute('aria-live', 'polite');
-            document.body.appendChild(toast);
-        }
-
-        window.clearTimeout(toast._hideTimer);
-        toast.textContent = message;
-        requestAnimationFrame(() => toast.classList.add('is-visible'));
-        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
-    }
-
-    function resetDocConfirm(form) {
-        if (!form) return;
-
-        delete form.dataset.confirmedAction;
-        window.clearTimeout(form._confirmTimer);
-        const button = form.querySelector('button[type="submit"]');
-        if (button && button.dataset.originalHtml) {
-            button.innerHTML = button.dataset.originalHtml;
-            delete button.dataset.originalHtml;
-        }
-        button?.classList.remove('is-confirming');
-    }
-
+    /* Las confirmaciones (archivar/restaurar/baja) usan el modal global msConfirm. */
     document.querySelectorAll('[data-doc-inline-preview]').forEach(panel => {
         const toggleButton = panel.querySelector('[data-doc-preview-toggle]');
         const stage = panel.querySelector('[data-doc-preview-stage]');
@@ -514,33 +486,5 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
         loadPreview();
     });
 
-    document.addEventListener('submit', function(event) {
-        const form = event.target instanceof HTMLFormElement ? event.target : null;
-        if (!form || form.dataset.docConfirm !== '1') {
-            return;
-        }
-
-        if (form.dataset.confirmedAction === '1') {
-            return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        document.querySelectorAll('form[data-doc-confirm="1"]').forEach(otherForm => {
-            if (otherForm !== form) resetDocConfirm(otherForm);
-        });
-
-        form.dataset.confirmedAction = '1';
-        const button = form.querySelector('button[type="submit"]');
-        if (button) {
-            button.dataset.originalHtml = button.innerHTML;
-            button.classList.add('is-confirming');
-            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
-        }
-
-        showDocToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
-        form._confirmTimer = window.setTimeout(() => resetDocConfirm(form), 7000);
-    }, true);
 })();
 </script>

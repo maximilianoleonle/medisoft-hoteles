@@ -412,8 +412,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                     <i class="fas fa-plus-circle"></i>
                     Nuevo Producto
                 </h1>
+                <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline ms-back--glass'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
                 <a href="<?= back_url('inventario') ?>"
-                   class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2">
+                   class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2 ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

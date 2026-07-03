@@ -21,6 +21,10 @@ if ($msToastMensaje) {
         $msToastMensaje = ['texto' => $msToastMensaje, 'tipo' => 'info'];
     }
 
+    // El header consume el flash antes de que corra la vista; se expone aquí
+    // para que las vistas puedan reaccionar (p.ej. pantalla de check-in exitoso).
+    $GLOBALS['ms_flash_consumido'] = $msToastMensaje;
+
     $msTexto = $msToastMensaje['texto'] ?? 'Operación realizada';
     $msTipo  = $msToastMensaje['tipo']  ?? 'info';
 

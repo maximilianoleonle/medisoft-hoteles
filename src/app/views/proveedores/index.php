@@ -518,6 +518,7 @@ $visibles = count($proveedores);
 
 <div class="providers-page p-4 sm:p-6">
     <div class="pv-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div class="pv-title-lockup">
                 <div class="pv-hero-icon"><i class="fas fa-truck-field"></i></div>
@@ -635,7 +636,7 @@ $visibles = count($proveedores);
                                         $tieneMail = trim((string)($proveedor['email'] ?? '')) !== '';
                                         $tieneRfc = trim((string)($proveedor['rfc'] ?? '')) !== '';
                                         ?>
-                                        <tr class="pv-row">
+                                        <tr class="pv-row" data-easy-href="<?= prov_safe($provUrl, '') ?>" role="link" tabindex="0" title="Abrir proveedor <?= prov_safe($proveedor['nombre']) ?>" aria-label="Abrir proveedor <?= prov_safe($proveedor['nombre']) ?>">
                                             <td>
                                                 <div class="pv-id-cell">
                                                     <div class="pv-avatar"><?= prov_inicial($proveedor['nombre'] ?? '') ?></div>
@@ -721,7 +722,7 @@ $visibles = count($proveedores);
                                 $tieneMail = trim((string)($proveedor['email'] ?? '')) !== '';
                                 $tieneRfc = trim((string)($proveedor['rfc'] ?? '')) !== '';
                                 ?>
-                                <article class="pv-mobile-card">
+                                <article class="pv-mobile-card" data-easy-href="<?= prov_safe($provUrl, '') ?>" role="link" tabindex="0" title="Abrir proveedor <?= prov_safe($proveedor['nombre']) ?>" aria-label="Abrir proveedor <?= prov_safe($proveedor['nombre']) ?>">
                                     <div class="pv-mobile-top">
                                         <div class="pv-avatar"><?= prov_inicial($proveedor['nombre'] ?? '') ?></div>
                                         <div class="min-w-0">

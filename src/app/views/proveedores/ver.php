@@ -163,7 +163,8 @@ $activo = (int)($proveedor['activo'] ?? 0) === 1;
 
         <section class="pv-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="pv-btn" href="<?= back_url('proveedores') ?>">
+                <?php $back_arrow_href = back_url('proveedores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="pv-btn ms-back-legacy" href="<?= back_url('proveedores') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

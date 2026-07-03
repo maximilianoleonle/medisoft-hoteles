@@ -397,7 +397,8 @@
 <div class="create-room-page min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
     <div class="max-w-7xl mx-auto mb-8">
         <div class="create-room-breadcrumb flex items-center text-sm text-gray-600 mb-4">
-            <a href="<?= back_url('habitaciones') ?>" class="hover:text-hotel-brown flex items-center">
+            <?php $back_arrow_href = back_url('habitaciones'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('habitaciones') ?>" class="hover:text-hotel-brown flex items-center ms-back-legacy">
                 <i class="fas fa-arrow-left mr-2"></i>Volver a Habitaciones
             </a>
         </div>

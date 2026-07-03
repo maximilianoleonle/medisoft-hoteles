@@ -348,12 +348,13 @@ if (!function_exists('cj_finance_sentence')) {
         color:var(--cj-navy);
     }
 }
-.cj-card-tail { display:flex; align-items:center; gap:6px; margin-left:auto; }
+.cj-card-tail { display:flex; align-items:center; gap:6px; margin-left:auto; min-width:0; }
 .cj-card-tail a, .cj-card-tail span {
     font-size:.75rem; font-weight:600; color:var(--cj-muted);
     text-decoration:none; padding:4px 9px;
     border-radius:var(--cj-r-xs); border:1px solid var(--cj-line);
     transition:background .15s;
+    max-width:100%;
 }
 .cj-card-tail a:hover { background:var(--cj-ivory); color:var(--cj-text); }
 .cj-card-body { padding:20px; }
@@ -804,6 +805,29 @@ if (!function_exists('cj_finance_sentence')) {
     .cj-resh-meta { gap:5px; }
     .cj-resh-acts { flex-direction:row; flex-wrap:wrap; }
     .cj-act-btn   { min-height:38px; font-size:.8rem; }
+    .cj-card-head {
+        display:grid;
+        grid-template-columns:36px minmax(0, 1fr);
+        align-items:center;
+        gap:8px 12px;
+        padding:14px 16px;
+    }
+    .cj-card-head h2 { font-size:1.05rem; }
+    .cj-card-tail {
+        grid-column:2 / -1;
+        width:100%;
+        margin-left:0;
+        justify-content:flex-start;
+    }
+    .cj-card-tail a,
+    .cj-card-tail span {
+        width:fit-content;
+        max-width:100%;
+        white-space:normal;
+        overflow-wrap:anywhere;
+        line-height:1.3;
+    }
+    .cj-card-body { padding:16px; }
     .cj-kpis      { grid-template-columns:repeat(2, minmax(0,1fr)); }
     .cj-cats      { grid-template-columns:1fr; }
     .cj-shortcuts { grid-template-columns:1fr; }
@@ -871,7 +895,8 @@ $cash_methods = [
 
     <!-- ── Topbar ── -->
     <nav class="cj-topbar">
-        <a href="<?= back_url('dashboard') ?>" class="cj-back" title="Volver">
+        <?php $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <a href="<?= back_url('dashboard') ?>" class="cj-back ms-back-legacy" title="Volver">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>

@@ -164,6 +164,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
 <div class="purchase-form-page p-4 sm:p-6">
     <div class="cp-shell">
+        <?php $back_arrow_href = back_url('compras'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="cp-title-lockup">
             <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
             <div>

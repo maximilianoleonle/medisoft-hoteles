@@ -1569,7 +1569,8 @@ textarea.invoice-input {
     <div class="invoice-shell">
         <nav class="invoice-topbar" aria-label="Navegacion de facturacion">
             <div class="invoice-nav-left">
-                <a href="<?= back_url('facturacion') ?>" class="invoice-back">
+                <?php $back_arrow_href = back_url('facturacion'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('facturacion') ?>" class="invoice-back ms-back-legacy">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

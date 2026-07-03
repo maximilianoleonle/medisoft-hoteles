@@ -17,8 +17,9 @@
                 Gestionar Imágenes - Habitación <?= htmlspecialchars($habitacion['numero']) ?>
             </h1>
             
+            <?php $back_arrow_href = back_url('habitaciones/' . $habitacion['id']); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>"
-               class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200">
+               class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200 ms-back-legacy">
                 <i class="fas fa-arrow-left mr-2"></i>Volver
             </a>
         </div>

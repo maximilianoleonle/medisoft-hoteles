@@ -339,7 +339,8 @@ $riesgoRows = [
                         Actualizar
                     </button>
                 </form>
-                <a href="<?= back_url('reportes') ?>" class="gd-btn">
+                <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reportes') ?>" class="gd-btn ms-back-legacy">
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     Reportes
                 </a>

@@ -1133,7 +1133,8 @@ $cortesias_actuales = array_column(array_filter($habitaciones_seleccionadas, fun
                         <?= $noches ?> noche<?= $noches > 1 ? 's' : '' ?>
                     </p>
                 </div>
-                <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>" class="btn btn-secondary">
+                <?php $back_arrow_href = back_url('reservaciones/ver/' . $reservacion['id']); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>" class="btn btn-secondary ms-back-legacy">
                     <i class="fas fa-arrow-left" style="margin-right: 5px;"></i>
                     Volver
                 </a>
@@ -1662,8 +1663,15 @@ document.getElementById('formEditarHabitaciones').addEventListener('submit', fun
     });
 
     // Confirmar con el usuario
-    if (confirm('¿Confirmar cambios en la reservación?')) {
-        this.submit();
-    }
+    const form = this;
+    msConfirm({
+        type: 'warning',
+        icon: 'alert',
+        title: '¿Confirmar cambios?',
+        msg: 'Se actualizarán las habitaciones de esta reservación.',
+        confirmLabel: 'Guardar cambios'
+    }).then(ok => {
+        if (ok) form.submit();
+    });
 });
 </script>
