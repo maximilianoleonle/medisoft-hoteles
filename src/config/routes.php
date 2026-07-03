@@ -198,6 +198,11 @@ $router->get('/h/{slug:[a-z0-9-]+}/reservar/api/disponibilidad', ['controller' =
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'MotorReservasPublico', 'action' => 'iniciarPago']);
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
+
+// Motor de reservas interno: tablero, conciliacion a Caja y configuracion
+$router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);
+$router->post('/motor-reservas/pagos/{id:[0-9]+}/conciliar', ['controller' => 'MotorReservas', 'action' => 'conciliar']);
+$router->post('/motor-reservas/configuracion', ['controller' => 'MotorReservas', 'action' => 'guardarConfiguracion']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
