@@ -91,6 +91,55 @@ class IaEjecutivaService
         ];
     }
 
+    /**
+     * Briefing matutino: genera (o reusa) el resumen del DIA ANTERIOR y crea
+     * la notificacion push para direccion. Idempotente por dia via dedupe_key.
+     * Requiere que el hotel tenga los bloques ia_ejecutiva Y notificaciones
+     * (el segundo lo valida NotificacionService/el llamador).
+     * Devuelve el id de la notificacion o null.
+     */
+    public function notificarResumenMatutino(int $hotelId, ?string $fecha = null): ?int
+    {
+        $fecha = $fecha && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)
+            ? $fecha
+            : date('Y-m-d', strtotime('-1 day'));
+
+        $resultado = $this->resumenGerencialDiario($hotelId, $fecha, false);
+        if (empty($resultado['success'])) {
+            error_log('IA Ejecutiva: no se pudo generar el resumen matutino del hotel ' . $hotelId . ': ' . ($resultado['message'] ?? ''));
+            return null;
+        }
+
+        if (!class_exists('NotificacionService')) {
+            require_once __DIR__ . '/NotificacionService.php';
+        }
+
+        return NotificacionService::crear([
+            'hotel_id' => $hotelId,
+            'rol_destino' => 'gerente',
+            'modulo' => 'ia_ejecutiva',
+            'tipo' => 'regla_ia_resumen_diario',
+            'severidad' => 'info',
+            'titulo' => 'Tu resumen del dia esta listo ✦',
+            'mensaje' => $this->extractoParaNotificacion((string) $resultado['resumen']),
+            'url' => 'ia/resumen-diario?fecha=' . $fecha,
+            'dedupe_key' => 'regla.ia_resumen_diario.' . str_replace('-', '', $fecha),
+        ]);
+    }
+
+    /** Primer parrafo narrativo del resumen, recortado para el push. */
+    private function extractoParaNotificacion(string $resumen): string
+    {
+        foreach (explode("\n", $resumen) as $linea) {
+            $linea = trim(preg_replace('/[#*]+/', '', $linea));
+            if (mb_strlen($linea) > 40) {
+                return mb_strlen($linea) > 180 ? mb_substr($linea, 0, 177) . '...' : $linea;
+            }
+        }
+
+        return 'Tu briefing gerencial generado por IA te espera.';
+    }
+
     // ───────────────────────── Prompts ─────────────────────────
 
     private function promptSistema(): string

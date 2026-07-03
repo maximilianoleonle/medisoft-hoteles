@@ -48,6 +48,7 @@ class NotificacionReglasService {
         $creadas[] = $this->reglaCajaAbiertaProlongada();
         $creadas[] = $this->reglaInventarioBajo();
         $creadas[] = $this->reglaReporteGerencialDiario();
+        $creadas[] = $this->reglaResumenIa();
 
         $this->resolverAutomaticasInactivas($this->tiposActivos);
 
@@ -309,6 +310,33 @@ class NotificacionReglasService {
             'url' => 'reportes/gerencial-diario?fecha=' . $fecha,
             'dedupe_key' => 'regla.reporte_gerencial_diario.' . str_replace('-', '', $fecha),
         ]);
+    }
+
+    /**
+     * Briefing IA del dia anterior (bloque ia_ejecutiva). El resumen se genera
+     * una sola vez al dia (cache en ia_resumenes + dedupe de la notificacion);
+     * el trigger es el primer dashboard abierto del dia o el cron matutino.
+     */
+    private function reglaResumenIa(): ?int {
+        if (!$this->moduloActivo('ia_ejecutiva') || !$this->reglaActiva('ia_resumen_diario')) {
+            return null;
+        }
+
+        if (!class_exists('IaEjecutivaService')) {
+            require_once __DIR__ . '/IaEjecutivaService.php';
+        }
+
+        $servicio = new IaEjecutivaService($this->db);
+        if (!$servicio->configurado()) {
+            return null;
+        }
+
+        $id = $servicio->notificarResumenMatutino($this->hotelId);
+        if ($id !== null) {
+            $this->tiposActivos[] = 'regla_ia_resumen_diario';
+        }
+
+        return $id;
     }
 
     private function crearRegla(array $datos): ?int {
