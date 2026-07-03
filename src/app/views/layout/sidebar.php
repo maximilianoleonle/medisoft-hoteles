@@ -37,6 +37,7 @@ $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifas
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
 $mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -75,6 +76,7 @@ $sidebarActivePersonal = $sidebarPathStarts('trabajadores');
 $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
+$sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
 $sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
 $sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
 $sidebarActiveRoles = $sidebarPathStarts('configuracion/roles');
@@ -470,6 +472,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarIaEjecutiva): ?>
+            <a href="<?= url('ia/resumen-diario') ?>"
+               class="nav-item <?= $sidebarActiveIaEjecutiva ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+                <span class="nav-text">Asesor IA</span>
             </a>
             <?php endif; ?>
 

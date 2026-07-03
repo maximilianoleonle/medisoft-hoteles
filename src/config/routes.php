@@ -199,6 +199,10 @@ $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'Mo
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
 
+// IA Ejecutiva: resumen gerencial diario narrado (bloque ia_ejecutiva)
+$router->get('/ia/resumen-diario', ['controller' => 'IaEjecutiva', 'action' => 'resumenDiario']);
+$router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' => 'regenerarResumen']);
+
 // Motor de reservas interno: tablero, conciliacion a Caja y configuracion
 $router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);
 $router->post('/motor-reservas/pagos/{id:[0-9]+}/conciliar', ['controller' => 'MotorReservas', 'action' => 'conciliar']);
