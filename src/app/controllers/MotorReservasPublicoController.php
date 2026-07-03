@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/../services/MotorDisponibilidadService.php';
+require_once __DIR__ . '/../services/MotorReservaOnlineService.php';
 
 class MotorReservasPublicoController extends Controller {
 
@@ -84,6 +85,138 @@ class MotorReservasPublicoController extends Controller {
         $resultado['moneda'] = (string) ($hotel['moneda_codigo'] ?? 'MXN');
         $resultado['moneda_simbolo'] = (string) ($hotel['moneda_simbolo'] ?? '$');
         $this->jsonPublico($resultado, 200);
+    }
+
+    public function iniciarPagoAction($slug) {
+        $hotel = $this->resolverHotel($slug);
+        if (!$hotel || !$this->motorHabilitado($hotel)) {
+            $this->jsonPublico(['success' => false, 'message' => 'Reservas en linea no disponibles para este hotel.'], 404);
+        }
+
+        if (!$this->permitirSolicitud((string) $hotel['slug'])) {
+            $this->jsonPublico(['success' => false, 'message' => 'Demasiadas solicitudes. Intenta de nuevo en un minuto.'], 429);
+        }
+
+        TenantContext::setHotel($hotel);
+
+        $input = json_decode((string) file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            $this->jsonPublico(['success' => false, 'message' => 'Solicitud invalida.'], 422);
+        }
+
+        $base = url('h/' . $hotel['slug'] . '/reservar');
+        $servicio = new MotorReservaOnlineService();
+
+        try {
+            $resultado = $servicio->iniciarPago($hotel, $input, [
+                'success' => $base . '/confirmacion/{HOLD}',
+                'cancel' => $base . '?cancelado=1',
+            ]);
+        } catch (Throwable $e) {
+            error_log('Motor publico: error al iniciar pago (hotel ' . (int) $hotel['id'] . '): ' . $e->getMessage());
+            $this->jsonPublico(['success' => false, 'message' => 'No se pudo iniciar el pago. Intenta de nuevo.'], 500);
+            return;
+        }
+
+        $this->jsonPublico($resultado, empty($resultado['success']) ? 422 : 200);
+    }
+
+    /**
+     * Webhook server-to-server de la pasarela. Sin CSRF (verificacion por firma
+     * Stripe o consulta directa a la API de MercadoPago). Idempotente.
+     */
+    public function webhookAction($slug, $proveedor) {
+        $hotel = $this->resolverHotel($slug);
+        if (!$hotel) {
+            $this->jsonPublico(['success' => false], 404);
+        }
+
+        TenantContext::setHotel($hotel);
+        $hotelId = (int) $hotel['id'];
+        $proveedor = strtolower(trim((string) $proveedor));
+
+        $pasarela = new MotorPasarelaService();
+        $cred = $pasarela->credenciales($hotelId);
+        if (!$cred || ($cred['proveedor'] ?? '') !== $proveedor) {
+            $this->jsonPublico(['success' => false], 404);
+        }
+
+        $servicio = new MotorReservaOnlineService();
+
+        if ($proveedor === 'stripe') {
+            $payload = (string) file_get_contents('php://input');
+            $firma = (string) ($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '');
+            $evento = $pasarela->verificarWebhookStripe($payload, $firma, (string) ($cred['webhook_secret'] ?? ''));
+
+            if ($evento === null) {
+                error_log('Motor webhook: firma Stripe invalida (hotel ' . $hotelId . ').');
+                $this->jsonPublico(['success' => false, 'message' => 'Firma invalida.'], 400);
+            }
+
+            if (($evento['type'] ?? '') !== 'checkout.session.completed') {
+                $this->jsonPublico(['success' => true, 'ignored' => true], 200);
+            }
+
+            $sesion = $evento['data']['object'] ?? [];
+            if (($sesion['payment_status'] ?? '') !== 'paid') {
+                $this->jsonPublico(['success' => true, 'ignored' => true], 200);
+            }
+
+            $holdToken = (string) ($sesion['client_reference_id'] ?? ($sesion['metadata']['hold_token'] ?? ''));
+            $referenciaCobro = (string) ($sesion['payment_intent'] ?? '');
+            $resultado = $servicio->confirmarPagoPorHold($hotelId, $holdToken, $referenciaCobro, $evento);
+            $this->jsonPublico($resultado, 200);
+        }
+
+        if ($proveedor === 'mercadopago') {
+            $query = $_GET;
+            $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
+            $tipo = (string) ($query['type'] ?? $query['topic'] ?? ($body['type'] ?? ''));
+            $paymentId = (string) ($query['data_id'] ?? ($query['data.id'] ?? ($body['data']['id'] ?? ($query['id'] ?? ''))));
+
+            if (stripos($tipo, 'payment') === false || $paymentId === '') {
+                $this->jsonPublico(['success' => true, 'ignored' => true], 200);
+            }
+
+            // Verificacion: consultar el pago directamente a MercadoPago con el token del hotel.
+            $pagoMp = $pasarela->consultarPagoMercadoPago($paymentId, (string) $cred['secret_key']);
+            if (!$pagoMp) {
+                $this->jsonPublico(['success' => false, 'message' => 'Pago no verificable.'], 400);
+            }
+
+            if (($pagoMp['status'] ?? '') !== 'approved') {
+                $this->jsonPublico(['success' => true, 'ignored' => true], 200);
+            }
+
+            $holdToken = (string) ($pagoMp['external_reference'] ?? '');
+            $resultado = $servicio->confirmarPagoPorHold($hotelId, $holdToken, $paymentId, $pagoMp);
+            $this->jsonPublico($resultado, 200);
+        }
+
+        $this->jsonPublico(['success' => false, 'message' => 'Proveedor no soportado.'], 404);
+    }
+
+    public function confirmacionAction($slug, $token) {
+        $hotel = $this->resolverHotel($slug);
+        if (!$hotel) {
+            $this->paginaPublica(404, 'Hotel no encontrado', 'La pagina que buscas no existe o el hotel no esta activo.');
+        }
+
+        TenantContext::setHotel($hotel);
+
+        $servicio = new MotorReservaOnlineService();
+        $estado = $servicio->estadoPorHoldToken((int) $hotel['id'], (string) $token);
+
+        if (!$estado) {
+            $this->paginaPublica(404, 'Reservacion no encontrada', 'No encontramos esta reservacion. Si ya pagaste, contacta al hotel con tu comprobante.', $hotel);
+        }
+
+        View::renderTemplate('motor/confirmacion', [
+            'title' => 'Confirmacion - ' . ($hotel['nombre'] ?? 'Hotel'),
+            'hotel' => $hotel,
+            'branding' => $this->brandingPublico($hotel),
+            'estado' => $estado,
+        ]);
     }
 
     // ───────────────────────── Guards y helpers ─────────────────────────

@@ -195,6 +195,9 @@ $router->get('/h/{slug:[a-z0-9-]+}/manifest.webmanifest', ['controller' => 'Pwa'
 // Motor de reservas publico (bloque motor_reservas; sin login)
 $router->get('/h/{slug:[a-z0-9-]+}/reservar', ['controller' => 'MotorReservasPublico', 'action' => 'reservar']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/api/disponibilidad', ['controller' => 'MotorReservasPublico', 'action' => 'disponibilidad']);
+$router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'MotorReservasPublico', 'action' => 'iniciarPago']);
+$router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
+$router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
