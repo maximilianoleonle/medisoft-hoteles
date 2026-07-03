@@ -34,9 +34,13 @@ class View {
         
         // Buffer de salida
         ob_start();
-        
-        // Incluir header si no es una vista de error o login
-        if (!in_array($view, ['auth/login', 'errors/404', 'errors/500'])) {
+
+        // Vistas standalone: sin layout interno (login, errores y paginas publicas del motor).
+        $esVistaStandalone = in_array($view, ['auth/login', 'errors/404', 'errors/500'])
+            || strpos($view, 'motor/') === 0;
+
+        // Incluir header si no es una vista standalone
+        if (!$esVistaStandalone) {
             require APP_PATH . '/views/layout/header.php';
             // El sidebar ya se incluye dentro del header.php, no lo incluimos aquí
         }
@@ -49,8 +53,8 @@ class View {
             throw new Exception("Vista $view no encontrada");
         }
         
-        // Incluir footer si no es una vista de error o login
-        if (!in_array($view, ['auth/login', 'errors/404', 'errors/500'])) {
+        // Incluir footer si no es una vista standalone
+        if (!$esVistaStandalone) {
             require APP_PATH . '/views/layout/footer.php';
         }
         
