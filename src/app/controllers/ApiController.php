@@ -37,6 +37,31 @@ class ApiController extends Controller {
         return true;
     }
 
+    /**
+     * Navegacion rapida: alternar una pantalla como favorita del usuario
+     * actual en el hotel actual. POST /api/nav/favorito {ruta}
+     */
+    public function navFavoritoAction() {
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false, 'message' => 'Método no permitido'], 405);
+        }
+
+        $this->validateCSRF();
+
+        if (!function_exists('has_hotel_context') || !has_hotel_context()) {
+            View::renderJSON(['success' => false, 'message' => 'Sin contexto de hotel'], 403);
+        }
+
+        $ruta = $this->getPost('ruta');
+        $resultado = nav_toggle_favorito($ruta);
+
+        if ($resultado === null) {
+            View::renderJSON(['success' => false, 'message' => 'Pantalla no válida'], 422);
+        }
+
+        View::renderJSON(['success' => true, 'favorito' => $resultado['favorito']]);
+    }
+
     private function moduleForCurrentApiAction() {
         $action = $this->route_params['action'] ?? '';
 

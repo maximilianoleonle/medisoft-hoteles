@@ -40,6 +40,12 @@ class View {
             || strpos($view, 'motor/') === 0
             || strpos($view, 'checkin/') === 0;
 
+        // Registrar la vista como "reciente" para navegacion rapida
+        // (fire-and-forget: nunca rompe la pagina si falla).
+        if (!$esVistaStandalone && function_exists('nav_registrar_visita')) {
+            nav_registrar_visita();
+        }
+
         // Incluir header si no es una vista standalone
         if (!$esVistaStandalone) {
             require APP_PATH . '/views/layout/header.php';

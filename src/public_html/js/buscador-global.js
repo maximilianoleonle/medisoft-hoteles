@@ -138,10 +138,53 @@
     }
   }
 
+  // ── Pantallas (catálogo local del sidebar, filtrado por módulos/permisos) ──
+  function _normalizarTexto(s) {
+    return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  function _filtrarPantallas(q) {
+    const cat = window.MS_NAV_PANTALLAS;
+    if (!Array.isArray(cat) || !q) return [];
+    const nq = _normalizarTexto(q);
+    return cat
+      .filter(p => _normalizarTexto(`${p.etiqueta} ${p.buscar || ''}`).includes(nq))
+      .slice(0, 5);
+  }
+
+  function _htmlPantallas(pantallas, q) {
+    if (!pantallas.length) return '';
+    let html = `<div style="padding:6px 14px 2px;font-size:.68rem;font-weight:700;color:#9CA3AF;letter-spacing:.07em;text-transform:uppercase;">Pantallas</div>`;
+    pantallas.forEach(p => {
+      html += `
+        <a href="${BASE}/${_esc(p.ruta)}"
+           class="bg-item"
+           style="display:flex;align-items:center;gap:10px;padding:9px 14px;text-decoration:none;
+                  transition:background .12s;cursor:pointer;border-radius:0;"
+           onmouseover="this.style.background='#F3F4F6'"
+           onmouseout="this.style.background='transparent'">
+          <span style="width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;
+                       align-items:center;justify-content:center;background:#6366F118;">
+            <i class="fas ${_esc(p.icono)}" style="font-size:.75rem;color:#6366F1;"></i>
+          </span>
+          <span style="min-width:0;overflow:hidden;">
+            <span style="display:block;font-size:.83rem;font-weight:600;color:#1F2937;
+                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${_resaltar(_esc(p.etiqueta), q)}${p.favorito ? ' <i class="fas fa-star" style="font-size:.6rem;color:#D4AF37;"></i>' : ''}
+            </span>
+            <span style="display:block;font-size:.73rem;color:#6B7280;">Ir a la pantalla</span>
+          </span>
+        </a>`;
+    });
+    return html;
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   function _renderizar(resultados, q) {
+    const pantallasHtml = _htmlPantallas(_filtrarPantallas(q), q);
+
     if (resultados.length === 0) {
-      dropdown.innerHTML = `
+      dropdown.innerHTML = pantallasHtml || `
         <div style="padding:20px;text-align:center;color:#9CA3AF;">
           <i class="fas fa-search" style="font-size:1.4rem;opacity:.4;display:block;margin-bottom:8px;"></i>
           <span style="font-size:.83rem;">Sin resultados para "<strong>${_esc(q)}</strong>"</span>

@@ -631,3 +631,6 @@ $router->get('/api/habitaciones/calcular-precio', ['controller' => 'Api', 'actio
 
 // Health check para monitoreo (publica en Router.php, protegida por HEALTH_TOKEN)
 $router->get('/health', ['controller' => 'Health', 'action' => 'index']);
+
+// Navegacion rapida: favoritos del usuario (por hotel)
+$router->post('/api/nav/favorito', ['controller' => 'Api', 'action' => 'navFavorito']);
