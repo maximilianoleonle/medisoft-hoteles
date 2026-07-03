@@ -9,6 +9,9 @@ $entradas_hoy        = $entradas_hoy        ?? [];
 $salidas_hoy         = $salidas_hoy         ?? [];
 $reservaciones       = $reservaciones       ?? [];
 $proximas_reservaciones = $proximas_reservaciones ?? [];
+$checkins_pendientes = isset($checkins_pendientes) && is_array($checkins_pendientes) ? $checkins_pendientes : [];
+$checkouts_vencidos  = isset($checkouts_vencidos) && is_array($checkouts_vencidos) ? $checkouts_vencidos : [];
+$llegadas_tardias    = isset($llegadas_tardias) && is_array($llegadas_tardias) ? $llegadas_tardias : [];
 $total_reservaciones = $total_reservaciones ?? count($reservaciones);
 $estados             = $estados             ?? [];
 $buscar              = $buscar              ?? '';
@@ -223,9 +226,9 @@ foreach ($reservaciones as $resumen_reserva) {
 
 $entradas_count = is_countable($entradas_hoy) ? count($entradas_hoy) : (int) ($estadisticas['entradas_hoy'] ?? 0);
 $salidas_count = is_countable($salidas_hoy) ? count($salidas_hoy) : (int) ($estadisticas['salidas_hoy'] ?? 0);
-$total_listado = count($reservaciones);
-$total_visible = $total_reservaciones ?: $total_listado;
-$total_busqueda_global = $total_visible + $total_proximas;
+$total_visible = $total_reservaciones;
+$total_alertas_pendientes = count($checkouts_vencidos) + count($checkins_pendientes) + count($llegadas_tardias);
+$abrir_agenda_proxima = ($total_visible === 0 && $total_proximas > 0);
 $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string) current_hotel_display_name() : 'Hotel';
 ?>
 
@@ -296,6 +299,291 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .metric-cancelled { background: #FEECEC; color: #D94444; }
 .res-metric strong { display: block; color: var(--res-heading); font-size: 1.9rem; line-height: 1; margin-bottom: 7px; }
 .res-metric span { display: block; color: #69758D; font-size: .78rem; font-weight: 800; }
+.res-alerts {
+    margin-bottom: 16px;
+    border: 1px solid color-mix(in srgb, #D94444 28%, var(--res-line));
+    border-left: 4px solid color-mix(in srgb, #D94444 78%, var(--res-line));
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 97% 0%, color-mix(in srgb, #D94444 10%, transparent), transparent 11rem),
+        linear-gradient(135deg, #FFFDFC, color-mix(in srgb, #D94444 5%, #FFF8F5));
+    box-shadow: 0 16px 32px -26px color-mix(in srgb, #D94444 60%, transparent);
+    overflow: hidden;
+}
+.res-alerts-toggle {
+    width: 100%;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .16s ease;
+}
+.res-alerts-toggle:hover { background: color-mix(in srgb, #D94444 4%, transparent); }
+.res-alerts-toggle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--res-accent) 72%, #fff);
+    outline-offset: -2px;
+    border-radius: 14px;
+}
+.res-alerts.is-open .res-alerts-toggle { border-bottom: 1px solid var(--res-line); }
+.res-alerts-title {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    gap: 10px;
+}
+.res-alerts-mark {
+    position: relative;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: #D94444;
+    color: #FFFDFB;
+    font-size: .82rem;
+    box-shadow: 0 10px 18px -12px color-mix(in srgb, #D94444 90%, transparent);
+}
+.res-alerts-mark::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--res-accent);
+    box-shadow: 0 0 0 2px #fff;
+    animation: resAlertsPing 2.4s ease-out infinite;
+}
+@keyframes resAlertsPing {
+    0%, 72%, 100% { outline: 0 solid transparent; }
+    36% { outline: 5px solid color-mix(in srgb, var(--res-accent) 30%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .res-alerts-mark::after { animation: none; }
+}
+.res-alerts-title strong {
+    display: block;
+    color: color-mix(in srgb, #D94444 42%, var(--res-heading));
+    font-size: .95rem;
+    font-weight: 950;
+    line-height: 1.1;
+}
+.res-alerts-title small {
+    display: block;
+    margin-top: 3px;
+    color: color-mix(in srgb, #D94444 28%, var(--res-muted));
+    font-size: .76rem;
+    font-weight: 750;
+    line-height: 1.2;
+}
+.res-alerts-sum {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+.res-alerts-chip {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: #fff;
+    font-size: .72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.res-alerts-chip i { font-size: .64rem; }
+.res-alerts-chip em { font-style: normal; font-weight: 700; }
+.res-alerts-chip--late {
+    color: #D94444;
+    border-color: color-mix(in srgb, #D94444 34%, #fff);
+    box-shadow: 0 8px 16px -14px color-mix(in srgb, #D94444 80%, transparent);
+}
+.res-alerts-chip--pending {
+    color: color-mix(in srgb, #D97706 86%, #000);
+    border-color: color-mix(in srgb, #D97706 36%, #fff);
+    box-shadow: 0 8px 16px -14px color-mix(in srgb, #D97706 70%, transparent);
+}
+.res-alerts-chip--today {
+    color: #7C3AED;
+    border-color: color-mix(in srgb, #7C3AED 32%, #fff);
+    box-shadow: 0 8px 16px -14px color-mix(in srgb, #7C3AED 70%, transparent);
+}
+.res-alerts-chev {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--res-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--res-muted);
+    font-size: .62rem;
+    transition: transform .28s ease, color .16s ease;
+}
+.res-alerts.is-open .res-alerts-chev {
+    transform: rotate(180deg);
+    color: var(--res-heading);
+}
+.res-alerts-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .3s ease;
+}
+.res-alerts.is-open .res-alerts-collapse { grid-template-rows: 1fr; }
+.res-alerts-collapse-inner {
+    min-height: 0;
+    overflow: hidden;
+}
+.res-alerts-body {
+    max-height: 264px;
+    overflow-y: auto;
+    padding: 10px 12px 12px;
+}
+.res-alerts-kicker {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 10px 6px 6px;
+    color: var(--res-muted);
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+.res-alerts-kicker:first-child { margin-top: 2px; }
+.res-alerts-kicker i { font-size: .66rem; }
+.res-alerts-kicker--late i { color: #D94444; }
+.res-alerts-kicker--pending i { color: #D97706; }
+.res-alerts-kicker--today i { color: #7C3AED; }
+.res-alerts-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--res-line) 78%, transparent);
+    border-radius: 13px;
+    background: #fff;
+}
+.res-alerts-item + .res-alerts-item { margin-top: 7px; }
+.res-alerts-item[data-href] {
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.res-alerts-item[data-href]:hover {
+    background: color-mix(in srgb, #D94444 4%, #fff);
+    border-color: color-mix(in srgb, #D94444 18%, var(--res-line));
+}
+.res-alerts-item[data-href]:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--res-accent) 70%, transparent);
+    outline-offset: -2px;
+}
+.res-alerts-ico {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    font-size: .74rem;
+}
+.res-alerts-ico--late { background: color-mix(in srgb, #D94444 10%, #fff); color: #D94444; }
+.res-alerts-ico--pending { background: color-mix(in srgb, #D97706 10%, #fff); color: #D97706; }
+.res-alerts-ico--today { background: color-mix(in srgb, #7C3AED 10%, #fff); color: #7C3AED; }
+.res-alerts-info {
+    flex: 1;
+    min-width: 0;
+}
+.res-alerts-info p {
+    margin: 0;
+}
+.res-alerts-info p:first-child {
+    color: var(--res-heading);
+    font-size: .86rem;
+    font-weight: 950;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.res-alerts-info p:last-child {
+    margin-top: 3px;
+    color: var(--res-muted);
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+.res-alerts-info b {
+    color: #D94444;
+    font-weight: 850;
+}
+.res-alerts-info a {
+    color: inherit;
+    font-weight: 850;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.res-alerts-btn {
+    flex: 0 0 auto;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 11px;
+    border: 1px solid var(--res-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--res-heading);
+    font-size: .74rem;
+    font-weight: 850;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+.res-alerts-btn:hover { transform: translateY(-1px); }
+.res-alerts-btn--late {
+    color: #D94444;
+    border-color: color-mix(in srgb, #D94444 32%, var(--res-line));
+}
+.res-alerts-btn--late:hover { background: color-mix(in srgb, #D94444 8%, #fff); }
+.res-alerts-btn--pending {
+    color: color-mix(in srgb, #D97706 86%, #000);
+    border-color: color-mix(in srgb, #D97706 32%, var(--res-line));
+}
+.res-alerts-btn--pending:hover { background: color-mix(in srgb, #D97706 8%, #fff); }
+@media (max-width: 640px) {
+    .res-alerts-toggle {
+        align-items: flex-start;
+        padding: 11px 12px;
+    }
+    .res-alerts-title small,
+    .res-alerts-chip em { display: none; }
+    .res-alerts-sum { gap: 5px; }
+    .res-alerts-chip { padding: 0 8px; }
+    .res-alerts-body { padding: 9px 10px 11px; }
+    .res-alerts-btn span { display: none; }
+    .res-alerts-btn {
+        width: 34px;
+        padding: 0;
+    }
+}
 .res-filterbar {
     display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center;
     border: 1px solid var(--res-line); border-radius: var(--res-radius); background: rgba(255,255,255,.94);
@@ -334,6 +622,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-checkin-close:focus-visible,
 .btn-modal-cancel:focus-visible,
 .btn-modal-confirm:focus-visible,
+.res-alerts-btn:focus-visible,
 .res-ci-cancel:focus-visible,
 .res-ci-confirm:focus-visible,
 .res-detail-link:focus-visible,
@@ -510,9 +799,11 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-filter-empty { display: none; margin-top: 14px; }
 .res-filter-empty.is-visible { display: block; }
 .reservation-item.hidden-search { display: none !important; }
-.reservation-item.is-linked { cursor: pointer; }
+.reservation-item.is-linked,
+.res-upcoming-card.is-linked { cursor: pointer; }
 tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-accent, #1E9E63) 6%, transparent); }
-.reservation-item.is-linked:focus-visible { outline: 2px solid color-mix(in srgb, var(--res-accent, #1E9E63) 55%, transparent); outline-offset: -2px; }
+.reservation-item.is-linked:focus-visible,
+.res-upcoming-card.is-linked:focus-visible { outline: 2px solid color-mix(in srgb, var(--res-accent, #1E9E63) 55%, transparent); outline-offset: -2px; }
 .res-upcoming {
     margin-top: 18px;
     border: 1px solid var(--res-line);
@@ -3938,57 +4229,100 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-mob-bottom {
         display: flex;
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: auto;
+        right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         z-index: 50;
         align-items: center;
-        gap: 10px;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        background: rgba(255, 253, 249, .94);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-top: 1px solid #E6DBC8;
-        box-shadow: 0 -8px 24px rgba(39, 31, 18, .08);
+        justify-content: flex-end;
+        gap: 7px;
+        width: auto;
+        max-width: calc(100vw - 32px);
+        padding: 6px;
+        background: rgba(255, 253, 249, .82);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(230, 219, 200, .92);
+        border-radius: 18px;
+        box-shadow: 0 12px 26px rgba(39, 31, 18, .12);
+    }
+    .res-mob-bottom::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: 17px;
+        background: rgba(255, 255, 255, .28);
+        pointer-events: none;
+    }
+    .res-mob-bottom > a {
+        position: relative;
+        z-index: 1;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
     }
     .res-mob-bottom-icon {
-        min-width: 48px;
-        min-height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
-        background: #F8F3EB;
-        border: 1px solid #E6DBC8;
+        border-radius: 14px;
+        background: rgba(248, 243, 235, .86);
+        border: 1px solid rgba(230, 219, 200, .88);
         color: #5C5040;
-        font-size: 1rem;
-        flex: 0 0 48px;
+        font-size: .94rem;
+        flex: 0 0 44px;
         text-decoration: none;
-        transition: background .18s ease, border-color .18s ease;
+        transition: background .18s ease, border-color .18s ease, transform .18s ease;
     }
     .res-mob-bottom-icon:hover {
         background: #EFE3D0;
         border-color: #D8C8B0;
+        transform: translateY(-1px);
+    }
+    .res-mob-bottom a:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--res-accent) 72%, #fff);
+        outline-offset: 2px;
     }
     .res-mob-bottom-cta {
-        flex: 1;
-        min-height: 48px;
+        flex: 0 0 44px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        border-radius: 12px;
+        gap: 0;
+        border-radius: 14px;
         background: var(--brand-action-bg, var(--res-brand));
         color: #fff;
-        font-size: .9rem;
+        font-size: .96rem;
         font-weight: 700;
         text-decoration: none;
         border: none;
         cursor: pointer;
-        box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--res-brand) 50%, transparent);
+        box-shadow: 0 10px 20px -14px color-mix(in srgb, var(--res-brand) 55%, transparent);
         transition: filter .18s ease, transform .18s ease;
     }
     .res-mob-bottom-cta:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .res-mob-bottom a:active { transform: scale(.96); }
+    .res-mob-bottom-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    body.has-hotel-bottom-nav .res-shell {
+        padding-bottom: calc(var(--hbn-offset, calc(84px + env(safe-area-inset-bottom, 0px))) + 66px) !important;
+    }
+
+    body.has-hotel-bottom-nav .res-mob-bottom {
+        bottom: calc(var(--hbn-offset, calc(84px + env(safe-area-inset-bottom, 0px))) + 10px);
+        z-index: 970;
+    }
 }
 
 @media (max-width: 420px) {
@@ -4016,7 +4350,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <p class="res-kicker">Operaci&oacute;n hotelera</p>
                     <h1 class="res-title">Reservaciones</h1>
                     <p class="res-subtitle">
-                        <?= htmlspecialchars($hotel_nombre_reservas) ?> &middot; <?= (int) $total_visible ?> reservas activas &middot; <?= htmlspecialchars($fecha_bonita) ?>
+                        <?= htmlspecialchars($hotel_nombre_reservas) ?> &middot; <?= (int) $total_visible ?> reservas en esta fecha &middot; <?= htmlspecialchars($fecha_bonita) ?>
                         <?php if ($total_proximas > 0): ?>
                             &middot; <?= (int) $total_proximas ?> pr&oacute;ximas
                         <?php endif; ?>
@@ -4078,13 +4412,180 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
             </article>
         </section>
 
+        <?php if ($total_alertas_pendientes > 0): ?>
+        <section class="res-alerts no-print" id="resAlertsCard" role="region" aria-label="Alertas pendientes">
+            <button type="button"
+                    class="res-alerts-toggle"
+                    aria-expanded="false"
+                    aria-controls="resAlertsCollapse"
+                    onclick="resToggleAlertasPendientes()">
+                <span class="res-alerts-title">
+                    <span class="res-alerts-mark"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span>
+                        <strong>Alertas pendientes</strong>
+                        <small>Toca para revisar el detalle</small>
+                    </span>
+                </span>
+                <span class="res-alerts-sum">
+                    <?php if (!empty($checkouts_vencidos)): ?>
+                    <span class="res-alerts-chip res-alerts-chip--late" title="Check-outs vencidos">
+                        <i class="fas fa-door-open"></i><?= count($checkouts_vencidos) ?> <em>vencido<?= count($checkouts_vencidos) > 1 ? 's' : '' ?></em>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($checkins_pendientes)): ?>
+                    <span class="res-alerts-chip res-alerts-chip--pending" title="Check-ins pendientes">
+                        <i class="fas fa-user-clock"></i><?= count($checkins_pendientes) ?> <em>sin check-in</em>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($llegadas_tardias)): ?>
+                    <span class="res-alerts-chip res-alerts-chip--today" title="Llegadas tardias hoy">
+                        <i class="fas fa-clock"></i><?= count($llegadas_tardias) ?> <em>hoy</em>
+                    </span>
+                    <?php endif; ?>
+                    <span class="res-alerts-chev"><i class="fas fa-chevron-down"></i></span>
+                </span>
+            </button>
+
+            <div class="res-alerts-collapse" id="resAlertsCollapse">
+                <div class="res-alerts-collapse-inner">
+                    <div class="res-alerts-body">
+                        <?php if (!empty($checkouts_vencidos)): ?>
+                        <p class="res-alerts-kicker res-alerts-kicker--late">
+                            <i class="fas fa-door-open"></i>
+                            Check-outs vencidos &middot; <?= count($checkouts_vencidos) ?>
+                        </p>
+                        <?php foreach ($checkouts_vencidos as $checkout): ?>
+                        <?php
+                            $checkoutId = (int)($checkout['id'] ?? 0);
+                            $checkoutNombre = (string)($checkout['nombre_completo'] ?? 'Sin nombre');
+                            $checkoutHabitaciones = (string)($checkout['habitaciones'] ?? 'S/N');
+                            $checkoutSalidaTs = strtotime((string)($checkout['fecha_salida'] ?? ''));
+                            $checkoutSalida = $checkoutSalidaTs ? date('d/m/Y', $checkoutSalidaTs) : 'Sin fecha';
+                            $checkoutRetraso = (int)($checkout['dias_retraso'] ?? 0);
+                        ?>
+                        <div class="res-alerts-item"
+                             data-href="<?= htmlspecialchars(url('reservaciones/ver/' . $checkoutId), ENT_QUOTES, 'UTF-8') ?>"
+                             role="link"
+                             tabindex="0"
+                             title="Abrir reservacion"
+                             aria-label="Abrir reservacion de <?= htmlspecialchars($checkoutNombre, ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="res-alerts-ico res-alerts-ico--late"><i class="fas fa-sign-out-alt"></i></span>
+                            <div class="res-alerts-info">
+                                <p><?= htmlspecialchars($checkoutNombre) ?></p>
+                                <p>
+                                    Hab. <?= htmlspecialchars($checkoutHabitaciones) ?>
+                                    &middot; Salida <?= htmlspecialchars($checkoutSalida) ?>
+                                    &middot; <b><?= $checkoutRetraso ?> dia<?= $checkoutRetraso === 1 ? '' : 's' ?> de retraso</b>
+                                </p>
+                            </div>
+                            <button type="button"
+                                    onclick="confirmarCheckOut(<?= $checkoutId ?>)"
+                                    title="Realizar check-out de esta reservacion"
+                                    class="res-alerts-btn res-alerts-btn--late">
+                                <i class="fas fa-sign-out-alt"></i><span>Check-out</span>
+                            </button>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <?php if (!empty($checkins_pendientes)): ?>
+                        <p class="res-alerts-kicker res-alerts-kicker--pending">
+                            <i class="fas fa-user-clock"></i>
+                            Check-ins pendientes &middot; <?= count($checkins_pendientes) ?>
+                        </p>
+                        <?php foreach ($checkins_pendientes as $checkin): ?>
+                        <?php
+                            $checkinId = (int)($checkin['id'] ?? 0);
+                            $checkinNombre = (string)($checkin['nombre_completo'] ?? 'Sin nombre');
+                            $checkinHabitaciones = (string)($checkin['habitaciones'] ?? 'S/N');
+                            $checkinEntradaTs = strtotime((string)($checkin['fecha_entrada'] ?? ''));
+                            $checkinEntrada = $checkinEntradaTs ? date('d/m/Y', $checkinEntradaTs) : 'Sin fecha';
+                            $checkinRetraso = (int)($checkin['dias_retraso'] ?? 0);
+                            $checkinTelefono = trim((string)($checkin['telefono'] ?? ''));
+                            $checkinTotal = (float)($checkin['precio_total'] ?? 0);
+                        ?>
+                        <div class="res-alerts-item"
+                             data-href="<?= htmlspecialchars(url('reservaciones/ver/' . $checkinId), ENT_QUOTES, 'UTF-8') ?>"
+                             role="link"
+                             tabindex="0"
+                             title="Abrir reservacion"
+                             aria-label="Abrir reservacion de <?= htmlspecialchars($checkinNombre, ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="res-alerts-ico res-alerts-ico--pending"><i class="fas fa-user-clock"></i></span>
+                            <div class="res-alerts-info">
+                                <p><?= htmlspecialchars($checkinNombre) ?></p>
+                                <p>
+                                    Hab. <?= htmlspecialchars($checkinHabitaciones) ?>
+                                    &middot; Llegada <?= htmlspecialchars($checkinEntrada) ?>
+                                    &middot; <?= $checkinRetraso ?> dia<?= $checkinRetraso === 1 ? '' : 's' ?> sin check-in
+                                    <?php if ($checkinTelefono !== ''): ?>
+                                        &middot; <a href="tel:<?= htmlspecialchars($checkinTelefono) ?>"><?= htmlspecialchars($checkinTelefono) ?></a>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <button type="button"
+                                    onclick="abrirModalCheckIn(<?= $checkinId ?>, <?= htmlspecialchars(json_encode($checkinTotal), ENT_QUOTES, 'UTF-8') ?>)"
+                                    title="Abrir check-in de esta reservacion"
+                                    class="res-alerts-btn res-alerts-btn--pending">
+                                <i class="fas fa-sign-in-alt"></i><span>Check-in</span>
+                            </button>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <?php if (!empty($llegadas_tardias)): ?>
+                        <p class="res-alerts-kicker res-alerts-kicker--today">
+                            <i class="fas fa-clock"></i>
+                            Llegadas tardias hoy &middot; <?= count($llegadas_tardias) ?>
+                        </p>
+                        <?php foreach ($llegadas_tardias as $tardio): ?>
+                        <?php
+                            $tardioId = (int)($tardio['id'] ?? 0);
+                            $tardioNombre = (string)($tardio['nombre_completo'] ?? 'Sin nombre');
+                            $tardioHabitaciones = (string)($tardio['habitaciones'] ?? 'S/N');
+                            $tardioHora = substr((string)($tardio['hora_llegada_estimada'] ?? ''), 0, 5);
+                            $tardioTelefono = trim((string)($tardio['telefono'] ?? ''));
+                        ?>
+                        <div class="res-alerts-item"
+                             data-href="<?= htmlspecialchars(url('reservaciones/ver/' . $tardioId), ENT_QUOTES, 'UTF-8') ?>"
+                             role="link"
+                             tabindex="0"
+                             title="Abrir reservacion"
+                             aria-label="Abrir reservacion de <?= htmlspecialchars($tardioNombre, ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="res-alerts-ico res-alerts-ico--today"><i class="fas fa-clock"></i></span>
+                            <div class="res-alerts-info">
+                                <p><?= htmlspecialchars($tardioNombre) ?></p>
+                                <p>
+                                    Hab. <?= htmlspecialchars($tardioHabitaciones) ?>
+                                    <?php if ($tardioHora !== ''): ?>
+                                        &middot; Hora estimada <?= htmlspecialchars($tardioHora) ?>
+                                    <?php endif; ?>
+                                    <?php if ($tardioTelefono !== ''): ?>
+                                        &middot; <a href="tel:<?= htmlspecialchars($tardioTelefono) ?>"><?= htmlspecialchars($tardioTelefono) ?></a>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <a href="<?= url('reservaciones/ver/' . $tardioId) ?>"
+                               title="Ver detalle de la reservacion"
+                               class="res-alerts-btn"
+                               aria-label="Ver reservacion">
+                                <i class="fas fa-arrow-right"></i><span>Ver</span>
+                            </a>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <section class="res-filterbar no-print" aria-label="Filtros de reservaciones">
             <div class="res-tabs">
                 <button type="button" onclick="filtrarEstado('todos')" class="res-tab filtro-estado is-active" data-estado="todos" title="Mostrar todas las reservaciones">
-                    Todas <span><?= (int) $total_busqueda_global ?></span>
+                    Todas <span><?= (int) $total_visible ?></span>
                 </button>
                 <button type="button" onclick="filtrarEstado('confirmada')" class="res-tab filtro-estado" data-estado="confirmada" title="Filtrar reservaciones confirmadas">
-                    <span class="res-tab-dot"></span>Confirmada <span><?= (int) (($estado_counts['confirmada'] ?? 0) + $total_proximas) ?></span>
+                    <span class="res-tab-dot"></span>Confirmada <span><?= (int) ($estado_counts['confirmada'] ?? 0) ?></span>
                 </button>
                 <button type="button" onclick="filtrarEstado('checked_in')" class="res-tab filtro-estado" data-estado="checked_in" title="Filtrar huéspedes hospedados">
                     <span class="res-tab-dot"></span>Hospedado <span><?= (int) ($estado_counts['checked_in'] ?? 0) ?></span>
@@ -4117,10 +4618,10 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                 </h2>
                 <p style="margin:0 0 18px;">
                     <?php if ($total_proximas > 0 && $proxima_reserva): ?>
-                        No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
+                        No hay reservaciones para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
                         La siguiente llegada es el <?= htmlspecialchars(format_date($proxima_reserva['fecha_entrada'] ?? $fecha_hoy, 'd M Y')) ?>.
                     <?php else: ?>
-                        No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
+                        No hay reservaciones para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
                     <?php endif; ?>
                 </p>
                 <div class="res-empty-actions">
@@ -4138,7 +4639,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
             <div id="searchResults" class="hidden mb-3">
                 <p class="text-sm text-gray-500">
                     <i class="fas fa-filter mr-1" style="color:var(--res-accent);"></i>
-                    Mostrando <span id="searchCount" class="font-bold" style="color:var(--res-heading);">0</span> de <?= (int) $total_busqueda_global ?>
+                    Mostrando <span id="searchCount" class="font-bold" style="color:var(--res-heading);">0</span> de <?= (int) $total_visible ?>
                 </p>
             </div>
 
@@ -4396,8 +4897,8 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         <?php endif; ?>
 
         <?php if ($total_proximas > 0): ?>
-            <section class="res-upcoming no-print" id="proximasReservaciones" aria-label="Agenda de proximas reservaciones">
-                <div class="res-upcoming-head" onclick="resUpcomingToggle(this)" role="button" aria-expanded="false" aria-controls="upcomingGrid" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resUpcomingToggle(this);}">
+            <section class="res-upcoming no-print<?= $abrir_agenda_proxima ? ' is-open' : '' ?>" id="proximasReservaciones" aria-label="Agenda de proximas reservaciones">
+                <div class="res-upcoming-head" onclick="resUpcomingToggle(this)" role="button" aria-expanded="<?= $abrir_agenda_proxima ? 'true' : 'false' ?>" aria-controls="upcomingGrid" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resUpcomingToggle(this);}">
                     <div>
                         <span class="res-section-kicker"><i class="fas fa-route"></i>Agenda pr&oacute;xima</span>
                         <h2>Pr&oacute;ximas reservaciones</h2>
@@ -4440,7 +4941,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                             $precio_total = (float) ($row['precio_total'] ?? 0);
                             $search_data = reserva_lower($folio . ' ' . $huesped_nombre . ' ' . $huesped_telefono . ' ' . $habitacion_label . ' ' . $todas_habs . ' ' . $habitacion_tipo . ' ' . $estado_ui['label']);
                         ?>
-                        <article class="res-upcoming-card reservation-item is-linked" data-res-id="future-<?= $res_id ?>" data-href="<?= url('reservaciones/ver/' . $res_id) ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                        <article class="res-upcoming-card is-linked" data-res-id="future-<?= $res_id ?>" data-href="<?= url('reservaciones/ver/' . $res_id) ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
                             <div class="res-upcoming-date" aria-label="Llegada <?= htmlspecialchars(format_date($fecha_entrada_raw, 'd M Y')) ?>">
                                 <span><?= htmlspecialchars(date('d', $entrada_ts)) ?></span>
                                 <strong><?= htmlspecialchars(reserva_upper($mes_abrev)) ?></strong>
@@ -4489,13 +4990,13 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         <?php endif; ?>
     </div>
     <!-- FAB móvil: sólo visible en ≤780px vía CSS -->
-    <div class="res-mob-bottom no-print" aria-hidden="true">
-        <a href="<?= url('reservaciones/calendario') ?>" class="res-mob-bottom-icon" title="Calendario de reservaciones">
+    <div class="res-mob-bottom no-print" role="navigation" aria-label="Acciones rapidas de reservaciones">
+        <a href="<?= url('reservaciones/calendario') ?>" class="res-mob-bottom-icon" title="Calendario de reservaciones" aria-label="Calendario de reservaciones">
             <i class="fas fa-calendar-alt" aria-hidden="true"></i>
         </a>
-        <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-mob-bottom-cta" title="Nueva reservaci&oacute;n">
+        <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-mob-bottom-cta" title="Nueva reservaci&oacute;n" aria-label="Nueva reservaci&oacute;n">
             <i class="fas fa-plus" aria-hidden="true"></i>
-            Nueva reservaci&oacute;n
+            <span class="res-mob-bottom-label">Nueva reservaci&oacute;n</span>
         </a>
     </div>
 </div>
@@ -6283,12 +6784,69 @@ function formatMoney(amount) {
     return '$' + parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 }
 
+function resToggleAlertasPendientes() {
+    const card = document.getElementById('resAlertsCard');
+    if (!card) return;
+
+    const btn = card.querySelector('.res-alerts-toggle');
+    const open = card.classList.toggle('is-open');
+    if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+}
+
+// Acordeon de alertas pendientes: filas completas abren la reservacion.
+(function () {
+    const card = document.getElementById('resAlertsCard');
+    if (!card) return;
+
+    function alertRowFromTarget(target) {
+        if (!(target instanceof Element)) return null;
+        if (target.closest('a, button, input, textarea, select, label')) return null;
+        return target.closest('.res-alerts-item[data-href]');
+    }
+
+    function openAlertRow(row, event) {
+        const href = row.getAttribute('data-href');
+        if (!href) return;
+
+        if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
+            window.open(href, '_blank', 'noopener');
+            return;
+        }
+
+        window.location.href = href;
+    }
+
+    card.addEventListener('click', function (event) {
+        const row = alertRowFromTarget(event.target);
+        if (!row) return;
+        openAlertRow(row, event);
+    });
+
+    card.addEventListener('auxclick', function (event) {
+        if (event.button !== 1) return;
+        const row = alertRowFromTarget(event.target);
+        if (!row) return;
+        event.preventDefault();
+        openAlertRow(row, event);
+    });
+
+    card.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const row = event.target.closest && event.target.closest('.res-alerts-item[data-href]');
+        if (!row || row !== event.target) return;
+        event.preventDefault();
+        openAlertRow(row, event);
+    });
+})();
+
 // Clic en cualquier parte de la fila/tarjeta de reservacion -> abre su detalle.
 // Respeta enlaces y botones internos (folio, telefono, check-in/out, acciones).
 (function () {
     function destino(target) {
         if (target.closest('a, button, input, textarea, select, label')) return null;
-        return target.closest('.reservation-item.is-linked[data-href]');
+        return target.closest('.reservation-item.is-linked[data-href], .res-upcoming-card.is-linked[data-href]');
     }
 
     document.addEventListener('click', function (e) {

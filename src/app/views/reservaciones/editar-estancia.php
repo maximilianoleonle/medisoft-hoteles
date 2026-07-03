@@ -342,9 +342,26 @@ $habitaciones    = $reservacion['habitaciones'] ?? [];
         // Entrada (solo confirmada): no antes de minEntrada, no después de salida - 1
         if (EST.estado === 'confirmada') {
             if (EST.minEntrada) { inEntrada.min = EST.minEntrada; }
-            const salida = inSalida.value || EST.salidaOriginal;
-            inEntrada.max = addDias(salida, -1);
+            if (EST.maxCheckout) {
+                inEntrada.max = addDias(EST.maxCheckout, -1);
+            } else {
+                inEntrada.removeAttribute('max');
+            }
         }
+    }
+
+    function ajustarSalidaPorNuevaEntrada() {
+        const entrada = inEntrada.value || EST.entradaOriginal;
+        const salida = inSalida.value || EST.salidaOriginal;
+        if (diffDias(entrada, salida) >= 1) {
+            return;
+        }
+
+        let salidaSugerida = addDias(entrada, Math.max(1, EST.nochesActuales || 1));
+        if (EST.maxCheckout && salidaSugerida > EST.maxCheckout) {
+            salidaSugerida = EST.maxCheckout;
+        }
+        inSalida.value = salidaSugerida;
     }
 
     function pintarLimiteHints() {
@@ -586,7 +603,7 @@ $habitaciones    = $reservacion['habitaciones'] ?? [];
         } catch (e) { /* sin tope, el servidor revalida al guardar */ }
     }
 
-    inEntrada.addEventListener('change', function () { aplicarLimites(); actualizarResumen(); });
+    inEntrada.addEventListener('change', function () { ajustarSalidaPorNuevaEntrada(); aplicarLimites(); actualizarResumen(); });
     inSalida.addEventListener('change', function () { aplicarLimites(); actualizarResumen(); });
     $('ee-confirm').addEventListener('click', confirmar);
 

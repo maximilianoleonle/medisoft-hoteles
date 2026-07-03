@@ -3117,22 +3117,37 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-room-top { display: contents; }
     .rdv3-room-top > .min-w-0 {
         grid-area: identity;
-        grid-template-columns: 52px minmax(0, 1fr);
-        column-gap: 12px;
+        grid-template-columns: minmax(52px, auto) minmax(0, 1fr);
+        column-gap: 10px;
         align-items: center;
     }
     .rdv3-room-number {
-        width: 52px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        min-width: 52px;
+        max-width: 76px;
         height: 52px;
+        padding: 4px 6px;
         border-radius: 14px;
         color: var(--rdv3-primary);
-        font-size: 1.22rem;
+        overflow: hidden;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        font-size: clamp(.58rem, 2.25vw, .9rem);
+        line-height: 1.05;
+        letter-spacing: 0;
     }
     .rdv3-room-type {
         margin-top: 0;
         color: var(--rdv3-primary);
         font-size: .82rem;
         font-weight: 950;
+        min-width: 0;
     }
     .rdv3-room-sub {
         margin-top: 2px;
@@ -3452,68 +3467,111 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     }
     .rdv3-mobile-bottom {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: auto;
+        right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         z-index: 90;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        border-top: 1px solid var(--rdv3-mobile-line);
-        background: rgba(255, 253, 249, .94);
-        box-shadow: 0 -12px 30px rgba(31, 43, 72, .12);
-        backdrop-filter: blur(16px);
+        justify-content: flex-end;
+        gap: 7px;
+        width: auto;
+        max-width: calc(100vw - 32px);
+        padding: 6px;
+        border: 1px solid rgba(230, 219, 200, .92);
+        border-radius: 18px;
+        background: rgba(255, 253, 249, .82);
+        box-shadow: 0 12px 26px rgba(39, 31, 18, .12);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+    .rdv3-mobile-bottom::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: 17px;
+        background: rgba(255, 255, 255, .28);
+        pointer-events: none;
+    }
+    .rdv3-mobile-bottom > a,
+    .rdv3-mobile-bottom > button {
+        position: relative;
+        z-index: 1;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+        flex: 0 0 44px;
     }
     .rdv3-mobile-primary {
-        flex: 1 1 auto;
-        min-height: 52px;
         border: 0;
-        border-radius: 12px;
+        border-radius: 14px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 9px;
+        gap: 0;
         background: #21A86A;
         color: #fff;
         font-size: .96rem;
         font-weight: 950;
         cursor: pointer;
-        box-shadow: 0 10px 22px rgba(33,168,106,.22);
+        box-shadow: 0 10px 20px -14px rgba(33, 168, 106, .9);
     }
     .rdv3-mobile-checkout {
         background: linear-gradient(135deg, #D97706, #B45309);
-        box-shadow: 0 10px 22px rgba(180, 83, 9, .25);
+        box-shadow: 0 10px 20px -14px rgba(180, 83, 9, .9);
     }
     .rdv3-mobile-more {
-        width: 52px;
-        height: 52px;
-        flex: 0 0 52px;
-        border-radius: 12px;
+        border-radius: 14px;
         display: grid;
         place-items: center;
-        border: 1px solid var(--rdv3-mobile-line);
-        background: #fff;
+        border: 1px solid rgba(230, 219, 200, .88);
+        background: rgba(255, 255, 255, .88);
         color: var(--rdv3-primary);
-        font-size: .96rem;
+        font-size: .94rem;
     }
     .rdv3-mobile-danger {
-        min-height: 52px;
-        flex: 0 0 auto;
-        padding: 0 12px;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid rgba(185, 28, 28, .24);
-        background: #FFF5F5;
+        background: rgba(255, 245, 245, .92);
         color: #991B1B;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 7px;
-        font-size: .8rem;
+        gap: 0;
+        font-size: .92rem;
         font-weight: 950;
-        white-space: nowrap;
-        box-shadow: 0 8px 18px rgba(185, 28, 28, .12);
+        box-shadow: 0 10px 20px -16px rgba(185, 28, 28, .72);
         cursor: pointer;
+    }
+    .rdv3-mobile-bottom a:focus-visible,
+    .rdv3-mobile-bottom button:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--rdv3-accent) 72%, #fff);
+        outline-offset: 2px;
+    }
+    .rdv3-mobile-bottom a:active,
+    .rdv3-mobile-bottom button:active {
+        transform: scale(.96);
+    }
+    .rdv3-mobile-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    body.has-hotel-bottom-nav .rdv3 .rdv3-main,
+    body.has-hotel-bottom-nav .rdv3 .rdv3-page {
+        padding-bottom: calc(var(--hbn-offset, calc(84px + env(safe-area-inset-bottom, 0px))) + 66px) !important;
+    }
+    body.has-hotel-bottom-nav .rdv3 .rdv3-mobile-bottom {
+        bottom: calc(var(--hbn-offset, calc(84px + env(safe-area-inset-bottom, 0px))) + 10px);
+        z-index: 970;
     }
 }
 @media (max-width: 370px) {
@@ -3522,8 +3580,14 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     }
     .rdv3 .rdv3-card--guest .rdv3-info-grid,
     .rdv3-contact-actions { grid-template-columns: 1fr; }
-    .rdv3-room-top > .min-w-0 { grid-template-columns: 42px minmax(0, 1fr); }
-    .rdv3-room-number { width: 42px; height: 42px; font-size: 1.12rem; }
+    .rdv3-room-top > .min-w-0 { grid-template-columns: minmax(52px, auto) minmax(0, 1fr); }
+    .rdv3-room-number {
+        min-width: 52px;
+        max-width: 68px;
+        width: auto;
+        height: 42px;
+        font-size: clamp(.54rem, 2.8vw, .76rem);
+    }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -4263,18 +4327,18 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 
                 <nav class="rdv3-mobile-bottom" aria-label="Acciones principales de reservacion">
                     <?php if ($rdCheckinMode === 'normal' || $rdCheckinMode === 'express'): ?>
-                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
+                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)" title="<?= $rdSafe($rdCheckinButtonLabel) ?>" aria-label="<?= $rdSafe($rdCheckinButtonLabel) ?>"><i class="fas fa-right-to-bracket" aria-hidden="true"></i><span class="rdv3-mobile-label"><?= $rdSafe($rdCheckinButtonLabel) ?></span></button>
                     <?php elseif ($rdCheckinMode === 'late'): ?>
-                        <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
+                        <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)' title="<?= $rdSafe($rdCheckinButtonLabel) ?>" aria-label="<?= $rdSafe($rdCheckinButtonLabel) ?>"><i class="fas fa-right-to-bracket" aria-hidden="true"></i><span class="rdv3-mobile-label"><?= $rdSafe($rdCheckinButtonLabel) ?></span></button>
                     <?php elseif ($rdEstadoKey === 'checked_in' && !$rdHasCheckoutDebt): ?>
-                        <button type="button" class="rdv3-mobile-primary rdv3-mobile-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
+                        <button type="button" class="rdv3-mobile-primary rdv3-mobile-checkout" onclick="abrirModalCheckOut()" title="Check-out" aria-label="Check-out"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span class="rdv3-mobile-label">Check-out</span></button>
                     <?php else: ?>
-                        <a class="rdv3-mobile-primary" href="#rdv3-actions-panel"><i class="fas fa-grip"></i>Ver acciones</a>
+                        <a class="rdv3-mobile-primary" href="#rdv3-actions-panel" title="Ver acciones" aria-label="Ver acciones"><i class="fas fa-grip" aria-hidden="true"></i><span class="rdv3-mobile-label">Ver acciones</span></a>
                     <?php endif; ?>
                     <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
-                        <button type="button" class="rdv3-mobile-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-ban"></i><span>Cancelar</span></button>
+                        <button type="button" class="rdv3-mobile-danger" onclick="mostrarFormularioCancelacion()" title="Cancelar reservacion" aria-label="Cancelar reservacion"><i class="fas fa-ban" aria-hidden="true"></i><span class="rdv3-mobile-label">Cancelar</span></button>
                     <?php endif; ?>
-                    <a class="rdv3-mobile-more" href="#rdv3-actions-panel" aria-label="Ver mas acciones"><i class="fas fa-ellipsis"></i></a>
+                    <a class="rdv3-mobile-more" href="#rdv3-actions-panel" title="Ver mas acciones" aria-label="Ver mas acciones"><i class="fas fa-ellipsis" aria-hidden="true"></i></a>
                 </nav>
             </div>
         </main>

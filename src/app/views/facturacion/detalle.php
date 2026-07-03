@@ -492,6 +492,13 @@ $abrirModalCancelarPorError = $facturacionModalOld === 'cancelar' || fact_det_fo
     gap: 14px;
 }
 
+.invoice-fiscal-form > .ms-form-error-summary,
+.invoice-fiscal-form > .ms-form-recovered-notice {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+}
+
 .invoice-field {
     grid-column: span 6;
     min-width: 0;
@@ -1321,8 +1328,7 @@ textarea.invoice-input {
         grid-column: 1 / -1;
     }
 
-    .invoice-fiscal-form > .invoice-field:nth-of-type(1),
-    .invoice-fiscal-form > .invoice-field:nth-of-type(5) {
+    .invoice-fiscal-form > .invoice-field.is-mobile-compact {
         grid-column: span 1;
     }
 
@@ -1549,8 +1555,7 @@ textarea.invoice-input {
         grid-template-columns: 1fr;
     }
 
-    .invoice-fiscal-form > .invoice-field:nth-of-type(1),
-    .invoice-fiscal-form > .invoice-field:nth-of-type(5) {
+    .invoice-fiscal-form > .invoice-field.is-mobile-compact {
         grid-column: 1 / -1;
     }
 
@@ -1671,7 +1676,7 @@ textarea.invoice-input {
                             <?= csrf_field() ?>
                             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
 
-                            <div class="invoice-field is-half">
+                            <div class="invoice-field is-half is-mobile-compact">
                                 <label class="invoice-label" for="fact_rfc">
                                     RFC <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
@@ -1734,7 +1739,7 @@ textarea.invoice-input {
                                 <?php endif; ?>
                             </div>
 
-                            <div class="invoice-field">
+                            <div class="invoice-field is-mobile-compact">
                                 <label class="invoice-label" for="fact_codigo_postal_fiscal">
                                     C.P. fiscal <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
@@ -1742,7 +1747,8 @@ textarea.invoice-input {
                                        value="<?= $datosFiscalesOld['codigo_postal_fiscal'] ?>"
                                        placeholder="00000"
                                        maxlength="5"
-                                       pattern="\d{5}"
+                                       inputmode="numeric"
+                                       autocomplete="postal-code"
                                        style="font-family: monospace;"
                                        <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'codigo_postal_fiscal', 'ms-form-error-fact_codigo_postal_fiscal') ?>>
                                 <?php if (fact_det_form_error($facturacionFieldErrors, 'codigo_postal_fiscal') !== ''): ?>

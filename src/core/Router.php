@@ -36,7 +36,8 @@ class Router {
             '/^\/login\/authenticate$/i',  // Proceso de autenticación
             '/^\/h\/[a-z0-9-]+\/reservar\/iniciar-pago$/i', // Motor: iniciar pago publico
             '/^\/h\/[a-z0-9-]+\/reservar\/webhook\/[a-z]+$/i', // Motor: webhook de pasarela (verificado por firma)
-            '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+\/completar$/i' // Pre-registro publico: envio del formulario
+            '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+\/completar$/i', // Pre-registro publico: envio del formulario
+            '/^\/saas\/webhook\/stripe$/i' // Webhook de cobros SaaS (verificado por firma)
         ]
     ];
     

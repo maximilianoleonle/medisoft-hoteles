@@ -11,6 +11,24 @@ html[data-theme="dark"] {
     color-scheme: dark;
 }
 
+/* ── Neutrales de marca globales ──────────────────────────────────────
+   branding.php inyecta los tokens --brand-* en :root (0,1,0). Aqui se
+   voltean SOLO los neutrales (superficie/texto/lineas) a la paleta dark
+   calida; se conservan --brand-primary/-secondary/-accent (identidad del
+   hotel) y los --brand-action-* (botones). Esto oscurece de una vez todas
+   las vistas boutique que derivan de estos neutrales; los ajustes finos
+   por vista van en los bloques D1+ de mas abajo. */
+html[data-theme="dark"] {
+    --brand-surface: #201F19;
+    --brand-surface-soft: #26241D;
+    --brand-soft: color-mix(in srgb, var(--brand-primary) 22%, #201F19);
+    --brand-text: #EFE9DC;
+    --brand-muted: #A69F8E;
+    --brand-border: #38352C;
+    --brand-line: #403C31;
+    --brand-focus: color-mix(in srgb, var(--brand-primary) 42%, #201F19);
+}
+
 /* ── Shell hotelero: re-mapeo de tokens --hotel-* ─────────────────── */
 html[data-theme="dark"] body.hotel-layout-scope {
     --hotel-bg: #191813;
@@ -40,72 +58,112 @@ html[data-theme="dark"] .hotel-layout-scope .hotel-header-user {
     color: var(--hotel-text);
 }
 
-/* ── Sidebar ──────────────────────────────────────────────────────── */
+/* ── Sidebar (modo oscuro "solido tipo SaaS": navy solido + texto slate
+   nitido, acentos azul/cyan, marcadores neutros; prioriza LEGIBILIDAD).
+   Paleta espejo del panel SaaS (--ms-sidebar #0B1220 / slate / azul). ── */
 html[data-theme="dark"] body.hotel-layout-scope {
-    --sidebar-bg: #1D1C17;
-    --sidebar-border: #35322A;
-    --sidebar-text: #DAD4C6;
-    --sidebar-text-muted: #8F897B;
-    --sidebar-hover: #26241E;
+    --sidebar-bg: #0B1220;
+    --sidebar-border: rgba(148, 163, 184, .16);
+    --sidebar-text: #E2E8F0;
+    --sidebar-text-muted: #94A3B8;
+    --sidebar-hover: rgba(148, 163, 184, .10);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .sidebar-main {
-    background: linear-gradient(180deg, #1D1C17 0%, #191813 100%);
-    border-right-color: var(--sidebar-border);
-    box-shadow: 2px 0 12px rgba(0, 0, 0, .4);
+    background: linear-gradient(180deg, #0D1424 0%, #0B1220 100%);
+    border-right: 1px solid var(--sidebar-border);
+    box-shadow: 16px 0 40px rgba(2, 6, 23, .45);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .sidebar-header {
-    border-bottom-color: rgba(156, 167, 119, .14);
-    background: linear-gradient(135deg, rgba(156, 167, 119, .10) 0%, rgba(184, 196, 154, .04) 100%);
+    border-bottom-color: rgba(148, 163, 184, .14);
+    background: linear-gradient(135deg, rgba(148, 163, 184, .06) 0%, rgba(148, 163, 184, .02) 100%);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .logo-title {
-    color: var(--hotel-text);
+    color: #F1F5F9;
     text-shadow: none;
 }
 
+html[data-theme="dark"] body.hotel-layout-scope .logo-subtitle {
+    color: #94A3B8;
+}
+
 html[data-theme="dark"] body.hotel-layout-scope .search-box {
-    background: #26241E;
+    background: rgba(15, 23, 42, .55);
+    border-color: rgba(148, 163, 184, .18);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .search-box:focus-within {
-    background: #2B2922;
-    box-shadow: 0 0 0 3px rgba(156, 167, 119, .16);
+    background: rgba(15, 23, 42, .78);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .28);
 }
 
+/* Etiquetas de seccion: slate legible, marcador neutro (no olivo) */
 html[data-theme="dark"] body.hotel-layout-scope .nav-section-title span {
-    color: #B9C29D;
+    color: #9FB0C9;
+    opacity: 1;
 }
 
-html[data-theme="dark"] body.hotel-layout-scope .nav-item:hover,
-html[data-theme="dark"] body.hotel-layout-scope .nav-item.active {
-    color: var(--sidebar-text);
+html[data-theme="dark"] body.hotel-layout-scope .nav-section-title::before {
+    background: linear-gradient(180deg, #64748B 0%, #334155 100%);
+    box-shadow: none;
+}
+
+/* Items: texto slate nitido; hover slate; activo con realce navy + icono blanco */
+html[data-theme="dark"] body.hotel-layout-scope .nav-item {
+    color: #E2E8F0;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-item:hover {
+    background: rgba(148, 163, 184, .10);
+    color: #FFFFFF;
+    box-shadow: none;
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .nav-item.active {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+    background: rgba(37, 99, 235, .18);
+    color: #FFFFFF;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .18);
+}
+
+/* Iconos: en claro llevan el color de MARCA del hotel dentro de un chip; sobre
+   navy oscuro ese glifo de marca queda apagado e indistinguible. En oscuro se
+   fuerzan a slate brillante, chip transparente (look limpio tipo SaaS). */
+html[data-theme="dark"] body.hotel-layout-scope .nav-item .nav-icon,
+html[data-theme="dark"] body.hotel-layout-scope .nav-item .nav-icon i {
+    color: #CBD5E1 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] body.hotel-layout-scope .nav-item:hover .nav-icon,
+html[data-theme="dark"] body.hotel-layout-scope .nav-item:hover .nav-icon i,
+html[data-theme="dark"] body.hotel-layout-scope .nav-item.active .nav-icon,
+html[data-theme="dark"] body.hotel-layout-scope .nav-item.active .nav-icon i {
+    color: #FFFFFF !important;
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .nav-badge {
-    box-shadow: 0 2px 6px rgba(239, 68, 68, .4), 0 0 0 2px #1D1C17;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, .4), 0 0 0 2px #0B1220;
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .sidebar-footer {
-    border-top-color: rgba(156, 167, 119, .14);
-    background: linear-gradient(180deg, #191813 0%, #1D1C17 100%);
+    border-top-color: rgba(148, 163, 184, .14);
+    background: linear-gradient(180deg, #0B1220 0%, #0D1424 100%);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .user-section {
-    background: rgba(38, 36, 30, .92);
-    border-color: rgba(156, 167, 119, .18);
+    background: rgba(15, 23, 42, .55);
+    border-color: rgba(148, 163, 184, .18);
     box-shadow: none;
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .user-dropdown {
-    background: rgba(30, 29, 24, .98);
-    border-color: #35322A;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, .4);
+    background: rgba(11, 18, 32, .98);
+    border-color: rgba(148, 163, 184, .18);
+    box-shadow: 0 -10px 25px rgba(2, 6, 23, .5);
 }
 
 html[data-theme="dark"] body.hotel-layout-scope .user-avatar {
@@ -418,4 +476,107 @@ html[data-theme="dark"] .hc-page [data-hc-section] {
 /* Título grande: usa el navy fuerte de marca, invisible sobre fondo oscuro */
 html[data-theme="dark"] .hc-page .hc-title {
     color: var(--hc-ink);
+}
+
+/* ── D1 Caja: re-mapeo de tokens --cj-* ───────────────────────────────
+   Definidos en :root por caja/index.php (0,1,0). Se voltean SOLO los
+   neutrales de superficie/linea; --cj-navy/-gold derivan de marca y
+   --cj-text ya sigue --brand-text (flipeado arriba). Semanticas intactas. */
+html[data-theme="dark"] {
+    --cj-surface: #201F19;
+    --cj-ivory:   #26241D;
+    --cj-line:    #38352C;
+    --cj-muted:   #A69F8E;
+    --cj-shadow-sm: 0 1px 3px rgba(0, 0, 0, .40);
+    --cj-shadow:    0 4px 16px -6px rgba(0, 0, 0, .55), 0 1px 3px rgba(0, 0, 0, .40);
+    --cj-shadow-lg: 0 22px 52px -30px rgba(0, 0, 0, .75), 0 4px 18px -8px rgba(0, 0, 0, .45);
+}
+
+/* ── D1 Reservaciones: tokens --res-* (scopeados en .res-bookings) ─────
+   Neutrales a dark; se conservan --res-brand/-2/-accent (marca) y los
+   avatares semanticos. La tarjeta del modal de exportacion usa #fff
+   literal (render fuera del wrapper) -> override directo. */
+html[data-theme="dark"] .res-bookings {
+    --res-bg:      color-mix(in srgb, var(--res-brand) 6%, #191813);
+    --res-card:    #201F19;
+    --res-line:    color-mix(in srgb, var(--res-brand) 14%, #38352C);
+    --res-soft:    color-mix(in srgb, var(--res-brand) 10%, #201F19);
+    --res-text:    #EFE9DC;
+    --res-heading: #F3EEE2;
+    --res-muted:   #A69F8E;
+}
+
+html[data-theme="dark"] .res-export-card {
+    background: #201F19;
+    color: #EFE9DC;
+    box-shadow: 0 32px 80px -24px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 255, 255, .06) inset;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   D1 vistas operativas: re-mapeo de neutrales por sistema de tokens de vista.
+   Se voltean superficies/lineas/texto a la paleta dark calida; se conservan
+   los hues de marca (--*-brand/-accent/-gold) y los tints semanticos de estado
+   (avatares, badges). Los tokens son view-specific (prefijados), asi que
+   declararlos globalmente en dark es inofensivo donde la vista no existe.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Huespedes (--guest-*) — los tokens se redefinen en .guests-page, hay que
+   scopear el override al mismo wrapper para ganarle en especificidad. */
+html[data-theme="dark"] .guests-page {
+    --guest-surface: #201F19;
+    --guest-surface-warm: #26241D;
+    --guest-ivory: #26241D;
+    --guest-ivory-2: #201F19;
+    --guest-border: color-mix(in srgb, var(--guest-brand, #1B2746) 14%, #38352C);
+    --guest-text: #EFE9DC;
+    --guest-heading: #F3EEE2;
+    --guest-muted: #A69F8E;
+    --guest-ink: #EFE9DC;
+}
+
+/* Inventario (--inv-*): neutrales + tints de estado atenuados sobre superficie */
+html[data-theme="dark"] .inv-page {
+    --inv-surface: #201F19;
+    --inv-ivory: #26241D;
+    --inv-line: #38352C;
+    --inv-muted: #A69F8E;
+    --inv-success-bg: color-mix(in srgb, #1E9E63 15%, #201F19);
+    --inv-warning-bg: color-mix(in srgb, #C2841C 15%, #201F19);
+    --inv-danger-bg:  color-mix(in srgb, #D64539 15%, #201F19);
+    --inv-info-bg:    color-mix(in srgb, #2F77E0 15%, #201F19);
+    --inv-auto-bg:    color-mix(in srgb, #6D5AE0 15%, #201F19);
+}
+
+/* Reportes (--report-*) */
+html[data-theme="dark"] .reportes-view {
+    --report-surface: #201F19;
+    --report-ivory: #26241D;
+    --report-border: color-mix(in srgb, var(--report-brand, #1B2746) 14%, #38352C);
+    --report-accent-line: color-mix(in srgb, var(--report-accent, #BD9441) 34%, #4A4536);
+    --report-text: #EFE9DC;
+    --report-muted: #A69F8E;
+}
+
+/* Habitaciones (--hb-* principal + modales de check-in/vista rapida/reserva).
+   Scopeado a .habitaciones-view; los modales que rendericen dentro del wrapper
+   heredan; si alguno queda fuera se ajusta en un repaso. */
+html[data-theme="dark"] .habitaciones-view {
+    --hb-ivory: #26241D;
+    --hb-ivory-2: #201F19;
+    --hb-surface: #201F19;
+    --hb-surface-warm: #26241D;
+    --hb-line: #38352C;
+    --hb-line-soft: #33302A;
+    --hb-muted: #A69F8E;
+    --hb-modal-surface: #201F19;
+    --hb-modal-paper: #26241D;
+    --hb-modal-ink: #EFE9DC;
+    --hb-modal-soft-ink: #C9C3B4;
+    --hb-modal-muted: #A69F8E;
+    --hb-modal-line: #38352C;
+    --hb-reserve-surface: #201F19;
+    --hb-reserve-paper: #26241D;
+    --hb-reserve-ink: #EFE9DC;
+    --hb-reserve-muted: #A69F8E;
+    --hb-reserve-line: #38352C;
 }

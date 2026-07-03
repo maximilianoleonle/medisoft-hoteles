@@ -42,9 +42,24 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         $footerNavBestLength = strlen($footerNavPrefix);
     }
 }
+
+// Cap deslizante: total de columnas (atajos + Menú) e índice del activo.
+$footerNavTotal = count($footerNavItems) + 1;
+$footerNavActiveIndex = -1;
+$footerNavIdx = 0;
+foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
+    if ($footerNavKey === $footerNavActiveKey) {
+        $footerNavActiveIndex = $footerNavIdx;
+        break;
+    }
+    $footerNavIdx++;
+}
 ?>
 
-<nav class="hotel-bottom-nav" id="hotel-bottom-nav" aria-label="Accesos rápidos">
+<nav class="hotel-bottom-nav" id="hotel-bottom-nav" aria-label="Accesos rápidos"
+     style="--hbn-count:<?= (int) $footerNavTotal ?>;--hbn-active:<?= (int) $footerNavActiveIndex ?>;"
+     <?= $footerNavActiveIndex < 0 ? 'data-no-active' : '' ?>>
+    <span class="hbn-cap" id="hbn-cap" aria-hidden="true"></span>
     <?php foreach ($footerNavItems as $footerNavKey => $footerNavItem): ?>
     <?php $footerNavEsActivo = $footerNavKey === $footerNavActiveKey; ?>
     <a href="<?= url($footerNavItem['path']) ?>"
@@ -57,7 +72,7 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     </a>
     <?php endforeach; ?>
 
-    <button type="button" class="hbn-item hbn-menu" id="hotel-bottom-nav-menu" aria-label="Abrir menú completo">
+    <button type="button" class="hbn-item hbn-menu" id="hotel-bottom-nav-menu" aria-label="Abrir menú completo" aria-controls="sidebar" aria-expanded="false">
         <span class="hbn-pill" aria-hidden="true">
             <i class="fas fa-grip"></i>
         </span>
@@ -71,56 +86,80 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
 }
 
 @media (max-width: 1024px) {
+    /* ── V12: barra flotante de vidrio con cap deslizante ── */
     .hotel-bottom-nav {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: 14px;
+        right: 14px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
         z-index: 980; /* debajo del overlay del sidebar (999) y del header móvil */
+        height: 64px;
+        padding: 7px;
         transform: translateY(0);
         transition: transform .22s ease, opacity .22s ease;
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: 1fr;
         align-items: stretch;
-        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-        background: color-mix(in srgb, var(--hotel-panel, #FFFEFB) 94%, transparent);
-        -webkit-backdrop-filter: blur(14px) saturate(1.3);
-        backdrop-filter: blur(14px) saturate(1.3);
-        border-top: 1px solid var(--hotel-border, #E7DEC9);
-        box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, .6);
+        -webkit-backdrop-filter: saturate(180%) blur(24px);
+        backdrop-filter: saturate(180%) blur(24px);
+        border: .5px solid rgba(255, 255, 255, .8);
+        border-radius: 24px;
+        box-shadow: 0 14px 34px rgba(27, 39, 70, .18);
+    }
+
+    /* Cap deslizante: píldora del color primario del hotel bajo el ítem activo */
+    .hotel-bottom-nav .hbn-cap {
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        width: calc((100% - 14px) / var(--hbn-count, 5));
+        height: calc(100% - 14px);
+        background: var(--hotel-brand, var(--brand-primary, #1B2746));
+        border-radius: 18px;
+        box-shadow: 0 5px 14px color-mix(in srgb, var(--hotel-brand, #1B2746) 30%, transparent);
+        transform: translateX(calc(var(--hbn-active, 0) * 100%));
+        transition: transform .34s cubic-bezier(.22, 1, .36, 1);
+        pointer-events: none;
+    }
+
+    .hotel-bottom-nav[data-no-active] .hbn-cap {
+        opacity: 0;
+        transform: translateX(0) scale(.6);
     }
 
     .hotel-bottom-nav .hbn-item {
         position: relative;
+        z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 3px;
-        min-height: 52px;
-        padding: 4px 2px;
+        min-height: 0;
+        padding: 2px;
         border: 0;
         background: none;
-        border-radius: 12px;
-        color: var(--hotel-muted, #6B7280);
+        border-radius: 18px;
+        color: var(--hotel-muted, #939BAD);
         text-decoration: none;
         font-family: inherit;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        transition: color .18s ease;
+        transition: color .2s ease;
     }
 
     .hotel-bottom-nav .hbn-pill {
         display: grid;
         place-items: center;
-        width: 46px;
-        height: 26px;
-        border-radius: 999px;
-        font-size: 1rem;
+        width: 24px;
+        height: 24px;
+        border-radius: 0;
+        font-size: 1.05rem;
         line-height: 1;
         background: transparent;
-        transition: background-color .18s ease, transform .18s ease;
+        transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
     }
 
     .hotel-bottom-nav .hbn-label {
@@ -129,38 +168,25 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: .6rem;
-        font-weight: 650;
+        font-weight: 700;
         letter-spacing: .01em;
         line-height: 1;
     }
 
     .hotel-bottom-nav .hbn-item:active .hbn-pill {
-        transform: scale(.92);
+        transform: scale(.9);
     }
 
+    /* Activo: texto en el color "sobre primario"; el icono usa el acento
+     * aclarado con blanco para garantizar contraste sobre el cap en
+     * cualquier paleta de hotel. */
     .hotel-bottom-nav .hbn-item.is-active {
-        color: var(--hotel-brand-dark, #0F172A);
+        color: var(--hotel-on-brand, #FFFFFF);
     }
 
     .hotel-bottom-nav .hbn-item.is-active .hbn-pill {
-        background: color-mix(in srgb, var(--hotel-brand, #1B2746) 14%, #FFFFFF);
-        color: var(--hotel-brand-dark, #0F172A);
-    }
-
-    .hotel-bottom-nav .hbn-item.is-active .hbn-label {
-        font-weight: 700;
-    }
-
-    .hotel-bottom-nav .hbn-item.is-active::before {
-        content: '';
-        position: absolute;
-        top: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 22px;
-        height: 3px;
-        border-radius: 0 0 999px 999px;
-        background: var(--hotel-accent, #BD9441);
+        color: color-mix(in srgb, var(--hotel-accent, #D8BC83) 40%, #FFFFFF);
+        transform: translateY(-1px) scale(1.06);
     }
 
     .hotel-bottom-nav .hbn-item:focus-visible {
@@ -197,30 +223,17 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     }
 
     /* ── La vista completa se recorre hacia arriba: nada queda bajo la barra ──
-     * Alto real de la barra: 6px + 52px + 6px = 64px, más safe-area. */
+     * Barra flotante: 64px de alto + 12px de aire abajo + 8px de holgura. */
     body.has-hotel-bottom-nav {
-        --hbn-offset: calc(64px + env(safe-area-inset-bottom, 0px));
+        --hbn-offset: calc(84px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Vistas con scroll interno (todas menos dashboard): el shell termina
-     * exactamente donde empieza la barra (60px header + 4px + barra). */
-    body.hotel-layout-scope.has-hotel-bottom-nav:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-        height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-        min-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-        max-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-    }
-
-    @supports not (height: 100dvh) {
-        body.hotel-layout-scope.has-hotel-bottom-nav:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-            height: calc(100vh - 64px - var(--hbn-offset)) !important;
-            min-height: calc(100vh - 64px - var(--hbn-offset)) !important;
-            max-height: calc(100vh - 64px - var(--hbn-offset)) !important;
-        }
-    }
-
-    /* Dashboard: el documento hace scroll, se compensa con espacio al final */
-    body.hotel-layout-scope.has-hotel-bottom-nav.page-dashboard .main-content {
+    /* La barra flota: el shell llega hasta abajo y el CONTENIDO pasa por
+     * debajo del vidrio; solo se compensa con padding al final del scroll
+     * para que el último elemento no quede tapado. */
+    body.hotel-layout-scope.has-hotel-bottom-nav .main-content {
         padding-bottom: calc(var(--hbn-offset) + 24px) !important;
+        scroll-padding-bottom: calc(var(--hbn-offset) + 24px);
     }
 
     /* ── Header auto-oculto: el contenido ocupa su espacio ──
@@ -236,20 +249,6 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
 
     body.hotel-layout-scope.has-hotel-bottom-nav:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
         transition: none;
-    }
-
-    body.hotel-layout-scope.has-hotel-bottom-nav.header-hidden:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-        height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-        min-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-        max-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
-    }
-
-    @supports not (height: 100dvh) {
-        body.hotel-layout-scope.has-hotel-bottom-nav.header-hidden:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-            height: calc(100vh - 64px - var(--hbn-offset)) !important;
-            min-height: calc(100vh - 64px - var(--hbn-offset)) !important;
-            max-height: calc(100vh - 64px - var(--hbn-offset)) !important;
-        }
     }
 
     /* La barrita de progreso de scroll sube junto con el header */
@@ -292,33 +291,101 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
 (function () {
     document.body.classList.add('has-hotel-bottom-nav');
 
+    /* La barra se renderiza en el header (antes que el sidebar y el resto del
+     * documento), así que los elementos externos se resuelven al momento de
+     * usarlos, no al cargar este script. */
     var menuBtn = document.getElementById('hotel-bottom-nav-menu');
 
+    /* ── Cap deslizante: acompaña el tap antes de navegar ──
+     * El slide y el cambio de color (is-active) son inmediatos al tocar,
+     * para que no quede el ítem viejo "encendido" mientras carga la vista. */
+    var hbnNav = document.getElementById('hotel-bottom-nav');
+    var hbnInitialActive = hbnNav ? parseInt(hbnNav.style.getPropertyValue('--hbn-active') || '-1', 10) : -1;
+    var hbnInitialEl = hbnNav ? hbnNav.querySelector('.hbn-item.is-active') : null;
+
+    function hbnMarkActive(target) {
+        if (!hbnNav) return;
+        var items = hbnNav.querySelectorAll('.hbn-item');
+        for (var j = 0; j < items.length; j++) {
+            items[j].classList.toggle('is-active', items[j] === target);
+        }
+    }
+
+    function hbnSlideCap(idx, target) {
+        if (!hbnNav) return;
+        if (idx < 0) {
+            hbnNav.setAttribute('data-no-active', '');
+            hbnMarkActive(null);
+            return;
+        }
+        hbnNav.removeAttribute('data-no-active');
+        hbnNav.style.setProperty('--hbn-active', idx);
+        if (target !== undefined) hbnMarkActive(target);
+    }
+
+    if (hbnNav) {
+        var hbnItems = hbnNav.querySelectorAll('.hbn-item');
+        for (var hi = 0; hi < hbnItems.length; hi++) {
+            (function (item, idx) {
+                item.addEventListener('click', function () {
+                    hbnSlideCap(idx, item);
+                });
+            })(hbnItems[hi], hi);
+        }
+    }
+
+    // El botón Menú ALTERNA el menú móvil (header y footer siguen visibles;
+    // no hay overlay ni X). Al cerrar, el cap regresa al atajo de la vista.
     if (menuBtn) {
         menuBtn.addEventListener('click', function (e) {
             e.preventDefault();
 
-            var hamburger = document.getElementById('mobile-menu-toggle');
-            if (hamburger) {
-                hamburger.click();
-                return;
-            }
-
             var sidebar = document.getElementById('sidebar');
-            var overlay = document.getElementById('sidebar-overlay');
-            if (sidebar && overlay) {
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
+            if (!sidebar) return;
+
+            var abierto = sidebar.classList.toggle('active');
+            document.body.style.overflow = abierto ? 'hidden' : '';
+            menuBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+
+            if (!abierto) {
+                hbnSlideCap(hbnInitialActive, hbnInitialEl);
             }
         });
+    }
+
+    // La hamburguesa del header también alterna el menú: el cap la acompaña.
+    function hbnBindHeaderToggle() {
+        var headerToggle = document.getElementById('mobile-menu-toggle');
+        if (!headerToggle || headerToggle.dataset.hbnCapBound) return;
+        headerToggle.dataset.hbnCapBound = 'true';
+        headerToggle.addEventListener('click', function () {
+            var sidebar = document.getElementById('sidebar');
+            var abierto = sidebar && sidebar.classList.contains('active');
+            if (menuBtn) menuBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            if (abierto && menuBtn) {
+                var items = hbnNav ? hbnNav.querySelectorAll('.hbn-item') : [];
+                for (var k = 0; k < items.length; k++) {
+                    if (items[k] === menuBtn) { hbnSlideCap(k, menuBtn); break; }
+                }
+            } else {
+                hbnSlideCap(hbnInitialActive, hbnInitialEl);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hbnBindHeaderToggle);
+    } else {
+        hbnBindHeaderToggle();
     }
 
     /* ── Ocultar la barra mientras haya un modal/overlay visible ──
      * Las vistas usan modales muy distintos (Tailwind z-50, SweetAlert2,
      * bottom-sheets propios), así que en lugar de pelear con z-index se
      * detecta genéricamente cualquier capa fija que cubra la pantalla. */
-    var OVERLAY_SELECTOR = '.swal2-container, .fixed.inset-0, [id*="modal" i], [class*="modal" i], [id*="sheet" i], [class*="sheet" i], .xpm-ov, .sidebar-overlay';
+    /* El menú móvil (#sidebar / .sidebar-overlay) NO cuenta como modal:
+     * el footer permanece visible mientras el menú está abierto. */
+    var OVERLAY_SELECTOR = '.swal2-container, .fixed.inset-0, [id*="modal" i], [class*="modal" i], [id*="sheet" i], [class*="sheet" i], .xpm-ov';
     var OVERLAY_BODY_CLASSES = ['swal2-shown', 'hb-mobile-sheet-open', 'hb-modal-open', 'overflow-hidden'];
     var overlayCheckQueued = false;
 

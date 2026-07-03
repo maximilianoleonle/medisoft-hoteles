@@ -368,6 +368,12 @@ $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'h
 $router->get('/admin/saas/modulos', ['controller' => 'SaasAdmin', 'action' => 'modulosCatalogo']);
 $router->post('/admin/saas/modulos/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosModulos']);
 $router->post('/admin/saas/planes/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosPlanes']);
+$router->get('/admin/saas/cobros', ['controller' => 'SaasAdmin', 'action' => 'cobros']);
+$router->post('/admin/saas/cobros/generar', ['controller' => 'SaasAdmin', 'action' => 'generarCobros']);
+$router->post('/admin/saas/cobros/{id:[0-9]+}/link', ['controller' => 'SaasAdmin', 'action' => 'linkPagoCobro']);
+$router->post('/admin/saas/cobros/{id:[0-9]+}/pagado', ['controller' => 'SaasAdmin', 'action' => 'pagadoManualCobro']);
+$router->post('/admin/saas/cobros/{id:[0-9]+}/cancelar', ['controller' => 'SaasAdmin', 'action' => 'cancelarCobro']);
+$router->post('/saas/webhook/stripe', ['controller' => 'SaasWebhook', 'action' => 'stripe']);
 $router->get('/admin/saas/hoteles/crear', ['controller' => 'SaasAdmin', 'action' => 'crearHotel']);
 $router->post('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'guardarHotel']);
 $router->get('/admin/saas/hoteles/{id:[0-9]+}', ['controller' => 'SaasAdmin', 'action' => 'verHotel']);

@@ -26,9 +26,7 @@ $sidebarRolHotel = function_exists('current_hotel_user_role') ? current_hotel_us
 $sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $sidebarPuedeTarifas = is_gerente() || is_admin() || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
 $mostrarFinanzas = $mostrarCaja || $mostrarCuentasPorCobrar || $mostrarFacturacion || $mostrarCuentasPorPagar;
-$mostrarOperacionInterna = $mostrarTareas || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarPersonal = $menuModuloActivo('personal') && $sidebarPuedeUsuarios;
@@ -42,7 +40,13 @@ $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, [
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCamarista = $menuModuloActivo('camarista');
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
+// Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
+// Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
+$mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
+$mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
+$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva;
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu);
+$mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
 if ($sidebarNormalizedPath === '/') {
@@ -155,7 +159,44 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 }
 ?>
 
+<?php
+// Datos para el menú móvil boutique (solo sistema hotelero).
+$sidebarUsuarioNombre = function_exists('user_name') ? (string) user_name() : 'Usuario';
+$sidebarUsuarioRol = function_exists('user_role') ? (string) user_role() : '';
+$sidebarIniciales = '';
+foreach (preg_split('/\s+/', trim($sidebarUsuarioNombre)) as $sidebarParte) {
+    if ($sidebarParte === '') { continue; }
+    $sidebarIniciales .= function_exists('mb_substr') ? mb_substr($sidebarParte, 0, 1, 'UTF-8') : substr($sidebarParte, 0, 1);
+    if ((function_exists('mb_strlen') ? mb_strlen($sidebarIniciales, 'UTF-8') : strlen($sidebarIniciales)) >= 2) { break; }
+}
+$sidebarIniciales = $sidebarIniciales !== ''
+    ? (function_exists('mb_strtoupper') ? mb_strtoupper($sidebarIniciales, 'UTF-8') : strtoupper($sidebarIniciales))
+    : 'U';
+$sidebarAppVersion = '1.0.0';
+$sidebarConfigApp = @include dirname(APP_PATH) . '/config/app.php';
+if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
+    $sidebarAppVersion = (string) $sidebarConfigApp['version'];
+}
+?>
 <aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : 'hotel-sidebar' ?>">
+    <?php if (!$sidebarEsPanelSaas): ?>
+    <!-- ── Menú móvil boutique: tarjeta de perfil (solo ≤1024px).
+         El header y el footer del sistema permanecen visibles; se cierra
+         desde el botón Menú del footer. ── -->
+    <div class="ms-mm-prof">
+        <div class="ms-mm-ava"><?= htmlspecialchars($sidebarIniciales, ENT_QUOTES, 'UTF-8') ?><span class="ms-mm-ring" aria-hidden="true"></span></div>
+        <div class="ms-mm-pinfo">
+            <div class="ms-mm-pn"><?= htmlspecialchars($sidebarUsuarioNombre, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="ms-mm-pe"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php if ($sidebarUsuarioRol !== ''): ?>
+            <span class="ms-mm-pr">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.5 6 .8-4.4 4.2 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.3l6-.8z"/></svg>
+                <?= htmlspecialchars($sidebarUsuarioRol, ENT_QUOTES, 'UTF-8') ?>
+            </span>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
     <div class="sidebar-header <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand' ?>">
         <?php if ($sidebarEsPanelSaas): ?>
         <div class="logo-container <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand-inner' ?>">
@@ -250,6 +291,9 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
         </div>
         <?php else: ?>
         <div class="nav-section hotel-nav-section hotel-dashboard-section">
+            <div class="nav-section-title ms-mm-only">
+                <span>INICIO</span>
+            </div>
             <?php if ($mostrarDashboard): ?>
             <a href="<?= url('dashboard') ?>"
                class="nav-item <?= $sidebarActiveDashboard ? 'active' : '' ?>">
@@ -325,6 +369,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-users"></i>
                 </div>
                 <span class="nav-text">Huéspedes</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCheckinDigital): ?>
+            <a href="<?= url('checkin-digital') ?>"
+               class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-id-badge"></i>
+                </div>
+                <span class="nav-text">Check-in digital</span>
             </a>
             <?php endif; ?>
         </div>
@@ -404,6 +458,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarCamarista): ?>
+            <a href="<?= url('camarista') ?>"
+               class="nav-item <?= $sidebarActiveCamarista ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-broom"></i>
+                </div>
+                <span class="nav-text">Limpieza</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarInventario): ?>
             <a href="<?= url('inventario') ?>"
                class="nav-item <?= $sidebarActiveInventario ? 'active' : '' ?>">
@@ -447,6 +511,54 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
         </div>
         <?php endif; ?>
 
+        <?php if ($mostrarVentasCanales): ?>
+        <div class="nav-section hotel-nav-section hotel-ventas-section">
+            <div class="nav-section-title">
+                <span>VENTAS Y CANALES</span>
+            </div>
+
+            <?php if ($mostrarMotorReservas): ?>
+            <a href="<?= url('motor-reservas') ?>"
+               class="nav-item <?= $sidebarActiveMotorReservas ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <span class="nav-text">Motor de reservas</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCanales): ?>
+            <a href="<?= url('canales') ?>"
+               class="nav-item <?= $sidebarActiveCanales ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span class="nav-text">Canales (iCal)</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarWhatsApp): ?>
+            <a href="<?= url('whatsapp') ?>"
+               class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <span class="nav-text">WhatsApp</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarIaEjecutiva): ?>
+            <a href="<?= url('ia/resumen-diario') ?>"
+               class="nav-item <?= $sidebarActiveIaEjecutiva ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+                <span class="nav-text">Asesor IA</span>
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <?php if ($mostrarAdministracion): ?>
         <div class="nav-section hotel-nav-section hotel-admin-section">
             <div class="nav-section-title">
@@ -483,66 +595,6 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
-            <?php if ($mostrarCheckinDigital): ?>
-            <a href="<?= url('checkin-digital') ?>"
-               class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-id-badge"></i>
-                </div>
-                <span class="nav-text">Check-in digital</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarCamarista): ?>
-            <a href="<?= url('camarista') ?>"
-               class="nav-item <?= $sidebarActiveCamarista ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-broom"></i>
-                </div>
-                <span class="nav-text">Limpieza</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarCanales): ?>
-            <a href="<?= url('canales') ?>"
-               class="nav-item <?= $sidebarActiveCanales ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <span class="nav-text">Canales (iCal)</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarWhatsApp): ?>
-            <a href="<?= url('whatsapp') ?>"
-               class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fab fa-whatsapp"></i>
-                </div>
-                <span class="nav-text">WhatsApp</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarIaEjecutiva): ?>
-            <a href="<?= url('ia/resumen-diario') ?>"
-               class="nav-item <?= $sidebarActiveIaEjecutiva ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-wand-magic-sparkles"></i>
-                </div>
-                <span class="nav-text">Asesor IA</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarMotorReservas): ?>
-            <a href="<?= url('motor-reservas') ?>"
-               class="nav-item <?= $sidebarActiveMotorReservas ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-globe"></i>
-                </div>
-                <span class="nav-text">Motor de reservas</span>
-            </a>
-            <?php endif; ?>
-
             <?php if ($mostrarNotificacionesMenu): ?>
             <a href="<?= url('notificaciones') ?>"
                class="nav-item <?= $sidebarActiveNotificaciones ? 'active' : '' ?>">
@@ -555,6 +607,14 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                 <span class="nav-text">Notificaciones</span>
             </a>
             <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($mostrarConfigSeccion): ?>
+        <div class="nav-section hotel-nav-section hotel-config-section">
+            <div class="nav-section-title">
+                <span>CONFIGURACIÓN</span>
+            </div>
 
             <?php if ($mostrarConfiguracion): ?>
             <a href="<?= url('configuracion') ?>"
@@ -587,6 +647,26 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             <?php endif; ?>
         </div>
         <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if (!$sidebarEsPanelSaas): ?>
+        <!-- ── Menú móvil boutique: cerrar sesión + versión (solo ≤1024px) ── -->
+        <div class="ms-mm-bottom">
+            <?php if ($sidebarMostrarLimpiezaOffline): ?>
+            <button type="button" class="ms-mm-cleanup" onclick="document.getElementById('manual-offline-cleanup-btn') && document.getElementById('manual-offline-cleanup-btn').click();">
+                <i class="fas fa-broom" aria-hidden="true"></i>
+                <span>Limpiar datos offline</span>
+            </button>
+            <?php endif; ?>
+            <form method="POST" action="<?= url('logout') ?>" class="ms-mm-logout-form">
+                <?= csrf_field() ?>
+                <button type="submit" class="ms-mm-logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 12H3m0 0 4-4m-4 4 4 4M20 4v16"/></svg>
+                    Cerrar sesión
+                </button>
+            </form>
+            <div class="ms-mm-ver">Medisoft Hoteles · versión <?= htmlspecialchars($sidebarAppVersion, ENT_QUOTES, 'UTF-8') ?></div>
+        </div>
         <?php endif; ?>
     </nav>
 
@@ -863,13 +943,14 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             mobileMenuToggle.dataset.hotelShellBound = 'true';
             mobileMenuToggle.setAttribute('aria-expanded', 'false');
 
+            // El menú convive con header y footer visibles: la hamburguesa
+            // alterna abrir/cerrar y no se usa overlay oscurecedor.
             mobileMenuToggle.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                mobileMenuToggle.setAttribute('aria-expanded', 'true');
+                var abierto = sidebar.classList.toggle('active');
+                document.body.style.overflow = abierto ? 'hidden' : '';
+                mobileMenuToggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
             });
 
             overlay.addEventListener('click', function() {
@@ -965,3 +1046,353 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
     position: relative;
 }
 </style>
+
+<?php if (!$sidebarEsPanelSaas): ?>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MENÚ MÓVIL BOUTIQUE (≤1024px) — reskin del drawer del hotel.
+   Prefijo #sidebar.hotel-sidebar: gana a las reglas !important de
+   3 clases del shell (.hotel-layout-scope .hotel-sidebar ...).
+   El desktop no se toca: las piezas ms-mm-* viven ocultas ahí.
+   ═══════════════════════════════════════════════════════════════ */
+.ms-mm-prof, .ms-mm-bottom { display: none; }
+.nav-section-title.ms-mm-only { display: none !important; }
+
+@media (max-width: 1024px) {
+    /* El menú vive ENTRE el header (arriba, z~10000) y el footer flotante
+     * (z 980): ambos permanecen visibles, como en cualquier otra vista. */
+    #sidebar.sidebar-main.hotel-sidebar {
+        top: 64px !important;
+        bottom: auto !important;
+        height: calc(100dvh - 64px) !important;
+        max-height: calc(100dvh - 64px) !important;
+        z-index: 900 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        background: #FBF8F2 !important;
+        border-right: 0 !important;
+        box-shadow: none !important;
+        padding: 8px 12px 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        /* Sin animación de entrada: el menú aparece al instante,
+         * como cualquier otra vista del sistema. */
+        transform: translateX(-102%) !important;
+        transition: none !important;
+    }
+    #sidebar.sidebar-main.hotel-sidebar.active {
+        transform: translateX(0) !important;
+    }
+    @supports not (height: 100dvh) {
+        #sidebar.sidebar-main.hotel-sidebar {
+            height: calc(100vh - 64px) !important;
+            max-height: calc(100vh - 64px) !important;
+        }
+    }
+
+    /* El contenido del menú pasa por debajo del footer de vidrio */
+    body.has-hotel-bottom-nav #sidebar.hotel-sidebar .sidebar-nav {
+        padding-bottom: calc(var(--hbn-offset, 84px) + 16px) !important;
+    }
+
+    /* Tarjeta de perfil */
+    #sidebar.hotel-sidebar .ms-mm-prof {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #FFFFFF;
+        border: 1px solid #ECE5D8;
+        border-radius: 16px;
+        padding: 11px 12px;
+        box-shadow: 0 1px 2px rgba(27,39,70,.05);
+        margin-bottom: 2px;
+        flex: none;
+    }
+    #sidebar.hotel-sidebar .ms-mm-ava {
+        width: 48px; height: 48px; border-radius: 14px;
+        display: grid; place-items: center;
+        color: #fff;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-weight: 600; font-size: 19px;
+        background: linear-gradient(150deg, var(--brand-secondary, #2E3F66), var(--brand-primary, #1B2746));
+        flex: none; position: relative;
+    }
+    #sidebar.hotel-sidebar .ms-mm-ring {
+        position: absolute; inset: -3px; border-radius: 17px;
+        border: 1.5px solid var(--brand-accent, #E4D4B0);
+        opacity: .55;
+    }
+    #sidebar.hotel-sidebar .ms-mm-pinfo { flex: 1; min-width: 0; }
+    #sidebar.hotel-sidebar .ms-mm-pn {
+        font-size: 15px; font-weight: 700;
+        color: var(--brand-primary, #1B2746);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #sidebar.hotel-sidebar .ms-mm-pe {
+        font-size: 11.5px; color: #6C7689; margin-top: 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #sidebar.hotel-sidebar .ms-mm-pr {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 10.5px; font-weight: 800; letter-spacing: .03em;
+        text-transform: uppercase;
+        color: var(--brand-accent, #B0883F);
+        background: color-mix(in srgb, var(--brand-accent, #B0883F) 12%, #FFFFFF);
+        border: 1px solid color-mix(in srgb, var(--brand-accent, #B0883F) 32%, #FFFFFF);
+        padding: 3px 9px; border-radius: 99px; margin-top: 6px;
+    }
+    #sidebar.hotel-sidebar .ms-mm-pr svg { width: 11px; height: 11px; }
+
+    /* Marca y footer de escritorio fuera en móvil */
+    #sidebar.hotel-sidebar .sidebar-header,
+    #sidebar.hotel-sidebar .sidebar-footer { display: none !important; }
+
+    /* Buscador como tarjeta */
+    #sidebar.hotel-sidebar .sidebar-search { padding: 8px 0 4px !important; flex: none; }
+    #sidebar.hotel-sidebar .sidebar-search .search-box {
+        background: #FFFFFF !important;
+        border: 1px solid #ECE5D8 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 1px 2px rgba(27,39,70,.05) !important;
+    }
+    #sidebar.hotel-sidebar .sidebar-search .search-input {
+        color: var(--brand-primary, #1B2746) !important;
+        font-size: 14px !important;
+    }
+
+    /* Navegación */
+    #sidebar.hotel-sidebar .sidebar-nav {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding: 0 0 10px !important;
+        margin: 0 !important;
+        gap: 0 !important;
+        scrollbar-width: none;
+    }
+    #sidebar.hotel-sidebar .sidebar-nav::-webkit-scrollbar { width: 0; }
+
+    #sidebar.hotel-sidebar .nav-section {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    /* La etiqueta del grupo vive en el espacio entre tarjetas */
+    #sidebar.hotel-sidebar .nav-section-title {
+        display: block !important;
+        margin: 0 4px 8px !important;
+        padding: 16px 0 0 !important;
+        border: 0 !important;
+        position: static !important;
+    }
+    #sidebar.hotel-sidebar .nav-section-title.ms-mm-only { display: block !important; }
+    #sidebar.hotel-sidebar .hotel-dashboard-section .nav-section-title { padding-top: 10px !important; }
+    #sidebar.hotel-sidebar .nav-section-title::before,
+    #sidebar.hotel-sidebar .nav-section-title::after { display: none !important; content: none !important; }
+    #sidebar.hotel-sidebar .nav-section-title span {
+        font-size: 11.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: .08em !important;
+        text-transform: uppercase !important;
+        color: #939BAD !important;
+        opacity: 1 !important;
+        display: inline !important;
+    }
+
+    /* Filas dentro de tarjetas blancas */
+    #sidebar.hotel-sidebar .nav-item {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        margin: 0 !important;
+        padding: 12px 13px !important;
+        min-height: 0 !important;
+        background: #FFFFFF !important;
+        border: 1px solid #ECE5D8 !important;
+        border-top-width: 0 !important;
+        border-radius: 0 !important;
+        color: var(--brand-primary, #1B2746) !important;
+        font-size: 14.5px !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        overflow: visible !important;
+    }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:first-of-type {
+        border-top-width: 1px !important;
+        border-top-left-radius: 16px !important;
+        border-top-right-radius: 16px !important;
+    }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:last-of-type {
+        border-bottom-left-radius: 16px !important;
+        border-bottom-right-radius: 16px !important;
+        box-shadow: 0 1px 2px rgba(27,39,70,.05) !important;
+    }
+    #sidebar.hotel-sidebar .nav-item:hover,
+    #sidebar.hotel-sidebar .nav-item:active {
+        background: #FEFCF7 !important;
+        color: var(--brand-primary, #1B2746) !important;
+        transform: none !important;
+    }
+    #sidebar.hotel-sidebar .nav-item .nav-text {
+        color: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        opacity: 1 !important;
+        flex: 1 !important;
+        min-width: 0;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Separador interno inset: arranca donde arranca el texto */
+    #sidebar.hotel-sidebar .nav-section a.nav-item + a.nav-item::before {
+        content: '' !important;
+        position: absolute !important;
+        left: 61px !important; right: 0 !important; top: 0 !important;
+        bottom: auto !important;
+        width: auto !important;
+        height: 1px !important;
+        background: #F1ECE2 !important;
+        border-radius: 0 !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    /* Chevron a la derecha (redefine el ::after decorativo del shell) */
+    #sidebar.hotel-sidebar .nav-item::after {
+        content: '' !important;
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        width: 8px !important; height: 8px !important; flex: none;
+        border: 0 !important;
+        border-top: 2px solid #B7BDCB !important;
+        border-right: 2px solid #B7BDCB !important;
+        border-radius: 0 !important;
+        background: none !important;
+        opacity: 1 !important;
+        z-index: auto !important;
+        transform: rotate(45deg) !important;
+        margin-left: auto !important;
+        margin-right: 2px !important;
+        pointer-events: none;
+    }
+    #sidebar.hotel-sidebar .nav-item:has(.nav-badge)::after { display: none !important; }
+
+    /* Icono como tile de color */
+    #sidebar.hotel-sidebar .nav-item .nav-icon {
+        position: static !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        border-radius: 10px !important;
+        display: grid !important;
+        place-items: center !important;
+        background: var(--ms-mm-ib, #FBF8F2) !important;
+        color: var(--ms-mm-ic, #6C7689) !important;
+        flex: none;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+    #sidebar.hotel-sidebar .nav-item .nav-icon i {
+        font-size: 15px !important;
+        color: inherit !important;
+        width: auto !important;
+        opacity: 1 !important;
+    }
+
+    /* Rotación de tintes semánticos por fila (paleta boutique) */
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+1) .nav-icon { --ms-mm-ib: #ECEBFB; --ms-mm-ic: #5A57D2; }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+2) .nav-icon { --ms-mm-ib: #E7F4EC; --ms-mm-ic: #1E9E63; }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+3) .nav-icon { --ms-mm-ib: #FAF0DC; --ms-mm-ic: #C2841C; }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+4) .nav-icon { --ms-mm-ib: #E2F2F6; --ms-mm-ic: #0E96B8; }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+5) .nav-icon { --ms-mm-ib: #E6EFFC; --ms-mm-ic: #2F77E0; }
+    #sidebar.hotel-sidebar .nav-section a.nav-item:nth-of-type(6n+6) .nav-icon { --ms-mm-ib: #ECEFF4; --ms-mm-ic: #5B6B86; }
+
+    /* Ítem activo: tile con el acento del hotel, sin píldora ni gradiente */
+    #sidebar.hotel-sidebar .nav-item.active {
+        background: #FFFFFF !important;
+        color: var(--brand-primary, #1B2746) !important;
+        font-weight: 800 !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+    #sidebar.hotel-sidebar .nav-section a.nav-item.active:last-of-type {
+        box-shadow: 0 1px 2px rgba(27,39,70,.05) !important;
+    }
+    #sidebar.hotel-sidebar .nav-item.active .nav-icon {
+        background: color-mix(in srgb, var(--brand-accent, #B0883F) 16%, #FFFFFF) !important;
+        color: var(--brand-accent, #B0883F) !important;
+    }
+    #sidebar.hotel-sidebar .nav-item.active .nav-text { color: inherit !important; }
+
+    /* Badges numéricos a la derecha (estilo pastilla) */
+    #sidebar.hotel-sidebar .nav-item .nav-badge {
+        position: absolute !important;
+        right: 14px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        left: auto !important;
+        bottom: auto !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        padding: 0 6px !important;
+        border-radius: 99px !important;
+        background: #D64539 !important;
+        color: #fff !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        line-height: 20px !important;
+        text-align: center !important;
+        box-shadow: none !important;
+        animation: none !important;
+    }
+    #sidebar.hotel-sidebar .nav-item .nav-badge.pulse-green {
+        background: #1E9E63 !important;
+        min-width: 10px !important;
+        height: 10px !important;
+        padding: 0 !important;
+        right: 18px !important;
+    }
+    #sidebar.hotel-sidebar .nav-item .nav-badge.nav-badge-billing {
+        background: var(--brand-accent, #B45309) !important;
+    }
+
+    /* Bloque final: limpiar offline + cerrar sesión + versión */
+    #sidebar.hotel-sidebar .ms-mm-bottom { display: block; padding: 6px 2px 4px; }
+    #sidebar.hotel-sidebar .ms-mm-cleanup {
+        display: flex; align-items: center; justify-content: center; gap: 9px;
+        width: 100%; margin-top: 18px; padding: 12px;
+        border-radius: 14px;
+        background: transparent; border: 1px dashed #D9D2C4;
+        color: #6C7689;
+        font-family: inherit; font-size: 13px; font-weight: 700;
+        cursor: pointer;
+    }
+    #sidebar.hotel-sidebar .ms-mm-logout-form { margin: 0; }
+    #sidebar.hotel-sidebar .ms-mm-logout {
+        display: flex; align-items: center; justify-content: center; gap: 9px;
+        width: 100%; margin-top: 12px; padding: 14px;
+        border-radius: 14px;
+        background: #FFFFFF;
+        border: 1px solid rgba(214,69,57,.22);
+        color: #D64539;
+        font-family: inherit; font-size: 14.5px; font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(27,39,70,.05);
+        transition: background .14s;
+    }
+    #sidebar.hotel-sidebar .ms-mm-logout:active { background: #FBE9E7; }
+    #sidebar.hotel-sidebar .ms-mm-logout svg { width: 18px; height: 18px; flex: none; }
+    #sidebar.hotel-sidebar .ms-mm-ver {
+        text-align: center;
+        font-size: 11.5px; color: #939BAD; font-weight: 600;
+        margin-top: 14px;
+    }
+}
+</style>
+
+<?php endif; ?>

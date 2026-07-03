@@ -85,6 +85,106 @@ class SaasAdminController extends Controller {
         $this->redirect('admin/saas/hoteles/' . (int) $hotelId);
     }
 
+    // ───────────── Cobros SaaS (facturacion mensual a hoteles) ─────────────
+
+    public function cobrosAction() {
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $servicio = new SaasCobroService();
+
+        $periodo = (string) $this->getQuery('periodo', date('Y-m'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $periodo)) {
+            $periodo = date('Y-m');
+        }
+
+        View::renderTemplate('admin/saas/cobros', [
+            'title' => 'Panel Medisoft interno - Cobros',
+            'periodo' => $periodo,
+            'cobros' => $servicio->cobrosDelPeriodo($periodo),
+            'stripeConfigurado' => $servicio->configurado(),
+        ]);
+    }
+
+    public function generarCobrosAction() {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $periodo = (string) $this->getPost('periodo', date('Y-m'));
+        $resultado = (new SaasCobroService())->generarPeriodo($periodo);
+
+        set_mensaje($resultado['message'], $resultado['success'] ? 'success' : 'error');
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($periodo));
+    }
+
+    public function linkPagoCobroAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $servicio = new SaasCobroService();
+        $cobro = $servicio->porId((int) $id);
+        $periodo = $cobro['periodo'] ?? date('Y-m');
+
+        $resultado = $servicio->crearLinkPago((int) $id, url('admin/saas/cobros?periodo=' . urlencode($periodo)));
+
+        set_mensaje($resultado['message'], $resultado['success'] ? 'success' : 'error');
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($periodo));
+    }
+
+    public function pagadoManualCobroAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $servicio = new SaasCobroService();
+        $cobro = $servicio->porId((int) $id);
+        $ok = $servicio->marcarPagado((int) $id, 'manual');
+
+        set_mensaje(
+            $ok ? 'Cobro marcado como pagado (manual).' : 'No se pudo marcar; quiza ya no estaba pendiente.',
+            $ok ? 'success' : 'error'
+        );
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($cobro['periodo'] ?? date('Y-m')));
+    }
+
+    public function cancelarCobroAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $servicio = new SaasCobroService();
+        $cobro = $servicio->porId((int) $id);
+        $ok = $servicio->cancelar((int) $id);
+
+        set_mensaje(
+            $ok ? 'Cobro cancelado.' : 'No se pudo cancelar; quiza ya no estaba pendiente.',
+            $ok ? 'success' : 'error'
+        );
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($cobro['periodo'] ?? date('Y-m')));
+    }
+
     public function verHotelAction($id) {
         $hotel = $this->obtenerHotelORedirigir($id);
         $usuariosHotel = $this->hotelModel->listarUsuariosParaSaasAdmin((int) $hotel['id']);

@@ -824,15 +824,15 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
   <!-- ── Modal de confirmación global + estados de página (msConfirm / msPageState) ── -->
   <?php include APP_PATH . '/views/partials/confirm.php'; ?>
 
+  <!-- ── Barra inferior de atajos: se renderiza temprano para estar visible
+       desde el primer paint, igual que el header móvil ── -->
+  <?php include APP_PATH . '/views/layout/footer-nav.php'; ?>
+
     <!-- Incluir pantalla de carga -->
     <?php include APP_PATH . '/views/components/loading-screen.php'; ?>
     
     <!-- HEADER MÓVIL MODERNO (Solo aparece en móvil) -->
     <div class="mobile-header-modern" id="mobileHeaderModern">
-        <button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Abrir menú de navegación">
-            <i class="fas fa-bars"></i>
-        </button>
-        
         <a href="<?= url('dashboard') ?>"
            class="mobile-header-logo"
            aria-label="Ir al dashboard"

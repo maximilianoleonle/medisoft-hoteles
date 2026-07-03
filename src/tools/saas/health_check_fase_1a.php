@@ -3724,6 +3724,11 @@ if (!is_file($routesPath)) {
             'POST /tareas/{id:[0-9]+}/completar -> tarea::completar',
             'POST /tareas/{id:[0-9]+}/cancelar -> tarea::cancelar',
             'GET /tareas/{id:[0-9]+} -> tarea::ver',
+            // Rutas agregadas por la rama feature/saas-multihotel (tareas
+            // multi-trabajador): edicion de tarea y lista contextual por habitacion.
+            'GET /tareas/de-habitacion/{id:[0-9]+} -> tarea::porhabitacion',
+            'GET /tareas/{id:[0-9]+}/editar -> tarea::editar',
+            'POST /tareas/{id:[0-9]+}/actualizar -> tarea::actualizar',
         ], true);
 
         if ((strpos($path, 'tareas') !== false || $controller === 'tarea') && !$allowedTaskRoute) {
