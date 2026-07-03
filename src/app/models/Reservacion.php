@@ -1713,36 +1713,40 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
  */
 public function obtenerEstadisticasDashboard() {
     $db = Database::getInstance();
-    
-    // Configurar zona horaria para MySQL
-    $db->query("SET time_zone = '-06:00'"); // Mexico City UTC-6
-    
+    // La zona horaria ya la fija Database::__construct al conectar.
+    // TODAS las consultas filtran por hotel: antes mezclaban conteos y dinero
+    // de todos los hoteles (fuga multi-tenant corregida en bloque 3).
+    $hotel_id = $this->hotelIdActual();
+
     // 1. Entradas de hoy (confirmadas que entran hoy)
-    $sql = "SELECT COUNT(*) as total 
-            FROM reservaciones 
-            WHERE fecha_entrada = CURDATE() 
+    $sql = "SELECT COUNT(*) as total
+            FROM reservaciones
+            WHERE hotel_id = ?
+            AND fecha_entrada = CURDATE()
             AND estado = 'confirmada'";
-    $stmt = $db->query($sql);
+    $stmt = $db->query($sql, [$hotel_id]);
     $entradas_hoy = $stmt->fetch()['total'] ?? 0;
-    
+
     // 2. Salidas de hoy (checked_in que salen hoy)
-    $sql = "SELECT COUNT(*) as total 
-            FROM reservaciones 
-            WHERE fecha_salida = CURDATE() 
+    $sql = "SELECT COUNT(*) as total
+            FROM reservaciones
+            WHERE hotel_id = ?
+            AND fecha_salida = CURDATE()
             AND estado = 'checked_in'";
-    $stmt = $db->query($sql);
+    $stmt = $db->query($sql, [$hotel_id]);
     $salidas_hoy = $stmt->fetch()['total'] ?? 0;
-    
+
     // 3. Habitaciones ocupadas actualmente
-    $sql = "SELECT COUNT(DISTINCT h.id) as total 
+    $sql = "SELECT COUNT(DISTINCT h.id) as total
             FROM habitaciones h
-            WHERE h.estado = 'ocupada'";
-    $stmt = $db->query($sql);
+            WHERE h.hotel_id = ?
+            AND h.estado = 'ocupada'";
+    $stmt = $db->query($sql, [$hotel_id]);
     $habitaciones_ocupadas = $stmt->fetch()['total'] ?? 0;
-    
+
     // Total de habitaciones activas
-    $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE activa = 1";
-    $stmt = $db->query($sql);
+    $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE hotel_id = ? AND activa = 1";
+    $stmt = $db->query($sql, [$hotel_id]);
     $total_habitaciones = $stmt->fetch()['total'] ?? 1;
     
     // Porcentaje de ocupación
@@ -1756,17 +1760,20 @@ public function obtenerEstadisticasDashboard() {
         'total' => 0
     ];
     
-    // Primero intentar con movimientos_caja (más preciso)
-    $sql = "SELECT 
+    // Primero intentar con movimientos_caja (más preciso).
+    // Rango sargable en lugar de DATE(created_at) para poder usar índice.
+    $sql = "SELECT
             metodo_pago,
             SUM(monto) as total
-            FROM movimientos_caja 
-            WHERE DATE(created_at) = CURDATE()
+            FROM movimientos_caja
+            WHERE hotel_id = ?
+            AND created_at >= CURDATE()
+            AND created_at < CURDATE() + INTERVAL 1 DAY
             AND tipo = 'ingreso'
             AND categoria = 'hospedaje'
             GROUP BY metodo_pago";
-    
-    $stmt = $db->query($sql);
+
+    $stmt = $db->query($sql, [$hotel_id]);
     $hay_movimientos = false;
     
     while ($row = $stmt->fetch()) {
@@ -1780,38 +1787,42 @@ public function obtenerEstadisticasDashboard() {
     
     // Si no hay movimientos en caja, usar el método antiguo
     if (!$hay_movimientos) {
-        $sql = "SELECT 
+        $sql = "SELECT
                 COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' THEN precio_total ELSE 0 END), 0) as efectivo,
                 COALESCE(SUM(CASE WHEN metodo_pago = 'tarjeta' THEN precio_total ELSE 0 END), 0) as tarjeta,
                 COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' THEN precio_total ELSE 0 END), 0) as transferencia,
                 COALESCE(SUM(precio_total), 0) as total
-                FROM reservaciones 
-                WHERE DATE(updated_at) = CURDATE()
+                FROM reservaciones
+                WHERE hotel_id = ?
+                AND updated_at >= CURDATE()
+                AND updated_at < CURDATE() + INTERVAL 1 DAY
                 AND estado IN ('checked_in', 'checked_out')
                 AND metodo_pago IS NOT NULL";
-        
-        $stmt = $db->query($sql);
+
+        $stmt = $db->query($sql, [$hotel_id]);
         $ingresos_dia = $stmt->fetch();
     }
-    
-    // 5. Ingresos del mes
-    $sql = "SELECT COALESCE(SUM(monto), 0) as total 
-            FROM movimientos_caja 
-            WHERE MONTH(created_at) = MONTH(CURDATE()) 
-            AND YEAR(created_at) = YEAR(CURDATE())
+
+    // 5. Ingresos del mes (rango sargable = usa índice por hotel+fecha)
+    $sql = "SELECT COALESCE(SUM(monto), 0) as total
+            FROM movimientos_caja
+            WHERE hotel_id = ?
+            AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+            AND created_at < DATE_FORMAT(CURDATE() + INTERVAL 1 MONTH, '%Y-%m-01')
             AND tipo = 'ingreso'
             AND categoria = 'hospedaje'";
-    $stmt = $db->query($sql);
+    $stmt = $db->query($sql, [$hotel_id]);
     $ingresos_mes_caja = $stmt->fetch()['total'] ?? 0;
-    
+
     // Si no hay datos en movimientos_caja, usar reservaciones
     if ($ingresos_mes_caja == 0) {
-        $sql = "SELECT SUM(precio_total) as total 
-                FROM reservaciones 
-                WHERE MONTH(created_at) = MONTH(CURDATE()) 
-                AND YEAR(created_at) = YEAR(CURDATE())
+        $sql = "SELECT SUM(precio_total) as total
+                FROM reservaciones
+                WHERE hotel_id = ?
+                AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                AND created_at < DATE_FORMAT(CURDATE() + INTERVAL 1 MONTH, '%Y-%m-01')
                 AND estado != 'cancelada'";
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         $ingresos_mes = $stmt->fetch()['total'] ?? 0;
     } else {
         $ingresos_mes = $ingresos_mes_caja;
@@ -1835,11 +1846,12 @@ public function obtenerEstadisticasDashboard() {
         $sql = "SELECT r.*, h.nombre_completo as huesped_nombre, h.telefono as huesped_telefono
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE r.fecha_entrada = CURDATE() 
+                WHERE r.hotel_id = ?
+                AND r.fecha_entrada = CURDATE()
                 AND r.estado = 'confirmada'
                 ORDER BY r.hora_llegada_estimada";
-        
-        $stmt = $this->db->query($sql);
+
+        $stmt = $this->db->query($sql, [$this->hotelIdActual()]);
         return $stmt->fetchAll();
     }
     
@@ -1850,11 +1862,12 @@ public function obtenerEstadisticasDashboard() {
         $sql = "SELECT r.*, h.nombre_completo as huesped_nombre, h.telefono as huesped_telefono
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE r.fecha_salida = CURDATE() 
+                WHERE r.hotel_id = ?
+                AND r.fecha_salida = CURDATE()
                 AND r.estado = 'checked_in'
                 ORDER BY r.id";
-        
-        $stmt = $this->db->query($sql);
+
+        $stmt = $this->db->query($sql, [$this->hotelIdActual()]);
         return $stmt->fetchAll();
     }
     
