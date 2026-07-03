@@ -199,6 +199,11 @@ $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'Mo
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
 
+// WhatsApp del hotel (bloque whatsapp): conexion y toggles
+$router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
+$router->post('/whatsapp/guardar', ['controller' => 'WhatsApp', 'action' => 'guardar']);
+$router->post('/whatsapp/probar', ['controller' => 'WhatsApp', 'action' => 'probar']);
+
 // IA Ejecutiva: resumen gerencial diario narrado (bloque ia_ejecutiva)
 $router->get('/ia/resumen-diario', ['controller' => 'IaEjecutiva', 'action' => 'resumenDiario']);
 $router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' => 'regenerarResumen']);

@@ -38,6 +38,7 @@ $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActi
 $mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -77,6 +78,7 @@ $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
+$sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
 $sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
 $sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
 $sidebarActiveRoles = $sidebarPathStarts('configuracion/roles');
@@ -472,6 +474,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarWhatsApp): ?>
+            <a href="<?= url('whatsapp') ?>"
+               class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <span class="nav-text">WhatsApp</span>
             </a>
             <?php endif; ?>
 

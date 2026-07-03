@@ -286,6 +286,27 @@ class MotorReservaOnlineService
 
             $this->eliminarHold($holdToken);
 
+            // WhatsApp best-effort (bloque whatsapp): confirmacion al huesped + aviso al dueno.
+            try {
+                if (!class_exists('WhatsAppHotelService')) {
+                    require_once __DIR__ . '/WhatsAppHotelService.php';
+                }
+                $hotelCtx = class_exists('TenantContext') ? (TenantContext::hotel() ?: []) : [];
+                (new WhatsAppHotelService($this->db))->notificarReservaOnline($hotelId, [
+                    'nombre' => (string) ($pago['huesped_nombre'] ?? ''),
+                    'telefono' => (string) ($pago['huesped_telefono'] ?? ''),
+                    'folio' => (int) $reservacionId,
+                    'entrada' => $entrada,
+                    'salida' => $salida,
+                    'tipo' => (string) ($payload['tipo'] ?? 'habitacion'),
+                    'anticipo' => (float) $pago['monto'],
+                    'saldo' => max(0, (float) $precios['total'] - (float) $pago['monto']),
+                    'hotel_nombre' => (string) ($hotelCtx['nombre'] ?? 'tu hotel'),
+                ]);
+            } catch (Throwable $eWa) {
+                error_log('Motor online: WhatsApp post-confirmacion fallo (no critico): ' . $eWa->getMessage());
+            }
+
             return ['success' => true, 'reservacion_id' => (int) $reservacionId];
         } catch (Throwable $e) {
             error_log('Motor online: error al confirmar pago ' . $pago['id'] . ': ' . $e->getMessage());

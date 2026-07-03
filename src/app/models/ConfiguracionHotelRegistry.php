@@ -88,6 +88,16 @@ class ConfiguracionHotelRegistry
             'default' => true,
             'description' => 'Enviar correo de confirmacion al huesped al completar su pago online.',
         ],
+        'whatsapp.confirmacion_huesped_activa' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Enviar confirmacion por WhatsApp al huesped cuando paga su reserva online.',
+        ],
+        'whatsapp.aviso_dueno_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Avisar por WhatsApp al numero del hotel cada reserva online pagada.',
+        ],
     ];
 
     private static $legacyFallbacks = [
