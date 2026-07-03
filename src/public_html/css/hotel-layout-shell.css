@@ -927,6 +927,8 @@ body.hotel-layout-scope {
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
+        touch-action: pan-y;
+        scrollbar-gutter: stable;
         padding-bottom: max(24px, env(safe-area-inset-bottom));
         scroll-padding-bottom: max(24px, env(safe-area-inset-bottom));
     }

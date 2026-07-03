@@ -169,9 +169,14 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     }
 
     /* Con un modal u overlay abierto, la barra se retira para no interferir */
-    body.hbn-overlay-open .hotel-bottom-nav {
-        transform: translateY(110%);
+    body.hbn-overlay-open .hotel-bottom-nav,
+    body.hb-mobile-sheet-open .hotel-bottom-nav,
+    body.hb-modal-open .hotel-bottom-nav,
+    body.swal2-shown .hotel-bottom-nav,
+    body.overflow-hidden .hotel-bottom-nav {
+        transform: translate3d(0, calc(100% + 16px), 0);
         opacity: 0;
+        visibility: hidden;
         pointer-events: none;
     }
 
@@ -214,34 +219,34 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
      * Al scrollear hacia abajo el shell agrega body.header-hidden; sin esto
      * quedaba una franja en blanco de 60px arriba. */
     body.hotel-layout-scope.has-hotel-bottom-nav {
-        transition: padding-top .28s ease;
+        transition: none;
     }
 
     body.hotel-layout-scope.has-hotel-bottom-nav.header-hidden {
-        padding-top: 0 !important;
+        padding-top: 64px !important;
     }
 
     body.hotel-layout-scope.has-hotel-bottom-nav:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-        transition: height .28s ease, min-height .28s ease, max-height .28s ease;
+        transition: none;
     }
 
     body.hotel-layout-scope.has-hotel-bottom-nav.header-hidden:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-        height: calc(100dvh - var(--hbn-offset)) !important;
-        min-height: calc(100dvh - var(--hbn-offset)) !important;
-        max-height: calc(100dvh - var(--hbn-offset)) !important;
+        height: calc(100dvh - 64px - var(--hbn-offset)) !important;
+        min-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
+        max-height: calc(100dvh - 64px - var(--hbn-offset)) !important;
     }
 
     @supports not (height: 100dvh) {
         body.hotel-layout-scope.has-hotel-bottom-nav.header-hidden:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
-            height: calc(100vh - var(--hbn-offset)) !important;
-            min-height: calc(100vh - var(--hbn-offset)) !important;
-            max-height: calc(100vh - var(--hbn-offset)) !important;
+            height: calc(100vh - 64px - var(--hbn-offset)) !important;
+            min-height: calc(100vh - 64px - var(--hbn-offset)) !important;
+            max-height: calc(100vh - 64px - var(--hbn-offset)) !important;
         }
     }
 
     /* La barrita de progreso de scroll sube junto con el header */
     body.has-hotel-bottom-nav.header-hidden .scroll-progress {
-        top: 0;
+        top: 64px;
     }
 
     /* Flotantes anclados al fondo suben el alto de la barra */
@@ -306,7 +311,7 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
      * bottom-sheets propios), así que en lugar de pelear con z-index se
      * detecta genéricamente cualquier capa fija que cubra la pantalla. */
     var OVERLAY_SELECTOR = '.swal2-container, .fixed.inset-0, [id*="modal" i], [class*="modal" i], [id*="sheet" i], [class*="sheet" i], .xpm-ov, .sidebar-overlay';
-    var OVERLAY_BODY_CLASSES = ['swal2-shown', 'hb-mobile-sheet-open'];
+    var OVERLAY_BODY_CLASSES = ['swal2-shown', 'hb-mobile-sheet-open', 'hb-modal-open', 'overflow-hidden'];
     var overlayCheckQueued = false;
 
     function isOverlayVisible(el) {

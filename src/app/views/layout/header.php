@@ -1185,6 +1185,7 @@ if ($_skShow):
                 return document.scrollingElement || document.documentElement;
             })();
             const isDocumentScroll = scrollContainer === document.documentElement || scrollContainer === document.body;
+            const isHotelLayout = document.body.classList.contains('hotel-layout-scope');
             
             // Verificar que el header existe
             if (mobileHeader) {
@@ -1207,6 +1208,14 @@ if ($_skShow):
                         if (scrollProgress && scrollHeight > 0) {
                             const percentage = scrollTop / scrollHeight;
                             scrollProgress.style.transform = `scaleX(${percentage})`;
+                        }
+
+                        if (isHotelLayout) {
+                            mobileHeader.classList.remove('hidden');
+                            document.body.classList.remove('header-hidden');
+                            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                            ticking = false;
+                            return;
                         }
                         
                         // Auto-hide del header con umbral mínimo

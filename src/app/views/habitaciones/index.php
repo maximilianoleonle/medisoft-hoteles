@@ -6186,6 +6186,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .hb-mobile-sheet-back,
 .habitaciones-view .hb-mobile-room-sheet{ display:none; }
 body.hb-mobile-sheet-open{ overflow:hidden; }
+body.hb-modal-open{ overflow:hidden; }
 
 @media (max-width:640px){
   .habitaciones-view{
@@ -6623,7 +6624,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     display:block;
     position:fixed;
     inset:0;
-    z-index:90;
+    z-index:10030;
     background:rgba(18,22,34,.46);
     opacity:0;
     visibility:hidden;
@@ -6636,8 +6637,8 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     left:0;
     right:0;
     bottom:0;
-    z-index:91;
-    max-height:86dvh;
+    z-index:10031;
+    max-height:min(88dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
     border-radius:24px 24px 0 0;
     background:var(--hb-surface);
     box-shadow:0 -12px 40px rgba(18,22,34,.2);
@@ -6658,6 +6659,10 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   .habitaciones-view .hb-mobile-sheet-content{
     min-height:0;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    touch-action:pan-y;
+    scroll-padding-bottom:calc(36px + env(safe-area-inset-bottom, 0px));
     scrollbar-width:none;
   }
   .habitaciones-view .hb-mobile-sheet-content::-webkit-scrollbar{ width:0; height:0; }
@@ -6671,7 +6676,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     flex-direction:column!important;
     justify-content:flex-start!important;
     gap:0!important;
-    padding:14px 20px 24px!important;
+    padding:14px 20px calc(28px + env(safe-area-inset-bottom, 0px))!important;
     border-radius:0!important;
     overflow:visible!important;
     background:transparent!important;
@@ -6745,7 +6750,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     color:inherit!important;
   }
   .habitaciones-view .hb-mobile-room-sheet.is-reserving{
-    max-height:86dvh;
+    max-height:min(88dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
   }
   .habitaciones-view .hb-mobile-room-sheet.is-reserving .hb-mobile-sheet-content{
     overflow-y:auto;
@@ -12807,6 +12812,43 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 .habitaciones-view .hb-chip {
     min-height: 44px !important;
 }
+
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+    .habitaciones-view .main-content,
+    .habitaciones-view {
+        touch-action: pan-y;
+    }
+
+    .habitaciones-view .flip-card,
+    .habitaciones-view .room-card-compact,
+    .habitaciones-view .flip-card-inner,
+    .habitaciones-view .flip-card-front {
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
+        will-change: auto !important;
+    }
+
+    .habitaciones-view .flip-card,
+    .habitaciones-view .room-card-compact,
+    .habitaciones-view .checkout-today-indicator,
+    .habitaciones-view .checkout-vencido-indicator,
+    .habitaciones-view .checkin-vencido-indicator,
+    .habitaciones-view .late-arrival-indicator,
+    .habitaciones-view .hb-alerts-mark-wrap::after,
+    .habitaciones-view .animate-pulse {
+        animation: none !important;
+    }
+
+    .habitaciones-view .checkin-vencido-indicator i,
+    .habitaciones-view .checkout-vencido-indicator i {
+        animation: none !important;
+    }
+
+    #vistaRapidaModal,
+    #modalLimpieza {
+        z-index: 10040 !important;
+    }
+}
 </style>
 
 <script>
@@ -12866,6 +12908,7 @@ function hbApplyFilters(){
   var p = document.getElementById('hbPiso'); f.piso = p ? p.value : '';
   var grid = document.getElementById('habitaciones-grid'); if(!grid) return;
   var total = 0;
+  var shouldAnimateCards = !(window.matchMedia && window.matchMedia('(max-width: 640px), (hover: none) and (pointer: coarse)').matches);
   grid.querySelectorAll('.flip-card').forEach(function(card){
     var show = true;
     var cardEstado = hbFilterEstado(card.dataset.estado || '');
@@ -12884,7 +12927,9 @@ function hbApplyFilters(){
     if(ct) ct.textContent = vis + ' ' + (vis === 1 ? 'habitaci\u00f3n' : 'habitaciones');
     var i = 0;
     sec.querySelectorAll('.flip-card:not(.hb-hidden)').forEach(function(c){
-      try { c.animate([{opacity:0, transform:'translateY(10px) scale(.985)'},{opacity:1, transform:'none'}], {duration:300, delay:i*28, easing:'cubic-bezier(.22,1,.36,1)', fill:'backwards'}); } catch(e){}
+      if (shouldAnimateCards) {
+        try { c.animate([{opacity:0, transform:'translateY(10px) scale(.985)'},{opacity:1, transform:'none'}], {duration:300, delay:i*28, easing:'cubic-bezier(.22,1,.36,1)', fill:'backwards'}); } catch(e){}
+      }
       i++;
     });
   });
@@ -12897,7 +12942,18 @@ function hbSetEstado(btn){
   hbMarcarEstadoActivo();
   hbApplyFilters();
   var grid = document.getElementById('habitaciones-grid');
-  if(grid){ var y = grid.getBoundingClientRect().top + window.pageYOffset - 88; window.scrollTo({ top: Math.max(0, y), behavior:'smooth' }); }
+  if(grid){
+    var scroller = document.querySelector('.main-content');
+    if (scroller && scroller.scrollTo) {
+      var sr = scroller.getBoundingClientRect();
+      var gr = grid.getBoundingClientRect();
+      var y = gr.top - sr.top + scroller.scrollTop - 12;
+      scroller.scrollTo({ top: Math.max(0, y), behavior:'smooth' });
+    } else {
+      var wy = grid.getBoundingClientRect().top + window.pageYOffset - 88;
+      window.scrollTo({ top: Math.max(0, wy), behavior:'smooth' });
+    }
+  }
 }
 function hbClearFilters(){
   window.__hbF = { estado:'', tipo:'', piso:'', q:'' };
@@ -14827,17 +14883,42 @@ function finalizarMantenimiento(id) {
 }
 
 function mostrarVistaRapida() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('mainHeader').style.display = 'none';
-    document.getElementById('vistaRapidaModal').classList.remove('hidden');
+    const sidebar = document.getElementById('sidebar');
+    const mainHeader = document.getElementById('mainHeader');
+    const modal = document.getElementById('vistaRapidaModal');
+    if (sidebar) sidebar.style.display = 'none';
+    if (mainHeader) mainHeader.style.display = 'none';
+    if (modal) modal.classList.remove('hidden');
+    document.body.classList.add('hb-modal-open');
     document.body.style.overflow = 'hidden';
 }
 
+function hbHayModalHabitacionesAbierto() {
+    const vistaRapida = document.getElementById('vistaRapidaModal');
+    const limpieza = document.getElementById('modalLimpieza');
+
+    return !!(
+        (vistaRapida && !vistaRapida.classList.contains('hidden')) ||
+        (limpieza && !limpieza.classList.contains('hidden'))
+    );
+}
+
+function hbSincronizarBloqueoModales() {
+    const hayModal = hbHayModalHabitacionesAbierto();
+    document.body.classList.toggle('hb-modal-open', hayModal);
+    if (!hayModal && !document.body.classList.contains('hb-mobile-sheet-open')) {
+        document.body.style.overflow = '';
+    }
+}
+
 function cerrarVistaRapida() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('mainHeader').style.display = '';
-    document.getElementById('vistaRapidaModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
+    const sidebar = document.getElementById('sidebar');
+    const mainHeader = document.getElementById('mainHeader');
+    const modal = document.getElementById('vistaRapidaModal');
+    if (sidebar) sidebar.style.display = '';
+    if (mainHeader) mainHeader.style.display = '';
+    if (modal) modal.classList.add('hidden');
+    hbSincronizarBloqueoModales();
 }
 // Función para recepción rápida de control remoto desde el índice de habitaciones
 function recibirRemotoRapido(habitacionId, reservacionId) {
@@ -14962,6 +15043,7 @@ document.addEventListener('keydown', function(e) {
  */
 function mostrarModalLimpieza() {
     document.getElementById('modalLimpieza').classList.remove('hidden');
+    document.body.classList.add('hb-modal-open');
     document.body.classList.add('overflow-hidden');
     actualizarContadorLimpieza();
 }
@@ -14972,6 +15054,7 @@ function mostrarModalLimpieza() {
 function cerrarModalLimpieza() {
     document.getElementById('modalLimpieza').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
+    hbSincronizarBloqueoModales();
 }
 
 /**
