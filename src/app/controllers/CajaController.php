@@ -953,15 +953,17 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function historialAction() {
         $mes = intval($this->getQuery('mes', date('m')));
         $año = intval($this->getQuery('año', date('Y')));
-        
-        // Obtener historial
-        $cortes = $this->cajaModel->obtenerHistorialCortes(null, 100);
-        
-        // Filtrar por mes y año
-        $cortesFiltrados = array_filter($cortes, function($corte) use ($mes, $año) {
-            $fecha = new DateTime($corte['fecha_apertura']);
-            return $fecha->format('m') == $mes && $fecha->format('Y') == $año;
-        });
+
+        if ($mes < 1 || $mes > 12) {
+            $mes = intval(date('m'));
+        }
+        if ($año < 2000 || $año > 2100) {
+            $año = intval(date('Y'));
+        }
+
+        // Historial del mes filtrado en SQL (antes: ultimos 100 cortes
+        // filtrados en PHP, lo que vaciaba meses antiguos).
+        $cortesFiltrados = $this->cajaModel->obtenerHistorialCortes(null, 200, $mes, $año);
         
         // Estadísticas del mes
         $estadisticas = $this->cajaModel->obtenerEstadisticasMes($mes, $año);

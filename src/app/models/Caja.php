@@ -489,11 +489,11 @@ class Caja extends Model {
     /**
      * Obtener historial de cortes
      */
-    public function obtenerHistorialCortes($caja_id = null, $limite = 30) {
+    public function obtenerHistorialCortes($caja_id = null, $limite = 30, $mes = null, $anio = null) {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
-        
-        $sql = "SELECT 
+
+        $sql = "SELECT
                 cc.*,
                 c.nombre as caja_nombre,
                 ua.nombre_completo as usuario_apertura,
@@ -505,17 +505,28 @@ class Caja extends Model {
                 LEFT JOIN usuarios ua ON cc.usuario_apertura_id = ua.id
                 LEFT JOIN usuarios uc ON cc.usuario_cierre_id = uc.id
                 WHERE cc.hotel_id = ?";
-        
+
         $params = [$hotel_id];
-        
+
         if ($caja_id) {
             $sql .= " AND cc.caja_id = ?";
             $params[] = $caja_id;
         }
-        
+
+        // Filtro por mes en SQL (rango sargable). Antes se traian los ultimos
+        // N cortes y se filtraba el mes en PHP: los meses fuera de esos N
+        // aparecian vacios en el historial.
+        if ($mes && $anio) {
+            $inicio = sprintf('%04d-%02d-01', (int) $anio, (int) $mes);
+            $fin = date('Y-m-d', strtotime($inicio . ' +1 month'));
+            $sql .= " AND cc.fecha_apertura >= ? AND cc.fecha_apertura < ?";
+            $params[] = $inicio;
+            $params[] = $fin;
+        }
+
         $sql .= " ORDER BY cc.id DESC LIMIT ?";
         $params[] = $limite;
-        
+
         $stmt = $db->query($sql, $params);
         return $stmt->fetchAll();
     }
