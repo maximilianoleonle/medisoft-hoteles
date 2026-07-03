@@ -1523,8 +1523,8 @@ public function obtenerNotasAction() {
                 h.nombre_completo, h.telefono, h.procedencia_estado, h.procedencia_ciudad,
                 GROUP_CONCAT(rh.habitacion_id) as habitaciones_ids,
                 GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
-                rh.precio as precio_habitacion,
-                rh.es_cortesia
+                ANY_VALUE(rh.precio) as precio_habitacion,
+                ANY_VALUE(rh.es_cortesia) as es_cortesia
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
