@@ -1,0 +1,19 @@
+# Caddy: HTTPS automatico (Let's Encrypt) + reverse proxy al contenedor app.
+# APP_DOMAIN viene del compose/env.
+
+{$APP_DOMAIN} {
+	encode gzip
+
+	# Cabeceras de seguridad (complementan las del .htaccess de la app)
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy app:80
+}
+
+# Redirigir www al dominio principal (si el DNS lo apunta aqui)
+www.{$APP_DOMAIN} {
+	redir https://{$APP_DOMAIN}{uri} permanent
+}

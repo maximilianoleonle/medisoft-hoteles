@@ -1,0 +1,75 @@
+# Compose de PRODUCCION — Medisoft Hoteles
+# Diferencias vs desarrollo:
+#  - Caddy al frente: HTTPS automatico (Let's Encrypt) y unico expuesto (80/443).
+#  - app SIN puerto publicado (solo via Caddy).
+#  - MySQL SIN puerto publicado (solo red interna).
+#  - SIN phpMyAdmin (administrar BD por tunel SSH: ssh -L 3306:localhost:3306).
+#
+# Uso en el servidor:
+#   APP_DOMAIN=app.tudominio.com docker compose -f docker-compose.prod.yml up -d --build
+# (APP_DOMAIN tambien puede ir en .env)
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: medisoft_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Definir APP_DOMAIN (ej. app.tudominio.com)}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - medisoft_caddy_data:/data
+      - medisoft_caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: ./docker/php
+    container_name: medisoft_hoteles_app
+    restart: unless-stopped
+    # Sin ports: solo Caddy le habla por la red interna.
+    volumes:
+      - ./src:/var/www/html
+      - ./docs:/var/www/docs:ro
+      - ./migrations:/var/www/migrations:ro
+      - ./.env:/var/www/.env:ro
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-medisoft_hoteles}
+      DB_USER: ${DB_USER:-medisoft_user}
+      DB_PASS: ${DB_PASS:?Definir DB_PASS fuerte en .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    container_name: medisoft_hoteles_db
+    restart: unless-stopped
+    # Sin ports: la BD no se expone a internet.
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-medisoft_hoteles}
+      MYSQL_USER: ${DB_USER:-medisoft_user}
+      MYSQL_PASSWORD: ${DB_PASS:?Definir DB_PASS fuerte en .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:?Definir DB_ROOT_PASS fuerte en .env}
+    volumes:
+      - medisoft_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  medisoft_mysql_data:
+  medisoft_caddy_data:
+  medisoft_caddy_config:
