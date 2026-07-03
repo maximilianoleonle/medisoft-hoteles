@@ -227,7 +227,8 @@ class MotorReservaOnlineService
             );
 
             // crearConHabitaciones maneja su PROPIA transaccion: no anidar otra aqui.
-            $reservacionId = $reservacionModel->crearConHabitaciones(
+            // Devuelve ['success' => true, 'id' => N] o false.
+            $creacion = $reservacionModel->crearConHabitaciones(
                 [
                     'huesped_id' => $huespedId,
                     'fecha_entrada' => $entrada,
@@ -240,7 +241,8 @@ class MotorReservaOnlineService
                 []
             );
 
-            if (!$reservacionId) {
+            $reservacionId = is_array($creacion) ? (int) ($creacion['id'] ?? 0) : 0;
+            if (empty($creacion['success']) || $reservacionId <= 0) {
                 throw new Exception('crearConHabitaciones no devolvio id de reservacion.');
             }
 
