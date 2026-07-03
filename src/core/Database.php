@@ -82,10 +82,15 @@ class Database {
             );
             
         } catch (PDOException $e) {
-            error_log("Error de conexion a base de datos: " . $e->getMessage());
-            http_response_code(500);
-            die("Error interno del servidor. Intente nuevamente mas tarde.");
-            die("Error de conexión: " . $e->getMessage());
+            if (function_exists('ms_log')) {
+                ms_log('critical', 'Error de conexion a base de datos: ' . $e->getMessage());
+            } else {
+                error_log("Error de conexion a base de datos: " . $e->getMessage());
+            }
+
+            // Mensaje generico sin credenciales ni host; el manejador global
+            // (ms_manejar_throwable) muestra la pagina 500 con request_id.
+            throw new RuntimeException('No hay conexion con la base de datos.', 0, $e);
         }
     }
     
@@ -105,7 +110,24 @@ class Database {
             $stmt->execute($params);
             return $stmt;
         } catch (PDOException $e) {
-            error_log("Error en query: " . $e->getMessage());
+            // Registrar con contexto (hotel, usuario, ruta) y el SQL truncado.
+            // Nunca se registran los parametros: pueden contener datos sensibles.
+            if (function_exists('ms_log')) {
+                ms_log('error', 'Error SQL: ' . $e->getMessage(), [
+                    'sql' => substr(preg_replace('/\s+/', ' ', (string) $sql), 0, 300),
+                    'codigo' => $e->getCode(),
+                ]);
+            } else {
+                error_log("Error en query: " . $e->getMessage());
+            }
+
+            // Modo transicion: se conserva el retorno false historico.
+            // Con DB_STRICT_ERRORS=true la query rota deja de disfrazarse de
+            // "sin datos" y pasa al manejador global de errores.
+            if (filter_var(getenv('DB_STRICT_ERRORS') ?: false, FILTER_VALIDATE_BOOLEAN)) {
+                throw $e;
+            }
+
             return false;
         }
     }

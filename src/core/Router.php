@@ -26,6 +26,7 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+$/i',    // Pre-registro publico (check-in digital)
             '/^\/h\/[a-z0-9-]+\/ical\/[a-f0-9]+\/[0-9]+\.ics$/i', // Feed iCal publico por habitacion (canales_ical)
             '/^\/reportes\/link\/[a-f0-9]+$/i', // Link publico seguro de reporte PDF
+            '/^\/health$/i',              // Health check (protegido por HEALTH_TOKEN)
             '/^\/manifest\.json$/i',      // PWA manifest
             '/^\/service-worker\.js$/i',  // Service worker
             '/^\/offline\.html$/i'        // Página offline

@@ -88,6 +88,9 @@
         
         <div class="mt-8 text-sm text-gray-500">
             <p>Si el problema persiste, contacte al administrador del sistema.</p>
+            <?php if (!empty($request_id)): ?>
+                <p class="mt-2 font-mono text-gray-400">Código de referencia: #<?= htmlspecialchars($request_id, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
         </div>
     </div>
 </body>

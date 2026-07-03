@@ -622,3 +622,6 @@ $router->get('/api/habitaciones/calcular-precio', ['controller' => 'Api', 'actio
 // Rutas legacy de correccion deshabilitadas en produccion.
 // $router->get('/correccion', ['controller' => 'Correccion', 'action' => 'index']);
 // $router->post('/correccion/aplicar', ['controller' => 'Correccion', 'action' => 'aplicar']);
+
+// Health check para monitoreo (publica en Router.php, protegida por HEALTH_TOKEN)
+$router->get('/health', ['controller' => 'Health', 'action' => 'index']);

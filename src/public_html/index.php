@@ -20,6 +20,13 @@ define('CORE_PATH', ROOT_PATH . '/core');
 define('PUBLIC_PATH', __DIR__); // Ajustado para Hostinger
 define('STORAGE_PATH', ROOT_PATH . '/storage');
 
+// Logger estructurado + manejadores globales de errores.
+// Se cargan ANTES que todo lo demas para que cualquier fallo del bootstrap
+// quede en el log con request_id y muestre la pagina de error amigable.
+require_once APP_PATH . '/helpers/log.php';
+require_once APP_PATH . '/helpers/errores.php';
+ms_registrar_manejadores_errores();
+
 // Cargar variables de entorno desde ROOT_PATH/.env si el hosting no las inyecta.
 $envPath = ROOT_PATH . '/.env';
 if (is_readable($envPath)) {
@@ -204,20 +211,8 @@ if (empty($url)) {
 // Despachar la ruta
 try {
     $router->dispatch($url);
-} catch (Exception $e) {
-    // Manejar errores
-    error_log($e->getMessage());
-    
-    // Mostrar página de error
-    http_response_code(500);
-    
-    if (APP_DEBUG) {
-        echo '<h1>Error</h1>';
-        echo '<p>' . $e->getMessage() . '</p>';
-        echo '<pre>' . $e->getTraceAsString() . '</pre>';
-    } else {
-        View::render('errors/500', [
-            'title' => 'Error del servidor'
-        ]);
-    }
+} catch (Throwable $e) {
+    // Registra en el log estructurado (hotel, usuario, ruta, request_id) y
+    // responde con la pagina 500 amigable o JSON si es AJAX.
+    ms_manejar_throwable($e);
 }
