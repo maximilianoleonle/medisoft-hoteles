@@ -243,11 +243,17 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
     $ocupadas = $stmt->fetchAll();
     $ocupadas_ids = array_column($ocupadas, 'habitacion_id');
     
+    // Bloqueos de canales externos (bloque canales_ical): [] si no esta contratado.
+    if (!class_exists('IcalCanalesService')) {
+        require_once __DIR__ . '/../services/IcalCanalesService.php';
+    }
+    $bloqueadas_ical = IcalCanalesService::habitacionesBloqueadas((int) $hotelId, $fecha_entrada, $fecha_salida);
+
     // Filtrar las habitaciones disponibles
-    $disponibles = array_filter($todas_habitaciones, function($hab) use ($ocupadas_ids) {
-        return !in_array($hab['id'], $ocupadas_ids);
+    $disponibles = array_filter($todas_habitaciones, function($hab) use ($ocupadas_ids, $bloqueadas_ical) {
+        return !in_array($hab['id'], $ocupadas_ids) && !in_array((int) $hab['id'], $bloqueadas_ical, true);
     });
-    
+
     return array_values($disponibles);
 }
     
@@ -318,9 +324,23 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
         }
         
         $sql .= " ORDER BY h.piso, CAST(h.numero AS UNSIGNED)";
-        
+
         $stmt = $this->db->query($sql, $params);
-        return $stmt->fetchAll();
+        $resultado = $stmt->fetchAll();
+
+        // Bloqueos de canales externos (bloque canales_ical): [] si no esta contratado.
+        if (!class_exists('IcalCanalesService')) {
+            require_once __DIR__ . '/../services/IcalCanalesService.php';
+        }
+        $bloqueadas_ical = IcalCanalesService::habitacionesBloqueadas((int) $hotelId, $fecha_entrada, $fecha_salida);
+
+        if (!empty($bloqueadas_ical)) {
+            $resultado = array_values(array_filter($resultado, function ($hab) use ($bloqueadas_ical) {
+                return !in_array((int) $hab['id'], $bloqueadas_ical, true);
+            }));
+        }
+
+        return $resultado;
     }
     
     /**

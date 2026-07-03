@@ -24,6 +24,7 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/reservar\/api\/disponibilidad$/i', // Disponibilidad publica del motor
             '/^\/h\/[a-z0-9-]+\/reservar\/confirmacion\/[a-f0-9]+$/i', // Confirmacion publica de pago del motor
             '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+$/i',    // Pre-registro publico (check-in digital)
+            '/^\/h\/[a-z0-9-]+\/ical\/[a-f0-9]+\/[0-9]+\.ics$/i', // Feed iCal publico por habitacion (canales_ical)
             '/^\/reportes\/link\/[a-f0-9]+$/i', // Link publico seguro de reporte PDF
             '/^\/manifest\.json$/i',      // PWA manifest
             '/^\/service-worker\.js$/i',  // Service worker

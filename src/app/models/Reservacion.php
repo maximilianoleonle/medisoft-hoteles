@@ -105,7 +105,7 @@ class Reservacion extends Model {
      * Se llama via POST desde el modal en ver.php
      */
 /**
- * Obtener reservaciones activas para una fecha específica
+ * Obtener reservaciones del listado para una fecha específica
  * Incluye tipo de habitación para mostrar en las cards
  * @param string $fecha - Fecha en formato Y-m-d (default: hoy)
  * @param string|null $buscar - Término de búsqueda opcional
@@ -153,7 +153,7 @@ public function obtenerHabitacionesReservadasPorFecha($fecha = null, $buscar = n
             INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
             LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
 WHERE r.hotel_id = ?
-AND r.estado IN ('confirmada', 'checked_in', 'checked_out')
+AND r.estado IN ('confirmada', 'checked_in', 'checked_out', 'cancelada')
 AND ? >= DATE(r.fecha_entrada) AND ? < DATE(r.fecha_salida)";
     
     $params = [$this->hotelIdActual(), $fecha, $fecha];
@@ -1284,9 +1284,24 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         try {
             $stmt = $this->db->query($sql, $params);
             $result = $stmt->fetch();
-            
-            // Si no hay habitaciones ocupadas, todas están disponibles
-            return $result['ocupadas'] == 0;
+
+            if ($result['ocupadas'] != 0) {
+                return false;
+            }
+
+            // Bloqueos de canales externos (bloque canales_ical): [] si no esta contratado.
+            if (!class_exists('IcalCanalesService')) {
+                require_once __DIR__ . '/../services/IcalCanalesService.php';
+            }
+            $bloqueadas_ical = IcalCanalesService::habitacionesBloqueadas((int) $hotel_id, $fecha_entrada, $fecha_salida);
+
+            foreach ($habitacion_ids as $hab_id) {
+                if (in_array((int) $hab_id, $bloqueadas_ical, true)) {
+                    return false;
+                }
+            }
+
+            return true;
         } catch (Exception $e) {
             error_log("Error en verificarDisponibilidadMultipleExcluyendo: " . $e->getMessage());
             return false;
@@ -2238,8 +2253,24 @@ public function obtenerEstadisticasDashboard() {
     
     $stmt_mant = $this->db->query($sql_mant, $params_mant);
     $conflictos_mant = $stmt_mant->fetchAll();
-    
-    return count($conflictos_mant) == 0;
+
+    if (count($conflictos_mant) > 0) {
+        return false;
+    }
+
+    // 3. Bloqueos de canales externos (bloque canales_ical): [] si no esta contratado.
+    if (!class_exists('IcalCanalesService')) {
+        require_once __DIR__ . '/../services/IcalCanalesService.php';
+    }
+    $bloqueadas_ical = IcalCanalesService::habitacionesBloqueadas((int) $hotel_id, $fecha_entrada, $fecha_salida);
+
+    foreach ($habitaciones_ids as $hab_id) {
+        if (in_array((int) $hab_id, $bloqueadas_ical, true)) {
+            return false;
+        }
+    }
+
+    return true;
 }
     
     /**

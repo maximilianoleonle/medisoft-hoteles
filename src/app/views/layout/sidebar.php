@@ -40,6 +40,7 @@ $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebar
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
+$mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -81,6 +82,7 @@ $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
+$sidebarActiveCanales = $sidebarPathStarts('canales');
 $sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
 $sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
 $sidebarActiveRoles = $sidebarPathStarts('configuracion/roles');
@@ -486,6 +488,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-id-badge"></i>
                 </div>
                 <span class="nav-text">Check-in digital</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCanales): ?>
+            <a href="<?= url('canales') ?>"
+               class="nav-item <?= $sidebarActiveCanales ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span class="nav-text">Canales (iCal)</span>
             </a>
             <?php endif; ?>
 

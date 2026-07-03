@@ -208,6 +208,15 @@ $router->get('/checkin-digital', ['controller' => 'CheckinDigital', 'action' => 
 $router->post('/checkin-digital/generar/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'generar']);
 $router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'descargarId']);
 
+// Canales iCal publico (bloque canales_ical; token de exportacion = credencial)
+$router->get('/h/{slug:[a-z0-9-]+}/ical/{token:[a-f0-9]+}/{habitacionid:[0-9]+}.ics', ['controller' => 'IcalPublico', 'action' => 'feed']);
+
+// Canales iCal interno (bloque canales_ical)
+$router->get('/canales', ['controller' => 'Canales', 'action' => 'index']);
+$router->post('/canales/feed/guardar', ['controller' => 'Canales', 'action' => 'guardarFeed']);
+$router->post('/canales/feed/eliminar/{id:[0-9]+}', ['controller' => 'Canales', 'action' => 'eliminarFeed']);
+$router->post('/canales/sincronizar', ['controller' => 'Canales', 'action' => 'sincronizar']);
+
 // WhatsApp del hotel (bloque whatsapp): conexion y toggles
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
 $router->post('/whatsapp/guardar', ['controller' => 'WhatsApp', 'action' => 'guardar']);

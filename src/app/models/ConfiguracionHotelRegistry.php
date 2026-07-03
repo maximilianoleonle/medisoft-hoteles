@@ -98,6 +98,11 @@ class ConfiguracionHotelRegistry
             'default' => true,
             'description' => 'Avisar por WhatsApp al numero del hotel cada reserva online pagada.',
         ],
+        'ical.token_exportacion' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Token secreto de los feeds iCal exportados del hotel (bloque canales_ical).',
+        ],
     ];
 
     private static $legacyFallbacks = [
