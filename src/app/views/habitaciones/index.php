@@ -12662,7 +12662,60 @@ body.hb-modal-open{ overflow:hidden; }
         inset: 0 !important;
         width: auto !important;
         height: auto !important;
-        z-index: 1050 !important;
+        z-index: 10070 !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza > .bg-white {
+        width: 100% !important;
+        max-width: none !important;
+        height: min(88dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px)) !important;
+        max-height: min(88dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px)) !important;
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
+        overflow: hidden !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza > .bg-white > div:first-child {
+        min-height: 116px !important;
+        padding: 24px 18px 18px !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza .p-6.overflow-y-auto {
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 16px 14px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza .bg-gray-50 {
+        position: relative !important;
+        z-index: 2 !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr) !important;
+        gap: 10px !important;
+        padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--hb-surface, #FFFFFF) 88%, transparent), var(--hb-surface-warm, #F8F5ED) 18%),
+            var(--hb-surface-warm, #F8F5ED) !important;
+        box-shadow: 0 -12px 26px -24px rgba(18, 22, 34, .55);
+    }
+
+    body.hotel-layout-scope #modalLimpieza .bg-gray-50 button {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 46px !important;
+        padding: 11px 10px !important;
+        border-radius: 13px !important;
+        font-size: .78rem !important;
+        line-height: 1.05 !important;
+        white-space: normal !important;
     }
 }
 </style>

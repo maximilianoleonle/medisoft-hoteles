@@ -169,11 +169,19 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     }
 
     /* Con un modal u overlay abierto, la barra se retira para no interferir */
+    .hotel-bottom-nav[hidden],
     body.hbn-overlay-open .hotel-bottom-nav,
     body.hb-mobile-sheet-open .hotel-bottom-nav,
     body.hb-modal-open .hotel-bottom-nav,
     body.swal2-shown .hotel-bottom-nav,
-    body.overflow-hidden .hotel-bottom-nav {
+    body.overflow-hidden .hotel-bottom-nav,
+    body:has(#hbMobileRoomSheet.is-open) .hotel-bottom-nav,
+    body:has(#modalLimpieza:not(.hidden)) .hotel-bottom-nav,
+    body:has(#vistaRapidaModal:not(.hidden)) .hotel-bottom-nav,
+    body:has(.tc-modal:not(.hidden)) .hotel-bottom-nav,
+    body:has(.swal2-container.swal2-backdrop-show) .hotel-bottom-nav,
+    body:has(.fixed.inset-0:not(.hidden)) .hotel-bottom-nav {
+        display: none !important;
         transform: translate3d(0, calc(100% + 16px), 0);
         opacity: 0;
         visibility: hidden;
@@ -353,7 +361,20 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
 
     function syncOverlayState() {
         overlayCheckQueued = false;
-        document.body.classList.toggle('hbn-overlay-open', anyOverlayOpen());
+        var isOpen = anyOverlayOpen();
+        var nav = document.getElementById('hotel-bottom-nav');
+
+        document.body.classList.toggle('hbn-overlay-open', isOpen);
+
+        if (nav) {
+            if (isOpen) {
+                nav.setAttribute('hidden', 'hidden');
+                nav.setAttribute('aria-hidden', 'true');
+            } else {
+                nav.removeAttribute('hidden');
+                nav.removeAttribute('aria-hidden');
+            }
+        }
     }
 
     var lateOverlayCheck = null;
