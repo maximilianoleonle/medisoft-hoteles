@@ -48,6 +48,46 @@ class ConfiguracionHotelRegistry
             'default' => [],
             'description' => 'Politica de campos visibles y obligatorios para registro de huespedes y vehiculos.',
         ],
+        'motor.publico_activo' => [
+            'type' => 'boolean',
+            'default' => false,
+            'description' => 'Pagina publica de reservas del hotel encendida (requiere bloque motor_reservas).',
+        ],
+        'motor.anticipo_tipo' => [
+            'type' => 'string',
+            'default' => 'porcentaje',
+            'description' => 'Como se calcula el anticipo online: porcentaje, primera_noche o monto_fijo.',
+        ],
+        'motor.anticipo_valor' => [
+            'type' => 'float',
+            'default' => 30.0,
+            'description' => 'Valor del anticipo online: % del total o monto fijo, segun anticipo_tipo.',
+        ],
+        'motor.min_noches' => [
+            'type' => 'integer',
+            'default' => 1,
+            'description' => 'Minimo de noches reservables desde la pagina publica.',
+        ],
+        'motor.max_noches' => [
+            'type' => 'integer',
+            'default' => 30,
+            'description' => 'Maximo de noches reservables desde la pagina publica.',
+        ],
+        'motor.anticipacion_max_dias' => [
+            'type' => 'integer',
+            'default' => 180,
+            'description' => 'Cuantos dias hacia adelante se puede reservar online.',
+        ],
+        'motor.politica_texto' => [
+            'type' => 'string',
+            'default' => 'El anticipo confirma tu reservacion. El saldo restante se liquida al llegar al hotel.',
+            'description' => 'Politica de reservacion visible en la pagina publica.',
+        ],
+        'motor.email_confirmacion_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Enviar correo de confirmacion al huesped al completar su pago online.',
+        ],
     ];
 
     private static $legacyFallbacks = [
