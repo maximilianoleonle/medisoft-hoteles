@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v18';
+const SW_VERSION = 'v19';
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -344,6 +344,12 @@ async function cacheFirst(request, cacheName) {
     }
     return response;
   } catch {
+    // Sin red: los assets versionados (?v=filemtime) no coinciden exacto con
+    // el precache (guardado sin query). Servir la ultima version conocida
+    // es mejor que un 503 estando offline.
+    const stale = await caches.match(request, { ignoreSearch: true });
+    if (stale) return stale;
+
     return new Response('Recurso no disponible offline', { status: 503 });
   }
 }
