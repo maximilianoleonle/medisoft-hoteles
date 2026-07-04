@@ -8,6 +8,14 @@ $hotel = $hotel ?? [];
 $branding = $branding ?? [];
 $estado = $estado ?? ['estado' => 'pendiente'];
 
+// Idioma (bloque motor_idiomas): 'en' solo si el controlador lo autorizo.
+$lang = in_array(($lang ?? 'es'), ['es', 'en'], true) ? $lang : 'es';
+$textosMotor = require __DIR__ . '/_textos.php';
+$LC = $textosMotor['confirmacion'][$lang] ?? $textosMotor['confirmacion']['es'];
+$lcSafe = static function ($clave) use ($LC) {
+    return htmlspecialchars((string) ($LC[$clave] ?? $clave), ENT_QUOTES, 'UTF-8');
+};
+
 $nombreHotel = htmlspecialchars((string) ($branding['nombre_visual'] ?? $hotel['nombre'] ?? 'Hotel'), ENT_QUOTES, 'UTF-8');
 $colorPrimario = htmlspecialchars((string) ($branding['color_primary'] ?? '#1B2746'), ENT_QUOTES, 'UTF-8');
 $colorAcento = htmlspecialchars((string) ($branding['color_accent'] ?? '#BD9441'), ENT_QUOTES, 'UTF-8');
@@ -26,13 +34,13 @@ $fmtFecha = function ($iso) {
 };
 $saldoRestante = max(0, (float) ($estado['precio_total_estancia'] ?? 0) - (float) ($estado['monto'] ?? 0));
 ?><!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $lang ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <?php if ($pendiente): ?><meta http-equiv="refresh" content="5"><?php endif; ?>
-    <title>Confirmacion - <?= $nombreHotel ?></title>
+    <title><?= $lcSafe('titulo_pagina') ?> - <?= $nombreHotel ?></title>
     <style>
     :root { --brand-primary: <?= $colorPrimario ?>; --brand-accent: <?= $colorAcento ?>; }
     * { box-sizing: border-box; }
@@ -58,32 +66,32 @@ $saldoRestante = max(0, (float) ($estado['precio_total_estancia'] ?? 0) - (float
 
     <?php if ($exito): ?>
         <div class="cf-ico">✅</div>
-        <h1>¡Reservacion confirmada!</h1>
-        <p>Gracias, <?= htmlspecialchars((string) ($estado['nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>. Tu anticipo fue recibido y tu habitacion esta apartada.</p>
+        <h1><?= $lcSafe('exito_titulo') ?></h1>
+        <p><?= str_replace('{nombre}', htmlspecialchars((string) ($estado['nombre'] ?? ''), ENT_QUOTES, 'UTF-8'), $lcSafe('exito_texto')) ?></p>
         <?php if (!empty($estado['reservacion_id'])): ?>
-            <div class="cf-folio">Folio #<?= (int) $estado['reservacion_id'] ?></div>
+            <div class="cf-folio"><?= $lcSafe('folio') ?> #<?= (int) $estado['reservacion_id'] ?></div>
         <?php endif; ?>
         <dl>
-            <div class="fila"><dt>Llegada</dt><dd><?= htmlspecialchars($fmtFecha($estado['entrada'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
-            <div class="fila"><dt>Salida</dt><dd><?= htmlspecialchars($fmtFecha($estado['salida'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
-            <div class="fila"><dt>Habitacion</dt><dd style="text-transform:capitalize;"><?= htmlspecialchars((string) ($estado['tipo'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
-            <div class="fila anticipo"><dt>Anticipo pagado</dt><dd><?= $fmt($estado['monto'] ?? 0) ?></dd></div>
-            <div class="fila"><dt>Pagas al llegar</dt><dd><?= $fmt($saldoRestante) ?></dd></div>
+            <div class="fila"><dt><?= $lcSafe('llegada') ?></dt><dd><?= htmlspecialchars($fmtFecha($estado['entrada'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div class="fila"><dt><?= $lcSafe('salida') ?></dt><dd><?= htmlspecialchars($fmtFecha($estado['salida'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div class="fila"><dt><?= $lcSafe('habitacion') ?></dt><dd style="text-transform:capitalize;"><?= htmlspecialchars((string) ($estado['tipo'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd></div>
+            <div class="fila anticipo"><dt><?= $lcSafe('anticipo_pagado') ?></dt><dd><?= $fmt($estado['monto'] ?? 0) ?></dd></div>
+            <div class="fila"><dt><?= $lcSafe('pagas_llegar') ?></dt><dd><?= $fmt($saldoRestante) ?></dd></div>
         </dl>
-        <p class="cf-nota">Presenta tu folio al llegar a <?= $nombreHotel ?>. Guarda o toma captura de esta pagina.</p>
+        <p class="cf-nota"><?= str_replace('{hotel}', $nombreHotel, $lcSafe('nota_folio')) ?></p>
     <?php elseif ($pendiente): ?>
         <div class="cf-spin" aria-hidden="true"></div>
-        <h1>Confirmando tu pago...</h1>
-        <p>Estamos verificando tu pago con el banco. Esta pagina se actualizara sola en unos segundos.</p>
-        <p class="cf-nota">Si pagaste y esta pantalla no cambia en unos minutos, contacta al hotel con tu comprobante.</p>
+        <h1><?= $lcSafe('pendiente_titulo') ?></h1>
+        <p><?= $lcSafe('pendiente_texto') ?></p>
+        <p class="cf-nota"><?= $lcSafe('pendiente_nota') ?></p>
     <?php elseif ($estadoPago === 'reembolsado'): ?>
         <div class="cf-ico">↩️</div>
-        <h1>Pago reembolsado</h1>
-        <p>La habitacion se ocupo justo antes de confirmar tu pago, asi que te devolvimos tu dinero automaticamente. Elige otras fechas o contacta al hotel.</p>
+        <h1><?= $lcSafe('reembolso_titulo') ?></h1>
+        <p><?= $lcSafe('reembolso_texto') ?></p>
     <?php else: ?>
         <div class="cf-ico">⚠️</div>
-        <h1>No pudimos completar tu reservacion</h1>
-        <p>Tu pago no se completo o hubo un problema al confirmarlo. Si ya pagaste, contacta al hotel con tu comprobante para resolverlo.</p>
+        <h1><?= $lcSafe('fallo_titulo') ?></h1>
+        <p><?= $lcSafe('fallo_texto') ?></p>
     <?php endif; ?>
 </div>
 </body>

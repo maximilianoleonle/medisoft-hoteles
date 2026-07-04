@@ -27,13 +27,20 @@ $apiCupon = url('h/' . $slugSeguro . '/reservar/api/cupon');
 $promocionesActivo = (bool) ($promocionesActivo ?? false);
 $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
 $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles : [];
+
+// Idioma (bloque motor_idiomas): 'en' solo si el controlador lo autorizo.
+$idiomasActivo = (bool) ($idiomasActivo ?? false);
+$lang = in_array(($lang ?? 'es'), ['es', 'en'], true) ? $lang : 'es';
+$textos = require __DIR__ . '/_textos.php';
+$L = $textos[$lang] ?? $textos['es'];
+$LJS = $L['js'];
 ?><!DOCTYPE html>
-<html lang="es">
+<html lang="<?= $lang ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="index, follow">
-    <title>Reservar - <?= $nombreHotel ?></title>
+    <title><?= $lang === 'en' ? 'Book' : 'Reservar' ?> - <?= $nombreHotel ?></title>
     <style>
     :root {
         --brand-primary: <?= $colorPrimario ?>;
@@ -134,72 +141,79 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
             <img src="<?= htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $nombreHotel ?>">
         <?php endif; ?>
         <h1><?= $nombreHotel ?></h1>
-        <p>Reserva en linea · confirma con un anticipo seguro</p>
+        <p><?= htmlspecialchars($L['subtitulo'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if ($idiomasActivo): ?>
+            <p style="margin-top:8px;font-size:.8rem;">
+                <a href="?lang=es" style="font-weight:<?= $lang === 'es' ? '800' : '400' ?>;color:var(--brand-primary);text-decoration:none;">Español</a>
+                <span style="color:#B9B2A2;"> · </span>
+                <a href="?lang=en" style="font-weight:<?= $lang === 'en' ? '800' : '400' ?>;color:var(--brand-primary);text-decoration:none;">English</a>
+            </p>
+        <?php endif; ?>
     </header>
 
     <nav class="mr-steps" aria-label="Progreso de tu reservacion">
-        <div class="mr-step activo" data-step-chip="1"><span class="n">1</span><span class="txt">Fechas</span></div>
-        <div class="mr-step" data-step-chip="2"><span class="n">2</span><span class="txt">Habitacion</span></div>
-        <div class="mr-step" data-step-chip="3"><span class="n">3</span><span class="txt">Tus datos</span></div>
+        <div class="mr-step activo" data-step-chip="1"><span class="n">1</span><span class="txt"><?= htmlspecialchars($L['paso_fechas'], ENT_QUOTES, 'UTF-8') ?></span></div>
+        <div class="mr-step" data-step-chip="2"><span class="n">2</span><span class="txt"><?= htmlspecialchars($L['paso_habitacion'], ENT_QUOTES, 'UTF-8') ?></span></div>
+        <div class="mr-step" data-step-chip="3"><span class="n">3</span><span class="txt"><?= htmlspecialchars($L['paso_datos'], ENT_QUOTES, 'UTF-8') ?></span></div>
     </nav>
 
     <div class="mr-card">
         <!-- PASO 1: fechas -->
         <section class="mr-panel activo" data-panel="1" aria-label="Paso 1: elige tus fechas">
-            <h2 class="mr-titulo-paso">¿Cuando te gustaria hospedarte?</h2>
+            <h2 class="mr-titulo-paso"><?= htmlspecialchars($L['paso1_titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
             <form id="mr-form-fechas" class="mr-form" autocomplete="off">
                 <div class="mr-field">
-                    <label for="mr-entrada">Llegada</label>
+                    <label for="mr-entrada"><?= htmlspecialchars($L['llegada'], ENT_QUOTES, 'UTF-8') ?></label>
                     <input type="date" id="mr-entrada" min="<?= $fechaMin ?>" max="<?= $fechaMax ?>" required>
                 </div>
                 <div class="mr-field">
-                    <label for="mr-salida">Salida</label>
+                    <label for="mr-salida"><?= htmlspecialchars($L['salida'], ENT_QUOTES, 'UTF-8') ?></label>
                     <input type="date" id="mr-salida" min="<?= $fechaMin ?>" max="<?= $fechaMax ?>" required>
                 </div>
                 <div class="mr-field full">
-                    <label for="mr-personas">Personas</label>
+                    <label for="mr-personas"><?= htmlspecialchars($L['personas'], ENT_QUOTES, 'UTF-8') ?></label>
                     <select id="mr-personas">
                         <?php for ($i = 1; $i <= 8; $i++): ?>
-                            <option value="<?= $i ?>" <?= $i === 2 ? 'selected' : '' ?>><?= $i ?> persona<?= $i > 1 ? 's' : '' ?></option>
+                            <option value="<?= $i ?>" <?= $i === 2 ? 'selected' : '' ?>><?= $i ?> <?= $i > 1 ? htmlspecialchars($L['persona_varias'], ENT_QUOTES, 'UTF-8') : htmlspecialchars($L['persona_uno'], ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
-                <button type="submit" class="mr-btn full" id="mr-buscar">Ver disponibilidad</button>
+                <button type="submit" class="mr-btn full" id="mr-buscar"><?= htmlspecialchars($L['ver_disponibilidad'], ENT_QUOTES, 'UTF-8') ?></button>
             </form>
             <div id="mr-estado-1" class="mr-estado" aria-live="polite"></div>
         </section>
 
         <!-- PASO 2: habitaciones -->
         <section class="mr-panel" data-panel="2" aria-label="Paso 2: elige tu habitacion">
-            <button type="button" class="mr-volver" data-volver="1">&larr; Cambiar fechas</button>
-            <h2 class="mr-titulo-paso">Elige tu habitacion</h2>
+            <button type="button" class="mr-volver" data-volver="1">&larr; <?= htmlspecialchars($L['cambiar_fechas'], ENT_QUOTES, 'UTF-8') ?></button>
+            <h2 class="mr-titulo-paso"><?= htmlspecialchars($L['paso2_titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
             <div id="mr-estado-2" class="mr-estado" aria-live="polite"></div>
             <div id="mr-resultados"></div>
         </section>
 
         <!-- PASO 3: datos y resumen -->
         <section class="mr-panel" data-panel="3" aria-label="Paso 3: tus datos y confirmacion">
-            <button type="button" class="mr-volver" data-volver="2">&larr; Elegir otra habitacion</button>
-            <h2 class="mr-titulo-paso">Confirma tu reservacion</h2>
+            <button type="button" class="mr-volver" data-volver="2">&larr; <?= htmlspecialchars($L['elegir_otra'], ENT_QUOTES, 'UTF-8') ?></button>
+            <h2 class="mr-titulo-paso"><?= htmlspecialchars($L['paso3_titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
 
             <div class="mr-resumen">
-                <div class="mr-resumen-head" id="mr-res-titulo">Resumen de tu estancia</div>
+                <div class="mr-resumen-head" id="mr-res-titulo"><?= htmlspecialchars($L['resumen_head'], ENT_QUOTES, 'UTF-8') ?></div>
                 <dl>
-                    <div class="fila"><dt>Fechas</dt><dd id="mr-res-fechas">—</dd></div>
-                    <div class="fila"><dt>Noches</dt><dd id="mr-res-noches">—</dd></div>
-                    <div class="fila"><dt>Habitacion</dt><dd id="mr-res-tipo">—</dd></div>
-                    <div class="fila"><dt>Personas</dt><dd id="mr-res-personas">—</dd></div>
-                    <div class="fila" id="mr-res-desc-fila" style="display:none;color:#15803D;"><dt id="mr-res-desc-label">Descuento</dt><dd id="mr-res-desc">—</dd></div>
-                    <div class="fila" id="mr-res-extras-fila" style="display:none;"><dt>Extras</dt><dd id="mr-res-extras">—</dd></div>
-                    <div class="fila total"><dt>Total de la estancia</dt><dd id="mr-res-total">—</dd></div>
-                    <div class="fila anticipo"><dt>Pagas hoy (anticipo)</dt><dd id="mr-res-anticipo">—</dd></div>
-                    <div class="fila"><dt>Pagas al llegar</dt><dd id="mr-res-saldo">—</dd></div>
+                    <div class="fila"><dt><?= htmlspecialchars($L['res_fechas'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-fechas">—</dd></div>
+                    <div class="fila"><dt><?= htmlspecialchars($L['res_noches'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-noches">—</dd></div>
+                    <div class="fila"><dt><?= htmlspecialchars($L['res_habitacion'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-tipo">—</dd></div>
+                    <div class="fila"><dt><?= htmlspecialchars($L['res_personas'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-personas">—</dd></div>
+                    <div class="fila" id="mr-res-desc-fila" style="display:none;color:#15803D;"><dt id="mr-res-desc-label"><?= htmlspecialchars($L['res_descuento'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-desc">—</dd></div>
+                    <div class="fila" id="mr-res-extras-fila" style="display:none;"><dt><?= htmlspecialchars($L['res_extras'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-extras">—</dd></div>
+                    <div class="fila total"><dt><?= htmlspecialchars($L['res_total'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-total">—</dd></div>
+                    <div class="fila anticipo"><dt><?= htmlspecialchars($L['res_anticipo'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-anticipo">—</dd></div>
+                    <div class="fila"><dt><?= htmlspecialchars($L['res_saldo'], ENT_QUOTES, 'UTF-8') ?></dt><dd id="mr-res-saldo">—</dd></div>
                 </dl>
             </div>
 
             <?php if (!empty($extrasDisponibles)): ?>
             <div class="mr-extras" style="margin:14px 0 4px;">
-                <div style="font-size:.82rem;font-weight:700;color:#55607A;margin-bottom:8px;">Mejora tu estancia (opcional)</div>
+                <div style="font-size:.82rem;font-weight:700;color:#55607A;margin-bottom:8px;"><?= htmlspecialchars($L['extras_titulo'], ENT_QUOTES, 'UTF-8') ?></div>
                 <?php foreach ($extrasDisponibles as $extra): ?>
                     <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--mr-line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;">
                         <input type="checkbox" class="mr-extra-check" style="margin-top:3px;"
@@ -221,31 +235,31 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
 
             <?php if ($promocionesActivo): ?>
             <div class="mr-cupon" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 4px;">
-                <input type="text" id="mr-cupon-codigo" maxlength="30" placeholder="¿Tienes un código promocional?"
+                <input type="text" id="mr-cupon-codigo" maxlength="30" placeholder="<?= htmlspecialchars($L['cupon_placeholder'], ENT_QUOTES, 'UTF-8') ?>"
                        style="flex:1;min-width:200px;min-height:44px;border:1px solid var(--mr-line);border-radius:10px;padding:0 12px;font-size:.95rem;text-transform:uppercase;" autocomplete="off">
                 <button type="button" id="mr-cupon-aplicar"
-                        style="min-height:44px;padding:0 16px;border:1px solid var(--brand-primary);border-radius:10px;background:#fff;color:var(--brand-primary);font-weight:700;cursor:pointer;">Aplicar</button>
+                        style="min-height:44px;padding:0 16px;border:1px solid var(--brand-primary);border-radius:10px;background:#fff;color:var(--brand-primary);font-weight:700;cursor:pointer;"><?= htmlspecialchars($L['cupon_aplicar'], ENT_QUOTES, 'UTF-8') ?></button>
                 <div id="mr-cupon-estado" style="width:100%;font-size:.82rem;" aria-live="polite"></div>
             </div>
             <?php endif; ?>
 
             <form id="mr-form-datos" class="mr-form" autocomplete="on">
                 <div class="mr-field full">
-                    <label for="mr-nombre">Nombre completo</label>
-                    <input type="text" id="mr-nombre" name="nombre" maxlength="150" required autocomplete="name" placeholder="Como aparece en tu identificacion">
+                    <label for="mr-nombre"><?= htmlspecialchars($L['nombre_label'], ENT_QUOTES, 'UTF-8') ?></label>
+                    <input type="text" id="mr-nombre" name="nombre" maxlength="150" required autocomplete="name" placeholder="<?= htmlspecialchars($L['nombre_ph'], ENT_QUOTES, 'UTF-8') ?>">
                     <span class="err" data-err="nombre"></span>
                 </div>
                 <div class="mr-field">
-                    <label for="mr-telefono">Telefono (WhatsApp)</label>
-                    <input type="tel" id="mr-telefono" name="telefono" maxlength="20" required inputmode="tel" autocomplete="tel" placeholder="10 digitos">
+                    <label for="mr-telefono"><?= htmlspecialchars($L['telefono_label'], ENT_QUOTES, 'UTF-8') ?></label>
+                    <input type="tel" id="mr-telefono" name="telefono" maxlength="20" required inputmode="tel" autocomplete="tel" placeholder="<?= htmlspecialchars($L['telefono_ph'], ENT_QUOTES, 'UTF-8') ?>">
                     <span class="err" data-err="telefono"></span>
                 </div>
                 <div class="mr-field">
-                    <label for="mr-email">Correo electronico</label>
-                    <input type="email" id="mr-email" name="email" maxlength="120" required autocomplete="email" placeholder="Para enviarte tu confirmacion">
+                    <label for="mr-email"><?= htmlspecialchars($L['email_label'], ENT_QUOTES, 'UTF-8') ?></label>
+                    <input type="email" id="mr-email" name="email" maxlength="120" required autocomplete="email" placeholder="<?= htmlspecialchars($L['email_ph'], ENT_QUOTES, 'UTF-8') ?>">
                     <span class="err" data-err="email"></span>
                 </div>
-                <button type="submit" class="mr-btn full" id="mr-pagar">Continuar al pago seguro</button>
+                <button type="submit" class="mr-btn full" id="mr-pagar"><?= htmlspecialchars($L['continuar_pago'], ENT_QUOTES, 'UTF-8') ?></button>
             </form>
             <div id="mr-estado-3" class="mr-estado" aria-live="polite"></div>
         </section>
@@ -254,7 +268,7 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
     <?php if (trim((string) $politica) !== ''): ?>
         <p class="mr-politica"><?= htmlspecialchars($politica, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
-    <p class="mr-footer">Reservas en linea de <?= $nombreHotel ?> · Impulsado por Medisoft Hoteles</p>
+    <p class="mr-footer"><?= str_replace('{hotel}', $nombreHotel, htmlspecialchars($L['footer'], ENT_QUOTES, 'UTF-8')) ?></p>
 </div>
 
 <script>
@@ -264,16 +278,17 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
     var apiIniciarPago = <?= json_encode($apiIniciarPago) ?>;
     var apiCupon = <?= json_encode($apiCupon) ?>;
     var anticipoTipo = <?= json_encode($anticipoTipo) ?>;
+    var T = <?= json_encode($LJS, JSON_UNESCAPED_UNICODE) ?>;
 
     var seleccion = { entrada: null, salida: null, personas: 2, noches: 0, tipo: null, cupon: null };
 
     function fmt(n) {
-        return simbolo + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return simbolo + Number(n).toLocaleString(T.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function fmtFecha(iso) {
         var d = new Date(iso + 'T12:00:00');
-        return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+        return d.toLocaleDateString(T.locale, { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
     function irAPaso(n) {
@@ -303,11 +318,11 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
         var estado1 = document.getElementById('mr-estado-1');
 
         if (!entrada || !salida) {
-            estado1.innerHTML = '<span class="mr-error">Selecciona tus fechas de llegada y salida.</span>';
+            estado1.innerHTML = '<span class="mr-error">' + T.selecciona_fechas + '</span>';
             return;
         }
         if (salida <= entrada) {
-            estado1.innerHTML = '<span class="mr-error">La fecha de salida debe ser posterior a la de llegada.</span>';
+            estado1.innerHTML = '<span class="mr-error">' + T.salida_posterior + '</span>';
             return;
         }
 
@@ -333,7 +348,7 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
         var resultados = document.getElementById('mr-resultados');
 
         boton.disabled = true;
-        estado2.textContent = 'Buscando habitaciones disponibles...';
+        estado2.textContent = T.buscando;
         resultados.innerHTML = skeletons();
 
         var url = apiDisponibilidad +
@@ -348,16 +363,16 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
                 resultados.innerHTML = '';
 
                 if (!data.success) {
-                    estado2.innerHTML = '<span class="mr-error">' + (data.message || 'No se pudo consultar la disponibilidad.') + '</span>';
+                    estado2.innerHTML = '<span class="mr-error">' + (data.message || T.error_disponibilidad) + '</span>';
                     return;
                 }
                 if (!data.tipos || !data.tipos.length) {
-                    estado2.innerHTML = 'No hay habitaciones disponibles para esas fechas.<br>Prueba con otras fechas.';
+                    estado2.innerHTML = T.sin_disponibilidad;
                     return;
                 }
 
                 seleccion.noches = data.noches;
-                estado2.textContent = fmtFecha(data.entrada) + ' → ' + fmtFecha(data.salida) + ' · ' + data.noches + ' noche(s)';
+                estado2.textContent = fmtFecha(data.entrada) + ' → ' + fmtFecha(data.salida) + ' · ' + data.noches + ' ' + T.noches;
 
                 data.tipos.forEach(function (t) {
                     var div = document.createElement('div');
@@ -367,11 +382,11 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
                         : '<div class="mr-foto-ph" aria-hidden="true">&#128716;</div>';
                     div.innerHTML = foto +
                         '<div><h3>' + t.tipo + '</h3>' +
-                        '<p class="mr-meta">Hasta ' + t.capacidad_personas + ' persona(s) · ' + t.disponibles + ' disponible(s)</p>' +
-                        '<p class="mr-anticipo">Apartala hoy con ' + fmt(t.anticipo_requerido) + '</p></div>' +
+                        '<p class="mr-meta">' + T.hasta + ' ' + t.capacidad_personas + ' ' + T.personas_disp + ' · ' + t.disponibles + ' ' + T.disponibles + '</p>' +
+                        '<p class="mr-anticipo">' + T.apartala + ' ' + fmt(t.anticipo_requerido) + '</p></div>' +
                         '<div class="mr-cta-tipo"><div class="mr-precio"><strong>' + fmt(t.precio_total) + '</strong>' +
-                        '<span>' + fmt(t.precio_por_noche) + ' / noche</span></div>' +
-                        '<button type="button" class="mr-elegir">Elegir</button></div>';
+                        '<span>' + fmt(t.precio_por_noche) + ' ' + T.por_noche + '</span></div>' +
+                        '<button type="button" class="mr-elegir">' + T.elegir + '</button></div>';
                     div.querySelector('.mr-elegir').addEventListener('click', function () {
                         elegirTipo(t);
                     });
@@ -381,7 +396,7 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
             .catch(function () {
                 boton.disabled = false;
                 resultados.innerHTML = '';
-                estado2.innerHTML = '<span class="mr-error">Error de conexion. Revisa tu internet e intenta de nuevo.</span>';
+                estado2.innerHTML = '<span class="mr-error">' + T.error_conexion + '</span>';
             });
     }
 
@@ -451,7 +466,7 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
         if (filaDesc) {
             filaDesc.style.display = descuento > 0 ? '' : 'none';
             if (descuento > 0) {
-                document.getElementById('mr-res-desc-label').textContent = 'Descuento (' + seleccion.cupon.codigo + ')';
+                document.getElementById('mr-res-desc-label').textContent = T.descuento + ' (' + seleccion.cupon.codigo + ')';
                 document.getElementById('mr-res-desc').textContent = '-' + fmt(descuento);
             }
         }
@@ -475,9 +490,9 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
     function elegirTipo(t) {
         seleccion.tipo = t;
         document.getElementById('mr-res-fechas').textContent = fmtFecha(seleccion.entrada) + ' → ' + fmtFecha(seleccion.salida);
-        document.getElementById('mr-res-noches').textContent = seleccion.noches + ' noche(s)';
+        document.getElementById('mr-res-noches').textContent = seleccion.noches + ' ' + T.noches;
         document.getElementById('mr-res-tipo').textContent = t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1);
-        document.getElementById('mr-res-personas').textContent = seleccion.personas + ' persona(s)';
+        document.getElementById('mr-res-personas').textContent = seleccion.personas + ' ' + T.personas_disp;
         refrescarResumen();
         document.getElementById('mr-estado-3').textContent = '';
         irAPaso(3);
@@ -495,37 +510,37 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
                 seleccion.cupon = null;
                 input.value = '';
                 input.disabled = false;
-                btnCupon.textContent = 'Aplicar';
+                btnCupon.textContent = T.aplicar;
                 estadoCupon.textContent = '';
                 refrescarResumen();
                 return;
             }
 
             if (!codigo) {
-                estadoCupon.innerHTML = '<span class="mr-error">Escribe tu codigo promocional.</span>';
+                estadoCupon.innerHTML = '<span class="mr-error">' + T.escribe_codigo + '</span>';
                 return;
             }
 
             btnCupon.disabled = true;
-            estadoCupon.textContent = 'Validando codigo...';
+            estadoCupon.textContent = T.validando_codigo;
 
             fetch(apiCupon + '?codigo=' + encodeURIComponent(codigo), { headers: { 'Accept': 'application/json' } })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     btnCupon.disabled = false;
                     if (!data.success) {
-                        estadoCupon.innerHTML = '<span class="mr-error">' + (data.message || 'El codigo no es valido.') + '</span>';
+                        estadoCupon.innerHTML = '<span class="mr-error">' + (data.message || T.codigo_invalido) + '</span>';
                         return;
                     }
                     seleccion.cupon = { codigo: data.codigo, tipo: data.tipo, valor: Number(data.valor) };
                     input.disabled = true;
-                    btnCupon.textContent = 'Quitar';
+                    btnCupon.textContent = T.quitar;
                     estadoCupon.innerHTML = '<span style="color:#15803D;font-weight:700;">✓ ' + data.codigo + ': ' + data.descripcion + '</span>';
                     refrescarResumen();
                 })
                 .catch(function () {
                     btnCupon.disabled = false;
-                    estadoCupon.innerHTML = '<span class="mr-error">No se pudo validar el codigo. Intenta de nuevo.</span>';
+                    estadoCupon.innerHTML = '<span class="mr-error">' + T.codigo_error + '</span>';
                 });
         });
     }
@@ -548,21 +563,21 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
         marcarError('nombre'); marcarError('telefono'); marcarError('email');
 
         if (nombre.length < 5 || nombre.indexOf(' ') === -1) {
-            marcarError('nombre', 'Escribe tu nombre y apellido.');
+            marcarError('nombre', T.err_nombre);
             valido = false;
         }
         if (telefono.replace(/\D/g, '').length < 10) {
-            marcarError('telefono', 'Escribe un telefono de al menos 10 digitos.');
+            marcarError('telefono', T.err_telefono);
             valido = false;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            marcarError('email', 'Escribe un correo valido.');
+            marcarError('email', T.err_email);
             valido = false;
         }
         if (!valido || !seleccion.tipo) { return; }
 
         boton.disabled = true;
-        estado3.textContent = 'Preparando tu pago seguro...';
+        estado3.textContent = T.preparando_pago;
 
         fetch(apiIniciarPago, {
             method: 'POST',
@@ -582,16 +597,16 @@ $extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles :
             .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
             .then(function (res) {
                 if (res.ok && res.data.success && res.data.checkout_url) {
-                    estado3.textContent = 'Redirigiendo al pago seguro...';
+                    estado3.textContent = T.redirigiendo;
                     window.location.href = res.data.checkout_url;
                     return;
                 }
                 boton.disabled = false;
-                estado3.innerHTML = '<span class="mr-error">' + (res.data.message || 'Los pagos en linea de este hotel aun no estan disponibles. Contacta al hotel para completar tu reservacion.') + '</span>';
+                estado3.innerHTML = '<span class="mr-error">' + (res.data.message || T.pagos_no_disponibles) + '</span>';
             })
             .catch(function () {
                 boton.disabled = false;
-                estado3.innerHTML = '<span class="mr-error">Los pagos en linea de este hotel aun no estan disponibles. Contacta al hotel para completar tu reservacion.</span>';
+                estado3.innerHTML = '<span class="mr-error">' + T.pagos_no_disponibles + '</span>';
             });
     });
 })();

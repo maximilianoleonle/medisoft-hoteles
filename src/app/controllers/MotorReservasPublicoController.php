@@ -47,6 +47,8 @@ class MotorReservasPublicoController extends Controller {
             'anticipoTipo' => (string) ConfiguracionHotelRegistry::get('motor.anticipo_tipo', 'porcentaje', $hotelId),
             'promocionesActivo' => function_exists('hotel_has_module') && hotel_has_module('promociones', $hotelId),
             'extrasDisponibles' => $this->extrasPublicos($hotelId),
+            'idiomasActivo' => $this->idiomasActivo($hotelId),
+            'lang' => $this->idiomaSolicitado($hotelId),
         ]);
     }
 
@@ -257,6 +259,7 @@ class MotorReservasPublicoController extends Controller {
             'hotel' => $hotel,
             'branding' => $this->brandingPublico($hotel),
             'estado' => $estado,
+            'lang' => $this->idiomaSolicitado((int) $hotel['id']),
         ]);
     }
 
@@ -293,6 +296,18 @@ class MotorReservasPublicoController extends Controller {
         }
 
         return ConfiguracionHotelRegistry::getBool('motor.publico_activo', false, $hotelId);
+    }
+
+    /** True si el hotel contrato el bloque motor_idiomas. */
+    private function idiomasActivo(int $hotelId): bool {
+        return function_exists('hotel_has_module') && hotel_has_module('motor_idiomas', $hotelId);
+    }
+
+    /** Idioma efectivo de la pagina publica: 'en' solo con el bloque activo. */
+    private function idiomaSolicitado(int $hotelId): string {
+        $lang = strtolower(trim((string) $this->getQuery('lang', 'es')));
+
+        return ($lang === 'en' && $this->idiomasActivo($hotelId)) ? 'en' : 'es';
     }
 
     /** Extras activos para la pagina publica (bloque upsells), o []. */
