@@ -223,6 +223,12 @@ $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
 $router->get('/night-audit', ['controller' => 'NightAudit', 'action' => 'index']);
 $router->post('/night-audit/ejecutar', ['controller' => 'NightAudit', 'action' => 'ejecutar']);
 
+// Nomina core (bloque nomina_avanzada) - Fase 1: dashboard y configuracion.
+// Sin calculo, sin Caja, sin snapshots: la operacion sigue en /trabajadores.
+$router->get('/nomina', ['controller' => 'Nomina', 'action' => 'index']);
+$router->get('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'configuracion']);
+$router->post('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'guardarConfiguracion']);
+
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
 $router->post('/lealtad/generar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'generar']);

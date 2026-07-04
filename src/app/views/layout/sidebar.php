@@ -31,6 +31,7 @@ $mostrarFinanzas = $mostrarCaja || $mostrarCuentasPorCobrar || $mostrarFacturaci
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarPersonal = $menuModuloActivo('personal') && $sidebarPuedeUsuarios;
+$mostrarNomina = $menuModuloActivo('nomina_avanzada') && (can('nomina.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true));
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
@@ -50,7 +51,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad');
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarAuditoria);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarNotificacionesMenu || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -90,6 +91,7 @@ $sidebarActiveProveedores = $sidebarPathStarts('proveedores');
 $sidebarActiveDocumentos = $sidebarPathStarts('documentos');
 $sidebarActiveReportes = $sidebarPathStarts('reportes');
 $sidebarActivePersonal = $sidebarPathStarts('trabajadores');
+$sidebarActiveNomina = $sidebarPathStarts('nomina');
 $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
@@ -648,6 +650,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-id-card"></i>
                 </div>
                 <span class="nav-text">Personal</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarNomina): ?>
+            <a href="<?= url('nomina') ?>"
+               class="nav-item <?= $sidebarActiveNomina ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <span class="nav-text">Nómina</span>
             </a>
             <?php endif; ?>
 
