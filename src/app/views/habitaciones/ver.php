@@ -131,6 +131,28 @@ if (!function_exists('room_detail_relative_exit')) {
     }
 }
 
+if (!function_exists('room_detail_relative_stay')) {
+    // Etiqueta relativa consciente del signo para el historial: futuro / en curso / pasado.
+    // room_detail_relative_exit() asume pasado, por eso una reserva futura salia como "Hace X dias".
+    function room_detail_relative_stay($fecha_entrada, $fecha_salida) {
+        $hoy     = new DateTime('today');
+        $entrada = (new DateTime($fecha_entrada))->setTime(0, 0, 0);
+        $salida  = (new DateTime($fecha_salida))->setTime(0, 0, 0);
+
+        // Aun no llega: reserva futura
+        if ($entrada > $hoy) {
+            $dias = (int)$hoy->diff($entrada)->days;
+            return $dias === 1 ? 'Manana' : 'En ' . $dias . ' dias';
+        }
+        // Ya entro pero aun no sale: estadia en curso
+        if ($salida > $hoy) {
+            return 'En estadia';
+        }
+        // Ya salio: reutiliza la escala pasada existente
+        return room_detail_relative_exit((int)$salida->diff($hoy)->days);
+    }
+}
+
 $estados_completos = $estados;
 $estados_completos['por_llegar'] = ['label' => 'Por llegar', 'color' => 'amber', 'icon' => 'clock'];
 $estado_info = $estados_completos[$estado_actual] ?? [];
@@ -1392,7 +1414,8 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 $fp_e = new DateTime($proxima_destacada['fecha_entrada']);
                                 $fp_s = new DateTime($proxima_destacada['fecha_salida']);
                                 $fp_noches = $fp_e->diff($fp_s)->days;
-                                $fp_dias  = (new DateTime())->diff($fp_e)->days;
+                                // Base a medianoche para contar dias calendario (evita truncar por la hora actual).
+                                $fp_dias  = (new DateTime('today'))->diff($fp_e)->days;
                                 ?>
                                 <div class="hdv-spotlight-card">
                                     <div class="hdv-spotlight-head">
@@ -1430,7 +1453,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 $fl_e = new DateTime($ultima_destacada['fecha_entrada']);
                                 $fl_s = new DateTime($ultima_destacada['fecha_salida']);
                                 $fl_noches = $fl_e->diff($fl_s)->days;
-                                $fl_dias   = $fl_s->diff(new DateTime())->days;
+                                $fl_dias   = $fl_s->diff(new DateTime('today'))->days;
                                 ?>
                                 <div class="hdv-spotlight-card">
                                     <div class="hdv-spotlight-head">
@@ -1485,13 +1508,17 @@ $mantenimientos_count = count($mantenimientos_programados);
                     <?php if (!empty($historial_reciente)): ?>
                         <div class="hdv-history-list">
                             <?php
-                            $hoy_dt = new DateTime();
+                            $hoy_dt = new DateTime('today');
                             foreach (array_slice($historial_reciente, 0, 10) as $reservacion):
                                 $fhi_e = new DateTime($reservacion['fecha_entrada']);
                                 $fhi_s = new DateTime($reservacion['fecha_salida']);
                                 $fhi_noches = $fhi_e->diff($fhi_s)->days;
-                                $fhi_dias   = $fhi_s->diff($hoy_dt)->days;
-                                $es_reciente = $fhi_dias <= 7;
+                                $fhi_rel = room_detail_relative_stay($reservacion['fecha_entrada'], $reservacion['fecha_salida']);
+                                // "Reciente" solo si ya llego y salio hace <=7 dias (o sigue en estadia); nunca a futuro.
+                                $fhi_e_solo = (new DateTime($reservacion['fecha_entrada']))->setTime(0, 0, 0);
+                                $fhi_s_solo = (new DateTime($reservacion['fecha_salida']))->setTime(0, 0, 0);
+                                $dias_desde_salida = (int)$fhi_s_solo->diff($hoy_dt)->days * ($fhi_s_solo > $hoy_dt ? -1 : 1);
+                                $es_reciente = $fhi_e_solo <= $hoy_dt && $dias_desde_salida <= 7;
                                 $total_pagado = null;
                                 if (isset($reservacion['precio_total']) && $reservacion['precio_total'] > 0) {
                                     $total_pagado = $reservacion['precio_total'];
@@ -1520,7 +1547,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                             <span class="hdv-meta-pill"><i class="fas fa-sign-in-alt"></i><?= $fhi_e->format('d/m/Y') ?></span>
                                             <span class="hdv-meta-pill"><i class="fas fa-sign-out-alt"></i><?= $fhi_s->format('d/m/Y') ?></span>
                                             <span class="hdv-meta-pill"><i class="fas fa-moon"></i><?= $fhi_noches ?> <?= $fhi_noches == 1 ? 'noche' : 'noches' ?></span>
-                                            <span class="hdv-meta-pill"><i class="fas fa-calendar-alt"></i><?= room_detail_relative_exit($fhi_dias) ?></span>
+                                            <span class="hdv-meta-pill"><i class="fas fa-calendar-alt"></i><?= $fhi_rel ?></span>
                                             <?php if ($total_pagado): ?>
                                                 <span class="hdv-meta-pill"><i class="fas fa-dollar-sign"></i><?= format_money($total_pagado) ?></span>
                                             <?php endif; ?>

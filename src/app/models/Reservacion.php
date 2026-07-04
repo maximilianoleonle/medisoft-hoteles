@@ -3472,10 +3472,17 @@ public function paraCalendario($mes = null, $año = null) {
                     $modo_monto
                 );
 
+                // Si una reduccion (p.ej. reversion de anticipo) deja el monto en 0,
+                // la solicitud debe cancelarse; de lo contrario queda 'pendiente' con
+                // $0 y la reservacion sigue apareciendo en Facturacion. COALESCE mantiene
+                // el estatus vigente cuando aun queda monto por facturar.
+                $estatus_guardar = ($monto_guardar <= 0.004) ? 'cancelada' : null;
+
                 $stmt = $db->query(
                     "UPDATE solicitudes_factura
                      SET metodo_pago_principal = ?,
                          monto_total = ?,
+                         estatus = COALESCE(?, estatus),
                          usuario_registro_id = COALESCE(?, usuario_registro_id),
                          notas = ?,
                          updated_at = NOW()
@@ -3484,6 +3491,7 @@ public function paraCalendario($mes = null, $año = null) {
                     [
                         $metodo_guardar,
                         $monto_guardar,
+                        $estatus_guardar,
                         $usuario_id,
                         $notas_guardar,
                         $existente['id'],

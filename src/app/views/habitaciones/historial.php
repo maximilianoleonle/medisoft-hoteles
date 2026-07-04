@@ -506,14 +506,21 @@
         <!-- Lista de Reservaciones -->
         <div class="history-list space-y-3">
             <?php 
-            $hoy = new DateTime();
-            foreach ($historial as $index => $reservacion): 
+            $hoy = new DateTime('today');
+            foreach ($historial as $index => $reservacion):
                 $fecha_entrada = new DateTime($reservacion['fecha_entrada']);
                 $fecha_salida = new DateTime($reservacion['fecha_salida']);
                 $duracion = $fecha_entrada->diff($fecha_salida)->days;
-                $dias_desde_salida = $fecha_salida->diff($hoy)->days;
-                
-                $es_reciente = $dias_desde_salida <= 7;
+
+                // diff()->days es absoluto: hay que reponer el signo para no tratar una reserva futura como pasada.
+                $ent_solo = (new DateTime($reservacion['fecha_entrada']))->setTime(0, 0, 0);
+                $sal_solo = (new DateTime($reservacion['fecha_salida']))->setTime(0, 0, 0);
+                $es_futura = $ent_solo > $hoy;
+                $en_estadia = !$es_futura && $sal_solo > $hoy;
+                $dias_hasta_entrada = (int)$hoy->diff($ent_solo)->days;
+                $dias_desde_salida = (int)$sal_solo->diff($hoy)->days * ($sal_solo > $hoy ? -1 : 1);
+
+                $es_reciente = !$es_futura && $dias_desde_salida <= 7;
                 
                 $total_pagado = null;
                 if (isset($reservacion['precio_total']) && $reservacion['precio_total'] > 0) {
@@ -585,7 +592,11 @@
                             <div class="history-pill history-pill-time flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
                                 <i class="fas fa-calendar-alt text-gray-500"></i>
                                 <span class="font-semibold">
-                                    <?php if ($dias_desde_salida == 0): ?>
+                                    <?php if ($es_futura): ?>
+                                        <?= $dias_hasta_entrada == 1 ? 'Mañana' : 'En ' . $dias_hasta_entrada . ' días' ?>
+                                    <?php elseif ($en_estadia): ?>
+                                        En estadía
+                                    <?php elseif ($dias_desde_salida == 0): ?>
                                         Salió hoy
                                     <?php elseif ($dias_desde_salida == 1): ?>
                                         Ayer

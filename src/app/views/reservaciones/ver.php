@@ -3886,10 +3886,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                                     <div style="font-size:.72rem;color:#1E40AF;font-weight:700;margin-bottom:7px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por <?= $rdMoney($anticipoFacturaSolicitud['monto_total'] ?? 0) ?></div>
                                                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                                         <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                                            <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                                            <input type="radio" name="factura_modo" value="acumular"> Sumar a factura pendiente
                                                         </label>
                                                         <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                                            <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                                            <input type="radio" name="factura_modo" value="separada" checked> Crear factura separada
                                                         </label>
                                                     </div>
                                                 </div>
@@ -5391,7 +5391,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                     Ya existe una solicitud de factura por un anticipo de
                                     <strong>$<?= number_format((float)($anticipoFacturaSolicitud['monto_total'] ?? 0), 2) ?></strong>
                                     (estatus: <?= htmlspecialchars($anticipoFacturaSolicitud['estatus'] ?? '') ?>).
-                                    Si seleccionas «Factura para cliente» se actualizará con el monto del check-in.
+                                    Por defecto el cobro del check-in se registra como <strong>factura separada</strong>; si prefieres sumarlo a la pendiente, usa las opciones de abajo.
                                 </div>
                             <?php endif; ?>
 
@@ -5418,10 +5418,10 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                     <div style="font-size:.74rem;color:#1E40AF;font-weight:700;margin-bottom:8px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por $<?= number_format((float)($anticipoFacturaSolicitud['monto_total'] ?? 0), 2) ?></div>
                                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                                         <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                            <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                            <input type="radio" name="factura_modo" value="acumular"> Sumar a factura pendiente
                                         </label>
                                         <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                            <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                            <input type="radio" name="factura_modo" value="separada" checked> Crear factura separada
                                         </label>
                                     </div>
                                 </div>
@@ -6051,10 +6051,10 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                             <div style="font-size:.72rem;color:#1E40AF;font-weight:700;margin-bottom:7px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por $<?= number_format((float)($anticipoFacturaSolicitud['monto_total'] ?? 0), 2) ?></div>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                    <input type="radio" name="factura_modo" value="acumular" checked> Sumar a factura pendiente
+                                    <input type="radio" name="factura_modo" value="acumular"> Sumar a factura pendiente
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                    <input type="radio" name="factura_modo" value="separada"> Crear factura separada
+                                    <input type="radio" name="factura_modo" value="separada" checked> Crear factura separada
                                 </label>
                             </div>
                         </div>
