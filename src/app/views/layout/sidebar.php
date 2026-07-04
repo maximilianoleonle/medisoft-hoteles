@@ -6,6 +6,7 @@ $menuModuloActivo = function ($clave) {
 $menuModulosSinConfigurar = function_exists('hotel_menu_modules_unconfigured') && hotel_menu_modules_unconfigured();
 $mostrarDashboard = $menuModuloActivo('dashboard');
 $mostrarOperacionDiaria = $menuModuloActivo('tablero_ejecutivo');
+$mostrarForecast = $menuModuloActivo('forecast');
 $mostrarHabitaciones = $menuModuloActivo('habitaciones');
 $mostrarReservaciones = $menuModuloActivo('reservaciones');
 $mostrarHuespedes = $menuModuloActivo('huespedes');
@@ -68,6 +69,7 @@ $sidebarPathIn = static function (array $prefixes) use ($sidebarPathStarts): boo
 };
 $sidebarActiveDashboard = $sidebarPathStarts('dashboard');
 $sidebarActiveOperacionDiaria = $sidebarPathStarts('operacion/diaria');
+$sidebarActiveForecast = $sidebarPathStarts('forecast');
 $sidebarActiveReservaciones = $sidebarPathStarts('reservaciones');
 $sidebarActiveHabitaciones = $sidebarPathStarts('habitaciones');
 $sidebarActiveHuespedes = $sidebarPathStarts('huespedes');
@@ -329,6 +331,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-clipboard-check"></i>
                 </div>
                 <span class="nav-text">Operacion diaria</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarForecast): ?>
+            <a href="<?= url('forecast') ?>"
+               class="nav-item <?= $sidebarActiveForecast ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="nav-text">Forecast</span>
             </a>
             <?php endif; ?>
 

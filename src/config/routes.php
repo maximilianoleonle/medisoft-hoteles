@@ -213,6 +213,9 @@ $router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital
 $router->get('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}', ['controller' => 'ReputacionPublico', 'action' => 'formulario']);
 $router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['controller' => 'ReputacionPublico', 'action' => 'responder']);
 
+// Forecast de ocupacion (bloque forecast, solo lectura)
+$router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
+
 // Reputacion interna: tablero, generar/enviar encuestas y configuracion
 $router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
 $router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
