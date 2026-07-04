@@ -435,6 +435,10 @@ $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'h
 $router->get('/admin/saas/modulos', ['controller' => 'SaasAdmin', 'action' => 'modulosCatalogo']);
 $router->post('/admin/saas/modulos/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosModulos']);
 $router->post('/admin/saas/planes/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosPlanes']);
+// Reglas legales de nomina versionadas (Fase 5 nomina core; solo saas_admins)
+$router->get('/admin/saas/nomina/reglas', ['controller' => 'SaasNomina', 'action' => 'reglas']);
+$router->post('/admin/saas/nomina/reglas', ['controller' => 'SaasNomina', 'action' => 'guardarRegla']);
+$router->post('/admin/saas/nomina/reglas/{id:[0-9]+}/alternar', ['controller' => 'SaasNomina', 'action' => 'alternarRegla']);
 $router->get('/admin/saas/cobros', ['controller' => 'SaasAdmin', 'action' => 'cobros']);
 $router->post('/admin/saas/cobros/generar', ['controller' => 'SaasAdmin', 'action' => 'generarCobros']);
 $router->post('/admin/saas/cobros/{id:[0-9]+}/link', ['controller' => 'SaasAdmin', 'action' => 'linkPagoCobro']);

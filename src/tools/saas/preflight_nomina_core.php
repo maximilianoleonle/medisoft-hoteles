@@ -654,6 +654,65 @@ if ($pdo instanceof PDO) {
     } catch (Throwable $e) {
         nomCoreWarning('Fase 4: no se pudieron verificar recibos: ' . $e->getMessage());
     }
+
+    // Fase 5: reglas legales versionadas.
+    try {
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME IN ('nomina_reglas_legales', 'nomina_reglas_legales_eventos')"
+        );
+        if ((int) ($st->fetch()['total'] ?? 0) === 2) {
+            nomCoreOk('Fase 5: tablas de reglas legales y su historial existen.');
+        } else {
+            nomCoreError('Fase 5: faltan tablas de reglas legales.', 'Aplicar la migracion 20260704_005.');
+        }
+
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM nomina_reglas_legales
+             WHERE pais = 'MX' AND estado = 'activo'
+               AND tipo_regla IN ('aguinaldo_dias_minimo', 'prima_vacacional_pct', 'vacaciones_tabla')"
+        );
+        if ((int) ($st->fetch()['total'] ?? 0) >= 3) {
+            nomCoreOk('Fase 5: reglas estatutarias LFT sembradas.');
+        } else {
+            nomCoreWarning('Fase 5: faltan reglas estatutarias LFT.', 'Re-aplicar semillas de 20260704_005.');
+        }
+
+        // Ejercicio vigente sin UMA/salario minimo resolubles HOY: aviso operativo.
+        $hoy = date('Y-m-d');
+        $st = $pdo->prepare(
+            "SELECT COUNT(*) AS total FROM nomina_reglas_legales
+             WHERE pais = 'MX' AND tipo_regla = ? AND estado = 'activo'
+               AND vigente_desde <= ? AND (vigente_hasta IS NULL OR vigente_hasta >= ?)"
+        );
+        foreach (['uma_diaria', 'salario_minimo_general'] as $tipoCritico) {
+            $st->execute([$tipoCritico, $hoy, $hoy]);
+            if ((int) ($st->fetch()['total'] ?? 0) > 0) {
+                nomCoreOk('Fase 5: ' . $tipoCritico . ' resoluble a hoy.');
+            } else {
+                nomCoreWarning('Fase 5: ' . $tipoCritico . ' NO resoluble a hoy (' . $hoy . ').', 'Capturar el ejercicio vigente en /admin/saas/nomina/reglas con fuente DOF antes de activar el modo legal.');
+            }
+        }
+
+        // Solape de vigencias activas del mismo tipo: error de captura.
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM nomina_reglas_legales a
+             INNER JOIN nomina_reglas_legales b
+                ON b.pais = a.pais AND b.tipo_regla = a.tipo_regla AND b.id > a.id
+               AND a.estado = 'activo' AND b.estado = 'activo'
+               AND a.vigente_desde <= COALESCE(b.vigente_hasta, '9999-12-31')
+               AND b.vigente_desde <= COALESCE(a.vigente_hasta, '9999-12-31')"
+        );
+        $solapes = (int) ($st->fetch()['total'] ?? 0);
+        if ($solapes === 0) {
+            nomCoreOk('Fase 5: cero solapes de vigencia entre reglas activas del mismo tipo.');
+        } else {
+            nomCoreError('Fase 5: ' . $solapes . ' solape(s) de vigencia en reglas activas.', 'Corregir vigencias en /admin/saas/nomina/reglas (la resolucion seria ambigua).');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 5: no se pudieron verificar reglas legales: ' . $e->getMessage());
+    }
 }
 
 /* ---------------------------------------------------------------------

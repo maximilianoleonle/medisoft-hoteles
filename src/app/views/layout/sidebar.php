@@ -290,6 +290,14 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 </div>
                 <span class="nav-text">Crear hotel</span>
             </a>
+
+            <a href="<?= url('admin/saas/nomina/reglas') ?>"
+               class="nav-item saas-nav-item <?= strpos($sidebarRequestPath, '/admin/saas/nomina') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-scale-balanced"></i>
+                </div>
+                <span class="nav-text">Reglas de nómina</span>
+            </a>
         </div>
 
         <div class="nav-section saas-nav-section">
