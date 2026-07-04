@@ -40,11 +40,12 @@ $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, [
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCamarista = $menuModuloActivo('camarista');
+$mostrarReputacion = $menuModuloActivo('reputacion');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
-$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva;
+$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
@@ -86,6 +87,7 @@ $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
+$sidebarActiveReputacion = $sidebarPathStarts('reputacion');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
 $sidebarActiveCanales = $sidebarPathStarts('canales');
 $sidebarActiveCamarista = $sidebarPathStarts('camarista');
@@ -645,6 +647,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-wand-magic-sparkles"></i>
                 </div>
                 <span class="nav-text">Asesor IA</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarReputacion): ?>
+            <a href="<?= url('reputacion') ?>"
+               class="nav-item <?= $sidebarActiveReputacion ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <span class="nav-text">Reputación</span>
             </a>
             <?php endif; ?>
         </div>

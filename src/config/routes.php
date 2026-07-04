@@ -208,6 +208,16 @@ $router->get('/checkin-digital', ['controller' => 'CheckinDigital', 'action' => 
 $router->post('/checkin-digital/generar/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'generar']);
 $router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'descargarId']);
 
+// Encuesta post-estancia publica (bloque reputacion; token = credencial)
+$router->get('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}', ['controller' => 'ReputacionPublico', 'action' => 'formulario']);
+$router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['controller' => 'ReputacionPublico', 'action' => 'responder']);
+
+// Reputacion interna: tablero, generar/enviar encuestas y configuracion
+$router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
+$router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
+$router->post('/reputacion/enviar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'enviar']);
+$router->post('/reputacion/config', ['controller' => 'Reputacion', 'action' => 'config']);
+
 // Canales iCal publico (bloque canales_ical; token de exportacion = credencial)
 $router->get('/h/{slug:[a-z0-9-]+}/ical/{token:[a-f0-9]+}/{habitacionid:[0-9]+}.ics', ['controller' => 'IcalPublico', 'action' => 'feed']);
 

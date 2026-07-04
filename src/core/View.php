@@ -38,7 +38,8 @@ class View {
         // Vistas standalone: sin layout interno (login, errores y paginas publicas motor/checkin).
         $esVistaStandalone = in_array($view, ['auth/login', 'errors/404', 'errors/500'])
             || strpos($view, 'motor/') === 0
-            || strpos($view, 'checkin/') === 0;
+            || strpos($view, 'checkin/') === 0
+            || strpos($view, 'encuesta/') === 0;
 
         // Registrar la vista como "reciente" para navegacion rapida
         // (fire-and-forget: nunca rompe la pagina si falla).
