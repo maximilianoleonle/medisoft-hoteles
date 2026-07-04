@@ -315,6 +315,10 @@ class NominaCierreService {
             $st->execute([$usuarioId, $hotelId, 'NOMV2-' . $periodoId . '-%']);
             $creditosAnulados = $st->rowCount();
 
+            // Cancelar los recibos internos vigentes del periodo.
+            require_once __DIR__ . '/NominaReciboService.php';
+            (new NominaReciboService($this->db))->cancelarPorPeriodo($hotelId, $periodoId, 'Anulacion del periodo: ' . $motivo, $usuarioId);
+
             $this->registrarEvento($periodoId, $hotelId, 'anulacion', 'anulado',
                 'Anulacion de periodo v2 (' . $creditosAnulados . ' creditos de ledger anulados)', $motivo, $usuarioId);
 
@@ -326,6 +330,83 @@ class NominaCierreService {
                 'descripcion' => 'Anulo periodo v2 ' . $periodo['etiqueta'] . ': ' . $motivo,
                 'datos_antes' => ['estado' => $periodo['estado']],
                 'datos_despues' => ['estado' => 'anulado', 'creditos_ledger_anulados' => $creditosAnulados],
+            ]);
+
+            if ($ownTransaction) {
+                $this->db->safeCommit();
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            if ($ownTransaction) {
+                $this->db->safeRollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Reapertura controlada: aprobado -> cerrado. Solo si la configuracion del
+     * negocio lo permite; motivo obligatorio; bloqueada con pagos vigentes;
+     * cancela los recibos emitidos (el snapshot NO se recalcula).
+     */
+    public function reabrir(int $hotelId, int $periodoId, string $motivo, ?int $usuarioId = null): bool {
+        $motivo = trim($motivo);
+        if ($motivo === '') {
+            throw new Exception('El motivo de reapertura es obligatorio.');
+        }
+        $motivo = mb_substr($motivo, 0, 255);
+
+        if (!ConfiguracionHotelRegistry::getBool('nomina.permitir_reapertura', false, $hotelId)) {
+            throw new Exception('Este negocio no permite reabrir periodos (configuracion de nomina).');
+        }
+
+        $periodo = $this->obtenerPeriodoV2($hotelId, $periodoId);
+        if ($periodo['estado'] !== 'aprobado') {
+            throw new Exception('Solo un periodo APROBADO puede reabrirse (estado: ' . $periodo['estado'] . ').');
+        }
+
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total FROM trabajador_pagos_caja
+             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'"
+        );
+        $st->execute([$hotelId, $periodoId]);
+        if ((int) ($st->fetch()['total'] ?? 0) > 0) {
+            throw new Exception('El periodo tiene pagos de Caja vigentes: revierte los pagos antes de reabrir.');
+        }
+
+        $ownTransaction = !$this->db->enTransaccion();
+
+        try {
+            if ($ownTransaction) {
+                $this->db->safeBeginTransaction();
+            }
+
+            $st = $this->pdo->prepare(
+                "UPDATE trabajador_nomina_periodos
+                 SET estado = 'cerrado', aprobado_por = NULL, aprobado_at = NULL
+                 WHERE id = ? AND hotel_id = ? AND estado = 'aprobado' AND motor = 'v2'"
+            );
+            $st->execute([$periodoId, $hotelId]);
+            if ($st->rowCount() !== 1) {
+                throw new Exception('No se pudo reabrir el periodo (estado cambiado por otro usuario).');
+            }
+
+            require_once __DIR__ . '/NominaReciboService.php';
+            $recibosCancelados = (new NominaReciboService($this->db))
+                ->cancelarPorPeriodo($hotelId, $periodoId, 'Reapertura del periodo: ' . $motivo, $usuarioId);
+
+            $this->registrarEvento($periodoId, $hotelId, 'reapertura', 'cerrado',
+                'Reapertura de periodo v2 (' . $recibosCancelados . ' recibos cancelados)', $motivo, $usuarioId);
+
+            AuditService::record('nomina.periodo_v2_reabierto', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $usuarioId,
+                'entidad_tipo' => 'trabajador_nomina_periodos',
+                'entidad_id' => (string) $periodoId,
+                'descripcion' => 'Reabrio periodo v2 ' . $periodo['etiqueta'] . ': ' . $motivo,
+                'datos_antes' => ['estado' => 'aprobado', 'aprobado_por' => $periodo['aprobado_por']],
+                'datos_despues' => ['estado' => 'cerrado', 'recibos_cancelados' => $recibosCancelados],
             ]);
 
             if ($ownTransaction) {

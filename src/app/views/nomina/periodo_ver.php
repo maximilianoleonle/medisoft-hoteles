@@ -8,6 +8,9 @@ $pdDetalles = is_array($detalles ?? null) ? $detalles : [];
 $pdLineas = is_array($lineasPorDetalle ?? null) ? $lineasPorDetalle : [];
 $pdPuedeAprobar = !empty($puedeAprobar);
 $pdPuedeAnular = !empty($puedeAnular);
+$pdPuedeVerRecibos = !empty($puedeVerRecibos);
+$pdRecibos = is_array($recibosPorDetalle ?? null) ? $recibosPorDetalle : [];
+$pdPermiteReapertura = !empty($permitirReapertura);
 $pdEsV2 = ($pd['motor'] ?? 'v1') === 'v2';
 
 $pdEstados = [
@@ -118,6 +121,23 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <a class="pd-btn ms-pressable" href="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id']) ?>">
             <i class="fas fa-hand-holding-dollar"></i> Registrar pagos (Caja)
         </a>
+        <?php if ($pdPuedeAprobar): ?>
+        <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/recibos/emitir') ?>">
+            <?= csrf_field() ?>
+            <button type="submit" class="pd-btn ms-pressable"><i class="fas fa-receipt"></i> Emitir recibos internos</button>
+        </form>
+        <?php endif; ?>
+        <?php if ($pdPuedeAnular && $pdPermiteReapertura): ?>
+        <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/reabrir') ?>" class="pd-anular-form"
+              data-ms-confirm data-ms-type="warning" data-ms-icon="key"
+              data-ms-title="Reabrir periodo"
+              data-ms-msg="El periodo volverá a CERRADO (sin aprobación) y sus recibos se cancelarán. El snapshot no se recalcula. ¿Reabrir?"
+              data-ms-ok="Reabrir">
+            <?= csrf_field() ?>
+            <input type="text" name="motivo" required maxlength="255" placeholder="Motivo de reapertura (obligatorio)">
+            <button type="submit" class="pd-btn ms-pressable"><i class="fas fa-rotate-left"></i> Reabrir</button>
+        </form>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -141,6 +161,14 @@ include APP_PATH . '/views/partials/back_arrow.php';
             <div style="text-align:right;">
                 <div class="pd-neto">$<?= number_format((float) $d['neto_sugerido'], 2) ?></div>
                 <div class="pd-mini">pendiente $<?= number_format((float) $d['pendiente_pago_sugerido'], 2) ?></div>
+                <?php $pdRecibo = $pdRecibos[(int) $d['id']] ?? null; ?>
+                <?php if ($pdRecibo && $pdPuedeVerRecibos): ?>
+                <div class="pd-mini" style="margin-top:4px;">
+                    <a href="<?= url('nomina/recibos/' . (int) $pdRecibo['id'] . '/pdf') ?>">
+                        <i class="fas fa-file-pdf"></i> Recibo <?= htmlspecialchars((string) $pdRecibo['folio']) ?>
+                    </a>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
         <?php $lineas = $pdLineas[(int) $d['id']] ?? []; ?>

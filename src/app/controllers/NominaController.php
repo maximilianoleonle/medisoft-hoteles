@@ -593,13 +593,28 @@ class NominaController extends Controller {
             $lineasPorDetalle[(int) $linea['detalle_id']][] = $linea;
         }
 
+        $recibosPorDetalle = [];
+        try {
+            require_once __DIR__ . '/../services/NominaReciboService.php';
+            foreach ((new NominaReciboService())->listarPorPeriodo($hotelId, $periodoId) as $recibo) {
+                if ($recibo['estado'] === 'emitido') {
+                    $recibosPorDetalle[(int) $recibo['detalle_id']] = $recibo;
+                }
+            }
+        } catch (Throwable $e) {
+            $recibosPorDetalle = [];
+        }
+
         View::renderTemplate('nomina/periodo_ver', [
             'title' => 'Periodo de nomina - ' . current_hotel_display_name(),
             'periodo' => $periodo,
             'detalles' => $detalles,
             'lineasPorDetalle' => $lineasPorDetalle,
+            'recibosPorDetalle' => $recibosPorDetalle,
             'puedeAprobar' => can('nomina.aprobar'),
             'puedeAnular' => can('nomina.reabrir'),
+            'puedeVerRecibos' => can('nomina.salarios'),
+            'permitirReapertura' => ConfiguracionHotelRegistry::getBool('nomina.permitir_reapertura', false, $hotelId),
         ]);
     }
 
@@ -617,6 +632,88 @@ class NominaController extends Controller {
         try {
             (new NominaCierreService())->aprobar($hotelId, (int) $id, user_id());
             set_mensaje('Periodo aprobado: los pagos por Caja quedan habilitados.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/periodos/' . (int) $id);
+    }
+
+    public function periodoRecibosEmitirAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.aprobar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            require_once __DIR__ . '/../services/NominaReciboService.php';
+            $emitidos = (new NominaReciboService())->emitirPorPeriodo($hotelId, (int) $id, user_id());
+            set_mensaje($emitidos > 0 ? $emitidos . ' recibo(s) emitido(s).' : 'Todos los detalles ya tienen recibo vigente.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/periodos/' . (int) $id);
+    }
+
+    public function reciboPdfAction($id) {
+        if (function_exists('require_permission')) {
+            require_permission('nomina.salarios');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            require_once __DIR__ . '/../services/NominaReciboService.php';
+            (new NominaReciboService())->descargarPdf($hotelId, (int) $id);
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+            $this->redirect('nomina/periodos');
+        }
+    }
+
+    public function reciboCancelarAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.reabrir');
+        }
+
+        $hotelId = $this->hotelIdActual();
+        $volverA = (int) $this->getPost('periodo_id', 0);
+
+        try {
+            require_once __DIR__ . '/../services/NominaReciboService.php';
+            (new NominaReciboService())->cancelar($hotelId, (int) $id, (string) $this->getPost('motivo', ''), user_id());
+            set_mensaje('Recibo cancelado.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect($volverA > 0 ? 'nomina/periodos/' . $volverA : 'nomina/periodos');
+    }
+
+    public function periodoReabrirAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.reabrir');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCierreService())->reabrir($hotelId, (int) $id, (string) $this->getPost('motivo', ''), user_id());
+            set_mensaje('Periodo reabierto (cerrado sin aprobacion). Los recibos emitidos fueron cancelados.', 'success');
         } catch (Throwable $e) {
             set_mensaje($e->getMessage(), 'error');
         }

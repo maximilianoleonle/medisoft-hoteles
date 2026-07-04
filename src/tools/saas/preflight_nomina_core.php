@@ -604,6 +604,56 @@ if ($pdo instanceof PDO) {
     } catch (Throwable $e) {
         nomCoreWarning('Fase 3: no se pudieron verificar estructuras del motor v2: ' . $e->getMessage());
     }
+
+    // Fase 4: recibos internos.
+    try {
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nomina_recibos'"
+        );
+        if ((int) ($st->fetch()['total'] ?? 0) === 1) {
+            nomCoreOk('Fase 4: tabla nomina_recibos existe.');
+
+            $st = $pdo->query(
+                "SELECT COUNT(*) AS total FROM (
+                    SELECT hotel_id, folio_numero FROM nomina_recibos GROUP BY hotel_id, folio_numero HAVING COUNT(*) > 1
+                 ) x"
+            );
+            $dupFolios = (int) ($st->fetch()['total'] ?? 0);
+            if ($dupFolios === 0) {
+                nomCoreOk('Fase 4: folios de recibo unicos por negocio.');
+            } else {
+                nomCoreError('Fase 4: ' . $dupFolios . ' folio(s) duplicados en nomina_recibos.');
+            }
+
+            $st = $pdo->query(
+                "SELECT COUNT(*) AS total FROM nomina_recibos r
+                 INNER JOIN trabajador_nomina_periodos p ON p.id = r.periodo_id
+                 WHERE r.estado = 'emitido' AND p.estado != 'aprobado'"
+            );
+            $recibosInvalidos = (int) ($st->fetch()['total'] ?? 0);
+            if ($recibosInvalidos === 0) {
+                nomCoreOk('Fase 4: cero recibos vigentes de periodos no aprobados.');
+            } else {
+                nomCoreError('Fase 4: ' . $recibosInvalidos . ' recibo(s) vigentes de periodos anulados/reabiertos.', 'Cancelar esos recibos: la reapertura/anulacion debe cancelarlos.');
+            }
+        } else {
+            nomCoreError('Fase 4: falta la tabla nomina_recibos.', 'Aplicar la migracion 20260704_004.');
+        }
+
+        $st = $pdo->query(
+            "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'trabajador_nomina_periodo_eventos' AND COLUMN_NAME = 'tipo'"
+        );
+        $tipoEnum = (string) ($st->fetch()['t'] ?? '');
+        if (strpos($tipoEnum, 'reapertura') !== false) {
+            nomCoreOk('Fase 4: eventos de periodo soportan reapertura.');
+        } else {
+            nomCoreError('Fase 4: el ENUM de eventos no incluye reapertura.', 'Aplicar la migracion 20260704_004.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 4: no se pudieron verificar recibos: ' . $e->getMessage());
+    }
 }
 
 /* ---------------------------------------------------------------------

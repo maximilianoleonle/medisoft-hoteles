@@ -247,6 +247,11 @@ $router->post('/nomina/periodos/cerrar', ['controller' => 'Nomina', 'action' => 
 $router->get('/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'periodoVer']);
 $router->post('/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Nomina', 'action' => 'periodoAprobar']);
 $router->post('/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Nomina', 'action' => 'periodoAnular']);
+// Fase 4: recibos internos y reapertura controlada.
+$router->post('/nomina/periodos/{id:[0-9]+}/recibos/emitir', ['controller' => 'Nomina', 'action' => 'periodoRecibosEmitir']);
+$router->post('/nomina/periodos/{id:[0-9]+}/reabrir', ['controller' => 'Nomina', 'action' => 'periodoReabrir']);
+$router->get('/nomina/recibos/{id:[0-9]+}/pdf', ['controller' => 'Nomina', 'action' => 'reciboPdf']);
+$router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina', 'action' => 'reciboCancelar']);
 
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
