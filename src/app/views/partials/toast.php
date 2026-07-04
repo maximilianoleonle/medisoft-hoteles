@@ -167,6 +167,8 @@ if ($msToastMensaje) {
 
     // Arranca barra de progreso + auto-cierre con pausa al hover/touch.
     function hydrate(t){
+        // Feedback háptico según el tipo (success/warning/error; 'info' no vibra).
+        if(window.MedisoftHaptics) window.MedisoftHaptics.fire(t.getAttribute('data-type'));
         var dur = parseInt(t.getAttribute('data-dur') || '5000', 10);
         var bar = t.querySelector('.ms-toast-bar');
         if(bar){ bar.style.setProperty('--ms-dur', dur + 'ms'); bar.classList.add('run'); }

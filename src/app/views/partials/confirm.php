@@ -197,6 +197,7 @@
             // Si ya hay uno abierto, se cancela el anterior.
             if (resolver) { var prev = resolver; resolver = null; prev(false); }
             resolver = resolve;
+            if (window.MedisoftHaptics) window.MedisoftHaptics.fire('tap');
             requestAnimationFrame(function(){
                 o.classList.add('open');
                 var okBtn = o.querySelector('.ms-cf-btn.ok');
@@ -230,6 +231,8 @@
     window.msPageState = function(opts){
         opts = opts || {};
         var type = ({ error:1, warning:1, success:1, info:1 })[opts.type] ? opts.type : 'success';
+        // Momento fuerte (check-in/out ok, error de operación): vibración según el tipo.
+        if (window.MedisoftHaptics) window.MedisoftHaptics.fire(type);
         var root = document.createElement('div');
         root.className = 'ms-pagestate-modal';
         root.setAttribute('data-type', type);

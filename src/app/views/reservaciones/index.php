@@ -1604,7 +1604,23 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-ci-cancel:hover,
 .res-ci-confirm:not(:disabled):hover { transform: translateY(-1px); }
 @media (max-width: 860px) {
-    .res-checkin-card { grid-template-columns: 1fr; }
+    /* En movil el encabezado se apila sobre el formulario: la card pasa a flex
+       column y el form/body llenan el alto disponible (sin su propio max-height),
+       para que el footer sticky nunca quede recortado bajo el viewport. */
+    .res-checkin-card {
+        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+    }
+    .res-checkin-form {
+        max-height: none;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    .res-checkin-body {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
     .res-checkin-head {
         min-height: auto;
         gap: 12px;
@@ -1663,14 +1679,93 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-tabs { display: grid; grid-template-columns: 1fr 1fr; }
     .res-tab { justify-content: center; }
     .res-mobile-grid { grid-template-columns: 1fr; }
-    .res-checkin-modal { padding: 8px; align-items: flex-end; }
-    .res-checkin-card { width: 100%; border-radius: 20px 20px 0 0; max-height: 96dvh; }
+    .res-checkin-modal { padding: 8px 8px max(8px, env(safe-area-inset-bottom, 8px)); align-items: flex-end; }
+    .res-checkin-card { width: 100%; border-radius: 20px 20px 0 0; max-height: 94dvh; }
     .res-checkin-title h3 { font-size: 1rem; }
     .res-checkin-title p { font-size: .72rem; }
     .res-card-type { grid-template-columns: 1fr; }
     .res-checkin-actions { flex-direction: column; }
     .res-ci-cancel,
     .res-ci-confirm { width: 100%; }
+}
+
+/* La flecha del desglose solo aparece en el modo por pasos (movil). */
+.res-ci-breakdown-chevron { display: none; }
+
+/* ===== Check-in movil por pasos (no afecta escritorio ni tablet) ===== */
+@media (max-width: 640px) {
+    .res-checkin-card.ci-stepped .ci-step-hidden { display: none !important; }
+
+    /* Desglose "por que se cobra": colapsable para aligerar el paso de cobro */
+    .res-checkin-card.ci-stepped .res-ci-breakdown-head { cursor: pointer; }
+    .res-checkin-card.ci-stepped .res-ci-breakdown-chevron {
+        display: inline-block;
+        align-self: center;
+        margin-left: auto;
+        color: color-mix(in srgb, var(--res-brand) 55%, #94A3B8);
+        transition: transform .18s ease;
+    }
+    .res-checkin-card.ci-stepped .res-ci-breakdown.ci-collapsed .res-ci-breakdown-lines { display: none; }
+    .res-checkin-card.ci-stepped .res-ci-breakdown.ci-collapsed .res-ci-breakdown-chevron { transform: rotate(-90deg); }
+
+    /* Encabezado: subtitulo fuera, indicador de paso dentro */
+    .res-checkin-card.ci-stepped .res-checkin-sub-desktop { display: none; }
+    .ci-step-pill {
+        display: inline-flex;
+        align-items: center;
+        width: max-content;
+        margin-top: 8px;
+        padding: 3px 11px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.16);
+        border: 1px solid rgba(255,255,255,.26);
+        color: #fff;
+        font-size: .7rem;
+        font-weight: 850;
+        letter-spacing: .03em;
+    }
+    .ci-step-pill[hidden] { display: none; }
+
+    /* Densidad mas comoda: total y hora en columna, atajos en 2 columnas */
+    .res-checkin-card.ci-stepped .res-checkin-body { gap: 12px; }
+    .res-checkin-card.ci-stepped .res-checkin-summary { grid-template-columns: 1fr; gap: 10px; }
+    .res-checkin-card.ci-stepped .res-ci-shortcuts { grid-template-columns: repeat(2, minmax(0,1fr)); }
+
+    /* Footer compacto en fila (solo 2 botones visibles a la vez) */
+    .res-checkin-card.ci-stepped .res-checkin-actions { flex-direction: row; }
+    .res-checkin-card.ci-stepped .res-ci-cancel,
+    .res-checkin-card.ci-stepped .res-ci-confirm,
+    .res-checkin-card.ci-stepped .res-ci-back,
+    .res-checkin-card.ci-stepped .res-ci-next { width: auto; }
+
+    .res-ci-back,
+    .res-ci-next {
+        min-height: 46px;
+        border-radius: 13px;
+        padding: 0 16px;
+        font-weight: 900;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform .16s ease;
+    }
+    .res-ci-back {
+        flex: .9;
+        border: 1px solid color-mix(in srgb, var(--res-brand) 14%, #DCE2EA);
+        color: var(--res-brand-2);
+        background: #fff;
+    }
+    .res-ci-next {
+        flex: 1.3;
+        border: 0;
+        color: #fff;
+        background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2));
+        box-shadow: 0 15px 30px -18px color-mix(in srgb, var(--res-brand) 70%, transparent);
+    }
+    .res-ci-back:hover,
+    .res-ci-next:hover { transform: translateY(-1px); }
 }
 
 /* Nueva reservacion: selector de cliente + hora, consistente con habitaciones. */
@@ -2566,23 +2661,30 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     top: 20px !important;
     right: 18px !important;
     z-index: 40 !important;
-    width: 34px !important;
-    height: 34px !important;
-    border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 24%, #E8DFD1) !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid color-mix(in srgb, var(--brand-secondary, #0F172A) 10%, #E8DFD1) !important;
     border-radius: 999px !important;
-    background: rgba(255, 255, 255, .92) !important;
-    color: #5B6674 !important;
+    background: rgba(255, 255, 255, .64) !important;
+    color: color-mix(in srgb, var(--brand-secondary, #0F172A) 48%, #8A93A4) !important;
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
     box-shadow: none !important;
-    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease !important;
+    opacity: .72 !important;
+    transition: opacity .16s ease, transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease !important;
 }
 
 .swal2-container.res-swal-reservation-container .swal2-close:hover,
 .swal2-container.res-swal-reservation-container .swal2-close:focus-visible {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--brand-accent, #BD9441) 42%, #E8DFD1) !important;
-    background: #FFFFFF !important;
-    color: var(--brand-secondary, #0F172A) !important;
-    outline: 3px solid color-mix(in srgb, var(--brand-accent, #BD9441) 12%, transparent) !important;
+    opacity: 1 !important;
+    border-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 18%, #E8DFD1) !important;
+    background: rgba(255, 255, 255, .94) !important;
+    color: color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #111827) !important;
+    outline: 3px solid color-mix(in srgb, var(--brand-accent, #BD9441) 10%, transparent) !important;
 }
 
 .res-reserve-shell {
@@ -2853,6 +2955,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 }
 
 .res-reserve-choice__copy strong {
+    min-width: 0;
     color: var(--res-reserve-ink);
     font-family: Georgia, 'Times New Roman', serif;
     font-size: 1.08rem;
@@ -2861,6 +2964,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 }
 
 .res-reserve-choice__copy em {
+    flex: 0 0 auto;
     min-height: 20px;
     display: inline-flex;
     align-items: center;
@@ -2871,6 +2975,10 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     font-size: .62rem;
     font-style: normal;
     font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
 }
 
 .res-reserve-choice__copy small {
@@ -3146,7 +3254,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 }
 
 .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal .swal2-close {
-    display: none !important;
+    display: inline-flex !important;
 }
 
 @media (min-width: 761px) {
@@ -5008,7 +5116,8 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                 <span class="res-checkin-icon"><i class="fas fa-sign-in-alt"></i></span>
                 <div>
                     <h3 id="checkInTitle">Confirmar check-in</h3>
-                    <p>Revisa llegada, cobro y factura antes de confirmar.</p>
+                    <p class="res-checkin-sub-desktop">Revisa llegada, cobro y factura antes de confirmar.</p>
+                    <span id="ciStepPill" class="ci-step-pill" hidden>Paso 1 de 2</span>
                 </div>
             </div>
             <button type="button" onclick="cerrarModalCheckIn()" class="res-checkin-close" aria-label="Cerrar check-in">
@@ -5020,7 +5129,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
             <?= csrf_field() ?>
             <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
             <div class="res-checkin-body">
-                <div class="res-checkin-summary">
+                <div class="res-checkin-summary" data-ci-step="1">
                     <div class="res-ci-total">
                         <span class="res-ci-kicker">Total a cobrar</span>
                         <div id="totalACobrar" class="res-ci-amount">$0.00</div>
@@ -5031,7 +5140,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     </div>
                 </div>
 
-                <section class="res-ci-section">
+                <section class="res-ci-section" data-ci-step="1">
                     <div class="res-ci-section-head">
                         <h4><i class="fas fa-wallet"></i>Metodos de pago</h4>
                         <span>Uno o varios</span>
@@ -5039,12 +5148,13 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <p class="res-ci-prompt">Elige como esta pagando el huesped. Si solo pagara una parte hoy, activa la opcion de dejar el resto pendiente.</p>
 
                     <div id="resCiBreakdown" class="res-ci-breakdown" aria-live="polite" hidden>
-                        <div class="res-ci-breakdown-head">
+                        <div class="res-ci-breakdown-head" onclick="ciToggleBreakdown()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ciToggleBreakdown();}" role="button" tabindex="0" aria-expanded="true">
                             <span class="res-ci-breakdown-icon"><i class="fas fa-circle-info"></i></span>
                             <div>
                                 <p class="res-ci-breakdown-title">Por que se cobra este monto</p>
                                 <p id="resCiBreakdownSub" class="res-ci-breakdown-sub">Resumen informativo del precio, anticipos y saldo pendiente.</p>
                             </div>
+                            <i class="fas fa-chevron-down res-ci-breakdown-chevron" aria-hidden="true"></i>
                         </div>
                         <div class="res-ci-breakdown-lines">
                             <div class="res-ci-breakdown-line" id="resCiSubtotalRow">
@@ -5192,7 +5302,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     </div>
                 </section>
 
-                <section class="res-ci-section">
+                <section class="res-ci-section" data-ci-step="2">
                     <div class="res-ci-section-head">
                         <h4><i class="fas fa-file-invoice"></i>Factura</h4>
                         <span>Requerido</span>
@@ -5227,7 +5337,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     </div>
                 </section>
 
-                <section class="res-ci-summary">
+                <section class="res-ci-summary" data-ci-step="2">
                     <h5>Resumen de pago</h5>
                     <div class="res-ci-row">
                         <span>Total a cobrar</span>
@@ -5256,6 +5366,8 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 
             <div class="res-checkin-actions">
                 <button type="button" onclick="cerrarModalCheckIn()" class="res-ci-cancel">Cancelar</button>
+                <button type="button" onclick="ciGoToStep(1)" class="res-ci-back" style="display:none;"><i class="fas fa-arrow-left"></i>Atras</button>
+                <button type="button" onclick="ciStepNext()" class="res-ci-next" style="display:none;">Continuar<i class="fas fa-chevron-right"></i></button>
                 <button type="submit" id="btnConfirmarCheckIn" class="res-ci-confirm">
                     <i class="fas fa-check"></i>
                     Confirmar check-in
@@ -5640,7 +5752,7 @@ function resMostrarSelectorTipoCliente(datosReserva) {
         `,
         showConfirmButton: false,
         showCancelButton: false,
-        showCloseButton: false,
+        showCloseButton: true,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
@@ -5695,7 +5807,7 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
             `,
             showConfirmButton: false,
             showCancelButton: false,
-            showCloseButton: false,
+            showCloseButton: true,
             allowOutsideClick: true,
             allowEscapeKey: true,
             returnFocus: false,
@@ -6052,6 +6164,9 @@ function abrirModalCheckIn(id, total) {
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('overflow-hidden');
+
+    // En movil el cobro se divide en pasos (Cobro -> Factura); en escritorio se ve todo.
+    ciResetSteps();
 
     // Saldo-aware: cobrar el SALDO (total menos anticipos ya pagados), no el total bruto.
     fetch(baseUrl + '/api/reservaciones/' + id + '/resumen-pagos', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -6567,14 +6682,92 @@ function resetearFormularioPago() {
     actualizarResultadoFacturaCheckIn();
 }
 
-document.getElementById('formCheckInModal')?.addEventListener('submit', function(e) {
-    e.preventDefault();
+// ====== Check-in por pasos: solo se activa en la vista movil (<=640px) ======
+let ciStepMode = false;
+let ciCurrentStep = 1;
+const CI_TOTAL_STEPS = 2;
 
-    if (!validarFacturaCheckIn()) {
-        document.getElementById('facturaContainer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function ciIsMobileCheckIn() {
+    return window.matchMedia('(max-width: 640px)').matches;
+}
+
+function ciApplyStepUI() {
+    const card = document.querySelector('#modalCheckIn .res-checkin-card');
+    if (!card) return;
+    const pill = document.getElementById('ciStepPill');
+    const btnCancel = card.querySelector('.res-ci-cancel');
+    const btnConfirm = card.querySelector('#btnConfirmarCheckIn');
+    const btnBack = card.querySelector('.res-ci-back');
+    const btnNext = card.querySelector('.res-ci-next');
+    const steps = card.querySelectorAll('[data-ci-step]');
+
+    if (!ciStepMode) {
+        card.classList.remove('ci-stepped');
+        steps.forEach(s => s.classList.remove('ci-step-hidden'));
+        if (pill) pill.hidden = true;
+        if (btnCancel) btnCancel.style.display = '';
+        if (btnConfirm) btnConfirm.style.display = '';
+        if (btnBack) btnBack.style.display = 'none';
+        if (btnNext) btnNext.style.display = 'none';
         return;
     }
 
+    card.classList.add('ci-stepped');
+    steps.forEach(s => {
+        s.classList.toggle('ci-step-hidden', String(s.dataset.ciStep) !== String(ciCurrentStep));
+    });
+    if (pill) {
+        pill.hidden = false;
+        pill.textContent = 'Paso ' + ciCurrentStep + ' de ' + CI_TOTAL_STEPS;
+    }
+    const enStep1 = ciCurrentStep <= 1;
+    if (btnCancel) btnCancel.style.display = enStep1 ? '' : 'none';
+    if (btnNext) btnNext.style.display = enStep1 ? '' : 'none';
+    if (btnBack) btnBack.style.display = enStep1 ? 'none' : '';
+    if (btnConfirm) btnConfirm.style.display = enStep1 ? 'none' : '';
+}
+
+function ciGoToStep(step) {
+    ciCurrentStep = Math.min(CI_TOTAL_STEPS, Math.max(1, step));
+    ciApplyStepUI();
+    const body = document.querySelector('#modalCheckIn .res-checkin-body');
+    if (body) body.scrollTop = 0;
+}
+
+function ciFocusStep(step) {
+    if (ciStepMode && ciCurrentStep !== step) ciGoToStep(step);
+}
+
+function ciStepNext() {
+    if (!ciValidarYPrepararPago()) return;
+    ciGoToStep(2);
+}
+
+function ciResetSteps() {
+    ciStepMode = ciIsMobileCheckIn();
+    ciCurrentStep = 1;
+    // En movil el desglose arranca colapsado (solo el encabezado); en escritorio siempre visible.
+    const box = document.getElementById('resCiBreakdown');
+    if (box) {
+        box.classList.toggle('ci-collapsed', ciStepMode);
+        const head = box.querySelector('.res-ci-breakdown-head');
+        if (head) head.setAttribute('aria-expanded', ciStepMode ? 'false' : 'true');
+    }
+    ciApplyStepUI();
+}
+
+function ciToggleBreakdown() {
+    if (!ciStepMode) return;
+    const box = document.getElementById('resCiBreakdown');
+    if (!box) return;
+    const collapsed = box.classList.toggle('ci-collapsed');
+    const head = box.querySelector('.res-ci-breakdown-head');
+    if (head) head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+// Valida el cobro (metodos, tarjeta, saldo, efectivo) y prepara el saldo pendiente.
+// Devuelve true si el pago es valido; muestra el aviso correspondiente si no.
+function ciValidarYPrepararPago() {
     const metodosSeleccionados = ['efectivo', 'tarjeta', 'transferencia'].filter(metodo => {
         const checkbox = document.getElementById('check_' + metodo);
         return checkbox && checkbox.checked;
@@ -6582,7 +6775,7 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
 
     if (metodosSeleccionados.length === 0 && totalReservacion > 0.01) {
         mostrarMensaje('Debe seleccionar al menos un metodo de pago', 'error');
-        return;
+        return false;
     }
 
     const checkTarjeta = document.getElementById('check_tarjeta');
@@ -6591,7 +6784,7 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
         if (!tipoTarjetaSeleccionado) {
             mostrarMensaje('Debe seleccionar el tipo de tarjeta: credito o debito', 'error');
             document.getElementById('panel_tarjeta')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
+            return false;
         }
     }
 
@@ -6604,12 +6797,12 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
 
     if (saldoRestante > 0.01 && (!permitirPendiente || totalPagado <= 0.01)) {
         mostrarMensaje('Para hacer check-in con pago parcial, activa Dejar saldo pendiente y registra el monto recibido.', 'error');
-        return;
+        return false;
     }
 
     if (saldoRestante < -0.01) {
         mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
-        return;
+        return false;
     }
 
     const checkEfectivo = document.getElementById('check_efectivo');
@@ -6619,8 +6812,25 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
 
         if (montoPagar > 0 && recibido < montoPagar) {
             mostrarMensaje('El monto recibido en efectivo es insuficiente', 'error');
-            return;
+            return false;
         }
+    }
+
+    return true;
+}
+
+document.getElementById('formCheckInModal')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (!validarFacturaCheckIn()) {
+        ciFocusStep(2);
+        document.getElementById('facturaContainer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    if (!ciValidarYPrepararPago()) {
+        ciFocusStep(1);
+        return;
     }
 
     resMoneySanitize(this);

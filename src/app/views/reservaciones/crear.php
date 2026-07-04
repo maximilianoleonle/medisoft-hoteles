@@ -2675,6 +2675,237 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     }
 }
 
+/* ═══════════ Pulido móvil: selección de habitaciones + barra ═══════════ */
+@media (max-width: 768px) {
+    /* ── Barra flotante minimalista boutique (vidrio ivory) ── */
+    .resumen-flotante {
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
+        border-radius: 22px !important;
+        border: 1px solid rgba(230, 219, 200, .9) !important;
+        background: rgba(255, 253, 249, .86) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(1.2);
+        backdrop-filter: blur(16px) saturate(1.2);
+        box-shadow: 0 16px 40px -22px rgba(39, 31, 18, .34) !important;
+    }
+    .resumen-flotante::before {
+        content: "";
+        display: block;
+        width: 34px;
+        height: 4px;
+        margin: 9px auto 0;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--rc-accent, #BD9441) 24%, #E6DEC9);
+        opacity: .7;
+    }
+    .rf-row {
+        gap: 12px;
+        padding: 5px 15px 13px;
+    }
+    .rf-info {
+        border: 0;
+        background: transparent;
+        padding: 3px 2px;
+        gap: 12px;
+        min-height: 46px;
+    }
+    /* Total en serif boutique (Cormorant), como los números de ver/index */
+    .rf-info-text strong {
+        font-family: var(--rc-serif);
+        font-size: 1.72rem;
+        font-weight: 600;
+        line-height: 1;
+        color: var(--rc-brand, #1B2746);
+        letter-spacing: -.01em;
+    }
+    .rf-info-text small {
+        margin-top: 4px;
+        font-size: .66rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--rc-muted);
+    }
+    .rf-caret {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: transparent;
+        border: 1px solid rgba(230, 219, 200, .95);
+        color: var(--rc-muted);
+        font-size: .72rem;
+    }
+    .rf-save {
+        min-width: 128px;
+        min-height: 48px !important;
+        border-radius: 14px;
+        font-size: .82rem;
+        font-weight: 800;
+        letter-spacing: .01em;
+        background: var(--rc-brand) !important;
+        border: 0 !important;
+        box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--rc-brand) 80%, transparent) !important;
+    }
+    /* Deshabilitado: ivory suave "en espera" (no gris muerto) */
+    .vista-reservacion .btn-save.rf-save:disabled {
+        background: color-mix(in srgb, var(--rc-brand) 8%, #F1EEE7) !important;
+        color: color-mix(in srgb, var(--rc-brand) 40%, #A7A090) !important;
+        border-color: transparent !important;
+        filter: none;
+        opacity: 1;
+        box-shadow: none !important;
+    }
+    /* Detalle expandible: mismo tono cálido, borde sutil */
+    .resumen-flotante.expanded .rf-detail {
+        border-bottom: 1px solid rgba(230, 219, 200, .7);
+    }
+
+    /* ── Selección de habitaciones: estado claro ── */
+    .vista-reservacion .habitacion-card.disponible .rc-room-card {
+        transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .12s ease;
+    }
+    .vista-reservacion .habitacion-card.disponible:active .rc-room-card {
+        transform: scale(.992);
+    }
+    .vista-reservacion .habitacion-card.selected .rc-room-card {
+        border-color: color-mix(in srgb, var(--rc-success) 58%, var(--rc-line)) !important;
+        background: color-mix(in srgb, var(--rc-success) 6%, #FFFFFF) !important;
+        box-shadow: 0 2px 10px rgba(30, 158, 99, .12), 0 16px 30px -22px rgba(30, 158, 99, .4) !important;
+    }
+    .vista-reservacion .habitacion-card.selected.es-cortesia .rc-room-card {
+        border-color: color-mix(in srgb, var(--rc-warning) 58%, var(--rc-line)) !important;
+        background: color-mix(in srgb, var(--rc-warning) 8%, #FFFFFF) !important;
+    }
+
+    /* Círculo de check: más grande y con relleno visible al seleccionar */
+    .vista-reservacion .rc-room-check {
+        width: 24px !important;
+        height: 24px !important;
+        border-width: 2px !important;
+        border-color: color-mix(in srgb, var(--rc-muted) 42%, #CBD5E1) !important;
+        background: #FFFFFF !important;
+    }
+    .vista-reservacion .rc-room-check i {
+        font-size: .72rem !important;
+    }
+    .vista-reservacion .habitacion-card.selected .rc-room-check {
+        background: var(--rc-success) !important;
+        border-color: var(--rc-success) !important;
+    }
+    .vista-reservacion .habitacion-card.selected.es-cortesia .rc-room-check {
+        background: var(--rc-warning) !important;
+        border-color: var(--rc-warning) !important;
+    }
+    .vista-reservacion .habitacion-card.selected .rc-room-check i {
+        opacity: 1 !important;
+    }
+
+    /* Texto de acción del pie con look de pastilla */
+    .vista-reservacion .rc-room-footer {
+        padding-top: 11px;
+    }
+    .vista-reservacion .rc-room-action-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 11px;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 850;
+        background: color-mix(in srgb, var(--rc-muted) 12%, #FFFFFF);
+        color: var(--rc-muted);
+    }
+    .vista-reservacion .habitacion-card.selected .rc-room-action-text {
+        background: color-mix(in srgb, var(--rc-success) 14%, #FFFFFF);
+        color: color-mix(in srgb, var(--rc-success) 82%, #123322) !important;
+    }
+    .vista-reservacion .habitacion-card.selected.es-cortesia .rc-room-action-text {
+        background: color-mix(in srgb, var(--rc-warning) 16%, #FFFFFF);
+        color: color-mix(in srgb, var(--rc-warning) 86%, #4A2A05) !important;
+    }
+
+    /* Número y precio con el color de marca del hotel */
+    .vista-reservacion .rc-room-number strong { color: var(--rc-brand); }
+    .vista-reservacion .rc-room-price strong { font-size: 1.06rem; color: var(--rc-brand); }
+
+    /* ── Habitaciones NO disponibles: se leen como "bloqueadas" ── */
+    .vista-reservacion .habitacion-card.ocupada .rc-room-card {
+        padding: 12px 13px !important;
+        border-color: color-mix(in srgb, var(--rc-danger) 24%, var(--rc-line)) !important;
+        background: color-mix(in srgb, var(--rc-danger) 4%, #FFFFFF) !important;
+    }
+    .vista-reservacion .habitacion-card.en-mantenimiento .rc-room-card {
+        border-color: color-mix(in srgb, var(--rc-warning) 28%, var(--rc-line)) !important;
+        background: color-mix(in srgb, var(--rc-warning) 5%, #FFFFFF) !important;
+    }
+    /* El número no disponible se atenúa para que resalten las disponibles */
+    .vista-reservacion .habitacion-card.ocupada .rc-room-number strong {
+        color: color-mix(in srgb, var(--rc-muted) 60%, #475569) !important;
+    }
+    .vista-reservacion .habitacion-card.ocupada .rc-room-price.is-muted strong {
+        font-size: .98rem;
+    }
+    /* Etiqueta "No disponible" clara y con candado */
+    .vista-reservacion .habitacion-card.ocupada .rc-room-price.is-muted span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 800;
+        color: color-mix(in srgb, var(--rc-danger) 78%, #5A1713);
+    }
+    .vista-reservacion .habitacion-card.en-mantenimiento .rc-room-price.is-muted span {
+        color: color-mix(in srgb, var(--rc-warning) 82%, #4A2A05);
+    }
+    .vista-reservacion .habitacion-card.ocupada .rc-room-price.is-muted span::before {
+        content: "\f023"; /* fa-lock */
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: .64rem;
+        opacity: .85;
+    }
+
+    /* ── Caja de detalle de ocupación: compacta y legible ── */
+    .vista-reservacion .rc-room-detail.info-ocupacion {
+        margin-top: 10px;
+        padding: 9px 11px !important;
+        border-radius: 11px !important;
+        line-height: 1.34;
+    }
+    .vista-reservacion .info-ocupacion .huesped-nombre {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .8rem !important;
+        font-weight: 800 !important;
+        color: var(--rc-brand) !important;
+        margin-bottom: 3px !important;
+    }
+    .vista-reservacion .info-ocupacion .fechas {
+        font-size: .72rem !important;
+        margin-top: 1px;
+    }
+
+    /* ── Contador "Seleccionadas": más protagonista ── */
+    .vista-reservacion .room-stats-bar { border-radius: 14px; }
+    .vista-reservacion .contador-habitaciones {
+        min-width: 26px;
+        height: 26px;
+        font-size: .82rem;
+        font-weight: 900;
+    }
+    /* Chips de conteo por tipo (disponibles/ocupadas) legibles */
+    .vista-reservacion .room-type-counts span {
+        min-height: 24px;
+        padding: 4px 9px;
+        font-size: .66rem;
+        font-weight: 850;
+    }
+}
+
 @media (max-width: 380px) {
     .vista-reservacion > div:first-of-type > .px-5,
     .vista-reservacion > .px-5:has(#formReservacion),
@@ -3180,6 +3411,10 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 $(document).ready(function() {
     // ── Global state ──────────────────────────────────────────
     let habitacionesSeleccionadas = [];
+    // Selección persistente por ID: sobrevive a los filtros de búsqueda
+    // (antes la selección vivía solo en los checkbox del DOM y se perdía al
+    //  filtrar por otra habitación que sacaba la anterior de la lista).
+    const selectedRoomIds = new Set();
     let habitacionesCortesiaSeleccionadas = [];
     let todasLasHabitaciones = [];
     let habitacionesDisponibles = [];
@@ -3793,14 +4028,22 @@ $(document).ready(function() {
                 String(h.caracteristicas || '').toLowerCase().includes(busquedaActiva)
             );
         }
-        renderizarHabitaciones(filtradas, prevSel);
+        renderizarHabitaciones(filtradas, prevSel, { filter: true });
     }
 
-    function renderizarHabitaciones(habs, selPrev = null) {
+    function renderizarHabitaciones(habs, selPrev = null, opts = {}) {
         const seleccionadas = selPrev || [];
         if (!selPrev) {
             $('.habitacion-check:checked').each(function() { seleccionadas.push($(this).val()); });
         }
+
+        // Estado de selección persistente:
+        //  - filtro de búsqueda  → conserva lo ya elegido (solo suma lo visible marcado)
+        //  - carga fresca (fechas/inicial) → reinicia según la selección inicial
+        if (!opts.filter) {
+            selectedRoomIds.clear();
+        }
+        seleccionadas.forEach(id => selectedRoomIds.add(id.toString()));
 
         if (!habs.length) {
             $('#contenedorHabitaciones').html(`
@@ -3888,7 +4131,7 @@ $(document).ready(function() {
                 grupoActual = tipoLabel;
             }
             const piso = {'-4':'4 niveles abajo','-2':'2 niveles abajo','-1':'Un nivel abajo','1':'Nivel de piso','2':'2º Nivel','3':'3º Nivel'}[hab.piso] || `Piso ${hab.piso}`;
-            const checked   = seleccionadas.includes(hab.id.toString());
+            const checked   = selectedRoomIds.has(hab.id.toString());
             const jacuzzi   = contieneJacuzzi(hab);
             const enMant    = hab.en_mantenimiento || hab.estado === 'mantenimiento';
             const ocupada   = (hab.ocupada || false) && !enMant;
@@ -4036,6 +4279,19 @@ $(document).ready(function() {
         if (grupoActual !== null) {
             html += '</div></div></section>';
         }
+
+        // Habitaciones seleccionadas que quedaron fuera del filtro actual:
+        // se agregan como inputs ocultos para que sigan contando y se envíen
+        // con el formulario aunque no estén visibles.
+        const idsVisibles = new Set(habs.map(h => h.id.toString()));
+        let hiddenSel = '';
+        selectedRoomIds.forEach(id => {
+            if (!idsVisibles.has(id.toString())) {
+                hiddenSel += `<input type="hidden" name="habitaciones[]" value="${id}" class="hab-sel-persist">`;
+            }
+        });
+        html += `<div id="selectedRoomsHidden" style="display:none">${hiddenSel}</div>`;
+
         $('#contenedorHabitaciones').html(html);
 
         // Checkbox events
@@ -4045,6 +4301,7 @@ $(document).ready(function() {
             const contador  = $('#contadorSeleccionadas');
 
             if ($(this).is(':checked')) {
+                selectedRoomIds.add($(this).val().toString());
                 card.addClass('selected pulse-selection');
                 setTimeout(() => card.removeClass('pulse-selection'), 1000);
                 card.find('.w-4.h-4').addClass('bg-green-600 border-green-600');
@@ -4054,6 +4311,7 @@ $(document).ready(function() {
                 setTimeout(() => contador.removeClass('animate'), 300);
                 if (navigator.vibrate) navigator.vibrate(50);
             } else {
+                selectedRoomIds.delete($(this).val().toString());
                 card.removeClass('selected pulse-selection es-cortesia');
                 card.find('.badge-cortesia').remove();
                 card.find('.w-4.h-4').removeClass('bg-green-600 border-green-600');
@@ -4072,16 +4330,20 @@ $(document).ready(function() {
 
     // ── Selection state ───────────────────────────────────────
     function actualizarSeleccion() {
+        // Se reconstruye desde el set persistente (no solo desde el DOM), para
+        // incluir habitaciones seleccionadas que estén ocultas por el filtro.
         habitacionesSeleccionadas = [];
-        $('.habitacion-check:checked').each(function() {
+        selectedRoomIds.forEach(id => {
+            const hab = todasLasHabitaciones.find(h => h.id.toString() === id.toString());
+            if (!hab) { selectedRoomIds.delete(id); return; }   // ya no disponible (p.ej. cambió de fechas)
             habitacionesSeleccionadas.push({
-                id:             $(this).val(),
-                precio:         parseFloat($(this).data('precio')),
-                numero:         $(this).data('numero'),
-                tipo:           $(this).data('tipo'),
-                tipo_label:     $(this).data('tipo-label') || $(this).data('tipo'),
-                piso:           $(this).data('piso'),
-                caracteristicas:$(this).data('caracteristicas')
+                id:             hab.id.toString(),
+                precio:         parseFloat(hab.precio_base),
+                numero:         hab.numero,
+                tipo:           hab.tipo,
+                tipo_label:     tipoRealHabitacion(hab),
+                piso:           hab.piso,
+                caracteristicas:hab.caracteristicas || ''
             });
         });
 
@@ -4397,7 +4659,7 @@ $(document).ready(function() {
         const fs   = $('#fecha_salida').val();
         const hl   = $('#hora_llegada').val();
         const horaOk = horaLlegadaModoActual() === 'despues' || !!hl;
-        const habs = $('.habitacion-check:checked').length;
+        const habs = habitacionesSeleccionadas.length;
         const ok   = hid && fe && fs && horaOk && habs > 0;
         $('#btnGuardar, #btnGuardarMovil').prop('disabled', !ok);
         $('#btnCotizacion, #btnCotizacionMovil').prop('disabled', !ok);
@@ -4516,7 +4778,7 @@ $(document).ready(function() {
     $('#formReservacion').on('submit', function(e) {
         e.preventDefault();
         if (this.dataset.enviandoReservacion === '1') return;
-        const totalHabs        = $('.habitacion-check:checked').length;
+        const totalHabs        = habitacionesSeleccionadas.length;
         const cortesiasAplicadas = habitacionesCortesiaSeleccionadas.length;
 
         // Inject hidden inputs para cortesias
@@ -4599,9 +4861,9 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     const fs = $('#fecha_salida').val();
     const hl = horaLlegadaModoActual() === 'despues' ? '' : $('#hora_llegada').val();
     const notas = $('textarea[name="notas"]').val() || '';
-    const habsChecked = $('.habitacion-check:checked');
+    const habsSel = habitacionesSeleccionadas.map(h => h.id);
 
-    if (!huespedId || !fe || !fs || (horaLlegadaModoActual() !== 'despues' && !hl) || habsChecked.length === 0) {
+    if (!huespedId || !fe || !fs || (horaLlegadaModoActual() !== 'despues' && !hl) || habsSel.length === 0) {
         Swal.fire({
             icon: 'warning',
             title: 'Datos incompletos',
@@ -4647,8 +4909,8 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
         addHidden('descuento_aplicado', descuentoAplicado);
     }
 
-    habsChecked.each(function() {
-        addHidden('habitaciones[]', $(this).val());
+    habsSel.forEach(function(id) {
+        addHidden('habitaciones[]', id);
     });
 
     if (typeof habitacionesCortesiaSeleccionadas !== 'undefined') {

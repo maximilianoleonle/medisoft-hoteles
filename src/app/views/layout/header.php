@@ -130,6 +130,48 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
         })();
     </script>
     <script>
+        /* Hápticos (vibración). Preferencia por dispositivo; ON por defecto donde el hardware lo soporta.
+           Android/Chrome vibra; iOS/Safari no expone la Vibration API y degrada en silencio (sin error). */
+        (function() {
+            var KEY = 'medisoft:haptics';
+            var supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+            var reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+            // Patrones (ms). Sutiles a propósito: un aviso, no un timbre.
+            var PATTERNS = {
+                tap:     10,
+                success: 18,
+                warning: [22, 45, 22],
+                error:   [28, 55, 28]
+            };
+
+            function enabled() {
+                var v = null;
+                try { v = window.localStorage.getItem(KEY); } catch (error) {}
+                return v !== 'off'; // ausente => activado
+            }
+
+            function fire(kind) {
+                if (!supported || !enabled()) { return false; }
+                if (reduceMotion && reduceMotion.matches) { return false; }
+                var pattern = PATTERNS[kind];
+                if (pattern == null) { return false; } // tipo desconocido (p.ej. 'info') => sin vibración
+                try { return navigator.vibrate(pattern); } catch (error) { return false; }
+            }
+
+            window.MedisoftHaptics = {
+                supported: supported,
+                fire: fire,
+                get: function() { return enabled() ? 'on' : 'off'; },
+                set: function(mode) {
+                    var on = mode !== 'off';
+                    try { window.localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (error) {}
+                    document.dispatchEvent(new CustomEvent('medisoft:haptics-change', { detail: { enabled: on } }));
+                }
+            };
+        })();
+    </script>
+    <script>
         (function() {
             try {
                 var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
@@ -824,6 +866,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
   <!-- ── Modal de confirmación global + estados de página (msConfirm / msPageState) ── -->
   <?php include APP_PATH . '/views/partials/confirm.php'; ?>
 
+  <!-- ── Micro-interacciones globales: count-up, entrada escalonada, press-state (MedisoftMotion) ── -->
+  <?php include APP_PATH . '/views/partials/motion.php'; ?>
+
   <!-- ── Barra inferior de atajos: se renderiza temprano para estar visible
        desde el primer paint, igual que el header móvil ── -->
   <?php include APP_PATH . '/views/layout/footer-nav.php'; ?>
@@ -909,10 +954,20 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
  * ──────────────────────────────────────────────────────────────── */
 $_skUri  = $_SERVER['REQUEST_URI'] ?? '';
 $_skType = 'b'; // default: lista
-if (preg_match('#/ver/\d+#', $_skUri) || preg_match('#/(ver|detalle|editar)$#i', $_skUri)) {
-    $_skType = 'c';
-} elseif (preg_match('#/(dashboard|inicio|calendario|reportes)#i', $_skUri)) {
-    $_skType = 'a';
+if (preg_match('#/(dashboard|inicio|calendario|reportes)#i', $_skUri)) {
+    $_skType = 'a';                                              // panel / vistas con columnas
+} elseif (preg_match('#/(crear|editar|nuevo|agregar|form)(/\d+)?/?(\?.*)?$#i', $_skUri)) {
+    $_skType = 'd';                                              // formulario (alta / edición)
+} elseif (preg_match('#/(ver|detalle)(/\d+)?/?(\?.*)?$#i', $_skUri)) {
+    $_skType = 'c';                                              // detalle de un registro
+}
+// Skeleton propio por vista (solo la ruta base). Si existe el archivo, gana al genérico.
+$_skView = '';
+if (preg_match('#/(dashboard|inicio|habitaciones|reservaciones|caja|huespedes|inventario|reportes|cuentas-por-cobrar|cuentas-por-pagar|compras|proveedores|documentos)/?($|\?)#i', $_skUri, $_skM)) {
+    $_skView = strtolower($_skM[1]) === 'inicio' ? 'dashboard' : strtolower($_skM[1]);
+    if (!is_file(APP_PATH . "/views/skeletons/{$_skView}.php")) {
+        $_skView = '';                                          // sin archivo → cae al genérico A/B/C/D
+    }
 }
 // Panel SaaS admin → no skeleton
 $_skShow = !($layoutEsPanelSaas ?? false);
@@ -924,7 +979,7 @@ if ($_skShow):
     position:fixed;
     inset:0;
     z-index:500;
-    background:#fff;
+    background:#FCFBF7; /* blanco cálido: mezcla con el lienzo boutique, no un flash frío */
     overflow:hidden;
     pointer-events:none;
     transition:opacity .3s ease;
@@ -990,10 +1045,39 @@ if ($_skShow):
 .psk-hero{ height:130px; }
 .psk-detail-cols{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px; flex:1; min-height:0; }
 @media(max-width:800px){ .psk-detail-cols{ grid-template-columns:1fr; } }
+/* ── Formulario (tipo D) ── */
+.psk-form{ display:flex; flex-direction:column; gap:16px; }
+.psk-fieldset{ display:flex; flex-direction:column; gap:12px; padding:16px; border:1px solid #F1EEE8; border-radius:16px; }
+html[data-theme="dark"] .psk-fieldset{ border-color:#38352C; }
+.psk-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:640px){ .psk-grid2{ grid-template-columns:1fr; } }
+.psk-field{ display:flex; flex-direction:column; gap:8px; }
+/* ── Rejillas responsivas compartidas por los skeletons de vista ── */
+.psk-g6{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.psk-g5{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.psk-g3{ display:grid; grid-template-columns:1fr; gap:12px; }
+.psk-split{ display:grid; grid-template-columns:1fr; gap:14px; flex:1; min-height:0; }
+.psk-hdr-col{ display:flex; flex-direction:column; gap:9px; }
+@media(min-width:640px){
+    .psk-g6{ grid-template-columns:repeat(3,1fr); }
+    .psk-g3{ grid-template-columns:repeat(3,1fr); }
+}
+@media(min-width:1025px){
+    .psk-g6{ grid-template-columns:repeat(6,1fr); }
+    .psk-g5{ grid-template-columns:repeat(5,1fr); }
+    .psk-split{ grid-template-columns:1.6fr 1fr; }
+}
+/* ── Respeta reduced-motion: sin shimmer, tono estable ── */
+@media (prefers-reduced-motion: reduce){
+    .psk-bone{ animation:none; background:#EEECE6; }
+    html[data-theme="dark"] .psk-bone{ animation:none; background:#26241E; }
+}
 </style>
 
 <div id="psk" role="status" aria-label="Cargando…">
-<?php if ($_skType === 'a'): /* ── TIPO A: Dashboard / Calendario ── */ ?>
+<?php if ($_skView): /* ── Skeleton propio de la vista ── */ ?>
+<?php include APP_PATH . "/views/skeletons/{$_skView}.php"; ?>
+<?php elseif ($_skType === 'a'): /* ── TIPO A: Dashboard / Calendario ── */ ?>
 <div class="psk-wrap">
     <div class="psk-hd">
         <div class="psk-bone psk-circle psk-hd-circle"></div>
@@ -1074,6 +1158,53 @@ if ($_skShow):
     <div class="psk-bone psk-r12" style="height:38px;width:220px;margin:0 auto"></div>
 </div>
 
+<?php elseif ($_skType === 'd'): /* ── TIPO D: Formulario (alta / edición) ── */ ?>
+<div class="psk-wrap">
+    <div class="psk-hd">
+        <div class="psk-bone psk-r12" style="height:36px;width:36px;flex-shrink:0"></div>
+        <div class="psk-hd-lines">
+            <div class="psk-bone" style="height:11px;width:24%"></div>
+            <div class="psk-bone" style="height:22px;width:48%"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+            <div class="psk-bone psk-r12" style="height:38px;width:96px"></div>
+            <div class="psk-bone psk-r12" style="height:38px;width:130px"></div>
+        </div>
+    </div>
+    <div class="psk-form">
+        <div class="psk-fieldset">
+            <div class="psk-bone" style="height:13px;width:34%"></div>
+            <div class="psk-grid2">
+                <?php for ($i = 0; $i < 4; $i++): ?>
+                <div class="psk-field">
+                    <div class="psk-bone psk-r4" style="height:9px;width:<?= [42,54,38,60][$i] ?>%"></div>
+                    <div class="psk-bone psk-r12" style="height:44px"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
+            <div class="psk-field">
+                <div class="psk-bone psk-r4" style="height:9px;width:28%"></div>
+                <div class="psk-bone psk-r12" style="height:92px"></div>
+            </div>
+        </div>
+        <div class="psk-fieldset">
+            <div class="psk-bone" style="height:13px;width:40%"></div>
+            <div class="psk-grid2">
+                <?php for ($i = 0; $i < 2; $i++): ?>
+                <div class="psk-field">
+                    <div class="psk-bone psk-r4" style="height:9px;width:<?= [50,44][$i] ?>%"></div>
+                    <div class="psk-bone psk-r12" style="height:44px"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
+        </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;padding-bottom:22px">
+        <div class="psk-bone psk-r12" style="height:44px;width:120px"></div>
+        <div class="psk-bone psk-r12" style="height:44px;width:170px"></div>
+    </div>
+</div>
+
 <?php else: /* ── TIPO C: Detalle ── */ ?>
 <div class="psk-wrap">
     <div class="psk-hd">
@@ -1117,17 +1248,59 @@ if ($_skShow):
 (function(){
     var sk = document.getElementById('psk');
     if (!sk) return;
-    function dismiss(){
+    var showTimer = 0, safety = 0;
+
+    function hide(){
+        clearTimeout(safety);
         sk.classList.add('psk-out');
-        setTimeout(function(){ if(sk.parentNode) sk.parentNode.removeChild(sk); }, 320);
+        setTimeout(function(){ sk.style.display = 'none'; }, 340);
     }
+    function show(){
+        clearTimeout(safety);
+        sk.style.transition = 'none';       // aparece al instante (sin fundido) para cubrir ya
+        sk.style.display = '';
+        sk.classList.remove('psk-out');
+        void sk.offsetWidth;
+        sk.style.transition = '';
+        safety = setTimeout(hide, 8000);    // nunca dejarlo pegado si la navegación no ocurre
+    }
+
+    // Descarte inicial (tras el pintado de la página). No se remueve del DOM: se reutiliza.
     if (document.readyState === 'complete') {
-        setTimeout(dismiss, 60);
+        setTimeout(hide, 60);
     } else {
-        window.addEventListener('load', function(){ setTimeout(dismiss, 80); }, { once: true });
-        // Fallback por si load tarda demasiado
-        setTimeout(dismiss, 3500);
+        window.addEventListener('load', function(){ setTimeout(hide, 80); }, { once: true });
+        setTimeout(hide, 3500); // respaldo si 'load' tarda demasiado
     }
+
+    // ── Reaparece al navegar internamente: cubre el "think-time" del servidor,
+    //    el instante en que la página vieja se queda congelada tras el clic. ──
+    function ignore(a, e){
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return true;
+        if (a.target && a.target !== '_self') return true;
+        if (a.hasAttribute('download') || a.hasAttribute('data-no-skeleton')) return true;
+        var href = a.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#' || /^(mailto:|tel:|javascript:)/i.test(href)) return true;
+        var url; try { url = new URL(a.href, location.href); } catch (_) { return true; }
+        if (url.origin !== location.origin) return true;
+        // Descargas / exports / impresión: navegan a un archivo, no cambian de pantalla
+        if (/\.(pdf|xlsx?|csv|zip|docx?|png|jpe?g)(\?|$)/i.test(url.pathname)) return true;
+        if (/\/(export|descargar|download|print|pdf)(\/|\?|$)/i.test(url.pathname)) return true;
+        // Ancla dentro de la misma página → no es navegación
+        if (url.pathname === location.pathname && url.search === location.search && url.hash) return true;
+        return false;
+    }
+    // Burbuja (no captura): si otro handler cancela la navegación (links AJAX), no mostramos nada.
+    document.addEventListener('click', function(e){
+        var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || ignore(a, e)) return;
+        clearTimeout(showTimer);
+        showTimer = setTimeout(show, 120); // sin parpadeo en paginas instantaneas
+    });
+
+    // Al volver con "atras" (bfcache) no dejar el skeleton puesto.
+    window.addEventListener('pageshow', function(ev){ clearTimeout(showTimer); if (ev.persisted) hide(); });
+    window.addEventListener('pagehide', function(){ clearTimeout(showTimer); });
 })();
 </script>
 <?php endif; // $_skShow ?>

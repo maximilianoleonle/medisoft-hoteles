@@ -458,3 +458,11 @@ table {
 .hover\:bg-hotel-brown:hover { background-color: var(--hotel-brown); }
 .hover\:bg-hotel-brown-dark:hover { background-color: var(--hotel-brown-dark); }
 .hover\:text-hotel-brown:hover { color: var(--hotel-brown); }
+
+/* ===================================
+   OCULTAR BOTONES DE IMPRIMIR EN MÓVIL
+   Imprimir es una acción de escritorio/POS; se oculta en móvil (<=768px)
+   =================================== */
+@media (max-width: 768px) {
+    .ms-print-hide-mobile { display: none !important; }
+}

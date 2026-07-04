@@ -2273,7 +2273,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-room-top > .min-w-0 {
     grid-area: identity;
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: minmax(58px, auto) minmax(0, 1fr);
     grid-template-rows: auto auto;
     column-gap: 14px;
     align-items: center;
@@ -2281,19 +2281,29 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 .rdv3-room-number {
     grid-row: 1 / 3;
-    width: 64px;
-    height: 64px;
-    display: grid;
-    place-items: center;
-    border-radius: 16px;
+    box-sizing: border-box;
+    min-width: 58px;
+    max-width: 150px;
+    min-height: 58px;
+    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 15px;
     border: 1px solid #E6DBC8;
-    background: #FFFDF9;
+    background: linear-gradient(180deg, #FFFDF9, #FBF5EA);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
     color: var(--rdv3-primary);
     font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 1.42rem;
-    line-height: 1;
+    font-size: clamp(1rem, .55rem + 1vw, 1.5rem);
+    line-height: 1.02;
     font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    letter-spacing: .01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
 }
 .rdv3-room-type { color: var(--rdv3-primary); font-size: .96rem; font-weight: 950; margin-top: 0; overflow-wrap: anywhere; }
 .rdv3-room-sub { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
@@ -3117,8 +3127,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-room-top { display: contents; }
     .rdv3-room-top > .min-w-0 {
         grid-area: identity;
-        grid-template-columns: minmax(52px, auto) minmax(0, 1fr);
-        column-gap: 10px;
+        grid-template-columns: minmax(50px, auto) minmax(0, 1fr);
+        column-gap: 12px;
         align-items: center;
     }
     .rdv3-room-number {
@@ -3127,20 +3137,24 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         align-items: center;
         justify-content: center;
         width: auto;
-        min-width: 52px;
-        max-width: 76px;
-        height: 52px;
-        padding: 4px 6px;
-        border-radius: 14px;
+        min-width: 50px;
+        max-width: 118px;
+        min-height: 50px;
+        height: auto;
+        padding: 7px 12px;
+        border-radius: 13px;
+        border: 1px solid #E6DBC8;
+        background: linear-gradient(180deg, #FFFDF9, #FBF5EA);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
         color: var(--rdv3-primary);
         overflow: hidden;
         text-align: center;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-        font-size: clamp(.58rem, 2.25vw, .9rem);
-        line-height: 1.05;
-        letter-spacing: 0;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+        font-size: clamp(.8rem, 3.6vw, 1.12rem);
+        line-height: 1.02;
+        letter-spacing: .01em;
     }
     .rdv3-room-type {
         margin-top: 0;
@@ -4012,7 +4026,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                             <article class="rdv3-room <?= $roomIsCourtesy ? 'is-courtesy' : '' ?>">
                                                 <div class="rdv3-room-top">
                                                     <div class="min-w-0">
-                                                        <div class="rdv3-room-number"><?= $rdSafe($room['numero'] ?? 'S/N') ?></div>
+                                                        <div class="rdv3-room-number" title="<?= $rdSafe($room['numero'] ?? 'S/N') ?>"><?= $rdSafe($room['numero'] ?? 'S/N') ?></div>
                                                         <div class="rdv3-room-type"><?= $rdSafe($roomType) ?></div>
                                                         <div class="rdv3-room-sub">
                                                             <span class="rdv3-tag"><i class="fas fa-layer-group"></i><?= $rdSafe($roomLocation) ?></span>
@@ -4236,7 +4250,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <button type="button" class="rdv3-action" onclick="abrirModalCotizacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-blue"><i class="fas fa-clipboard-list"></i></span>Generar cotizacion</span><i class="fas fa-chevron-right"></i></button>
                                 <button type="button" class="rdv3-action" onclick="window.location.href='<?= url('reservaciones/editar-estancia/' . $reservacion['id']) ?>'"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar estancia</span><i class="fas fa-chevron-right"></i></button>
                                 <?php if (!empty($reservacion['metodo_pago'])): ?>
-                                    <button type="button" class="rdv3-action" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>
+                                    <button type="button" class="rdv3-action ms-print-hide-mobile" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
                                 <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
                                     <button type="button" class="rdv3-action rdv3-action--danger" onclick="mostrarFormularioCancelacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-danger"><i class="fas fa-ban"></i></span>Cancelar reservacion</span><i class="fas fa-chevron-right"></i></button>
@@ -9353,7 +9367,7 @@ document.querySelectorAll('input[name="tipo_tarjeta_cp"], #referencia_tarjeta_cp
     control.addEventListener('change', resetConfirmacionCambioPago);
 });
 
-// Check-in exitoso: pantalla de éxito + auto-descarga del ticket
+// Check-in exitoso: pantalla de éxito + oferta de imprimir ticket (solo PC)
 <?php if ($auto_imprimir_ticket): ?>
 <?php
 $rdCheckinHabsCount = count($habitaciones ?? []);
@@ -9373,19 +9387,43 @@ if ($rdCheckinExtra !== '') {
 document.addEventListener('DOMContentLoaded', function() {
     // El estado de página sustituye al toast para este flujo.
     document.querySelectorAll('#ms-toast-stack .ms-toast').forEach(function(t){ t.remove(); });
-    if (typeof msPageState === 'function') {
-        msPageState({
-            type: 'success',
-            icon: 'check',
-            title: '¡Check-in completado!',
-            msg: <?= json_encode($rdCheckinPageMsg, JSON_UNESCAPED_UNICODE) ?>,
-            primary: { label: 'Ver reservación' },
-            secondary: { label: 'Volver al inicio', href: '<?= url('dashboard') ?>' }
-        });
+
+    // Pantalla de éxito con las acciones (ver reservación / volver al inicio).
+    function mostrarEstadoCheckin() {
+        if (typeof msPageState === 'function') {
+            msPageState({
+                type: 'success',
+                icon: 'check',
+                title: '¡Check-in completado!',
+                msg: <?= json_encode($rdCheckinPageMsg, JSON_UNESCAPED_UNICODE) ?>,
+                primary: { label: 'Ver reservación' },
+                secondary: { label: 'Volver al inicio', href: '<?= url('dashboard') ?>' }
+            });
+        }
     }
-    setTimeout(function() {
-        imprimirTicketTermico('descargar');
-    }, 1500);
+
+    // Ticket: solo en PC. En móvil se omite para no saturar la vista.
+    var __esMovilTicket = (window.MedisoftMobileFiles && typeof window.MedisoftMobileFiles.isMobile === 'function')
+        ? window.MedisoftMobileFiles.isMobile()
+        : window.matchMedia('(max-width: 820px)').matches;
+
+    if (__esMovilTicket || typeof msConfirm !== 'function') {
+        mostrarEstadoCheckin();
+        return;
+    }
+
+    // Primero preguntar por el ticket; al decidir, mostrar la pantalla de éxito.
+    msConfirm({
+        type: 'info',
+        icon: 'check',
+        title: '¿Imprimir ticket?',
+        msg: 'El check-in quedó registrado. ¿Deseas imprimir el ticket del huésped?',
+        confirmLabel: 'Imprimir ticket',
+        cancelLabel: 'Ahora no'
+    }).then(function(ok) {
+        if (ok) imprimirTicketTermico('imprimir');
+        mostrarEstadoCheckin();
+    });
 });
 <?php endif; ?>
 

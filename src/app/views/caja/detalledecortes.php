@@ -40,8 +40,8 @@
                         <i class="fas fa-arrow-left"></i>
                         <span>Historial</span>
                     </a>
-                    <button onclick="imprimirCorte()" 
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                    <button onclick="imprimirCorte()"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 ms-print-hide-mobile">
                         <i class="fas fa-print"></i>
                         <span>Imprimir</span>
                     </button>

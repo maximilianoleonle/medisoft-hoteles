@@ -291,51 +291,10 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         </div>
         <?php else: ?>
         <?php
-        // Navegacion rapida: favoritos + pantallas frecuentes del usuario en ESTE hotel.
-        // nav_accesos_rapidos revalida modulos activos y permisos en cada render.
-        $navAccesosRapidos = function_exists('nav_accesos_rapidos') ? nav_accesos_rapidos(6) : [];
+        // Catalogo usado por el buscador global; no se renderiza como seccion visible.
         $navPantallasBusqueda = function_exists('nav_pantallas_visibles') ? nav_pantallas_visibles() : [];
         $navRutasFavoritas = function_exists('nav_favoritos_rutas') ? nav_favoritos_rutas() : [];
         ?>
-        <?php if (!empty($navAccesosRapidos)): ?>
-        <div class="nav-section hotel-nav-section hotel-accesos-section">
-            <div class="nav-section-title">
-                <span>ACCESOS RÁPIDOS</span>
-            </div>
-            <?php foreach ($navAccesosRapidos as $navAcceso): ?>
-            <a href="<?= url($navAcceso['ruta']) ?>"
-               class="nav-item ms-nav-quick"
-               style="position:relative;">
-                <div class="nav-icon">
-                    <i class="fas <?= htmlspecialchars($navAcceso['icono'], ENT_QUOTES, 'UTF-8') ?>"></i>
-                </div>
-                <span class="nav-text"><?= htmlspecialchars($navAcceso['etiqueta'], ENT_QUOTES, 'UTF-8') ?></span>
-                <button type="button"
-                        class="ms-nav-fav <?= !empty($navAcceso['es_favorito']) ? 'is-fav' : '' ?>"
-                        data-nav-ruta="<?= htmlspecialchars($navAcceso['ruta'], ENT_QUOTES, 'UTF-8') ?>"
-                        title="<?= !empty($navAcceso['es_favorito']) ? 'Quitar de favoritos' : 'Fijar como favorito' ?>"
-                        aria-label="Alternar favorito">
-                    <i class="<?= !empty($navAcceso['es_favorito']) ? 'fas' : 'far' ?> fa-star"></i>
-                </button>
-            </a>
-            <?php endforeach; ?>
-        </div>
-        <style>
-            .ms-nav-fav {
-                margin-left: auto;
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 4px 6px;
-                font-size: .72rem;
-                color: inherit;
-                opacity: .35;
-                transition: opacity .15s, color .15s;
-                flex-shrink: 0;
-            }
-            .ms-nav-fav:hover { opacity: .9; }
-            .ms-nav-fav.is-fav { opacity: 1; color: #D4AF37; }
-        </style>
         <script>
             window.MS_NAV_PANTALLAS = <?= json_encode(array_map(static function ($p) use ($navRutasFavoritas) {
                 return [
@@ -346,41 +305,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     'favorito' => in_array($p['ruta'], $navRutasFavoritas, true),
                 ];
             }, $navPantallasBusqueda), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?: '[]' ?>;
-
-            // Toggle de favoritos por delegacion (el sidebar puede re-renderizarse)
-            document.addEventListener('click', function (ev) {
-                const btn = ev.target.closest('.ms-nav-fav');
-                if (!btn) return;
-
-                ev.preventDefault();
-                ev.stopPropagation();
-
-                const ruta = btn.getAttribute('data-nav-ruta');
-                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                const base = window.BASE_URL ? window.BASE_URL.replace(/\/$/, '') : '';
-
-                fetch(base + '/api/nav/favorito', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-Token': csrf
-                    },
-                    body: 'ruta=' + encodeURIComponent(ruta)
-                }).then(r => r.json()).then(data => {
-                    if (!data || !data.success) return;
-                    btn.classList.toggle('is-fav', data.favorito);
-                    const icon = btn.querySelector('i');
-                    if (icon) icon.className = (data.favorito ? 'fas' : 'far') + ' fa-star';
-                    btn.title = data.favorito ? 'Quitar de favoritos' : 'Fijar como favorito';
-                    if (window.msToast) {
-                        window.msToast(data.favorito ? 'Fijado en accesos rápidos' : 'Quitado de favoritos', 'success');
-                    }
-                }).catch(() => {});
-            });
         </script>
-        <?php endif; ?>
         <div class="nav-section hotel-nav-section hotel-dashboard-section">
             <div class="nav-section-title ms-mm-only">
                 <span>INICIO</span>

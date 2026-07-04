@@ -1130,7 +1130,7 @@ if ($diferencia > 0) {
             <div class="cut-actions no-print" aria-label="Acciones del corte">
                 <a href="<?= back_url('caja/historial') ?>" class="cut-btn"><i class="fas fa-arrow-left"></i>Volver</a>
                 <a href="<?= url('caja/descargar-pdf/' . (int)($corte['id'] ?? 0)) ?>" class="cut-btn is-primary"><i class="fas fa-file-pdf"></i>Descargar PDF</a>
-                <button type="button" onclick="window.print()" class="cut-btn"><i class="fas fa-print"></i>Imprimir</button>
+                <button type="button" onclick="window.print()" class="cut-btn ms-print-hide-mobile"><i class="fas fa-print"></i>Imprimir</button>
             </div>
         </header>
 

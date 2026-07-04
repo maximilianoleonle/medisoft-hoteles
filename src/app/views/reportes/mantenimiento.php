@@ -1032,7 +1032,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                 </p>
 
                 <div class="mant-hero-actions">
-                    <button type="button" onclick="window.print()" class="mant-btn is-accent">
+                    <button type="button" onclick="window.print()" class="mant-btn is-accent ms-print-hide-mobile">
                         <i class="fas fa-print"></i>
                         Imprimir
                     </button>

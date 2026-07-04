@@ -4102,7 +4102,7 @@ html {
                                 Apariencia
                             </h2>
                             <p class="hc-panel-copy">
-                                Elige el tema de color de la app. Se aplica al instante y se guarda solo en este dispositivo.
+                                Elige el tema de color y la vibración de la app. Se aplica al instante y se guarda solo en este dispositivo.
                             </p>
                         </div>
                     </div>
@@ -4124,6 +4124,23 @@ html {
                             <button type="button" class="hc-theme-opt" data-theme-mode="dark" role="radio" aria-checked="false">
                                 <i class="fas fa-moon" aria-hidden="true"></i>
                                 <span>Oscuro</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hc-theme-card" id="hc-haptics-card" hidden>
+                        <div>
+                            <p class="hc-theme-label">Vibración (hápticos)</p>
+                            <p class="hc-theme-hint">Pequeñas vibraciones al confirmar acciones y avisos. Disponible solo en dispositivos compatibles.</p>
+                        </div>
+                        <div class="hc-theme-seg" role="radiogroup" aria-label="Vibración">
+                            <button type="button" class="hc-theme-opt" data-haptics-mode="on" role="radio" aria-checked="false">
+                                <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                                <span>Activada</span>
+                            </button>
+                            <button type="button" class="hc-theme-opt" data-haptics-mode="off" role="radio" aria-checked="false">
+                                <i class="fas fa-ban" aria-hidden="true"></i>
+                                <span>Desactivada</span>
                             </button>
                         </div>
                     </div>
@@ -7021,6 +7038,43 @@ if (observedSections.length > 0) {
 
     document.addEventListener('medisoft:theme-change', syncThemeButtons);
     syncThemeButtons();
+})();
+
+// ── Vibración / hápticos (MedisoftHaptics se define en layout/header.php) ──
+(function() {
+    const card = document.getElementById('hc-haptics-card');
+    const buttons = Array.from(document.querySelectorAll('.hc-theme-opt[data-haptics-mode]'));
+    if (!card || buttons.length === 0 || !window.MedisoftHaptics) {
+        return;
+    }
+
+    // Solo mostrar el control donde tiene sentido: soporte real + dispositivo táctil.
+    const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (!window.MedisoftHaptics.supported || !touch) {
+        return; // la card queda oculta (hidden)
+    }
+    card.hidden = false;
+
+    const syncButtons = function() {
+        const mode = window.MedisoftHaptics.get();
+        buttons.forEach(button => {
+            const isActive = button.dataset.hapticsMode === mode;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-checked', isActive ? 'true' : 'false');
+        });
+    };
+
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const mode = this.dataset.hapticsMode;
+            window.MedisoftHaptics.set(mode);
+            syncButtons();
+            if (mode === 'on') { window.MedisoftHaptics.fire('success'); } // confirmación palpable
+        });
+    });
+
+    document.addEventListener('medisoft:haptics-change', syncButtons);
+    syncButtons();
 })();
 
 document.addEventListener('DOMContentLoaded', function() {

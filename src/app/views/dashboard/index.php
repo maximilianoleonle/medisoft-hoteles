@@ -4118,21 +4118,21 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
         </section>
 
-        <section class="grid4">
+        <section class="grid4" data-ms-stagger>
             <article class="card card-pad occ-card">
                 <div class="occ-wave"></div>
                 <div class="card-row-head">
                     <div class="mini-icon"><i class="fas fa-bed" aria-hidden="true"></i></div>
                     <div style="text-align:right">
                         <div class="card-title">Ocupación</div>
-                        <div class="occ-percent"><?= dashboard_percent_text($ocupacion_pct) ?></div>
+                        <div class="occ-percent" data-ms-count><?= dashboard_percent_text($ocupacion_pct) ?></div>
                     </div>
                 </div>
                 <div class="occ-meta">
-                    <strong><?= $habitaciones_ocupadas ?></strong>
+                    <strong data-ms-count><?= $habitaciones_ocupadas ?></strong>
                     <span class="muted">/ <?= $habitaciones_total ?> habitaciones ocupadas</span>
                     <div class="soft-note"><?= $habitaciones_libres ?> disponibles esta noche</div>
-                    <a class="card-kicker-link" href="<?= url('habitaciones') ?>" title="Ver el tablero de habitaciones">
+                    <a class="card-kicker-link ms-pressable" href="<?= url('habitaciones') ?>" title="Ver el tablero de habitaciones">
                         Ver habitaciones
                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
                     </a>

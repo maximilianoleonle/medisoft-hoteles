@@ -103,6 +103,95 @@ $mesActualTexto   = ($mesesNombres[$mes] ?? '') . ' ' . $año;
 $hotelNombre      = (function_exists('current_hotel_nombre') && current_hotel_nombre())
     ? current_hotel_nombre()
     : ((function_exists('current_hotel_display_name') ? current_hotel_display_name() : '') ?: 'Hotel');
+
+// ── Datos para la vista móvil (rediseño tipo agenda) ──────────────────────
+$hcalHabNumById  = [];
+$hcalHabTipoById = [];
+foreach ($habitaciones as $h) {
+    $hid = (int)($h['id'] ?? 0);
+    $hcalHabNumById[$hid]  = (string)($h['numero'] ?? '?');
+    $hcalHabTipoById[$hid] = ucfirst(str_replace('_', ' ', (string)($h['tipo'] ?? 'Habitación')));
+}
+
+$hcalPrimerDiaSemana = (int)date('w', $primerDia); // 0=Dom … 6=Sáb
+$hcalDiasNombres = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+$hcalDaysData = [];
+$hcalPesoEstado = ['llegada' => 0, 'estancia' => 1, 'salida' => 2, 'cancelada' => 3];
+
+for ($d = 1; $d <= $diasEnMes; $d++) {
+    $fTs    = mktime(0, 0, 0, $mes, $d, $año);
+    $fTexto = date('Y-m-d', $fTs);
+    $entries = $calendario[$d] ?? [];
+
+    $seen = [];
+    $reservasDia = [];
+    $ocupadas = $llegadas = $salidas = 0;
+    $flags = ['llegada' => false, 'estancia' => false, 'salida' => false, 'cancelada' => false];
+
+    foreach ($entries as $habId => $rr) {
+        $estado = (string)($rr['estado'] ?? '');
+        if ($estado !== 'cancelada') $ocupadas++;
+
+        $rid = (int)($rr['id'] ?? 0);
+        if ($rid && isset($seen[$rid])) continue;
+        if ($rid) $seen[$rid] = true;
+
+        $ent = substr((string)($rr['fecha_entrada'] ?? ''), 0, 10);
+        $sal = substr((string)($rr['fecha_salida']  ?? ''), 0, 10);
+        $esLlegada = ($ent !== '' && $ent === $fTexto);
+        $esSalida  = ($sal !== '' && $sal === $fTexto);
+
+        if ($estado === 'cancelada')      { $flags['cancelada'] = true; $cat = 'cancelada'; }
+        elseif ($esLlegada)               { $llegadas++; $flags['llegada'] = true; $cat = 'llegada'; }
+        elseif ($esSalida)                { $salidas++;  $flags['salida']  = true; $cat = 'salida'; }
+        else                              { $flags['estancia'] = true; $cat = 'estancia'; }
+
+        $eInfo  = hcal_estado_info($estado);
+        $habNumR = (string)($rr['habitacion_numero'] ?? ($hcalHabNumById[(int)$habId] ?? '—'));
+        $noches  = ($ent && $sal)
+            ? max(1, (int)round((strtotime($sal) - strtotime($ent)) / 86400))
+            : 0;
+
+        $reservasDia[] = [
+            'id'      => $rid,
+            'key'     => $eInfo['key'],
+            'icon'    => $eInfo['icon'],
+            'label'   => $eInfo['label'],
+            'nombre'  => (string)($rr['huesped_nombre'] ?? 'Reserva'),
+            'hab'     => $habNumR,
+            'tipo'    => (string)($hcalHabTipoById[(int)$habId] ?? ''),
+            'entrada' => $ent,
+            'salida'  => $sal,
+            'noches'  => $noches,
+            'cat'     => $cat,
+            'w'       => $hcalPesoEstado[$cat] ?? 4,
+        ];
+    }
+
+    usort($reservasDia, function ($a, $b) {
+        return ($a['w'] <=> $b['w']) ?: strcmp($a['nombre'], $b['nombre']);
+    });
+
+    $dots = array_values(array_filter([
+        $flags['llegada']  ? 'llegada'  : null,
+        $flags['estancia'] ? 'estancia' : null,
+        $flags['salida']   ? 'salida'   : null,
+        $flags['cancelada']? 'cancelada': null,
+    ]));
+
+    $hcalDaysData[$d] = [
+        'fecha'     => $fTexto,
+        'diaSemana' => $hcalDiasNombres[(int)date('w', $fTs)] ?? '',
+        'ocupadas'  => $ocupadas,
+        'llegadas'  => $llegadas,
+        'salidas'   => $salidas,
+        'libres'    => max(0, count($habitaciones) - $ocupadas),
+        'dots'      => $dots,
+        'reservas'  => $reservasDia,
+    ];
+}
+$hcalDefaultDay = $esEsteMes ? $hoyNum : 1;
+$hcalTotalHabs  = count($habitaciones);
 ?>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@400;500;600;700;800&display=swap');
@@ -112,6 +201,9 @@ $hotelNombre      = (function_exists('current_hotel_nombre') && current_hotel_no
     --green:         #4A6741;
     --green-dark:    #3A5233;
     --green-soft:    #EDF2EC;
+    --hcal-action-bg: var(--brand-action-bg, var(--green));
+    --hcal-action-bg-hover: var(--brand-action-bg-hover, var(--green-dark));
+    --hcal-action-text: var(--brand-action-text, #FFFEFB);
     --blue:          #2F6EA8;
     --blue-dark:     #1E5C9A;
     --blue-soft:     #EAF3FF;
@@ -319,11 +411,17 @@ $hotelNombre      = (function_exists('current_hotel_nombre') && current_hotel_no
     transform: translateY(-1px);
 }
 .hcal-btn.is-primary {
-    background: var(--green);
-    color: #fff;
-    border-color: var(--green-dark);
+    background: var(--hcal-action-bg);
+    color: var(--hcal-action-text) !important;
+    border-color: color-mix(in srgb, var(--hcal-action-bg) 78%, #000);
+    box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--hcal-action-bg) 70%, transparent);
 }
-.hcal-btn.is-primary:hover { background: var(--green-dark); color: #fff; }
+.hcal-btn.is-primary i { color: currentColor !important; }
+.hcal-btn.is-primary:hover {
+    background: var(--hcal-action-bg-hover);
+    color: var(--hcal-action-text) !important;
+    border-color: color-mix(in srgb, var(--hcal-action-bg-hover) 78%, #000);
+}
 
 /* ── 2-col layout ─────────────────────────────────────────────── */
 .hcal-layout {
@@ -864,6 +962,312 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
     }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   ESCRITORIO · vista Mes + toggle Mes/Habitaciones
+   ══════════════════════════════════════════════════════════════ */
+.hcal-calcol { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.hcal-calcol .hcal-tableview { display: none; }
+.hcal-calcol.show-hab .hcal-monthview { display: none; }
+.hcal-calcol.show-hab .hcal-tableview { display: block; }
+
+.hcal-viewtoggle {
+    display: inline-flex; gap: 2px; padding: 3px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow);
+}
+.hcal-vt-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border: 0; border-radius: 9px; cursor: pointer;
+    background: transparent; color: var(--muted);
+    font-family: inherit; font-size: .8rem; font-weight: 600;
+    transition: background .15s ease, color .15s ease;
+}
+.hcal-vt-btn i { font-size: .76rem; }
+.hcal-vt-btn.is-on { background: var(--green); color: #fff; box-shadow: var(--shadow); }
+
+.hcal-mv { padding: 6px 16px 18px; }
+.hcal-mv-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 8px; }
+.hcal-mv-week span {
+    text-align: center; font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--subtle); padding: 4px 0;
+}
+.hcal-mv-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.hcal-mv-cell {
+    min-height: 120px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--card);
+    padding: 8px; display: flex; flex-direction: column; gap: 5px;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hcal-mv-cell.is-blank { background: transparent; border-color: transparent; }
+.hcal-mv-cell.is-weekend { background: color-mix(in srgb, var(--amber-soft) 38%, var(--card)); }
+.hcal-mv-cell.is-past { opacity: .6; }
+.hcal-mv-cell.is-today { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.hcal-mv-cell:not(.is-blank):hover { box-shadow: var(--shadow-md); }
+
+.hcal-mv-cell-top { display: flex; align-items: center; justify-content: space-between; min-height: 24px; }
+.hcal-mv-num { font-family: 'Outfit', sans-serif; font-size: .95rem; font-weight: 700; color: var(--text); }
+.hcal-mv-cell.is-today .hcal-mv-num {
+    background: var(--blue); color: #fff; width: 24px; height: 24px;
+    border-radius: 50%; display: grid; place-items: center; font-size: .8rem;
+}
+.hcal-mv-flags { display: flex; gap: 4px; }
+.hcal-mv-flag {
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: .64rem; font-weight: 700; padding: 1px 5px; border-radius: 6px;
+}
+.hcal-mv-flag i { font-size: .56rem; }
+.hcal-mv-flag.is-in  { background: var(--green-soft); color: var(--green); }
+.hcal-mv-flag.is-out { background: var(--amber-soft); color: var(--amber); }
+
+.hcal-mv-chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hcal-mv-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 6px; border-radius: 7px; min-width: 0;
+    background: var(--green-soft); font-size: .72rem; font-weight: 600; color: var(--text);
+    transition: filter .12s ease;
+}
+.hcal-mv-chip.is-extra { display: none; }
+.hcal-mv-cell.is-expanded .hcal-mv-chip.is-extra { display: flex; }
+.hcal-mv-chip-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--subtle); }
+.hcal-mv-chip-txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hcal-mv-chip-hab {
+    flex: none; font-size: .63rem; font-weight: 700; color: var(--muted);
+    background: rgba(0,0,0,.045); padding: 0 5px; border-radius: 5px;
+}
+.hcal-mv-chip.is-confirmada  { background: var(--blue-soft); }
+.hcal-mv-chip.is-confirmada  .hcal-mv-chip-dot { background: var(--blue); }
+.hcal-mv-chip.is-checked-in  { background: var(--green-soft); }
+.hcal-mv-chip.is-checked-in  .hcal-mv-chip-dot { background: var(--green); }
+.hcal-mv-chip.is-checked-out { background: var(--amber-soft); }
+.hcal-mv-chip.is-checked-out .hcal-mv-chip-dot { background: var(--amber); }
+.hcal-mv-chip.is-cancelada   { background: var(--red-soft); }
+.hcal-mv-chip.is-cancelada   .hcal-mv-chip-dot { background: var(--red); }
+.hcal-mv-chip.is-cancelada   .hcal-mv-chip-txt { text-decoration: line-through; opacity: .7; }
+.hcal-mv-chip:hover { filter: brightness(.97); }
+
+.hcal-mv-more {
+    align-self: flex-start; border: 0; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: .68rem; font-weight: 700; color: var(--blue-dark); padding: 2px 4px;
+}
+.hcal-mv-more:hover { text-decoration: underline; }
+
+.hcal-mv-free {
+    margin: auto auto 6px; width: 28px; height: 28px; border-radius: 9px;
+    display: grid; place-items: center; color: var(--border-strong);
+    opacity: 0; transition: opacity .15s ease, background-color .15s ease, color .15s ease;
+}
+.hcal-mv-cell:hover .hcal-mv-free { opacity: 1; }
+.hcal-mv-free:hover { background: var(--green-soft); color: var(--green); }
+
+@media (max-width: 1200px) {
+    .hcal-viewtoggle { order: 3; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VISTA MÓVIL · agenda (rediseño tipo app de calendario)
+   ══════════════════════════════════════════════════════════════ */
+.hcal-m { display: none; }
+
+@media (max-width: 767px) {
+    /* Ocultar la vista de escritorio (la tabla queda en el DOM para
+       exportar CSV / imprimir, solo oculta visualmente). */
+    .hcal-header, .hcal-controls, .hcal-layout { display: none !important; }
+    .hcal-shell { padding: 12px 14px 28px; }
+    .hcal-m { display: block; }
+
+    /* ── Encabezado de mes ── */
+    .hcal-m-top {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        gap: 12px; margin: 4px 2px 16px;
+    }
+    .hcal-m-eyebrow {
+        display: block; font-size: .68rem; font-weight: 600; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--subtle); margin-bottom: 3px;
+    }
+    .hcal-m-month {
+        font-family: 'Outfit', sans-serif; font-size: 1.72rem; font-weight: 700;
+        color: var(--text); line-height: 1; letter-spacing: -.02em;
+    }
+    .hcal-m-month span { color: var(--subtle); font-weight: 500; }
+    .hcal-m-nav { display: flex; align-items: center; gap: 6px; flex: none; }
+    .hcal-m-navbtn {
+        width: 34px; height: 34px; border-radius: 11px;
+        display: grid; place-items: center; flex: none;
+        background: var(--card); border: 1px solid var(--border);
+        color: var(--text); font-size: .8rem; box-shadow: var(--shadow);
+    }
+    .hcal-m-navbtn:active { transform: scale(.94); }
+    .hcal-m-today {
+        height: 34px; padding: 0 13px; border-radius: 11px;
+        background: var(--green); color: #fff; border: 0;
+        font-family: inherit; font-size: .78rem; font-weight: 600; cursor: pointer;
+        box-shadow: var(--shadow);
+    }
+    .hcal-m-today:active { transform: scale(.96); }
+
+    /* ── Métricas ── */
+    .hcal-m-stats {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
+        margin-bottom: 16px;
+    }
+    .hcal-m-stat {
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 15px; padding: 12px 10px; text-align: center;
+        box-shadow: var(--shadow);
+    }
+    .hcal-m-stat-v {
+        display: block; font-family: 'Outfit', sans-serif; font-size: 1.5rem;
+        font-weight: 700; color: var(--text); line-height: 1;
+    }
+    .hcal-m-stat-v small { font-size: .9rem; font-weight: 600; color: var(--subtle); }
+    .hcal-m-stat-l {
+        display: block; font-size: .68rem; font-weight: 500; color: var(--muted);
+        margin-top: 5px; letter-spacing: .01em;
+    }
+
+    /* ── Cuadrícula ── */
+    .hcal-m-cal {
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 20px; padding: 14px 10px 10px; box-shadow: var(--shadow-md);
+        margin-bottom: 16px;
+    }
+    .hcal-m-week {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 6px;
+    }
+    .hcal-m-week span {
+        text-align: center; font-size: .66rem; font-weight: 700;
+        letter-spacing: .04em; text-transform: uppercase; color: var(--subtle);
+    }
+    .hcal-m-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .hcal-m-blank { height: 50px; }
+    .hcal-m-day {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 3px; height: 50px;
+        border: 0; background: none; cursor: pointer; padding: 0;
+        font-family: inherit; -webkit-tap-highlight-color: transparent;
+    }
+    .hcal-m-daynum {
+        width: 36px; height: 36px; border-radius: 50%;
+        display: grid; place-items: center;
+        font-size: .92rem; font-weight: 600; color: var(--text);
+        transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
+    }
+    .hcal-m-day.has-act .hcal-m-daynum { background: var(--green-soft); }
+    .hcal-m-day.is-today .hcal-m-daynum {
+        box-shadow: inset 0 0 0 2px var(--blue); color: var(--blue-dark); font-weight: 700;
+    }
+    .hcal-m-day.is-sel .hcal-m-daynum {
+        background: var(--green) !important; color: #fff !important; box-shadow: none;
+    }
+    .hcal-m-day.is-past { opacity: .4; }
+    .hcal-m-day:active .hcal-m-daynum { transform: scale(.9); }
+    .hcal-m-dots { height: 6px; display: flex; gap: 3px; align-items: center; justify-content: center; }
+    .hcal-m-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .hcal-m-dot.is-llegada  { background: var(--green); }
+    .hcal-m-dot.is-estancia { background: var(--blue); }
+    .hcal-m-dot.is-salida   { background: var(--amber); }
+    .hcal-m-dot.is-cancelada{ background: var(--red); }
+    .hcal-m-day.is-sel .hcal-m-dot { background: rgba(255,255,255,.9) !important; }
+
+    /* ── Agenda del día ── */
+    .hcal-m-agenda { margin-top: 2px; }
+    .hcal-m-agenda-head {
+        display: flex; align-items: center; gap: 12px; margin: 0 2px 12px;
+    }
+    .hcal-m-agenda-daynum {
+        font-family: 'Outfit', sans-serif; font-size: 2.4rem; font-weight: 700;
+        color: var(--green); line-height: .9; flex: none; min-width: 46px; text-align: center;
+    }
+    .hcal-m-agenda-meta { flex: 1; min-width: 0; }
+    .hcal-m-agenda-meta strong {
+        display: block; font-family: 'Outfit', sans-serif; font-size: 1rem;
+        font-weight: 600; color: var(--text);
+    }
+    .hcal-m-agenda-meta span { font-size: .8rem; color: var(--muted); font-weight: 500; }
+    .hcal-m-agenda-add {
+        width: 42px; height: 42px; border-radius: 13px; flex: none;
+        display: grid; place-items: center;
+        background: var(--hcal-action-bg); color: var(--hcal-action-text) !important; font-size: 1rem;
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--hcal-action-bg) 34%, transparent);
+    }
+    .hcal-m-agenda-add i { color: currentColor !important; }
+    .hcal-m-agenda-add:active { transform: scale(.94); }
+
+    .hcal-m-agenda-list { display: flex; flex-direction: column; gap: 9px; }
+    .hcal-m-ag-item {
+        display: flex; align-items: center; gap: 12px;
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 16px; padding: 13px 14px; box-shadow: var(--shadow);
+        position: relative; overflow: hidden;
+    }
+    .hcal-m-ag-item::before {
+        content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+        width: 3px; border-radius: 0 3px 3px 0; background: var(--subtle);
+    }
+    .hcal-m-ag-item.is-confirmada::before  { background: var(--blue); }
+    .hcal-m-ag-item.is-checked-in::before  { background: var(--green); }
+    .hcal-m-ag-item.is-checked-out::before { background: var(--amber); }
+    .hcal-m-ag-item.is-cancelada::before   { background: var(--red); }
+    .hcal-m-ag-item:active { transform: scale(.99); }
+
+    .hcal-m-ag-ico {
+        width: 40px; height: 40px; border-radius: 12px; flex: none;
+        display: grid; place-items: center; font-size: .92rem;
+        background: var(--green-soft); color: var(--green);
+    }
+    .hcal-m-ag-item.is-confirmada  .hcal-m-ag-ico { background: var(--blue-soft);   color: var(--blue-dark); }
+    .hcal-m-ag-item.is-checked-in  .hcal-m-ag-ico { background: var(--green-soft);  color: var(--green); }
+    .hcal-m-ag-item.is-checked-out .hcal-m-ag-ico { background: var(--amber-soft);  color: var(--amber); }
+    .hcal-m-ag-item.is-cancelada   .hcal-m-ag-ico { background: var(--red-soft);    color: var(--red); }
+
+    .hcal-m-ag-body { flex: 1; min-width: 0; }
+    .hcal-m-ag-body strong {
+        display: block; font-size: .94rem; font-weight: 600; color: var(--text);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hcal-m-ag-sub {
+        display: block; font-size: .76rem; color: var(--muted); margin-top: 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hcal-m-ag-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .hcal-m-ag-tag {
+        font-size: .66rem; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+        letter-spacing: .01em; white-space: nowrap;
+        background: color-mix(in srgb, var(--subtle) 16%, var(--card)); color: var(--muted);
+    }
+    .hcal-m-ag-tag.is-llegada  { background: var(--green-soft); color: var(--green); }
+    .hcal-m-ag-tag.is-salida   { background: var(--amber-soft); color: var(--amber); }
+    .hcal-m-ag-tag.is-estancia { background: var(--blue-soft);  color: var(--blue-dark); }
+    .hcal-m-ag-tag.is-cancelada{ background: var(--red-soft);   color: var(--red); }
+    .hcal-m-ag-range { font-size: .7rem; color: var(--subtle); font-weight: 600; }
+
+    .hcal-m-empty {
+        text-align: center; padding: 28px 18px;
+        background: var(--card); border: 1px dashed var(--border-mid);
+        border-radius: 16px; color: var(--muted);
+    }
+    .hcal-m-empty i { font-size: 1.5rem; color: var(--subtle); }
+    .hcal-m-empty p { margin: 8px 0 14px; font-size: .86rem; }
+    .hcal .hcal-m-empty-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 16px; border-radius: 11px;
+        background: var(--hcal-action-bg);
+        color: var(--hcal-action-text) !important;
+        border: 1px solid color-mix(in srgb, var(--hcal-action-text) 18%, transparent);
+        box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--hcal-action-bg) 70%, transparent);
+        font-size: .82rem; font-weight: 700;
+    }
+    .hcal .hcal-m-empty-btn i {
+        color: currentColor !important;
+        font-size: .82rem;
+    }
+    .hcal .hcal-m-empty-btn:hover {
+        background: var(--hcal-action-bg-hover);
+        color: var(--hcal-action-text) !important;
+    }
+}
+
 /* ── Print ────────────────────────────────────────────────────── */
 @media print {
     .hcal { background: #fff !important; }
@@ -890,6 +1294,121 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
         <span class="hcal-crumb-sep"><i class="fas fa-chevron-right"></i></span>
         <span>Calendario</span>
     </nav>
+
+    <?php
+    $hcalCatLabel = ['llegada' => 'Llegada', 'salida' => 'Salida', 'estancia' => 'En estancia', 'cancelada' => 'Cancelada'];
+    $hcalDefInfo  = $hcalDaysData[$hcalDefaultDay] ?? ['diaSemana' => '', 'reservas' => [], 'llegadas' => 0, 'salidas' => 0, 'ocupadas' => 0];
+    $hcalDefFecha = $hcalDaysData[$hcalDefaultDay]['fecha'] ?? date('Y-m-d', $primerDia);
+    $hcalResumen = function ($info) {
+        $parts = [];
+        if (($info['llegadas'] ?? 0) > 0) $parts[] = $info['llegadas'] . ' llegada' . ($info['llegadas'] > 1 ? 's' : '');
+        if (($info['salidas'] ?? 0) > 0)  $parts[] = $info['salidas'] . ' salida' . ($info['salidas'] > 1 ? 's' : '');
+        if (($info['ocupadas'] ?? 0) > 0 && empty($parts)) $parts[] = $info['ocupadas'] . ' en estancia';
+        return $parts ? implode(' · ', $parts) : 'Sin movimientos';
+    };
+    ?>
+    <!-- ═══════════ Vista móvil · agenda de reservaciones ═══════════ -->
+    <div class="hcal-m" aria-label="Calendario de reservaciones">
+
+        <!-- Encabezado de mes -->
+        <div class="hcal-m-top">
+            <div class="hcal-m-monthblock">
+                <span class="hcal-m-eyebrow"><?= hcal_safe($hotelNombre) ?></span>
+                <h1 class="hcal-m-month"><?= hcal_safe($mesesNombres[$mes] ?? '') ?> <span><?= (int)$año ?></span></h1>
+            </div>
+            <div class="hcal-m-nav">
+                <a href="<?= hcal_mes_url($mesAnterior, $añoAnterior) ?>" class="hcal-m-navbtn" aria-label="Mes anterior"><i class="fas fa-chevron-left"></i></a>
+                <button type="button" class="hcal-m-today" onclick="irAHoy()">Hoy</button>
+                <a href="<?= hcal_mes_url($mesSiguiente, $añoSiguiente) ?>" class="hcal-m-navbtn" aria-label="Mes siguiente"><i class="fas fa-chevron-right"></i></a>
+            </div>
+        </div>
+
+        <!-- Métricas del mes -->
+        <div class="hcal-m-stats">
+            <div class="hcal-m-stat">
+                <span class="hcal-m-stat-v"><?= (int)$ocupacion ?><small>%</small></span>
+                <span class="hcal-m-stat-l">Ocupación</span>
+            </div>
+            <div class="hcal-m-stat">
+                <span class="hcal-m-stat-v"><?= (int)$totalReservaciones ?></span>
+                <span class="hcal-m-stat-l">Reservas</span>
+            </div>
+            <div class="hcal-m-stat">
+                <span class="hcal-m-stat-v" style="color:var(--green)"><?= (int)$disponiblesHoy ?></span>
+                <span class="hcal-m-stat-l">Libres hoy</span>
+            </div>
+        </div>
+
+        <!-- Cuadrícula del mes -->
+        <div class="hcal-m-cal">
+            <div class="hcal-m-week">
+                <?php foreach ($diasAbr as $ab): ?><span><?= $ab ?></span><?php endforeach; ?>
+            </div>
+            <div class="hcal-m-grid" id="hcalMGrid">
+                <?php for ($b = 0; $b < $hcalPrimerDiaSemana; $b++): ?>
+                    <span class="hcal-m-blank" aria-hidden="true"></span>
+                <?php endfor; ?>
+                <?php for ($d = 1; $d <= $diasEnMes; $d++):
+                    $info    = $hcalDaysData[$d];
+                    $isToday = ($esEsteMes && $d === $hoyNum);
+                    $isSel   = ($d === $hcalDefaultDay);
+                    $isPast  = ($esEsteMes && $d < $hoyNum);
+                    $cls = 'hcal-m-day';
+                    if (($info['ocupadas'] ?? 0) > 0) $cls .= ' has-act';
+                    if ($isToday) $cls .= ' is-today';
+                    if ($isSel)   $cls .= ' is-sel';
+                    if ($isPast)  $cls .= ' is-past';
+                ?>
+                    <button type="button" class="<?= $cls ?>" data-day="<?= $d ?>" aria-label="Día <?= $d ?>">
+                        <span class="hcal-m-daynum"><?= $d ?></span>
+                        <span class="hcal-m-dots" aria-hidden="true">
+                            <?php foreach ($info['dots'] as $dot): ?><i class="hcal-m-dot is-<?= hcal_safe($dot) ?>"></i><?php endforeach; ?>
+                        </span>
+                    </button>
+                <?php endfor; ?>
+            </div>
+        </div>
+
+        <!-- Agenda del día seleccionado -->
+        <div class="hcal-m-agenda">
+            <div class="hcal-m-agenda-head">
+                <div class="hcal-m-agenda-daynum" id="hcalMAgDay"><?= (int)$hcalDefaultDay ?></div>
+                <div class="hcal-m-agenda-meta">
+                    <strong id="hcalMAgWeekday"><?= hcal_safe($hcalDefInfo['diaSemana']) ?></strong>
+                    <span id="hcalMAgSummary"><?= hcal_safe($hcalResumen($hcalDefInfo)) ?></span>
+                </div>
+                <a href="<?= url('reservaciones/crear') ?>?fecha_entrada=<?= hcal_safe($hcalDefFecha) ?>"
+                   class="hcal-m-agenda-add" id="hcalMAgAdd" aria-label="Nueva reserva este día">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+            <div class="hcal-m-agenda-list" id="hcalMAgList">
+                <?php if (empty($hcalDefInfo['reservas'])): ?>
+                    <div class="hcal-m-empty">
+                        <i class="fas fa-moon"></i>
+                        <p>Sin reservaciones este día.</p>
+                        <a href="<?= url('reservaciones/crear') ?>?fecha_entrada=<?= hcal_safe($hcalDefFecha) ?>" class="hcal-m-empty-btn">
+                            <i class="fas fa-plus"></i> Crear reserva
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($hcalDefInfo['reservas'] as $res): ?>
+                        <a href="<?= url('reservaciones/ver/' . (int)$res['id']) ?>" class="hcal-m-ag-item is-<?= hcal_safe($res['key']) ?>">
+                            <span class="hcal-m-ag-ico"><i class="fas <?= hcal_safe($res['icon']) ?>"></i></span>
+                            <span class="hcal-m-ag-body">
+                                <strong><?= hcal_safe($res['nombre']) ?></strong>
+                                <span class="hcal-m-ag-sub">Hab. <?= hcal_safe($res['hab']) ?><?= $res['tipo'] !== '' ? ' · ' . hcal_safe($res['tipo']) : '' ?></span>
+                            </span>
+                            <span class="hcal-m-ag-side">
+                                <span class="hcal-m-ag-tag is-<?= hcal_safe($res['cat']) ?>"><?= hcal_safe($hcalCatLabel[$res['cat']] ?? $res['label']) ?></span>
+                                <?php if ($res['noches'] > 0): ?><span class="hcal-m-ag-range"><i class="fas fa-moon"></i> <?= (int)$res['noches'] ?></span><?php endif; ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
     <!-- Header -->
     <div class="hcal-header">
@@ -946,6 +1465,15 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                 </button>
             </div>
 
+            <div class="hcal-viewtoggle" role="tablist" aria-label="Tipo de vista">
+                <button type="button" class="hcal-vt-btn is-on" data-view="mes" role="tab" aria-selected="true">
+                    <i class="fas fa-calendar"></i> Mes
+                </button>
+                <button type="button" class="hcal-vt-btn" data-view="hab" role="tab" aria-selected="false">
+                    <i class="fas fa-table-cells-large"></i> Habitaciones
+                </button>
+            </div>
+
             <div class="hcal-actions">
                 <a href="<?= url('reservaciones') ?>" class="hcal-btn">
                     <i class="fas fa-list-ul"></i> Lista
@@ -953,7 +1481,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                 <button type="button" onclick="exportarCalendario()" class="hcal-btn">
                     <i class="fas fa-file-csv"></i> CSV
                 </button>
-                <button type="button" onclick="imprimirCalendario()" class="hcal-btn" title="Imprimir">
+                <button type="button" onclick="imprimirCalendario()" class="hcal-btn ms-print-hide-mobile" title="Imprimir">
                     <i class="fas fa-print"></i>
                 </button>
                 <a href="<?= url('reservaciones/crear') ?>" class="hcal-btn is-primary">
@@ -966,8 +1494,88 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
     <!-- Main layout -->
     <div class="hcal-layout">
 
-        <!-- ── Calendar board ── -->
-        <section class="hcal-card" aria-label="Calendario mensual de habitaciones">
+      <!-- Columna del calendario (alterna entre vista Mes y vista Habitaciones) -->
+      <div class="hcal-calcol" id="hcalCalCol">
+
+        <!-- ═══ Vista Mes (grande, tipo agenda) ═══ -->
+        <section class="hcal-card hcal-monthview" aria-label="Calendario mensual">
+            <div class="hcal-card-head">
+                <div>
+                    <h2>
+                        <i class="fas fa-calendar-day" style="color:var(--green);margin-right:7px;font-size:.85rem"></i>
+                        <?= hcal_safe($mesesNombres[$mes] ?? '') ?> <?= (int)$año ?>
+                    </h2>
+                    <p>Clic en una <strong>reserva</strong> → abrir ficha &nbsp;·&nbsp; clic en <strong>+ N más</strong> → ver el día completo</p>
+                </div>
+                <div class="hcal-legend" aria-label="Leyenda de movimientos">
+                    <span class="hcal-leg is-checked-in"><span class="hcal-leg-dot"></span>Llegada</span>
+                    <span class="hcal-leg is-confirmada"><span class="hcal-leg-dot"></span>En estancia</span>
+                    <span class="hcal-leg is-checked-out"><span class="hcal-leg-dot"></span>Salida</span>
+                    <span class="hcal-leg is-cancelada"><span class="hcal-leg-dot"></span>Cancelada</span>
+                </div>
+            </div>
+
+            <div class="hcal-mv">
+                <div class="hcal-mv-week">
+                    <?php foreach ($diasAbr as $ab): ?><span><?= $ab ?></span><?php endforeach; ?>
+                </div>
+                <div class="hcal-mv-grid">
+                    <?php for ($b = 0; $b < $hcalPrimerDiaSemana; $b++): ?>
+                        <div class="hcal-mv-cell is-blank" aria-hidden="true"></div>
+                    <?php endfor; ?>
+                    <?php
+                    $mvCatColor = ['llegada' => 'checked-in', 'estancia' => 'confirmada', 'salida' => 'checked-out', 'cancelada' => 'cancelada'];
+                    for ($d = 1; $d <= $diasEnMes; $d++):
+                        $info    = $hcalDaysData[$d];
+                        $fTs     = mktime(0, 0, 0, $mes, $d, $año);
+                        $diaSem  = (int)date('w', $fTs);
+                        $isWe    = ($diaSem === 0 || $diaSem === 6);
+                        $isToday = ($esEsteMes && $d === $hoyNum);
+                        $isPast  = ($esEsteMes && $d < $hoyNum);
+                        $totRes  = count($info['reservas']);
+                        $cls = 'hcal-mv-cell';
+                        if ($isWe)    $cls .= ' is-weekend';
+                        if ($isToday) $cls .= ' is-today';
+                        if ($isPast)  $cls .= ' is-past';
+                    ?>
+                        <div class="<?= $cls ?>" data-day="<?= $d ?>">
+                            <div class="hcal-mv-cell-top">
+                                <span class="hcal-mv-num"><?= $d ?></span>
+                                <?php if ($info['llegadas'] > 0 || $info['salidas'] > 0): ?>
+                                    <span class="hcal-mv-flags">
+                                        <?php if ($info['llegadas'] > 0): ?><span class="hcal-mv-flag is-in" title="Llegadas"><i class="fas fa-arrow-right-to-bracket"></i><?= (int)$info['llegadas'] ?></span><?php endif; ?>
+                                        <?php if ($info['salidas'] > 0): ?><span class="hcal-mv-flag is-out" title="Salidas"><i class="fas fa-arrow-right-from-bracket"></i><?= (int)$info['salidas'] ?></span><?php endif; ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($totRes > 0): ?>
+                                <div class="hcal-mv-chips">
+                                    <?php foreach ($info['reservas'] as $i => $res): ?>
+                                        <a href="<?= url('reservaciones/ver/' . (int)$res['id']) ?>"
+                                           class="hcal-mv-chip is-<?= hcal_safe($mvCatColor[$res['cat']] ?? 'confirmada') ?><?= $i >= 3 ? ' is-extra' : '' ?>"
+                                           title="<?= hcal_safe($res['nombre']) ?> · Hab. <?= hcal_safe($res['hab']) ?>">
+                                            <span class="hcal-mv-chip-dot"></span>
+                                            <span class="hcal-mv-chip-txt"><?= hcal_safe(hcal_primer_nombre($res['nombre'])) ?></span>
+                                            <span class="hcal-mv-chip-hab"><?= hcal_safe($res['hab']) ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                    <?php if ($totRes > 3): ?>
+                                        <button type="button" class="hcal-mv-more" data-more><i class="fas fa-plus" style="font-size:.6rem"></i> <?= $totRes - 3 ?> más</button>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else: ?>
+                                <a href="<?= url('reservaciones/crear') ?>?fecha_entrada=<?= hcal_safe($info['fecha']) ?>" class="hcal-mv-free" title="Día libre · crear reserva">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ Vista Habitaciones (matriz habitación × días) ═══ -->
+        <section class="hcal-card hcal-tableview" aria-label="Calendario mensual de habitaciones">
             <div class="hcal-card-head">
                 <div>
                     <h2>
@@ -1101,6 +1709,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                 </table>
             </div>
         </section>
+      </div><!-- /.hcal-calcol -->
 
         <!-- ── Sidebar ── -->
         <aside class="hcal-side">
@@ -1195,7 +1804,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                     <button type="button" onclick="exportarCalendario()" class="hcal-side-btn">
                         <i class="fas fa-file-csv"></i> Exportar CSV
                     </button>
-                    <button type="button" onclick="imprimirCalendario()" class="hcal-side-btn">
+                    <button type="button" onclick="imprimirCalendario()" class="hcal-side-btn ms-print-hide-mobile">
                         <i class="fas fa-print"></i> Imprimir
                     </button>
                     <a href="<?= url('reportes/ocupacion') ?>" class="hcal-side-btn">
@@ -1400,4 +2009,120 @@ function exportarCalendario() {
 function imprimirCalendario() {
     window.print();
 }
+
+// ── Vista móvil: agenda interactiva por día ──────────────────────
+window.hcalDays = <?= json_encode($hcalDaysData, JSON_UNESCAPED_UNICODE) ?>;
+(function () {
+    var grid = document.getElementById('hcalMGrid');
+    if (!grid) return;
+
+    var elDay  = document.getElementById('hcalMAgDay');
+    var elWk   = document.getElementById('hcalMAgWeekday');
+    var elSum  = document.getElementById('hcalMAgSummary');
+    var elAdd  = document.getElementById('hcalMAgAdd');
+    var elList = document.getElementById('hcalMAgList');
+    var CREAR  = '<?= url('reservaciones/crear') ?>';
+    var VER    = '<?= url('reservaciones/ver/') ?>';
+    var CATLBL = { llegada: 'Llegada', salida: 'Salida', estancia: 'En estancia', cancelada: 'Cancelada' };
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function resumen(info) {
+        var p = [];
+        if (info.llegadas > 0) p.push(info.llegadas + ' llegada' + (info.llegadas > 1 ? 's' : ''));
+        if (info.salidas > 0)  p.push(info.salidas + ' salida' + (info.salidas > 1 ? 's' : ''));
+        if (info.ocupadas > 0 && !p.length) p.push(info.ocupadas + ' en estancia');
+        return p.length ? p.join(' · ') : 'Sin movimientos';
+    }
+
+    function render(day) {
+        var info = window.hcalDays[day];
+        if (!info) return;
+
+        elDay.textContent = day;
+        elWk.textContent  = info.diaSemana;
+        elSum.textContent = resumen(info);
+        elAdd.href = CREAR + '?fecha_entrada=' + info.fecha;
+
+        if (!info.reservas.length) {
+            elList.innerHTML =
+                '<div class="hcal-m-empty"><i class="fas fa-moon"></i>' +
+                '<p>Sin reservaciones este día.</p>' +
+                '<a href="' + CREAR + '?fecha_entrada=' + info.fecha + '" class="hcal-m-empty-btn">' +
+                '<i class="fas fa-plus"></i> Crear reserva</a></div>';
+            return;
+        }
+
+        var html = '';
+        info.reservas.forEach(function (r) {
+            var tag   = CATLBL[r.cat] || r.label;
+            var range = r.noches > 0 ? '<span class="hcal-m-ag-range"><i class="fas fa-moon"></i> ' + r.noches + '</span>' : '';
+            html +=
+                '<a href="' + VER + r.id + '" class="hcal-m-ag-item is-' + esc(r.key) + '">' +
+                    '<span class="hcal-m-ag-ico"><i class="fas ' + esc(r.icon) + '"></i></span>' +
+                    '<span class="hcal-m-ag-body">' +
+                        '<strong>' + esc(r.nombre) + '</strong>' +
+                        '<span class="hcal-m-ag-sub">Hab. ' + esc(r.hab) + (r.tipo ? ' · ' + esc(r.tipo) : '') + '</span>' +
+                    '</span>' +
+                    '<span class="hcal-m-ag-side">' +
+                        '<span class="hcal-m-ag-tag is-' + esc(r.cat) + '">' + esc(tag) + '</span>' + range +
+                    '</span>' +
+                '</a>';
+        });
+        elList.innerHTML = html;
+    }
+
+    grid.addEventListener('click', function (e) {
+        var btn = e.target.closest('.hcal-m-day');
+        if (!btn) return;
+        grid.querySelectorAll('.hcal-m-day.is-sel').forEach(function (x) { x.classList.remove('is-sel'); });
+        btn.classList.add('is-sel');
+        render(parseInt(btn.dataset.day, 10));
+    });
+})();
+
+// ── Escritorio: toggle Mes / Habitaciones + expandir "+N más" ─────
+(function () {
+    var col = document.getElementById('hcalCalCol');
+    if (!col) return;
+
+    var KEY  = 'hcalView';
+    var btns = document.querySelectorAll('.hcal-vt-btn');
+
+    function setView(v) {
+        col.classList.toggle('show-hab', v === 'hab');
+        btns.forEach(function (b) {
+            var on = b.dataset.view === v;
+            b.classList.toggle('is-on', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        try { localStorage.setItem(KEY, v); } catch (e) {}
+    }
+
+    btns.forEach(function (b) {
+        b.addEventListener('click', function () { setView(b.dataset.view); });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    if (saved === 'hab') setView('hab');
+
+    // "+N más" expande / colapsa las reservas ocultas de una celda
+    col.addEventListener('click', function (e) {
+        var more = e.target.closest('.hcal-mv-more');
+        if (!more) return;
+        e.preventDefault();
+        var cell = more.closest('.hcal-mv-cell');
+        if (!cell) return;
+        var open = cell.classList.toggle('is-expanded');
+        var n = cell.querySelectorAll('.hcal-mv-chip.is-extra').length;
+        more.innerHTML = open
+            ? '<i class="fas fa-minus" style="font-size:.6rem"></i> menos'
+            : '<i class="fas fa-plus" style="font-size:.6rem"></i> ' + n + ' más';
+    });
+})();
 </script>
