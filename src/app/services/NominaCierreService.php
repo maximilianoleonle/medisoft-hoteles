@@ -6,14 +6,17 @@
  * (trabajador_nomina_periodos/_detalles/_eventos) con motor='v2' y
  * grupo_nomina_id, mas las lineas normalizadas en nomina_periodo_conceptos.
  *
- * Al cerrar, acredita el NETO de cada trabajador en el ledger laboral
- * (trabajador_pagos, referencia 'NOMV2-{periodo}-{trabajador}') para que el
- * riel de pagos por Caja existente (snapshot -> pago con corte abierto)
- * funcione sin tocar una sola linea del subsistema de Caja. El motor v2
- * excluye esas referencias de calculos futuros (sin doble conteo).
+ * Al APROBAR (no al cerrar), acredita el NETO de cada trabajador en el ledger
+ * laboral (trabajador_pagos, referencia 'NOMV2-{periodo}-{trabajador}') para
+ * que el riel de pagos por Caja existente funcione sin tocar una linea del
+ * subsistema de Caja. Emitir el credito hasta la aprobacion garantiza que
+ * NINGUN riel de pago (ni el libre) pueda pagar un periodo sin aprobar.
+ * El motor v2 excluye esas referencias de calculos futuros (sin doble conteo).
  *
  * Anulacion v2: exige motivo, bloquea si hay pagos snapshot vigentes y anula
- * los creditos NOMV2 del ledger en la misma transaccion.
+ * los creditos NOMV2 del ledger en la misma transaccion. La reapertura
+ * (aprobado -> cerrado) tambien anula los creditos: sin aprobacion no hay
+ * saldo pagable.
  */
 
 require_once __DIR__ . '/../../core/Database.php';
@@ -121,13 +124,6 @@ class NominaCierreService {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
 
-            $stLedger = $this->pdo->prepare(
-                "INSERT INTO trabajador_pagos
-                    (hotel_id, trabajador_id, tipo, efecto, monto, concepto,
-                     periodo_inicio, periodo_fin, fecha, referencia, estado, created_by)
-                 VALUES (?, ?, 'pago', 'a_favor', ?, ?, ?, ?, ?, ?, 'activo', ?)"
-            );
-
             foreach ($preview['trabajadores'] as $fila) {
                 $t = $fila['trabajador'];
 
@@ -179,20 +175,8 @@ class NominaCierreService {
                     ]);
                 }
 
-                // Credito del neto en el ledger para habilitar el pago por Caja.
-                if ($fila['neto'] > 0) {
-                    $stLedger->execute([
-                        $hotelId,
-                        (int) $t['id'],
-                        number_format($fila['neto'], 2, '.', ''),
-                        mb_substr('Cierre nomina: ' . $etiqueta, 0, 160),
-                        $fechaInicio,
-                        $fechaFin,
-                        $fechaFin,
-                        'NOMV2-' . $periodoId . '-' . (int) $t['id'],
-                        $usuarioId,
-                    ]);
-                }
+                // NOTA: el credito NOMV2 del ledger se emite al APROBAR, no aqui:
+                // un periodo cerrado sin aprobar no debe ser pagable por ningun riel.
             }
 
             $this->registrarEvento($periodoId, $hotelId, 'cierre', 'cerrado',
@@ -244,7 +228,40 @@ class NominaCierreService {
                 throw new Exception('No se pudo aprobar el periodo (estado cambiado por otro usuario).');
             }
 
-            $this->registrarEvento($periodoId, $hotelId, 'aprobacion', 'aprobado', 'Aprobacion de periodo v2', null, $usuarioId);
+            // Emitir el credito del neto en el ledger: desde este momento (y solo
+            // desde este momento) el periodo es pagable por los rieles de Caja.
+            $st = $this->pdo->prepare(
+                "SELECT trabajador_id, neto_sugerido FROM trabajador_nomina_periodo_detalles
+                 WHERE periodo_id = ? AND hotel_id = ? AND neto_sugerido > 0"
+            );
+            $st->execute([$periodoId, $hotelId]);
+            $detallesPagables = $st->fetchAll();
+
+            $stLedger = $this->pdo->prepare(
+                "INSERT INTO trabajador_pagos
+                    (hotel_id, trabajador_id, tipo, efecto, monto, concepto,
+                     periodo_inicio, periodo_fin, fecha, referencia, estado, created_by)
+                 VALUES (?, ?, 'pago', 'a_favor', ?, ?, ?, ?, ?, ?, 'activo', ?)"
+            );
+
+            $creditosEmitidos = 0;
+            foreach ($detallesPagables as $d) {
+                $stLedger->execute([
+                    $hotelId,
+                    (int) $d['trabajador_id'],
+                    $d['neto_sugerido'],
+                    mb_substr('Nomina aprobada: ' . $periodo['etiqueta'], 0, 160),
+                    $periodo['fecha_inicio'],
+                    $periodo['fecha_fin'],
+                    $periodo['fecha_fin'],
+                    'NOMV2-' . $periodoId . '-' . (int) $d['trabajador_id'],
+                    $usuarioId,
+                ]);
+                $creditosEmitidos++;
+            }
+
+            $this->registrarEvento($periodoId, $hotelId, 'aprobacion', 'aprobado',
+                'Aprobacion de periodo v2 (' . $creditosEmitidos . ' creditos de ledger emitidos)', null, $usuarioId);
 
             AuditService::record('nomina.periodo_v2_aprobado', [
                 'hotel_id' => $hotelId,
@@ -394,12 +411,20 @@ class NominaCierreService {
                 throw new Exception('No se pudo reabrir el periodo (estado cambiado por otro usuario).');
             }
 
+            // Sin aprobacion no hay saldo pagable: anular los creditos NOMV2.
+            $st = $this->pdo->prepare(
+                "UPDATE trabajador_pagos SET estado = 'anulado', updated_by = ?
+                 WHERE hotel_id = ? AND referencia LIKE ? AND estado = 'activo'"
+            );
+            $st->execute([$usuarioId, $hotelId, 'NOMV2-' . $periodoId . '-%']);
+            $creditosAnulados = $st->rowCount();
+
             require_once __DIR__ . '/NominaReciboService.php';
             $recibosCancelados = (new NominaReciboService($this->db))
                 ->cancelarPorPeriodo($hotelId, $periodoId, 'Reapertura del periodo: ' . $motivo, $usuarioId);
 
             $this->registrarEvento($periodoId, $hotelId, 'reapertura', 'cerrado',
-                'Reapertura de periodo v2 (' . $recibosCancelados . ' recibos cancelados)', $motivo, $usuarioId);
+                'Reapertura de periodo v2 (' . $creditosAnulados . ' creditos anulados, ' . $recibosCancelados . ' recibos cancelados)', $motivo, $usuarioId);
 
             AuditService::record('nomina.periodo_v2_reabierto', [
                 'hotel_id' => $hotelId,

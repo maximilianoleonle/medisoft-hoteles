@@ -574,19 +574,20 @@ if ($pdo instanceof PDO) {
             nomCoreError('Fase 3: ' . $sinLiberar . ' periodo(s) anulados con anulacion_uk = 0.', 'Ejecutar: UPDATE trabajador_nomina_periodos SET anulacion_uk = id WHERE estado = \'anulado\' AND anulacion_uk = 0;');
         }
 
-        // Integridad: creditos NOMV2 activos cuyo periodo esta anulado = huerfanos.
+        // Integridad: los creditos NOMV2 activos SOLO pueden pertenecer a
+        // periodos APROBADOS (se emiten al aprobar; anular/reabrir los anula).
         $st = $pdo->query(
             "SELECT COUNT(*) AS total
              FROM trabajador_pagos tp
              INNER JOIN trabajador_nomina_periodos p
                 ON p.id = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tp.referencia, '-', 2), '-', -1) AS UNSIGNED)
-             WHERE tp.referencia LIKE 'NOMV2-%' AND tp.estado = 'activo' AND p.estado = 'anulado'"
+             WHERE tp.referencia LIKE 'NOMV2-%' AND tp.estado = 'activo' AND p.estado != 'aprobado'"
         );
         $huerfanos = (int) ($st->fetch()['total'] ?? 0);
         if ($huerfanos === 0) {
-            nomCoreOk('Fase 3: cero creditos NOMV2 huerfanos (periodos anulados sin revertir ledger).');
+            nomCoreOk('Fase 3: creditos NOMV2 activos solo en periodos aprobados (invariante de pago).');
         } else {
-            nomCoreError('Fase 3: ' . $huerfanos . ' credito(s) NOMV2 activos de periodos ANULADOS.', 'Anular esos creditos de trabajador_pagos: inflan el saldo laboral.');
+            nomCoreError('Fase 3: ' . $huerfanos . ' credito(s) NOMV2 activos de periodos NO aprobados.', 'Anular esos creditos de trabajador_pagos: permiten pagar nomina sin aprobacion.');
         }
 
         // Integridad: todo periodo v2 no anulado debe tener lineas congeladas.

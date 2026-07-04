@@ -263,13 +263,17 @@ class NominaCalculoService {
             ];
         }
 
-        // 3) Ledger v1 con solape (compatibilidad; excluye creditos NOMV2-*).
+        // 3) Ledger v1 (compatibilidad; excluye creditos NOMV2-*).
+        //    Atribucion por FECHA de la fila (no por solape de rango): una fila
+        //    cuenta EXACTAMENTE UNA VEZ entre periodos consecutivos del grupo.
+        //    Una fila cuyo rango v1 abarque dos periodos v2 se atribuye al
+        //    periodo donde cae su fecha de captura.
         $st = $this->pdo->prepare(
             "SELECT id, tipo, efecto, monto, concepto, fecha
              FROM trabajador_pagos
              WHERE hotel_id = ? AND trabajador_id = ? AND estado = 'activo'
                AND (referencia IS NULL OR referencia NOT LIKE 'NOMV2-%')
-               AND COALESCE(periodo_fin, fecha) >= ? AND COALESCE(periodo_inicio, fecha) <= ?
+               AND fecha BETWEEN ? AND ?
              ORDER BY fecha ASC, id ASC"
         );
         $st->execute([$hotelId, $trabajadorId, $inicio, $fin]);
