@@ -107,6 +107,20 @@ include APP_PATH . '/views/partials/back_arrow.php';
     </div>
     <?php endif; ?>
 
+    <?php if ($inPuedeCapturar): ?>
+    <form method="POST" action="<?= url('nomina/incidencias/proponer') ?>" class="inc-form" style="margin-bottom:14px;">
+        <?= csrf_field() ?>
+        <input type="hidden" name="desde" value="<?= htmlspecialchars((string) ($inFiltros['desde'] ?? date('Y-m-01'))) ?>">
+        <input type="hidden" name="hasta" value="<?= htmlspecialchars((string) ($inFiltros['hasta'] ?? date('Y-m-d'))) ?>">
+        <button type="submit" class="inc-btn inc-btn-sec ms-pressable">
+            <i class="fas fa-wand-magic-sparkles"></i> Proponer desde la operación (adaptador del giro)
+        </button>
+        <span style="font-size:12px; color:var(--nom-muted); align-self:center;">
+            Usa el rango de los filtros; las propuestas quedan pendientes de tu aprobación.
+        </span>
+    </form>
+    <?php endif; ?>
+
     <form method="GET" action="<?= url('nomina/incidencias') ?>" class="inc-form" data-auto-filter-form style="margin-bottom:14px;">
         <div class="inc-field" style="flex:0 1 160px;">
             <label>Desde</label>
@@ -151,6 +165,13 @@ include APP_PATH . '/views/partials/back_arrow.php';
                     <td><?= htmlspecialchars((string) $i['origen']) ?></td>
                     <?php if ($inPuedeCapturar): ?>
                     <td>
+                        <?php if ($i['estado'] === 'pendiente'): ?>
+                        <form method="POST" action="<?= url('nomina/incidencias/' . (int) $i['id'] . '/estado') ?>" style="display:inline-block; margin-bottom:4px;">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="estado" value="aprobada">
+                            <button type="submit" class="inc-btn ms-pressable" style="padding:5px 10px; font-size:12px;">Aprobar</button>
+                        </form>
+                        <?php endif; ?>
                         <?php if ($i['estado'] !== 'rechazada'): ?>
                         <form method="POST" action="<?= url('nomina/incidencias/' . (int) $i['id'] . '/estado') ?>"
                               data-ms-confirm data-ms-type="warning" data-ms-icon="trash"

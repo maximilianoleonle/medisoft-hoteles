@@ -142,6 +142,17 @@ include APP_PATH . '/views/partials/back_arrow.php';
             <p class="nom-hint">Aplican a los cálculos y montos que muestre la nómina.</p>
             <div class="nom-field-row">
                 <div>
+                    <label class="nom-label" for="nom-giro">Giro del negocio</label>
+                    <select id="nom-giro" name="giro" class="nom-input">
+                        <?php
+                        $nomGiros = ['hotel' => 'Hotel', 'restaurante' => 'Restaurante', 'academia' => 'Academia', 'clinica' => 'Clínica', 'lavanderia' => 'Lavandería', 'otro' => 'Otro'];
+                        $nomGiroActual = (string) ($nomConfig['giro'] ?? 'hotel');
+                        foreach ($nomGiros as $gk => $gl): ?>
+                        <option value="<?= $gk ?>" <?= $nomGiroActual === $gk ? 'selected' : '' ?>><?= $gl ?><?= $gk !== 'hotel' ? ' (adaptador próximamente)' : '' ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
                     <label class="nom-label" for="nom-pais">País de reglas legales</label>
                     <select id="nom-pais" name="pais" class="nom-input">
                         <option value="MX" selected>México (MX)</option>

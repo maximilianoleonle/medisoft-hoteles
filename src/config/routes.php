@@ -247,6 +247,12 @@ $router->post('/nomina/periodos/cerrar', ['controller' => 'Nomina', 'action' => 
 $router->get('/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'periodoVer']);
 $router->post('/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Nomina', 'action' => 'periodoAprobar']);
 $router->post('/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Nomina', 'action' => 'periodoAnular']);
+// Fases 7-10: exportacion contador, adaptador por giro y API interna JSON.
+$router->get('/nomina/periodos/{id:[0-9]+}/exportar', ['controller' => 'Nomina', 'action' => 'periodoExportar']);
+$router->post('/nomina/incidencias/proponer', ['controller' => 'Nomina', 'action' => 'incidenciasProponer']);
+$router->get('/api/nomina/periodos', ['controller' => 'Nomina', 'action' => 'apiPeriodos']);
+$router->get('/api/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'apiPeriodoVer']);
+$router->post('/api/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'apiIncidenciaCrear']);
 // Fase 4: recibos internos y reapertura controlada.
 $router->post('/nomina/periodos/{id:[0-9]+}/recibos/emitir', ['controller' => 'Nomina', 'action' => 'periodoRecibosEmitir']);
 $router->post('/nomina/periodos/{id:[0-9]+}/reabrir', ['controller' => 'Nomina', 'action' => 'periodoReabrir']);

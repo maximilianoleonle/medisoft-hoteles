@@ -89,7 +89,11 @@ class NominaController extends Controller {
         $pais = strtoupper(trim((string) $this->getPost('pais', $antes['pais'])));
         $redondeo = (string) $this->getPost('redondeo', $antes['redondeo']);
 
+        require_once __DIR__ . '/../services/NominaAdaptadorRegistry.php';
+        $giro = (string) $this->getPost('giro', $antes['giro']);
+
         $nuevos = [
+            'giro' => in_array($giro, NominaAdaptadorRegistry::GIROS_VALIDOS, true) ? $giro : 'hotel',
             'modo' => in_array($modo, $this->modosValidos, true) ? $modo : 'simplificada',
             'pais' => in_array($pais, $this->paisesValidos, true) ? $pais : 'MX',
             'redondeo' => in_array($redondeo, $this->redondeosValidos, true) ? $redondeo : 'centavos',
@@ -100,6 +104,7 @@ class NominaController extends Controller {
         ];
 
         $claves = [
+            'negocio.giro' => ['valor' => $nuevos['giro'], 'tipo' => 'string'],
             'nomina.modo' => ['valor' => $nuevos['modo'], 'tipo' => 'string'],
             'nomina.pais' => ['valor' => $nuevos['pais'], 'tipo' => 'string'],
             'nomina.redondeo' => ['valor' => $nuevos['redondeo'], 'tipo' => 'string'],
@@ -721,6 +726,197 @@ class NominaController extends Controller {
         $this->redirect('nomina/periodos/' . (int) $id);
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Fase 7: exportacion para contador (modo hibrido y general)          */
+    /* ------------------------------------------------------------------ */
+
+    public function periodoExportarAction($id) {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('exportaciones');
+        }
+        if (function_exists('require_permission')) {
+            require_permission('nomina.exportar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+        $periodoId = (int) $id;
+
+        $db = Database::getInstance();
+        $st = $db->query(
+            "SELECT * FROM trabajador_nomina_periodos WHERE id = ? AND hotel_id = ?",
+            [$periodoId, $hotelId]
+        );
+        $periodo = $st !== false ? $st->fetch() : null;
+        if (!$periodo) {
+            set_mensaje('El periodo no existe en este negocio.', 'error');
+            $this->redirect('nomina/periodos');
+        }
+
+        $st = $db->query(
+            "SELECT d.trabajador_nombre, d.trabajador_identificacion, d.trabajador_rol,
+                    l.concepto_nombre, l.tipo, l.clasificacion, l.origen, l.cantidad, l.base, l.monto, l.referencia
+             FROM trabajador_nomina_periodo_detalles d
+             LEFT JOIN nomina_periodo_conceptos l ON l.detalle_id = d.id
+             WHERE d.periodo_id = ? AND d.hotel_id = ?
+             ORDER BY d.trabajador_nombre ASC, l.tipo ASC, l.id ASC",
+            [$periodoId, $hotelId]
+        );
+        $filas = $st !== false ? $st->fetchAll() : [];
+
+        session_write_close();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $nombre = 'nomina-periodo-' . $periodoId . '-' . $periodo['fecha_inicio'] . '-' . $periodo['fecha_fin'] . '.csv';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $nombre . '"');
+        header('X-Content-Type-Options: nosniff');
+
+        $salida = fopen('php://output', 'w');
+        fwrite($salida, "\xEF\xBB\xBF");
+        fputcsv($salida, ['Periodo', $periodo['etiqueta'], $periodo['fecha_inicio'], $periodo['fecha_fin'], 'estado', $periodo['estado'], 'motor', $periodo['motor'] ?? 'v1']);
+        fputcsv($salida, ['Empleado', 'Identificacion', 'Puesto', 'Concepto', 'Tipo', 'Clasificacion', 'Origen', 'Cantidad', 'Base', 'Monto', 'Referencia']);
+        foreach ($filas as $f) {
+            fputcsv($salida, [
+                $f['trabajador_nombre'],
+                $f['trabajador_identificacion'],
+                $f['trabajador_rol'],
+                $f['concepto_nombre'],
+                $f['tipo'],
+                $f['clasificacion'],
+                $f['origen'],
+                $f['cantidad'] !== null ? number_format((float) $f['cantidad'], 2, '.', '') : '',
+                $f['base'] !== null ? number_format((float) $f['base'], 2, '.', '') : '',
+                $f['monto'] !== null ? number_format((float) $f['monto'], 2, '.', '') : '',
+                $f['referencia'],
+            ]);
+        }
+        fclose($salida);
+        exit;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Fases 8/9: adaptador por giro (propone incidencias)                 */
+    /* ------------------------------------------------------------------ */
+
+    public function incidenciasProponerAction() {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/incidencias');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.incidencias');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            require_once __DIR__ . '/../services/NominaAdaptadorRegistry.php';
+            $giro = NominaAdaptadorRegistry::giroDelNegocio($hotelId);
+            $adaptador = NominaAdaptadorRegistry::paraGiro($giro);
+
+            if ($adaptador === null) {
+                set_mensaje('El giro "' . $giro . '" aun no tiene adaptador de nomina; captura las incidencias manualmente.', 'warning');
+            } else {
+                $desde = (string) $this->getPost('desde', date('Y-m-01'));
+                $hasta = (string) $this->getPost('hasta', date('Y-m-d'));
+                $resultado = $adaptador->proponerIncidencias($hotelId, $desde, $hasta, user_id());
+
+                $mensaje = $resultado['propuestas'] . ' propuesta(s) del adaptador ' . $giro . ' (quedan pendientes de aprobar).';
+                if (!empty($resultado['avisos'])) {
+                    $mensaje .= ' ' . implode(' ', $resultado['avisos']);
+                }
+                set_mensaje($mensaje, $resultado['propuestas'] > 0 ? 'success' : 'info');
+            }
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/incidencias?estado=pendiente');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Fase 10: API interna JSON (reutilizable por integraciones futuras)  */
+    /* ------------------------------------------------------------------ */
+
+    public function apiPeriodosAction() {
+        $hotelId = $this->hotelIdActual();
+
+        $db = Database::getInstance();
+        $st = $db->query(
+            "SELECT p.id, p.etiqueta, p.tipo_periodo, p.motor, p.estado, p.fecha_inicio, p.fecha_fin,
+                    p.trabajadores_total, p.bruto_total, p.neto_sugerido_total, g.nombre AS grupo
+             FROM trabajador_nomina_periodos p
+             LEFT JOIN nomina_grupos g ON g.id = p.grupo_nomina_id
+             WHERE p.hotel_id = ?
+             ORDER BY p.fecha_fin DESC, p.id DESC
+             LIMIT 100",
+            [$hotelId]
+        );
+
+        View::renderJSON(['success' => true, 'periodos' => $st !== false ? $st->fetchAll() : []]);
+    }
+
+    public function apiPeriodoVerAction($id) {
+        $hotelId = $this->hotelIdActual();
+        $periodoId = (int) $id;
+
+        $db = Database::getInstance();
+        $st = $db->query(
+            "SELECT * FROM trabajador_nomina_periodos WHERE id = ? AND hotel_id = ?",
+            [$periodoId, $hotelId]
+        );
+        $periodo = $st !== false ? $st->fetch() : null;
+
+        if (!$periodo) {
+            View::renderJSON(['success' => false, 'error' => 'periodo_no_encontrado'], 404);
+        }
+
+        $st = $db->query(
+            "SELECT id, trabajador_id, trabajador_nombre, conceptos_a_favor, conceptos_en_contra,
+                    deducciones_informativas, neto_sugerido, pendiente_pago_sugerido
+             FROM trabajador_nomina_periodo_detalles WHERE periodo_id = ? AND hotel_id = ?",
+            [$periodoId, $hotelId]
+        );
+        $detalles = $st !== false ? $st->fetchAll() : [];
+
+        $st = $db->query(
+            "SELECT detalle_id, concepto_nombre, tipo, clasificacion, origen, cantidad, base, monto, referencia
+             FROM nomina_periodo_conceptos WHERE periodo_id = ? AND hotel_id = ?",
+            [$periodoId, $hotelId]
+        );
+        $lineas = $st !== false ? $st->fetchAll() : [];
+
+        View::renderJSON(['success' => true, 'periodo' => $periodo, 'detalles' => $detalles, 'lineas' => $lineas]);
+    }
+
+    public function apiIncidenciaCrearAction() {
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false, 'error' => 'metodo_no_permitido'], 405);
+        }
+        $this->validateCSRF();
+        if (!can('nomina.incidencias')) {
+            View::renderJSON(['success' => false, 'error' => 'permiso_denegado'], 403);
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $incidenciaId = (new NominaIncidenciaService())->registrar($hotelId, [
+                'trabajador_id' => $this->getPost('trabajador_id'),
+                'concepto_id' => $this->getPost('concepto_id'),
+                'fecha' => $this->getPost('fecha'),
+                'cantidad' => $this->getPost('cantidad'),
+                'monto' => $this->getPost('monto'),
+                'descripcion' => $this->getPost('descripcion'),
+            ], user_id());
+            View::renderJSON(['success' => true, 'incidencia_id' => $incidenciaId]);
+        } catch (Throwable $e) {
+            View::renderJSON(['success' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
     public function periodoAnularAction($id) {
         if (!$this->isPost()) {
             $this->redirect('nomina/periodos');
@@ -768,6 +964,7 @@ class NominaController extends Controller {
      */
     private function configuracionActual($hotelId) {
         return [
+            'giro' => (string) ConfiguracionHotelRegistry::get('negocio.giro', 'hotel', $hotelId),
             'modo' => (string) ConfiguracionHotelRegistry::get('nomina.modo', 'simplificada', $hotelId),
             'pais' => (string) ConfiguracionHotelRegistry::get('nomina.pais', 'MX', $hotelId),
             'redondeo' => (string) ConfiguracionHotelRegistry::get('nomina.redondeo', 'centavos', $hotelId),

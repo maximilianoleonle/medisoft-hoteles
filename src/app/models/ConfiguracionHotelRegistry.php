@@ -168,6 +168,11 @@ class ConfiguracionHotelRegistry
             'default' => false,
             'description' => 'Permite reabrir periodos de nomina cerrados (siempre con motivo y auditoria).',
         ],
+        'negocio.giro' => [
+            'type' => 'string',
+            'default' => 'hotel',
+            'description' => 'Giro del negocio (hotel, restaurante, academia...); selecciona el adaptador de nomina.',
+        ],
     ];
 
     private static $legacyFallbacks = [

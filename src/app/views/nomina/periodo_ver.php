@@ -94,6 +94,14 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <div class="pd-kpi"><div class="pd-kpi-label">Pendiente de pago</div><div class="pd-kpi-value">$<?= number_format((float) ($pd['pendiente_pago_total'] ?? 0), 2) ?></div></div>
     </div>
 
+    <?php if (function_exists('hotel_menu_module_enabled') && hotel_menu_module_enabled('exportaciones') && can('nomina.exportar')): ?>
+    <div class="pd-acciones">
+        <a class="pd-btn ms-pressable" href="<?= url('nomina/periodos/' . (int) ($pd['id'] ?? 0) . '/exportar') ?>">
+            <i class="fas fa-file-csv"></i> Exportar para contador (CSV)
+        </a>
+    </div>
+    <?php endif; ?>
+
     <?php if ($pdEsV2 && ($pd['estado'] ?? '') !== 'anulado'): ?>
     <div class="pd-acciones">
         <?php if (($pd['estado'] ?? '') === 'cerrado' && $pdPuedeAprobar): ?>
