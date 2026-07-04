@@ -11,6 +11,9 @@
 require_once __DIR__ . '/../services/AuditService.php';
 require_once __DIR__ . '/../services/NominaCatalogoService.php';
 require_once __DIR__ . '/../services/NominaSalarioService.php';
+require_once __DIR__ . '/../services/NominaIncidenciaService.php';
+require_once __DIR__ . '/../services/NominaCalculoService.php';
+require_once __DIR__ . '/../services/NominaCierreService.php';
 
 class NominaController extends Controller {
 
@@ -373,6 +376,273 @@ class NominaController extends Controller {
         }
 
         $this->redirect('nomina/empleados/' . (int) $id);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Fase 3: incidencias                                                 */
+    /* ------------------------------------------------------------------ */
+
+    public function incidenciasAction() {
+        $hotelId = $this->hotelIdActual();
+        $servicio = new NominaIncidenciaService();
+        $catalogo = new NominaCatalogoService();
+
+        $filtros = [
+            'desde' => (string) $this->getQuery('desde', date('Y-m-01')),
+            'hasta' => (string) $this->getQuery('hasta', date('Y-m-d')),
+            'estado' => (string) $this->getQuery('estado', ''),
+        ];
+
+        $trabajadores = [];
+        try {
+            $db = Database::getInstance();
+            $st = $db->query(
+                "SELECT id, nombre_completo FROM trabajadores WHERE hotel_id = ? AND estado = 'activo' ORDER BY nombre_completo ASC LIMIT 300",
+                [$hotelId]
+            );
+            $trabajadores = $st !== false ? $st->fetchAll() : [];
+        } catch (Throwable $e) {
+            $trabajadores = [];
+        }
+
+        View::renderTemplate('nomina/incidencias', [
+            'title' => 'Incidencias de nomina - ' . current_hotel_display_name(),
+            'incidencias' => $servicio->listar($hotelId, $filtros),
+            'filtros' => $filtros,
+            'conceptos' => $catalogo->listar($hotelId, 'conceptos', true),
+            'trabajadores' => $trabajadores,
+            'puedeCapturar' => can('nomina.incidencias'),
+        ]);
+    }
+
+    public function incidenciaCrearAction() {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/incidencias');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.incidencias');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaIncidenciaService())->registrar($hotelId, [
+                'trabajador_id' => $this->getPost('trabajador_id'),
+                'concepto_id' => $this->getPost('concepto_id'),
+                'fecha' => $this->getPost('fecha'),
+                'cantidad' => $this->getPost('cantidad'),
+                'monto' => $this->getPost('monto'),
+                'descripcion' => $this->getPost('descripcion'),
+            ], user_id());
+            set_mensaje('Incidencia registrada.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/incidencias');
+    }
+
+    public function incidenciaEstadoAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/incidencias');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.incidencias');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaIncidenciaService())->cambiarEstado($hotelId, (int) $id, (string) $this->getPost('estado'), user_id());
+            set_mensaje('Incidencia actualizada.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/incidencias');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Fase 3: periodos v2 (preview, cierre, aprobacion, anulacion)        */
+    /* ------------------------------------------------------------------ */
+
+    public function periodosAction() {
+        $hotelId = $this->hotelIdActual();
+        $catalogo = new NominaCatalogoService();
+        $grupos = $catalogo->listar($hotelId, 'grupos', true);
+
+        $sugerencias = [];
+        $periodos = [];
+        try {
+            $calculo = new NominaCalculoService();
+            foreach ($grupos as $g) {
+                $sugerencias[(int) $g['id']] = $calculo->sugerirRango($hotelId, $g);
+            }
+
+            $db = Database::getInstance();
+            $st = $db->query(
+                "SELECT p.id, p.etiqueta, p.tipo_periodo, p.motor, p.estado, p.fecha_inicio, p.fecha_fin,
+                        p.trabajadores_total, p.bruto_total, p.neto_sugerido_total, g.nombre AS grupo_nombre
+                 FROM trabajador_nomina_periodos p
+                 LEFT JOIN nomina_grupos g ON g.id = p.grupo_nomina_id
+                 WHERE p.hotel_id = ?
+                 ORDER BY p.fecha_fin DESC, p.id DESC
+                 LIMIT 60",
+                [$hotelId]
+            );
+            $periodos = $st !== false ? $st->fetchAll() : [];
+        } catch (Throwable $e) {
+            // Vista funciona con listas vacias.
+        }
+
+        View::renderTemplate('nomina/periodos', [
+            'title' => 'Periodos de nomina - ' . current_hotel_display_name(),
+            'grupos' => $grupos,
+            'sugerencias' => $sugerencias,
+            'periodos' => $periodos,
+            'puedeCalcular' => can('nomina.calcular'),
+        ]);
+    }
+
+    public function periodoPreviewAction() {
+        if (function_exists('require_permission')) {
+            require_permission('nomina.calcular');
+        }
+
+        $hotelId = $this->hotelIdActual();
+        $grupoId = (int) $this->getQuery('grupo_id', 0);
+        $inicio = (string) $this->getQuery('inicio', '');
+        $fin = (string) $this->getQuery('fin', '');
+
+        try {
+            $preview = (new NominaCalculoService())->preview($hotelId, $grupoId, $inicio, $fin);
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+            $this->redirect('nomina/periodos');
+            return;
+        }
+
+        View::renderTemplate('nomina/periodo_preview', [
+            'title' => 'Previsualizacion de nomina - ' . current_hotel_display_name(),
+            'preview' => $preview,
+            'puedeCerrar' => can('nomina.cerrar'),
+        ]);
+    }
+
+    public function periodoCerrarAction() {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.cerrar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $periodoId = (new NominaCierreService())->cerrar(
+                $hotelId,
+                (int) $this->getPost('grupo_id'),
+                (string) $this->getPost('inicio'),
+                (string) $this->getPost('fin'),
+                user_id()
+            );
+            set_mensaje('Periodo cerrado. Revisa el snapshot y apruebalo para habilitar pagos.', 'success');
+            $this->redirect('nomina/periodos/' . $periodoId);
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+            $this->redirect('nomina/periodos');
+        }
+    }
+
+    public function periodoVerAction($id) {
+        $hotelId = $this->hotelIdActual();
+        $periodoId = (int) $id;
+
+        $db = Database::getInstance();
+        $st = $db->query(
+            "SELECT p.*, g.nombre AS grupo_nombre
+             FROM trabajador_nomina_periodos p
+             LEFT JOIN nomina_grupos g ON g.id = p.grupo_nomina_id
+             WHERE p.id = ? AND p.hotel_id = ?",
+            [$periodoId, $hotelId]
+        );
+        $periodo = $st !== false ? $st->fetch() : null;
+
+        if (!$periodo) {
+            set_mensaje('El periodo no existe en este negocio.', 'error');
+            $this->redirect('nomina/periodos');
+        }
+
+        $detalles = [];
+        $lineasPorDetalle = [];
+        $st = $db->query(
+            "SELECT * FROM trabajador_nomina_periodo_detalles WHERE periodo_id = ? AND hotel_id = ? ORDER BY trabajador_nombre ASC",
+            [$periodoId, $hotelId]
+        );
+        $detalles = $st !== false ? $st->fetchAll() : [];
+
+        $st = $db->query(
+            "SELECT * FROM nomina_periodo_conceptos WHERE periodo_id = ? AND hotel_id = ? ORDER BY detalle_id ASC, tipo ASC, id ASC",
+            [$periodoId, $hotelId]
+        );
+        foreach (($st !== false ? $st->fetchAll() : []) as $linea) {
+            $lineasPorDetalle[(int) $linea['detalle_id']][] = $linea;
+        }
+
+        View::renderTemplate('nomina/periodo_ver', [
+            'title' => 'Periodo de nomina - ' . current_hotel_display_name(),
+            'periodo' => $periodo,
+            'detalles' => $detalles,
+            'lineasPorDetalle' => $lineasPorDetalle,
+            'puedeAprobar' => can('nomina.aprobar'),
+            'puedeAnular' => can('nomina.reabrir'),
+        ]);
+    }
+
+    public function periodoAprobarAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.aprobar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCierreService())->aprobar($hotelId, (int) $id, user_id());
+            set_mensaje('Periodo aprobado: los pagos por Caja quedan habilitados.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/periodos/' . (int) $id);
+    }
+
+    public function periodoAnularAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/periodos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.reabrir');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCierreService())->anular($hotelId, (int) $id, (string) $this->getPost('motivo', ''), user_id());
+            set_mensaje('Periodo anulado y creditos de ledger revertidos.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/periodos/' . (int) $id);
     }
 
     /* ------------------------------------------------------------------ */

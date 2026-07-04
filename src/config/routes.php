@@ -237,6 +237,16 @@ $router->get('/nomina/empleados', ['controller' => 'Nomina', 'action' => 'emplea
 $router->get('/nomina/empleados/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'empleadoFicha']);
 $router->post('/nomina/empleados/{id:[0-9]+}/asignaciones', ['controller' => 'Nomina', 'action' => 'empleadoAsignaciones']);
 $router->post('/nomina/empleados/{id:[0-9]+}/salario', ['controller' => 'Nomina', 'action' => 'empleadoSalario']);
+// Fase 3: motor v2 (incidencias y periodos por grupo de pago).
+$router->get('/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'incidencias']);
+$router->post('/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'incidenciaCrear']);
+$router->post('/nomina/incidencias/{id:[0-9]+}/estado', ['controller' => 'Nomina', 'action' => 'incidenciaEstado']);
+$router->get('/nomina/periodos', ['controller' => 'Nomina', 'action' => 'periodos']);
+$router->get('/nomina/periodos/preview', ['controller' => 'Nomina', 'action' => 'periodoPreview']);
+$router->post('/nomina/periodos/cerrar', ['controller' => 'Nomina', 'action' => 'periodoCerrar']);
+$router->get('/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'periodoVer']);
+$router->post('/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Nomina', 'action' => 'periodoAprobar']);
+$router->post('/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Nomina', 'action' => 'periodoAnular']);
 
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);

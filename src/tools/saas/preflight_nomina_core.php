@@ -524,6 +524,89 @@ if ($pdo instanceof PDO) {
 }
 
 /* ---------------------------------------------------------------------
+ * 7h) Fase 3: motor v2 (incidencias, lineas, periodos por grupo).
+ * ------------------------------------------------------------------- */
+if ($pdo instanceof PDO) {
+    try {
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('nomina_incidencias', 'nomina_periodo_conceptos')"
+        );
+        $tablas = (int) ($st->fetch()['total'] ?? 0);
+        if ($tablas === 2) {
+            nomCoreOk('Fase 3: tablas nomina_incidencias y nomina_periodo_conceptos existen.');
+        } else {
+            nomCoreError('Fase 3: faltan tablas del motor v2 (' . $tablas . '/2).', 'Aplicar la migracion 20260704_003.');
+        }
+
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'trabajador_nomina_periodos'
+               AND COLUMN_NAME IN ('grupo_nomina_id', 'motor', 'reglas_snapshot_json')"
+        );
+        $cols = (int) ($st->fetch()['total'] ?? 0);
+        if ($cols === 3) {
+            nomCoreOk('Fase 3: trabajador_nomina_periodos extendida (grupo, motor, reglas_snapshot).');
+        } else {
+            nomCoreError('Fase 3: trabajador_nomina_periodos tiene ' . $cols . '/3 columnas nuevas.', 'Aplicar la migracion 20260704_003.');
+        }
+
+        $st = $pdo->query(
+            "SELECT COUNT(DISTINCT INDEX_NAME) AS total FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'trabajador_nomina_periodos'
+               AND INDEX_NAME = 'uk_trabajador_nomina_periodo_grupo_rango_vigente'"
+        );
+        if ((int) ($st->fetch()['total'] ?? 0) === 1) {
+            nomCoreOk('Fase 3: unicidad por grupo activa solo para periodos vigentes.');
+        } else {
+            nomCoreError('Fase 3: falta la UNIQUE por grupo (vigentes) en periodos.', 'Aplicar la migracion 20260704_003.');
+        }
+
+        // Consistencia: todo periodo anulado debe liberar su rango (anulacion_uk = id).
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM trabajador_nomina_periodos
+             WHERE estado = 'anulado' AND anulacion_uk = 0"
+        );
+        $sinLiberar = (int) ($st->fetch()['total'] ?? 0);
+        if ($sinLiberar === 0) {
+            nomCoreOk('Fase 3: todos los periodos anulados liberaron su rango (anulacion_uk).');
+        } else {
+            nomCoreError('Fase 3: ' . $sinLiberar . ' periodo(s) anulados con anulacion_uk = 0.', 'Ejecutar: UPDATE trabajador_nomina_periodos SET anulacion_uk = id WHERE estado = \'anulado\' AND anulacion_uk = 0;');
+        }
+
+        // Integridad: creditos NOMV2 activos cuyo periodo esta anulado = huerfanos.
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total
+             FROM trabajador_pagos tp
+             INNER JOIN trabajador_nomina_periodos p
+                ON p.id = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tp.referencia, '-', 2), '-', -1) AS UNSIGNED)
+             WHERE tp.referencia LIKE 'NOMV2-%' AND tp.estado = 'activo' AND p.estado = 'anulado'"
+        );
+        $huerfanos = (int) ($st->fetch()['total'] ?? 0);
+        if ($huerfanos === 0) {
+            nomCoreOk('Fase 3: cero creditos NOMV2 huerfanos (periodos anulados sin revertir ledger).');
+        } else {
+            nomCoreError('Fase 3: ' . $huerfanos . ' credito(s) NOMV2 activos de periodos ANULADOS.', 'Anular esos creditos de trabajador_pagos: inflan el saldo laboral.');
+        }
+
+        // Integridad: todo periodo v2 no anulado debe tener lineas congeladas.
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM trabajador_nomina_periodos p
+             WHERE p.motor = 'v2' AND p.estado != 'anulado'
+               AND NOT EXISTS (SELECT 1 FROM nomina_periodo_conceptos l WHERE l.periodo_id = p.id)"
+        );
+        $sinLineas = (int) ($st->fetch()['total'] ?? 0);
+        if ($sinLineas === 0) {
+            nomCoreOk('Fase 3: todos los periodos v2 vigentes tienen lineas congeladas.');
+        } else {
+            nomCoreWarning('Fase 3: ' . $sinLineas . ' periodo(s) v2 sin lineas congeladas.', 'Revisar cierres interrumpidos.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 3: no se pudieron verificar estructuras del motor v2: ' . $e->getMessage());
+    }
+}
+
+/* ---------------------------------------------------------------------
  * 8) Modo de errores de BD para el futuro motor de calculo.
  * ------------------------------------------------------------------- */
 $strict = $env['DB_STRICT_ERRORS'] ?? getenv('DB_STRICT_ERRORS');

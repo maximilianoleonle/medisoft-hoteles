@@ -127,11 +127,12 @@ $nomEstadoPeriodoLabels = [
         <a href="<?= url('nomina/empleados') ?>" class="nom-btn ms-pressable">
             <i class="fas fa-address-book"></i> Empleados
         </a>
-        <?php if ($nomPersonalActivo): ?>
-        <a href="<?= url('trabajadores/nomina/periodos') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-calendar-week"></i> Periodos de pre-nómina
+        <a href="<?= url('nomina/incidencias') ?>" class="nom-btn ms-pressable">
+            <i class="fas fa-clipboard-list"></i> Incidencias
         </a>
-        <?php endif; ?>
+        <a href="<?= url('nomina/periodos') ?>" class="nom-btn ms-pressable">
+            <i class="fas fa-calendar-week"></i> Periodos
+        </a>
     </div>
 
     <?php if (!$nomPersonalActivo): ?>
