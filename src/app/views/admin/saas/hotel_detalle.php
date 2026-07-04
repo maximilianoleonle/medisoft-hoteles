@@ -212,6 +212,51 @@ $fila = function ($label, $value) {
         </div>
     </div>
 
+    <?php $cobrosHotel = $cobrosHotel ?? []; ?>
+    <?php if (!empty($cobrosHotel)): ?>
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Estado de cuenta</h2>
+            <p class="text-sm text-gray-500">Cobros mensuales de este hotel (los gestionas en <a href="<?= url('admin/saas/cobros') ?>" class="underline">Cobros</a>).</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y" style="border-color:var(--ms-border);">
+                <thead style="background:var(--ms-bg);">
+                    <tr>
+                        <th class="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Periodo</th>
+                        <th class="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Monto</th>
+                        <th class="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Estado</th>
+                        <th class="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Pago</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color:var(--ms-border);">
+                <?php
+                $badgeCuenta = static function ($estado) {
+                    $map = [
+                        'pagado' => ['Pagado', 'background:rgba(22,163,74,.12);color:var(--ms-success);'],
+                        'pendiente' => ['Pendiente', 'background:rgba(245,158,11,.14);color:#92600A;'],
+                        'vencido' => ['Vencido', 'background:rgba(220,38,38,.12);color:#B91C1C;'],
+                        'cancelado' => ['Cancelado', 'background:rgba(100,116,139,.12);color:var(--ms-muted);'],
+                    ];
+                    return $map[$estado] ?? [$estado, ''];
+                };
+                foreach ($cobrosHotel as $cc): [$ccTxt, $ccStyle] = $badgeCuenta($cc['estado']); ?>
+                    <tr>
+                        <td class="px-5 py-3 text-sm font-medium" style="color:var(--ms-text);"><?= htmlspecialchars((string) $cc['periodo'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="px-5 py-3 text-right text-sm font-semibold" style="color:var(--ms-text);">$<?= number_format((float) $cc['monto'], 2) ?></td>
+                        <td class="px-5 py-3"><span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" style="<?= $ccStyle ?>"><?= htmlspecialchars($ccTxt, ENT_QUOTES, 'UTF-8') ?></span></td>
+                        <td class="px-5 py-3 text-xs" style="color:var(--ms-muted);">
+                            <?= $cc['metodo'] ? htmlspecialchars((string) $cc['metodo'], ENT_QUOTES, 'UTF-8') : '—' ?><?= $cc['pagado_at'] ? ' · ' . htmlspecialchars(date('d/m/Y', strtotime((string) $cc['pagado_at'])), ENT_QUOTES, 'UTF-8') : '' ?>
+                            <?= (!$cc['pagado_at'] && !empty($cc['vence_at']) && in_array($cc['estado'], ['pendiente', 'vencido'], true)) ? 'vence ' . htmlspecialchars(date('d/m/Y', strtotime((string) $cc['vence_at'])), ENT_QUOTES, 'UTF-8') : '' ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div id="resumen" class="scroll-mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-3">

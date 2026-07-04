@@ -103,6 +103,21 @@ class ConfiguracionHotelRegistry
             'default' => '',
             'description' => 'Token secreto de los feeds iCal exportados del hotel (bloque canales_ical).',
         ],
+        'reputacion.google_review_url' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Link para dejar resena en Google (se muestra al huesped que califica bien).',
+        ],
+        'reputacion.umbral_alerta' => [
+            'type' => 'integer',
+            'default' => 3,
+            'description' => 'Calificacion (1-5) igual o menor a esta genera alerta interna (bloque reputacion).',
+        ],
+        'reputacion.dias_vigencia' => [
+            'type' => 'integer',
+            'default' => 30,
+            'description' => 'Dias que sigue valido el link de encuesta despues del checkout.',
+        ],
     ];
 
     private static $legacyFallbacks = [

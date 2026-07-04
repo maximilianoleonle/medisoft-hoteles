@@ -22,8 +22,10 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/manifest\.webmanifest$/i', // Manifest scoped por hotel
             '/^\/h\/[a-z0-9-]+\/reservar$/i',              // Motor de reservas publico
             '/^\/h\/[a-z0-9-]+\/reservar\/api\/disponibilidad$/i', // Disponibilidad publica del motor
+            '/^\/h\/[a-z0-9-]+\/reservar\/api\/cupon$/i',          // Validacion publica de cupon (promociones)
             '/^\/h\/[a-z0-9-]+\/reservar\/confirmacion\/[a-f0-9]+$/i', // Confirmacion publica de pago del motor
             '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+$/i',    // Pre-registro publico (check-in digital)
+            '/^\/h\/[a-z0-9-]+\/encuesta\/[a-f0-9]+$/i',   // Encuesta post-estancia publica (reputacion)
             '/^\/h\/[a-z0-9-]+\/ical\/[a-f0-9]+\/[0-9]+\.ics$/i', // Feed iCal publico por habitacion (canales_ical)
             '/^\/reportes\/link\/[a-f0-9]+$/i', // Link publico seguro de reporte PDF
             '/^\/health$/i',              // Health check (protegido por HEALTH_TOKEN)
@@ -37,6 +39,7 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/reservar\/iniciar-pago$/i', // Motor: iniciar pago publico
             '/^\/h\/[a-z0-9-]+\/reservar\/webhook\/[a-z]+$/i', // Motor: webhook de pasarela (verificado por firma)
             '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+\/completar$/i', // Pre-registro publico: envio del formulario
+            '/^\/h\/[a-z0-9-]+\/encuesta\/[a-f0-9]+\/responder$/i', // Encuesta publica: envio de la respuesta
             '/^\/saas\/webhook\/stripe$/i' // Webhook de cobros SaaS (verificado por firma)
         ]
     ];

@@ -77,7 +77,34 @@ class MotorReservaOnlineService
 
         // Precio y anticipo SIEMPRE del lado servidor.
         $precios = $this->precioHabitacion($habitacion, $entrada, $salida, max(1, (int) $rango['noches']));
-        $anticipo = $this->disponibilidad->calcularAnticipo($hotelId, $precios['total'], $precios['primera_noche']);
+
+        // Cupon (bloque promociones): validar y aplicar en servidor; se congela en el payload.
+        $cuponAplicado = null;
+        $codigoCupon = trim((string) ($input['cupon'] ?? ''));
+        if ($codigoCupon !== '') {
+            $resultadoCupon = $this->aplicarCupon($hotelId, $codigoCupon, $precios);
+            if (!$resultadoCupon['ok']) {
+                return ['success' => false, 'message' => $resultadoCupon['motivo']];
+            }
+            $cuponAplicado = $resultadoCupon['cupon'];
+            $precios = $resultadoCupon['precios'];
+        }
+
+        // Extras (bloque upsells): importes en servidor sobre noches/personas
+        // validadas. El cupon NO descuenta extras (aplica solo a hospedaje).
+        $extrasAplicados = ['extras' => [], 'total' => 0.0];
+        $extrasElegidos = is_array($input['extras'] ?? null) ? $input['extras'] : [];
+        if (!empty($extrasElegidos) && function_exists('hotel_has_module') && hotel_has_module('upsells', $hotelId)) {
+            $extrasAplicados = $this->extraService()->calcular(
+                $hotelId,
+                $extrasElegidos,
+                max(1, (int) $rango['noches']),
+                $personas
+            );
+        }
+
+        $totalConExtras = round($precios['total'] + $extrasAplicados['total'], 2);
+        $anticipo = $this->disponibilidad->calcularAnticipo($hotelId, $totalConExtras, $precios['primera_noche']);
 
         $holdToken = bin2hex(random_bytes(16));
 
@@ -142,8 +169,11 @@ class MotorReservaOnlineService
                     'personas' => $personas,
                     'tipo' => $tipo,
                     'habitacion_id' => (int) $habitacion['id'],
-                    'precio_total_estancia' => $precios['total'],
+                    'precio_total_estancia' => $totalConExtras,
                     'anticipo' => $anticipo,
+                    'cupon' => $cuponAplicado,
+                    'extras' => $extrasAplicados['extras'],
+                    'total_extras' => $extrasAplicados['total'],
                 ], JSON_UNESCAPED_UNICODE),
             ]);
             $pagoId = (int) $this->pdo->lastInsertId();
@@ -243,13 +273,51 @@ class MotorReservaOnlineService
 
             $noches = max(1, (int) round((strtotime($salida) - strtotime($entrada)) / 86400));
             $precios = $this->precioHabitacion($habitacion, $entrada, $salida, $noches);
+
+            // Re-aplicar el cupon CONGELADO al iniciar el pago (dato escrito por el
+            // servidor, no por el navegador) sobre el precio recien recalculado.
+            $cuponPayload = is_array($payload['cupon'] ?? null) ? $payload['cupon'] : null;
+            $notaCupon = '';
+            if ($cuponPayload) {
+                $cuponService = $this->cuponService();
+                $reaplicado = $cuponService->aplicar(
+                    ['tipo' => (string) ($cuponPayload['tipo'] ?? 'porcentaje'), 'valor' => (float) ($cuponPayload['valor'] ?? 0)],
+                    $precios['total'],
+                    $precios['primera_noche']
+                );
+                if (!empty($reaplicado['ok'])) {
+                    $precios['total'] = $reaplicado['total'];
+                    $precios['primera_noche'] = $reaplicado['primera_noche'];
+                    $notaCupon = sprintf(
+                        ' Cupon %s aplicado (-$%s).',
+                        (string) ($cuponPayload['codigo'] ?? ''),
+                        number_format((float) $reaplicado['descuento'], 2)
+                    );
+                }
+            }
+            // Extras congelados al iniciar el pago (importes escritos por el servidor).
+            $extrasPayload = is_array($payload['extras'] ?? null) ? $payload['extras'] : [];
+            $notaExtras = '';
+            if (!empty($extrasPayload)) {
+                $totalExtras = 0.0;
+                $nombresExtras = [];
+                foreach ($extrasPayload as $extra) {
+                    $totalExtras += (float) ($extra['importe'] ?? 0);
+                    $nombresExtras[] = (string) ($extra['nombre'] ?? 'Extra')
+                        . ' ($' . number_format((float) ($extra['importe'] ?? 0), 2) . ')';
+                }
+                $precios['total'] = round($precios['total'] + $totalExtras, 2);
+                $notaExtras = ' Extras: ' . implode(', ', $nombresExtras) . '.';
+            }
             $habitacion['precio_calculado'] = $precios['total'];
 
             $notas = sprintf(
-                'Reserva online (motor). Pago %s ref %s. Anticipo pagado $%s via pasarela, PENDIENTE DE CONCILIAR EN CAJA.',
+                'Reserva online (motor). Pago %s ref %s. Anticipo pagado $%s via pasarela, PENDIENTE DE CONCILIAR EN CAJA.%s%s',
                 (string) $pago['proveedor'],
                 (string) $pago['proveedor_pago_id'],
-                number_format((float) $pago['monto'], 2)
+                number_format((float) $pago['monto'], 2),
+                $notaCupon,
+                $notaExtras
             );
 
             // crearConHabitaciones maneja su PROPIA transaccion: no anidar otra aqui.
@@ -285,6 +353,11 @@ class MotorReservaOnlineService
             ]);
 
             $this->eliminarHold($holdToken);
+
+            // Consumir el uso del cupon UNA sola vez (estamos dentro del claim atomico).
+            if ($cuponPayload && !empty($cuponPayload['id'])) {
+                $this->cuponService()->consumir((int) $cuponPayload['id']);
+            }
 
             // WhatsApp best-effort (bloque whatsapp): confirmacion al huesped + aviso al dueno.
             try {
@@ -388,6 +461,61 @@ class MotorReservaOnlineService
     }
 
     // ───────────────────────── Helpers ─────────────────────────
+
+    private function cuponService(): MotorCuponService
+    {
+        if (!class_exists('MotorCuponService')) {
+            require_once __DIR__ . '/MotorCuponService.php';
+        }
+
+        return new MotorCuponService($this->db);
+    }
+
+    private function extraService(): MotorExtraService
+    {
+        if (!class_exists('MotorExtraService')) {
+            require_once __DIR__ . '/MotorExtraService.php';
+        }
+
+        return new MotorExtraService($this->db);
+    }
+
+    /**
+     * Valida y aplica un cupon en iniciarPago (bloque promociones). Devuelve
+     * ['ok' => bool, 'motivo' => ?, 'cupon' => ?array congelable, 'precios' => array].
+     */
+    private function aplicarCupon(int $hotelId, string $codigo, array $precios): array
+    {
+        if (!function_exists('hotel_has_module') || !hotel_has_module('promociones', $hotelId)) {
+            return ['ok' => false, 'motivo' => 'Este hotel no acepta codigos promocionales.', 'cupon' => null, 'precios' => $precios];
+        }
+
+        $servicio = $this->cuponService();
+        $validacion = $servicio->validar($hotelId, $codigo);
+        if (!$validacion['ok']) {
+            return ['ok' => false, 'motivo' => $validacion['motivo'], 'cupon' => null, 'precios' => $precios];
+        }
+
+        $cupon = $validacion['cupon'];
+        $aplicacion = $servicio->aplicar($cupon, (float) $precios['total'], (float) $precios['primera_noche']);
+        if (!$aplicacion['ok']) {
+            return ['ok' => false, 'motivo' => $aplicacion['motivo'], 'cupon' => null, 'precios' => $precios];
+        }
+
+        return [
+            'ok' => true,
+            'motivo' => null,
+            'cupon' => [
+                'id' => (int) $cupon['id'],
+                'codigo' => (string) $cupon['codigo'],
+                'tipo' => (string) $cupon['tipo'],
+                'valor' => (float) $cupon['valor'],
+                'descuento' => (float) $aplicacion['descuento'],
+                'total_sin_descuento' => (float) $precios['total'],
+            ],
+            'precios' => ['total' => $aplicacion['total'], 'primera_noche' => $aplicacion['primera_noche']],
+        ];
+    }
 
     private function elegirHabitacion(int $hotelId, string $tipo, string $entrada, string $salida, int $personas): ?array
     {

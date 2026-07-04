@@ -103,7 +103,48 @@ class SaasAdminController extends Controller {
             'periodo' => $periodo,
             'cobros' => $servicio->cobrosDelPeriodo($periodo),
             'stripeConfigurado' => $servicio->configurado(),
+            'correoConfigurado' => filter_var(trim((string) getenv('SAAS_EMAIL_REMITENTE')), FILTER_VALIDATE_EMAIL) !== false,
         ]);
+    }
+
+    /** Ciclo automatico manual: lo mismo que corre el cron, desde un boton. */
+    public function ejecutarCicloCobrosAction() {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $periodo = (string) $this->getPost('periodo', date('Y-m'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $periodo)) {
+            $periodo = date('Y-m');
+        }
+
+        $resultado = (new SaasCobroService())->cicloAutomatico($periodo);
+        set_mensaje(implode('<br>', $resultado['log'] ?? ['Ciclo ejecutado.']), 'success');
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($periodo));
+    }
+
+    public function enviarCorreoCobroAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/cobros');
+        }
+
+        $this->validateCSRF();
+
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $servicio = new SaasCobroService();
+        $cobro = $servicio->porId((int) $id);
+        $esRecordatorio = (int) $this->getPost('recordatorio', 0) === 1;
+
+        $resultado = $servicio->enviarCorreoCobro((int) $id, $esRecordatorio);
+        set_mensaje($resultado['message'], !empty($resultado['success']) ? 'success' : 'error');
+        $this->redirect('admin/saas/cobros?periodo=' . urlencode($cobro['periodo'] ?? date('Y-m')));
     }
 
     public function generarCobrosAction() {
@@ -196,6 +237,11 @@ class SaasAdminController extends Controller {
         $brandingHotel = $this->brandingModel->resolverParaHotel((int) $hotel['id'], $hotel);
         $resumenCobro = $this->moduloModel->resumenCobroMensual((int) $hotel['id']);
 
+        if (!class_exists('SaasCobroService')) {
+            require_once __DIR__ . '/../services/SaasCobroService.php';
+        }
+        $cobrosHotel = (new SaasCobroService())->cobrosPorHotel((int) $hotel['id'], 12);
+
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
             'hotel' => $hotel,
@@ -206,7 +252,8 @@ class SaasAdminController extends Controller {
             'modulosPorPlan' => $modulosPorPlan,
             'auditoriaPlan' => $auditoriaPlan,
             'brandingHotel' => $brandingHotel,
-            'resumenCobro' => $resumenCobro
+            'resumenCobro' => $resumenCobro,
+            'cobrosHotel' => $cobrosHotel
         ]);
     }
 

@@ -44,6 +44,9 @@ class MotorReservasPublicoController extends Controller {
             'minNoches' => ConfiguracionHotelRegistry::getInt('motor.min_noches', 1, $hotelId),
             'maxNoches' => ConfiguracionHotelRegistry::getInt('motor.max_noches', 30, $hotelId),
             'anticipacionMaxDias' => ConfiguracionHotelRegistry::getInt('motor.anticipacion_max_dias', 180, $hotelId),
+            'anticipoTipo' => (string) ConfiguracionHotelRegistry::get('motor.anticipo_tipo', 'porcentaje', $hotelId),
+            'promocionesActivo' => function_exists('hotel_has_module') && hotel_has_module('promociones', $hotelId),
+            'extrasDisponibles' => $this->extrasPublicos($hotelId),
         ]);
     }
 
@@ -85,6 +88,44 @@ class MotorReservasPublicoController extends Controller {
         $resultado['moneda'] = (string) ($hotel['moneda_codigo'] ?? 'MXN');
         $resultado['moneda_simbolo'] = (string) ($hotel['moneda_simbolo'] ?? '$');
         $this->jsonPublico($resultado, 200);
+    }
+
+    /** Validacion publica de un codigo promocional (bloque promociones). Solo informa;
+     *  el descuento real se aplica en servidor dentro de iniciarPago. */
+    public function validarCuponAction($slug) {
+        $hotel = $this->resolverHotel($slug);
+        if (!$hotel || !$this->motorHabilitado($hotel)) {
+            $this->jsonPublico(['success' => false, 'message' => 'Reservas en linea no disponibles para este hotel.'], 404);
+        }
+
+        if (!$this->permitirSolicitud((string) $hotel['slug'])) {
+            $this->jsonPublico(['success' => false, 'message' => 'Demasiadas consultas. Intenta de nuevo en un minuto.'], 429);
+        }
+
+        TenantContext::setHotel($hotel);
+        $hotelId = (int) $hotel['id'];
+
+        if (!function_exists('hotel_has_module') || !hotel_has_module('promociones', $hotelId)) {
+            $this->jsonPublico(['success' => false, 'message' => 'Este hotel no acepta codigos promocionales.'], 404);
+        }
+
+        if (!class_exists('MotorCuponService')) {
+            require_once __DIR__ . '/../services/MotorCuponService.php';
+        }
+        $servicio = new MotorCuponService();
+        $validacion = $servicio->validar($hotelId, (string) $this->getQuery('codigo', ''));
+
+        if (!$validacion['ok']) {
+            $this->jsonPublico(['success' => false, 'message' => $validacion['motivo']], 200);
+        }
+
+        $this->jsonPublico([
+            'success' => true,
+            'codigo' => (string) $validacion['cupon']['codigo'],
+            'tipo' => (string) $validacion['cupon']['tipo'],
+            'valor' => (float) $validacion['cupon']['valor'],
+            'descripcion' => $servicio->descripcion($validacion['cupon']),
+        ], 200);
     }
 
     public function iniciarPagoAction($slug) {
@@ -252,6 +293,19 @@ class MotorReservasPublicoController extends Controller {
         }
 
         return ConfiguracionHotelRegistry::getBool('motor.publico_activo', false, $hotelId);
+    }
+
+    /** Extras activos para la pagina publica (bloque upsells), o []. */
+    private function extrasPublicos(int $hotelId): array {
+        if (!function_exists('hotel_has_module') || !hotel_has_module('upsells', $hotelId)) {
+            return [];
+        }
+
+        if (!class_exists('MotorExtraService')) {
+            require_once __DIR__ . '/../services/MotorExtraService.php';
+        }
+
+        return (new MotorExtraService())->activos($hotelId);
     }
 
     private function brandingPublico(array $hotel) {

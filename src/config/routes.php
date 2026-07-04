@@ -195,6 +195,7 @@ $router->get('/h/{slug:[a-z0-9-]+}/manifest.webmanifest', ['controller' => 'Pwa'
 // Motor de reservas publico (bloque motor_reservas; sin login)
 $router->get('/h/{slug:[a-z0-9-]+}/reservar', ['controller' => 'MotorReservasPublico', 'action' => 'reservar']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/api/disponibilidad', ['controller' => 'MotorReservasPublico', 'action' => 'disponibilidad']);
+$router->get('/h/{slug:[a-z0-9-]+}/reservar/api/cupon', ['controller' => 'MotorReservasPublico', 'action' => 'validarCupon']);
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'MotorReservasPublico', 'action' => 'iniciarPago']);
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
@@ -207,6 +208,16 @@ $router->post('/h/{slug:[a-z0-9-]+}/checkin/{token:[a-f0-9]+}/completar', ['cont
 $router->get('/checkin-digital', ['controller' => 'CheckinDigital', 'action' => 'index']);
 $router->post('/checkin-digital/generar/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'generar']);
 $router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital', 'action' => 'descargarId']);
+
+// Encuesta post-estancia publica (bloque reputacion; token = credencial)
+$router->get('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}', ['controller' => 'ReputacionPublico', 'action' => 'formulario']);
+$router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['controller' => 'ReputacionPublico', 'action' => 'responder']);
+
+// Reputacion interna: tablero, generar/enviar encuestas y configuracion
+$router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
+$router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
+$router->post('/reputacion/enviar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'enviar']);
+$router->post('/reputacion/config', ['controller' => 'Reputacion', 'action' => 'config']);
 
 // Canales iCal publico (bloque canales_ical; token de exportacion = credencial)
 $router->get('/h/{slug:[a-z0-9-]+}/ical/{token:[a-f0-9]+}/{habitacionid:[0-9]+}.ics', ['controller' => 'IcalPublico', 'action' => 'feed']);
@@ -234,6 +245,16 @@ $router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' 
 $router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);
 $router->post('/motor-reservas/pagos/{id:[0-9]+}/conciliar', ['controller' => 'MotorReservas', 'action' => 'conciliar']);
 $router->post('/motor-reservas/configuracion', ['controller' => 'MotorReservas', 'action' => 'guardarConfiguracion']);
+
+// Cupones del motor (bloque promociones)
+$router->get('/motor-reservas/cupones', ['controller' => 'MotorReservas', 'action' => 'cupones']);
+$router->post('/motor-reservas/cupones/crear', ['controller' => 'MotorReservas', 'action' => 'crearCupon']);
+$router->post('/motor-reservas/cupones/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarCupon']);
+
+// Extras del motor (bloque upsells)
+$router->get('/motor-reservas/extras', ['controller' => 'MotorReservas', 'action' => 'extras']);
+$router->post('/motor-reservas/extras/crear', ['controller' => 'MotorReservas', 'action' => 'crearExtra']);
+$router->post('/motor-reservas/extras/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarExtra']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
@@ -373,6 +394,8 @@ $router->post('/admin/saas/cobros/generar', ['controller' => 'SaasAdmin', 'actio
 $router->post('/admin/saas/cobros/{id:[0-9]+}/link', ['controller' => 'SaasAdmin', 'action' => 'linkPagoCobro']);
 $router->post('/admin/saas/cobros/{id:[0-9]+}/pagado', ['controller' => 'SaasAdmin', 'action' => 'pagadoManualCobro']);
 $router->post('/admin/saas/cobros/{id:[0-9]+}/cancelar', ['controller' => 'SaasAdmin', 'action' => 'cancelarCobro']);
+$router->post('/admin/saas/cobros/{id:[0-9]+}/correo', ['controller' => 'SaasAdmin', 'action' => 'enviarCorreoCobro']);
+$router->post('/admin/saas/cobros/ciclo', ['controller' => 'SaasAdmin', 'action' => 'ejecutarCicloCobros']);
 $router->post('/saas/webhook/stripe', ['controller' => 'SaasWebhook', 'action' => 'stripe']);
 $router->get('/admin/saas/hoteles/crear', ['controller' => 'SaasAdmin', 'action' => 'crearHotel']);
 $router->post('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'guardarHotel']);

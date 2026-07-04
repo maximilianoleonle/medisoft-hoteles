@@ -23,6 +23,10 @@ $fechaMax = date('Y-m-d', strtotime('+' . max(1, $anticipacionMaxDias) . ' days'
 $slugSeguro = (string) ($hotel['slug'] ?? '');
 $apiDisponibilidad = url('h/' . $slugSeguro . '/reservar/api/disponibilidad');
 $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
+$apiCupon = url('h/' . $slugSeguro . '/reservar/api/cupon');
+$promocionesActivo = (bool) ($promocionesActivo ?? false);
+$anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
+$extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles : [];
 ?><!DOCTYPE html>
 <html lang="es">
 <head>
@@ -185,11 +189,45 @@ $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
                     <div class="fila"><dt>Noches</dt><dd id="mr-res-noches">—</dd></div>
                     <div class="fila"><dt>Habitacion</dt><dd id="mr-res-tipo">—</dd></div>
                     <div class="fila"><dt>Personas</dt><dd id="mr-res-personas">—</dd></div>
+                    <div class="fila" id="mr-res-desc-fila" style="display:none;color:#15803D;"><dt id="mr-res-desc-label">Descuento</dt><dd id="mr-res-desc">—</dd></div>
+                    <div class="fila" id="mr-res-extras-fila" style="display:none;"><dt>Extras</dt><dd id="mr-res-extras">—</dd></div>
                     <div class="fila total"><dt>Total de la estancia</dt><dd id="mr-res-total">—</dd></div>
                     <div class="fila anticipo"><dt>Pagas hoy (anticipo)</dt><dd id="mr-res-anticipo">—</dd></div>
                     <div class="fila"><dt>Pagas al llegar</dt><dd id="mr-res-saldo">—</dd></div>
                 </dl>
             </div>
+
+            <?php if (!empty($extrasDisponibles)): ?>
+            <div class="mr-extras" style="margin:14px 0 4px;">
+                <div style="font-size:.82rem;font-weight:700;color:#55607A;margin-bottom:8px;">Mejora tu estancia (opcional)</div>
+                <?php foreach ($extrasDisponibles as $extra): ?>
+                    <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--mr-line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;">
+                        <input type="checkbox" class="mr-extra-check" style="margin-top:3px;"
+                               value="<?= (int) $extra['id'] ?>"
+                               data-nombre="<?= htmlspecialchars((string) $extra['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                               data-precio="<?= htmlspecialchars(number_format((float) $extra['precio'], 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>"
+                               data-tipo="<?= htmlspecialchars((string) $extra['tipo_cobro'], ENT_QUOTES, 'UTF-8') ?>">
+                        <span style="flex:1;">
+                            <span style="font-weight:700;color:#2A3242;"><?= htmlspecialchars((string) $extra['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="mr-extra-precio" style="float:right;font-weight:700;color:var(--brand-primary);"></span>
+                            <?php if (!empty($extra['descripcion'])): ?>
+                                <br><span style="font-size:.8rem;color:#8A93A6;"><?= htmlspecialchars((string) $extra['descripcion'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($promocionesActivo): ?>
+            <div class="mr-cupon" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 4px;">
+                <input type="text" id="mr-cupon-codigo" maxlength="30" placeholder="¿Tienes un código promocional?"
+                       style="flex:1;min-width:200px;min-height:44px;border:1px solid var(--mr-line);border-radius:10px;padding:0 12px;font-size:.95rem;text-transform:uppercase;" autocomplete="off">
+                <button type="button" id="mr-cupon-aplicar"
+                        style="min-height:44px;padding:0 16px;border:1px solid var(--brand-primary);border-radius:10px;background:#fff;color:var(--brand-primary);font-weight:700;cursor:pointer;">Aplicar</button>
+                <div id="mr-cupon-estado" style="width:100%;font-size:.82rem;" aria-live="polite"></div>
+            </div>
+            <?php endif; ?>
 
             <form id="mr-form-datos" class="mr-form" autocomplete="on">
                 <div class="mr-field full">
@@ -224,8 +262,10 @@ $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
     var simbolo = <?= json_encode($monedaSimbolo) ?>;
     var apiDisponibilidad = <?= json_encode($apiDisponibilidad) ?>;
     var apiIniciarPago = <?= json_encode($apiIniciarPago) ?>;
+    var apiCupon = <?= json_encode($apiCupon) ?>;
+    var anticipoTipo = <?= json_encode($anticipoTipo) ?>;
 
-    var seleccion = { entrada: null, salida: null, personas: 2, noches: 0, tipo: null };
+    var seleccion = { entrada: null, salida: null, personas: 2, noches: 0, tipo: null, cupon: null };
 
     function fmt(n) {
         return simbolo + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -346,17 +386,148 @@ $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
     }
 
     // ── Paso 2 → 3: resumen ──
+    // Mismo calculo que el servidor: el cupon descuenta el hospedaje, los
+    // extras se suman despues (sin descuento), y el anticipo escala con el
+    // total final salvo cuando es monto fijo o primera noche.
+    function factorExtra(tipo) {
+        var noches = Math.max(1, seleccion.noches || 1);
+        var personas = Math.max(1, seleccion.personas || 1);
+        if (tipo === 'por_noche') { return noches; }
+        if (tipo === 'por_persona') { return personas; }
+        if (tipo === 'por_persona_noche') { return noches * personas; }
+        return 1;
+    }
+
+    function extrasSeleccionados() {
+        var lista = [];
+        document.querySelectorAll('.mr-extra-check:checked').forEach(function (chk) {
+            lista.push(parseInt(chk.value, 10));
+        });
+        return lista;
+    }
+
+    function refrescarEtiquetasExtras() {
+        document.querySelectorAll('.mr-extra-check').forEach(function (chk) {
+            var importe = Number(chk.dataset.precio) * factorExtra(chk.dataset.tipo);
+            var etiqueta = chk.closest('label').querySelector('.mr-extra-precio');
+            if (etiqueta) { etiqueta.textContent = '+' + fmt(importe); }
+        });
+    }
+
+    function refrescarResumen() {
+        var t = seleccion.tipo;
+        if (!t) { return; }
+
+        var totalOriginal = Number(t.precio_total);
+        var anticipoOriginal = Number(t.anticipo_requerido);
+        var total = totalOriginal;
+        var descuento = 0;
+        var factorCupon = 1;
+
+        if (seleccion.cupon) {
+            descuento = seleccion.cupon.tipo === 'porcentaje'
+                ? Math.round(total * seleccion.cupon.valor) / 100
+                : Math.min(seleccion.cupon.valor, total);
+            total = Math.round((total - descuento) * 100) / 100;
+            factorCupon = totalOriginal > 0 ? total / totalOriginal : 1;
+        }
+
+        var totalExtras = 0;
+        document.querySelectorAll('.mr-extra-check:checked').forEach(function (chk) {
+            totalExtras += Math.round(Number(chk.dataset.precio) * factorExtra(chk.dataset.tipo) * 100) / 100;
+        });
+        var totalFinal = Math.round((total + totalExtras) * 100) / 100;
+
+        var anticipo;
+        if (anticipoTipo === 'monto_fijo') {
+            anticipo = Math.min(anticipoOriginal, totalFinal);
+        } else if (anticipoTipo === 'primera_noche') {
+            anticipo = Math.round(anticipoOriginal * factorCupon * 100) / 100;
+        } else {
+            anticipo = Math.round(anticipoOriginal * (totalOriginal > 0 ? totalFinal / totalOriginal : 1) * 100) / 100;
+        }
+
+        var filaDesc = document.getElementById('mr-res-desc-fila');
+        if (filaDesc) {
+            filaDesc.style.display = descuento > 0 ? '' : 'none';
+            if (descuento > 0) {
+                document.getElementById('mr-res-desc-label').textContent = 'Descuento (' + seleccion.cupon.codigo + ')';
+                document.getElementById('mr-res-desc').textContent = '-' + fmt(descuento);
+            }
+        }
+        var filaExtras = document.getElementById('mr-res-extras-fila');
+        if (filaExtras) {
+            filaExtras.style.display = totalExtras > 0 ? '' : 'none';
+            if (totalExtras > 0) {
+                document.getElementById('mr-res-extras').textContent = '+' + fmt(totalExtras);
+            }
+        }
+        document.getElementById('mr-res-total').textContent = fmt(totalFinal);
+        document.getElementById('mr-res-anticipo').textContent = fmt(anticipo);
+        document.getElementById('mr-res-saldo').textContent = fmt(Math.max(0, totalFinal - anticipo));
+        refrescarEtiquetasExtras();
+    }
+
+    document.querySelectorAll('.mr-extra-check').forEach(function (chk) {
+        chk.addEventListener('change', refrescarResumen);
+    });
+
     function elegirTipo(t) {
         seleccion.tipo = t;
         document.getElementById('mr-res-fechas').textContent = fmtFecha(seleccion.entrada) + ' → ' + fmtFecha(seleccion.salida);
         document.getElementById('mr-res-noches').textContent = seleccion.noches + ' noche(s)';
         document.getElementById('mr-res-tipo').textContent = t.tipo.charAt(0).toUpperCase() + t.tipo.slice(1);
         document.getElementById('mr-res-personas').textContent = seleccion.personas + ' persona(s)';
-        document.getElementById('mr-res-total').textContent = fmt(t.precio_total);
-        document.getElementById('mr-res-anticipo').textContent = fmt(t.anticipo_requerido);
-        document.getElementById('mr-res-saldo').textContent = fmt(Math.max(0, t.precio_total - t.anticipo_requerido));
+        refrescarResumen();
         document.getElementById('mr-estado-3').textContent = '';
         irAPaso(3);
+    }
+
+    // ── Cupon promocional (bloque promociones) ──
+    var btnCupon = document.getElementById('mr-cupon-aplicar');
+    if (btnCupon) {
+        btnCupon.addEventListener('click', function () {
+            var input = document.getElementById('mr-cupon-codigo');
+            var estadoCupon = document.getElementById('mr-cupon-estado');
+            var codigo = (input.value || '').trim().toUpperCase();
+
+            if (seleccion.cupon) {
+                seleccion.cupon = null;
+                input.value = '';
+                input.disabled = false;
+                btnCupon.textContent = 'Aplicar';
+                estadoCupon.textContent = '';
+                refrescarResumen();
+                return;
+            }
+
+            if (!codigo) {
+                estadoCupon.innerHTML = '<span class="mr-error">Escribe tu codigo promocional.</span>';
+                return;
+            }
+
+            btnCupon.disabled = true;
+            estadoCupon.textContent = 'Validando codigo...';
+
+            fetch(apiCupon + '?codigo=' + encodeURIComponent(codigo), { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    btnCupon.disabled = false;
+                    if (!data.success) {
+                        estadoCupon.innerHTML = '<span class="mr-error">' + (data.message || 'El codigo no es valido.') + '</span>';
+                        return;
+                    }
+                    seleccion.cupon = { codigo: data.codigo, tipo: data.tipo, valor: Number(data.valor) };
+                    input.disabled = true;
+                    btnCupon.textContent = 'Quitar';
+                    estadoCupon.innerHTML = '<span style="color:#15803D;font-weight:700;">✓ ' + data.codigo + ': ' + data.descripcion + '</span>';
+                    refrescarResumen();
+                })
+                .catch(function () {
+                    btnCupon.disabled = false;
+                    estadoCupon.innerHTML = '<span class="mr-error">No se pudo validar el codigo. Intenta de nuevo.</span>';
+                });
+        });
     }
 
     // ── Paso 3: validar datos e iniciar pago ──
@@ -403,7 +574,9 @@ $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
                 tipo: seleccion.tipo.tipo,
                 nombre: nombre,
                 telefono: telefono,
-                email: email
+                email: email,
+                cupon: seleccion.cupon ? seleccion.cupon.codigo : '',
+                extras: extrasSeleccionados()
             })
         })
             .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })

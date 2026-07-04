@@ -68,6 +68,21 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
     <h1>Motor de reservas online</h1>
     <p class="sub">Reservas desde tu pagina publica con anticipo pagado. El dinero de la pasarela se concilia a Caja desde aqui.</p>
 
+    <?php
+    $mrvTieneCupones = function_exists('hotel_menu_module_enabled') && hotel_menu_module_enabled('promociones');
+    $mrvTieneExtras = function_exists('hotel_menu_module_enabled') && hotel_menu_module_enabled('upsells');
+    ?>
+    <?php if ($mrvTieneCupones || $mrvTieneExtras): ?>
+        <p style="margin:-6px 0 16px;display:flex;gap:18px;flex-wrap:wrap;">
+            <?php if ($mrvTieneCupones): ?>
+                <a href="<?= url('motor-reservas/cupones') ?>" style="font-size:.86rem;font-weight:700;color:var(--brand-primary,#1B2746);text-decoration:none;">&#127991;&#65039; Cupones y promociones &rarr;</a>
+            <?php endif; ?>
+            <?php if ($mrvTieneExtras): ?>
+                <a href="<?= url('motor-reservas/extras') ?>" style="font-size:.86rem;font-weight:700;color:var(--brand-primary,#1B2746);text-decoration:none;">&#127873; Extras y upselling &rarr;</a>
+            <?php endif; ?>
+        </p>
+    <?php endif; ?>
+
     <?php if ($mensaje = get_mensaje()): ?>
         <?php $tipo = $mensaje['tipo'] ?? 'info'; ?>
         <div style="margin-bottom:14px;padding:11px 14px;border-radius:10px;font-size:.88rem;<?= $tipo === 'error' ? 'background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.2);' : 'background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2);' ?>">
