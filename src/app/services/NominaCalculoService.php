@@ -52,9 +52,36 @@ class NominaCalculoService {
 
         $dias = (int) ((strtotime($fechaFin) - strtotime($fechaInicio)) / 86400) + 1;
         $redondeo = (string) ConfiguracionHotelRegistry::get('nomina.redondeo', 'centavos', $hotelId);
+        $modo = (string) ConfiguracionHotelRegistry::get('nomina.modo', 'simplificada', $hotelId);
+        $pais = (string) ConfiguracionHotelRegistry::get('nomina.pais', 'MX', $hotelId);
 
         $alertas = [];
         $bloqueado = false;
+
+        // Modo legal: resolver reglas fiscales vigentes UNA vez para el periodo.
+        $contextoFiscal = null;
+        $reglasFiscales = null;
+        if ($modo === 'legal') {
+            require_once __DIR__ . '/NominaFiscalService.php';
+            $fiscal = new NominaFiscalService();
+            $resolucion = $fiscal->resolverReglas($pais, (string) $grupo['periodicidad'], $fechaFin);
+            $alertas = array_merge($alertas, $resolucion['alertas']);
+            if (!empty($resolucion['bloqueado'])) {
+                $bloqueado = true;
+            }
+            $contextoFiscal = ['servicio' => $fiscal, 'reglas' => $resolucion['reglas']];
+            $reglasFiscales = [];
+            foreach ($resolucion['reglas'] as $claveRegla => $regla) {
+                $reglasFiscales[$claveRegla] = $regla !== null ? [
+                    'id' => (int) $regla['id'],
+                    'tipo_regla' => $regla['tipo_regla'],
+                    'ejercicio' => (int) $regla['ejercicio'],
+                    'vigente_desde' => $regla['vigente_desde'],
+                    'valor' => $regla['valor'],
+                    'fuente' => $regla['fuente'],
+                ] : null;
+            }
+        }
 
         // Solape con otros periodos NO anulados del mismo grupo: bloqueante.
         $st = $this->pdo->prepare(
@@ -92,7 +119,7 @@ class NominaCalculoService {
         ];
 
         foreach ($trabajadores as $t) {
-            $fila = $this->calcularTrabajador($hotelId, $t, $grupo, $fechaInicio, $fechaFin, $dias, $redondeo);
+            $fila = $this->calcularTrabajador($hotelId, $t, $grupo, $fechaInicio, $fechaFin, $dias, $redondeo, $contextoFiscal);
             $filas[] = $fila;
             $totales['percepciones'] += $fila['percepciones'];
             $totales['deducciones_lineas'] += $fila['deducciones_lineas'];
@@ -111,6 +138,9 @@ class NominaCalculoService {
             'fecha_fin' => $fechaFin,
             'dias' => $dias,
             'redondeo' => $redondeo,
+            'modo' => $modo,
+            'pais' => $pais,
+            'reglas_fiscales' => $reglasFiscales,
             'trabajadores' => $filas,
             'totales' => $totales,
             'alertas' => $alertas,
@@ -168,7 +198,7 @@ class NominaCalculoService {
 
     /* ------------------------------------------------------------------ */
 
-    private function calcularTrabajador(int $hotelId, array $t, array $grupo, string $inicio, string $fin, int $dias, string $redondeo): array {
+    private function calcularTrabajador(int $hotelId, array $t, array $grupo, string $inicio, string $fin, int $dias, string $redondeo, ?array $contextoFiscal = null): array {
         $trabajadorId = (int) $t['id'];
         $lineas = [];
         $alertas = [];
@@ -209,7 +239,7 @@ class NominaCalculoService {
         // 2) Incidencias aprobadas del rango.
         $st = $this->pdo->prepare(
             "SELECT i.id, i.fecha, i.cantidad, i.monto, i.descripcion,
-                    c.id AS concepto_id, c.nombre, c.tipo, c.clasificacion, c.modo_calculo, c.monto_default
+                    c.id AS concepto_id, c.nombre, c.tipo, c.clasificacion, c.modo_calculo, c.monto_default, c.gravable_isr
              FROM nomina_incidencias i
              INNER JOIN nomina_conceptos c ON c.id = i.concepto_id
              WHERE i.hotel_id = ? AND i.trabajador_id = ? AND i.estado = 'aprobada'
@@ -229,6 +259,7 @@ class NominaCalculoService {
                 'base' => $inc['monto_default'] !== null ? (float) $inc['monto_default'] : null,
                 'monto' => $this->redondear($monto, $redondeo),
                 'referencia' => 'INC-' . (int) $inc['id'],
+                'gravable_isr' => ((int) ($inc['gravable_isr'] ?? 0)) === 1,
             ];
         }
 
@@ -254,6 +285,52 @@ class NominaCalculoService {
                 'monto' => round((float) $lp['monto'], 2),
                 'referencia' => 'LED-' . (int) $lp['id'],
             ];
+        }
+
+        // 3b) Modo legal: lineas fiscales (ISR retenido, IMSS obrero).
+        if ($contextoFiscal !== null) {
+            $baseGravable = 0.0;
+            $hayLedger = false;
+            foreach ($lineas as $l) {
+                if ($l['origen'] === 'ledger') {
+                    $hayLedger = true;
+                    continue;
+                }
+                if ($l['tipo'] !== 'percepcion') {
+                    continue;
+                }
+                // El sueldo siempre grava; las incidencias segun su concepto.
+                if ($l['origen'] === 'salario' || !empty($l['gravable_isr'])) {
+                    $baseGravable += $l['monto'];
+                }
+            }
+            if ($hayLedger) {
+                $alertas[] = 'Modo legal: las lineas del ledger v1 NO gravan ISR en esta version.';
+            }
+
+            $salarioDiario = 0.0;
+            if ($vigencia) {
+                $esquemaVig = (string) $vigencia['esquema'];
+                if ($esquemaVig === 'diario') {
+                    $salarioDiario = (float) $vigencia['salario'];
+                } elseif (isset($this->diasBase[$esquemaVig])) {
+                    $salarioDiario = (float) $vigencia['salario'] / $this->diasBase[$esquemaVig];
+                } else {
+                    $alertas[] = 'Modo legal: esquema ' . $esquemaVig . ' sin salario diario derivable; IMSS omitido.';
+                }
+            }
+
+            $fiscal = $contextoFiscal['servicio']->lineasFiscales(
+                $baseGravable,
+                $salarioDiario,
+                $dias,
+                (string) $grupo['periodicidad'],
+                $contextoFiscal['reglas']
+            );
+            foreach ($fiscal['lineas'] as $lf) {
+                $lineas[] = $lf;
+            }
+            $alertas = array_merge($alertas, $fiscal['alertas']);
         }
 
         // 4) Deducciones informativas: saldos vivos de anticipos y prestamos.

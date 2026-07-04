@@ -713,6 +713,42 @@ if ($pdo instanceof PDO) {
     } catch (Throwable $e) {
         nomCoreWarning('Fase 5: no se pudieron verificar reglas legales: ' . $e->getMessage());
     }
+
+    // Fase 6: motor legal (origen fiscal en lineas congeladas).
+    try {
+        $st = $pdo->query(
+            "SELECT COLUMN_TYPE AS t FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nomina_periodo_conceptos' AND COLUMN_NAME = 'origen'"
+        );
+        $origenEnum = (string) ($st->fetch()['t'] ?? '');
+        if (strpos($origenEnum, 'fiscal') !== false) {
+            nomCoreOk('Fase 6: lineas congeladas soportan origen fiscal (ISR/IMSS).');
+        } else {
+            nomCoreError('Fase 6: el ENUM origen no incluye fiscal.', 'Aplicar la migracion 20260704_006.');
+        }
+
+        // Negocios en modo legal sin tabla ISR resoluble: aviso critico.
+        $st = $pdo->query(
+            "SELECT COUNT(DISTINCT hc.hotel_id) AS total
+             FROM hotel_configuracion hc
+             WHERE hc.clave = 'nomina.modo' AND hc.valor = 'legal' AND hc.activo = 1
+               AND NOT EXISTS (
+                   SELECT 1 FROM nomina_reglas_legales r
+                   WHERE r.pais = 'MX' AND r.estado = 'activo'
+                     AND r.tipo_regla LIKE 'isr_tabla_%'
+                     AND r.vigente_desde <= CURDATE()
+                     AND (r.vigente_hasta IS NULL OR r.vigente_hasta >= CURDATE())
+               )"
+        );
+        $legalSinIsr = (int) ($st->fetch()['total'] ?? 0);
+        if ($legalSinIsr === 0) {
+            nomCoreOk('Fase 6: ningun negocio en modo legal sin tabla ISR resoluble.');
+        } else {
+            nomCoreWarning('Fase 6: ' . $legalSinIsr . ' negocio(s) en modo legal SIN tabla ISR vigente.', 'Sus cierres legales quedaran bloqueados hasta capturar las tablas del ejercicio en /admin/saas/nomina/reglas.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 6: no se pudo verificar el motor legal: ' . $e->getMessage());
+    }
 }
 
 /* ---------------------------------------------------------------------

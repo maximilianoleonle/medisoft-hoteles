@@ -51,6 +51,8 @@ class NominaCierreService {
 
         $reglasSnapshot = [
             'motor' => 'v2',
+            'modo' => $preview['modo'] ?? 'simplificada',
+            'reglas_legales_aplicadas' => $preview['reglas_fiscales'] ?? null,
             'grupo' => ['id' => (int) $grupo['id'], 'nombre' => $grupo['nombre'], 'periodicidad' => $grupo['periodicidad']],
             'configuracion' => [
                 'modo' => (string) ConfiguracionHotelRegistry::get('nomina.modo', 'simplificada', $hotelId),
