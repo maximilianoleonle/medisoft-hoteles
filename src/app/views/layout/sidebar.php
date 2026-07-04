@@ -34,6 +34,7 @@ $mostrarPersonal = $menuModuloActivo('personal') && $sidebarPuedeUsuarios;
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
+$mostrarAuditoria = $menuModuloActivo('auditoria') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
@@ -47,7 +48,7 @@ $mostrarReputacion = $menuModuloActivo('reputacion');
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion;
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -70,6 +71,7 @@ $sidebarPathIn = static function (array $prefixes) use ($sidebarPathStarts): boo
 $sidebarActiveDashboard = $sidebarPathStarts('dashboard');
 $sidebarActiveOperacionDiaria = $sidebarPathStarts('operacion/diaria');
 $sidebarActiveForecast = $sidebarPathStarts('forecast');
+$sidebarActiveAuditoria = $sidebarPathStarts('auditoria');
 $sidebarActiveReservaciones = $sidebarPathStarts('reservaciones');
 $sidebarActiveHabitaciones = $sidebarPathStarts('habitaciones');
 $sidebarActiveHuespedes = $sidebarPathStarts('huespedes');
@@ -645,6 +647,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <?php endif; ?>
                 </div>
                 <span class="nav-text">Notificaciones</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarAuditoria): ?>
+            <a href="<?= url('auditoria') ?>"
+               class="nav-item <?= $sidebarActiveAuditoria ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <span class="nav-text">Bitácora</span>
             </a>
             <?php endif; ?>
         </div>

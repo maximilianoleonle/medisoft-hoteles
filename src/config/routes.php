@@ -216,6 +216,9 @@ $router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['con
 // Forecast de ocupacion (bloque forecast, solo lectura)
 $router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
 
+// Bitacora de auditoria (bloque auditoria, solo lectura para gerencia)
+$router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
+
 // Reputacion interna: tablero, generar/enviar encuestas y configuracion
 $router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
 $router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
