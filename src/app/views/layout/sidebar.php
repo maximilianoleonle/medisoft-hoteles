@@ -44,11 +44,12 @@ $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel
 $mostrarCamarista = $menuModuloActivo('camarista');
 $mostrarReputacion = $menuModuloActivo('reputacion');
 $mostrarNightAudit = $menuModuloActivo('night_audit');
+$mostrarLealtad = $menuModuloActivo('lealtad');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
-$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion;
+$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
@@ -74,6 +75,7 @@ $sidebarActiveOperacionDiaria = $sidebarPathStarts('operacion/diaria');
 $sidebarActiveForecast = $sidebarPathStarts('forecast');
 $sidebarActiveAuditoria = $sidebarPathStarts('auditoria');
 $sidebarActiveNightAudit = $sidebarPathStarts('night-audit');
+$sidebarActiveLealtad = $sidebarPathStarts('lealtad');
 $sidebarActiveReservaciones = $sidebarPathStarts('reservaciones');
 $sidebarActiveHabitaciones = $sidebarPathStarts('habitaciones');
 $sidebarActiveHuespedes = $sidebarPathStarts('huespedes');
@@ -608,6 +610,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-star"></i>
                 </div>
                 <span class="nav-text">Reputación</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarLealtad): ?>
+            <a href="<?= url('lealtad') ?>"
+               class="nav-item <?= $sidebarActiveLealtad ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <span class="nav-text">Huésped frecuente</span>
             </a>
             <?php endif; ?>
         </div>

@@ -223,6 +223,12 @@ $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
 $router->get('/night-audit', ['controller' => 'NightAudit', 'action' => 'index']);
 $router->post('/night-audit/ejecutar', ['controller' => 'NightAudit', 'action' => 'ejecutar']);
 
+// Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
+$router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
+$router->post('/lealtad/generar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'generar']);
+$router->post('/lealtad/enviar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'enviar']);
+$router->post('/lealtad/config', ['controller' => 'Lealtad', 'action' => 'config']);
+
 // Reputacion interna: tablero, generar/enviar encuestas y configuracion
 $router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
 $router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);

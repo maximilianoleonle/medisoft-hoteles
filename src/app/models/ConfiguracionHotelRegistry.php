@@ -118,6 +118,21 @@ class ConfiguracionHotelRegistry
             'default' => 30,
             'description' => 'Dias que sigue valido el link de encuesta despues del checkout.',
         ],
+        'lealtad.min_estancias' => [
+            'type' => 'integer',
+            'default' => 3,
+            'description' => 'Estancias completadas para considerar frecuente a un huesped (bloque lealtad).',
+        ],
+        'lealtad.descuento_pct' => [
+            'type' => 'integer',
+            'default' => 10,
+            'description' => 'Porcentaje de descuento del cupon personal de huesped frecuente.',
+        ],
+        'lealtad.vigencia_dias' => [
+            'type' => 'integer',
+            'default' => 90,
+            'description' => 'Dias de vigencia del cupon personal desde que se genera.',
+        ],
     ];
 
     private static $legacyFallbacks = [
