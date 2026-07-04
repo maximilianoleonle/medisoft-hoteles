@@ -22,6 +22,7 @@ class Router {
             '/^\/h\/[a-z0-9-]+\/manifest\.webmanifest$/i', // Manifest scoped por hotel
             '/^\/h\/[a-z0-9-]+\/reservar$/i',              // Motor de reservas publico
             '/^\/h\/[a-z0-9-]+\/reservar\/api\/disponibilidad$/i', // Disponibilidad publica del motor
+            '/^\/h\/[a-z0-9-]+\/reservar\/api\/cupon$/i',          // Validacion publica de cupon (promociones)
             '/^\/h\/[a-z0-9-]+\/reservar\/confirmacion\/[a-f0-9]+$/i', // Confirmacion publica de pago del motor
             '/^\/h\/[a-z0-9-]+\/checkin\/[a-f0-9]+$/i',    // Pre-registro publico (check-in digital)
             '/^\/h\/[a-z0-9-]+\/encuesta\/[a-f0-9]+$/i',   // Encuesta post-estancia publica (reputacion)

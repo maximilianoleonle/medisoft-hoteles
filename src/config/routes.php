@@ -195,6 +195,7 @@ $router->get('/h/{slug:[a-z0-9-]+}/manifest.webmanifest', ['controller' => 'Pwa'
 // Motor de reservas publico (bloque motor_reservas; sin login)
 $router->get('/h/{slug:[a-z0-9-]+}/reservar', ['controller' => 'MotorReservasPublico', 'action' => 'reservar']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/api/disponibilidad', ['controller' => 'MotorReservasPublico', 'action' => 'disponibilidad']);
+$router->get('/h/{slug:[a-z0-9-]+}/reservar/api/cupon', ['controller' => 'MotorReservasPublico', 'action' => 'validarCupon']);
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/iniciar-pago', ['controller' => 'MotorReservasPublico', 'action' => 'iniciarPago']);
 $router->post('/h/{slug:[a-z0-9-]+}/reservar/webhook/{proveedor:[a-z]+}', ['controller' => 'MotorReservasPublico', 'action' => 'webhook']);
 $router->get('/h/{slug:[a-z0-9-]+}/reservar/confirmacion/{token:[a-f0-9]+}', ['controller' => 'MotorReservasPublico', 'action' => 'confirmacion']);
@@ -244,6 +245,11 @@ $router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' 
 $router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);
 $router->post('/motor-reservas/pagos/{id:[0-9]+}/conciliar', ['controller' => 'MotorReservas', 'action' => 'conciliar']);
 $router->post('/motor-reservas/configuracion', ['controller' => 'MotorReservas', 'action' => 'guardarConfiguracion']);
+
+// Cupones del motor (bloque promociones)
+$router->get('/motor-reservas/cupones', ['controller' => 'MotorReservas', 'action' => 'cupones']);
+$router->post('/motor-reservas/cupones/crear', ['controller' => 'MotorReservas', 'action' => 'crearCupon']);
+$router->post('/motor-reservas/cupones/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarCupon']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
