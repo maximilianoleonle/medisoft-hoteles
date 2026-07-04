@@ -427,6 +427,103 @@ if (!$pdo instanceof PDO) {
 }
 
 /* ---------------------------------------------------------------------
+ * 7g) Fase 2: catalogos internos e historial salarial.
+ * ------------------------------------------------------------------- */
+if ($pdo instanceof PDO) {
+    $tablasFase2 = [
+        'nomina_departamentos', 'nomina_puestos', 'nomina_tipos_contrato',
+        'nomina_grupos', 'nomina_conceptos', 'trabajador_salarios',
+    ];
+
+    try {
+        $marcadores = implode(',', array_fill(0, count($tablasFase2), '?'));
+        $st = $pdo->prepare(
+            "SELECT TABLE_NAME FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ($marcadores)"
+        );
+        $st->execute($tablasFase2);
+        $presentes = array_column($st->fetchAll(), 'TABLE_NAME');
+        $faltantes = array_diff($tablasFase2, $presentes);
+
+        if ($faltantes === []) {
+            nomCoreOk('Fase 2: las 6 tablas de catalogos e historial salarial existen.');
+        } else {
+            nomCoreError('Fase 2: faltan tablas: ' . implode(', ', $faltantes) . '.', 'Aplicar la migracion 20260704_002.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 2: no se pudieron verificar tablas: ' . $e->getMessage());
+    }
+
+    try {
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'trabajadores'
+               AND COLUMN_NAME IN ('puesto_id','departamento_id','tipo_contrato_id','grupo_nomina_id')"
+        );
+        $cols = (int) ($st->fetch()['total'] ?? 0);
+        if ($cols === 4) {
+            nomCoreOk('Fase 2: trabajadores tiene las 4 columnas de asignacion (NULL-ables).');
+        } else {
+            nomCoreError('Fase 2: trabajadores tiene ' . $cols . '/4 columnas de asignacion.', 'Aplicar la migracion 20260704_002.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 2: no se pudieron verificar columnas de trabajadores: ' . $e->getMessage());
+    }
+
+    // Backfill: todo trabajador con salario_base > 0 debe tener historial.
+    try {
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM trabajadores t
+             WHERE t.salario_base IS NOT NULL AND t.salario_base > 0
+               AND NOT EXISTS (SELECT 1 FROM trabajador_salarios ts WHERE ts.trabajador_id = t.id)"
+        );
+        $sinHistorial = (int) ($st->fetch()['total'] ?? 0);
+        if ($sinHistorial === 0) {
+            nomCoreOk('Fase 2: backfill salarial completo (0 trabajadores con salario sin historial).');
+        } else {
+            nomCoreError('Fase 2: ' . $sinHistorial . ' trabajador(es) con salario_base sin vigencia en trabajador_salarios.', 'Re-ejecutar el backfill de 20260704_002.');
+        }
+
+        // Consistencia: maximo UNA vigencia abierta por trabajador.
+        $st = $pdo->query(
+            "SELECT COUNT(*) AS total FROM (
+                SELECT trabajador_id FROM trabajador_salarios
+                WHERE vigente_hasta IS NULL
+                GROUP BY trabajador_id HAVING COUNT(*) > 1
+             ) x"
+        );
+        $duplicadas = (int) ($st->fetch()['total'] ?? 0);
+        if ($duplicadas === 0) {
+            nomCoreOk('Fase 2: ninguna doble vigencia salarial abierta.');
+        } else {
+            nomCoreError('Fase 2: ' . $duplicadas . ' trabajador(es) con MAS de una vigencia salarial abierta.', 'Cerrar manualmente las vigencias duplicadas antes de calcular nomina.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 2: no se pudo verificar el historial salarial: ' . $e->getMessage());
+    }
+
+    // Aislamiento: asignaciones de trabajadores deben apuntar a catalogos del MISMO hotel.
+    try {
+        $st = $pdo->query(
+            "SELECT
+                (SELECT COUNT(*) FROM trabajadores t INNER JOIN nomina_puestos p ON p.id = t.puesto_id AND p.hotel_id != t.hotel_id)
+              + (SELECT COUNT(*) FROM trabajadores t INNER JOIN nomina_departamentos d ON d.id = t.departamento_id AND d.hotel_id != t.hotel_id)
+              + (SELECT COUNT(*) FROM trabajadores t INNER JOIN nomina_tipos_contrato c ON c.id = t.tipo_contrato_id AND c.hotel_id != t.hotel_id)
+              + (SELECT COUNT(*) FROM trabajadores t INNER JOIN nomina_grupos g ON g.id = t.grupo_nomina_id AND g.hotel_id != t.hotel_id)
+              AS cruzadas"
+        );
+        $cruzadas = (int) ($st->fetch()['cruzadas'] ?? 0);
+        if ($cruzadas === 0) {
+            nomCoreOk('Fase 2: cero asignaciones cruzadas entre hoteles (aislamiento tenant).');
+        } else {
+            nomCoreError('Fase 2: ' . $cruzadas . ' asignacion(es) apuntan a catalogos de OTRO hotel.', 'Fuga de tenant: corregir de inmediato y revisar NominaCatalogoService::asignarATrabajador.');
+        }
+    } catch (Throwable $e) {
+        nomCoreWarning('Fase 2: no se pudo verificar aislamiento de asignaciones: ' . $e->getMessage());
+    }
+}
+
+/* ---------------------------------------------------------------------
  * 8) Modo de errores de BD para el futuro motor de calculo.
  * ------------------------------------------------------------------- */
 $strict = $env['DB_STRICT_ERRORS'] ?? getenv('DB_STRICT_ERRORS');

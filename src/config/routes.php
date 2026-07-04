@@ -228,6 +228,15 @@ $router->post('/night-audit/ejecutar', ['controller' => 'NightAudit', 'action' =
 $router->get('/nomina', ['controller' => 'Nomina', 'action' => 'index']);
 $router->get('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'configuracion']);
 $router->post('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'guardarConfiguracion']);
+// Fase 2: catalogos internos y ficha de nomina de empleados.
+$router->get('/nomina/catalogos', ['controller' => 'Nomina', 'action' => 'catalogos']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/crear', ['controller' => 'Nomina', 'action' => 'catalogoGuardar']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/actualizar', ['controller' => 'Nomina', 'action' => 'catalogoActualizar']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/alternar', ['controller' => 'Nomina', 'action' => 'catalogoAlternar']);
+$router->get('/nomina/empleados', ['controller' => 'Nomina', 'action' => 'empleados']);
+$router->get('/nomina/empleados/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'empleadoFicha']);
+$router->post('/nomina/empleados/{id:[0-9]+}/asignaciones', ['controller' => 'Nomina', 'action' => 'empleadoAsignaciones']);
+$router->post('/nomina/empleados/{id:[0-9]+}/salario', ['controller' => 'Nomina', 'action' => 'empleadoSalario']);
 
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);

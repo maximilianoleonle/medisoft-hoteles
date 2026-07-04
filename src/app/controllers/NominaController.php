@@ -9,6 +9,8 @@
  */
 
 require_once __DIR__ . '/../services/AuditService.php';
+require_once __DIR__ . '/../services/NominaCatalogoService.php';
+require_once __DIR__ . '/../services/NominaSalarioService.php';
 
 class NominaController extends Controller {
 
@@ -152,6 +154,242 @@ class NominaController extends Controller {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Fase 2: catalogos internos                                          */
+    /* ------------------------------------------------------------------ */
+
+    public function catalogosAction() {
+        $hotelId = $this->hotelIdActual();
+        $servicio = new NominaCatalogoService();
+
+        $tipo = (string) $this->getQuery('tipo', 'departamentos');
+        if (!$servicio->esTipoValido($tipo)) {
+            $tipo = 'departamentos';
+        }
+
+        $puedeConfigurar = can('nomina.configurar');
+
+        // Primera visita de un negocio sin conceptos: sembrar los base.
+        if ($puedeConfigurar) {
+            try {
+                $servicio->sembrarConceptosBase($hotelId, user_id());
+            } catch (Throwable $e) {
+                // Siembra best-effort: la pantalla funciona sin conceptos.
+            }
+        }
+
+        View::renderTemplate('nomina/catalogos', [
+            'title' => 'Catalogos de nomina - ' . current_hotel_display_name(),
+            'tipo' => $tipo,
+            'registros' => $servicio->listar($hotelId, $tipo),
+            'conteos' => $servicio->conteos($hotelId),
+            'departamentosActivos' => $servicio->listar($hotelId, 'departamentos', true),
+            'puedeConfigurar' => $puedeConfigurar,
+        ]);
+    }
+
+    public function catalogoGuardarAction($tipo) {
+        $this->requiereEscrituraCatalogo($tipo);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCatalogoService())->crear($hotelId, (string) $tipo, $_POST, user_id());
+            set_mensaje('Registro creado en el catalogo.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/catalogos?tipo=' . urlencode((string) $tipo));
+    }
+
+    public function catalogoActualizarAction($tipo, $id) {
+        $this->requiereEscrituraCatalogo($tipo);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCatalogoService())->actualizar($hotelId, (string) $tipo, (int) $id, $_POST, user_id());
+            set_mensaje('Registro actualizado.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/catalogos?tipo=' . urlencode((string) $tipo));
+    }
+
+    public function catalogoAlternarAction($tipo, $id) {
+        $this->requiereEscrituraCatalogo($tipo);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCatalogoService())->alternar($hotelId, (string) $tipo, (int) $id, user_id());
+            set_mensaje('Estado del registro actualizado.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/catalogos?tipo=' . urlencode((string) $tipo));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Fase 2: empleados (ficha de nomina sobre trabajadores existentes)   */
+    /* ------------------------------------------------------------------ */
+
+    public function empleadosAction() {
+        $hotelId = $this->hotelIdActual();
+
+        $buscar = trim((string) $this->getQuery('buscar', ''));
+        $estado = (string) $this->getQuery('estado', 'activo');
+        if (!in_array($estado, ['activo', 'inactivo', 'baja', 'todos'], true)) {
+            $estado = 'activo';
+        }
+
+        $empleados = [];
+        try {
+            $db = Database::getInstance();
+            $sql = "SELECT t.id, t.nombre_completo, t.rol_laboral, t.estado, t.periodicidad_pago,
+                           p.nombre AS puesto, d.nombre AS departamento,
+                           g.nombre AS grupo_nomina, c.nombre AS tipo_contrato
+                    FROM trabajadores t
+                    LEFT JOIN nomina_puestos p ON p.id = t.puesto_id
+                    LEFT JOIN nomina_departamentos d ON d.id = t.departamento_id
+                    LEFT JOIN nomina_grupos g ON g.id = t.grupo_nomina_id
+                    LEFT JOIN nomina_tipos_contrato c ON c.id = t.tipo_contrato_id
+                    WHERE t.hotel_id = ?";
+            $params = [$hotelId];
+
+            if ($estado !== 'todos') {
+                $sql .= " AND t.estado = ?";
+                $params[] = $estado;
+            }
+            if ($buscar !== '') {
+                $sql .= " AND t.nombre_completo LIKE ?";
+                $params[] = '%' . $buscar . '%';
+            }
+            $sql .= " ORDER BY t.nombre_completo ASC LIMIT 300";
+
+            $st = $db->query($sql, $params);
+            $empleados = $st !== false ? $st->fetchAll() : [];
+        } catch (Throwable $e) {
+            $empleados = [];
+        }
+
+        View::renderTemplate('nomina/empleados', [
+            'title' => 'Empleados de nomina - ' . current_hotel_display_name(),
+            'empleados' => $empleados,
+            'buscar' => $buscar,
+            'estado' => $estado,
+            'personalActivo' => function_exists('hotel_has_module') && hotel_has_module('personal', $hotelId),
+        ]);
+    }
+
+    public function empleadoFichaAction($id) {
+        $hotelId = $this->hotelIdActual();
+        $trabajadorId = (int) $id;
+
+        $db = Database::getInstance();
+        $st = $db->query(
+            "SELECT t.*, p.nombre AS puesto_nombre, d.nombre AS departamento_nombre,
+                    g.nombre AS grupo_nombre, c.nombre AS contrato_nombre
+             FROM trabajadores t
+             LEFT JOIN nomina_puestos p ON p.id = t.puesto_id
+             LEFT JOIN nomina_departamentos d ON d.id = t.departamento_id
+             LEFT JOIN nomina_grupos g ON g.id = t.grupo_nomina_id
+             LEFT JOIN nomina_tipos_contrato c ON c.id = t.tipo_contrato_id
+             WHERE t.id = ? AND t.hotel_id = ?",
+            [$trabajadorId, $hotelId]
+        );
+        $trabajador = $st !== false ? $st->fetch() : null;
+
+        if (!$trabajador) {
+            set_mensaje('El empleado no existe en este negocio.', 'error');
+            $this->redirect('nomina/empleados');
+        }
+
+        $catalogo = new NominaCatalogoService();
+        $puedeSalarios = can('nomina.salarios');
+
+        $salarios = new NominaSalarioService();
+
+        View::renderTemplate('nomina/empleado_ficha', [
+            'title' => 'Ficha de nomina - ' . current_hotel_display_name(),
+            'trabajador' => $trabajador,
+            'puestos' => $catalogo->listar($hotelId, 'puestos', true),
+            'departamentos' => $catalogo->listar($hotelId, 'departamentos', true),
+            'contratos' => $catalogo->listar($hotelId, 'tipos_contrato', true),
+            'grupos' => $catalogo->listar($hotelId, 'grupos', true),
+            'puedeEmpleados' => can('nomina.empleados'),
+            'puedeSalarios' => $puedeSalarios,
+            'salarioVigente' => $puedeSalarios ? $salarios->vigente($hotelId, $trabajadorId) : null,
+            'historialSalarios' => $puedeSalarios ? $salarios->historial($hotelId, $trabajadorId) : [],
+        ]);
+    }
+
+    public function empleadoAsignacionesAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/empleados');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.empleados');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            (new NominaCatalogoService())->asignarATrabajador($hotelId, (int) $id, [
+                'puesto_id' => $this->getPost('puesto_id'),
+                'departamento_id' => $this->getPost('departamento_id'),
+                'tipo_contrato_id' => $this->getPost('tipo_contrato_id'),
+                'grupo_nomina_id' => $this->getPost('grupo_nomina_id'),
+            ], user_id());
+            set_mensaje('Asignaciones de nomina guardadas.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/empleados/' . (int) $id);
+    }
+
+    public function empleadoSalarioAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/empleados');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.salarios');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $resultado = (new NominaSalarioService())->registrarCambio($hotelId, (int) $id, [
+                'salario' => $this->getPost('salario'),
+                'esquema' => $this->getPost('esquema'),
+                'vigente_desde' => $this->getPost('vigente_desde'),
+                'motivo' => $this->getPost('motivo'),
+            ], user_id());
+            set_mensaje($resultado['message'] ?? 'Cambio salarial registrado.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje($e->getMessage(), 'error');
+        }
+
+        $this->redirect('nomina/empleados/' . (int) $id);
+    }
+
+    /* ------------------------------------------------------------------ */
+
+    private function requiereEscrituraCatalogo($tipo) {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/catalogos');
+        }
+        $this->validateCSRF();
+        if (function_exists('require_permission')) {
+            require_permission('nomina.configurar');
+        }
+        if (!(new NominaCatalogoService())->esTipoValido((string) $tipo)) {
+            set_mensaje('Tipo de catalogo no valido.', 'error');
+            $this->redirect('nomina/catalogos');
+        }
+    }
 
     private function hotelIdActual() {
         return (int) obtenerHotelIdActualCompat();

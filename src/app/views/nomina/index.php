@@ -118,13 +118,16 @@ $nomEstadoPeriodoLabels = [
     <div class="nom-navrow">
         <?php if ($nomPuedeConfigurar): ?>
         <a href="<?= url('nomina/configuracion') ?>" class="nom-btn nom-btn-primary ms-pressable">
-            <i class="fas fa-sliders"></i> Configuración de nómina
+            <i class="fas fa-sliders"></i> Configuración
+        </a>
+        <a href="<?= url('nomina/catalogos') ?>" class="nom-btn ms-pressable">
+            <i class="fas fa-layer-group"></i> Catálogos
         </a>
         <?php endif; ?>
-        <?php if ($nomPersonalActivo): ?>
-        <a href="<?= url('trabajadores') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-id-card"></i> Personal
+        <a href="<?= url('nomina/empleados') ?>" class="nom-btn ms-pressable">
+            <i class="fas fa-address-book"></i> Empleados
         </a>
+        <?php if ($nomPersonalActivo): ?>
         <a href="<?= url('trabajadores/nomina/periodos') ?>" class="nom-btn ms-pressable">
             <i class="fas fa-calendar-week"></i> Periodos de pre-nómina
         </a>
