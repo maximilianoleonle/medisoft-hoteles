@@ -5,6 +5,7 @@
 $periodo = $periodo ?? date('Y-m');
 $cobros = $cobros ?? [];
 $stripeConfigurado = $stripeConfigurado ?? false;
+$correoConfigurado = $correoConfigurado ?? false;
 
 $scSafe = static function ($v) {
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
@@ -16,17 +17,20 @@ $scMoney = static function ($n) {
 $totalPeriodo = 0.0;
 $totalPagado = 0.0;
 $pendientes = 0;
+$vencidos = 0;
 foreach ($cobros as $c) {
     if ($c['estado'] === 'cancelado') continue;
     $totalPeriodo += (float) $c['monto'];
     if ($c['estado'] === 'pagado') $totalPagado += (float) $c['monto'];
     if ($c['estado'] === 'pendiente') $pendientes++;
+    if ($c['estado'] === 'vencido') $vencidos++;
 }
 
 $badgeCobro = static function ($estado) {
     $map = [
         'pagado' => ['Pagado', 'background:rgba(22,163,74,.12);color:var(--ms-success);'],
         'pendiente' => ['Pendiente', 'background:rgba(245,158,11,.14);color:#92600A;'],
+        'vencido' => ['Vencido', 'background:rgba(220,38,38,.12);color:#B91C1C;'],
         'cancelado' => ['Cancelado', 'background:rgba(100,116,139,.12);color:var(--ms-muted);'],
     ];
     return $map[$estado] ?? [$estado, ''];
@@ -61,6 +65,18 @@ $etiquetaPeriodo = ($meses[substr($periodo, 5, 2)] ?? $periodo) . ' ' . substr($
                         style="background:var(--ms-primary);">
                     <i class="fas fa-file-invoice-dollar text-xs"></i>
                     Generar cobros de <?= $scSafe($etiquetaPeriodo) ?>
+                </button>
+            </form>
+            <form method="POST" action="<?= url('admin/saas/cobros/ciclo') ?>"
+                  onsubmit="return confirm('Esto genera los cobros que falten, manda correos de cobro y recordatorios, y marca vencidos. ¿Continuar?');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="periodo" value="<?= $scSafe($periodo) ?>">
+                <button type="submit"
+                        class="inline-flex items-center justify-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-slate-50"
+                        style="border-color:var(--ms-border);color:var(--ms-text);"
+                        title="Lo mismo que corre el cron diario: generar + correos + recordatorios + vencidos">
+                    <i class="fas fa-rotate text-xs" style="color:var(--ms-muted);"></i>
+                    Ejecutar ciclo ahora
                 </button>
             </form>
         </div>
@@ -101,8 +117,8 @@ $etiquetaPeriodo = ($meses[substr($periodo, 5, 2)] ?? $periodo) . ' ' . substr($
                 <i class="fas fa-hourglass-half text-sm" style="color:#B45309;"></i>
             </div>
             <div>
-                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cobros pendientes</div>
-                <div class="mt-0.5 text-2xl font-semibold" style="color:#B45309;"><?= (int) $pendientes ?></div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Pendientes / vencidos</div>
+                <div class="mt-0.5 text-2xl font-semibold" style="color:#B45309;"><?= (int) $pendientes ?><?php if ($vencidos > 0): ?> <span style="color:#B91C1C;">· <?= (int) $vencidos ?> vencido(s)</span><?php endif; ?></div>
             </div>
         </div>
     </div>
@@ -110,6 +126,12 @@ $etiquetaPeriodo = ($meses[substr($periodo, 5, 2)] ?? $periodo) . ' ' . substr($
     <?php if (!$stripeConfigurado): ?>
         <div class="mb-4 rounded-md border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
             Los links de pago requieren <code>SAAS_STRIPE_SECRET_KEY</code> en el .env (llave de TU cuenta Stripe, no la de un hotel). Mientras tanto puedes marcar pagos como manuales.
+        </div>
+    <?php endif; ?>
+
+    <?php if (!$correoConfigurado): ?>
+        <div class="mb-4 rounded-md border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
+            Los correos de cobro requieren <code>SAAS_EMAIL_REMITENTE</code> en el .env (correo de tu plataforma; opcional <code>SAAS_EMAIL_NOMBRE</code>). El ciclo automático funciona igual, pero sin envíos.
         </div>
     <?php endif; ?>
 
@@ -149,12 +171,29 @@ $etiquetaPeriodo = ($meses[substr($periodo, 5, 2)] ?? $periodo) . ' ' . substr($
                             <td class="px-5 py-4 text-xs" style="color:var(--ms-muted);">
                                 Básico <?= $scMoney($desglose['precio_base'] ?? 0) ?> + <?= (int) $numBloques ?> bloque(s) <?= $scMoney($desglose['total_modulos'] ?? 0) ?>
                                 <?php if ($c['metodo']): ?><div class="mt-0.5">Vía: <?= $scSafe($c['metodo']) ?><?= $c['pagado_at'] ? ' · ' . $scSafe(date('d/m/Y', strtotime((string) $c['pagado_at']))) : '' ?></div><?php endif; ?>
+                                <?php if (!empty($c['vence_at']) && in_array($c['estado'], ['pendiente', 'vencido'], true)): ?>
+                                    <div class="mt-0.5">Vence: <?= $scSafe(date('d/m/Y', strtotime((string) $c['vence_at']))) ?></div>
+                                <?php endif; ?>
+                                <?php if (!empty($c['correo_enviado_at'])): ?>
+                                    <div class="mt-0.5">✉ Correo <?= $scSafe(date('d/m', strtotime((string) $c['correo_enviado_at']))) ?><?= !empty($c['recordatorio_enviado_at']) ? ' · recordatorio ' . $scSafe(date('d/m', strtotime((string) $c['recordatorio_enviado_at']))) : '' ?></div>
+                                <?php endif; ?>
                             </td>
                             <td class="px-5 py-4 text-right text-sm font-semibold" style="color:var(--ms-text);"><?= $scMoney($c['monto']) ?></td>
                             <td class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" style="<?= $badgeStyle ?>"><?= $scSafe($badgeTxt) ?></span></td>
                             <td class="px-5 py-4 text-right">
-                                <?php if ($c['estado'] === 'pendiente'): ?>
+                                <?php if (in_array($c['estado'], ['pendiente', 'vencido'], true)): ?>
                                     <div class="flex flex-wrap justify-end gap-1.5">
+                                        <?php if ($correoConfigurado): ?>
+                                            <form method="POST" action="<?= url('admin/saas/cobros/' . (int) $c['id'] . '/correo') ?>">
+                                                <?= csrf_field() ?>
+                                                <?php $yaEnviado = !empty($c['correo_enviado_at']); ?>
+                                                <input type="hidden" name="recordatorio" value="<?= $yaEnviado ? 1 : 0 ?>">
+                                                <button type="submit" class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);">
+                                                    <i class="fas fa-envelope text-[10px]" style="color:var(--ms-muted);"></i>
+                                                    <?= $yaEnviado ? 'Reenviar recordatorio' : 'Enviar correo de cobro' ?>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                         <?php if (!empty($c['checkout_url'])): ?>
                                             <button type="button"
                                                     class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition hover:bg-slate-50"

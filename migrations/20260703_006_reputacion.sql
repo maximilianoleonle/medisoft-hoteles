@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS reputacion_encuestas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO migrations (nombre, batch, checksum, estado)
-VALUES ('20260703_005_reputacion.sql', 1, NULL, 'ejecutada')
+VALUES ('20260703_006_reputacion.sql', 1, NULL, 'ejecutada')
 ON DUPLICATE KEY UPDATE
     estado = VALUES(estado),
     ejecutada_en = CURRENT_TIMESTAMP;
