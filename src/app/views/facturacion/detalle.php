@@ -1868,12 +1868,16 @@ textarea.invoice-input {
                                         $metodo_icons = ['efectivo' => 'money-bill-wave', 'tarjeta' => 'credit-card', 'transferencia' => 'exchange-alt'];
                                         $metodo_colors = ['efectivo' => '#16824E', 'tarjeta' => '#2563EB', 'transferencia' => '#7C3AED'];
                                         $metodo = $pago['metodo_pago'] ?? '';
+                                        $metodo_label = ucfirst((string)$metodo);
+                                        if ($metodo === 'tarjeta' && !empty($pago['tipo_tarjeta'])) {
+                                            $metodo_label .= ' · ' . ($pago['tipo_tarjeta'] === 'credito' ? 'Crédito' : 'Débito');
+                                        }
                                     ?>
                                     <div class="invoice-pay-item" style="--pay-color: <?= fact_det_safe($metodo_colors[$metodo] ?? '#667085') ?>;">
                                         <div class="invoice-pay-method">
                                             <i class="fas fa-<?= fact_det_safe($metodo_icons[$metodo] ?? 'circle') ?>"></i>
                                             <div>
-                                                <strong><?= fact_det_safe(ucfirst((string)$metodo), 'Pago') ?></strong>
+                                                <strong><?= fact_det_safe($metodo_label, 'Pago') ?></strong>
                                                 <?php if (!empty($pago['referencia'])): ?>
                                                     <span>Ref: <?= fact_det_safe($pago['referencia']) ?></span>
                                                 <?php else: ?>

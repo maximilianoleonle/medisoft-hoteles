@@ -2988,6 +2988,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         overflow: visible;
     }
     .rdv3-card--stay { order: 10; }
+    #rdv3-payment-section { order: 15; }
     .rdv3-card--rooms { order: 20; }
     .rdv3-card--guest { order: 30; }
     .rdv3-side-card--payment { order: 40; }
@@ -3843,7 +3844,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 $rpPuedeCobrar = !empty($rpEval['elegible']) && ($rpEsPagoPendiente || $rpModuloAnticipos);
                                 ?>
                                 <?php if ($rpPuedeCobrar): ?>
-                                    <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+                                    <button type="button" class="rp-mobile-cta" data-rp-open aria-haspopup="dialog" aria-controls="rdaSheet">
+                                        <i class="fas fa-plus"></i> <?= $rdSafe($rpBotonCobro) ?>
+                                    </button>
+                                    <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" class="rp-desktop-form" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
                                         <div style="flex:1;min-width:130px;">
@@ -3936,6 +3940,358 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?php endif; ?>
                             </div>
                         </section>
+
+                        <?php
+                        // ── Bottom-sheet wizard de anticipo (SOLO móvil ≤780px) ──
+                        // Reusa exactamente los mismos campos/acción/CSRF que el form de escritorio.
+                        $rpSaldoNum  = (float)($rpResumen['saldo'] ?? 0);
+                        $rpSaldoAttr = number_format($rpSaldoNum, 2, '.', '');
+                        $rpMedioAttr = number_format($rpSaldoNum / 2, 2, '.', '');
+                        $rpMetodoIcon = ['efectivo' => 'fa-money-bill-wave', 'tarjeta' => 'fa-credit-card', 'transferencia' => 'fa-building-columns'];
+                        ?>
+                        <?php if ($rpPuedeCobrar): ?>
+                        <div class="rda-backdrop" id="rdaBackdrop" data-rp-close hidden></div>
+                        <div class="rda-sheet" id="rdaSheet" role="dialog" aria-modal="true" aria-labelledby="rdaTitle" data-rda-saldo="<?= $rpSaldoAttr ?>" hidden>
+                            <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" id="rdaForm" class="rda-form">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
+                                <header class="rda-head">
+                                    <h3 id="rdaTitle"><?= $rdSafe($rpBotonCobro) ?></h3>
+                                    <button type="button" class="rda-close" data-rp-close aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
+                                </header>
+                                <div class="rda-stepper" aria-hidden="true">
+                                    <div class="rda-step is-current" data-rda-ind="1"><span>1</span> Anticipo</div>
+                                    <div class="rda-line" data-rda-line></div>
+                                    <div class="rda-step" data-rda-ind="2"><span>2</span> Factura</div>
+                                </div>
+                                <div class="rda-body">
+                                    <section class="rda-stage is-active" data-rda-stage="1">
+                                        <div class="rda-stats">
+                                            <div class="rda-stat"><small>Total</small><strong><?= $rdMoney($rpResumen['total']) ?></strong></div>
+                                            <div class="rda-stat is-paid"><small>Pagado</small><strong><?= $rdMoney($rpResumen['pagado']) ?></strong></div>
+                                            <div class="rda-stat is-balance"><small>Saldo</small><strong><?= $rdMoney($rpResumen['saldo']) ?></strong></div>
+                                        </div>
+                                        <label class="rda-label" for="rdaMonto"><?= $rdSafe($rpMontoLabel) ?></label>
+                                        <div class="rda-money">
+                                            <span>$</span>
+                                            <input type="text" id="rdaMonto" name="monto" value="<?= $rpSaldoNum > 0.004 ? $rpSaldoAttr : '' ?>" data-money-format="true" placeholder="0.00" inputmode="decimal" autocomplete="off">
+                                        </div>
+                                        <div class="rda-chips">
+                                            <button type="button" class="rda-chip" data-rda-fill="<?= $rpMedioAttr ?>">50% del saldo · <?= $rdMoney($rpSaldoNum / 2) ?></button>
+                                            <button type="button" class="rda-chip" data-rda-fill="<?= $rpSaldoAttr ?>">Saldo completo · <?= $rdMoney($rpSaldoNum) ?></button>
+                                        </div>
+                                        <label class="rda-label">Método de pago</label>
+                                        <div class="rda-methods">
+                                            <?php $rpFirst = true; foreach (($rpEval['metodos_pago'] ?? []) as $mk => $ml): ?>
+                                                <label class="rda-method rda-m-<?= $rdSafe($mk) ?>">
+                                                    <input type="radio" name="metodo_pago" value="<?= $rdSafe($mk) ?>" <?= $rpFirst ? 'checked' : '' ?> data-rda-metodo>
+                                                    <i class="fas <?= $rpMetodoIcon[$mk] ?? 'fa-wallet' ?>" aria-hidden="true"></i>
+                                                    <span><?= $rdSafe($ml) ?></span>
+                                                </label>
+                                            <?php $rpFirst = false; endforeach; ?>
+                                        </div>
+                                        <div class="rda-tarjeta" data-rda-tarjeta hidden>
+                                            <label class="rda-label">Tipo de tarjeta</label>
+                                            <div class="rda-tt">
+                                                <label class="rda-ttopt"><input type="radio" name="tipo_tarjeta_anticipo" value="debito" disabled> <i class="fas fa-money-check-alt" aria-hidden="true"></i> Débito</label>
+                                                <label class="rda-ttopt"><input type="radio" name="tipo_tarjeta_anticipo" value="credito" disabled> <i class="fas fa-credit-card" aria-hidden="true"></i> Crédito</label>
+                                            </div>
+                                            <p class="rda-inv-hint" data-rda-tt-hint hidden><i class="fas fa-circle-info" aria-hidden="true"></i> Selecciona débito o crédito para continuar.</p>
+                                        </div>
+                                        <div class="rda-after">
+                                            <span>Saldo después del anticipo</span>
+                                            <b data-rda-after>$0.00</b>
+                                        </div>
+                                    </section>
+                                    <section class="rda-stage" data-rda-stage="2" hidden>
+                                        <div class="rda-inv-q"><i class="fas fa-file-invoice" aria-hidden="true"></i> ¿El cliente requiere factura?</div>
+                                        <label class="rda-radio-card">
+                                            <input type="radio" name="requiere_factura" value="si" data-rda-factura>
+                                            <span class="rc-dot"></span>
+                                            <span class="rc-txt"><strong>Factura para cliente</strong><small>Se emitirá comprobante fiscal</small></span>
+                                        </label>
+                                        <label class="rda-radio-card">
+                                            <input type="radio" name="requiere_factura" value="no" data-rda-factura>
+                                            <span class="rc-dot"></span>
+                                            <span class="rc-txt"><strong>Sin factura</strong><small>Solo recibo interno</small></span>
+                                        </label>
+                                        <p class="rda-inv-hint" data-rda-inv-hint><i class="fas fa-circle-info" aria-hidden="true"></i> Indica si el cliente requiere factura para continuar.</p>
+                                        <?php if (!empty($anticipoFacturaSolicitud)): ?>
+                                            <div class="rda-inv-pending">
+                                                <div class="rda-inv-pending-h"><i class="fas fa-file-lines" aria-hidden="true"></i> Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> · <?= $rdMoney($anticipoFacturaSolicitud['monto_total'] ?? 0) ?></div>
+                                                <label class="rda-radio-card sm"><input type="radio" name="factura_modo" value="acumular"><span class="rc-dot"></span><span class="rc-txt"><strong>Sumar a factura pendiente</strong></span></label>
+                                                <label class="rda-radio-card sm"><input type="radio" name="factura_modo" value="separada" checked><span class="rc-dot"></span><span class="rc-txt"><strong>Crear factura separada</strong></span></label>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="rda-summary">
+                                            <div class="rda-summary-h">Resumen del anticipo</div>
+                                            <div class="rda-summary-row"><span>Monto</span><b data-rda-sum-monto>$0.00</b></div>
+                                            <div class="rda-summary-row"><span>Método</span><b data-rda-sum-metodo>—</b></div>
+                                            <div class="rda-summary-row"><span>Factura</span><b data-rda-sum-factura>Sin factura</b></div>
+                                            <div class="rda-summary-row is-total"><span>Saldo restante</span><b data-rda-sum-saldo>$0.00</b></div>
+                                        </div>
+                                    </section>
+                                </div>
+                                <footer class="rda-foot">
+                                    <button type="button" class="rda-btn rda-btn-ghost" data-rda-back hidden><i class="fas fa-arrow-left" aria-hidden="true"></i> Atrás</button>
+                                    <button type="button" class="rda-btn rda-btn-navy" data-rda-next>Continuar <i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+                                    <button type="submit" class="rda-btn rda-btn-green" data-rda-submit hidden><i class="fas fa-check" aria-hidden="true"></i> <?= $rdSafe($rpBotonCobro) ?></button>
+                                </footer>
+                            </form>
+                        </div>
+                        <?php endif; ?>
+
+                        <style>
+                        .rp-mobile-cta { display: none; }
+                        @media (max-width: 780px) {
+                            #rdv3-payment-section .rp-desktop-form { display: none !important; }
+                            .rp-mobile-cta {
+                                display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+                                width: 100%; min-height: 48px; margin-top: 2px;
+                                border: 0; border-radius: 12px; cursor: pointer;
+                                background: linear-gradient(135deg, #15835A, #0E6C49); color: #fff;
+                                font-size: .92rem; font-weight: 800; letter-spacing: .01em;
+                                box-shadow: 0 8px 18px -10px rgba(21,131,90,.6);
+                            }
+                            .rp-mobile-cta:active { transform: translateY(1px); }
+                        }
+                        @media (min-width: 781px) { .rda-sheet, .rda-backdrop { display: none !important; } }
+                        .rda-backdrop { position: fixed; inset: 0; z-index: 10060; background: rgba(15,23,42,.5); opacity: 0; transition: opacity .25s ease; }
+                        .rda-backdrop.is-open { opacity: 1; }
+                        .rda-sheet[hidden], .rda-backdrop[hidden] { display: none !important; }
+                        .rda-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10061; max-height: 92dvh; display: flex; flex-direction: column; background: #FBF9F5; border-radius: 20px 20px 0 0; box-shadow: 0 -18px 48px -20px rgba(15,23,42,.4); transform: translateY(100%); transition: transform .3s cubic-bezier(.22,1,.36,1); padding-bottom: env(safe-area-inset-bottom, 0px); }
+                        .rda-sheet.is-open { transform: translateY(0); }
+                        .rda-form { display: flex; flex-direction: column; min-height: 0; }
+                        .rda-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 26px 14px !important; }
+                        .rda-head h3 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.28rem; color: #1E293B; font-weight: 600; }
+                        .rda-close { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; border: 1px solid #E5E7EB; background: #fff; color: #64748B; cursor: pointer; }
+                        .rda-stepper { display: flex; align-items: center; gap: 10px; padding: 0 26px 10px; }
+                        .rda-step { display: flex; align-items: center; gap: 7px; font-size: .82rem; font-weight: 700; color: #94A3B8; }
+                        .rda-step span { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #E2E8F0; color: #64748B; font-size: .72rem; font-weight: 800; }
+                        .rda-step.is-current { color: #1E293B; }
+                        .rda-step.is-current span { background: #1E293B; color: #fff; }
+                        .rda-step.is-done span { background: #15835A; color: #fff; }
+                        .rda-line { flex: 1; height: 2px; background: #E2E8F0; border-radius: 2px; transition: background .25s ease; }
+                        .rda-line.is-done { background: #15835A; }
+                        .rda-body { overflow-y: auto; padding: 8px 26px 16px; -webkit-overflow-scrolling: touch; }
+                        .rda-stage { display: none; }
+                        .rda-stage.is-active { display: block; }
+                        .rda-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+                        .rda-stat { border: 1px solid #EAE6DE; border-radius: 12px; padding: 9px 6px; text-align: center; background: #fff; }
+                        .rda-stat small { display: block; color: #94A3B8; font-size: .6rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
+                        .rda-stat strong { font-size: 1.02rem; font-weight: 800; color: #1E293B; font-variant-numeric: tabular-nums; }
+                        .rda-stat.is-paid small, .rda-stat.is-paid strong { color: #15835A; }
+                        .rda-stat.is-balance small, .rda-stat.is-balance strong { color: #B4540F; }
+                        .rda-label { display: block; font-size: .82rem; font-weight: 700; color: #334155; margin: 12px 0 7px; }
+                        .rda-money { display: flex; align-items: center; gap: 8px; border: 1px solid #E5E7EB; border-radius: 12px; padding: 2px 14px; background: #fff; }
+                        .rda-money span { color: #94A3B8; font-size: 1.15rem; font-weight: 800; }
+                        .rda-money input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 1.5rem; font-weight: 700; color: #1E293B; padding: 10px 0; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+                        .rda-money input::-webkit-outer-spin-button, .rda-money input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+                        .rda-chips { display: flex; gap: 8px; margin-top: 10px; }
+                        .rda-chip { flex: 1; min-height: 40px; padding: 0 8px; border: 1px solid #E5E7EB; border-radius: 10px; background: #fff; color: #475569; font-size: .78rem; font-weight: 700; cursor: pointer; }
+                        .rda-chip.is-active { border-color: #15835A; background: #ECFDF3; color: #0E6C49; }
+                        .rda-methods { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+                        .rda-method { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border: 1px solid #E5E7EB; border-radius: 12px; background: #fff; cursor: pointer; text-align: center; }
+                        .rda-method input { position: absolute; opacity: 0; pointer-events: none; }
+                        .rda-method i { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: #F1F5F9; color: #64748B; font-size: .95rem; }
+                        .rda-method span { font-size: .78rem; font-weight: 700; color: #334155; }
+                        .rda-method.is-sel.rda-m-efectivo { border-color: #15835A; background: #F0FBF5; }
+                        .rda-method.is-sel.rda-m-efectivo i { background: #DCFCE7; color: #15835A; }
+                        .rda-method.is-sel.rda-m-tarjeta { border-color: #2563EB; background: #EFF6FF; }
+                        .rda-method.is-sel.rda-m-tarjeta i { background: #DBEAFE; color: #2563EB; }
+                        .rda-method.is-sel.rda-m-transferencia { border-color: #7C3AED; background: #F5F3FF; }
+                        .rda-method.is-sel.rda-m-transferencia i { background: #EDE9FE; color: #7C3AED; }
+                        .rda-tarjeta { margin-top: 8px; }
+                        .rda-tt { display: flex; gap: 8px; }
+                        .rda-ttopt { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; border: 1px solid #BFDBFE; border-radius: 10px; background: #fff; font-size: .8rem; font-weight: 700; color: #1E3A8A; cursor: pointer; }
+                        .rda-ttopt input { position: absolute; opacity: 0; }
+                        .rda-ttopt.is-sel { border-color: #2563EB; background: #EFF6FF; }
+                        .rda-after { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 12px 14px; border: 1px solid #EAE6DE; border-radius: 12px; background: #fff; }
+                        .rda-after span { color: #475569; font-size: .84rem; font-weight: 600; }
+                        .rda-after b { font-size: 1.05rem; font-weight: 800; color: #15835A; font-variant-numeric: tabular-nums; }
+                        .rda-after.is-pending b { color: #B4540F; }
+                        .rda-inv-q { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 800; color: #1E293B; margin: 4px 0 12px; }
+                        .rda-radio-card { position: relative; display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid #E5E7EB; border-radius: 12px; background: #fff; cursor: pointer; margin-bottom: 10px; }
+                        .rda-radio-card input { position: absolute; opacity: 0; }
+                        .rda-radio-card .rc-dot { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #CBD5E1; position: relative; }
+                        .rda-radio-card.is-sel { border-color: #2563EB; background: #EFF6FF; }
+                        .rda-radio-card.is-sel .rc-dot { border-color: #2563EB; }
+                        .rda-radio-card.is-sel .rc-dot::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #2563EB; }
+                        .rda-radio-card .rc-txt { display: flex; flex-direction: column; gap: 1px; }
+                        .rda-radio-card .rc-txt strong { font-size: .88rem; font-weight: 700; color: #1E293B; }
+                        .rda-radio-card .rc-txt small { font-size: .74rem; color: #64748B; }
+                        .rda-radio-card.sm { padding: 10px 12px; margin-bottom: 8px; }
+                        .rda-radio-card.sm .rc-txt strong { font-size: .82rem; }
+                        .rda-inv-pending { margin: 6px 0 14px; padding: 12px; border: 1px solid #FDE8C8; border-radius: 12px; background: #FEF6E9; }
+                        .rda-inv-pending-h { display: flex; align-items: center; gap: 7px; font-size: .78rem; font-weight: 800; color: #8A5A12; margin-bottom: 9px; }
+                        .rda-summary { border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; margin-top: 6px; }
+                        .rda-summary-h { background: #1E293B; color: #fff; font-size: .86rem; font-weight: 700; padding: 11px 14px; }
+                        .rda-summary-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-top: 1px solid #EEF1F4; font-size: .85rem; }
+                        .rda-summary-row span { color: #64748B; }
+                        .rda-summary-row b { color: #1E293B; font-weight: 800; font-variant-numeric: tabular-nums; }
+                        .rda-summary-row.is-total { background: #F0FBF5; }
+                        .rda-summary-row.is-total b { color: #15835A; }
+                        .rda-foot { display: flex; gap: 10px; padding: 12px 26px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #EEE9E0; background: #fff; }
+                        .rda-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: 13px; border: 0; font-size: .92rem; font-weight: 800; cursor: pointer; }
+                        .rda-btn[hidden] { display: none !important; }
+                        .rda-btn-navy { background: #1E293B; color: #fff; }
+                        .rda-btn-green { background: linear-gradient(135deg, #15835A, #0E6C49); color: #fff; }
+                        .rda-btn-ghost { flex: 0 0 auto; padding: 0 18px; background: #fff; border: 1px solid #D7DBDF; color: #334155; }
+                        .rda-btn:active { transform: translateY(1px); }
+                        .rda-btn:disabled { cursor: not-allowed; }
+                        .rda-btn.is-wait { background: #EEF1F4 !important; color: #94A3B8 !important; box-shadow: none !important; }
+                        .rda-inv-hint { display: flex; align-items: center; gap: 6px; font-size: .76rem; font-weight: 600; color: #B4540F; margin: -2px 0 12px; }
+                        .rda-inv-hint[hidden] { display: none; }
+                        </style>
+                        <script>
+                        (function () {
+                            var sheet = document.getElementById('rdaSheet');
+                            if (!sheet) return;
+                            var backdrop = document.getElementById('rdaBackdrop');
+                            var form = document.getElementById('rdaForm');
+                            var saldo = parseFloat(sheet.getAttribute('data-rda-saldo')) || 0;
+                            var monto = document.getElementById('rdaMonto');
+                            var afterBox = sheet.querySelector('.rda-after');
+                            var afterVal = sheet.querySelector('[data-rda-after]');
+                            var stage1 = sheet.querySelector('[data-rda-stage="1"]');
+                            var stage2 = sheet.querySelector('[data-rda-stage="2"]');
+                            var ind1 = sheet.querySelector('[data-rda-ind="1"]');
+                            var ind2 = sheet.querySelector('[data-rda-ind="2"]');
+                            var line = sheet.querySelector('[data-rda-line]');
+                            var btnNext = sheet.querySelector('[data-rda-next]');
+                            var btnBack = sheet.querySelector('[data-rda-back]');
+                            var btnSubmit = sheet.querySelector('[data-rda-submit]');
+                            var tarjetaBox = sheet.querySelector('[data-rda-tarjeta]');
+                            var invHint = sheet.querySelector('[data-rda-inv-hint]');
+                            var ttHint = sheet.querySelector('[data-rda-tt-hint]');
+                            var submitHTML = btnSubmit ? btnSubmit.innerHTML : '';
+
+                            function money(n) {
+                                n = Math.round(n * 100) / 100;
+                                return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                            function parseMonto() {
+                                var v = (monto.value || '').toString().replace(/[^0-9.]/g, '');
+                                var n = parseFloat(v);
+                                return isNaN(n) ? 0 : n;
+                            }
+                            function syncSel() {
+                                sheet.querySelectorAll('.rda-method').forEach(function (el) { el.classList.toggle('is-sel', !!el.querySelector('input:checked')); });
+                                sheet.querySelectorAll('.rda-ttopt').forEach(function (el) { el.classList.toggle('is-sel', !!el.querySelector('input:checked')); });
+                                sheet.querySelectorAll('.rda-radio-card').forEach(function (el) { el.classList.toggle('is-sel', !!el.querySelector('input:checked')); });
+                            }
+                            function recalc() {
+                                var m = parseMonto();
+                                var after = saldo - m; if (after < 0) after = 0;
+                                afterVal.textContent = money(after);
+                                afterBox.classList.toggle('is-pending', after > 0.004);
+                                sheet.querySelectorAll('.rda-chip').forEach(function (c) {
+                                    c.classList.toggle('is-active', Math.abs(parseFloat(c.getAttribute('data-rda-fill')) - m) < 0.005);
+                                });
+                            }
+                            function metodoLabel() {
+                                var r = sheet.querySelector('[data-rda-metodo]:checked');
+                                if (!r) return '—';
+                                var s = r.parentElement.querySelector('span');
+                                var lbl = s ? s.textContent : r.value;
+                                if (r.value === 'tarjeta') {
+                                    var tt = sheet.querySelector('input[name="tipo_tarjeta_anticipo"]:checked');
+                                    if (tt) lbl += ' · ' + (tt.value === 'credito' ? 'Crédito' : 'Débito');
+                                }
+                                return lbl;
+                            }
+                            function facturaLabel() {
+                                var f = sheet.querySelector('input[name="requiere_factura"]:checked');
+                                if (!f || f.value === 'no') return 'Sin factura';
+                                var modo = sheet.querySelector('input[name="factura_modo"]:checked');
+                                return 'Cliente' + (modo ? ' · ' + (modo.value === 'separada' ? 'Separada' : 'Sumada') : '');
+                            }
+                            function fillSummary() {
+                                var m = parseMonto();
+                                var after = saldo - m; if (after < 0) after = 0;
+                                sheet.querySelector('[data-rda-sum-monto]').textContent = money(m);
+                                sheet.querySelector('[data-rda-sum-metodo]').textContent = metodoLabel();
+                                sheet.querySelector('[data-rda-sum-factura]').textContent = facturaLabel();
+                                sheet.querySelector('[data-rda-sum-saldo]').textContent = money(after);
+                            }
+                            function updateGate() {
+                                if (!btnSubmit) return;
+                                var chosen = !!sheet.querySelector('input[name="requiere_factura"]:checked');
+                                btnSubmit.disabled = !chosen;
+                                btnSubmit.classList.toggle('is-wait', !chosen);
+                                btnSubmit.innerHTML = chosen ? submitHTML : 'Continuar';
+                                if (invHint) invHint.hidden = chosen;
+                            }
+                            function goStep(n) {
+                                if (n === 1) {
+                                    stage1.hidden = false; stage1.classList.add('is-active');
+                                    stage2.hidden = true; stage2.classList.remove('is-active');
+                                    ind1.className = 'rda-step is-current'; ind2.className = 'rda-step'; line.classList.remove('is-done');
+                                    btnNext.hidden = false; btnBack.hidden = true; btnSubmit.hidden = true;
+                                } else {
+                                    stage1.hidden = true; stage1.classList.remove('is-active');
+                                    stage2.hidden = false; stage2.classList.add('is-active');
+                                    ind1.className = 'rda-step is-done'; ind2.className = 'rda-step is-current'; line.classList.add('is-done');
+                                    btnNext.hidden = true; btnBack.hidden = false; btnSubmit.hidden = false;
+                                    fillSummary();
+                                    updateGate();
+                                }
+                            }
+                            function open() {
+                                sheet.hidden = false; backdrop.hidden = false;
+                                void sheet.offsetHeight; // fuerza reflow para que el translateY anime desde abajo
+                                sheet.classList.add('is-open'); backdrop.classList.add('is-open');
+                                document.body.style.overflow = 'hidden';
+                                goStep(1); syncSel(); recalc();
+                            }
+                            function close() {
+                                sheet.classList.remove('is-open'); backdrop.classList.remove('is-open');
+                                document.body.style.overflow = '';
+                                setTimeout(function () { sheet.hidden = true; backdrop.hidden = true; }, 300);
+                            }
+                            document.querySelectorAll('[data-rp-open]').forEach(function (b) { b.addEventListener('click', open); });
+                            document.querySelectorAll('[data-rp-close]').forEach(function (b) { b.addEventListener('click', close); });
+                            btnNext.addEventListener('click', function () {
+                                var m = parseMonto();
+                                if (m <= 0) { monto.focus(); return; }
+                                if (m > saldo + 0.01) { monto.value = saldo.toFixed(2); recalc(); }
+                                var mm = sheet.querySelector('[data-rda-metodo]:checked');
+                                if (mm && mm.value === 'tarjeta' && !sheet.querySelector('input[name="tipo_tarjeta_anticipo"]:checked')) {
+                                    if (ttHint) ttHint.hidden = false;
+                                    if (tarjetaBox) tarjetaBox.scrollIntoView({ block: 'nearest' });
+                                    return;
+                                }
+                                goStep(2);
+                            });
+                            btnBack.addEventListener('click', function () { goStep(1); });
+                            sheet.querySelectorAll('[data-rda-fill]').forEach(function (chip) {
+                                chip.addEventListener('click', function () {
+                                    monto.value = parseFloat(chip.getAttribute('data-rda-fill')).toFixed(2);
+                                    monto.dispatchEvent(new Event('input', { bubbles: true }));
+                                    recalc();
+                                });
+                            });
+                            monto.addEventListener('input', recalc);
+                            sheet.querySelectorAll('[data-rda-metodo]').forEach(function (r) {
+                                r.addEventListener('change', function () {
+                                    var isTarjeta = (r.value === 'tarjeta' && r.checked);
+                                    if (tarjetaBox) {
+                                        tarjetaBox.hidden = !isTarjeta;
+                                        tarjetaBox.querySelectorAll('input[name="tipo_tarjeta_anticipo"]').forEach(function (t) { t.disabled = !isTarjeta; if (!isTarjeta) t.checked = false; });
+                                    }
+                                    if (ttHint) ttHint.hidden = true;
+                                    syncSel();
+                                });
+                            });
+                            sheet.querySelectorAll('input[name="requiere_factura"], input[name="factura_modo"], input[name="tipo_tarjeta_anticipo"]').forEach(function (i) {
+                                i.addEventListener('change', function () { if (ttHint) ttHint.hidden = true; syncSel(); fillSummary(); updateGate(); });
+                            });
+                            form.addEventListener('submit', function () {
+                                document.body.style.overflow = '';
+                                if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...'; }
+                            });
+                        })();
+                        </script>
                         <script>
                             function rdv3ToggleTipoTarjetaAnticipo() {
                                 const metodo = document.querySelector('[data-rdv3-anticipo-metodo]');

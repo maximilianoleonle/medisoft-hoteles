@@ -122,6 +122,28 @@ Si se modifica una vista con formularios:
 
 \- No anidar forms.
 
+\## Regla obligatoria: contrato operativo antes de cambios criticos
+
+Antes de modificar reservaciones, pagos/anticipos, check-in, check-out,
+habitaciones, cuentas por cobrar, facturacion o caja, se debe cumplir el
+contrato de `docs/contrato_operativo_cambios_criticos.md`.
+
+No se agregan vistas, botones, endpoints ni automatismos nuevos sobre esa
+frontera sin declarar:
+
+\- que archivos se van a tocar;
+
+\- que archivos no se van a tocar;
+
+\- que flujos pueden afectarse;
+
+\- como se prueba;
+
+\- como se revierte si rompe algo.
+
+Si un cambio rompe un flujo ya testeado, se pausa la feature nueva y se corrige
+la regresion antes de seguir avanzando.
+
 
 
 \## Validaciones obligatorias

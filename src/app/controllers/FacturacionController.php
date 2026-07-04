@@ -201,6 +201,53 @@ class FacturacionController extends Controller {
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$solicitud['reservacion_id'], $hotel_id, $hotel_id]);
             $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // El tipo de tarjeta (debito/credito) no vive en movimientos_caja; se enriquece
+            // desde reservacion_abonos (anticipos: enlace directo por movimiento_caja_id) y
+            // reservacion_pagos (check-in: cruce por monto+fecha).
+            if (!empty($pagos)) {
+                $tarjetaPorMovimiento = [];
+                $tarjetaPorClave = [];
+                try {
+                    $stmtAb = $this->db->prepare(
+                        "SELECT movimiento_caja_id, monto, tipo_tarjeta, created_at
+                         FROM reservacion_abonos
+                         WHERE reservacion_id = ? AND hotel_id = ? AND metodo_pago = 'tarjeta'
+                           AND tipo_tarjeta IS NOT NULL AND tipo_tarjeta <> ''"
+                    );
+                    $stmtAb->execute([$solicitud['reservacion_id'], $hotel_id]);
+                    foreach ($stmtAb->fetchAll(PDO::FETCH_ASSOC) as $ab) {
+                        if (!empty($ab['movimiento_caja_id'])) {
+                            $tarjetaPorMovimiento[(int)$ab['movimiento_caja_id']] = $ab['tipo_tarjeta'];
+                        }
+                        $tarjetaPorClave[number_format((float)$ab['monto'], 2, '.', '') . '|' . (string)$ab['created_at']] = $ab['tipo_tarjeta'];
+                    }
+                    $stmtPg = $this->db->prepare(
+                        "SELECT monto, tipo_tarjeta, created_at
+                         FROM reservacion_pagos
+                         WHERE reservacion_id = ? AND hotel_id = ? AND metodo_pago = 'tarjeta'
+                           AND tipo_tarjeta IS NOT NULL AND tipo_tarjeta <> ''"
+                    );
+                    $stmtPg->execute([$solicitud['reservacion_id'], $hotel_id]);
+                    foreach ($stmtPg->fetchAll(PDO::FETCH_ASSOC) as $pg) {
+                        $tarjetaPorClave[number_format((float)$pg['monto'], 2, '.', '') . '|' . (string)$pg['created_at']] = $pg['tipo_tarjeta'];
+                    }
+                } catch (Throwable $eTarjeta) {
+                    error_log('No se pudo enriquecer tipo de tarjeta en facturacion: ' . $eTarjeta->getMessage());
+                }
+                foreach ($pagos as &$pagoRef) {
+                    if (($pagoRef['metodo_pago'] ?? '') !== 'tarjeta') { continue; }
+                    $tt = $tarjetaPorMovimiento[(int)($pagoRef['id'] ?? 0)] ?? null;
+                    if ($tt === null || $tt === '') {
+                        $clave = number_format((float)($pagoRef['monto'] ?? 0), 2, '.', '') . '|' . (string)($pagoRef['created_at'] ?? '');
+                        $tt = $tarjetaPorClave[$clave] ?? null;
+                    }
+                    if ($tt !== null && $tt !== '') {
+                        $pagoRef['tipo_tarjeta'] = $tt;
+                    }
+                }
+                unset($pagoRef);
+            }
         } catch (Exception $e) {
             error_log("Error al obtener pagos de facturación: " . $e->getMessage());
         }

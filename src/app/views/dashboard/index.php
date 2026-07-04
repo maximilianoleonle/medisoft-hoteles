@@ -874,8 +874,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
         touch-action: pan-y;
-        padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
-        scroll-padding-bottom: max(24px, env(safe-area-inset-bottom));
+        /* Suma el alto de la barra inferior flotante (--hbn-offset del footer-nav)
+           para que el ultimo contenido no quede tapado; fallback 0px si el hotel
+           no tiene barra configurada. */
+        padding-bottom: calc(var(--hbn-offset, 0px) + max(24px, env(safe-area-inset-bottom))) !important;
+        scroll-padding-bottom: calc(var(--hbn-offset, 0px) + max(24px, env(safe-area-inset-bottom)));
     }
 
     body.hotel-layout-scope.page-dashboard .dashboard-boutique {
@@ -3604,6 +3607,45 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     margin-top: 8px;
 }
 
+/* Estacionamiento (móvil) */
+.dm-sec-note {
+    color: var(--dash-gold);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: none;
+    white-space: nowrap;
+}
+.dm-park { --parking-ring-start: var(--dash-gold-mid); --parking-ring-end: var(--dash-gold); }
+.dm-park.is-busy, .dm-park.is-near-capacity { --parking-ring-start: color-mix(in srgb, var(--dash-maint) 54%, #fff); --parking-ring-end: var(--dash-maint); }
+.dm-park.is-over-capacity { --parking-ring-start: color-mix(in srgb, var(--dash-critical) 54%, #fff); --parking-ring-end: var(--dash-critical); }
+.dm-park.is-unconfigured { --parking-ring-start: color-mix(in srgb, var(--dash-slate-400) 50%, #fff); --parking-ring-end: var(--dash-slate-500); }
+.dm-park-top { align-items: center; gap: 14px; }
+.dm-park-ring b { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; }
+.dm-park-ring b span { margin-top: 1px; color: var(--dash-slate-400); font-size: 9.5px; font-weight: 700; letter-spacing: 0; }
+.dm-park-stats { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dm-park-stat { display: flex; flex-direction: column; gap: 3px; padding: 9px 5px; border-radius: 12px; text-align: center; }
+.dm-park-stat span { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.dm-park-stat strong { font-size: 19px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.dm-park-stat.is-occupied { background: var(--dash-bg-occupied); }
+.dm-park-stat.is-occupied span, .dm-park-stat.is-occupied strong { color: var(--dash-occupied); }
+.dm-park-stat.is-reserved { background: var(--dash-bg-arriving); }
+.dm-park-stat.is-reserved span, .dm-park-stat.is-reserved strong { color: var(--dash-arriving); }
+.dm-park-stat.is-free { background: var(--dash-bg-available); }
+.dm-park-stat.is-free span, .dm-park-stat.is-free strong { color: var(--dash-available); }
+.dm-park-bar { margin-top: 14px; }
+.dm-park-bar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; font-weight: 800; color: var(--dash-slate-700); }
+.dm-park-bar-head i { margin-right: 5px; color: var(--dash-gold); }
+.dm-park-bar-head b { color: var(--dash-navy); font-variant-numeric: tabular-nums; }
+.dm-park-note { margin-top: 7px; color: var(--dash-slate-500); font-size: 12px; }
+.dm-park-types { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.dm-park-type { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--dash-line); border-radius: 12px; background: color-mix(in srgb, var(--dash-gold) 3%, #fff); }
+.dm-park-type .nm { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--dash-navy); font-size: 13.5px; font-weight: 850; }
+.dm-park-type .nm small { color: var(--dash-slate-500); font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-park-type .ct { flex: 0 0 auto; min-width: 46px; text-align: center; padding: 5px 12px; border-radius: 999px; background: var(--dash-surface); border: 1px solid var(--dash-line); color: var(--dash-navy); font-size: 12.5px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.dm-park-type.is-over-capacity .ct { background: var(--dash-gold-bg); border-color: var(--dash-gold-line); color: color-mix(in srgb, var(--dash-gold) 62%, var(--dash-ink)); }
+.dm-park-type.is-full .ct { background: var(--dash-bg-occupied); border-color: transparent; color: var(--dash-occupied); }
+
 /* Movimientos del día */
 .dm-mvtop {
     display: flex;
@@ -4584,6 +4626,77 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             <span class="dm-badge"><span class="led"></span> <?= $habitaciones_libres ?> disponibles</span>
                         </div>
                     </div>
+                </div>
+
+                <div class="dm-sec"><span>Estacionamiento</span><span class="dm-sec-note"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></span></div>
+                <div class="dm-card dm-park <?= dashboard_safe($estado_visual_estacionamiento) ?>">
+                    <div class="dm-occ dm-park-top">
+                        <div class="dm-ring dm-park-ring">
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--dash-line)" stroke-width="9"></circle>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="url(#dmParkingRing)" stroke-width="9" stroke-linecap="round"
+                                    stroke-dasharray="264" stroke-dashoffset="<?= round(264 - (264 * $pct_estacionamiento / 100), 1) ?>" transform="rotate(-90 50 50)"></circle>
+                                <defs>
+                                    <linearGradient id="dmParkingRing" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0" style="stop-color:var(--parking-ring-start, var(--dash-gold-mid))"></stop>
+                                        <stop offset="1" style="stop-color:var(--parking-ring-end, var(--dash-gold))"></stop>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <b><?= $vehiculos_estacionados ?><span><?= dashboard_safe($etiqueta_limite_estacionamiento) ?></span></b>
+                        </div>
+                        <div class="dm-park-stats" aria-label="Estado de lugares de estacionamiento">
+                            <div class="dm-park-stat is-occupied"><span>Ocupados</span><strong><?= $vehiculos_ocupados_fisicos ?></strong></div>
+                            <div class="dm-park-stat is-reserved"><span>Apartados</span><strong><?= $vehiculos_apartados_reserva ?></strong></div>
+                            <div class="dm-park-stat is-free"><span>Libres</span><strong><?= $espacios_disp ?></strong></div>
+                        </div>
+                    </div>
+                    <div class="dm-park-bar">
+                        <div class="dm-park-bar-head">
+                            <span><i class="fas fa-car" aria-hidden="true"></i> Cupo comprometido</span>
+                            <b><?= dashboard_safe($etiqueta_progreso_estacionamiento) ?></b>
+                        </div>
+                        <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
+                        <div class="dm-park-note">
+                            <?php if (!$estacionamiento_tiene_cupo): ?>
+                                Configura el cupo en Configuración para medir disponibilidad.
+                            <?php elseif ($espacios_excedidos > 0): ?>
+                                <?= $espacios_excedidos ?> sobre el límite · <?= $vehiculos_registrados_total ?> vehículos registrados
+                            <?php else: ?>
+                                <?= $espacios_disp ?> espacios disponibles · <?= $vehiculos_registrados_total ?> vehículos registrados
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php if (!empty($resumen_estacionamientos_dashboard)): ?>
+                        <div class="dm-park-types" aria-label="Estacionamientos por tipo">
+                            <?php foreach ($resumen_estacionamientos_dashboard as $parkingItem): ?>
+                                <?php
+                                $pTotal = (int)($parkingItem['total'] ?? 0);
+                                $pCupo  = (int)($parkingItem['cupo'] ?? 0);
+                                $pDisp  = (int)($parkingItem['disponibles'] ?? 0);
+                                $pOver  = (int)($parkingItem['sobrecupo'] ?? 0);
+                                $pOcc   = (int)($parkingItem['ocupados'] ?? 0);
+                                $pApar  = (int)($parkingItem['apartados'] ?? 0);
+                                $pReg   = (int)($parkingItem['registrados'] ?? 0);
+                                $pClass = 'dm-park-type';
+                                if ($pCupo <= 0) { $pClass .= ' is-unconfigured'; }
+                                elseif ($pOver > 0) { $pClass .= ' is-over-capacity'; }
+                                elseif ($pDisp === 0 && $pTotal > 0) { $pClass .= ' is-full'; }
+                                if ($pCupo > 0) {
+                                    $pDetail = $pOcc . ' ocup · ' . $pApar . ' apart · ' . $pDisp . ' libres';
+                                } else {
+                                    $pDetail = $pOcc . ' ocup · ' . $pReg . ' registrado' . ($pReg === 1 ? '' : 's');
+                                }
+                                if ($pOver > 0) { $pDetail .= ' · +' . $pOver . ' sobre cupo'; }
+                                $pBadge = $pCupo > 0 ? ($pTotal . '/' . $pCupo) : (string)$pTotal;
+                                ?>
+                                <div class="<?= $pClass ?>">
+                                    <span class="nm"><?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?><small><?= dashboard_safe($pDetail) ?></small></span>
+                                    <strong class="ct"><?= dashboard_safe($pBadge) ?></strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="dm-sec"><span>Movimientos del día</span></div>

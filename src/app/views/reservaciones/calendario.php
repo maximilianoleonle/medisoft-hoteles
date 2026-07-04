@@ -198,9 +198,9 @@ $hcalTotalHabs  = count($habitaciones);
 
 /* ── Root tokens ─────────────────────────────────────────────── */
 .hcal {
-    --green:         #4A6741;
-    --green-dark:    #3A5233;
-    --green-soft:    #EDF2EC;
+    --green:         #596066;
+    --green-dark:    #424850;
+    --green-soft:    #EDEFF1;
     --hcal-action-bg: var(--brand-action-bg, var(--green));
     --hcal-action-bg-hover: var(--brand-action-bg-hover, var(--green-dark));
     --hcal-action-text: var(--brand-action-text, #FFFEFB);
@@ -215,17 +215,17 @@ $hcalTotalHabs  = count($habitaciones);
     --amber-soft:    #FDF3EC;
     --yellow:        #B66A00;
     --yellow-soft:   #FFF4D8;
-    --surface:       #F4F7F3;
+    --surface:       #F5F6F7;
     --card:          #FFFFFF;
-    --border:        rgba(74,103,65,.12);
-    --border-mid:    rgba(74,103,65,.2);
-    --border-strong: rgba(74,103,65,.32);
-    --text:          #1A2E1A;
-    --muted:         #5A7058;
-    --subtle:        #8A9E88;
+    --border:        rgba(89,96,102,.12);
+    --border-mid:    rgba(89,96,102,.2);
+    --border-strong: rgba(89,96,102,.32);
+    --text:          #1E2226;
+    --muted:         #5E666E;
+    --subtle:        #98A0A8;
     --radius:        14px;
-    --shadow:        0 1px 3px rgba(26,46,26,.06), 0 4px 16px rgba(26,46,26,.07);
-    --shadow-md:     0 2px 8px rgba(26,46,26,.08), 0 8px 24px rgba(26,46,26,.09);
+    --shadow:        0 1px 3px rgba(30,34,38,.06), 0 4px 16px rgba(30,34,38,.07);
+    --shadow-md:     0 2px 8px rgba(30,34,38,.08), 0 8px 24px rgba(30,34,38,.09);
 
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     color: var(--text);
@@ -322,7 +322,7 @@ $hcalTotalHabs  = count($habitaciones);
 }
 .hcal-stat.is-amber  { color: var(--yellow);  background: var(--yellow-soft);  border-color: rgba(182,106,0,.2); }
 .hcal-stat.is-blue   { color: var(--blue);    background: var(--blue-soft);    border-color: rgba(47,110,168,.2); }
-.hcal-stat.is-green  { color: var(--green);   background: var(--green-soft);   border-color: rgba(74,103,65,.2); }
+.hcal-stat.is-green  { color: var(--green);   background: var(--green-soft);   border-color: rgba(89,96,102,.2); }
 .hcal-stat.is-indigo { color: var(--indigo);  background: var(--indigo-soft);  border-color: rgba(91,94,166,.2); }
 .hcal-stat.is-red    { color: var(--red);     background: var(--red-soft);     border-color: rgba(185,70,61,.2); }
 
@@ -401,13 +401,13 @@ $hcalTotalHabs  = count($habitaciones);
     border: 1px solid var(--border-mid);
     background: var(--card);
     color: var(--muted);
-    box-shadow: 0 1px 3px rgba(26,46,26,.05);
+    box-shadow: 0 1px 3px rgba(30,34,38,.05);
     transition: background .14s, color .14s, border-color .14s, transform .14s;
 }
 .hcal-btn:hover {
     background: var(--green-soft);
     color: var(--green-dark);
-    border-color: rgba(74,103,65,.28);
+    border-color: rgba(89,96,102,.28);
     transform: translateY(-1px);
 }
 .hcal-btn.is-primary {
@@ -469,7 +469,7 @@ $hcalTotalHabs  = count($habitaciones);
 }
 .hcal-leg-dot { width: 8px; height: 8px; border-radius: 3px; }
 .hcal-leg.is-confirmada  { background: var(--blue-soft);   border-color: rgba(47,110,168,.18); color: var(--blue-dark); }
-.hcal-leg.is-checked-in  { background: var(--green-soft);  border-color: rgba(74,103,65,.18);  color: var(--green-dark); }
+.hcal-leg.is-checked-in  { background: var(--green-soft);  border-color: rgba(89,96,102,.18);  color: var(--green-dark); }
 .hcal-leg.is-checked-out { background: var(--indigo-soft); border-color: rgba(91,94,166,.18);  color: var(--indigo); }
 .hcal-leg.is-cancelada   { background: var(--red-soft);    border-color: rgba(185,70,61,.18);  color: var(--red); }
 .hcal-leg.is-libre       { background: var(--surface);     border-color: var(--border-mid);    color: var(--subtle); }
@@ -485,12 +485,12 @@ $hcalTotalHabs  = count($habitaciones);
     max-height: calc(100dvh - 260px);
     min-height: 420px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(74,103,65,.2) var(--surface);
+    scrollbar-color: rgba(89,96,102,.2) var(--surface);
 }
 .hcal-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
 .hcal-scroll::-webkit-scrollbar-track { background: var(--surface); }
 .hcal-scroll::-webkit-scrollbar-thumb {
-    background: rgba(74,103,65,.22);
+    background: rgba(89,96,102,.22);
     border-radius: 999px;
     border: 2px solid var(--surface);
 }
@@ -599,7 +599,7 @@ $hcalTotalHabs  = count($habitaciones);
     place-items: center;
     border-radius: 9px;
     background: var(--green-soft);
-    border: 1px solid rgba(74,103,65,.16);
+    border: 1px solid rgba(89,96,102,.16);
     font-family: 'Outfit', sans-serif;
     font-size: .88rem;
     font-weight: 800;
@@ -672,7 +672,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
 .hcal-res-bar.cont-right { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right-color: transparent; margin-right: -1px; }
 
 .hcal-res-bar.is-confirmada  { background: var(--blue-soft);   border-color: rgba(47,110,168,.38);  color: var(--blue-dark); }
-.hcal-res-bar.is-checked-in  { background: var(--green-soft);  border-color: rgba(74,103,65,.34);   color: var(--green-dark); }
+.hcal-res-bar.is-checked-in  { background: var(--green-soft);  border-color: rgba(89,96,102,.34);   color: var(--green-dark); }
 .hcal-res-bar.is-checked-out { background: var(--indigo-soft); border-color: rgba(91,94,166,.32);   color: var(--indigo); }
 .hcal-res-bar.is-cancelada   { background: var(--red-soft);    border-color: rgba(185,70,61,.28);   color: var(--red); opacity: .8; }
 
@@ -697,7 +697,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
 }
 .hcal-avail-btn:hover {
     background: var(--green-soft);
-    border-color: rgba(74,103,65,.3);
+    border-color: rgba(89,96,102,.3);
     color: var(--green);
     opacity: 1;
 }
@@ -773,7 +773,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
 }
 .hcal-today-item:hover {
     background: var(--green-soft);
-    border-color: rgba(74,103,65,.26);
+    border-color: rgba(89,96,102,.26);
     transform: translateY(-1px);
 }
 .hcal-today-ico {
@@ -829,7 +829,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
     cursor: pointer;
     transition: background .13s, border-color .13s, color .13s;
 }
-.hcal-side-btn:hover { background: var(--green-soft); border-color: rgba(74,103,65,.26); color: var(--green-dark); }
+.hcal-side-btn:hover { background: var(--green-soft); border-color: rgba(89,96,102,.26); color: var(--green-dark); }
 .hcal-side-btn i { width: 15px; text-align: center; font-size: .78rem; }
 
 /* ── Reservation tooltip ──────────────────────────────────────── */
@@ -883,7 +883,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
     white-space: nowrap;
 }
 .hcal-tt-badge.is-confirmada  { background: #DBEAFE; color: #1D4ED8; }
-.hcal-tt-badge.is-checked-in  { background: #DCFCE7; color: #15803D; }
+.hcal-tt-badge.is-checked-in  { background: #E9ECEF; color: #424850; }
 .hcal-tt-badge.is-checked-out { background: #EDE9FE; color: #5B21B6; }
 .hcal-tt-badge.is-cancelada   { background: #FEE2E2; color: #B91C1C; }
 
@@ -902,7 +902,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
     width: 15px;
     text-align: center;
     font-size: .72rem;
-    color: #4A6741;
+    color: #596066;
 }
 .hcal-tt-row strong { color: #111827; font-weight: 700; }
 .hcal-tt-divider {

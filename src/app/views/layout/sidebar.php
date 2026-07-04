@@ -188,6 +188,58 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
     $sidebarAppVersion = (string) $sidebarConfigApp['version'];
 }
 ?>
+<?php if (!$sidebarEsPanelSaas): ?>
+<style id="hotel-sidebar-critical-state">
+@media (max-width: 1024px) {
+    #sidebar.sidebar-main.hotel-sidebar {
+        position: fixed !important;
+        top: 64px !important;
+        left: 0 !important;
+        bottom: auto !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: calc(100vh - 64px) !important;
+        max-height: calc(100vh - 64px) !important;
+        height: calc(100dvh - 64px) !important;
+        max-height: calc(100dvh - 64px) !important;
+        transform: translate3d(-102%, 0, 0) !important;
+        transition: none !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: #FBF8F2 !important;
+        z-index: 900 !important;
+        pointer-events: none !important;
+    }
+
+    #sidebar.sidebar-main.hotel-sidebar.active,
+    #sidebar.sidebar-main.hotel-sidebar.open {
+        transform: translate3d(0, 0, 0) !important;
+        pointer-events: auto !important;
+    }
+
+    #sidebar.hotel-sidebar .sidebar-header,
+    #sidebar.hotel-sidebar .sidebar-footer {
+        display: none !important;
+    }
+
+    #sidebar.hotel-sidebar .ms-mm-prof {
+        display: flex !important;
+    }
+
+    #sidebar.hotel-sidebar .ms-mm-bottom {
+        display: block !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    #sidebar.hotel-sidebar .ms-mm-prof,
+    #sidebar.hotel-sidebar .ms-mm-bottom {
+        display: none !important;
+    }
+}
+</style>
+<?php endif; ?>
 <aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : 'hotel-sidebar' ?>">
     <?php if (!$sidebarEsPanelSaas): ?>
     <!-- ── Menú móvil boutique: tarjeta de perfil (solo ≤1024px).
@@ -200,7 +252,6 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <div class="ms-mm-pe"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></div>
             <?php if ($sidebarUsuarioRol !== ''): ?>
             <span class="ms-mm-pr">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.5 6 .8-4.4 4.2 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.3l6-.8z"/></svg>
                 <?= htmlspecialchars($sidebarUsuarioRol, ENT_QUOTES, 'UTF-8') ?>
             </span>
             <?php endif; ?>
@@ -1218,7 +1269,6 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         border: 1px solid color-mix(in srgb, var(--brand-accent, #B0883F) 32%, #FFFFFF);
         padding: 3px 9px; border-radius: 99px; margin-top: 6px;
     }
-    #sidebar.hotel-sidebar .ms-mm-pr svg { width: 11px; height: 11px; }
 
     /* Marca y footer de escritorio fuera en móvil */
     #sidebar.hotel-sidebar .sidebar-header,

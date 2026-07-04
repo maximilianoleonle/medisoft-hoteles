@@ -681,7 +681,34 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             .mobile-header-modern.hidden {
                 transform: translateY(-100%);
             }
-            
+
+            /* Con CUALQUIER modal/overlay abierto en movil, el header se retira
+               para no interferir ni asomarse por encima. Se apoya en los mismos
+               indicadores que usa la barra inferior (detector generico
+               body.hbn-overlay-open + clases directas + :has()), asi cubre
+               todos los modales sin tener que tocarlos uno por uno. */
+            body.hbn-overlay-open .mobile-header-modern,
+            body.overflow-hidden .mobile-header-modern,
+            body.swal2-shown .mobile-header-modern,
+            body.hb-modal-open .mobile-header-modern,
+            body.hb-mobile-sheet-open .mobile-header-modern,
+            body:has(.swal2-container.swal2-backdrop-show) .mobile-header-modern,
+            body:has(.fixed.inset-0:not(.hidden)) .mobile-header-modern {
+                transform: translateY(-100%);
+                pointer-events: none;
+            }
+
+            /* La barrita de progreso de scroll tambien se oculta con el modal. */
+            body.hbn-overlay-open .scroll-progress,
+            body.overflow-hidden .scroll-progress,
+            body.swal2-shown .scroll-progress,
+            body.hb-modal-open .scroll-progress,
+            body.hb-mobile-sheet-open .scroll-progress,
+            body:has(.swal2-container.swal2-backdrop-show) .scroll-progress,
+            body:has(.fixed.inset-0:not(.hidden)) .scroll-progress {
+                opacity: 0;
+            }
+
             /* Botón de hamburguesa móvil */
             .mobile-menu-toggle {
                 background: rgba(255, 255, 255, 0.1);
