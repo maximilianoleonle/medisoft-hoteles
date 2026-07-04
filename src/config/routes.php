@@ -250,6 +250,11 @@ $router->post('/motor-reservas/configuracion', ['controller' => 'MotorReservas',
 $router->get('/motor-reservas/cupones', ['controller' => 'MotorReservas', 'action' => 'cupones']);
 $router->post('/motor-reservas/cupones/crear', ['controller' => 'MotorReservas', 'action' => 'crearCupon']);
 $router->post('/motor-reservas/cupones/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarCupon']);
+
+// Extras del motor (bloque upsells)
+$router->get('/motor-reservas/extras', ['controller' => 'MotorReservas', 'action' => 'extras']);
+$router->post('/motor-reservas/extras/crear', ['controller' => 'MotorReservas', 'action' => 'crearExtra']);
+$router->post('/motor-reservas/extras/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarExtra']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard

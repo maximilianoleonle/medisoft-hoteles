@@ -299,6 +299,71 @@ class MotorReservasController extends Controller {
         return new MotorCuponService();
     }
 
+    // ───────────── Extras (bloque upsells) ─────────────
+
+    public function extrasAction() {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('upsells');
+        }
+
+        $hotelId = $this->hotelIdActual();
+        $servicio = $this->extraService();
+
+        View::renderTemplate('motor_reservas/extras', [
+            'title' => 'Extras - ' . current_hotel_display_name(),
+            'extras' => $servicio->listar($hotelId),
+        ]);
+    }
+
+    public function crearExtraAction() {
+        if (!$this->isPost()) {
+            $this->redirect('motor-reservas/extras');
+        }
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('upsells');
+        }
+
+        $this->validateCSRF();
+        $hotelId = $this->hotelIdActual();
+
+        $resultado = $this->extraService()->crear($hotelId, [
+            'nombre' => (string) $this->getPost('nombre', ''),
+            'descripcion' => (string) $this->getPost('descripcion', ''),
+            'precio' => (string) $this->getPost('precio', '0'),
+            'tipo_cobro' => (string) $this->getPost('tipo_cobro', 'por_reserva'),
+            'orden' => (string) $this->getPost('orden', '0'),
+        ], user_id());
+
+        set_mensaje($resultado['message'], $resultado['success'] ? 'success' : 'error');
+        $this->redirect('motor-reservas/extras');
+    }
+
+    public function alternarExtraAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('motor-reservas/extras');
+        }
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('upsells');
+        }
+
+        $this->validateCSRF();
+        $hotelId = $this->hotelIdActual();
+
+        $ok = $this->extraService()->alternar($hotelId, (int) $id);
+        set_mensaje($ok ? 'Extra actualizado.' : 'No se pudo actualizar el extra.', $ok ? 'success' : 'error');
+        $this->redirect('motor-reservas/extras');
+    }
+
+    private function extraService() {
+        if (!class_exists('MotorExtraService')) {
+            require_once __DIR__ . '/../services/MotorExtraService.php';
+        }
+
+        return new MotorExtraService();
+    }
+
     private function hotelIdActual() {
         return (int) obtenerHotelIdActualCompat();
     }

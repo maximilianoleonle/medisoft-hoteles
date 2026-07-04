@@ -46,6 +46,7 @@ class MotorReservasPublicoController extends Controller {
             'anticipacionMaxDias' => ConfiguracionHotelRegistry::getInt('motor.anticipacion_max_dias', 180, $hotelId),
             'anticipoTipo' => (string) ConfiguracionHotelRegistry::get('motor.anticipo_tipo', 'porcentaje', $hotelId),
             'promocionesActivo' => function_exists('hotel_has_module') && hotel_has_module('promociones', $hotelId),
+            'extrasDisponibles' => $this->extrasPublicos($hotelId),
         ]);
     }
 
@@ -292,6 +293,19 @@ class MotorReservasPublicoController extends Controller {
         }
 
         return ConfiguracionHotelRegistry::getBool('motor.publico_activo', false, $hotelId);
+    }
+
+    /** Extras activos para la pagina publica (bloque upsells), o []. */
+    private function extrasPublicos(int $hotelId): array {
+        if (!function_exists('hotel_has_module') || !hotel_has_module('upsells', $hotelId)) {
+            return [];
+        }
+
+        if (!class_exists('MotorExtraService')) {
+            require_once __DIR__ . '/../services/MotorExtraService.php';
+        }
+
+        return (new MotorExtraService())->activos($hotelId);
     }
 
     private function brandingPublico(array $hotel) {

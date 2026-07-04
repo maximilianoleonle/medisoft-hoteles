@@ -90,7 +90,21 @@ class MotorReservaOnlineService
             $precios = $resultadoCupon['precios'];
         }
 
-        $anticipo = $this->disponibilidad->calcularAnticipo($hotelId, $precios['total'], $precios['primera_noche']);
+        // Extras (bloque upsells): importes en servidor sobre noches/personas
+        // validadas. El cupon NO descuenta extras (aplica solo a hospedaje).
+        $extrasAplicados = ['extras' => [], 'total' => 0.0];
+        $extrasElegidos = is_array($input['extras'] ?? null) ? $input['extras'] : [];
+        if (!empty($extrasElegidos) && function_exists('hotel_has_module') && hotel_has_module('upsells', $hotelId)) {
+            $extrasAplicados = $this->extraService()->calcular(
+                $hotelId,
+                $extrasElegidos,
+                max(1, (int) $rango['noches']),
+                $personas
+            );
+        }
+
+        $totalConExtras = round($precios['total'] + $extrasAplicados['total'], 2);
+        $anticipo = $this->disponibilidad->calcularAnticipo($hotelId, $totalConExtras, $precios['primera_noche']);
 
         $holdToken = bin2hex(random_bytes(16));
 
@@ -155,9 +169,11 @@ class MotorReservaOnlineService
                     'personas' => $personas,
                     'tipo' => $tipo,
                     'habitacion_id' => (int) $habitacion['id'],
-                    'precio_total_estancia' => $precios['total'],
+                    'precio_total_estancia' => $totalConExtras,
                     'anticipo' => $anticipo,
                     'cupon' => $cuponAplicado,
+                    'extras' => $extrasAplicados['extras'],
+                    'total_extras' => $extrasAplicados['total'],
                 ], JSON_UNESCAPED_UNICODE),
             ]);
             $pagoId = (int) $this->pdo->lastInsertId();
@@ -279,14 +295,29 @@ class MotorReservaOnlineService
                     );
                 }
             }
+            // Extras congelados al iniciar el pago (importes escritos por el servidor).
+            $extrasPayload = is_array($payload['extras'] ?? null) ? $payload['extras'] : [];
+            $notaExtras = '';
+            if (!empty($extrasPayload)) {
+                $totalExtras = 0.0;
+                $nombresExtras = [];
+                foreach ($extrasPayload as $extra) {
+                    $totalExtras += (float) ($extra['importe'] ?? 0);
+                    $nombresExtras[] = (string) ($extra['nombre'] ?? 'Extra')
+                        . ' ($' . number_format((float) ($extra['importe'] ?? 0), 2) . ')';
+                }
+                $precios['total'] = round($precios['total'] + $totalExtras, 2);
+                $notaExtras = ' Extras: ' . implode(', ', $nombresExtras) . '.';
+            }
             $habitacion['precio_calculado'] = $precios['total'];
 
             $notas = sprintf(
-                'Reserva online (motor). Pago %s ref %s. Anticipo pagado $%s via pasarela, PENDIENTE DE CONCILIAR EN CAJA.%s',
+                'Reserva online (motor). Pago %s ref %s. Anticipo pagado $%s via pasarela, PENDIENTE DE CONCILIAR EN CAJA.%s%s',
                 (string) $pago['proveedor'],
                 (string) $pago['proveedor_pago_id'],
                 number_format((float) $pago['monto'], 2),
-                $notaCupon
+                $notaCupon,
+                $notaExtras
             );
 
             // crearConHabitaciones maneja su PROPIA transaccion: no anidar otra aqui.
@@ -438,6 +469,15 @@ class MotorReservaOnlineService
         }
 
         return new MotorCuponService($this->db);
+    }
+
+    private function extraService(): MotorExtraService
+    {
+        if (!class_exists('MotorExtraService')) {
+            require_once __DIR__ . '/MotorExtraService.php';
+        }
+
+        return new MotorExtraService($this->db);
     }
 
     /**

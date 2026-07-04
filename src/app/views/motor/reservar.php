@@ -26,6 +26,7 @@ $apiIniciarPago = url('h/' . $slugSeguro . '/reservar/iniciar-pago');
 $apiCupon = url('h/' . $slugSeguro . '/reservar/api/cupon');
 $promocionesActivo = (bool) ($promocionesActivo ?? false);
 $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
+$extrasDisponibles = is_array($extrasDisponibles ?? null) ? $extrasDisponibles : [];
 ?><!DOCTYPE html>
 <html lang="es">
 <head>
@@ -189,11 +190,34 @@ $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
                     <div class="fila"><dt>Habitacion</dt><dd id="mr-res-tipo">—</dd></div>
                     <div class="fila"><dt>Personas</dt><dd id="mr-res-personas">—</dd></div>
                     <div class="fila" id="mr-res-desc-fila" style="display:none;color:#15803D;"><dt id="mr-res-desc-label">Descuento</dt><dd id="mr-res-desc">—</dd></div>
+                    <div class="fila" id="mr-res-extras-fila" style="display:none;"><dt>Extras</dt><dd id="mr-res-extras">—</dd></div>
                     <div class="fila total"><dt>Total de la estancia</dt><dd id="mr-res-total">—</dd></div>
                     <div class="fila anticipo"><dt>Pagas hoy (anticipo)</dt><dd id="mr-res-anticipo">—</dd></div>
                     <div class="fila"><dt>Pagas al llegar</dt><dd id="mr-res-saldo">—</dd></div>
                 </dl>
             </div>
+
+            <?php if (!empty($extrasDisponibles)): ?>
+            <div class="mr-extras" style="margin:14px 0 4px;">
+                <div style="font-size:.82rem;font-weight:700;color:#55607A;margin-bottom:8px;">Mejora tu estancia (opcional)</div>
+                <?php foreach ($extrasDisponibles as $extra): ?>
+                    <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--mr-line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;">
+                        <input type="checkbox" class="mr-extra-check" style="margin-top:3px;"
+                               value="<?= (int) $extra['id'] ?>"
+                               data-nombre="<?= htmlspecialchars((string) $extra['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                               data-precio="<?= htmlspecialchars(number_format((float) $extra['precio'], 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>"
+                               data-tipo="<?= htmlspecialchars((string) $extra['tipo_cobro'], ENT_QUOTES, 'UTF-8') ?>">
+                        <span style="flex:1;">
+                            <span style="font-weight:700;color:#2A3242;"><?= htmlspecialchars((string) $extra['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="mr-extra-precio" style="float:right;font-weight:700;color:var(--brand-primary);"></span>
+                            <?php if (!empty($extra['descripcion'])): ?>
+                                <br><span style="font-size:.8rem;color:#8A93A6;"><?= htmlspecialchars((string) $extra['descripcion'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
             <?php if ($promocionesActivo): ?>
             <div class="mr-cupon" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 4px;">
@@ -362,25 +386,65 @@ $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
     }
 
     // ── Paso 2 → 3: resumen ──
-    // Mismo calculo que el servidor: el cupon descuenta el total; el anticipo
-    // escala con el descuento salvo cuando es monto fijo (solo se topa al total).
+    // Mismo calculo que el servidor: el cupon descuenta el hospedaje, los
+    // extras se suman despues (sin descuento), y el anticipo escala con el
+    // total final salvo cuando es monto fijo o primera noche.
+    function factorExtra(tipo) {
+        var noches = Math.max(1, seleccion.noches || 1);
+        var personas = Math.max(1, seleccion.personas || 1);
+        if (tipo === 'por_noche') { return noches; }
+        if (tipo === 'por_persona') { return personas; }
+        if (tipo === 'por_persona_noche') { return noches * personas; }
+        return 1;
+    }
+
+    function extrasSeleccionados() {
+        var lista = [];
+        document.querySelectorAll('.mr-extra-check:checked').forEach(function (chk) {
+            lista.push(parseInt(chk.value, 10));
+        });
+        return lista;
+    }
+
+    function refrescarEtiquetasExtras() {
+        document.querySelectorAll('.mr-extra-check').forEach(function (chk) {
+            var importe = Number(chk.dataset.precio) * factorExtra(chk.dataset.tipo);
+            var etiqueta = chk.closest('label').querySelector('.mr-extra-precio');
+            if (etiqueta) { etiqueta.textContent = '+' + fmt(importe); }
+        });
+    }
+
     function refrescarResumen() {
         var t = seleccion.tipo;
         if (!t) { return; }
 
-        var total = Number(t.precio_total);
-        var anticipo = Number(t.anticipo_requerido);
+        var totalOriginal = Number(t.precio_total);
+        var anticipoOriginal = Number(t.anticipo_requerido);
+        var total = totalOriginal;
         var descuento = 0;
+        var factorCupon = 1;
 
         if (seleccion.cupon) {
             descuento = seleccion.cupon.tipo === 'porcentaje'
                 ? Math.round(total * seleccion.cupon.valor) / 100
                 : Math.min(seleccion.cupon.valor, total);
-            var totalDesc = Math.round((total - descuento) * 100) / 100;
-            anticipo = anticipoTipo === 'monto_fijo'
-                ? Math.min(anticipo, totalDesc)
-                : Math.round(anticipo * (total > 0 ? totalDesc / total : 1) * 100) / 100;
-            total = totalDesc;
+            total = Math.round((total - descuento) * 100) / 100;
+            factorCupon = totalOriginal > 0 ? total / totalOriginal : 1;
+        }
+
+        var totalExtras = 0;
+        document.querySelectorAll('.mr-extra-check:checked').forEach(function (chk) {
+            totalExtras += Math.round(Number(chk.dataset.precio) * factorExtra(chk.dataset.tipo) * 100) / 100;
+        });
+        var totalFinal = Math.round((total + totalExtras) * 100) / 100;
+
+        var anticipo;
+        if (anticipoTipo === 'monto_fijo') {
+            anticipo = Math.min(anticipoOriginal, totalFinal);
+        } else if (anticipoTipo === 'primera_noche') {
+            anticipo = Math.round(anticipoOriginal * factorCupon * 100) / 100;
+        } else {
+            anticipo = Math.round(anticipoOriginal * (totalOriginal > 0 ? totalFinal / totalOriginal : 1) * 100) / 100;
         }
 
         var filaDesc = document.getElementById('mr-res-desc-fila');
@@ -391,10 +455,22 @@ $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
                 document.getElementById('mr-res-desc').textContent = '-' + fmt(descuento);
             }
         }
-        document.getElementById('mr-res-total').textContent = fmt(total);
+        var filaExtras = document.getElementById('mr-res-extras-fila');
+        if (filaExtras) {
+            filaExtras.style.display = totalExtras > 0 ? '' : 'none';
+            if (totalExtras > 0) {
+                document.getElementById('mr-res-extras').textContent = '+' + fmt(totalExtras);
+            }
+        }
+        document.getElementById('mr-res-total').textContent = fmt(totalFinal);
         document.getElementById('mr-res-anticipo').textContent = fmt(anticipo);
-        document.getElementById('mr-res-saldo').textContent = fmt(Math.max(0, total - anticipo));
+        document.getElementById('mr-res-saldo').textContent = fmt(Math.max(0, totalFinal - anticipo));
+        refrescarEtiquetasExtras();
     }
+
+    document.querySelectorAll('.mr-extra-check').forEach(function (chk) {
+        chk.addEventListener('change', refrescarResumen);
+    });
 
     function elegirTipo(t) {
         seleccion.tipo = t;
@@ -499,7 +575,8 @@ $anticipoTipo = (string) ($anticipoTipo ?? 'porcentaje');
                 nombre: nombre,
                 telefono: telefono,
                 email: email,
-                cupon: seleccion.cupon ? seleccion.cupon.codigo : ''
+                cupon: seleccion.cupon ? seleccion.cupon.codigo : '',
+                extras: extrasSeleccionados()
             })
         })
             .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
