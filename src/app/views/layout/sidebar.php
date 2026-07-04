@@ -43,10 +43,11 @@ $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCamarista = $menuModuloActivo('camarista');
 $mostrarReputacion = $menuModuloActivo('reputacion');
+$mostrarNightAudit = $menuModuloActivo('night_audit');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
-$mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
+$mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
@@ -72,6 +73,7 @@ $sidebarActiveDashboard = $sidebarPathStarts('dashboard');
 $sidebarActiveOperacionDiaria = $sidebarPathStarts('operacion/diaria');
 $sidebarActiveForecast = $sidebarPathStarts('forecast');
 $sidebarActiveAuditoria = $sidebarPathStarts('auditoria');
+$sidebarActiveNightAudit = $sidebarPathStarts('night-audit');
 $sidebarActiveReservaciones = $sidebarPathStarts('reservaciones');
 $sidebarActiveHabitaciones = $sidebarPathStarts('habitaciones');
 $sidebarActiveHuespedes = $sidebarPathStarts('huespedes');
@@ -537,6 +539,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-folder-open"></i>
                 </div>
                 <span class="nav-text">Documentos</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarNightAudit): ?>
+            <a href="<?= url('night-audit') ?>"
+               class="nav-item <?= $sidebarActiveNightAudit ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <span class="nav-text">Night audit</span>
             </a>
             <?php endif; ?>
 

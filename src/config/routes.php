@@ -219,6 +219,10 @@ $router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
 // Bitacora de auditoria (bloque auditoria, solo lectura para gerencia)
 $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
 
+// Night audit (bloque night_audit: detecta y avisa, no modifica)
+$router->get('/night-audit', ['controller' => 'NightAudit', 'action' => 'index']);
+$router->post('/night-audit/ejecutar', ['controller' => 'NightAudit', 'action' => 'ejecutar']);
+
 // Reputacion interna: tablero, generar/enviar encuestas y configuracion
 $router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index']);
 $router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
