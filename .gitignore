@@ -55,3 +55,9 @@ dist/
 # Configuración personal de Claude Code
 .claude/settings.local.json
 .claude/skills-disabled/
+
+# Fotos de identificacion de huespedes (PII - nunca al repo)
+src/storage/checkin_ids/
+
+# Config local de preview de Claude (rutas por maquina)
+.claude/launch.json

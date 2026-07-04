@@ -2677,89 +2677,99 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
 /* ═══════════ Pulido móvil: selección de habitaciones + barra ═══════════ */
 @media (max-width: 768px) {
-    /* ── Barra flotante minimalista boutique (vidrio ivory) ── */
+    /* ── Barra flotante minimalista: pastilla slim (una sola línea) ── */
     .resumen-flotante {
-        left: 12px;
-        right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        left: 14px;
+        right: 14px;
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         padding-bottom: 0;
-        border-radius: 22px !important;
+        border-radius: 16px !important;
         border: 1px solid rgba(230, 219, 200, .9) !important;
-        background: rgba(255, 253, 249, .86) !important;
+        background: rgba(255, 253, 249, .92) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2);
         backdrop-filter: blur(16px) saturate(1.2);
-        box-shadow: 0 16px 40px -22px rgba(39, 31, 18, .34) !important;
+        box-shadow: 0 10px 28px -18px rgba(39, 31, 18, .32) !important;
     }
-    .resumen-flotante::before {
-        content: "";
-        display: block;
-        width: 34px;
-        height: 4px;
-        margin: 9px auto 0;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--rc-accent, #BD9441) 24%, #E6DEC9);
-        opacity: .7;
-    }
+    /* Sin manija: la barra queda lo más baja posible */
+    .resumen-flotante::before { display: none; }
+
     .rf-row {
-        gap: 12px;
-        padding: 5px 15px 13px;
+        gap: 9px;
+        padding: 7px 8px 7px 14px;
+        align-items: center;
     }
     .rf-info {
         border: 0;
         background: transparent;
-        padding: 3px 2px;
-        gap: 12px;
-        min-height: 46px;
+        padding: 0;
+        gap: 9px;
+        min-height: 0;
+        align-items: center;
+        justify-content: flex-start;
     }
-    /* Total en serif boutique (Cormorant), como los números de ver/index */
-    .rf-info-text strong {
-        font-family: var(--rc-serif);
-        font-size: 1.72rem;
-        font-weight: 600;
+    /* Total + meta en UNA sola línea: mínima altura */
+    .rf-info-text {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
         line-height: 1;
+    }
+    .rf-info-text strong {
+        font-size: 1.12rem;
+        font-weight: 800;
         color: var(--rc-brand, #1B2746);
         letter-spacing: -.01em;
+        font-variant-numeric: tabular-nums;
+        flex: none;
     }
     .rf-info-text small {
-        margin-top: 4px;
-        font-size: .66rem;
-        font-weight: 700;
-        letter-spacing: .05em;
-        text-transform: uppercase;
+        margin: 0;
+        font-size: .72rem;
+        font-weight: 650;
         color: var(--rc-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
     }
     .rf-caret {
-        width: 34px;
-        height: 34px;
+        width: 26px;
+        height: 26px;
+        flex: none;
         display: grid;
         place-items: center;
         border-radius: 50%;
         background: transparent;
         border: 1px solid rgba(230, 219, 200, .95);
         color: var(--rc-muted);
-        font-size: .72rem;
+        font-size: .62rem;
     }
     .rf-save {
-        min-width: 128px;
-        min-height: 48px !important;
-        border-radius: 14px;
-        font-size: .82rem;
+        flex: none;
+        width: auto !important;
+        min-width: 0;
+        min-height: 40px !important;
+        padding: 0 16px !important;
+        border-radius: 12px;
+        font-size: .8rem;
         font-weight: 800;
         letter-spacing: .01em;
+        gap: 6px;
         background: var(--rc-brand) !important;
         border: 0 !important;
-        box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--rc-brand) 80%, transparent) !important;
+        box-shadow: none !important;
     }
     /* Deshabilitado: ivory suave "en espera" (no gris muerto) */
     .vista-reservacion .btn-save.rf-save:disabled {
         background: color-mix(in srgb, var(--rc-brand) 8%, #F1EEE7) !important;
-        color: color-mix(in srgb, var(--rc-brand) 40%, #A7A090) !important;
+        color: color-mix(in srgb, var(--rc-brand) 42%, #A7A090) !important;
         border-color: transparent !important;
         filter: none;
         opacity: 1;
         box-shadow: none !important;
     }
-    /* Detalle expandible: mismo tono cálido, borde sutil */
+    /* Detalle expandible (solo al tocar): tono cálido, borde sutil */
     .resumen-flotante.expanded .rf-detail {
         border-bottom: 1px solid rgba(230, 219, 200, .7);
     }

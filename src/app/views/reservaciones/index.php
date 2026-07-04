@@ -1361,34 +1361,60 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     color: #DC2626;
     font-size: .92rem;
 }
-.res-ci-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+/* Atajos de pago: minimalistas, uniformes y responsivos (auto-fit, sin desbordes).
+   Superficie neutra; el color semantico vive solo en el chip del icono. */
+.res-ci-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+/* El 5.º atajo (numero impar) ocupa el ancho para no dejar una celda vacia. */
+.res-ci-shortcuts .res-ci-shortcut:last-child { grid-column: 1 / -1; }
 .res-ci-shortcut {
     --res-shortcut-color: var(--res-brand);
-    min-height: 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--res-shortcut-color) 22%, #DCE2EA);
+    gap: 9px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--res-brand) 12%, #E4E7EC);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--res-shortcut-color) 6%, #FFFFFF);
-    color: color-mix(in srgb, var(--res-shortcut-color) 86%, #263247);
-    font-size: .78rem;
-    font-weight: 900;
-    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    background: #fff;
+    color: var(--res-brand-2);
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.res-ci-shortcut > i {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    font-size: .8rem;
+    color: var(--res-shortcut-color);
+    background: color-mix(in srgb, var(--res-shortcut-color) 11%, #fff);
 }
 .res-ci-shortcut:hover,
 .res-ci-shortcut:focus-visible {
+    border-color: color-mix(in srgb, var(--res-shortcut-color) 42%, #E4E7EC);
+    background: color-mix(in srgb, var(--res-shortcut-color) 4%, #fff);
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--res-shortcut-color) 48%, #DCE2EA);
-    background: color-mix(in srgb, var(--res-shortcut-color) 10%, #FFFFFF);
+    box-shadow: 0 8px 18px -14px color-mix(in srgb, var(--res-shortcut-color) 55%, transparent);
     outline: none;
 }
 .res-ci-shortcut--cash { --res-shortcut-color: #148653; }
 .res-ci-shortcut--card { --res-shortcut-color: #2563EB; }
 .res-ci-shortcut--transfer { --res-shortcut-color: #7C3AED; }
-.res-ci-shortcut--split { --res-shortcut-color: var(--res-accent); }
-.res-ci-shortcut--cash-transfer { --res-shortcut-color: #0F9F8F; }
+.res-ci-shortcut--split { --res-shortcut-color: var(--res-brand); }
+.res-ci-shortcut--cash-transfer { --res-shortcut-color: var(--res-brand); }
 .res-ci-pending-option {
     display: grid;
     grid-template-columns: auto auto minmax(0, 1fr);
@@ -1669,7 +1695,6 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-checkin-card { border-radius: 20px; max-height: 94dvh; }
     .res-checkin-summary,
     .res-ci-grid,
-    .res-ci-shortcuts,
     .res-invoice-options { grid-template-columns: 1fr; }
     .res-checkin-head { padding: 16px 62px 16px 16px; }
     .res-checkin-body { padding: 14px; }
@@ -1726,10 +1751,10 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     }
     .ci-step-pill[hidden] { display: none; }
 
-    /* Densidad mas comoda: total y hora en columna, atajos en 2 columnas */
+    /* Densidad mas comoda: total/hora y atajos en una sola columna (etiqueta en una linea) */
     .res-checkin-card.ci-stepped .res-checkin-body { gap: 12px; }
     .res-checkin-card.ci-stepped .res-checkin-summary { grid-template-columns: 1fr; gap: 10px; }
-    .res-checkin-card.ci-stepped .res-ci-shortcuts { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .res-checkin-card.ci-stepped .res-ci-shortcuts { grid-template-columns: 1fr; }
 
     /* Footer compacto en fila (solo 2 botones visibles a la vez) */
     .res-checkin-card.ci-stepped .res-checkin-actions { flex-direction: row; }
