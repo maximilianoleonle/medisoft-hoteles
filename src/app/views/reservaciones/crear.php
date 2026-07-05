@@ -246,51 +246,93 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 .item-cortesia.activa      { border-color: #D97706; background: #FFFBEB; }
 .checkbox-cortesia { width: 20px; height: 20px; cursor: pointer; accent-color: #D97706; }
 
-/* ── Mobile floating summary ─────────────── */
+/* ── Resumen flotante móvil (rediseño neutro compacto) ───── */
 .resumen-flotante {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: white;
-    border-top: 2px solid var(--lc-green);
-    box-shadow: 0 -4px 20px rgba(61,82,52,.12);
+    position: fixed;
+    left: 12px; right: 12px; bottom: 12px;
+    background: #FFFFFF;
+    border: 1px solid #E6E8EB;
+    border-radius: 18px;
+    box-shadow: 0 12px 34px -14px rgba(17,20,24,.32);
     z-index: 40;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
+    transform: translateY(180%);
+    transition: transform .34s cubic-bezier(.22,1,.36,1);
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .resumen-flotante.activo { transform: translateY(0); }
 @media (min-width: 1280px) { .resumen-flotante { display: none; } }
 
-/* ── Barra slim tipo checkout (fila total + Guardar) ── */
-.resumen-flotante { padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* ── Fila slim siempre visible: total + meta + Guardar ── */
 .rf-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 14px;
+    padding: 8px 8px 8px 14px;
 }
 .rf-info {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
-    padding: 6px 2px;
+    padding: 4px 2px;
     border: 0;
     background: transparent;
     text-align: left;
     cursor: pointer;
 }
-.rf-info-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.1; }
-.rf-info-text strong { font-size: 1.18rem; font-weight: 800; color: var(--lc-green); font-variant-numeric: tabular-nums; }
-.rf-info-text small { margin-top: 2px; font-size: .72rem; font-weight: 600; color: #6B7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rf-caret { flex: 0 0 auto; color: #9CA3AF; font-size: .8rem; transition: transform .25s ease; }
+.rf-caret {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    border-radius: 9px;
+    background: #F2F4F6;
+    color: #6B7280;
+    font-size: .68rem;
+    transition: transform .28s ease;
+}
 .resumen-flotante.expanded .rf-caret { transform: rotate(180deg); }
-.rf-save {
+.rf-info-text { display: flex; align-items: baseline; gap: 8px; min-width: 0; line-height: 1.05; }
+.rf-info-text strong {
+    font-size: 1.16rem; font-weight: 800; color: #1E2226;
+    letter-spacing: -.01em; font-variant-numeric: tabular-nums; flex: none;
+}
+.rf-info-text small {
+    font-size: .74rem; font-weight: 600; color: #6B7280;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+
+/* ── Guardar: CTA primaria SIEMPRE visible (grafito neutro) ── */
+.resumen-flotante .rf-save {
     flex: 0 0 auto;
     width: auto !important;
-    min-width: 138px;
+    min-width: 0;
     margin: 0 !important;
+    min-height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 13px !important;
+    font-size: .82rem; font-weight: 800; letter-spacing: .01em;
+    /* CTA = color de marca del hotel (se adapta a cada hotel); fallback grafito neutro. */
+    background: var(--rc-brand, #2B2F36) !important;
+    color: #FFFFFF !important;
+    border: 0 !important;
+    box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--rc-brand, #2B2F36) 55%, transparent) !important;
 }
+.resumen-flotante .rf-save:hover:not(:disabled) { background: var(--rc-brand-2, #14171B) !important; transform: translateY(-1px); }
+/* Deshabilitado: se sigue leyendo como botón, no desaparece */
+.resumen-flotante .rf-save:disabled {
+    background: #EDEFF1 !important;
+    color: #9AA0A6 !important;
+    border: 1px solid #DCDFE3 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    cursor: not-allowed;
+}
+
+/* ── Detalle expandible ── */
 .rf-detail {
     max-height: 0;
     overflow: hidden;
@@ -298,12 +340,51 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     transition: max-height .3s ease, padding .25s ease;
 }
 .resumen-flotante.expanded .rf-detail {
-    max-height: 48vh;
+    max-height: 46vh;
     overflow-y: auto;
-    padding: 13px 14px 2px;
-    border-bottom: 1px solid #EAF0E5;
+    padding: 12px 14px 4px;
+    border-bottom: 1px solid #EEF0F2;
 }
-.rf-cotizacion { margin-top: 10px !important; }
+/* Contenido del detalle (inyectado por JS) */
+.rf-detail-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding-bottom: 10px; margin-bottom: 8px;
+    border-bottom: 1px solid #EEF0F2;
+}
+.rf-dh-title { font-size: .82rem; font-weight: 700; color: #374151; }
+.rf-dh-sub   { margin-top: 3px; font-size: .7rem; font-weight: 600; color: #8A6D3B; }
+.rf-dh-disc  { margin-top: 3px; font-size: .7rem; font-weight: 600; color: #9A6A6A; }
+.rf-dh-total { font-size: 1.05rem; font-weight: 800; color: #1E2226; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rf-rooms { display: flex; flex-direction: column; }
+.rf-room-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: .78rem; color: #6B7280;
+    padding: 6px 0; border-bottom: 1px solid #F3F4F6;
+}
+.rf-room-row:last-child { border-bottom: 0; }
+.rf-room-row span:last-child { font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; }
+.rf-room-free { text-decoration: line-through; color: #9CA3AF !important; font-weight: 600 !important; }
+
+/* ── Cotización PDF: acción secundaria discreta ── */
+.resumen-flotante .rf-cotizacion {
+    margin-top: 10px !important;
+    width: 100% !important;
+    min-height: 40px !important;
+    border-radius: 11px !important;
+    background: #FFFFFF !important;
+    color: #2B2F36 !important;
+    border: 1px solid #D7DBDF !important;
+    font-size: .78rem !important; font-weight: 700 !important;
+    box-shadow: none !important;
+}
+.resumen-flotante .rf-cotizacion:hover:not(:disabled) { background: #F7F8F9 !important; transform: none; }
+.resumen-flotante .rf-cotizacion:disabled {
+    background: #F7F8F9 !important;
+    color: #A2A8B0 !important;
+    border-color: #E9EBEE !important;
+    filter: none !important; opacity: 1 !important;
+    cursor: not-allowed;
+}
 
 /* ── Panel headers ───────────────────────── */
 .panel-hd-guest   { background: linear-gradient(135deg, #5C7A4E, #4A6340); }
@@ -2625,154 +2706,22 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
         line-height: 1.25;
     }
 
+    /* El diseño base del resumen ya es mobile-first; solo un ajuste de margen. */
     .resumen-flotante {
-        left: 8px;
-        right: 8px;
-        bottom: 8px;
-        border-radius: 16px !important;
-        border: 1px solid var(--brand-accent, #BD9441) !important;
-        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-        box-shadow: 0 -14px 34px -24px rgba(15, 23, 42, .42) !important;
-        overflow: hidden;
-    }
-
-    .rf-row {
-        gap: 8px;
-        padding: 8px;
-    }
-
-    .rf-info {
-        min-height: 44px;
-        padding: 6px 8px;
-        border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #E5E7EB);
-        border-radius: 12px;
-        background: #FFFFFF;
-    }
-
-    .rf-info-text strong {
-        font-size: 1rem;
-    }
-
-    .rf-info-text small {
-        font-size: .62rem;
-    }
-
-    .rf-save {
-        min-width: 112px;
-        min-height: 44px !important;
-        border-radius: 12px;
-        font-size: .72rem;
-    }
-
-    .rf-detail {
-        padding-left: 8px;
-        padding-right: 8px;
-    }
-
-    .resumen-flotante.expanded .rf-detail {
-        max-height: 44vh;
-        padding: 9px 8px 2px;
+        left: 10px;
+        right: 10px;
     }
 }
 
 /* ═══════════ Pulido móvil: selección de habitaciones + barra ═══════════ */
 @media (max-width: 768px) {
     /* ── Barra flotante minimalista: pastilla slim (una sola línea) ── */
-    .resumen-flotante {
-        left: 14px;
-        right: 14px;
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        padding-bottom: 0;
-        border-radius: 16px !important;
-        border: 1px solid rgba(230, 219, 200, .9) !important;
-        background: rgba(255, 253, 249, .92) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(1.2);
-        backdrop-filter: blur(16px) saturate(1.2);
-        box-shadow: 0 10px 28px -18px rgba(39, 31, 18, .32) !important;
-    }
-    /* Sin manija: la barra queda lo más baja posible */
-    .resumen-flotante::before { display: none; }
-
-    .rf-row {
-        gap: 9px;
-        padding: 7px 8px 7px 14px;
-        align-items: center;
-    }
-    .rf-info {
-        border: 0;
-        background: transparent;
-        padding: 0;
-        gap: 9px;
-        min-height: 0;
-        align-items: center;
-        justify-content: flex-start;
-    }
-    /* Total + meta en UNA sola línea: mínima altura */
-    .rf-info-text {
-        flex-direction: row;
-        align-items: baseline;
-        gap: 8px;
-        min-width: 0;
-        line-height: 1;
-    }
-    .rf-info-text strong {
-        font-size: 1.12rem;
-        font-weight: 800;
-        color: var(--rc-brand, #1B2746);
-        letter-spacing: -.01em;
-        font-variant-numeric: tabular-nums;
-        flex: none;
-    }
-    .rf-info-text small {
-        margin: 0;
-        font-size: .72rem;
-        font-weight: 650;
-        color: var(--rc-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-    }
-    .rf-caret {
-        width: 26px;
-        height: 26px;
-        flex: none;
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        background: transparent;
-        border: 1px solid rgba(230, 219, 200, .95);
-        color: var(--rc-muted);
-        font-size: .62rem;
-    }
-    .rf-save {
-        flex: none;
-        width: auto !important;
-        min-width: 0;
-        min-height: 40px !important;
-        padding: 0 16px !important;
-        border-radius: 12px;
-        font-size: .8rem;
-        font-weight: 800;
-        letter-spacing: .01em;
-        gap: 6px;
-        background: var(--rc-brand) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-    }
-    /* Deshabilitado: ivory suave "en espera" (no gris muerto) */
-    .vista-reservacion .btn-save.rf-save:disabled {
-        background: color-mix(in srgb, var(--rc-brand) 8%, #F1EEE7) !important;
-        color: color-mix(in srgb, var(--rc-brand) 42%, #A7A090) !important;
-        border-color: transparent !important;
-        filter: none;
-        opacity: 1;
-        box-shadow: none !important;
-    }
-    /* Detalle expandible (solo al tocar): tono cálido, borde sutil */
-    .resumen-flotante.expanded .rf-detail {
-        border-bottom: 1px solid rgba(230, 219, 200, .7);
-    }
+    /* Resumen flotante — refinamiento fino en teléfono (colores en la base). */
+    .rf-row { padding: 7px 7px 7px 13px; gap: 8px; }
+    .rf-info-text strong { font-size: 1.08rem; }
+    .rf-info-text small { font-size: .7rem; }
+    .resumen-flotante .rf-save { min-height: 42px !important; padding: 0 16px !important; font-size: .8rem; }
+    .resumen-flotante.expanded .rf-detail { max-height: 44vh; }
 
     /* ── Selección de habitaciones: estado claro ── */
     .vista-reservacion .habitacion-card.disponible .rc-room-card {
@@ -3400,11 +3349,11 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     <!-- Fila slim siempre visible: total + Guardar -->
     <div class="rf-row">
         <button type="button" class="rf-info" id="rfToggle" aria-expanded="false" aria-controls="rfDetail">
+            <i class="fas fa-chevron-up rf-caret" aria-hidden="true"></i>
             <span class="rf-info-text">
                 <strong id="rfTotal">$0</strong>
                 <small id="rfMeta">Selecciona habitaciones</small>
             </span>
-            <i class="fas fa-chevron-up rf-caret" aria-hidden="true"></i>
         </button>
         <button type="submit" form="formReservacion" id="btnGuardarMovil" disabled class="btn-save rf-save">
             <i class="fas fa-save"></i>
@@ -4602,26 +4551,24 @@ $(document).ready(function() {
 
         $('#resumenReservacion').html(html);
 
-        // Mobile summary
+        // Mobile summary (detalle neutro y compacto)
         $('#resumenMovil').html(`
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <div class="text-sm">
-                        <p class="font-bold text-gray-700">${d.totalHabs} hab. × ${d.noches} noche${d.noches>1?'s':''}</p>
-                        ${d.habsCortesia>0 ? `<p class="text-xs text-amber-600">${d.habsCortesia} cortesía${d.habsCortesia>1?'s':''}</p>` : ''}
-                        ${hayDescuento ? `<p class="text-xs text-rose-600">Descuento: -$${descAplicado.toLocaleString()}</p>` : ''}
-                    </div>
-                    <p class="font-black text-lg" style="color:var(--lc-green);">$${displayTotal.toLocaleString()}</p>
+            <div class="rf-detail-head">
+                <div>
+                    <p class="rf-dh-title">${d.totalHabs} habitación${d.totalHabs>1?'es':''} · ${d.noches} noche${d.noches>1?'s':''}</p>
+                    ${d.habsCortesia>0 ? `<p class="rf-dh-sub">${d.habsCortesia} cortesía${d.habsCortesia>1?'s':''}</p>` : ''}
+                    ${hayDescuento ? `<p class="rf-dh-disc">Descuento −$${descAplicado.toLocaleString()}</p>` : ''}
                 </div>
-                <div class="text-xs border-t border-[#EAF0E5] pt-2 space-y-1 max-h-[100px] overflow-y-auto">
-                    ${d.habitaciones.map(h => {
-                        const c = d.habitacionesCortesia?.includes(h.id.toString());
-                        return `<div class="flex justify-between text-gray-500">
-                            <span>Hab. ${h.numero}${c?' (Cortesía)':''}</span>
-                            <span ${c?'class="line-through"':''}>$${(h.precio*d.noches).toLocaleString()}</span>
-                        </div>`;
-                    }).join('')}
-                </div>
+                <p class="rf-dh-total">$${displayTotal.toLocaleString()}</p>
+            </div>
+            <div class="rf-rooms">
+                ${d.habitaciones.map(h => {
+                    const c = d.habitacionesCortesia?.includes(h.id.toString());
+                    return `<div class="rf-room-row">
+                        <span>Hab. ${h.numero}${c?' · Cortesía':''}</span>
+                        <span class="${c?'rf-room-free':''}">$${(h.precio*d.noches).toLocaleString()}</span>
+                    </div>`;
+                }).join('')}
             </div>
         `);
 

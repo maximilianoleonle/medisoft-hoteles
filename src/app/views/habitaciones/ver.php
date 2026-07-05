@@ -91,7 +91,7 @@ if (!function_exists('room_detail_safe')) {
 if (!function_exists('room_detail_status_meta')) {
     function room_detail_status_meta($estado, $estadoInfo = []) {
         $map = [
-            'disponible' => ['label' => 'Disponible', 'icon' => 'check-circle', 'color' => '#157A52', 'soft' => '#E8F6ED'],
+            'disponible' => ['label' => 'Disponible', 'icon' => 'check-circle', 'color' => '#596066', 'soft' => '#EDEFF1'],
             'ocupada' => ['label' => 'Ocupada', 'icon' => 'user-lock', 'color' => '#B9463D', 'soft' => '#FFF0EF'],
             'mantenimiento' => ['label' => 'Mantenimiento', 'icon' => 'tools', 'color' => '#B66A00', 'soft' => '#FFF4D8'],
             'limpieza' => ['label' => 'Limpieza', 'icon' => 'broom', 'color' => '#2F6EA8', 'soft' => '#EAF3FF'],
@@ -221,9 +221,9 @@ $mantenimientos_count = count($mantenimientos_programados);
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 .hdv {
-    --green: #4A6741;
-    --green-dark: #3A5233;
-    --green-soft: #EDF2EC;
+    --green: #596066;
+    --green-dark: #424850;
+    --green-soft: #EDEFF1;
     --amber: #C8956C;
     --amber-soft: #FDF3EC;
     --red: #B9463D;
@@ -232,16 +232,16 @@ $mantenimientos_count = count($mantenimientos_programados);
     --blue-soft: #EAF3FF;
     --yellow: #B66A00;
     --yellow-soft: #FFF4D8;
-    --surface: #F4F7F3;
+    --surface: #F5F6F7;
     --card: #FFFFFF;
-    --border: rgba(74,103,65,.12);
-    --border-strong: rgba(74,103,65,.22);
-    --text: #1A2E1A;
-    --muted: #5A7058;
-    --subtle: #8A9E88;
+    --border: rgba(89,96,102,.12);
+    --border-strong: rgba(89,96,102,.22);
+    --text: #1E2226;
+    --muted: #5E666E;
+    --subtle: #98A0A8;
     --radius: 14px;
-    --shadow: 0 1px 3px rgba(26,46,26,.06), 0 4px 16px rgba(26,46,26,.07);
-    --shadow-md: 0 2px 8px rgba(26,46,26,.08), 0 8px 24px rgba(26,46,26,.09);
+    --shadow: 0 1px 3px rgba(30,34,38,.06), 0 4px 16px rgba(30,34,38,.07);
+    --shadow-md: 0 2px 8px rgba(30,34,38,.08), 0 8px 24px rgba(30,34,38,.09);
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     color: var(--text);
     background: var(--surface);
@@ -466,7 +466,7 @@ $mantenimientos_count = count($mantenimientos_programados);
     display: grid;
     place-items: center;
     border-radius: 10px;
-    background: rgba(26,46,26,.62);
+    background: rgba(30,34,38,.62);
     color: #fff;
     border: 1px solid rgba(255,255,255,.18);
     cursor: pointer;
@@ -474,14 +474,14 @@ $mantenimientos_count = count($mantenimientos_programados);
     font-size: .8rem;
     transition: background .15s;
 }
-.hdv-gallery-btn:hover { background: rgba(26,46,26,.82); }
+.hdv-gallery-btn:hover { background: rgba(30,34,38,.82); }
 .hdv-gallery-count {
     position: absolute;
     left: 10px;
     bottom: 10px;
     padding: 5px 10px;
     border-radius: 999px;
-    background: rgba(26,46,26,.62);
+    background: rgba(30,34,38,.62);
     color: #fff;
     font-size: .72rem;
     font-weight: 700;
@@ -592,13 +592,13 @@ $mantenimientos_count = count($mantenimientos_programados);
     background: linear-gradient(135deg, var(--green), var(--green-dark));
     color: #fff;
     border-color: var(--green-dark);
-    box-shadow: 0 2px 8px rgba(74,103,65,.28);
+    box-shadow: 0 2px 8px rgba(89,96,102,.28);
 }
 .hdv-btn-success {
-    background: linear-gradient(135deg, #157A52, #0E6040);
+    background: linear-gradient(135deg, #596066, #424850);
     color: #fff;
-    border-color: #0E6040;
-    box-shadow: 0 2px 8px rgba(21,122,82,.28);
+    border-color: #424850;
+    box-shadow: 0 2px 8px rgba(89,96,102,.28);
 }
 .hdv-btn-danger {
     background: linear-gradient(135deg, var(--red), #922F28);
@@ -839,20 +839,20 @@ $mantenimientos_count = count($mantenimientos_programados);
 
 /* ── Modal styles (maintenance modals — kept functional) ── */
 .hdv-modal {
-    --green: #4A6741;
-    --green-dark: #3A5233;
-    --green-soft: #EDF2EC;
+    --green: #596066;
+    --green-dark: #424850;
+    --green-soft: #EDEFF1;
     --blue: #2F6EA8;
     --blue-soft: #EAF3FF;
     --yellow: #B66A00;
     --yellow-soft: #FFF4D8;
     --card: #FFFFFF;
-    --border: rgba(74,103,65,.12);
-    --border-strong: rgba(74,103,65,.22);
-    --text: #1A2E1A;
-    --muted: #5A7058;
-    --subtle: #6B7F69;
-    --shadow-md: 0 2px 8px rgba(26,46,26,.08), 0 8px 24px rgba(26,46,26,.09);
+    --border: rgba(89,96,102,.12);
+    --border-strong: rgba(89,96,102,.22);
+    --text: #1E2226;
+    --muted: #5E666E;
+    --subtle: #6E7478;
+    --shadow-md: 0 2px 8px rgba(30,34,38,.08), 0 8px 24px rgba(30,34,38,.09);
     position: fixed;
     inset: 0;
     z-index: 10040;
@@ -860,7 +860,7 @@ $mantenimientos_count = count($mantenimientos_programados);
     align-items: center;
     justify-content: center;
     padding: 16px;
-    background: rgba(10,20,10,.58);
+    background: rgba(15,18,20,.58);
     backdrop-filter: blur(8px);
     color: var(--text);
 }
@@ -871,8 +871,8 @@ $mantenimientos_count = count($mantenimientos_programados);
     overflow: auto;
     background: var(--card, #FFFFFF);
     border-radius: 18px;
-    border: 1px solid var(--border-strong, rgba(74,103,65,.22));
-    box-shadow: 0 24px 64px rgba(10,20,10,.32);
+    border: 1px solid var(--border-strong, rgba(89,96,102,.22));
+    box-shadow: 0 24px 64px rgba(15,18,20,.32);
     transform: scale(.96);
     opacity: 0;
     transition: transform .22s ease, opacity .22s ease;
@@ -883,7 +883,7 @@ $mantenimientos_count = count($mantenimientos_programados);
     justify-content: space-between;
     gap: 14px;
     padding: 18px 20px;
-    border-bottom: 1px solid var(--border, rgba(74,103,65,.12));
+    border-bottom: 1px solid var(--border, rgba(89,96,102,.12));
     background: #FAFCFA;
 }
 .hdv-modal-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -930,7 +930,7 @@ $mantenimientos_count = count($mantenimientos_programados);
     transition: background .15s;
 }
 .hdv-modal-close:hover { background: var(--green-soft); }
-.hdv-modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; background: var(--card, #FFFFFF); color: var(--text, #1A2E1A); }
+.hdv-modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; background: var(--card, #FFFFFF); color: var(--text, #1E2226); }
 .hdv-maint-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0,1fr));
@@ -2264,7 +2264,7 @@ document.querySelectorAll('.js-finalizar-limpieza-form').forEach(function(form) 
         .then(function(data) {
             const numero = data.numero || roomNumber;
             if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'success', title: 'Habitacion disponible', text: 'La habitacion ' + numero + ' ya quedo lista.', confirmButtonColor: '#059669', confirmButtonText: 'Entendido' }).then(() => window.location.reload());
+                Swal.fire({ icon: 'success', title: 'Habitacion disponible', text: 'La habitacion ' + numero + ' ya quedo lista.', confirmButtonColor: '#596066', confirmButtonText: 'Entendido' }).then(() => window.location.reload());
                 return;
             }
             window.msToast('success', 'Habitación disponible', 'La habitacion ' + numero + ' ya quedo disponible.');

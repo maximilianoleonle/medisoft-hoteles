@@ -91,7 +91,7 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         position: fixed;
         left: 14px;
         right: 14px;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(6px + env(safe-area-inset-bottom, 0px));
         z-index: 980; /* debajo del overlay del sidebar (999) y del header móvil */
         height: 64px;
         padding: 7px;
@@ -138,7 +138,7 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         justify-content: center;
         gap: 3px;
         min-height: 0;
-        padding: 2px;
+        padding: 2px 4px;
         border: 0;
         background: none;
         border-radius: 18px;
@@ -167,9 +167,11 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: .6rem;
+        /* Responsivo: baja en pantallas angostas para que etiquetas largas
+           (ej. "Habitaciones") no rocen el borde de su columna. */
+        font-size: clamp(.5rem, 2.4vw, .56rem);
         font-weight: 700;
-        letter-spacing: .01em;
+        letter-spacing: 0;
         line-height: 1;
     }
 
@@ -223,9 +225,9 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     }
 
     /* ── La vista completa se recorre hacia arriba: nada queda bajo la barra ──
-     * Barra flotante: 64px de alto + 12px de aire abajo + 8px de holgura. */
+     * Barra flotante: 64px de alto + 6px de aire abajo + 8px de holgura. */
     body.has-hotel-bottom-nav {
-        --hbn-offset: calc(84px + env(safe-area-inset-bottom, 0px));
+        --hbn-offset: calc(78px + env(safe-area-inset-bottom, 0px));
     }
 
     /* La barra flota: el shell llega hasta abajo y el CONTENIDO pasa por
@@ -432,6 +434,20 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         var nav = document.getElementById('hotel-bottom-nav');
 
         document.body.classList.toggle('hbn-overlay-open', isOpen);
+
+        // Bloqueo de scroll del fondo con un modal abierto. El scroll real de la
+        // app NO vive en body/html (el shell es h-screen overflow-hidden) sino en
+        // .main-content, asi que congelar el body no basta: sin esto el fondo se
+        // desliza por detras del modal. Se fija overflow:hidden inline (gana a
+        // cualquier regla) y se restaura al cerrarse; la posicion no se pierde.
+        var mainScroll = document.querySelector('.main-content');
+        if (mainScroll) {
+            if (isOpen) {
+                mainScroll.style.setProperty('overflow', 'hidden', 'important');
+            } else {
+                mainScroll.style.removeProperty('overflow');
+            }
+        }
 
         if (nav) {
             if (isOpen) {
