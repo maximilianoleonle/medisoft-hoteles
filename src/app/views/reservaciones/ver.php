@@ -3820,21 +3820,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <span class="rdv3-icon rdv3-icon--green"><i class="fas fa-hand-holding-dollar"></i></span>
                                     <h2 class="rdv3-card-title">Pagos y anticipos</h2>
                                 </div>
+                                <span class="rp-status <?= $rpSaldoPositivo ? 'is-pending' : 'is-done' ?>"><span class="rp-status-dot"></span><?= $rpSaldoPositivo ? 'Pendiente' : 'Liquidada' ?></span>
                             </header>
                             <div class="rdv3-card-body">
-                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-                                    <div style="background:#F6F8F4;border-radius:10px;padding:10px;text-align:center;">
-                                        <small style="color:#667085;display:block;">Total</small>
-                                        <strong style="color:#111827;font-size:1rem;"><?= $rdMoney($rpResumen['total']) ?></strong>
-                                    </div>
-                                    <div style="background:#F0FBF5;border-radius:10px;padding:10px;text-align:center;">
-                                        <small style="color:#667085;display:block;">Pagado</small>
-                                        <strong style="color:#15835A;font-size:1rem;"><?= $rdMoney($rpResumen['pagado']) ?></strong>
-                                    </div>
-                                    <div style="background:<?= $rpSaldoPositivo ? '#FFF7ED' : '#F0FBF5' ?>;border-radius:10px;padding:10px;text-align:center;">
-                                        <small style="color:#667085;display:block;">Saldo</small>
-                                        <strong style="color:<?= $rpSaldoPositivo ? '#B4540F' : '#15835A' ?>;font-size:1rem;"><?= $rdMoney($rpResumen['saldo']) ?></strong>
-                                    </div>
+                                <div class="rp-stats">
+                                    <div class="rp-stat"><small>Total</small><strong><?= $rdMoney($rpResumen['total']) ?></strong></div>
+                                    <div class="rp-stat is-paid"><small>Pagado</small><strong><?= $rdMoney($rpResumen['pagado']) ?></strong></div>
+                                    <div class="rp-stat <?= $rpSaldoPositivo ? 'is-balance' : 'is-paid' ?>"><small>Saldo</small><strong><?= $rdMoney($rpResumen['saldo']) ?></strong></div>
                                 </div>
 
                                 <?php
@@ -3842,74 +3834,34 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 // el cobro de saldo tras check-in/out es core y siempre se muestra.
                                 $rpModuloAnticipos = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('anticipos');
                                 $rpPuedeCobrar = !empty($rpEval['elegible']) && ($rpEsPagoPendiente || $rpModuloAnticipos);
+                                $rpPct = ($rpResumen['total'] ?? 0) > 0
+                                    ? min(100, max(0, (int)round(($rpResumen['pagado'] / $rpResumen['total']) * 100)))
+                                    : ($rpSaldoPositivo ? 0 : 100);
                                 ?>
+                                <div class="rp-progress <?= $rpSaldoPositivo ? 'is-pending' : 'is-done' ?>"><i style="width:<?= $rpPct ?>%"></i></div>
                                 <?php if ($rpPuedeCobrar): ?>
-                                    <button type="button" class="rp-mobile-cta" data-rp-open aria-haspopup="dialog" aria-controls="rdaSheet">
-                                        <i class="fas fa-plus"></i> <?= $rdSafe($rpBotonCobro) ?>
-                                    </button>
-                                    <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" class="rp-desktop-form" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
-                                        <div style="flex:1;min-width:130px;">
-                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;"><?= $rdSafe($rpMontoLabel) ?></label>
-                                            <input type="number" name="monto" min="0.01" step="0.01" max="<?= number_format((float)$rpResumen['saldo'], 2, '.', '') ?>" value="<?= $rpSaldoPositivo ? number_format((float)$rpResumen['saldo'], 2, '.', '') : '' ?>" data-money-format="true" placeholder="0.00" required style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
-                                        </div>
-                                        <div style="min-width:140px;">
-                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;">Método</label>
-                                            <select name="metodo_pago" data-rdv3-anticipo-metodo onchange="rdv3ToggleTipoTarjetaAnticipo()" style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
-                                                <?php foreach (($rpEval['metodos_pago'] ?? []) as $mk => $ml): ?>
-                                                    <option value="<?= $rdSafe($mk) ?>"><?= $rdSafe($ml) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                        <div data-rdv3-anticipo-tarjeta style="display:none;min-width:220px;">
-                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:6px;">Tipo de tarjeta</label>
-                                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                                <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;">
-                                                    <input type="radio" name="tipo_tarjeta_anticipo" value="debito" disabled>
-                                                    <i class="fas fa-money-check-alt"></i> Debito
-                                                </label>
-                                                <label style="display:flex;align-items:center;gap:6px;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px;font-size:.83rem;font-weight:700;cursor:pointer;background:#FFFFFF;">
-                                                    <input type="radio" name="tipo_tarjeta_anticipo" value="credito" disabled>
-                                                    <i class="fas fa-credit-card"></i> Credito
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div style="width:100%;margin-top:4px;">
-                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:6px;">¿Requiere factura?</label>
-                                            <div style="display:flex;gap:10px;">
-                                                <label style="display:flex;align-items:center;gap:5px;font-size:.84rem;font-weight:600;cursor:pointer;">
-                                                    <input type="radio" name="requiere_factura" value="no" checked> Sin factura
-                                                </label>
-                                                <label style="display:flex;align-items:center;gap:5px;font-size:.84rem;font-weight:600;cursor:pointer;">
-                                                    <input type="radio" name="requiere_factura" value="si"> Factura para cliente
-                                                </label>
-                                            </div>
-                                            <?php if (!empty($anticipoFacturaSolicitud)): ?>
-                                                <div style="margin-top:10px;padding:10px;border:1px solid #BFDBFE;border-radius:10px;background:#EFF6FF;">
-                                                    <div style="font-size:.72rem;color:#1E40AF;font-weight:700;margin-bottom:7px;">Factura pendiente #<?= (int)($anticipoFacturaSolicitud['id'] ?? 0) ?> por <?= $rdMoney($anticipoFacturaSolicitud['monto_total'] ?? 0) ?></div>
-                                                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                                            <input type="radio" name="factura_modo" value="acumular"> Sumar a factura pendiente
-                                                        </label>
-                                                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#1E3A8A;cursor:pointer;">
-                                                            <input type="radio" name="factura_modo" value="separada" checked> Crear factura separada
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <button type="submit" class="rdv3-btn rdv3-btn-primary" style="margin-top:4px;"><i class="fas fa-plus"></i> <?= $rdSafe($rpBotonCobro) ?></button>
-                                    </form>
+                                    <div class="rp-actionrow">
+                                        <span class="rp-note">
+                                            <i class="fas <?= $rpSaldoPositivo ? 'fa-clock' : 'fa-circle-check' ?>" aria-hidden="true"></i>
+                                            <?= $rpSaldoPositivo ? ('Saldo pendiente ' . $rdMoney($rpResumen['saldo'])) : 'Reservación liquidada · sin saldo pendiente' ?>
+                                        </span>
+                                        <button type="button" class="rp-cta" data-rp-open aria-haspopup="dialog" aria-controls="rdaSheet">
+                                            <i class="fas fa-plus" aria-hidden="true"></i> <?= $rdSafe($rpBotonCobro) ?>
+                                        </button>
+                                    </div>
                                 <?php elseif ($rpSaldoPositivo): ?>
-                                    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;color:#9A3412;font-size:.84rem;">
-                                        <i class="fas fa-circle-info"></i>
+                                    <div class="rp-warn">
+                                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                        <span>
                                         <?php if (!empty($rpEval['elegible']) && !$rpModuloAnticipos): ?>
                                             El bloque de anticipos no está contratado; el saldo se cobra al hacer check-in.
                                         <?php else: ?>
                                             <?= $rdSafe($rpEval['motivo'] ?: 'No se puede registrar un anticipo ahora.') ?>
                                         <?php endif; ?>
+                                        </span>
                                     </div>
+                                <?php else: ?>
+                                    <div class="rp-note rp-note--block"><i class="fas fa-circle-check" aria-hidden="true"></i> Reservación liquidada · sin saldo pendiente</div>
                                 <?php endif; ?>
 
                                 <?php if (!empty($rpAbonos)): ?>
@@ -3956,7 +3908,11 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="concepto" value="<?= $rdSafe($rpConceptoCobro) ?>">
                                 <header class="rda-head">
-                                    <h3 id="rdaTitle"><?= $rdSafe($rpBotonCobro) ?></h3>
+                                    <span class="rda-head-icon" aria-hidden="true"><i class="far fa-credit-card"></i></span>
+                                    <div class="rda-head-txt">
+                                        <h3 id="rdaTitle"><?= $rdSafe($rpBotonCobro) ?></h3>
+                                        <p class="rda-sub"><?= $rdSafe($rdHuespedNombre) ?> · Reservación #<?= (int)$rdReservationId ?></p>
+                                    </div>
                                     <button type="button" class="rda-close" data-rp-close aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
                                 </header>
                                 <div class="rda-stepper" aria-hidden="true">
@@ -4042,27 +3998,59 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         <?php endif; ?>
 
                         <style>
-                        .rp-mobile-cta { display: none; }
+                        /* ── Tarjeta "Pagos y anticipos" ── */
+                        #rdv3-payment-section .rdv3-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+                        .rp-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: .74rem; font-weight: 800; white-space: nowrap; }
+                        .rp-status .rp-status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+                        .rp-status.is-done { background: #E7F5EC; color: #15835A; }
+                        .rp-status.is-pending { background: #FDF1E3; color: #B4540F; }
+                        .rp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+                        .rp-stat { border: 1px solid #ECE7DC; border-radius: 12px; padding: 12px 10px; text-align: center; background: #FDFCF9; }
+                        .rp-stat small { display: block; margin-bottom: 3px; color: #94A3B8; font-size: .64rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+                        .rp-stat strong { font-size: 1.12rem; font-weight: 800; color: #1E293B; font-variant-numeric: tabular-nums; }
+                        .rp-stat.is-paid small, .rp-stat.is-paid strong { color: #15835A; }
+                        .rp-stat.is-balance small, .rp-stat.is-balance strong { color: #B4540F; }
+                        .rp-progress { height: 8px; border-radius: 999px; background: #EEEAE0; overflow: hidden; margin: 2px 0 14px; }
+                        .rp-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #16A06A, #12805A); transition: width .5s cubic-bezier(.22,1,.36,1); }
+                        .rp-progress.is-pending i { background: linear-gradient(90deg, #E7A24C, #C87E23); }
+                        .rp-actionrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+                        .rp-note { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-size: .86rem; font-weight: 600; }
+                        .rp-note i { color: #15835A; }
+                        .rp-note--block { margin-top: 2px; }
+                        .rp-warn { display: flex; align-items: flex-start; gap: 8px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 12px; color: #9A3412; font-size: .84rem; }
+                        .rp-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 0; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, #15835A, #0E6C49); color: #fff; font-size: .9rem; font-weight: 800; letter-spacing: .01em; box-shadow: 0 8px 18px -10px rgba(21,131,90,.6); }
+                        .rp-cta:hover { filter: brightness(1.06); }
+                        .rp-cta:active { transform: translateY(1px); }
                         @media (max-width: 780px) {
-                            #rdv3-payment-section .rp-desktop-form { display: none !important; }
-                            .rp-mobile-cta {
-                                display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-                                width: 100%; min-height: 48px; margin-top: 2px;
-                                border: 0; border-radius: 12px; cursor: pointer;
-                                background: linear-gradient(135deg, #15835A, #0E6C49); color: #fff;
-                                font-size: .92rem; font-weight: 800; letter-spacing: .01em;
-                                box-shadow: 0 8px 18px -10px rgba(21,131,90,.6);
-                            }
-                            .rp-mobile-cta:active { transform: translateY(1px); }
+                            .rp-actionrow { flex-direction: column; align-items: stretch; }
+                            .rp-cta { width: 100%; min-height: 48px; }
                         }
-                        @media (min-width: 781px) { .rda-sheet, .rda-backdrop { display: none !important; } }
+                        /* ── Header del modal: icono + título + subtítulo ── */
+                        .rda-head-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: #E7F5EC; color: #15835A; font-size: 1rem; }
+                        .rda-head-txt { flex: 1 1 auto; min-width: 0; }
+                        .rda-sub { margin: 2px 0 0; font-size: .78rem; font-weight: 600; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        /* ── En escritorio el mismo wizard es un modal CENTRADO ── */
+                        @media (min-width: 781px) {
+                            .rda-backdrop { background: rgba(15,23,42,.45); }
+                            .rda-sheet {
+                                left: 50%; right: auto; top: 50%; bottom: auto;
+                                width: min(470px, calc(100vw - 40px));
+                                max-height: 90vh;
+                                border-radius: 20px;
+                                padding-bottom: 0;
+                                transform: translate(-50%, -47%) scale(.98);
+                                opacity: 0;
+                                transition: transform .24s cubic-bezier(.22,1,.36,1), opacity .18s ease;
+                            }
+                            .rda-sheet.is-open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                        }
                         .rda-backdrop { position: fixed; inset: 0; z-index: 10060; background: rgba(15,23,42,.5); opacity: 0; transition: opacity .25s ease; }
                         .rda-backdrop.is-open { opacity: 1; }
                         .rda-sheet[hidden], .rda-backdrop[hidden] { display: none !important; }
                         .rda-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10061; max-height: 92dvh; display: flex; flex-direction: column; background: #FBF9F5; border-radius: 20px 20px 0 0; box-shadow: 0 -18px 48px -20px rgba(15,23,42,.4); transform: translateY(100%); transition: transform .3s cubic-bezier(.22,1,.36,1); padding-bottom: env(safe-area-inset-bottom, 0px); }
                         .rda-sheet.is-open { transform: translateY(0); }
                         .rda-form { display: flex; flex-direction: column; min-height: 0; }
-                        .rda-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 26px 14px !important; }
+                        .rda-head { display: flex; align-items: center; gap: 12px; padding: 20px 26px 14px !important; }
                         .rda-head h3 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.28rem; color: #1E293B; font-weight: 600; }
                         .rda-close { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; border: 1px solid #E5E7EB; background: #fff; color: #64748B; cursor: pointer; }
                         .rda-stepper { display: flex; align-items: center; gap: 10px; padding: 0 26px 10px; }
