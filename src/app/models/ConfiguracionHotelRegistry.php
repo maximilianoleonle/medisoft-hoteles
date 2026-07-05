@@ -133,6 +133,46 @@ class ConfiguracionHotelRegistry
             'default' => 90,
             'description' => 'Dias de vigencia del cupon personal desde que se genera.',
         ],
+        'nomina.modo' => [
+            'type' => 'string',
+            'default' => 'simplificada',
+            'description' => 'Modo de nomina del negocio: simplificada, hibrida o legal (bloque nomina_avanzada).',
+        ],
+        'nomina.pais' => [
+            'type' => 'string',
+            'default' => 'MX',
+            'description' => 'Pais cuyas reglas legales de nomina aplican al negocio.',
+        ],
+        'nomina.redondeo' => [
+            'type' => 'string',
+            'default' => 'centavos',
+            'description' => 'Redondeo de montos de nomina: centavos (2 decimales) o pesos (enteros).',
+        ],
+        'nomina.permitir_horas_extra' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Permite registrar horas extra como incidencia de nomina.',
+        ],
+        'nomina.permitir_descuentos_manuales' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Permite descuentos manuales autorizados en la nomina.',
+        ],
+        'nomina.requiere_aprobacion_cierre' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Un periodo cerrado requiere aprobacion de un segundo paso antes de pagarse.',
+        ],
+        'nomina.permitir_reapertura' => [
+            'type' => 'boolean',
+            'default' => false,
+            'description' => 'Permite reabrir periodos de nomina cerrados (siempre con motivo y auditoria).',
+        ],
+        'negocio.giro' => [
+            'type' => 'string',
+            'default' => 'hotel',
+            'description' => 'Giro del negocio (hotel, restaurante, academia...); selecciona el adaptador de nomina.',
+        ],
     ];
 
     private static $legacyFallbacks = [

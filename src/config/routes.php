@@ -223,6 +223,42 @@ $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
 $router->get('/night-audit', ['controller' => 'NightAudit', 'action' => 'index']);
 $router->post('/night-audit/ejecutar', ['controller' => 'NightAudit', 'action' => 'ejecutar']);
 
+// Nomina core (bloque nomina_avanzada) - Fase 1: dashboard y configuracion.
+// Sin calculo, sin Caja, sin snapshots: la operacion sigue en /trabajadores.
+$router->get('/nomina', ['controller' => 'Nomina', 'action' => 'index']);
+$router->get('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'configuracion']);
+$router->post('/nomina/configuracion', ['controller' => 'Nomina', 'action' => 'guardarConfiguracion']);
+// Fase 2: catalogos internos y ficha de nomina de empleados.
+$router->get('/nomina/catalogos', ['controller' => 'Nomina', 'action' => 'catalogos']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/crear', ['controller' => 'Nomina', 'action' => 'catalogoGuardar']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/actualizar', ['controller' => 'Nomina', 'action' => 'catalogoActualizar']);
+$router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/alternar', ['controller' => 'Nomina', 'action' => 'catalogoAlternar']);
+$router->get('/nomina/empleados', ['controller' => 'Nomina', 'action' => 'empleados']);
+$router->get('/nomina/empleados/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'empleadoFicha']);
+$router->post('/nomina/empleados/{id:[0-9]+}/asignaciones', ['controller' => 'Nomina', 'action' => 'empleadoAsignaciones']);
+$router->post('/nomina/empleados/{id:[0-9]+}/salario', ['controller' => 'Nomina', 'action' => 'empleadoSalario']);
+// Fase 3: motor v2 (incidencias y periodos por grupo de pago).
+$router->get('/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'incidencias']);
+$router->post('/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'incidenciaCrear']);
+$router->post('/nomina/incidencias/{id:[0-9]+}/estado', ['controller' => 'Nomina', 'action' => 'incidenciaEstado']);
+$router->get('/nomina/periodos', ['controller' => 'Nomina', 'action' => 'periodos']);
+$router->get('/nomina/periodos/preview', ['controller' => 'Nomina', 'action' => 'periodoPreview']);
+$router->post('/nomina/periodos/cerrar', ['controller' => 'Nomina', 'action' => 'periodoCerrar']);
+$router->get('/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'periodoVer']);
+$router->post('/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Nomina', 'action' => 'periodoAprobar']);
+$router->post('/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Nomina', 'action' => 'periodoAnular']);
+// Fases 7-10: exportacion contador, adaptador por giro y API interna JSON.
+$router->get('/nomina/periodos/{id:[0-9]+}/exportar', ['controller' => 'Nomina', 'action' => 'periodoExportar']);
+$router->post('/nomina/incidencias/proponer', ['controller' => 'Nomina', 'action' => 'incidenciasProponer']);
+$router->get('/api/nomina/periodos', ['controller' => 'Nomina', 'action' => 'apiPeriodos']);
+$router->get('/api/nomina/periodos/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'apiPeriodoVer']);
+$router->post('/api/nomina/incidencias', ['controller' => 'Nomina', 'action' => 'apiIncidenciaCrear']);
+// Fase 4: recibos internos y reapertura controlada.
+$router->post('/nomina/periodos/{id:[0-9]+}/recibos/emitir', ['controller' => 'Nomina', 'action' => 'periodoRecibosEmitir']);
+$router->post('/nomina/periodos/{id:[0-9]+}/reabrir', ['controller' => 'Nomina', 'action' => 'periodoReabrir']);
+$router->get('/nomina/recibos/{id:[0-9]+}/pdf', ['controller' => 'Nomina', 'action' => 'reciboPdf']);
+$router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina', 'action' => 'reciboCancelar']);
+
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
 $router->post('/lealtad/generar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'generar']);
@@ -405,6 +441,10 @@ $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'h
 $router->get('/admin/saas/modulos', ['controller' => 'SaasAdmin', 'action' => 'modulosCatalogo']);
 $router->post('/admin/saas/modulos/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosModulos']);
 $router->post('/admin/saas/planes/precios', ['controller' => 'SaasAdmin', 'action' => 'actualizarPreciosPlanes']);
+// Reglas legales de nomina versionadas (Fase 5 nomina core; solo saas_admins)
+$router->get('/admin/saas/nomina/reglas', ['controller' => 'SaasNomina', 'action' => 'reglas']);
+$router->post('/admin/saas/nomina/reglas', ['controller' => 'SaasNomina', 'action' => 'guardarRegla']);
+$router->post('/admin/saas/nomina/reglas/{id:[0-9]+}/alternar', ['controller' => 'SaasNomina', 'action' => 'alternarRegla']);
 $router->get('/admin/saas/cobros', ['controller' => 'SaasAdmin', 'action' => 'cobros']);
 $router->post('/admin/saas/cobros/generar', ['controller' => 'SaasAdmin', 'action' => 'generarCobros']);
 $router->post('/admin/saas/cobros/{id:[0-9]+}/link', ['controller' => 'SaasAdmin', 'action' => 'linkPagoCobro']);
