@@ -54,10 +54,11 @@ class CopilotoService
 
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
         //    especificas ("como hago un corte") y no deben confundirse con la
-        //    pregunta de dato ("como voy de caja" -> saldo).
-        $faq = $this->detectarFaq($norm);
+        //    pregunta de dato ("como voy de caja" -> saldo). Consciente de modulos:
+        //    si el bloque no esta activo, avisa en vez de mandar a una pantalla vacia.
+        $faq = $this->detectarFaq($norm, $hotelId);
         if ($faq !== null) {
-            $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', 'faq:' . $faq['clave'], 0, 0);
+            $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $faq['intent'], 0, 0);
             return ['success' => true, 'texto' => $faq['texto'], 'fuente' => 'reglas', 'enlace' => $faq['enlace']];
         }
 
@@ -319,31 +320,61 @@ class CopilotoService
 
     // ───────────────────────── Ayuda (FAQ deterministo) ─────────────────────────
 
-    private function detectarFaq(string $norm): ?array
+    private function detectarFaq(string $norm, int $hotelId): ?array
     {
+        // 'modulo' => null significa seccion core (siempre disponible). Con clave
+        // de modulo, se responde con los pasos SOLO si el hotel lo tiene activo.
         $faqs = [
-            ['clave' => 'corte_caja', 'palabras' => ['como hago un corte', 'como cierro la caja', 'como hago el corte', 'cerrar caja'],
+            ['clave' => 'corte_caja', 'modulo' => null, 'nombre' => 'Caja',
+             'palabras' => ['como hago un corte', 'como cierro la caja', 'como hago el corte', 'cerrar caja'],
              'texto' => 'Para hacer un corte de caja: entra a **Caja**, revisa los movimientos del turno, captura el efectivo contado y confirma el cierre. El sistema calcula la diferencia contra lo esperado.',
              'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']],
-            ['clave' => 'cupon', 'palabras' => ['como hago un cupon', 'como creo un cupon', 'crear cupon', 'codigo de descuento', 'como hago un descuento'],
-             'texto' => 'Los cupones viven en **Motor de reservas > Cupones**. Crea un codigo, elige % o monto fijo, su vigencia y limite de usos. El huesped lo captura al reservar en linea.',
-             'enlace' => ['url' => 'motor-reservas/cupones', 'texto' => 'Ir a Cupones']],
-            ['clave' => 'reservacion', 'palabras' => ['como hago una reservacion', 'como creo una reserva', 'nueva reservacion', 'registrar reserva'],
+            ['clave' => 'reservacion', 'modulo' => null, 'nombre' => 'Reservaciones',
+             'palabras' => ['como hago una reservacion', 'como creo una reserva', 'nueva reservacion', 'registrar reserva'],
              'texto' => 'Para una reservacion nueva: entra a **Reservaciones > Nueva**, elige fechas y habitacion, captura al huesped y guarda. Desde ahi puedes hacer el check-in cuando llegue.',
              'enlace' => ['url' => 'reservaciones', 'texto' => 'Ir a Reservaciones']],
-            ['clave' => 'extras', 'palabras' => ['como vendo extras', 'como agrego extras', 'desayuno extra', 'late checkout'],
+            ['clave' => 'cupon', 'modulo' => 'promociones', 'nombre' => 'Cupones y promociones',
+             'palabras' => ['como hago un cupon', 'como creo un cupon', 'crear cupon', 'codigo de descuento', 'como hago un descuento'],
+             'texto' => 'Los cupones viven en **Motor de reservas > Cupones**. Crea un codigo, elige % o monto fijo, su vigencia y limite de usos. El huesped lo captura al reservar en linea.',
+             'enlace' => ['url' => 'motor-reservas/cupones', 'texto' => 'Ir a Cupones']],
+            ['clave' => 'extras', 'modulo' => 'upsells', 'nombre' => 'Extras y upselling',
+             'palabras' => ['como vendo extras', 'como agrego extras', 'desayuno extra', 'late checkout'],
              'texto' => 'Los extras (desayuno, late checkout) se configuran en **Motor de reservas > Extras**. Defines nombre, precio y como se cobra; el huesped los agrega al reservar.',
              'enlace' => ['url' => 'motor-reservas/extras', 'texto' => 'Ir a Extras']],
-            ['clave' => 'encuesta', 'palabras' => ['como mando una encuesta', 'encuesta de satisfaccion', 'como pido una resena', 'como pido calificacion'],
+            ['clave' => 'encuesta', 'modulo' => 'reputacion', 'nombre' => 'Reputacion',
+             'palabras' => ['como mando una encuesta', 'encuesta de satisfaccion', 'como pido una resena', 'como pido calificacion'],
              'texto' => 'En **Reputacion** puedes generar y enviar la encuesta post-estancia a tus huespedes con checkout. Las buenas calificaciones se invitan a Google; las bajas te llegan como alerta.',
              'enlace' => ['url' => 'reputacion', 'texto' => 'Ir a Reputacion']],
+            ['clave' => 'forecast', 'modulo' => 'forecast', 'nombre' => 'Forecast',
+             'palabras' => ['como veo el forecast', 'proyeccion de ocupacion', 'como veo mi ocupacion futura', 'pronostico de ocupacion'],
+             'texto' => 'En **Forecast** ves la proyeccion de ocupacion a 30, 60 y 90 dias, el ritmo de reservas y la comparativa con el anio pasado.',
+             'enlace' => ['url' => 'forecast', 'texto' => 'Ir a Forecast']],
+            ['clave' => 'lealtad', 'modulo' => 'lealtad', 'nombre' => 'Huesped frecuente',
+             'palabras' => ['huesped frecuente', 'cliente frecuente', 'como premio a mis clientes', 'programa de lealtad'],
+             'texto' => 'En **Huesped frecuente** ves a tus huespedes que regresan y les generas un cupon personal de agradecimiento para su siguiente reserva en linea.',
+             'enlace' => ['url' => 'lealtad', 'texto' => 'Ir a Huesped frecuente']],
         ];
 
         foreach ($faqs as $faq) {
             foreach ($faq['palabras'] as $p) {
-                if (strpos($norm, $p) !== false) {
-                    return $faq;
+                if (strpos($norm, $p) === false) {
+                    continue;
                 }
+
+                // Bloque no core que el hotel no tiene: avisar, no mandar a vacio.
+                if ($faq['modulo'] !== null && !$this->tieneModulo($faq['modulo'], $hotelId)) {
+                    return [
+                        'intent' => 'faq_inactivo:' . $faq['clave'],
+                        'texto' => 'El modulo de **' . $faq['nombre'] . '** no esta activo en tu hotel, por eso no te aparece en el menu. Si te interesa activarlo, contacta a Medisoft.',
+                        'enlace' => null,
+                    ];
+                }
+
+                return [
+                    'intent' => 'faq:' . $faq['clave'],
+                    'texto' => $faq['texto'],
+                    'enlace' => $faq['enlace'],
+                ];
             }
         }
 
@@ -365,7 +396,7 @@ class CopilotoService
 
         $usuario = "Datos en vivo del hotel (calculados por el servidor, son la unica fuente de cifras):\n"
             . $this->snapshotTexto($hotelId)
-            . "\n\nGuia de uso disponible:\n" . $this->ayudaConocimiento()
+            . "\n\nSecciones que ESTE hotel tiene activas (no menciones ni recomiendes ninguna que no este en esta lista):\n" . $this->ayudaConocimiento($hotelId)
             . "\n\nPregunta del usuario del hotel:\n" . $pregunta;
 
         return $this->llamarClaude($sistema, $usuario);
@@ -398,15 +429,34 @@ class CopilotoService
         return implode("\n", $lineas);
     }
 
-    private function ayudaConocimiento(): string
+    private function ayudaConocimiento(int $hotelId): string
     {
-        return "- Corte de caja: seccion Caja.\n"
-            . "- Reservacion nueva y check-in/check-out: seccion Reservaciones.\n"
-            . "- Cupones de descuento y extras del motor: Motor de reservas > Cupones / Extras.\n"
-            . "- Encuestas y resenas: seccion Reputacion.\n"
-            . "- Huespedes frecuentes: seccion Huesped frecuente.\n"
-            . "- Proyeccion de ocupacion: seccion Forecast.\n"
-            . "- Cierre nocturno (no-shows, checkouts vencidos): seccion Night audit.";
+        // Core siempre presente; el resto solo si el hotel tiene el bloque.
+        $lineas = [
+            "- Corte de caja: seccion Caja.",
+            "- Reservacion nueva y check-in/check-out: seccion Reservaciones.",
+            "- Habitaciones y su estado: seccion Habitaciones.",
+        ];
+
+        $opcionales = [
+            'motor_reservas' => "- Reservas en linea con pago de anticipo: seccion Motor de reservas.",
+            'promociones' => "- Cupones de descuento del motor: Motor de reservas > Cupones.",
+            'upsells' => "- Extras del motor (desayuno, late checkout): Motor de reservas > Extras.",
+            'reputacion' => "- Encuestas y resenas: seccion Reputacion.",
+            'lealtad' => "- Huespedes frecuentes y su cupon: seccion Huesped frecuente.",
+            'forecast' => "- Proyeccion de ocupacion 30/60/90 dias: seccion Forecast.",
+            'night_audit' => "- Cierre nocturno (no-shows, checkouts vencidos): seccion Night audit.",
+            'auditoria' => "- Bitacora de quien hizo que: seccion Bitacora (solo gerencia).",
+            'ia_ejecutiva' => "- Resumen gerencial diario narrado: seccion Asesor IA.",
+        ];
+
+        foreach ($opcionales as $modulo => $linea) {
+            if ($this->tieneModulo($modulo, $hotelId)) {
+                $lineas[] = $linea;
+            }
+        }
+
+        return implode("\n", $lineas);
     }
 
     /** Devuelve ['success', 'texto', 'tokens_entrada', 'tokens_salida', 'message']. */
