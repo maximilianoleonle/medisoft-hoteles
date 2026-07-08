@@ -402,5 +402,8 @@
     <script src="<?= function_exists('asset_version') ? asset_version('js/caja-offline.js') : asset('js/caja-offline.js') ?>" defer></script>
     <?php endif; ?>
 
+    <!-- Copiloto Medisoft (bloque copiloto): widget flotante, solo si esta activo -->
+    <?php include __DIR__ . '/copiloto_widget.php'; ?>
+
 </body>
 </html>

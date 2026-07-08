@@ -259,6 +259,9 @@ $router->post('/nomina/periodos/{id:[0-9]+}/reabrir', ['controller' => 'Nomina',
 $router->get('/nomina/recibos/{id:[0-9]+}/pdf', ['controller' => 'Nomina', 'action' => 'reciboPdf']);
 $router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina', 'action' => 'reciboCancelar']);
 
+// Copiloto Medisoft (bloque copiloto: asistente hibrido, solo lectura)
+$router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'preguntar']);
+
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
 $router->post('/lealtad/generar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'generar']);
