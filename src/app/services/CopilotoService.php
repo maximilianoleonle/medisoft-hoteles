@@ -126,6 +126,10 @@ class CopilotoService
         if ($tiene(['ocupacion', 'cuartos libres', 'habitaciones libres', 'cuartos disponibles', 'habitaciones disponibles', 'cuanto tengo lleno', 'que tan lleno', 'disponibilidad hoy'])) {
             return 'ocupacion';
         }
+        if ($tiene(['mes pasado', 'mes anterior'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro'])) {
+            return 'ganancias_mes_pasado';
+        }
         if ($tiene(['caja', 'efectivo', 'corte', 'cuanto llevo', 'cuanto hay en'])) {
             return 'caja';
         }
@@ -286,6 +290,20 @@ class CopilotoService
                         ? 'No tienes cupones activos en este momento.'
                         : "Tienes **{$cu['n']} cupon(es) activo(s)**" . ($cu['codigos'] !== '' ? ': ' . $cu['codigos'] : '') . '.',
                     'enlace' => ['url' => 'motor-reservas/cupones', 'texto' => 'Ver cupones'],
+                ];
+
+            case 'ganancias_mes_pasado':
+                $g = $this->gananciasMesPasado($hotelId);
+                if (!$g['hay']) {
+                    return ['texto' => "No tengo movimientos de caja registrados del mes pasado ({$g['mes']} {$g['anio']}).", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $enlaceGan = $this->tieneModulo('reportes', $hotelId)
+                    ? ['url' => 'reportes', 'texto' => 'Ver reportes']
+                    : ['url' => 'caja', 'texto' => 'Ir a Caja'];
+                return [
+                    'texto' => "El mes pasado ({$g['mes']} {$g['anio']}) registraste **ingresos por \${$g['ingresos']}** y gastos por \${$g['gastos']}, "
+                        . "para una **ganancia neta de \${$g['neto']}** (ingresos menos gastos de caja).",
+                    'enlace' => $enlaceGan,
                 ];
         }
 
@@ -613,12 +631,63 @@ class CopilotoService
         return ['n' => (int) ($fila['n'] ?? 0), 'monto' => number_format((float) ($fila['monto'] ?? 0), 2)];
     }
 
+    /**
+     * Ingresos, gastos y ganancia neta del MES CALENDARIO ANTERIOR, tomados de
+     * movimientos_caja (misma fuente que Caja/Reportes). Solo lectura y por hotel.
+     */
+    private function gananciasMesPasado(int $hotelId): array
+    {
+        $ingresos = 0.0;
+        $gastos = 0.0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT tipo, COALESCE(SUM(monto), 0) AS total
+                 FROM movimientos_caja
+                 WHERE hotel_id = ?
+                   AND created_at >= DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')
+                   AND created_at <  DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                 GROUP BY tipo"
+            );
+            $stmt->execute([$hotelId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                if ((string) $fila['tipo'] === 'ingreso') {
+                    $ingresos = (float) $fila['total'];
+                } elseif ((string) $fila['tipo'] === 'gasto') {
+                    $gastos = (float) $fila['total'];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error ganancias mes pasado: ' . $e->getMessage());
+        }
+
+        $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
+        $ref = strtotime('first day of last month');
+
+        return [
+            'hay' => ($ingresos > 0 || $gastos > 0),
+            'ingresos' => number_format($ingresos, 2),
+            'gastos' => number_format($gastos, 2),
+            'neto' => number_format($ingresos - $gastos, 2),
+            'mes' => $meses[(int) date('n', $ref)],
+            'anio' => date('Y', $ref),
+        ];
+    }
+
     // ───────────────────────── Ayuda (FAQ deterministo) ─────────────────────────
 
     private function detectarFaq(string $norm, int $hotelId): ?array
     {
         // 'modulo' => null significa seccion core (siempre disponible). Con clave
         // de modulo, se responde con los pasos SOLO si el hotel lo tiene activo.
+
+        // Preguntas por la CIFRA de un periodo ("ganancias/ingresos del mes pasado")
+        // son dato, no ayuda: se dejan pasar a detectarIntent para dar el numero
+        // real (evita que "cuanto vendi el mes pasado" caiga en la FAQ de Reportes).
+        if ((strpos($norm, 'mes pasado') !== false || strpos($norm, 'mes anterior') !== false)
+            && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|factur|cuanto (hice|entro))/', $norm)) {
+            return null;
+        }
+
         $faqs = [
             ['clave' => 'corte_caja', 'modulo' => null, 'nombre' => 'Caja',
              'palabras' => ['como hago un corte', 'como cierro la caja', 'como hago el corte', 'cerrar caja'],
@@ -820,6 +889,11 @@ class CopilotoService
             $c['abierto'] ? "- Caja: corte abierto, efectivo esperado \${$c['esperado']}" : "- Caja: sin corte abierto",
         ];
 
+        $g = $this->gananciasMesPasado($hotelId);
+        if ($g['hay']) {
+            $lineas[] = "- Mes pasado ({$g['mes']} {$g['anio']}): ingresos \${$g['ingresos']}, gastos \${$g['gastos']}, ganancia neta \${$g['neto']}";
+        }
+
         $manana = $this->reservasPorFecha($hotelId, 'entrada', 1);
         $lineas[] = "- Llegadas de manana: {$manana['total']}";
 
@@ -973,6 +1047,7 @@ class CopilotoService
             . "• \"¿cuantas habitaciones libres tengo?\" o \"¿quien llega hoy/manana?\"\n"
             . "• \"¿como pinta la semana?\" o \"¿quien esta hospedado?\"\n"
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
+            . "• \"¿cuales fueron las ganancias del mes pasado?\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 
