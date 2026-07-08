@@ -5539,6 +5539,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
         <form id="formCheckInModal" method="POST" action="" class="rv-checkin-form">
             <?= csrf_field() ?>
             <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
+            <input type="hidden" name="checkin_return_to" id="checkin_return_to" value="<?= htmlspecialchars((string)($_GET['checkin_return_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="rv-checkin-topbar">
                 <div class="rv-checkin-titleblock">
@@ -7287,6 +7288,12 @@ function abrirModalCheckIn(id, total) {
     document.body.style.overflow = 'hidden';
 }
 window.abrirModalCheckIn = abrirModalCheckIn;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#checkin') {
+        abrirModalCheckIn(<?= (int)$rdReservationId ?>, <?= json_encode((float)$rdTotal) ?>);
+    }
+});
 
 // Función de check-out
 function confirmarCheckOut(id) {

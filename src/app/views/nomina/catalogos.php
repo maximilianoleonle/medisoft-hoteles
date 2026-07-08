@@ -8,6 +8,7 @@ $catRegistros = is_array($registros ?? null) ? $registros : [];
 $catConteos = is_array($conteos ?? null) ? $conteos : [];
 $catDepartamentos = is_array($departamentosActivos ?? null) ? $departamentosActivos : [];
 $catPuedeConfigurar = !empty($puedeConfigurar);
+$catPuedeGestionarRoles = function_exists('can') && can('roles.manage');
 
 $catTabs = [
     'departamentos' => ['label' => 'Departamentos', 'icono' => 'fa-sitemap'],
@@ -129,6 +130,15 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
 .nomina-cat-page .cat-tab .cat-count { font-size: 11px; opacity: .75; }
 .nomina-cat-page .cat-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
 .nomina-cat-page .cat-card h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
+.nomina-cat-page .cat-notice {
+    display: flex; gap: 12px; align-items: flex-start;
+    border: 1px solid color-mix(in srgb, var(--nom-gold) 45%, var(--nom-border));
+    background: color-mix(in srgb, var(--nom-gold) 8%, var(--nom-card));
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px;
+    color: var(--nom-text);
+}
+.nomina-cat-page .cat-notice i { color: var(--nom-gold); margin-top: 2px; }
+.nomina-cat-page .cat-notice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .nomina-cat-page .cat-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .nomina-cat-page .cat-field { display: flex; flex-direction: column; gap: 4px; min-width: 130px; flex: 1 1 150px; }
 .nomina-cat-page .cat-field-nombre { flex: 2 1 220px; }
@@ -178,6 +188,23 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
         <?php endforeach; ?>
     </div>
 
+    <?php if (!$catPuedeConfigurar): ?>
+    <div class="cat-notice">
+        <i class="fas fa-lock"></i>
+        <div>
+            <strong>Estás viendo catálogos en modo lectura.</strong><br>
+            Tu usuario puede consultar nómina, pero no crear ni editar catálogos. Para configurar departamentos,
+            puestos, contratos o grupos de pago necesitas el permiso <strong>nomina.configurar</strong>.
+            <div class="cat-notice-actions">
+                <a href="<?= url('nomina') ?>" class="cat-btn ms-pressable"><i class="fas fa-arrow-left"></i> Volver a nómina</a>
+                <?php if ($catPuedeGestionarRoles): ?>
+                <a href="<?= url('configuracion/roles') ?>" class="cat-btn ms-pressable"><i class="fas fa-user-lock"></i> Revisar roles</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if ($catPuedeConfigurar): ?>
     <div class="cat-card">
         <h2><i class="fas fa-plus" style="color:var(--nom-gold)"></i> Nuevo <?= strtolower($catTabs[$catTipo]['label']) === 'contratos' ? 'tipo de contrato' : rtrim(strtolower($catTabs[$catTipo]['label']), 's') ?></h2>
@@ -197,7 +224,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
         <div class="cat-vacio">
             <i class="fas fa-layer-group"></i>
             Este catálogo está vacío.
-            <?= $catPuedeConfigurar ? 'Crea el primer registro con el formulario de arriba.' : 'Pide a un usuario con permiso de configuración crearlos.' ?>
+            <?= $catPuedeConfigurar ? 'Crea el primer registro con el formulario de arriba.' : 'Cuando un usuario con nomina.configurar cree registros, aquí podrás consultarlos.' ?>
         </div>
         <?php else: ?>
         <table class="cat-tabla">

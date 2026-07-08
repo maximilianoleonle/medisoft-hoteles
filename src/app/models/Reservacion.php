@@ -335,7 +335,15 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         }
         
         // Obtener todas las habitaciones de la reservación
-        $sql = "SELECT rh.habitacion_id, h.numero 
+        $habitaciones_ids = array_values(array_unique(array_filter(array_map('intval', $habitaciones_ids), function ($hab_id) {
+            return $hab_id > 0;
+        })));
+
+        if (empty($habitaciones_ids)) {
+            throw new Exception('Debe seleccionar al menos una habitacion valida');
+        }
+
+        $sql = "SELECT rh.habitacion_id, h.numero
                 FROM reservacion_habitaciones rh
                 INNER JOIN habitaciones h
                     ON rh.habitacion_id = h.id
@@ -393,34 +401,48 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         // Obtener números de habitaciones liberadas para la nota
         $sql = "SELECT numero FROM habitaciones WHERE id IN ($placeholders) AND hotel_id = ? ORDER BY numero";
         $stmt = $db->query($sql, array_merge($habitaciones_ids, [$hotel_id]));
-        $habitaciones_liberadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $habitaciones_procesadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $sql = "SELECT id, numero FROM habitaciones
+                WHERE id IN ($placeholders)
+                AND hotel_id = ?
+                AND estado = 'limpieza'
+                ORDER BY numero";
+        $stmt = $db->query($sql, array_merge($habitaciones_ids, [$hotel_id]));
+        $habitaciones_liberadas_rows = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        $habitaciones_liberadas = array_column($habitaciones_liberadas_rows, 'numero');
+        $habitaciones_liberadas_ids = array_map('intval', array_column($habitaciones_liberadas_rows, 'id'));
+
+        $sql = "SELECT numero FROM habitaciones
+                WHERE id IN ($placeholders)
+                AND hotel_id = ?
+                AND estado = 'ocupada'
+                ORDER BY numero";
+        $stmt = $db->query($sql, array_merge($habitaciones_ids, [$hotel_id]));
+        $habitaciones_ocupadas_otro_flujo = $stmt ? ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
         
         error_log("Números liberados: " . implode(', ', $habitaciones_liberadas));
         
         // Verificar cuántas habitaciones quedan ocupadas
-        $sql = "SELECT COUNT(*) as ocupadas 
-                FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h
-                    ON rh.habitacion_id = h.id
-                    AND h.hotel_id = rh.hotel_id
-                WHERE rh.reservacion_id = ? 
-                AND rh.hotel_id = ?
-                AND h.hotel_id = ?
-                AND h.estado = 'ocupada'";
-        $stmt = $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
-        $resultado = $stmt->fetch();
-        $habitaciones_ocupadas = $resultado['ocupadas'];
+        $habitaciones_restantes_ids = array_values(array_diff($habitaciones_validas, $habitaciones_ids));
+        $habitaciones_ocupadas = count($habitaciones_restantes_ids);
         
         error_log("Habitaciones que quedan ocupadas: $habitaciones_ocupadas");
         
         // Determinar si es check-out completo o parcial
-        $es_checkout_completo = ($habitaciones_ocupadas == 0);
+        $es_checkout_completo = empty($habitaciones_restantes_ids);
         
         // Preparar nota
         $usuario_nombre = $_SESSION['user_name'] ?? $_SESSION['usuario_nombre'] ?? 'Usuario';
         $nota = "\n\n[CHECK-OUT " . ($es_checkout_completo ? 'COMPLETO' : 'PARCIAL') . "] ";
         $nota .= date('Y-m-d H:i:s') . " - Por: " . $usuario_nombre;
-        $nota .= "\nHabitaciones liberadas: " . implode(', ', $habitaciones_liberadas);
+        $nota .= "\nHabitaciones procesadas: " . implode(', ', $habitaciones_procesadas);
+        if (!empty($habitaciones_liberadas)) {
+            $nota .= "\nHabitaciones enviadas a limpieza: " . implode(', ', $habitaciones_liberadas);
+        }
+        if (!empty($habitaciones_ocupadas_otro_flujo)) {
+            $nota .= "\nHabitaciones que siguen ocupadas por otra reservacion activa: " . implode(', ', $habitaciones_ocupadas_otro_flujo);
+        }
         
         if (!$es_checkout_completo) {
             $nota .= "\nHabitaciones que permanecen ocupadas: " . $habitaciones_ocupadas;
@@ -461,8 +483,10 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         return [
             'success' => true,
             'habitaciones_liberadas' => count($habitaciones_liberadas),
+            'habitaciones_liberadas_ids' => $habitaciones_liberadas_ids,
             'numeros_liberados' => $habitaciones_liberadas,
             'habitaciones_restantes' => $habitaciones_ocupadas,
+            'numeros_ocupadas_otro_flujo' => $habitaciones_ocupadas_otro_flujo,
             'checkout_completo' => $es_checkout_completo
         ];
         

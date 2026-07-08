@@ -65,7 +65,7 @@ class CopilotoService
         // 2) Reglas de datos (deterministas).
         $intent = $this->detectarIntent($norm, $hotelId);
         if ($intent !== null) {
-            $r = $this->responderIntent($hotelId, $intent);
+            $r = $this->responderIntent($hotelId, $intent, $norm);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intent, 0, 0);
             return $r + ['success' => true, 'fuente' => 'reglas'];
         }
@@ -106,6 +106,10 @@ class CopilotoService
         if ($tiene(['manana llega', 'llegan manana', 'quien llega manana', 'llegadas de manana', 'entradas de manana', 'reservas de manana'])) {
             return 'llegadas_manana';
         }
+        if (($tiene(['semana']) && $tiene(['ganancia', 'ingreso', 'vendi', 'gane', 'venta', 'utilidad']))
+            || $tiene(['como va la semana', 'como vamos esta semana', 'como va esta semana', 'que tal la semana'])) {
+            return 'ganancias_semana';
+        }
         if ($tiene(['esta semana', 'proximos dias', 'fin de semana', 'ocupacion de la semana', 'como pinta la semana', 'proximos 7'])) {
             return 'ocupacion_semana';
         }
@@ -125,6 +129,30 @@ class CopilotoService
         }
         if ($tiene(['ocupacion', 'cuartos libres', 'habitaciones libres', 'cuartos disponibles', 'habitaciones disponibles', 'cuanto tengo lleno', 'que tan lleno', 'disponibilidad hoy'])) {
             return 'ocupacion';
+        }
+        if ($tiene(['mejor o peor', 'mejor que el mes', 'peor que el mes', 'comparado con el mes', 'comparada con el mes', 'comparacion con el mes', 'contra el mes pasado', 'vs el mes pasado', 'versus el mes pasado', 'como voy comparado'])) {
+            return 'comparar_meses';
+        }
+        if ($tiene(['mejor dia', 'peor dia', 'dia mas fuerte', 'dia mas flojo', 'mejor jornada', 'mi mejor dia', 'dia que mas'])) {
+            return 'dia_top';
+        }
+        if ($tiene(['tarjeta', 'metodo de pago', 'metodos de pago', 'efectivo o tarjeta', 'como me pagan', 'como me pagaron'])) {
+            return 'pago_metodo';
+        }
+        if ($tiene(['en que gaste', 'en que gasto', 'en que se me va', 'mayores gastos', 'gastos mas grandes', 'categorias de gasto', 'donde se va el dinero', 'en que se gasta'])) {
+            return 'gastos_categoria';
+        }
+        if ($tiene(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', 'hoy', 'ayer', 'antier', 'anteayer'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'cuanto', 'como nos fue', 'como fue', 'como estuvo', 'como me fue', 'como nos'])) {
+            return 'ganancias_dia';
+        }
+        if ($tiene(['mes pasado', 'mes anterior'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro'])) {
+            return 'ganancias_mes_pasado';
+        }
+        if ($tiene(['este mes', 'mes en curso', 'mes actual', 'lo que va del mes', 'del mes'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro', 'cuanto llevo'])) {
+            return 'ganancias_mes_actual';
         }
         if ($tiene(['caja', 'efectivo', 'corte', 'cuanto llevo', 'cuanto hay en'])) {
             return 'caja';
@@ -149,7 +177,7 @@ class CopilotoService
         return null;
     }
 
-    private function responderIntent(int $hotelId, string $intent): array
+    private function responderIntent(int $hotelId, string $intent, string $norm = ''): array
     {
         switch ($intent) {
             case 'ocupacion':
@@ -286,6 +314,110 @@ class CopilotoService
                         ? 'No tienes cupones activos en este momento.'
                         : "Tienes **{$cu['n']} cupon(es) activo(s)**" . ($cu['codigos'] !== '' ? ': ' . $cu['codigos'] : '') . '.',
                     'enlace' => ['url' => 'motor-reservas/cupones', 'texto' => 'Ver cupones'],
+                ];
+
+            case 'ganancias_mes_pasado':
+                $g = $this->gananciasMesPasado($hotelId);
+                if (!$g['hay']) {
+                    return ['texto' => "No tengo movimientos de caja registrados del mes pasado ({$g['mes']} {$g['anio']}).", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $enlaceGan = $this->tieneModulo('reportes', $hotelId)
+                    ? ['url' => 'reportes', 'texto' => 'Ver reportes']
+                    : ['url' => 'caja', 'texto' => 'Ir a Caja'];
+                return [
+                    'texto' => "El mes pasado ({$g['mes']} {$g['anio']}) registraste **ingresos por \${$g['ingresos']}** y gastos por \${$g['gastos']}, "
+                        . "para una **ganancia neta de \${$g['neto']}** (ingresos menos gastos de caja).",
+                    'enlace' => $enlaceGan,
+                ];
+
+            case 'ganancias_mes_actual':
+                $ga = $this->gananciasMesActual($hotelId);
+                if (!$ga['hay']) {
+                    return ['texto' => "Aun no tienes movimientos de caja registrados este mes ({$ga['mes']} {$ga['anio']}).", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $enlaceGa = $this->tieneModulo('reportes', $hotelId)
+                    ? ['url' => 'reportes', 'texto' => 'Ver reportes']
+                    : ['url' => 'caja', 'texto' => 'Ir a Caja'];
+                return [
+                    'texto' => "En lo que va de {$ga['mes']} {$ga['anio']} llevas **ingresos por \${$ga['ingresos']}** y gastos por \${$ga['gastos']}, "
+                        . "para una **ganancia neta de \${$ga['neto']}** (al dia de hoy, ingresos menos gastos de caja).",
+                    'enlace' => $enlaceGa,
+                ];
+
+            case 'comparar_meses':
+                $cmp = $this->compararMesActualVsPasado($hotelId);
+                if (!$cmp['hayActual'] && !$cmp['hayPasado']) {
+                    return ['texto' => 'Todavia no tengo movimientos de caja de este mes ni del mismo tramo del mes pasado para compararte.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $dif = $cmp['netoActualNum'] - $cmp['netoPasadoNum'];
+                $pct = $cmp['netoPasadoNum'] > 0 ? round(abs($dif) / $cmp['netoPasadoNum'] * 100) : null;
+                $difFmt = number_format(abs($dif), 2);
+                if ($dif > 0) {
+                    $veredicto = "Vas **mejor**: \${$difFmt} mas de ganancia neta" . ($pct !== null ? " (+{$pct}%)" : '') . ' que a estas alturas del mes pasado.';
+                } elseif ($dif < 0) {
+                    $veredicto = "Vas **por debajo**: \${$difFmt} menos de ganancia neta" . ($pct !== null ? " (-{$pct}%)" : '') . ' que a estas alturas del mes pasado.';
+                } else {
+                    $veredicto = 'Vas **igual** que a estas alturas del mes pasado.';
+                }
+                return [
+                    'texto' => "Comparando los primeros {$cmp['dia']} dias del mes: en {$cmp['mesActual']} llevas **\${$cmp['netoActual']}** de ganancia neta, "
+                        . "contra **\${$cmp['netoPasado']}** en el mismo tramo de {$cmp['mesPasado']}.\n{$veredicto}",
+                    'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'ganancias_dia':
+                $dref = $this->resolverDiaReferido($norm);
+                if ($dref === null) {
+                    return ['texto' => 'No identifique de que dia me hablas. Prueba con "como nos fue el jueves" o "cuanto vendi ayer".', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $gd = $this->gananciasEntre($hotelId, $dref['fecha'], date('Y-m-d', strtotime($dref['fecha'] . ' +1 day')));
+                if (!$gd['hay']) {
+                    return ['texto' => "No tengo movimientos de caja registrados para {$dref['texto']}.", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                return [
+                    'texto' => ucfirst($dref['texto']) . " registraste **ingresos por \${$gd['ingresos']}** y gastos por \${$gd['gastos']}, para una **ganancia neta de \${$gd['neto']}**.",
+                    'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'dia_top':
+                $dt = $this->diasTopMes($hotelId);
+                if (!$dt['hay']) {
+                    return ['texto' => 'Aun no tengo movimientos de caja este mes para sacar tu mejor dia.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $txtDia = "Tu **mejor dia** de este mes fue el {$dt['mejorFecha']} con **\${$dt['mejorNeto']}** de ganancia neta.";
+                if ($dt['mejorFecha'] !== $dt['peorFecha']) {
+                    $txtDia .= " El mas flojo fue el {$dt['peorFecha']} (\${$dt['peorNeto']}).";
+                }
+                return ['texto' => $txtDia, 'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja']];
+
+            case 'ganancias_semana':
+                $gs = $this->gananciasEntre($hotelId, date('Y-m-d', strtotime('monday this week')), date('Y-m-d', strtotime('+1 day')));
+                if (!$gs['hay']) {
+                    return ['texto' => 'Aun no tengo movimientos de caja de esta semana.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                return [
+                    'texto' => "En lo que va de la semana llevas **ingresos por \${$gs['ingresos']}** y gastos por \${$gs['gastos']}, para una **ganancia neta de \${$gs['neto']}**.",
+                    'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'pago_metodo':
+                $pm = $this->ingresosPorMetodo($hotelId);
+                if (!$pm['hay']) {
+                    return ['texto' => "Aun no tengo ingresos registrados este mes ({$pm['mes']}) para separarlos por metodo.", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                return [
+                    'texto' => "Ingresos de {$pm['mes']} por metodo: **efectivo \${$pm['efectivo']}**, **tarjeta \${$pm['tarjeta']}**, transferencia \${$pm['transferencia']}.",
+                    'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'gastos_categoria':
+                $gc = $this->gastosPorCategoria($hotelId);
+                if (!$gc['hay']) {
+                    return ['texto' => "No tengo gastos registrados este mes ({$gc['mes']}).", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                return [
+                    'texto' => "Tus mayores gastos de {$gc['mes']}: " . implode(', ', $gc['items']) . '.',
+                    'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
                 ];
         }
 
@@ -613,12 +745,236 @@ class CopilotoService
         return ['n' => (int) ($fila['n'] ?? 0), 'monto' => number_format((float) ($fila['monto'] ?? 0), 2)];
     }
 
+    /**
+     * Suma ingresos, gastos y ganancia neta de movimientos_caja en el rango
+     * [desde, hasta) — misma fuente que Caja/Reportes. Solo lectura y por hotel.
+     */
+    private function gananciasEntre(int $hotelId, string $desde, string $hasta): array
+    {
+        $ingresos = 0.0;
+        $gastos = 0.0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT tipo, COALESCE(SUM(monto), 0) AS total
+                 FROM movimientos_caja
+                 WHERE hotel_id = ? AND created_at >= ? AND created_at < ?
+                 GROUP BY tipo"
+            );
+            $stmt->execute([$hotelId, $desde, $hasta]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                if ((string) $fila['tipo'] === 'ingreso') {
+                    $ingresos = (float) $fila['total'];
+                } elseif ((string) $fila['tipo'] === 'gasto') {
+                    $gastos = (float) $fila['total'];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error ganancias: ' . $e->getMessage());
+        }
+
+        return [
+            'hay' => ($ingresos > 0 || $gastos > 0),
+            'ingresos' => number_format($ingresos, 2),
+            'gastos' => number_format($gastos, 2),
+            'neto' => number_format($ingresos - $gastos, 2),
+            'neto_num' => $ingresos - $gastos,
+        ];
+    }
+
+    /** Ingresos/gastos/neto del MES CALENDARIO ANTERIOR. */
+    private function gananciasMesPasado(int $hotelId): array
+    {
+        $ref = strtotime('first day of last month');
+
+        return $this->gananciasEntre($hotelId, date('Y-m-01', $ref), date('Y-m-01'))
+            + ['mes' => $this->nombreMes((int) date('n', $ref)), 'anio' => date('Y', $ref)];
+    }
+
+    /** Ingresos/gastos/neto del MES EN CURSO, del dia 1 hasta hoy inclusive. */
+    private function gananciasMesActual(int $hotelId): array
+    {
+        // 'hasta' es manana (exclusivo) para incluir todo lo de hoy.
+        return $this->gananciasEntre($hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day')))
+            + ['mes' => $this->nombreMes((int) date('n')), 'anio' => date('Y')];
+    }
+
+    /**
+     * Compara la ganancia neta del mes en curso contra el MISMO tramo del mes
+     * pasado (primeros N dias, N = dia de hoy), para una lectura justa de ritmo.
+     */
+    private function compararMesActualVsPasado(int $hotelId): array
+    {
+        $diaHoy = (int) date('j');
+        $refLM = strtotime('first day of last month');
+
+        $actual = $this->gananciasEntre($hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day')));
+        // Mismo tramo del mes pasado, sin invadir el mes en curso (cap en el dia 1 de este mes).
+        $hastaLM = date('Y-m-d', min(strtotime("+{$diaHoy} days", $refLM), strtotime(date('Y-m-01'))));
+        $pasado = $this->gananciasEntre($hotelId, date('Y-m-01', $refLM), $hastaLM);
+
+        return [
+            'dia' => $diaHoy,
+            'mesActual' => $this->nombreMes((int) date('n')),
+            'mesPasado' => $this->nombreMes((int) date('n', $refLM)),
+            'netoActual' => $actual['neto'],
+            'netoPasado' => $pasado['neto'],
+            'netoActualNum' => $actual['neto_num'],
+            'netoPasadoNum' => $pasado['neto_num'],
+            'hayActual' => $actual['hay'],
+            'hayPasado' => $pasado['hay'],
+        ];
+    }
+
+    /**
+     * Resuelve una referencia de dia en la pregunta a una fecha concreta:
+     * un dia de la semana ("jueves") -> su ocurrencia mas reciente (hoy si aplica,
+     * si no el ultimo pasado); tambien "ayer" y "antier". Null si no reconoce.
+     */
+    private function resolverDiaReferido(string $norm): ?array
+    {
+        $dias = ['lunes' => 'Monday', 'martes' => 'Tuesday', 'miercoles' => 'Wednesday', 'jueves' => 'Thursday', 'viernes' => 'Friday', 'sabado' => 'Saturday', 'domingo' => 'Sunday'];
+        foreach ($dias as $es => $en) {
+            if (strpos($norm, $es) !== false) {
+                $ts = strtolower(date('l')) === strtolower($en) ? strtotime('today') : strtotime("last {$en}");
+                return ['fecha' => date('Y-m-d', $ts), 'texto' => "el {$es} " . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts))];
+            }
+        }
+        if (strpos($norm, 'hoy') !== false) {
+            $ts = strtotime('today');
+            return ['fecha' => date('Y-m-d', $ts), 'texto' => 'hoy (' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts)) . ')'];
+        }
+        // 'antier'/'anteayer' antes que 'ayer' (anteayer contiene 'ayer').
+        if (strpos($norm, 'antier') !== false || strpos($norm, 'anteayer') !== false) {
+            $ts = strtotime('-2 days');
+            return ['fecha' => date('Y-m-d', $ts), 'texto' => 'antier (' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts)) . ')'];
+        }
+        if (strpos($norm, 'ayer') !== false) {
+            $ts = strtotime('-1 day');
+            return ['fecha' => date('Y-m-d', $ts), 'texto' => 'ayer (' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts)) . ')'];
+        }
+        return null;
+    }
+
+    /** Fecha 'Y-m-d' a texto corto en espanol: "jueves 3 de julio". */
+    private function fechaCorta(string $ymd): string
+    {
+        $ts = strtotime($ymd);
+        $diasES = ['Monday' => 'lunes', 'Tuesday' => 'martes', 'Wednesday' => 'miercoles', 'Thursday' => 'jueves', 'Friday' => 'viernes', 'Saturday' => 'sabado', 'Sunday' => 'domingo'];
+        return ($diasES[date('l', $ts)] ?? '') . ' ' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts));
+    }
+
+    /** Mejor y peor dia (por ganancia neta) del mes en curso. */
+    private function diasTopMes(int $hotelId): array
+    {
+        $porDia = [];
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT DATE(created_at) f, SUM(CASE WHEN tipo='ingreso' THEN monto ELSE -monto END) neto
+                 FROM movimientos_caja
+                 WHERE hotel_id = ? AND created_at >= ? AND created_at < ?
+                 GROUP BY DATE(created_at)"
+            );
+            $stmt->execute([$hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day'))]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $porDia[(string) $r['f']] = (float) $r['neto'];
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error dias top: ' . $e->getMessage());
+        }
+
+        if (empty($porDia)) {
+            return ['hay' => false];
+        }
+
+        $mejorF = array_keys($porDia, max($porDia))[0];
+        $peorF = array_keys($porDia, min($porDia))[0];
+
+        return [
+            'hay' => true,
+            'mejorFecha' => $this->fechaCorta($mejorF),
+            'mejorNeto' => number_format($porDia[$mejorF], 2),
+            'peorFecha' => $this->fechaCorta($peorF),
+            'peorNeto' => number_format($porDia[$peorF], 2),
+        ];
+    }
+
+    /** Ingresos del mes en curso separados por metodo de pago. */
+    private function ingresosPorMetodo(int $hotelId): array
+    {
+        $out = ['efectivo' => 0.0, 'tarjeta' => 0.0, 'transferencia' => 0.0];
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT metodo_pago, COALESCE(SUM(monto), 0) t
+                 FROM movimientos_caja
+                 WHERE hotel_id = ? AND tipo = 'ingreso' AND created_at >= ? AND created_at < ?
+                 GROUP BY metodo_pago"
+            );
+            $stmt->execute([$hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day'))]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $out[(string) $r['metodo_pago']] = (float) $r['t'];
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error metodo pago: ' . $e->getMessage());
+        }
+
+        return [
+            'hay' => array_sum($out) > 0,
+            'efectivo' => number_format($out['efectivo'], 2),
+            'tarjeta' => number_format($out['tarjeta'], 2),
+            'transferencia' => number_format($out['transferencia'], 2),
+            'mes' => $this->nombreMes((int) date('n')),
+        ];
+    }
+
+    /** Top 3 categorias de gasto del mes en curso. */
+    private function gastosPorCategoria(int $hotelId): array
+    {
+        $items = [];
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT categoria, COALESCE(SUM(monto), 0) t
+                 FROM movimientos_caja
+                 WHERE hotel_id = ? AND tipo = 'gasto' AND created_at >= ? AND created_at < ?
+                 GROUP BY categoria ORDER BY t DESC LIMIT 3"
+            );
+            $stmt->execute([$hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day'))]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $items[] = ucfirst((string) $r['categoria']) . ' $' . number_format((float) $r['t'], 2);
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error gastos categoria: ' . $e->getMessage());
+        }
+
+        return ['hay' => !empty($items), 'items' => $items, 'mes' => $this->nombreMes((int) date('n'))];
+    }
+
+    private function nombreMes(int $m): string
+    {
+        $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
+        return $meses[$m] ?? (string) $m;
+    }
+
     // ───────────────────────── Ayuda (FAQ deterministo) ─────────────────────────
 
     private function detectarFaq(string $norm, int $hotelId): ?array
     {
         // 'modulo' => null significa seccion core (siempre disponible). Con clave
         // de modulo, se responde con los pasos SOLO si el hotel lo tiene activo.
+
+        // Preguntas por la CIFRA de un periodo ("ganancias/ingresos del mes pasado")
+        // son dato, no ayuda: se dejan pasar a detectarIntent para dar el numero
+        // real (evita que "cuanto vendi el mes pasado" caiga en la FAQ de Reportes).
+        if (preg_match('/(mes pasado|mes anterior|este mes|mes en curso|mes actual|del mes)/', $norm)
+            && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|factur|cuanto (hice|entro))/', $norm)) {
+            return null;
+        }
+        // Referencia a un dia concreto ("el jueves", "ayer") + dato de dinero/desempeno
+        // tambien es intent (evita que "cuanto vendi ayer" caiga en la FAQ de Reportes).
+        if (preg_match('/(lunes|martes|miercoles|jueves|viernes|sabado|domingo|hoy|ayer|antier|anteayer)/', $norm)
+            && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|cuanto|como nos|como fue|como estuvo|como me fue)/', $norm)) {
+            return null;
+        }
+
         $faqs = [
             ['clave' => 'corte_caja', 'modulo' => null, 'nombre' => 'Caja',
              'palabras' => ['como hago un corte', 'como cierro la caja', 'como hago el corte', 'cerrar caja'],
@@ -790,7 +1146,7 @@ class CopilotoService
             . "\n- Nunca inventes cifras: si un numero no esta en los datos, di que no lo tienes a la mano y sugiere donde verlo."
             . "\n- Si preguntan como hacer algo, da los pasos en 2-4 lineas y menciona la seccion del sistema."
             . "\n- Eres de solo lectura: nunca afirmes haber hecho un cambio; a lo mucho sugieres la accion."
-            . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin explicar que eres una IA."
+            . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin mencionar que usas un modelo externo."
             . "\n- Montos con formato \$1,234.56.";
 
         $usuario = "Datos en vivo del hotel (calculados por el servidor, son la unica fuente de cifras):\n"
@@ -819,6 +1175,15 @@ class CopilotoService
             "- Checkouts vencidos: {$venc}",
             $c['abierto'] ? "- Caja: corte abierto, efectivo esperado \${$c['esperado']}" : "- Caja: sin corte abierto",
         ];
+
+        $gAct = $this->gananciasMesActual($hotelId);
+        if ($gAct['hay']) {
+            $lineas[] = "- Este mes en curso ({$gAct['mes']} {$gAct['anio']}, al dia de hoy): ingresos \${$gAct['ingresos']}, gastos \${$gAct['gastos']}, ganancia neta \${$gAct['neto']}";
+        }
+        $g = $this->gananciasMesPasado($hotelId);
+        if ($g['hay']) {
+            $lineas[] = "- Mes pasado ({$g['mes']} {$g['anio']}): ingresos \${$g['ingresos']}, gastos \${$g['gastos']}, ganancia neta \${$g['neto']}";
+        }
 
         $manana = $this->reservasPorFecha($hotelId, 'entrada', 1);
         $lineas[] = "- Llegadas de manana: {$manana['total']}";
@@ -872,7 +1237,7 @@ class CopilotoService
             'forecast' => "- Proyeccion de ocupacion 30/60/90 dias: seccion Forecast.",
             'night_audit' => "- Cierre nocturno (no-shows, checkouts vencidos): seccion Night audit.",
             'auditoria' => "- Bitacora de quien hizo que: seccion Bitacora (solo gerencia).",
-            'ia_ejecutiva' => "- Resumen gerencial diario narrado: seccion Asesor IA.",
+            'ia_ejecutiva' => "- Resumen gerencial diario narrado: seccion Asesor inteligente.",
             'inventario' => "- Inventario: productos, existencias y movimientos, con alertas de stock bajo.",
             'tareas' => "- Tareas operativas asignables al personal: seccion Tareas.",
             'personal' => "- Personal: trabajadores, asistencia, anticipos/prestamos y pago de nomina: seccion Personal.",
@@ -973,6 +1338,8 @@ class CopilotoService
             . "• \"¿cuantas habitaciones libres tengo?\" o \"¿quien llega hoy/manana?\"\n"
             . "• \"¿como pinta la semana?\" o \"¿quien esta hospedado?\"\n"
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
+            . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
+            . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 

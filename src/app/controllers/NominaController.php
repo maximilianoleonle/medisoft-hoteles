@@ -14,6 +14,7 @@ require_once __DIR__ . '/../services/NominaSalarioService.php';
 require_once __DIR__ . '/../services/NominaIncidenciaService.php';
 require_once __DIR__ . '/../services/NominaCalculoService.php';
 require_once __DIR__ . '/../services/NominaCierreService.php';
+require_once __DIR__ . '/../models/Trabajador.php';
 
 class NominaController extends Controller {
 
@@ -589,6 +590,9 @@ class NominaController extends Controller {
             [$periodoId, $hotelId]
         );
         $detalles = $st !== false ? $st->fetchAll() : [];
+        $conciliado = (new Trabajador())->conciliarNominaPeriodoSnapshotConPagosCaja($periodo, $detalles, $hotelId);
+        $periodo = $conciliado['periodo'];
+        $detalles = $conciliado['detalles'];
 
         $st = $db->query(
             "SELECT * FROM nomina_periodo_conceptos WHERE periodo_id = ? AND hotel_id = ? ORDER BY detalle_id ASC, tipo ASC, id ASC",
