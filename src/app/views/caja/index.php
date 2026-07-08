@@ -934,10 +934,10 @@ $cash_methods = [
                 </div>
             </div>
             <div class="cj-resh-acts">
-                <button type="button" onclick="mostrarModalIngreso()" class="cj-act-btn cj-act-income">
+                <button id="cop-ancla-ingreso" type="button" onclick="mostrarModalIngreso()" class="cj-act-btn cj-act-income">
                     <i class="fas fa-plus"></i> Registrar Ingreso
                 </button>
-                <button type="button" onclick="mostrarModalGasto()" class="cj-act-btn cj-act-expense">
+                <button id="cop-ancla-gasto" type="button" onclick="mostrarModalGasto()" class="cj-act-btn cj-act-expense">
                     <i class="fas fa-minus"></i> Registrar Gasto
                 </button>
                 <a id="cop-ancla-corte" href="<?= url('caja/corte') ?>" class="cj-act-btn cj-act-corte">

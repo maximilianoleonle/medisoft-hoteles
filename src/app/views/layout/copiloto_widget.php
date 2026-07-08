@@ -20,8 +20,9 @@ $copU = function ($ruta) { return function_exists('url') ? url($ruta) : '/' . lt
 $copMod = function ($clave) { return function_exists('hotel_menu_module_enabled') ? hotel_menu_module_enabled($clave) : true; };
 
 $copSecciones = [
-    // Core: siempre disponibles.
-    'caja' => $copU('caja') . '#cop-ancla-corte',
+    // Core: siempre disponibles. Las negritas inline llevan a la pantalla; los
+    // anclas de accion exacta los pone cada respuesta del copiloto en su enlace.
+    'caja' => $copU('caja'),
     'reservaciones' => $copU('reservaciones'),
     'habitaciones' => $copU('habitaciones'),
 ];
