@@ -231,7 +231,7 @@ $geRenderVehicleInlineFields = function () use ($geVehicleVisibleFields, $geGues
 ?>
 
 <style id="guest-edit-redesign">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .guest-edit-page {
     --ge-brand: var(--brand-primary, #1B2746);

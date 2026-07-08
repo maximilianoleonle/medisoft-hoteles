@@ -78,7 +78,7 @@ $visibles = count($compras);
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cp-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, var(--cp-ivory-2), var(--cp-ivory));
 }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .purchases-page .cp-shell { display: grid; gap: 14px; }
 

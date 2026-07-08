@@ -25,10 +25,10 @@ $errorThemeColor = function_exists('hotel_branding_hex')
     <meta name="theme-color" content="<?= htmlspecialchars($errorThemeColor, ENT_QUOTES, 'UTF-8') ?>">
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="<?= asset('vendor/tailwind/tailwindcdn.js') ?>"></script>
 
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">

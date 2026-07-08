@@ -195,7 +195,7 @@ $noches = $rdNoches;
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800;900&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 /* Variables CSS */
 :root {
@@ -6552,7 +6552,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
 
 <!-- Scripts -->
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 
 
 

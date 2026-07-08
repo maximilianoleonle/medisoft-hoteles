@@ -224,7 +224,7 @@ $tiene_limpieza = count($habitaciones_limpieza) > 0;
    VISUAL REDESIGN — Aesthetic Enhancement Layer
    Only CSS changes. Zero functionality modifications.
    ═══════════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca2.css') ?>');
 
 :root {
     --primary: #4A6741;
@@ -4964,7 +4964,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
      Capa scopeada a .habitaciones-view para ganar especificidad sin tocar markup.
      ════════════════════════════════════════════════════════════════════ -->
 <style id="hb-boutique-refinement">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .habitaciones-view{
   /* Identidad del hotel (fallback boutique navy/oro) */
@@ -14527,7 +14527,20 @@ function mostrarModalSaldoPendiente(data) {
 // ========================================
 // CHECK-OUT RÁPIDO (todas las habitaciones)
 // ========================================
-function ejecutarCheckOutRapido(reservacionId) {
+async function ejecutarCheckOutRapido(reservacionId) {
+    const formData = new FormData();
+    formData.append('csrf_token', '<?= csrf_token() ?>');
+    formData.append('hora_salida', new Date().toTimeString().slice(0, 8));
+
+    // Selector opcional de responsable de limpieza (cancelable)
+    if (window.CheckoutLimpieza) {
+        const asignaciones = await CheckoutLimpieza.seleccionar({
+            infoUrl: `<?= url('api/reservaciones') ?>/${reservacionId}/limpieza-personal`
+        });
+        if (asignaciones === null) return; // usuario cancelo el check-out
+        CheckoutLimpieza.aplicarAFormData(formData, asignaciones);
+    }
+
     Swal.fire({
         title: 'Procesando Check-out...',
         html: 'Registrando salida del huésped',
@@ -14537,10 +14550,6 @@ function ejecutarCheckOutRapido(reservacionId) {
             Swal.showLoading();
         }
     });
-
-    const formData = new FormData();
-    formData.append('csrf_token', '<?= csrf_token() ?>');
-    formData.append('hora_salida', new Date().toTimeString().slice(0, 8));
 
     const endpoint = `<?= url('reservaciones/check-out-rapido/') ?>${reservacionId}`;
 
@@ -14723,17 +14732,7 @@ function checkOutDirectoIndex(reservacionId, habitacionInfo) {
 
 
 // Ejecutar el check-out con las habitaciones seleccionadas
-function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
-    Swal.fire({
-        title: 'Procesando Check-out...',
-        html: 'Registrando salida del huésped',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        willOpen: () => {
-            Swal.showLoading();
-        }
-    });
-
+async function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
     const formData = new FormData();
     formData.append('csrf_token', '<?= csrf_token() ?>');
     formData.append('hora_salida', new Date().toTimeString().slice(0, 8));
@@ -14744,6 +14743,26 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
             formData.append('habitaciones[]', id);
         });
     }
+
+    // Selector opcional de responsable de limpieza (cancelable)
+    if (window.CheckoutLimpieza) {
+        const asignaciones = await CheckoutLimpieza.seleccionar({
+            infoUrl: `<?= url('api/reservaciones') ?>/${reservacionId}/limpieza-personal`,
+            habitacionesIds: habitacionesIds
+        });
+        if (asignaciones === null) return; // usuario cancelo el check-out
+        CheckoutLimpieza.aplicarAFormData(formData, asignaciones);
+    }
+
+    Swal.fire({
+        title: 'Procesando Check-out...',
+        html: 'Registrando salida del huésped',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
 
     // Usar el endpoint de check-out parcial
     const endpoint = `<?= url('reservaciones/check-out-parcial/') ?>${reservacionId}`;
@@ -15447,4 +15466,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>

@@ -62,7 +62,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 </style><style>
 .exec-page{--exec-brand:var(--brand-primary,#1B2746);--exec-brand-2:var(--brand-secondary,#0F172A);--exec-accent:var(--brand-accent,#BD9441);--exec-text:var(--brand-text,#172033);--exec-muted:var(--brand-muted,#64748B);--exec-border:var(--brand-border,#E5E7EB);--exec-soft:color-mix(in srgb,var(--exec-brand) 5%,#F8FAFC);--exec-accent-soft:color-mix(in srgb,var(--exec-accent) 12%,#FFFFFF);max-width:1440px;margin:0 auto;padding:24px;color:var(--exec-text)}
 .exec-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--exec-border)}

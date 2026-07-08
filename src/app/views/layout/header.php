@@ -237,23 +237,18 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="apple-touch-icon" sizes="384x384" href="<?= asset('img/icons/icon-384x384.png') ?>">
     <link rel="apple-touch-icon" sizes="512x512" href="<?= htmlspecialchars($layoutPwaIcon512Url ?: asset('img/icons/icon-512x512.png'), ENT_QUOTES, 'UTF-8') ?>">
     
-    <!-- Preconnect para optimización -->
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <!-- Librerías self-hosted (fase 6 offline): sin dependencia de CDNs externos -->
+    <!-- Tailwind CSS (runtime, self-hosted) -->
+    <script src="<?= asset('vendor/tailwind/tailwindcdn.js') ?>"></script>
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
+
     <!-- Fix para layout del dashboard - Cargar al final -->
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dashboard-layout-fix.css') : asset('css/dashboard-layout-fix.css') ?>">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Fuentes (Playfair Display + Inter) self-hosted -->
+    <link href="<?= asset('vendor/fonts/fonts.css') ?>" rel="stylesheet">
     
     <!-- CSS del sidebar -->
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-styles.css') : asset('css/sidebar-styles.css') ?>">
@@ -262,10 +257,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/performance-optimization.css') : asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
     <!-- Chart.js para gráficas -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
     
     <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
     
     <!-- Custom Configuration -->
     <script>
@@ -917,8 +912,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
         
         <!-- Acciones: sync + install -->
         <div class="mobile-header-actions" style="display:flex;align-items:center;gap:6px;">
-            <!-- Indicador de sincronización -->
-            <div id="pwa-sync-indicator" title="Estado de conexión">
+            <!-- Indicador de sincronización (toca para ver operaciones offline) -->
+            <div id="pwa-sync-indicator" title="Operaciones offline"
+                 style="cursor:pointer;"
+                 onclick="window.location.href='<?= url('offline/pendientes') ?>'">
                 <i class="fas fa-sync-alt"></i>
                 <span id="pwa-queue-badge" class="hidden">0</span>
             </div>

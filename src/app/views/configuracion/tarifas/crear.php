@@ -319,7 +319,7 @@ input:checked + .toggle-slider:before {
 </style>
 
 <style id="tarifa-create-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .tarifa-create-page {
     --tar-brand: var(--brand-primary, #1B2746);
@@ -1711,4 +1711,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>

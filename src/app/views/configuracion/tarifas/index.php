@@ -9,16 +9,16 @@ if (empty($tarifaRoomTypeLabels) && class_exists('Habitacion')) {
 ?>
 
 <!-- ── Librerías ─────────────────────────── -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="<?= asset('vendor/bootstrap/bootstrap.min.css') ?>">
+<link rel="stylesheet" href="<?= asset('vendor/datatables/dataTables.bootstrap4.min.css') ?>">
+<link rel="stylesheet" href="<?= asset('vendor/toastr/toastr.min.css') ?>">
+<link href="<?= asset('vendor/tailwind/tailwind-2.2.19.min.css') ?>" rel="stylesheet">
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="<?= asset('vendor/jquery/jquery-3.6.0.min.js') ?>"></script>
+<script src="<?= asset('vendor/bootstrap/bootstrap.bundle.min.js') ?>"></script>
+<script src="<?= asset('vendor/datatables/jquery.dataTables.min.js') ?>"></script>
+<script src="<?= asset('vendor/datatables/dataTables.bootstrap4.min.js') ?>"></script>
+<script src="<?= asset('vendor/toastr/toastr.min.js') ?>"></script>
 
 <style>
 /* ══════════════════════════════════════════
@@ -272,7 +272,7 @@ input.toggle-activo:checked ~ div {
 
 <!-- ════════════════ TARIFAS PAGE ══════════════════════════ -->
 <style id="tarifas-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .tar-page {
     --tar-brand: var(--brand-primary, #1B2746);

@@ -295,7 +295,7 @@ $previewNominaQuery = http_build_query([
 </style>
 
 <style id="nomina-periodos-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 .nomina-periodos {
     --period-brand: var(--brand-primary, #1B2746) !important;
     --period-accent: var(--brand-accent, #BD9441) !important;

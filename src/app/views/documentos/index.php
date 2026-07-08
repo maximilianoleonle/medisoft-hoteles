@@ -119,7 +119,7 @@ $visibles = count($documentos);
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--dc-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, var(--dc-ivory-2), var(--dc-ivory));
 }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .docs-page .dc-shell { display: grid; gap: 14px; min-width: 0; max-width: 100%; }
 .docs-page .dc-hero-section { display: flex; flex-direction: column; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }

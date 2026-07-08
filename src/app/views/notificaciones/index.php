@@ -138,7 +138,7 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .ntx-page {
     --ntx-primary: var(--brand-primary, #1f3f46);

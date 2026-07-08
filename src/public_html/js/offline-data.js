@@ -20,7 +20,10 @@
   // Intervalo de snapshot automático (15 min mientras hay internet)
   const SNAPSHOT_INTERVALO_MS = 15 * 60 * 1000;
   const BUSQUEDA_GLOBAL_LIMITE = 40;
-  const DB_VERSION = 4;
+  // Rango de reservaciones a cachear (hoy + N días) para poder validar
+  // disponibilidad localmente al crear reservaciones sin internet
+  const RESERVACIONES_DIAS_SNAPSHOT = 30;
+  const DB_VERSION = 5;
   let missingContextWarned = false;
 
   function sanitizeStorageScope(value) {
@@ -92,6 +95,20 @@
         }
         if (!db.objectStoreNames.contains('reservaciones_busqueda')) {
           db.createObjectStore('reservaciones_busqueda', { keyPath: 'id' });
+        }
+        // v5: espejo defensivo de los stores que crea pwa.js
+        if (!db.objectStoreNames.contains('caja')) {
+          db.createObjectStore('caja', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('caja_movimientos')) {
+          const movStore = db.createObjectStore('caja_movimientos', { keyPath: 'id' });
+          movStore.createIndex('tipo', 'tipo');
+        }
+        if (!db.objectStoreNames.contains('caja_categorias')) {
+          db.createObjectStore('caja_categorias', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('tarifas_incrementos')) {
+          db.createObjectStore('tarifas_incrementos', { keyPath: 'id' });
         }
       };
       req.onsuccess = e => resolve(e.target.result);
@@ -266,8 +283,8 @@
   }
 
   /**
-   * Descarga reservaciones de hoy + mañana y las guarda en IndexedDB.
-   * Actualiza meta.ultima_sync_reservaciones.
+   * Descarga reservaciones de hoy + los próximos RESERVACIONES_DIAS_SNAPSHOT
+   * días y las guarda en IndexedDB. Actualiza meta.ultima_sync_reservaciones.
    */
   async function capturarReservaciones() {
     if (!hasOfflineStorageContext()) {
@@ -277,7 +294,7 @@
     if (!navigator.onLine) return;
 
     try {
-      const res  = await fetch(BASE + '/api/reservaciones/hoy', {
+      const res  = await fetch(`${BASE}/api/reservaciones/hoy?dias=${RESERVACIONES_DIAS_SNAPSHOT}`, {
         credentials: 'same-origin',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
       });
@@ -392,13 +409,107 @@
     }
   }
 
-  /** Captura ambos snapshots en paralelo. */
+  /**
+   * Descarga el estado de la caja (corte abierto, resumen, movimientos y
+   * categorías) para poder VER la caja sin internet. Solo lectura: los
+   * registros de dinero siguen siendo online-only.
+   */
+  async function capturarCaja() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
+    if (!navigator.onLine) return;
+
+    try {
+      const res = await fetch(BASE + '/api/caja/snapshot', {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+      if (!json.success) return;
+
+      await _txPut('caja', {
+        key: 'corte_actual',
+        corte: json.corte || null,
+        resumen: json.resumen || null,
+        generado_at: json.generado_at || null,
+        cached_at: new Date().toISOString(),
+      });
+
+      await _txClear('caja_movimientos');
+      for (const mov of (json.movimientos || [])) {
+        if (mov && mov.id) {
+          await _txPut('caja_movimientos', { ...mov, id: Number(mov.id) });
+        }
+      }
+
+      await _txClear('caja_categorias');
+      for (const cat of (json.categorias || [])) {
+        if (cat && cat.id) {
+          await _txPut('caja_categorias', { ...cat, id: Number(cat.id) });
+        }
+      }
+
+      await _txPut('meta', {
+        key: 'ultima_sync_caja',
+        valor: new Date().toISOString(),
+        corte_abierto: Boolean(json.corte),
+        total_movimientos: (json.movimientos || []).length,
+      });
+
+      console.log(`[OfflineData] Caja cacheada: ${(json.movimientos || []).length} movimientos`);
+    } catch (err) {
+      console.warn('[OfflineData] No se pudo capturar caja:', err.message);
+    }
+  }
+
+  /** Descarga los incrementos de tarifa activos para cálculo local de precios. */
+  async function capturarTarifas() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
+    if (!navigator.onLine) return;
+
+    try {
+      const res = await fetch(BASE + '/api/tarifas/incrementos', {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+      if (!json.success || !Array.isArray(json.incrementos_activos)) return;
+
+      await _txClear('tarifas_incrementos');
+      for (const inc of json.incrementos_activos) {
+        if (inc && inc.id) {
+          await _txPut('tarifas_incrementos', { ...inc, id: Number(inc.id) });
+        }
+      }
+
+      await _txPut('meta', {
+        key: 'ultima_sync_tarifas',
+        valor: new Date().toISOString(),
+        total: json.incrementos_activos.length,
+      });
+    } catch (err) {
+      console.warn('[OfflineData] No se pudo capturar tarifas:', err.message);
+    }
+  }
+
+  /** Captura todos los snapshots en paralelo. */
   async function capturarSnapshots() {
     await Promise.allSettled([
       capturarHabitaciones(),
       capturarReservaciones(),
       capturarHuespedes(),
       capturarIndiceGlobal(),
+      capturarCaja(),
+      capturarTarifas(),
     ]);
     _actualizarUITimestamp();
   }
@@ -515,9 +626,11 @@
   async function guardarHuespedes(huespedes = []) {
     for (const huesped of huespedes) {
       if (huesped && huesped.id) {
+        // Los huespedes creados offline usan id temporal string (tmp_hue_*)
+        const idNumerico = Number(huesped.id);
         await _txPut('huespedes', {
           ...huesped,
-          id: Number(huesped.id),
+          id: Number.isFinite(idNumerico) && idNumerico > 0 ? idNumerico : huesped.id,
           cached_at: new Date().toISOString(),
         });
       }
@@ -576,6 +689,87 @@
       .slice(0, BUSQUEDA_GLOBAL_LIMITE);
   }
 
+  /**
+   * Devuelve el snapshot de caja: corte abierto, resumen, movimientos y
+   * categorías. Si hay internet actualiza primero; offline devuelve la copia.
+   */
+  async function obtenerCajaSnapshot() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return null;
+    }
+    if (navigator.onLine) await capturarCaja();
+
+    const [estado, movimientos, categorias, meta] = await Promise.all([
+      _txGet('caja', 'corte_actual'),
+      _txGetAll('caja_movimientos').catch(() => []),
+      _txGetAll('caja_categorias').catch(() => []),
+      _txGet('meta', 'ultima_sync_caja').catch(() => null),
+    ]);
+
+    return {
+      corte: estado?.corte || null,
+      resumen: estado?.resumen || null,
+      movimientos: movimientos.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))),
+      categorias,
+      cached_at: estado?.cached_at || null,
+      ultima_sync: meta?.valor || null,
+    };
+  }
+
+  /**
+   * Verifica contra el snapshot local (reservaciones de hoy + ~30 días) si las
+   * habitaciones chocan con otra reservación en el rango de fechas dado.
+   * Devuelve la lista de conflictos [{habitacion_id, reservacion_id, huesped_nombre, fechas}].
+   * OJO: es una validación de "mejor esfuerzo" con datos de hasta 15 min de
+   * atraso — el servidor revalida SIEMPRE al sincronizar.
+   */
+  async function verificarDisponibilidadLocal(habitacionIds = [], fechaEntrada, fechaSalida, excluirId = null) {
+    const ids = normalizarIdsHabitaciones(habitacionIds);
+    if (!ids.length || !fechaEntrada || !fechaSalida) return [];
+
+    const [reservacionesDia, reservacionesIndice] = await Promise.all([
+      _txGetAll('reservaciones').catch(() => []),
+      _txGetAll('reservaciones_busqueda').catch(() => []),
+    ]);
+
+    const vistas = new Set();
+    const conflictos = [];
+
+    for (const r of [...reservacionesDia, ...reservacionesIndice]) {
+      if (!r || vistas.has(String(r.id))) continue;
+      vistas.add(String(r.id));
+
+      if (excluirId && String(r.id) === String(excluirId)) continue;
+      if (!['confirmada', 'checked_in'].includes(String(r.estado || ''))) continue;
+      if (!traslapa(fechaEntrada, fechaSalida, r.fecha_entrada, r.fecha_salida)) continue;
+
+      const habsReservadas = normalizarIdsHabitaciones(r.habitaciones_ids);
+      for (const id of ids) {
+        if (habsReservadas.includes(id)) {
+          conflictos.push({
+            habitacion_id: id,
+            reservacion_id: r.id,
+            huesped_nombre: r.huesped_nombre || 'Huésped',
+            fechas: `${r.fecha_entrada} → ${r.fecha_salida}`,
+          });
+        }
+      }
+    }
+
+    return conflictos;
+  }
+
+  /** Categorías de movimientos de caja cacheadas (para formularios offline). */
+  function obtenerCategoriasCaja() {
+    return _txGetAll('caja_categorias');
+  }
+
+  /** Incrementos de tarifa activos cacheados (para cálculo local de precios). */
+  function obtenerIncrementosTarifa() {
+    return _txGetAll('tarifas_incrementos');
+  }
+
   /** Devuelve el metadato de última sincronización para la UI. */
   async function obtenerMetaSync() {
     const hab = await abrirDB().then(db => new Promise((resolve, reject) => {
@@ -600,10 +794,11 @@
   /**
    * Encola una operación para sincronizar con el servidor.
    *
-   * @param {string} tipo     - 'checkin' | 'checkout' | 'cambiar_estado_habitacion' | 'crear_reservacion'
-   *                            (pago_caja/gasto_caja ya NO se encolan: el dinero es online-only
-   *                            y el servidor los rechaza en /api/sync)
-   * @param {object} payload  - Datos específicos del tipo (ver ApiController::syncAction)
+   * @param {string} tipo     - 'checkin' | 'checkout' | 'cambiar_estado_habitacion' |
+   *                            'crear_reservacion' | 'crear_huesped' | 'pago_caja' | 'gasto_caja'
+   *                            (el dinero se sincroniza con candados desde 2026-07-08:
+   *                            el servidor lo rechaza si el corte de caja cambió)
+   * @param {object} payload  - Datos específicos del tipo (ver Sync.php)
    * @param {string} [label]  - Descripción legible para mostrar en UI
    * @returns {string}        - UUID de la operación creada
    */
@@ -641,6 +836,56 @@
   /** Devuelve todas las operaciones (para panel de estado). */
   function obtenerTodasOperaciones() {
     return _txGetAll('operaciones_offline');
+  }
+
+  /**
+   * Reencola una operación marcada con error para intentar de nuevo.
+   * Devuelve true si la operación existía y se reencoló.
+   */
+  async function reintentarOperacion(uuid) {
+    const op = await _txGet('operaciones_offline', uuid);
+    if (!op || op.estado !== 'error') return false;
+
+    await _txPut('operaciones_offline', {
+      ...op,
+      estado: 'pendiente',
+      error: null,
+      reintentado_at: new Date().toISOString(),
+    });
+    _actualizarBadgePendientes();
+    return true;
+  }
+
+  /**
+   * Elimina definitivamente una operación de la cola (pendiente o con error).
+   * La UI debe pedir confirmación ANTES de llamar esto — sobre todo con dinero.
+   */
+  async function descartarOperacion(uuid) {
+    const op = await _txGet('operaciones_offline', uuid);
+    if (!op || op.estado === 'sincronizado') return false;
+
+    await _txDelete('operaciones_offline', uuid);
+    if (op.tipo === 'crear_reservacion' && op.payload?.client_temp_id) {
+      await _txDelete('reservaciones', op.payload.client_temp_id).catch(() => {});
+    }
+    if (op.tipo === 'crear_huesped' && op.payload?.client_temp_id) {
+      await _txDelete('huespedes', op.payload.client_temp_id).catch(() => {});
+    }
+    _actualizarBadgePendientes();
+    return true;
+  }
+
+  /** Borra del historial las operaciones sincronizadas con más de N días. */
+  async function purgarSincronizadasAntiguas(dias = 7) {
+    try {
+      const limite = Date.now() - dias * 24 * 60 * 60 * 1000;
+      const todas = await _txGetAll('operaciones_offline');
+      for (const op of todas) {
+        if (op.estado === 'sincronizado' && (op.timestamp || 0) < limite) {
+          await _txDelete('operaciones_offline', op.uuid);
+        }
+      }
+    } catch (_) {}
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -732,11 +977,16 @@
 
       if (fallidas > 0) {
         window.PWA?.showToast(
-          `${fallidas} operación(es) no pudieron sincronizarse. Revisa el estado offline.`,
+          `${fallidas} operación(es) rechazadas al sincronizar. Revísalas en Operaciones offline.`,
           'warning',
-          6000
+          8000
         );
       }
+
+      // Aviso a las pantallas interesadas (p.ej. /offline/pendientes) para re-renderizar
+      window.dispatchEvent(new CustomEvent('loscedros:sync-done', {
+        detail: { exitosas, fallidas },
+      }));
 
       console.log(`[OfflineData] Sync completado — exitosas: ${exitosas}, fallidas: ${fallidas}`);
 
@@ -764,11 +1014,26 @@
 
   async function _actualizarBadgePendientes() {
     const badge = document.getElementById('offline-ops-badge');
-    if (!badge) return;
+    const link  = document.getElementById('offline-ops-link');
+    if (!badge && !link) return;
     try {
-      const pendientes = await obtenerPendientes();
-      badge.textContent = pendientes.length;
-      badge.classList.toggle('hidden', pendientes.length === 0);
+      const todas = await obtenerTodasOperaciones();
+      const pendientes = todas.filter(o => o.estado === 'pendiente').length;
+      const errores    = todas.filter(o => o.estado === 'error').length;
+      const total      = pendientes + errores;
+
+      if (badge) {
+        badge.textContent = total;
+        badge.classList.toggle('hidden', total === 0);
+        // Rojo si hay rechazadas que requieren atención, ámbar si solo pendientes
+        badge.style.background = errores > 0 ? '#DC2626' : '#D97706';
+      }
+      if (link) {
+        link.classList.toggle('hidden', total === 0);
+        link.title = errores > 0
+          ? `${errores} operación(es) rechazadas — requieren tu atención`
+          : `${pendientes} operación(es) esperando sincronizar`;
+      }
     } catch (_) {}
   }
 
@@ -798,6 +1063,9 @@
       setTimeout(capturarSnapshots, 3500);
     }
 
+    // Mantener chico el historial de operaciones ya sincronizadas
+    purgarSincronizadasAntiguas(7);
+
     // Actualizar badge de pendientes
     _actualizarBadgePendientes();
     _actualizarUITimestamp();
@@ -825,6 +1093,8 @@
     capturarReservaciones,
     capturarHuespedes,
     capturarIndiceGlobal,
+    capturarCaja,
+    capturarTarifas,
     capturarSnapshots,
 
     // Lectura
@@ -835,12 +1105,19 @@
     guardarHuespedes,
     buscarHuespedes,
     buscarGlobal,
+    obtenerCajaSnapshot,
+    obtenerCategoriasCaja,
+    obtenerIncrementosTarifa,
+    verificarDisponibilidadLocal,
     obtenerMetaSync,
 
     // Cola
     encolarOperacion,
     obtenerPendientes,
     obtenerTodasOperaciones,
+    reintentarOperacion,
+    descartarOperacion,
+    purgarSincronizadasAntiguas,
 
     // Sincronización
     sincronizar,

@@ -125,7 +125,7 @@ $metodoMeta = [
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 </style><style>
 .profit-report-view,
 .profit-modal-overlay {
@@ -1444,7 +1444,7 @@ $metodoMeta = [
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script>
 const datosGrafica = <?= json_encode($resumenDiario) ?>;
 let myChart = null;
@@ -1729,6 +1729,6 @@ window.addEventListener('afterprint', function() {
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>

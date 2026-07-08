@@ -80,6 +80,8 @@ class ApiController extends Controller {
             'vehiculosHuesped' => 'vehiculos',
             'verificarDisponibilidad' => 'reservaciones',
             'buscarHuespedes' => 'huespedes',
+            'cajaSnapshot' => 'caja',
+            'incrementosTarifaActivos' => 'reservaciones',
             'alertasInventario' => 'inventario',
             'previewCheckinInventario' => 'inventario',
             'verificarStockHabitacion' => 'inventario'
@@ -1116,6 +1118,9 @@ public function vehiculosHuespedAction() {
             $db = Database::getInstance();
             $hotel_id = $this->hotelIdActual();
             $hoy = date('Y-m-d');
+            // Rango hacia adelante para el snapshot offline (default 1 = hoy+manana,
+            // la PWA pide 30 para validar disponibilidad localmente sin internet)
+            $dias = max(1, min(45, (int) $this->getQuery('dias', 1)));
 
             $sql = "SELECT
                         r.id,
@@ -1144,7 +1149,7 @@ public function vehiculosHuespedAction() {
                         AND hab.hotel_id = rh.hotel_id
                     WHERE r.hotel_id = ?
                       AND r.estado IN ('confirmada', 'checked_in')
-                      AND r.fecha_entrada <= DATE_ADD(?, INTERVAL 1 DAY)
+                      AND r.fecha_entrada <= DATE_ADD(?, INTERVAL $dias DAY)
                       AND r.fecha_salida >= ?
                     GROUP BY r.id
                     ORDER BY r.fecha_entrada ASC, r.hora_llegada_estimada ASC";
@@ -1178,6 +1183,7 @@ public function vehiculosHuespedAction() {
             View::renderJSON([
                 'success' => true,
                 'fecha' => $hoy,
+                'dias' => $dias,
                 'total' => count($reservaciones),
                 'reservaciones' => $reservaciones,
                 'generado_at' => date('Y-m-d H:i:s'),
@@ -1189,14 +1195,65 @@ public function vehiculosHuespedAction() {
     }
 
     /**
+     * Snapshot de caja para modo offline: corte abierto, resumen, movimientos
+     * del corte y catalogo de categorias. Solo lectura — la PWA lo guarda en
+     * IndexedDB para poder VER la caja sin internet (los registros de dinero
+     * siguen siendo online-only).
+     */
+    public function cajaSnapshotAction() {
+        try {
+            require_once __DIR__ . '/../models/Caja.php';
+
+            $db = Database::getInstance();
+            $cajaModel = new Caja();
+
+            $corte = $cajaModel->obtenerCorteActual() ?: null;
+            $resumen = $corte ? $cajaModel->obtenerResumenCaja($corte['id']) : null;
+
+            $movimientos = [];
+            if ($corte) {
+                $stmt = $db->query(
+                    "SELECT mc.id, mc.tipo, mc.categoria, mc.categoria_id, mc.descripcion,
+                            mc.monto, mc.metodo_pago, mc.referencia, mc.reservacion_id,
+                            mc.usuario_id, mc.created_at,
+                            u.nombre_completo AS usuario_nombre
+                     FROM movimientos_caja mc
+                     LEFT JOIN usuarios u ON mc.usuario_id = u.id
+                     WHERE mc.corte_id = ? AND mc.hotel_id = ?
+                     ORDER BY mc.created_at DESC, mc.id DESC
+                     LIMIT 500",
+                    [(int) $corte['id'], $this->hotelIdActual()]
+                );
+                $movimientos = $stmt ? $stmt->fetchAll() : [];
+            }
+
+            $stmt = $db->query(
+                "SELECT id, nombre, tipo FROM categorias_movimientos WHERE activa = 1 ORDER BY tipo, nombre"
+            );
+            $categorias = $stmt ? $stmt->fetchAll() : [];
+
+            View::renderJSON([
+                'success' => true,
+                'corte' => $corte,
+                'resumen' => $resumen,
+                'movimientos' => $movimientos,
+                'categorias' => $categorias,
+                'generado_at' => date('Y-m-d H:i:s'),
+            ]);
+        } catch (Throwable $e) {
+            error_log('[API cajaSnapshot] ' . $e->getMessage());
+            View::renderJSON(['success' => false, 'message' => 'Error interno'], 500);
+        }
+    }
+
+    /**
      * Sincroniza operaciones capturadas offline (IndexedDB → Sync::procesarLote).
      *
-     * Política (2026-07-02): solo operaciones SIN dinero. Los cobros y gastos
-     * (pago_caja/gasto_caja) son online-only — se rechazan con error explícito
-     * para que el cliente los marque y la recepcionista los vea, en vez de
-     * aplicarse a caja fuera del flujo normal.
+     * Política (2026-07-08, reemplaza a la de 2026-07-02): los cobros y gastos
+     * SÍ se sincronizan offline, pero con candados en Sync::registrarMovimientoCaja:
+     * se rechazan si el corte de caja cambió desde la captura, y la descripción
+     * queda marcada como "capturado offline" para auditoría.
      */
-    private const SYNC_TIPOS_DINERO = ['pago_caja', 'gasto_caja'];
     private const SYNC_MAX_OPERACIONES = 200;
 
     public function syncAction() {
@@ -1221,28 +1278,15 @@ public function vehiculosHuespedAction() {
             return;
         }
 
-        $permitidas = [];
-        $fallidas = [];
-        foreach ($operaciones as $op) {
-            if (in_array((string)($op['tipo'] ?? ''), self::SYNC_TIPOS_DINERO, true)) {
-                $fallidas[] = [
-                    'uuid' => $op['uuid'] ?? 'sin-uuid',
-                    'error' => 'Los cobros y gastos no se sincronizan offline. Registra este movimiento directamente en Caja con conexión.',
-                ];
-            } else {
-                $permitidas[] = $op;
-            }
-        }
-
         try {
             require_once __DIR__ . '/../models/Sync.php';
             $sync = new Sync();
-            $resultado = $sync->procesarLote($permitidas, user_id(), $this->hotelIdActual());
+            $resultado = $sync->procesarLote($operaciones, user_id(), $this->hotelIdActual());
 
             View::renderJSON([
                 'success' => true,
                 'exitosas' => $resultado['exitosas'],
-                'fallidas' => array_merge($fallidas, $resultado['fallidas']),
+                'fallidas' => $resultado['fallidas'],
             ]);
         } catch (Throwable $e) {
             error_log('[API sync] ' . $e->getMessage());

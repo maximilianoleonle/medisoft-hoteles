@@ -814,6 +814,14 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         <div class="hotel-sidebar-status" style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
             <span class="pwa-status-label" id="sidebar-net-label">Sesión activa</span>
+            <!-- Operaciones offline pendientes/rechazadas (JS lo muestra solo si hay) -->
+            <a href="<?= url('offline/pendientes') ?>" id="offline-ops-link" class="hidden"
+               style="margin-left:auto;display:flex;align-items:center;gap:5px;text-decoration:none;"
+               title="Operaciones offline">
+                <i class="fas fa-cloud-arrow-up" style="font-size:.8rem;color:#D97706;"></i>
+                <span id="offline-ops-badge" class="hidden"
+                      style="background:#D97706;color:white;border-radius:10px;padding:0 7px;font-size:.7rem;font-weight:700;line-height:1.5;">0</span>
+            </a>
         </div>
         <?php endif; ?>
         <div class="user-menu-shell">

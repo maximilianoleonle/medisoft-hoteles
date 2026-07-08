@@ -109,7 +109,7 @@ if (!function_exists('cj_finance_sentence')) {
 }
 ?>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 /* ── Design tokens ── */
 :root {
@@ -1517,7 +1517,7 @@ $cash_methods = [
 <script src="<?= asset('js/sidebar-scripts.js') ?>"></script>
 <script src="<?= asset('js/modal-sidebar-fix.js') ?>"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 <script>
 function obtenerSidebarCaja() {
     return document.getElementById('sidebar') || document.querySelector('[data-sidebar]');

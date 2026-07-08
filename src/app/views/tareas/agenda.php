@@ -154,7 +154,7 @@ $rangosRapidos = [
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
 }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .tk-agenda .tk-shell { display: grid; gap: 14px; }
 .tk-agenda.tk-agenda--calendar {

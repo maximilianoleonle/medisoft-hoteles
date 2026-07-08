@@ -7,7 +7,7 @@
 <!-- Solo en el dashboard -->
 <!-- Solo cargar en el dashboard -->
 <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script src="<?= function_exists('asset_version') ? asset_version('js/dashboard.js') : asset('js/dashboard.js') ?>"></script>
 <?php endif; ?>
 
@@ -22,6 +22,12 @@
     <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
     <script src="<?= function_exists('asset_version') ? asset_version('js/dashboard.js') : asset('js/dashboard.js') ?>"></script>
     <?php endif; ?>
+
+    <!-- Oculta la sidebar mientras haya cualquier modal abierto (todas las páginas) -->
+    <script src="<?= function_exists('asset_version') ? asset_version('js/modal-sidebar-fix.js') : asset('js/modal-sidebar-fix.js') ?>" defer></script>
+
+    <!-- Selector de responsable de limpieza al hacer check-out (todas las páginas) -->
+    <script src="<?= function_exists('asset_version') ? asset_version('js/checkout-limpieza.js') : asset('js/checkout-limpieza.js') ?>" defer></script>
 
     <!-- Buscador global (todas las páginas autenticadas) -->
     <script src="<?= function_exists('asset_version') ? asset_version('js/buscador-global.js') : asset('js/buscador-global.js') ?>" defer></script>
@@ -400,6 +406,11 @@
     <!-- Offline: interceptores para caja (ingresos y gastos) -->
     <?php if (isset($title) && stripos($title, 'Caja') !== false): ?>
     <script src="<?= function_exists('asset_version') ? asset_version('js/caja-offline.js') : asset('js/caja-offline.js') ?>" defer></script>
+    <?php endif; ?>
+
+    <!-- Offline: registro de huéspedes sin conexión (id temporal + cola de sync) -->
+    <?php if (isset($title) && (stripos($title, 'Huésped') !== false || stripos($title, 'Huesped') !== false)): ?>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/huespedes-offline.js') : asset('js/huespedes-offline.js') ?>" defer></script>
     <?php endif; ?>
 
     <!-- Copiloto Medisoft (bloque copiloto): widget flotante, solo si esta activo -->

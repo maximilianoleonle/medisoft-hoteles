@@ -123,7 +123,7 @@ $totalImagenes            = count($imagenesExistentes);
 $rangoActual              = $rangosHabitacion[$habitacionTipoFormulario] ?? ['min' => 500, 'max' => 3000];
 ?>
 <style id="edit-hab-s2">
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .edit-hab-page {
     --s-bg:#F1F5F9; --s-card:#fff; --s-border:#E2E8F0;

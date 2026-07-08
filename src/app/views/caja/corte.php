@@ -643,7 +643,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
 </style>
 
 <style id="caja-corte-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 .ccx-page {
     --ccx-primary: var(--brand-primary, #1B2746) !important;
     --ccx-secondary: var(--brand-secondary, #0F172A) !important;

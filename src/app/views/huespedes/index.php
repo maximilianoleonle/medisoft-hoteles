@@ -799,7 +799,7 @@ select.guest-control {
 
 <!-- ════ Capa boutique (rediseño huespedes.html): ivory + navy/oro + serif. Solo tema, conserva layout. ════ -->
 <style id="guest-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .guests-page {
     /* Identidad del hotel (fallback boutique navy/oro en vez de azul) */

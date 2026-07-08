@@ -218,7 +218,7 @@ $mantenimientos_count = count($mantenimientos_programados);
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca2.css') ?>');
 
 .hdv {
     --green: #596066;
@@ -2222,6 +2222,16 @@ async function realizarCheckout(reservacionId) {
         csrfField.name = 'csrf_token';
         csrfField.value = '<?= csrf_token() ?>';
         form.appendChild(csrfField);
+
+        // Selector opcional de responsable de limpieza (cancelable)
+        if (window.CheckoutLimpieza) {
+            const asignaciones = await CheckoutLimpieza.seleccionar({
+                infoUrl: '<?= url('api/reservaciones') ?>/' + reservacionId + '/limpieza-personal'
+            });
+            if (asignaciones === null) return; // usuario cancelo el check-out
+            CheckoutLimpieza.aplicarAForm(form, asignaciones);
+        }
+
         document.body.appendChild(form);
         form.submit();
     }

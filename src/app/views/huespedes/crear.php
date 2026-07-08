@@ -211,10 +211,10 @@ $gcRenderVehicleFields = function ($indexToken, array $values = []) use ($gcVehi
 };
 $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 ?>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="<?= asset('vendor/tailwind/tailwind-2.2.19.min.css') ?>" rel="stylesheet">
 
 <style id="guest-create-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .guest-create-page {
     --gc-brand: var(--brand-primary, #1B2746);

@@ -309,7 +309,7 @@
 </div>
 
 <!-- Librería para drag and drop -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="<?= asset('vendor/sortablejs/Sortable.min.js') ?>"></script>
 
 <script>
 // Datos de categorías para edición
