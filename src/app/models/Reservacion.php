@@ -3385,38 +3385,6 @@ public function paraCalendario($mes = null, $año = null) {
     }
 
     /**
-     * Obtener reservaciones que necesitan check-in tardío
-     */
-    public function obtenerReservacionesSinCheckIn() {
-        $hoy = date('Y-m-d');
-        
-        $sql = "SELECT 
-                    r.id,
-                    r.fecha_entrada,
-                    r.fecha_salida,
-                    r.precio_total,
-                    h.nombre_completo as huesped,
-                    GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
-                    DATEDIFF(?, r.fecha_entrada) as dias_retraso,
-                    CASE 
-                        WHEN ? >= r.fecha_salida THEN 'express'
-                        ELSE 'tardio'
-                    END as tipo_pendiente
-                FROM reservaciones r
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                WHERE r.estado = 'confirmada'
-                AND r.fecha_entrada <= ?
-                GROUP BY r.id
-                ORDER BY r.fecha_entrada ASC";
-        
-        $db = Database::getInstance();
-        $stmt = $db->query($sql, [$hoy, $hoy, $hoy]);
-        
-        return $stmt->fetchAll();
-    }
-    /**
      * Crear solicitud de factura
      */
     public function crearSolicitudFactura($datos) {

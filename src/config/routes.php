@@ -643,9 +643,6 @@ $router->get('/reportes/estancia', ['controller' => 'Reportes', 'action' => 'est
 $router->get('/reportes/ranking-estados', ['controller' => 'Reportes', 'action' => 'rankingEstados']);
 $router->get('/reportes/mantenimiento', ['controller' => 'Reportes', 'action' => 'mantenimiento']); // NUEVA LÃNEA
 // En tu archivo routes.php, despuÃ©s de las otras rutas de reportes
-// Rutas de prueba deshabilitadas en produccion.
-// $router->get('/reportes/test-datos', ['controller' => 'Reportes', 'action' => 'testDatos']);
-// $router->get('/reportes/test-usuario', ['controller' => 'Reportes', 'action' => 'testUsuario']);
 // ExportaciÃ³n y datos AJAX
 $router->get('/reportes/exportar-pdf', ['controller' => 'Reportes', 'action' => 'exportarPdf']);
 $router->get('/reportes/datos-grafica', ['controller' => 'Reportes', 'action' => 'datosGrafica']);

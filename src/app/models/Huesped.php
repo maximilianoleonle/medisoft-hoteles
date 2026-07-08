@@ -653,27 +653,8 @@ class Huesped extends Model {
         return $this->first(['telefono' => $telefono]);
     }
     
-    /**
-     * Obtener historial de reservaciones del huésped (ACTUALIZADO)
-     */
-    public function getReservaciones($huesped_id) {
-        $sql = "SELECT r.*, 
-                GROUP_CONCAT(h.numero ORDER BY h.numero SEPARATOR ', ') as habitaciones_numeros,
-                GROUP_CONCAT(DISTINCT h.tipo) as tipos_habitacion,
-                COUNT(DISTINCT rh.habitacion_id) as total_habitaciones,
-                SUM(CASE WHEN rh.es_cortesia = 1 THEN 1 ELSE 0 END) as habitaciones_cortesia
-                FROM reservaciones r
-                LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                LEFT JOIN habitaciones h ON rh.habitacion_id = h.id
-                WHERE r.huesped_id = ?
-                GROUP BY r.id
-                ORDER BY r.fecha_entrada DESC";
-        
-        $stmt = $this->db->query($sql, [$huesped_id]);
-        return $stmt->fetchAll();
-    }
-    
-    // Agregar estos métodos a la clase Huesped existente:
+    // getReservaciones($huesped_id) eliminado (ciclo 2): consultaba reservaciones
+    // sin filtrar hotel_id y no tenia llamadores. Usar getReservacionesPorHotel.
 
 /**
  * Obtener vehículos del huésped

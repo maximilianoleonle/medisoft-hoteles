@@ -416,60 +416,6 @@ public function informacionImagenAction() {
 }
 
 /**
- * Obtener estadísticas de imágenes del hotel
- */
-public function estadisticasImagenesAction() {
-    $db = Database::getInstance();
-    
-    // Contar habitaciones con y sin imagen
-    $sql = "SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN foto_url IS NOT NULL AND foto_url != '' THEN 1 ELSE 0 END) as con_imagen,
-                SUM(CASE WHEN foto_url IS NULL OR foto_url = '' THEN 1 ELSE 0 END) as sin_imagen
-            FROM habitaciones 
-            WHERE activa = 1";
-    
-    $stmt = $db->query($sql);
-    $stats = $stmt->fetch();
-    
-    // Obtener tamaños de archivos
-    $imageSizes = [];
-    $totalSize = 0;
-    
-    $sql = "SELECT foto_url FROM habitaciones WHERE foto_url IS NOT NULL AND foto_url != '' AND activa = 1";
-    $stmt = $db->query($sql);
-    $imagenes = $stmt->fetchAll();
-    
-    foreach ($imagenes as $imagen) {
-        $imageInfo = get_image_info($imagen['foto_url']);
-        if ($imageInfo) {
-            $imageSizes[] = $imageInfo['size'];
-            $totalSize += $imageInfo['size'];
-        }
-    }
-    
-    $averageSize = count($imageSizes) > 0 ? $totalSize / count($imageSizes) : 0;
-    
-    View::renderJSON([
-        'success' => true,
-        'estadisticas' => [
-            'total_habitaciones' => $stats['total'],
-            'con_imagen' => $stats['con_imagen'],
-            'sin_imagen' => $stats['sin_imagen'],
-            'porcentaje_con_imagen' => $stats['total'] > 0 ? round(($stats['con_imagen'] / $stats['total']) * 100, 1) : 0,
-            'total_size' => $totalSize,
-            'total_size_formatted' => format_file_size($totalSize),
-            'average_size' => $averageSize,
-            'average_size_formatted' => format_file_size($averageSize),
-            'total_images' => count($imageSizes)
-        ]
-    ]);
-}
-
-/**
- * Limpiar imágenes huérfanas (que no están referenciadas en BD)
- */
- /**
   * LEGACY INVENTARIO FASE 2D: metodo no ruteado con dependencia historica.
   * No exponer como API nueva; usar InventarioService::verificarDisponibilidad.
   */
@@ -1958,37 +1904,4 @@ public function incrementosTarifaActivosAction() {
     }
 }
     
-    /**
-     * Obtener reservaciones activas por habitación
-     */
-    public function reservacionesActivasHabitacionAction() {
-        $habitacion_id = $this->getQuery('habitacion_id');
-        
-        if (!$habitacion_id) {
-            View::renderJSON([
-                'success' => false,
-                'message' => 'Falta ID de habitación'
-            ]);
-            return;
-        }
-        
-        $db = Database::getInstance();
-        
-        $sql = "SELECT r.*, h.nombre_completo as huesped_nombre, h.telefono
-                FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE rh.habitacion_id = ?
-                AND r.estado IN ('confirmada', 'checked_in')
-                AND r.fecha_salida >= CURDATE()
-                ORDER BY r.fecha_entrada";
-        
-        $stmt = $db->query($sql, [$habitacion_id]);
-        $reservaciones = $stmt->fetchAll();
-        
-        View::renderJSON([
-            'success' => true,
-            'data' => $reservaciones
-        ]);
-    }
 }
