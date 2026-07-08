@@ -100,8 +100,13 @@ class DashboardController extends Controller {
             
             // Obtener datos para gráficos
             $datosGraficos = $this->getDatosGraficos();
-            NotificacionReglasService::evaluarDashboard($this->hotelIdActual());
-            NotificacionService::sincronizarBandeja($this->hotelIdActual());
+            // Generacion diferida: el motor de reglas + sincronizacion corren a
+            // lo sumo una vez por intervalo por hotel (la vista Notificaciones
+            // sigue sincronizando fresco al abrirse).
+            if (NotificacionService::debeSincronizar($this->hotelIdActual())) {
+                NotificacionReglasService::evaluarDashboard($this->hotelIdActual());
+                NotificacionService::sincronizarBandeja($this->hotelIdActual());
+            }
             $notificacionesDashboard = $this->getNotificacionesDashboard();
             
             // Preparar datos para la vista

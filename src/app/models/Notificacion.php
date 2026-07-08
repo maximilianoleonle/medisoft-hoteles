@@ -31,6 +31,14 @@ class Notificacion extends Model {
     private $ultimoEventoFueCreado = false;
 
     public function tablaDisponible(): bool {
+        // Cache por request: cada metodo del modelo consulta esto y llegaban
+        // 12 hits a information_schema por pagina.
+        static $disponible = null;
+
+        if ($disponible !== null) {
+            return $disponible;
+        }
+
         $stmt = $this->db->query(
             "SELECT 1
              FROM information_schema.TABLES
@@ -39,7 +47,7 @@ class Notificacion extends Model {
              LIMIT 1"
         );
 
-        return $stmt !== false && (bool) $stmt->fetch();
+        return $disponible = ($stmt !== false && (bool) $stmt->fetch());
     }
 
     public function contarNoLeidas(int $hotelId, ?string $rolUsuario = null, ?int $usuarioId = null): int {

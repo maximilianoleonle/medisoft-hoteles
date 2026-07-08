@@ -50,6 +50,44 @@ class NotificacionService {
         }
     }
 
+    /**
+     * Throttle de generacion por hotel: evita correr el motor de reglas y la
+     * sincronizacion de bandeja en CADA carga del dashboard (~8 queries).
+     * Devuelve true a lo sumo una vez por intervalo por hotel; el timestamp
+     * vive en hotel_configuracion (compartido entre usuarios del hotel).
+     * Ante cualquier duda o error devuelve true: mejor sincronizar de mas.
+     */
+    public static function debeSincronizar(int $hotelId, int $intervaloSegundos = 90): bool {
+        if ($hotelId <= 0) {
+            return false;
+        }
+
+        if (!function_exists('hotel_config_get') || !function_exists('hotel_config_save_value')) {
+            return true;
+        }
+
+        try {
+            $ultima = (int) hotel_config_get('notificaciones.ultima_sincronizacion', 0, $hotelId);
+
+            if ($ultima > 0 && (time() - $ultima) < $intervaloSegundos) {
+                return false;
+            }
+
+            hotel_config_save_value(
+                'notificaciones.ultima_sincronizacion',
+                (string) time(),
+                'string',
+                'notificaciones',
+                'Throttle del motor de notificaciones (timestamp unix).',
+                $hotelId
+            );
+
+            return true;
+        } catch (Throwable $e) {
+            return true;
+        }
+    }
+
     public static function sincronizarBandeja(int $hotelId): void {
         if ($hotelId <= 0) {
             return;
