@@ -126,6 +126,9 @@ class CopilotoService
         if ($tiene(['ocupacion', 'cuartos libres', 'habitaciones libres', 'cuartos disponibles', 'habitaciones disponibles', 'cuanto tengo lleno', 'que tan lleno', 'disponibilidad hoy'])) {
             return 'ocupacion';
         }
+        if ($tiene(['mejor o peor', 'mejor que el mes', 'peor que el mes', 'comparado con el mes', 'comparada con el mes', 'comparacion con el mes', 'contra el mes pasado', 'vs el mes pasado', 'versus el mes pasado', 'como voy comparado'])) {
+            return 'comparar_meses';
+        }
         if ($tiene(['mes pasado', 'mes anterior'])
             && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro'])) {
             return 'ganancias_mes_pasado';
@@ -322,6 +325,27 @@ class CopilotoService
                     'texto' => "En lo que va de {$ga['mes']} {$ga['anio']} llevas **ingresos por \${$ga['ingresos']}** y gastos por \${$ga['gastos']}, "
                         . "para una **ganancia neta de \${$ga['neto']}** (al dia de hoy, ingresos menos gastos de caja).",
                     'enlace' => $enlaceGa,
+                ];
+
+            case 'comparar_meses':
+                $cmp = $this->compararMesActualVsPasado($hotelId);
+                if (!$cmp['hayActual'] && !$cmp['hayPasado']) {
+                    return ['texto' => 'Todavia no tengo movimientos de caja de este mes ni del mismo tramo del mes pasado para compararte.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $dif = $cmp['netoActualNum'] - $cmp['netoPasadoNum'];
+                $pct = $cmp['netoPasadoNum'] > 0 ? round(abs($dif) / $cmp['netoPasadoNum'] * 100) : null;
+                $difFmt = number_format(abs($dif), 2);
+                if ($dif > 0) {
+                    $veredicto = "Vas **mejor**: \${$difFmt} mas de ganancia neta" . ($pct !== null ? " (+{$pct}%)" : '') . ' que a estas alturas del mes pasado.';
+                } elseif ($dif < 0) {
+                    $veredicto = "Vas **por debajo**: \${$difFmt} menos de ganancia neta" . ($pct !== null ? " (-{$pct}%)" : '') . ' que a estas alturas del mes pasado.';
+                } else {
+                    $veredicto = 'Vas **igual** que a estas alturas del mes pasado.';
+                }
+                return [
+                    'texto' => "Comparando los primeros {$cmp['dia']} dias del mes: en {$cmp['mesActual']} llevas **\${$cmp['netoActual']}** de ganancia neta, "
+                        . "contra **\${$cmp['netoPasado']}** en el mismo tramo de {$cmp['mesPasado']}.\n{$veredicto}",
+                    'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
                 ];
         }
 
@@ -681,6 +705,7 @@ class CopilotoService
             'ingresos' => number_format($ingresos, 2),
             'gastos' => number_format($gastos, 2),
             'neto' => number_format($ingresos - $gastos, 2),
+            'neto_num' => $ingresos - $gastos,
         ];
     }
 
@@ -699,6 +724,33 @@ class CopilotoService
         // 'hasta' es manana (exclusivo) para incluir todo lo de hoy.
         return $this->gananciasEntre($hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day')))
             + ['mes' => $this->nombreMes((int) date('n')), 'anio' => date('Y')];
+    }
+
+    /**
+     * Compara la ganancia neta del mes en curso contra el MISMO tramo del mes
+     * pasado (primeros N dias, N = dia de hoy), para una lectura justa de ritmo.
+     */
+    private function compararMesActualVsPasado(int $hotelId): array
+    {
+        $diaHoy = (int) date('j');
+        $refLM = strtotime('first day of last month');
+
+        $actual = $this->gananciasEntre($hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day')));
+        // Mismo tramo del mes pasado, sin invadir el mes en curso (cap en el dia 1 de este mes).
+        $hastaLM = date('Y-m-d', min(strtotime("+{$diaHoy} days", $refLM), strtotime(date('Y-m-01'))));
+        $pasado = $this->gananciasEntre($hotelId, date('Y-m-01', $refLM), $hastaLM);
+
+        return [
+            'dia' => $diaHoy,
+            'mesActual' => $this->nombreMes((int) date('n')),
+            'mesPasado' => $this->nombreMes((int) date('n', $refLM)),
+            'netoActual' => $actual['neto'],
+            'netoPasado' => $pasado['neto'],
+            'netoActualNum' => $actual['neto_num'],
+            'netoPasadoNum' => $pasado['neto_num'],
+            'hayActual' => $actual['hay'],
+            'hayPasado' => $pasado['hay'],
+        ];
     }
 
     private function nombreMes(int $m): string
@@ -893,7 +945,7 @@ class CopilotoService
             . "\n- Nunca inventes cifras: si un numero no esta en los datos, di que no lo tienes a la mano y sugiere donde verlo."
             . "\n- Si preguntan como hacer algo, da los pasos en 2-4 lineas y menciona la seccion del sistema."
             . "\n- Eres de solo lectura: nunca afirmes haber hecho un cambio; a lo mucho sugieres la accion."
-            . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin explicar que eres una IA."
+            . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin mencionar que usas un modelo externo."
             . "\n- Montos con formato \$1,234.56.";
 
         $usuario = "Datos en vivo del hotel (calculados por el servidor, son la unica fuente de cifras):\n"
@@ -984,7 +1036,7 @@ class CopilotoService
             'forecast' => "- Proyeccion de ocupacion 30/60/90 dias: seccion Forecast.",
             'night_audit' => "- Cierre nocturno (no-shows, checkouts vencidos): seccion Night audit.",
             'auditoria' => "- Bitacora de quien hizo que: seccion Bitacora (solo gerencia).",
-            'ia_ejecutiva' => "- Resumen gerencial diario narrado: seccion Asesor IA.",
+            'ia_ejecutiva' => "- Resumen gerencial diario narrado: seccion Asesor inteligente.",
             'inventario' => "- Inventario: productos, existencias y movimientos, con alertas de stock bajo.",
             'tareas' => "- Tareas operativas asignables al personal: seccion Tareas.",
             'personal' => "- Personal: trabajadores, asistencia, anticipos/prestamos y pago de nomina: seccion Personal.",
@@ -1085,7 +1137,7 @@ class CopilotoService
             . "• \"¿cuantas habitaciones libres tengo?\" o \"¿quien llega hoy/manana?\"\n"
             . "• \"¿como pinta la semana?\" o \"¿quien esta hospedado?\"\n"
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
-            . "• \"¿cuales fueron las ganancias del mes pasado?\"\n"
+            . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 
