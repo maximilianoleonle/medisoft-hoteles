@@ -940,7 +940,7 @@ $cash_methods = [
                 <button type="button" onclick="mostrarModalGasto()" class="cj-act-btn cj-act-expense">
                     <i class="fas fa-minus"></i> Registrar Gasto
                 </button>
-                <a href="<?= url('caja/corte') ?>" class="cj-act-btn cj-act-corte">
+                <a id="cop-ancla-corte" href="<?= url('caja/corte') ?>" class="cj-act-btn cj-act-corte">
                     <i class="fas fa-scissors"></i> Hacer Corte
                 </a>
             </div>

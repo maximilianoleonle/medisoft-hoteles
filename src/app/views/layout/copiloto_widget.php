@@ -9,6 +9,40 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 }
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
+
+/**
+ * Diccionario de secciones para hipervincular las negritas del chat. Consciente
+ * de modulos: solo se vuelven enlace las secciones que ESTE hotel tiene activas.
+ * Clave = nombre normalizado (minusculas, sin acentos); valor = URL absoluta.
+ * Algunas llevan #ancla para hacer scroll a la accion exacta al llegar.
+ */
+$copU = function ($ruta) { return function_exists('url') ? url($ruta) : '/' . ltrim($ruta, '/'); };
+$copMod = function ($clave) { return function_exists('hotel_menu_module_enabled') ? hotel_menu_module_enabled($clave) : true; };
+
+$copSecciones = [
+    // Core: siempre disponibles.
+    'caja' => $copU('caja') . '#cop-ancla-corte',
+    'reservaciones' => $copU('reservaciones'),
+    'habitaciones' => $copU('habitaciones'),
+];
+$copOpcionales = [
+    'motor_reservas' => ['motor de reservas' => $copU('motor-reservas')],
+    'promociones' => ['cupones' => $copU('motor-reservas/cupones')],
+    'upsells' => ['extras' => $copU('motor-reservas/extras')],
+    'reputacion' => ['reputacion' => $copU('reputacion')],
+    'lealtad' => ['huesped frecuente' => $copU('lealtad')],
+    'forecast' => ['forecast' => $copU('forecast')],
+    'night_audit' => ['night audit' => $copU('night-audit')],
+    'auditoria' => ['bitacora' => $copU('auditoria')],
+    'ia_ejecutiva' => ['asesor ia' => $copU('ia/resumen-diario')],
+];
+foreach ($copOpcionales as $clave => $mapa) {
+    if ($copMod($clave)) {
+        foreach ($mapa as $nombre => $urlSeccion) {
+            $copSecciones[$nombre] = $urlSeccion;
+        }
+    }
+}
 ?>
 <style>
 #cop-fab { position: fixed; bottom: 18px; right: 18px; z-index: 10000; width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer; background: var(--brand-primary, #1B2746); color: #fff; font-size: 1.5rem; box-shadow: 0 10px 28px -8px rgba(20,28,45,.55); display: grid; place-items: center; transition: transform .12s ease; }
@@ -28,6 +62,8 @@ $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/p
 .cop-fuente.ia { background: rgba(124,58,237,.12); color: #6D28D9; }
 .cop-fuente.fallback { background: rgba(100,116,139,.12); color: #64748B; }
 .cop-enlace { display: inline-block; margin-top: 8px; font-size: .8rem; font-weight: 700; color: var(--brand-primary, #1B2746); text-decoration: none; padding: 5px 10px; border: 1px solid #D8D4C9; border-radius: 8px; }
+.cop-link { color: var(--brand-primary, #1B2746); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.cop-link:hover { opacity: .8; }
 .cop-sugerencias { display: flex; flex-wrap: wrap; gap: 6px; }
 .cop-chip { border: 1px solid #D8D4C9; background: #fff; border-radius: 999px; padding: 5px 11px; font-size: .78rem; cursor: pointer; color: #55607A; }
 .cop-chip:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); }
@@ -77,7 +113,13 @@ $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/p
     var closeBtn = document.getElementById('cop-close');
     var URL = <?= json_encode($copilotoUrl) ?>;
     var TOKEN = <?= json_encode($copilotoToken) ?>;
+    var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var ocupado = false;
+
+    // Normaliza a minusculas sin acentos, para casar "Reputación" con "reputacion".
+    function norm(s) {
+        return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
 
     function abrir(v) {
         panel.classList.toggle('abierto', v);
@@ -91,9 +133,17 @@ $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/p
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
         });
     }
+    // Las negritas que casan con una seccion activa se vuelven hipervinculo;
+    // el resto queda como texto en negrita normal.
     function formato(texto) {
         var t = escapar(texto);
-        t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        t = t.replace(/\*\*([^*]+)\*\*/g, function (_, contenido) {
+            var url = SECCIONES[norm(contenido)];
+            if (url) {
+                return '<a class="cop-link" href="' + escapar(url) + '">' + contenido + '</a>';
+            }
+            return '<strong>' + contenido + '</strong>';
+        });
         return t.replace(/\n/g, '<br>');
     }
     function agregar(clase, html) {

@@ -405,5 +405,33 @@
     <!-- Copiloto Medisoft (bloque copiloto): widget flotante, solo si esta activo -->
     <?php include __DIR__ . '/copiloto_widget.php'; ?>
 
+    <!-- Scroll a la seccion indicada por #ancla (usado por los enlaces del Copiloto).
+         Generico y seguro: si el elemento no existe, no hace nada. -->
+    <style>
+        @keyframes cop-flash-kf { 0% { box-shadow: 0 0 0 0 rgba(189,148,65,.55); } 100% { box-shadow: 0 0 0 12px rgba(189,148,65,0); } }
+        .cop-flash { animation: cop-flash-kf 1.1s ease-out 2; border-radius: 10px; }
+    </style>
+    <script>
+    (function () {
+        function irAAncla() {
+            var id = (location.hash || '').replace('#', '');
+            if (!id) { return; }
+            var el = document.getElementById(id);
+            if (!el) { return; }
+            try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { el.scrollIntoView(); }
+            el.classList.remove('cop-flash');
+            void el.offsetWidth; // reinicia la animacion si se repite
+            el.classList.add('cop-flash');
+            setTimeout(function () { el.classList.remove('cop-flash'); }, 2500);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () { setTimeout(irAAncla, 120); });
+        } else {
+            setTimeout(irAAncla, 120);
+        }
+        window.addEventListener('hashchange', irAAncla);
+    })();
+    </script>
+
 </body>
 </html>
