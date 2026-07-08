@@ -65,7 +65,7 @@ class CopilotoService
         // 2) Reglas de datos (deterministas).
         $intent = $this->detectarIntent($norm, $hotelId);
         if ($intent !== null) {
-            $r = $this->responderIntent($hotelId, $intent);
+            $r = $this->responderIntent($hotelId, $intent, $norm);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intent, 0, 0);
             return $r + ['success' => true, 'fuente' => 'reglas'];
         }
@@ -129,6 +129,10 @@ class CopilotoService
         if ($tiene(['mejor o peor', 'mejor que el mes', 'peor que el mes', 'comparado con el mes', 'comparada con el mes', 'comparacion con el mes', 'contra el mes pasado', 'vs el mes pasado', 'versus el mes pasado', 'como voy comparado'])) {
             return 'comparar_meses';
         }
+        if ($tiene(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', 'ayer', 'antier', 'anteayer'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'cuanto', 'como nos fue', 'como fue', 'como estuvo', 'como me fue', 'como nos'])) {
+            return 'ganancias_dia';
+        }
         if ($tiene(['mes pasado', 'mes anterior'])
             && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro'])) {
             return 'ganancias_mes_pasado';
@@ -160,7 +164,7 @@ class CopilotoService
         return null;
     }
 
-    private function responderIntent(int $hotelId, string $intent): array
+    private function responderIntent(int $hotelId, string $intent, string $norm = ''): array
     {
         switch ($intent) {
             case 'ocupacion':
@@ -345,6 +349,20 @@ class CopilotoService
                 return [
                     'texto' => "Comparando los primeros {$cmp['dia']} dias del mes: en {$cmp['mesActual']} llevas **\${$cmp['netoActual']}** de ganancia neta, "
                         . "contra **\${$cmp['netoPasado']}** en el mismo tramo de {$cmp['mesPasado']}.\n{$veredicto}",
+                    'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'ganancias_dia':
+                $dref = $this->resolverDiaReferido($norm);
+                if ($dref === null) {
+                    return ['texto' => 'No identifique de que dia me hablas. Prueba con "como nos fue el jueves" o "cuanto vendi ayer".', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $gd = $this->gananciasEntre($hotelId, $dref['fecha'], date('Y-m-d', strtotime($dref['fecha'] . ' +1 day')));
+                if (!$gd['hay']) {
+                    return ['texto' => "No tengo movimientos de caja registrados para {$dref['texto']}.", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                return [
+                    'texto' => ucfirst($dref['texto']) . " registraste **ingresos por \${$gd['ingresos']}** y gastos por \${$gd['gastos']}, para una **ganancia neta de \${$gd['neto']}**.",
                     'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
                 ];
         }
@@ -753,6 +771,32 @@ class CopilotoService
         ];
     }
 
+    /**
+     * Resuelve una referencia de dia en la pregunta a una fecha concreta:
+     * un dia de la semana ("jueves") -> su ocurrencia mas reciente (hoy si aplica,
+     * si no el ultimo pasado); tambien "ayer" y "antier". Null si no reconoce.
+     */
+    private function resolverDiaReferido(string $norm): ?array
+    {
+        $dias = ['lunes' => 'Monday', 'martes' => 'Tuesday', 'miercoles' => 'Wednesday', 'jueves' => 'Thursday', 'viernes' => 'Friday', 'sabado' => 'Saturday', 'domingo' => 'Sunday'];
+        foreach ($dias as $es => $en) {
+            if (strpos($norm, $es) !== false) {
+                $ts = strtolower(date('l')) === strtolower($en) ? strtotime('today') : strtotime("last {$en}");
+                return ['fecha' => date('Y-m-d', $ts), 'texto' => "el {$es} " . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts))];
+            }
+        }
+        // 'antier'/'anteayer' antes que 'ayer' (anteayer contiene 'ayer').
+        if (strpos($norm, 'antier') !== false || strpos($norm, 'anteayer') !== false) {
+            $ts = strtotime('-2 days');
+            return ['fecha' => date('Y-m-d', $ts), 'texto' => 'antier (' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts)) . ')'];
+        }
+        if (strpos($norm, 'ayer') !== false) {
+            $ts = strtotime('-1 day');
+            return ['fecha' => date('Y-m-d', $ts), 'texto' => 'ayer (' . date('j', $ts) . ' de ' . $this->nombreMes((int) date('n', $ts)) . ')'];
+        }
+        return null;
+    }
+
     private function nombreMes(int $m): string
     {
         $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
@@ -771,6 +815,12 @@ class CopilotoService
         // real (evita que "cuanto vendi el mes pasado" caiga en la FAQ de Reportes).
         if (preg_match('/(mes pasado|mes anterior|este mes|mes en curso|mes actual|del mes)/', $norm)
             && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|factur|cuanto (hice|entro))/', $norm)) {
+            return null;
+        }
+        // Referencia a un dia concreto ("el jueves", "ayer") + dato de dinero/desempeno
+        // tambien es intent (evita que "cuanto vendi ayer" caiga en la FAQ de Reportes).
+        if (preg_match('/(lunes|martes|miercoles|jueves|viernes|sabado|domingo|ayer|antier|anteayer)/', $norm)
+            && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|cuanto|como nos|como fue|como estuvo|como me fue)/', $norm)) {
             return null;
         }
 
@@ -1138,6 +1188,7 @@ class CopilotoService
             . "• \"¿como pinta la semana?\" o \"¿quien esta hospedado?\"\n"
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
+            . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 
