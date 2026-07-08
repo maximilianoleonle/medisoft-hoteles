@@ -112,6 +112,7 @@ class Sync
             'checkout'                  => $this->hacerCheckout($payload),
             'pago_caja'                 => $this->registrarMovimientoCaja($payload, $op['usuario_id'] ?? null, 'ingreso'),
             'gasto_caja'                => $this->registrarMovimientoCaja($payload, $op['usuario_id'] ?? null, 'gasto'),
+            'pre_corte_caja'            => $this->preCorteCaja($payload, $op['usuario_id'] ?? null),
             default                     => throw new InvalidArgumentException("Tipo de operación desconocido: '$tipo'"),
         };
     }
@@ -133,6 +134,7 @@ class Sync
             'checkout' => 'habitaciones.checkout',
             'pago_caja' => 'caja.cobros',
             'gasto_caja' => 'caja.movimientos',
+            'pre_corte_caja' => 'caja.corte',
         ];
 
         if (!isset($permisos[$tipo])) {
@@ -600,6 +602,96 @@ class Sync
 
         $simbolo = $tipo_movimiento === 'ingreso' ? '+' : '-';
         return "{$simbolo}\${$monto} ({$p['metodo_pago']}) → {$tipo_movimiento} en corte {$corte['id']}";
+    }
+
+    /**
+     * Cierra el corte de caja capturado offline (pre-corte, fase 4).
+     * Payload: { corte_id_capturado, efectivo_contado, observaciones?,
+     *            efectivo_esperado_local?, capturado_offline_at? }
+     *
+     * El dispositivo contó el efectivo sin internet contra SUS datos locales.
+     * Aquí el servidor recalcula el esperado con TODOS los movimientos (los de
+     * otros equipos incluidos) y cierra el corte con esa verdad. Si el esperado
+     * del servidor difiere del que vio el dispositivo, se deja constancia en
+     * las observaciones y en el resultado para que recepción lo revise.
+     *
+     * Candado: solo cierra el MISMO corte que estaba abierto al capturar.
+     * IMPORTANTE: procesarLote ordena por timestamp, así que los cobros/gastos
+     * encolados antes del pre-corte se aplican primero y entran al corte.
+     */
+    private function preCorteCaja(array $p, ?int $usuario_id): string
+    {
+        $this->requerir($p, ['corte_id_capturado', 'efectivo_contado']);
+
+        $corte_capturado = (int) $p['corte_id_capturado'];
+        $efectivo_contado = (float) $p['efectivo_contado'];
+        if ($efectivo_contado < 0) {
+            throw new InvalidArgumentException('El efectivo contado no puede ser negativo');
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id FROM cortes_caja
+             WHERE hotel_id = ? AND estado = 'abierto'
+             ORDER BY fecha_apertura DESC LIMIT 1",
+            [$this->hotelId]
+        );
+        $corte = $stmt ? $stmt->fetch() : null;
+
+        if (!$corte) {
+            throw new RuntimeException(
+                "El corte #{$corte_capturado} ya no está abierto (alguien lo cerró con internet). " .
+                "Revisa el historial de cortes y verifica el efectivo contado."
+            );
+        }
+
+        if ((int) $corte['id'] !== $corte_capturado) {
+            throw new RuntimeException(
+                "El corte cambió desde que se capturó el cierre sin internet " .
+                "(corte #{$corte_capturado} → #{$corte['id']}). Haz el corte manualmente."
+            );
+        }
+
+        if (!class_exists('Caja')) {
+            require_once __DIR__ . '/Caja.php';
+        }
+
+        $observaciones = trim((string) ($p['observaciones'] ?? ''));
+        $marca = 'Cierre capturado OFFLINE';
+        if (!empty($p['capturado_offline_at'])) {
+            $marca .= ' el ' . date('d/m/Y H:i', strtotime((string) $p['capturado_offline_at']) ?: time());
+        }
+        $esperado_local = isset($p['efectivo_esperado_local']) ? (float) $p['efectivo_esperado_local'] : null;
+        if ($esperado_local !== null) {
+            $marca .= sprintf('; el equipo esperaba $%.2f en efectivo', $esperado_local);
+        }
+        $observaciones = $observaciones === '' ? "[$marca]" : $observaciones . "\n[$marca]";
+
+        $cajaModel = new Caja();
+        $resultado = $cajaModel->cerrarCaja($corte_capturado, $efectivo_contado, $observaciones, $usuario_id ?: 1);
+
+        if (empty($resultado['success'])) {
+            throw new RuntimeException($resultado['message'] ?? 'No se pudo cerrar el corte');
+        }
+
+        $esperado_servidor = (float) ($resultado['resumen']['efectivo_en_caja'] ?? 0);
+        $diferencia = (float) ($resultado['diferencia'] ?? 0);
+
+        $detalle = sprintf(
+            'Corte #%d cerrado (pre-corte offline): contado $%.2f, esperado $%.2f, diferencia $%+.2f',
+            $corte_capturado,
+            $efectivo_contado,
+            $esperado_servidor,
+            $diferencia
+        );
+
+        if ($esperado_local !== null && abs($esperado_local - $esperado_servidor) > 0.004) {
+            $detalle .= sprintf(
+                '. OJO: el equipo esperaba $%.2f — hubo movimientos de otros equipos; revisa el corte.',
+                $esperado_local
+            );
+        }
+
+        return $detalle;
     }
 
     // =========================================================================

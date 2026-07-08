@@ -31,6 +31,7 @@
 
     _instalarInterceptor('modalIngreso', 'pago_caja', 'ingreso');
     _instalarInterceptor('modalGasto', 'gasto_caja', 'gasto');
+    _instalarInterceptorCorte();
     _actualizarBannerOffline();
 
     window.addEventListener('online',  () => _actualizarBannerOffline());
@@ -77,6 +78,18 @@
   async function _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel) {
     if (!window.OfflineData) {
       _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
+      return;
+    }
+
+    // Candado: si ya hay un pre-corte encolado, el efectivo ya fue contado.
+    // Registrar más movimientos después del conteo descuadraría el corte.
+    if (await _hayPreCortePendiente()) {
+      _avisar(
+        'warning',
+        'Cierre de caja pendiente',
+        'Ya capturaste el cierre de este corte sin internet. No se pueden registrar ' +
+        'más movimientos hasta que sincronice y se abra un corte nuevo.'
+      );
       return;
     }
 
@@ -154,6 +167,145 @@
       tipoLabel === 'ingreso' ? 'Ingreso guardado offline' : 'Gasto guardado offline',
       'Quedó guardado en este equipo dentro del corte actual y se enviará a Caja al volver internet. ' +
       'Si el corte se cierra antes de sincronizar, se te avisará para registrarlo a mano.'
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 2b. PRE-CORTE DE CAJA OFFLINE (fase 4)
+  //     Offline, el botón "Hacer Corte" abre este flujo: se calcula el efectivo
+  //     esperado con los datos locales (snapshot + movimientos encolados), se
+  //     captura el efectivo contado y se encola. Al volver internet el servidor
+  //     recalcula con TODOS los movimientos y cierra el corte de verdad.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function _hayPreCortePendiente() {
+    try {
+      const pendientes = await window.OfflineData.obtenerPendientes();
+      return pendientes.some(o => o.tipo === 'pre_corte_caja');
+    } catch (_) { return false; }
+  }
+
+  function _instalarInterceptorCorte() {
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('a[href], button');
+      if (!link) return;
+
+      // Solo el botón "Hacer Corte" (la página caja/corte exacta, no caja/corte/123)
+      const href = link.getAttribute('href') || '';
+      let esBotonCorte = false;
+      try {
+        esBotonCorte = href && new URL(href, location.origin).pathname.replace(/\/$/, '').endsWith('/caja/corte');
+      } catch (_) {}
+      if (!esBotonCorte) return;
+
+      // Online real → flujo normal (página de corte)
+      if (navigator.onLine && window.PWA?.isOnline?.() !== false) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      _preCorteOffline();
+    }, true);
+  }
+
+  async function _preCorteOffline() {
+    if (!window.OfflineData?.obtenerCajaSnapshot) {
+      _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
+      return;
+    }
+
+    if (await _hayPreCortePendiente()) {
+      _avisar('warning', 'Cierre ya capturado', 'El cierre de este corte ya está esperando internet para aplicarse.');
+      return;
+    }
+
+    const snapshot = await window.OfflineData.obtenerCajaSnapshot().catch(() => null);
+    const corte = snapshot?.corte;
+    if (!corte || corte.estado !== 'abierto' || !corte.id) {
+      _avisar('warning', 'Sin corte en caché', 'No hay un corte abierto en los datos offline de este equipo.');
+      return;
+    }
+
+    // Efectivo esperado local = lo del último snapshot + lo encolado en este equipo
+    const base = Number(snapshot?.resumen?.efectivo_en_caja ?? 0);
+    let pendienteEfectivo = 0;
+    try {
+      const pendientes = await window.OfflineData.obtenerPendientes();
+      for (const op of pendientes) {
+        if (op.payload?.metodo_pago !== 'efectivo') continue;
+        if (op.tipo === 'pago_caja') pendienteEfectivo += Number(op.payload.monto || 0);
+        if (op.tipo === 'gasto_caja') pendienteEfectivo -= Number(op.payload.monto || 0);
+      }
+    } catch (_) {}
+    const esperadoLocal = base + pendienteEfectivo;
+
+    if (!window.Swal) {
+      _avisar('error', 'No disponible', 'El cierre offline necesita la interfaz completa. Intenta desde la pantalla de Caja.');
+      return;
+    }
+
+    const fmt = n => '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+    const { value: valores, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: 'Cierre de caja sin internet',
+      html: `
+        <div style="text-align:left;font-size:.92rem;">
+          <p style="background:#FEF3C7;color:#92400E;border-radius:8px;padding:8px 10px;margin-bottom:12px;">
+            <strong>Se cerrará con datos de este equipo.</strong> Si otra recepción registró
+            movimientos, el esperado real puede cambiar: el sistema lo recalculará y te avisará al volver internet.
+          </p>
+          <p style="margin-bottom:4px;">Corte <strong>#${corte.id}</strong></p>
+          <p style="margin-bottom:10px;">Efectivo esperado según este equipo: <strong>${fmt(esperadoLocal)}</strong>
+            ${pendienteEfectivo !== 0 ? `<br><span style="font-size:.8rem;color:#92400E;">(incluye ${fmt(pendienteEfectivo)} de movimientos offline sin sincronizar)</span>` : ''}
+          </p>
+          <label style="display:block;font-weight:600;margin-bottom:4px;">Efectivo contado</label>
+          <input id="precorte-contado" type="number" step="0.01" min="0" class="swal2-input" style="margin:0 0 10px;width:100%;" placeholder="0.00">
+          <label style="display:block;font-weight:600;margin-bottom:4px;">Observaciones (opcional)</label>
+          <textarea id="precorte-obs" class="swal2-textarea" style="margin:0;width:100%;" rows="2"></textarea>
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Capturar cierre',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#B45309',
+      reverseButtons: true,
+      focusConfirm: false,
+      preConfirm: () => {
+        const contado = parseFloat(document.getElementById('precorte-contado').value);
+        if (!isFinite(contado) || contado < 0) {
+          Swal.showValidationMessage('Escribe el efectivo contado (puede ser 0).');
+          return false;
+        }
+        return { contado, obs: document.getElementById('precorte-obs').value.trim() };
+      },
+    });
+
+    if (!isConfirmed || !valores) return;
+
+    try {
+      await window.OfflineData.encolarOperacion('pre_corte_caja', {
+        corte_id_capturado: Number(corte.id),
+        efectivo_contado: valores.contado,
+        efectivo_esperado_local: esperadoLocal,
+        observaciones: valores.obs || undefined,
+        capturado_offline_at: new Date().toISOString(),
+      }, `Cierre de caja corte #${corte.id} — contado ${fmt(valores.contado)}`);
+    } catch (err) {
+      console.error('[CajaOffline] No se pudo encolar el pre-corte:', err);
+      _avisar('error', 'No se pudo capturar', 'El cierre NO quedó guardado. Intenta de nuevo.');
+      return;
+    }
+
+    _actualizarPanelPendientes(
+      { descripcion: `Cierre corte #${corte.id}`, metodo_pago: 'efectivo', categoria: 'Pre-corte', monto: valores.contado },
+      'gasto'
+    );
+
+    const diferenciaLocal = valores.contado - esperadoLocal;
+    _avisar(
+      'success',
+      'Cierre capturado en este equipo',
+      `Contado ${fmt(valores.contado)} vs esperado local ${fmt(esperadoLocal)} ` +
+      `(diferencia ${fmt(diferenciaLocal)}). El corte se cerrará al volver internet con TODOS los movimientos ` +
+      'y se te avisará si el esperado real cambió. Ya no registres movimientos en este corte.'
     );
   }
 
@@ -296,8 +448,8 @@
           <div>
             <strong>Caja en modo offline</strong>
             <span style="display:block;font-size:0.82em;opacity:0.9;margin-top:1px;">
-              Los ingresos y gastos que registres se guardan en este equipo y se envían a Caja al volver internet.
-              La apertura y el cierre de corte requieren conexión.
+              Los ingresos, gastos y el cierre de corte que registres se guardan en este equipo
+              y se aplican al volver internet. La apertura de un corte nuevo sí requiere conexión.
             </span>
           </div>
         `;
@@ -323,11 +475,13 @@
     }
   }
 
-  /** Botones que no deben usarse offline: apertura/cierre de corte */
+  /**
+   * Offline solo se bloquea la APERTURA de corte (crear un corte requiere
+   * servidor). El cierre ya NO se bloquea: el botón "Hacer Corte" abre el
+   * flujo de pre-corte offline (ver _instalarInterceptorCorte).
+   */
   function _deshabilitarBotonesRiesgosos() {
-    document.querySelectorAll(
-      '[href*="caja/corte"], [href*="caja/apertura"], [onclick*="corte"], [data-action="corte"]'
-    ).forEach(btn => {
+    document.querySelectorAll('[href*="caja/apertura"], [href*="caja/abrir"]').forEach(btn => {
       btn.dataset.offlineDisabled = 'true';
       btn.style.opacity           = '0.4';
       btn.style.pointerEvents     = 'none';

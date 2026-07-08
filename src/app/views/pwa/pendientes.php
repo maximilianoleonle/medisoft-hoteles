@@ -92,6 +92,7 @@
         cambiar_estado_habitacion: { icono: 'fa-broom',          nombre: 'Estado de habitación',   dinero: false },
         pago_caja:                 { icono: 'fa-cash-register',  nombre: 'Cobro en caja',          dinero: true },
         gasto_caja:                { icono: 'fa-money-bill-wave', nombre: 'Gasto en caja',         dinero: true },
+        pre_corte_caja:            { icono: 'fa-lock',           nombre: 'Cierre de caja (pre-corte)', dinero: true },
     };
 
     function esc(str) {
