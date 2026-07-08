@@ -27,6 +27,7 @@ $copSecciones = [
     'habitaciones' => $copU('habitaciones'),
 ];
 $copOpcionales = [
+    'huespedes' => ['huespedes' => $copU('huespedes')],
     'motor_reservas' => ['motor de reservas' => $copU('motor-reservas')],
     'promociones' => ['cupones' => $copU('motor-reservas/cupones')],
     'upsells' => ['extras' => $copU('motor-reservas/extras')],
@@ -36,6 +37,24 @@ $copOpcionales = [
     'night_audit' => ['night audit' => $copU('night-audit')],
     'auditoria' => ['bitacora' => $copU('auditoria')],
     'ia_ejecutiva' => ['asesor ia' => $copU('ia/resumen-diario')],
+    'reportes' => ['reportes' => $copU('reportes')],
+    'inventario' => ['inventario' => $copU('inventario')],
+    'tareas' => ['tareas' => $copU('tareas')],
+    'personal' => ['personal' => $copU('trabajadores')],
+    'nomina_avanzada' => ['nomina' => $copU('nomina')],
+    'compras' => ['compras' => $copU('compras')],
+    'facturacion' => ['facturacion' => $copU('facturacion')],
+    'cuentas_cobrar' => ['cuentas por cobrar' => $copU('cuentas-por-cobrar')],
+    'documentos' => ['documentos' => $copU('documentos')],
+    'tarifas_dinamicas' => ['tarifas dinamicas' => $copU('configuracion/tarifas')],
+    'checkin_digital' => ['check-in digital' => $copU('checkin-digital')],
+    'camarista' => ['app de camarista' => $copU('camarista')],
+    'canales_ical' => ['canales' => $copU('canales')],
+    'whatsapp' => ['whatsapp' => $copU('whatsapp')],
+    'tablero_ejecutivo' => ['operacion diaria' => $copU('operacion/diaria')],
+    'notificaciones' => ['notificaciones' => $copU('notificaciones')],
+    'configuracion' => ['configuracion' => $copU('configuracion')],
+    'usuarios' => ['usuarios' => $copU('usuarios')],
 ];
 foreach ($copOpcionales as $clave => $mapa) {
     if ($copMod($clave)) {
@@ -89,10 +108,11 @@ foreach ($copOpcionales as $clave => $mapa) {
         <div class="cop-msg bot">
             Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n o c&oacute;mo hacer algo.
             <div class="cop-sugerencias" style="margin-top:10px;">
+                <button type="button" class="cop-chip" data-q="Dame el resumen del día">📋 Resumen del día</button>
                 <button type="button" class="cop-chip" data-q="¿Cuántas habitaciones libres tengo hoy?">Habitaciones libres</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo voy de caja?">Estado de caja</button>
                 <button type="button" class="cop-chip" data-q="¿Quién llega hoy?">Llegadas de hoy</button>
-                <button type="button" class="cop-chip" data-q="¿Hay checkouts vencidos?">Checkouts vencidos</button>
+                <button type="button" class="cop-chip" data-q="¿Cómo pinta la semana?">¿Cómo pinta la semana?</button>
+                <button type="button" class="cop-chip" data-q="¿Cómo voy de caja?">Estado de caja</button>
                 <button type="button" class="cop-chip" data-q="¿Cómo hago un corte de caja?">¿Cómo hago un corte?</button>
             </div>
         </div>
