@@ -130,6 +130,10 @@ class CopilotoService
             && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro'])) {
             return 'ganancias_mes_pasado';
         }
+        if ($tiene(['este mes', 'mes en curso', 'mes actual', 'lo que va del mes', 'del mes'])
+            && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro', 'cuanto llevo'])) {
+            return 'ganancias_mes_actual';
+        }
         if ($tiene(['caja', 'efectivo', 'corte', 'cuanto llevo', 'cuanto hay en'])) {
             return 'caja';
         }
@@ -304,6 +308,20 @@ class CopilotoService
                     'texto' => "El mes pasado ({$g['mes']} {$g['anio']}) registraste **ingresos por \${$g['ingresos']}** y gastos por \${$g['gastos']}, "
                         . "para una **ganancia neta de \${$g['neto']}** (ingresos menos gastos de caja).",
                     'enlace' => $enlaceGan,
+                ];
+
+            case 'ganancias_mes_actual':
+                $ga = $this->gananciasMesActual($hotelId);
+                if (!$ga['hay']) {
+                    return ['texto' => "Aun no tienes movimientos de caja registrados este mes ({$ga['mes']} {$ga['anio']}).", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                }
+                $enlaceGa = $this->tieneModulo('reportes', $hotelId)
+                    ? ['url' => 'reportes', 'texto' => 'Ver reportes']
+                    : ['url' => 'caja', 'texto' => 'Ir a Caja'];
+                return [
+                    'texto' => "En lo que va de {$ga['mes']} {$ga['anio']} llevas **ingresos por \${$ga['ingresos']}** y gastos por \${$ga['gastos']}, "
+                        . "para una **ganancia neta de \${$ga['neto']}** (al dia de hoy, ingresos menos gastos de caja).",
+                    'enlace' => $enlaceGa,
                 ];
         }
 
@@ -632,10 +650,10 @@ class CopilotoService
     }
 
     /**
-     * Ingresos, gastos y ganancia neta del MES CALENDARIO ANTERIOR, tomados de
-     * movimientos_caja (misma fuente que Caja/Reportes). Solo lectura y por hotel.
+     * Suma ingresos, gastos y ganancia neta de movimientos_caja en el rango
+     * [desde, hasta) — misma fuente que Caja/Reportes. Solo lectura y por hotel.
      */
-    private function gananciasMesPasado(int $hotelId): array
+    private function gananciasEntre(int $hotelId, string $desde, string $hasta): array
     {
         $ingresos = 0.0;
         $gastos = 0.0;
@@ -643,12 +661,10 @@ class CopilotoService
             $stmt = $this->pdo->prepare(
                 "SELECT tipo, COALESCE(SUM(monto), 0) AS total
                  FROM movimientos_caja
-                 WHERE hotel_id = ?
-                   AND created_at >= DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH, '%Y-%m-01')
-                   AND created_at <  DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                 WHERE hotel_id = ? AND created_at >= ? AND created_at < ?
                  GROUP BY tipo"
             );
-            $stmt->execute([$hotelId]);
+            $stmt->execute([$hotelId, $desde, $hasta]);
             foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
                 if ((string) $fila['tipo'] === 'ingreso') {
                     $ingresos = (float) $fila['total'];
@@ -657,20 +673,38 @@ class CopilotoService
                 }
             }
         } catch (Throwable $e) {
-            error_log('Copiloto: error ganancias mes pasado: ' . $e->getMessage());
+            error_log('Copiloto: error ganancias: ' . $e->getMessage());
         }
-
-        $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
-        $ref = strtotime('first day of last month');
 
         return [
             'hay' => ($ingresos > 0 || $gastos > 0),
             'ingresos' => number_format($ingresos, 2),
             'gastos' => number_format($gastos, 2),
             'neto' => number_format($ingresos - $gastos, 2),
-            'mes' => $meses[(int) date('n', $ref)],
-            'anio' => date('Y', $ref),
         ];
+    }
+
+    /** Ingresos/gastos/neto del MES CALENDARIO ANTERIOR. */
+    private function gananciasMesPasado(int $hotelId): array
+    {
+        $ref = strtotime('first day of last month');
+
+        return $this->gananciasEntre($hotelId, date('Y-m-01', $ref), date('Y-m-01'))
+            + ['mes' => $this->nombreMes((int) date('n', $ref)), 'anio' => date('Y', $ref)];
+    }
+
+    /** Ingresos/gastos/neto del MES EN CURSO, del dia 1 hasta hoy inclusive. */
+    private function gananciasMesActual(int $hotelId): array
+    {
+        // 'hasta' es manana (exclusivo) para incluir todo lo de hoy.
+        return $this->gananciasEntre($hotelId, date('Y-m-01'), date('Y-m-d', strtotime('+1 day')))
+            + ['mes' => $this->nombreMes((int) date('n')), 'anio' => date('Y')];
+    }
+
+    private function nombreMes(int $m): string
+    {
+        $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
+        return $meses[$m] ?? (string) $m;
     }
 
     // ───────────────────────── Ayuda (FAQ deterministo) ─────────────────────────
@@ -683,7 +717,7 @@ class CopilotoService
         // Preguntas por la CIFRA de un periodo ("ganancias/ingresos del mes pasado")
         // son dato, no ayuda: se dejan pasar a detectarIntent para dar el numero
         // real (evita que "cuanto vendi el mes pasado" caiga en la FAQ de Reportes).
-        if ((strpos($norm, 'mes pasado') !== false || strpos($norm, 'mes anterior') !== false)
+        if (preg_match('/(mes pasado|mes anterior|este mes|mes en curso|mes actual|del mes)/', $norm)
             && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|factur|cuanto (hice|entro))/', $norm)) {
             return null;
         }
@@ -889,6 +923,10 @@ class CopilotoService
             $c['abierto'] ? "- Caja: corte abierto, efectivo esperado \${$c['esperado']}" : "- Caja: sin corte abierto",
         ];
 
+        $gAct = $this->gananciasMesActual($hotelId);
+        if ($gAct['hay']) {
+            $lineas[] = "- Este mes en curso ({$gAct['mes']} {$gAct['anio']}, al dia de hoy): ingresos \${$gAct['ingresos']}, gastos \${$gAct['gastos']}, ganancia neta \${$gAct['neto']}";
+        }
         $g = $this->gananciasMesPasado($hotelId);
         if ($g['hay']) {
             $lineas[] = "- Mes pasado ({$g['mes']} {$g['anio']}): ingresos \${$g['ingresos']}, gastos \${$g['gastos']}, ganancia neta \${$g['neto']}";
