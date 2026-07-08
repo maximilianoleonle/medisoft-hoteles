@@ -4225,7 +4225,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     Excel
                 </button>
                 <?php endif; ?>
-                <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
+                <a id="cop-ancla-nueva-reserva" href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
                     <i class="fas fa-plus"></i>
                     Nueva reservacion
                 </a>
@@ -6459,7 +6459,15 @@ function confirmarCheckOut(id) {
         return;
     }
 
-    const enviarCheckOut = function() {
+    const enviarCheckOut = async function() {
+        // Selector opcional de responsable de limpieza (cancelable)
+        if (window.CheckoutLimpieza) {
+            const asignaciones = await CheckoutLimpieza.seleccionar({
+                infoUrl: baseUrl + '/api/reservaciones/' + id + '/limpieza-personal'
+            });
+            if (asignaciones === null) return; // usuario cancelo el check-out
+            CheckoutLimpieza.aplicarAForm(form, asignaciones);
+        }
         const horaSalida = form.querySelector('input[name="hora_salida"]');
         if (horaSalida) horaSalida.value = new Date().toTimeString().slice(0, 8);
         form.action = baseUrl + '/reservaciones/check-out/' + id;

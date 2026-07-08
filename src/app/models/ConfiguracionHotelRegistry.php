@@ -133,6 +133,11 @@ class ConfiguracionHotelRegistry
             'default' => 90,
             'description' => 'Dias de vigencia del cupon personal desde que se genera.',
         ],
+        'copiloto.ia_activa' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Permitir que el copiloto use IA (Claude) para preguntas abiertas. Apagado = solo reglas, sin costo de API.',
+        ],
         'nomina.modo' => [
             'type' => 'string',
             'default' => 'simplificada',
