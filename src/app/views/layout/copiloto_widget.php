@@ -9,6 +9,12 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 }
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
+$copilotoLogoUrl = function_exists('asset_version')
+    ? asset_version('img/logo.png')
+    : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
+$copilotoLogoNocheUrl = function_exists('asset_version')
+    ? asset_version('img/logo_noche.png')
+    : (function_exists('asset') ? asset('img/logo_noche.png') : '/img/logo_noche.png');
 
 /**
  * Diccionario de secciones para hipervincular las negritas del chat. Consciente
@@ -36,7 +42,7 @@ $copOpcionales = [
     'forecast' => ['forecast' => $copU('forecast')],
     'night_audit' => ['night audit' => $copU('night-audit')],
     'auditoria' => ['bitacora' => $copU('auditoria')],
-    'ia_ejecutiva' => ['asesor ia' => $copU('ia/resumen-diario')],
+    'ia_ejecutiva' => ['asesor inteligente' => $copU('ia/resumen-diario')],
     'reportes' => ['reportes' => $copU('reportes')],
     'inventario' => ['inventario' => $copU('inventario')],
     'tareas' => ['tareas' => $copU('tareas')],
@@ -65,11 +71,38 @@ foreach ($copOpcionales as $clave => $mapa) {
 }
 ?>
 <style>
-#cop-fab { position: fixed; bottom: 18px; right: 18px; z-index: 10000; width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer; background: var(--brand-primary, #1B2746); color: #fff; font-size: 1.5rem; box-shadow: 0 10px 28px -8px rgba(20,28,45,.55); display: grid; place-items: center; transition: transform .12s ease; }
-#cop-fab:hover { transform: scale(1.06); }
+#cop-fab { position: fixed; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); right: calc(22px + env(safe-area-inset-right, 0px)); z-index: 10000; width: 64px; max-width: calc(100vw - 44px); height: 64px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 14%, #FFFFFF); cursor: pointer; background: #fff; padding: 0; box-shadow: 0 12px 30px -8px rgba(20,28,45,.58); display: flex; align-items: center; justify-content: flex-start; transition: width .22s ease, transform .12s ease, box-shadow .18s ease; overflow: visible; isolation: isolate; }
+#cop-fab:hover,
+#cop-fab:focus-visible,
+#cop-fab.cop-fab-discover { width: min(218px, calc(100vw - 44px)); box-shadow: 0 16px 34px -9px rgba(20,28,45,.62); }
+#cop-fab:hover { transform: translateY(-1px) scale(1.03); }
+#cop-fab::after { content: ''; position: absolute; inset: -7px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 32%, transparent); opacity: 0; pointer-events: none; z-index: -1; }
+#cop-fab.cop-fab-attention::after { animation: cop-fab-ring 2.4s ease-out .9s 1; }
+.cop-fab-mark { position: relative; width: 64px; height: 64px; min-width: 64px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: #fff; }
+.cop-logo-img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 1; transform-origin: center; transition: opacity .18s ease; }
+.cop-logo-img-noche { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.cop-fab-mark .cop-logo-img { transform: scale(2.05); }
+.cop-fab-label { color: var(--brand-primary, #1B2746); font-size: .88rem; font-weight: 800; line-height: 1; white-space: nowrap; padding: 0 18px 0 2px; opacity: 0; transform: translateX(-8px); transition: opacity .18s ease, transform .18s ease; }
+#cop-fab:hover .cop-fab-label,
+#cop-fab:focus-visible .cop-fab-label,
+#cop-fab.cop-fab-discover .cop-fab-label { opacity: 1; transform: translateX(0); }
+html[data-theme="dark"] #cop-fab { background: #171612; border-color: rgba(239,233,220,.14); box-shadow: 0 16px 34px -12px rgba(0,0,0,.72); }
+html[data-theme="dark"] .cop-fab-mark { background: #171612; }
+html[data-theme="dark"] .cop-fab-label { color: #EFE9DC; }
+html[data-theme="dark"] .cop-logo-img-dia { opacity: 0; }
+html[data-theme="dark"] .cop-logo-img-noche { opacity: 1; }
+@keyframes cop-fab-ring {
+    0% { opacity: 0; transform: scale(.92); }
+    22% { opacity: .26; }
+    76% { opacity: 0; transform: scale(1.14); }
+    100% { opacity: 0; transform: scale(1.14); }
+}
 #cop-panel { position: fixed; bottom: 84px; right: 18px; z-index: 10000; width: min(380px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 120px)); background: #fff; border: 1px solid #E1DED4; border-radius: 16px; box-shadow: 0 24px 60px -20px rgba(20,28,45,.5); display: none; flex-direction: column; overflow: hidden; }
 #cop-panel.abierto { display: flex; }
 .cop-head { padding: 14px 16px; background: var(--brand-primary, #1B2746); color: #fff; display: flex; align-items: center; gap: 8px; }
+.cop-logo-mark { position: relative; width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.18); display: grid; place-items: center; flex: none; overflow: hidden; }
+.cop-logo-mark .cop-logo-img { transform: scale(1.78); }
+html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-head strong { font-size: .95rem; }
 .cop-head .cop-sub { font-size: .72rem; opacity: .8; }
 .cop-close { margin-left: auto; background: none; border: 0; color: #fff; font-size: 1.3rem; cursor: pointer; line-height: 1; }
@@ -92,12 +125,77 @@ foreach ($copOpcionales as $clave => $mapa) {
 .cop-foot button { min-height: 42px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--brand-primary, #1B2746); color: #fff; font-weight: 700; cursor: pointer; }
 .cop-foot button:disabled { opacity: .55; cursor: wait; }
 .cop-typing { font-size: .82rem; color: #8A93A6; font-style: italic; }
+@media (prefers-reduced-motion: reduce) {
+    #cop-fab,
+    #cop-fab::after,
+    .cop-fab-label,
+    .cop-logo-img { animation: none !important; transition: none !important; }
+}
+@media (max-width: 1024px) {
+    body.has-hotel-bottom-nav #cop-fab {
+        right: calc(16px + env(safe-area-inset-right, 0px));
+        bottom: calc(var(--hbn-offset, 84px) + 14px);
+    }
+
+    body.has-hotel-bottom-nav #cop-panel {
+        right: 16px;
+        bottom: calc(var(--hbn-offset, 84px) + 126px);
+        max-height: min(560px, calc(100dvh - var(--hbn-offset, 84px) - 154px));
+    }
+}
+@media (max-width: 780px) {
+    body.page-reservaciones #cop-fab {
+        width: 56px;
+        max-width: 56px;
+        height: 56px;
+        top: calc(82px + env(safe-area-inset-top, 0px));
+        right: calc(16px + env(safe-area-inset-right, 0px));
+        bottom: auto;
+    }
+
+    body.page-reservaciones #cop-fab:hover,
+    body.page-reservaciones #cop-fab:focus-visible,
+    body.page-reservaciones #cop-fab.cop-fab-discover {
+        width: 56px;
+    }
+
+    body.page-reservaciones #cop-fab:hover {
+        transform: translateY(-1px) scale(1.02);
+    }
+
+    body.page-reservaciones .cop-fab-mark {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+    }
+
+    body.page-reservaciones .cop-fab-label {
+        display: none;
+    }
+
+    body.page-reservaciones #cop-fab::after {
+        inset: -5px;
+    }
+
+    body.page-reservaciones.has-hotel-bottom-nav #cop-fab {
+        bottom: auto;
+    }
+}
 </style>
 
-<button id="cop-fab" type="button" aria-label="Abrir copiloto">🤖</button>
+<button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir asesor inteligente">
+    <span class="cop-fab-mark" aria-hidden="true">
+        <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
+        <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
+    </span>
+    <span class="cop-fab-label" aria-hidden="true">Asesor inteligente</span>
+</button>
 <div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft">
     <div class="cop-head">
-        <span style="font-size:1.2rem;">🤖</span>
+        <span class="cop-logo-mark" aria-hidden="true">
+            <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
+            <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
+        </span>
         <div>
             <strong>Copiloto</strong>
             <div class="cop-sub">Pregunta sobre tu hotel</div>
@@ -136,6 +234,37 @@ foreach ($copOpcionales as $clave => $mapa) {
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var ocupado = false;
+    var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
+        window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
+            ? String(window.MEDISOFT_CONTEXT.hotel_id)
+            : 'global'
+    );
+
+    function marcarDescubierto() {
+        fab.classList.remove('cop-fab-discover');
+        fab.classList.remove('cop-fab-attention');
+        try {
+            window.localStorage.setItem(DISCOVERY_KEY, 'seen');
+        } catch (error) {}
+    }
+
+    fab.addEventListener('animationend', function (event) {
+        if (event.animationName === 'cop-fab-ring') {
+            fab.classList.remove('cop-fab-attention');
+        }
+    });
+
+    try {
+        if (window.localStorage.getItem(DISCOVERY_KEY) === 'seen') {
+            fab.classList.remove('cop-fab-discover');
+        } else {
+            window.setTimeout(marcarDescubierto, 7600);
+        }
+    } catch (error) {
+        window.setTimeout(function () {
+            fab.classList.remove('cop-fab-discover');
+        }, 7600);
+    }
 
     // Normaliza a minusculas sin acentos, para casar "Reputación" con "reputacion".
     function norm(s) {
@@ -144,7 +273,10 @@ foreach ($copOpcionales as $clave => $mapa) {
 
     function abrir(v) {
         panel.classList.toggle('abierto', v);
-        if (v) { setTimeout(function () { input.focus(); }, 50); }
+        if (v) {
+            marcarDescubierto();
+            setTimeout(function () { input.focus(); }, 50);
+        }
     }
     fab.addEventListener('click', function () { abrir(!panel.classList.contains('abierto')); });
     closeBtn.addEventListener('click', function () { abrir(false); });
@@ -197,7 +329,7 @@ foreach ($copOpcionales as $clave => $mapa) {
             .then(function (data) {
                 var html = formato(data.texto || 'No pude responder.');
                 var fuente = data.fuente || 'fallback';
-                var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ IA' : '💡 Sugerencia');
+                var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
                 html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
                 if (data.enlace && data.enlace.url) {
                     html += '<br><a class="cop-enlace" href="' + escapar(data.enlace.url.charAt(0) === '/' ? data.enlace.url : (data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';

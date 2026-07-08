@@ -41,7 +41,7 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 
 ## 6. Crons del servidor (crontab del host)
 ```cron
-# Briefing IA matutino (7:00 AM hora del servidor)
+# Resumen inteligente matutino (7:00 AM hora del servidor)
 0 7 * * * docker exec medisoft_hoteles_app php /var/www/html/tools/cron_resumen_ia.php >> /var/log/medisoft_cron.log 2>&1
 ```
 (Los holds expirados del motor se limpian solos en cada consulta de disponibilidad.)
@@ -50,7 +50,7 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 - [ ] Login por slug de un hotel + dashboard carga.
 - [ ] `bash tools/test_bloques_funcional.sh` adaptado al dominio (o repetir manualmente: apagar/encender un bloque y verificar).
 - [ ] Motor: disponibilidad pública responde; pago test → reservación → conciliar.
-- [ ] IA: generar un resumen desde la UI.
+- [ ] Asesor inteligente: generar un resumen desde la UI.
 - [ ] Push: instalar PWA en un teléfono y recibir una notificación.
 - [ ] Verificar HTTPS en todas las páginas (sin contenido mixto).
 

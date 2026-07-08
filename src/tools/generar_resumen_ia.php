@@ -1,6 +1,6 @@
 <?php
 /**
- * Herramienta CLI: generar el resumen gerencial IA de un hotel.
+ * Herramienta CLI: generar el resumen gerencial inteligente de un hotel.
  * Sirve para pruebas y como base del envio matutino programado (V2).
  *
  * Uso (dentro del contenedor app):
@@ -47,7 +47,7 @@ if (!$hotel) {
     exit(1);
 }
 
-echo "Generando resumen IA para {$hotel['nombre']} — {$fecha}" . ($regenerar ? ' (regenerando)' : '') . "...\n\n";
+echo "Generando resumen inteligente para {$hotel['nombre']} — {$fecha}" . ($regenerar ? ' (regenerando)' : '') . "...\n\n";
 
 $inicio = microtime(true);
 $servicio = new IaEjecutivaService($db);

@@ -63,7 +63,7 @@ class IaEjecutivaService
         if (!$this->configurado()) {
             return [
                 'success' => false,
-                'message' => 'El asistente IA no esta configurado en el servidor (falta ANTHROPIC_API_KEY). Contacta a Medisoft.',
+                'message' => 'El asesor inteligente no esta configurado en el servidor (falta ANTHROPIC_API_KEY). Contacta a Medisoft.',
             ];
         }
 
@@ -137,7 +137,7 @@ class IaEjecutivaService
             }
         }
 
-        return 'Tu briefing gerencial generado por IA te espera.';
+        return 'Tu resumen gerencial inteligente te espera.';
     }
 
     // ───────────────────────── Prompts ─────────────────────────
@@ -154,7 +154,7 @@ class IaEjecutivaService
             . "4. Una recomendacion concreta para hoy, en una oracion.\n\n"
             . 'Reglas: usa solo los datos del JSON, nunca inventes cifras; escribe montos como $1,234.56; '
             . 'si un dato viene vacio o en cero, no lo menciones salvo que la ausencia sea relevante; '
-            . 'no expliques que eres una IA ni describas el JSON.';
+            . 'no menciones que usas un modelo externo ni describas el JSON.';
     }
 
     private function promptUsuario(string $fecha, array $reporte): string
@@ -205,25 +205,25 @@ class IaEjecutivaService
 
         if ($respuesta === false) {
             error_log('IA Ejecutiva: error curl contra el API de Claude: ' . $errorCurl);
-            return ['success' => false, 'message' => 'No se pudo contactar al asistente IA. Intenta de nuevo.'];
+            return ['success' => false, 'message' => 'No se pudo contactar al asesor inteligente. Intenta de nuevo.'];
         }
 
         $json = json_decode((string) $respuesta, true);
 
         if ($status === 429) {
-            return ['success' => false, 'message' => 'El asistente IA esta saturado en este momento. Intenta en un minuto.'];
+            return ['success' => false, 'message' => 'El asesor inteligente esta ocupado en este momento. Intenta en un minuto.'];
         }
 
         if ($status < 200 || $status >= 300 || !is_array($json)) {
             $detalle = is_array($json) ? (string) ($json['error']['message'] ?? '') : '';
             error_log('IA Ejecutiva: API de Claude HTTP ' . $status . ': ' . $detalle);
-            return ['success' => false, 'message' => 'El asistente IA no pudo generar el resumen (error del servicio).'];
+            return ['success' => false, 'message' => 'El asesor inteligente no pudo generar el resumen (error del servicio).'];
         }
 
         // Revisar stop_reason antes de leer contenido (refusal/max_tokens).
         $stopReason = (string) ($json['stop_reason'] ?? '');
         if ($stopReason === 'refusal') {
-            return ['success' => false, 'message' => 'El asistente IA declino generar este resumen.'];
+            return ['success' => false, 'message' => 'El asesor inteligente no pudo generar este resumen.'];
         }
 
         // content es una lista de bloques polimorficos: tomar los de tipo text.
@@ -236,7 +236,7 @@ class IaEjecutivaService
 
         $texto = trim($texto);
         if ($texto === '') {
-            return ['success' => false, 'message' => 'El asistente IA devolvio una respuesta vacia. Intenta regenerar.'];
+            return ['success' => false, 'message' => 'El asesor inteligente devolvio una respuesta vacia. Intenta regenerar.'];
         }
 
         return [

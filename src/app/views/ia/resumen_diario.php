@@ -1,6 +1,6 @@
 <?php
 /**
- * Asesor IA: resumen gerencial diario narrado (bloque ia_ejecutiva).
+ * Asesor inteligente: resumen gerencial diario narrado (bloque ia_ejecutiva).
  * Vista interna con layout estandar.
  */
 $fecha = $fecha ?? date('Y-m-d');
@@ -73,7 +73,7 @@ $iaMarkdown = static function ($texto) {
 </style>
 
 <div class="iav">
-    <h1>Asesor IA</h1>
+    <h1>Asesor inteligente</h1>
     <p class="sub">Tu resumen gerencial del dia, narrado y accionable. Generado a partir de los datos reales del hotel.</p>
 
     <?php if ($mensaje = get_mensaje()): ?>
@@ -95,7 +95,7 @@ $iaMarkdown = static function ($texto) {
               onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent='Generando...'; return true;">
             <?= csrf_field() ?>
             <input type="hidden" name="fecha" value="<?= $iaSafe($fecha) ?>">
-            <button type="submit" class="iav-btn" <?= $configurado ? '' : 'disabled title="El asistente IA no esta configurado en el servidor."' ?>>
+            <button type="submit" class="iav-btn" <?= $configurado ? '' : 'disabled title="El asesor inteligente no esta configurado en el servidor."' ?>>
                 <?= empty($resultado['success']) ? 'Generar resumen de hoy' : 'Regenerar con datos actuales' ?>
             </button>
         </form>
@@ -104,7 +104,7 @@ $iaMarkdown = static function ($texto) {
     <div class="iav-card">
         <?php if (!empty($resultado['success'])): ?>
             <p class="meta">
-                <span class="chip">✦ Asesor IA</span>
+                <span class="chip">✦ Asesor inteligente</span>
                 <span>Resumen del <?= $iaSafe(date('d/m/Y', strtotime($fecha))) ?></span>
                 <?php if (!empty($resultado['generado_en'])): ?>
                     <span>· generado el <?= $iaSafe(date('d/m/Y H:i', strtotime((string) $resultado['generado_en']))) ?></span>

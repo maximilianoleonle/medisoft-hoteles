@@ -4953,9 +4953,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     </section>
 </div>
 
-<div id="modalExportarPDF" class="fixed inset-0 z-50 hidden">
+<div id="modalExportarPDF" class="fixed inset-0 z-50 hidden" data-ms-overlay-close>
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="res-export-card">
+        <div class="res-export-card ms-anim-panel">
             <button type="button" onclick="cerrarModalExportarPDF()" class="res-export-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
             <div class="res-export-hd">
                 <span class="res-export-ic"><i class="fas fa-file-pdf"></i></span>
@@ -4980,9 +4980,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     </div>
 </div>
 
-<div id="modalExportarExcel" class="fixed inset-0 z-50 hidden">
+<div id="modalExportarExcel" class="fixed inset-0 z-50 hidden" data-ms-overlay-close>
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="res-export-card">
+        <div class="res-export-card ms-anim-panel">
             <button type="button" onclick="cerrarModalExportarExcel()" class="res-export-close" aria-label="Cerrar"><i class="fas fa-times"></i></button>
             <div class="res-export-hd res-export-hd--excel">
                 <span class="res-export-ic"><i class="fas fa-file-excel"></i></span>
@@ -6517,21 +6517,30 @@ function abrirModalExportarPDF() {
     if (sidebar) sidebar.style.display = 'none';
     const modal = document.getElementById('modalExportarPDF');
     if (modal) {
-        modal.classList.remove('hidden');
         const fecha = document.getElementById('fechaExportar');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
         resLimpiarErrorExportacion('fechaExportar', 'fechaExportarError');
-        document.body.classList.add('overflow-hidden');
+        if (window.msModal) {
+            window.msModal.open(modal);
+        } else {
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
     }
 }
 
 function cerrarModalExportarPDF() {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.display = '';
     const modal = document.getElementById('modalExportarPDF');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
+    const restoreSidebar = function() { if (sidebar) sidebar.style.display = ''; };
+    if (modal && window.msModal) {
+        window.msModal.close(modal, { onClose: restoreSidebar });
+    } else {
+        restoreSidebar();
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
     }
 }
 
@@ -6564,21 +6573,30 @@ function abrirModalExportarExcel() {
     if (sidebar) sidebar.style.display = 'none';
     const modal = document.getElementById('modalExportarExcel');
     if (modal) {
-        modal.classList.remove('hidden');
         const fecha = document.getElementById('fechaExportarExcel');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
         resLimpiarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError');
-        document.body.classList.add('overflow-hidden');
+        if (window.msModal) {
+            window.msModal.open(modal);
+        } else {
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
     }
 }
 
 function cerrarModalExportarExcel() {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.display = '';
     const modal = document.getElementById('modalExportarExcel');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
+    const restoreSidebar = function() { if (sidebar) sidebar.style.display = ''; };
+    if (modal && window.msModal) {
+        window.msModal.close(modal, { onClose: restoreSidebar });
+    } else {
+        restoreSidebar();
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
     }
 }
 

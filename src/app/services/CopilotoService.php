@@ -264,10 +264,11 @@ class CopilotoService
                 if ($sem === null) {
                     return ['texto' => 'No tienes habitaciones activas registradas todavia.', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
                 }
-                $texto = "Los proximos 7 dias traen una ocupacion promedio de **{$sem['promedio']}%**.";
+                $texto = "De tus **{$sem['activas']} habitaciones**, los proximos 7 dias promedian **{$sem['promedio']}% de ocupacion**.";
                 if ($sem['mejor_dia'] !== null) {
-                    $texto .= " Tu dia mas fuerte es el {$sem['mejor_dia']} ({$sem['mejor_pct']}%).";
+                    $texto .= " El dia mas fuerte es el {$sem['mejor_dia']}: **{$sem['mejor_habs']} de {$sem['activas']} ocupadas** ({$sem['mejor_pct']}%).";
                 }
+                $texto .= " Hoy tienes **{$sem['libres_hoy']} libres**.";
                 $enlace = $this->tieneModulo('forecast', $hotelId)
                     ? ['url' => 'forecast', 'texto' => 'Ver forecast completo']
                     : ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'];
@@ -605,9 +606,12 @@ class CopilotoService
         $dias = ['Monday' => 'lunes', 'Tuesday' => 'martes', 'Wednesday' => 'miercoles', 'Thursday' => 'jueves', 'Friday' => 'viernes', 'Saturday' => 'sabado', 'Sunday' => 'domingo'];
 
         return [
+            'activas' => $o['activas'],
+            'libres_hoy' => $o['libres'],
             'promedio' => $promedio,
             'mejor_dia' => $mejorHabs > 0 ? ($dias[date('l', strtotime($mejorFecha))] ?? $mejorFecha) . ' ' . date('d/m', strtotime($mejorFecha)) : null,
             'mejor_pct' => $mejorHabs > 0 ? (int) round($mejorHabs * 100 / $o['activas']) : 0,
+            'mejor_habs' => max(0, $mejorHabs),
         ];
     }
 

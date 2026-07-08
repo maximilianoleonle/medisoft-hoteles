@@ -4679,108 +4679,380 @@ if ($tiene_doble_movimiento) {
     <!-- Tooltip container -->
     <div id="roomTooltip" class="room-tooltip"></div>
 </div>
-<!-- Modal de Limpieza Múltiple -->
-<div id="modalLimpieza" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-        <!-- Header del modal -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-broom text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold">Marcar Habitaciones Limpias</h3>
-                    <p class="text-xs text-blue-100">Selecciona las habitaciones que ya están listas</p>
+<!-- ════════════════════════════════════════════════════════════════════
+     Modal de Limpieza Múltiple — rediseño responsive con identidad de
+     limpieza (azul fresco = estado semántico --c-cleaning del sistema)
+     sobre la esencia boutique de la vista (serif Cormorant, superficies
+     marfil, acento oro, sombras suaves). El modal vive FUERA de
+     .habitaciones-view, por eso define sus propios tokens --lm-* desde
+     los --brand-* globales. Todos los selectores se prefijan con
+     #modalLimpieza para ganar (por especificidad) a los overrides
+     dispersos que comparte con #vistaRapidaModal.
+     ════════════════════════════════════════════════════════════════════ -->
+<style id="lm-cleaning-redesign">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
+#modalLimpieza.lm-overlay{
+  --lm-brand: var(--brand-primary, #1B2746);
+  --lm-gold: var(--brand-accent, #BD9441);
+  --lm-clean:#2F77E0; --lm-clean-deep:#1E5FBF; --lm-clean-bright:#5A9BF2;
+  --lm-clean-soft:#E6EFFC; --lm-clean-mist:#F3F8FF;
+  --lm-surface:#FFFFFF; --lm-surface-warm:#FCFAF5;
+  --lm-line:#E7E1D4; --lm-line-cool:#D5E3F6;
+  --lm-ink:#20293A; --lm-ink-soft:#5C6675; --lm-ink-faint:#8B94A3;
+  --lm-radius:24px; --lm-radius-md:15px; --lm-radius-sm:11px;
+  --lm-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --lm-shadow:0 34px 80px -30px rgba(16,32,64,.6), 0 10px 30px -18px rgba(16,32,64,.35);
+  background:rgba(14,26,46,.55)!important;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+}
+
+/* ── Diálogo ── */
+#modalLimpieza .lm-dialog{
+  position:relative; box-sizing:border-box;
+  display:flex; flex-direction:column;
+  width:min(680px, 100%);
+  max-height:min(88vh, 760px); max-height:min(88dvh, 760px);
+  overflow:hidden;
+  background:var(--lm-surface);
+  border-radius:var(--lm-radius); box-shadow:var(--lm-shadow), 0 0 0 1px rgba(213,227,246,.5);
+  font-family:'DM Sans','Outfit',system-ui,-apple-system,sans-serif;
+  color:var(--lm-ink);
+  animation:lmPop .3s cubic-bezier(.22,1,.36,1);
+}
+#modalLimpieza .lm-dialog *{ box-sizing:border-box; }
+
+/* ── Header con motivo de limpieza (azul fresco + burbujas) ── */
+#modalLimpieza .lm-header{
+  position:relative; overflow:hidden; flex:0 0 auto;
+  display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:16px;
+  min-height:94px; padding:20px 24px 20px 22px;
+  border-radius:var(--lm-radius) var(--lm-radius) 0 0;
+  background:linear-gradient(135deg, #2E6FD2 0%, #3D82EA 58%, #60A1FA 100%);
+  color:#fff;
+}
+#modalLimpieza .lm-header::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(96% 74% at 16% -24%, rgba(255,255,255,.31), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.1), transparent 46%);
+}
+#modalLimpieza .lm-bubbles{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+#modalLimpieza .lm-bubble{
+  position:absolute; bottom:-24px; border-radius:50%; opacity:0;
+  background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.9), rgba(255,255,255,.28) 45%, rgba(255,255,255,.06) 70%);
+  box-shadow:inset 0 0 6px rgba(255,255,255,.4);
+  animation:lmRise linear infinite;
+}
+#modalLimpieza .lm-bubble--1{ left:12%; width:14px; height:14px; animation-duration:7s;   animation-delay:0s; }
+#modalLimpieza .lm-bubble--2{ left:32%; width:9px;  height:9px;  animation-duration:9s;   animation-delay:1.4s; }
+#modalLimpieza .lm-bubble--3{ left:56%; width:18px; height:18px; animation-duration:8s;   animation-delay:.6s; }
+#modalLimpieza .lm-bubble--4{ left:74%; width:11px; height:11px; animation-duration:10s;  animation-delay:2.1s; }
+#modalLimpieza .lm-bubble--5{ left:88%; width:7px;  height:7px;  animation-duration:6.5s; animation-delay:.9s; }
+
+#modalLimpieza .lm-header__main{ position:relative; z-index:1; display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
+#modalLimpieza .lm-emblem{
+  position:relative; flex:0 0 auto; width:50px; height:50px; border-radius:14px;
+  display:grid; place-items:center;
+  background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34), 0 8px 18px -12px rgba(0,0,0,.42);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+}
+#modalLimpieza .lm-emblem i{ font-size:1.28rem; color:#fff; }
+#modalLimpieza .lm-emblem__spark{
+  position:absolute; top:-4px; right:-4px; width:14px; height:14px;
+  background:linear-gradient(135deg,#fff,var(--lm-gold));
+  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+  filter:drop-shadow(0 0 4px rgba(255,255,255,.75));
+  animation:lmTwinkle 2.4s ease-in-out infinite;
+}
+#modalLimpieza .lm-header__text{ min-width:0; }
+#modalLimpieza .lm-title{
+  margin:0;
+  font-family:var(--lm-serif)!important;
+  font-weight:600;
+  font-size:1.58rem;
+  line-height:1.1;
+  letter-spacing:0;
+  color:#fff;
+  text-wrap:balance;
+}
+#modalLimpieza .lm-subtitle{ margin:4px 0 0; font-size:.78rem; font-weight:700; line-height:1.28; color:rgba(255,255,255,.88); }
+#modalLimpieza .lm-close{
+  position:relative; z-index:1; flex:0 0 auto; width:38px; height:38px; border-radius:9px;
+  border:1px solid rgba(255,255,255,.22); cursor:pointer;
+  display:grid; place-items:center; background:rgba(255,255,255,.1); color:#fff; font-size:1rem;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
+}
+#modalLimpieza .lm-close:hover{ background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.34); }
+#modalLimpieza .lm-close:active{ transform:scale(.94); }
+#modalLimpieza .lm-close:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+
+/* ── Toolbar: progreso + selección rápida ── */
+#modalLimpieza .lm-toolbar{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 22px; background:var(--lm-surface); border-bottom:1px solid var(--lm-line);
+}
+#modalLimpieza .lm-progress-wrap{ min-width:0; flex:1; }
+#modalLimpieza .lm-count{ margin:0; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+#modalLimpieza .lm-count__n{ font-family:var(--lm-serif); font-weight:700; font-size:1.5rem; line-height:1; color:var(--lm-clean-deep); }
+#modalLimpieza .lm-count__sep{ font-size:.82rem; color:var(--lm-ink-faint); }
+#modalLimpieza .lm-count__total{ font-weight:700; font-size:.95rem; color:var(--lm-ink); }
+#modalLimpieza .lm-count__label{ font-size:.82rem; color:var(--lm-ink-soft); }
+#modalLimpieza .lm-progress{ margin-top:8px; height:6px; max-width:280px; border-radius:999px; background:var(--lm-clean-soft); overflow:hidden; }
+#modalLimpieza .lm-progress__bar{ display:block; height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg, var(--lm-clean), var(--lm-clean-bright)); transition:width .3s cubic-bezier(.22,1,.36,1); }
+#modalLimpieza .lm-select{ flex:0 0 auto; display:flex; gap:8px; }
+#modalLimpieza .lm-select__btn{
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer; min-height:40px;
+  padding:8px 14px; border-radius:11px; font-size:.82rem; font-weight:600;
+  border:1px solid transparent; transition:all .18s ease;
+  background:var(--lm-clean-soft); color:var(--lm-clean-deep);
+}
+#modalLimpieza .lm-select__btn i{ font-size:.8rem; }
+#modalLimpieza .lm-select__btn:hover{ background:color-mix(in srgb, var(--lm-clean) 18%, #fff); }
+#modalLimpieza .lm-select__btn.is-active{ background:var(--lm-clean); color:#fff; box-shadow:0 8px 18px -10px var(--lm-clean); }
+#modalLimpieza .lm-select__btn--ghost{ background:transparent; color:var(--lm-ink-soft); border-color:var(--lm-line); }
+#modalLimpieza .lm-select__btn--ghost:hover{ background:var(--lm-surface-warm); color:var(--lm-ink); border-color:var(--lm-ink-faint); }
+#modalLimpieza .lm-select__btn:focus-visible{ outline:2px solid var(--lm-clean); outline-offset:2px; }
+
+/* ── Cuerpo / lista ── */
+#modalLimpieza .lm-body{
+  flex:1 1 auto; min-height:0; overflow-y:auto; padding:16px 22px 20px;
+  background:linear-gradient(180deg, var(--lm-clean-mist) 0%, var(--lm-surface-warm) 120px);
+}
+#modalLimpieza .lm-list{ display:flex; flex-direction:column; gap:10px; }
+#modalLimpieza .lm-room{
+  position:relative; display:flex; align-items:center; gap:14px; cursor:pointer;
+  padding:14px 16px; border-radius:var(--lm-radius-md);
+  background:var(--lm-surface)!important; border:1.5px solid var(--lm-line)!important;
+  box-shadow:0 1px 2px rgba(16,32,64,.04);
+  transition:border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+#modalLimpieza .lm-room:hover{
+  border-color:var(--lm-line-cool)!important; background:var(--lm-clean-mist)!important;
+  transform:translateY(-1px); box-shadow:0 10px 22px -14px rgba(47,119,224,.5);
+}
+#modalLimpieza .lm-room:has(.lm-room__input:checked){
+  border-color:var(--lm-clean)!important; background:var(--lm-clean-mist)!important;
+  box-shadow:0 0 0 1px var(--lm-clean) inset, 0 12px 24px -16px rgba(47,119,224,.6);
+}
+#modalLimpieza .lm-room__input{ position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none; }
+#modalLimpieza .lm-check{
+  flex:0 0 auto; width:24px; height:24px; border-radius:8px; display:grid; place-items:center;
+  background:#fff; border:2px solid var(--lm-line-cool); color:#fff;
+  transition:all .18s cubic-bezier(.22,1,.36,1);
+}
+#modalLimpieza .lm-check i{ font-size:.7rem; opacity:0; transform:scale(.4); transition:all .18s cubic-bezier(.22,1,.36,1); }
+#modalLimpieza .lm-room__input:checked + .lm-check{
+  background:linear-gradient(135deg, var(--lm-clean), var(--lm-clean-deep));
+  border-color:var(--lm-clean-deep); box-shadow:0 6px 14px -6px var(--lm-clean);
+}
+#modalLimpieza .lm-room__input:checked + .lm-check i{ opacity:1; transform:scale(1); }
+#modalLimpieza .lm-room__input:focus-visible + .lm-check{ outline:2px solid var(--lm-clean); outline-offset:2px; }
+#modalLimpieza .lm-room__emblem{
+  flex:0 0 auto; width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
+  background:var(--lm-clean-soft); color:var(--lm-clean-deep); font-size:1.05rem; border:1px solid var(--lm-line-cool);
+}
+#modalLimpieza .lm-room__info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+#modalLimpieza .lm-room__name{ font-family:var(--lm-serif); font-weight:700; font-size:1.15rem; line-height:1; color:var(--lm-ink); }
+#modalLimpieza .lm-room__meta{ display:flex; align-items:center; gap:7px; font-size:.76rem; color:var(--lm-ink-soft); min-width:0; }
+#modalLimpieza .lm-room__chip{ display:inline-flex; align-items:center; gap:5px; flex:0 0 auto; }
+#modalLimpieza .lm-room__chip i{ font-size:.72rem; color:var(--lm-ink-faint); }
+#modalLimpieza .lm-room__dot{ color:var(--lm-ink-faint); flex:0 0 auto; }
+#modalLimpieza .lm-room__type{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+#modalLimpieza .lm-badge{
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px;
+  font-size:.72rem; font-weight:700; letter-spacing:.01em;
+  background:var(--lm-clean-soft); color:var(--lm-clean-deep); border:1px solid var(--lm-line-cool);
+}
+#modalLimpieza .lm-badge i{ font-size:.72rem; }
+
+/* ── Estado vacío ── */
+#modalLimpieza .lm-empty{ text-align:center; padding:40px 20px; }
+#modalLimpieza .lm-empty__icon{ display:grid; place-items:center; width:64px; height:64px; margin:0 auto 14px; border-radius:20px; background:var(--lm-clean-soft); color:var(--lm-clean); font-size:1.7rem; }
+#modalLimpieza .lm-empty__title{ margin:0; font-family:var(--lm-serif); font-weight:700; font-size:1.3rem; color:var(--lm-ink); }
+#modalLimpieza .lm-empty__text{ margin:4px 0 0; font-size:.85rem; color:var(--lm-ink-soft); }
+
+/* ── Footer ── */
+#modalLimpieza .lm-footer{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 22px; padding-bottom:max(16px, env(safe-area-inset-bottom));
+  background:var(--lm-surface); border-top:1px solid var(--lm-line);
+}
+#modalLimpieza .lm-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px; cursor:pointer;
+  border:0; border-radius:13px; font-size:.9rem; font-weight:700; min-height:48px; padding:0 20px;
+  font-family:inherit; transition:all .18s ease;
+}
+#modalLimpieza .lm-btn--ghost{ background:transparent; color:var(--lm-ink-soft); }
+#modalLimpieza .lm-btn--ghost:hover{ background:var(--lm-surface-warm); color:var(--lm-ink); }
+#modalLimpieza .lm-btn--primary{
+  position:relative; overflow:hidden; color:#fff; padding:0 24px;
+  background:linear-gradient(135deg, var(--lm-clean-deep), var(--lm-clean) 60%, var(--lm-clean-bright));
+  box-shadow:0 14px 26px -12px rgba(47,119,224,.7);
+}
+#modalLimpieza .lm-btn--primary:hover:not(:disabled){ filter:brightness(1.05); transform:translateY(-1px); box-shadow:0 18px 32px -12px rgba(47,119,224,.8); }
+#modalLimpieza .lm-btn--primary:active:not(:disabled){ transform:translateY(0) scale(.99); }
+#modalLimpieza .lm-btn:focus-visible{ outline:2px solid var(--lm-clean-deep); outline-offset:2px; }
+#modalLimpieza .lm-btn--primary:disabled{ background:#E9ECF1; color:#A7AEBA; box-shadow:none; cursor:not-allowed; }
+#modalLimpieza .lm-btn__count{
+  display:none; min-width:22px; height:22px; padding:0 7px; border-radius:999px; line-height:1;
+  background:rgba(255,255,255,.25); color:#fff; font-size:.78rem; font-weight:700; align-items:center; justify-content:center;
+}
+#modalLimpieza .lm-btn__count.is-visible{ display:inline-flex; }
+#modalLimpieza .lm-btn--primary:disabled .lm-btn__count{ background:rgba(0,0,0,.08); color:#A7AEBA; }
+#modalLimpieza .lm-btn__shine{
+  position:absolute; top:0; left:0; width:40%; height:100%; pointer-events:none;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent);
+  transform:translateX(-160%) skewX(-18deg);
+}
+#modalLimpieza .lm-btn--primary:hover:not(:disabled) .lm-btn__shine{ transition:transform .7s ease; transform:translateX(320%) skewX(-18deg); }
+
+/* ── Animaciones ── */
+@keyframes lmPop{ from{ opacity:0; transform:translateY(16px) scale(.98);} to{ opacity:1; transform:none;} }
+@keyframes lmSheetIn{ from{ transform:translateY(100%);} to{ transform:none;} }
+@keyframes lmTwinkle{ 0%,100%{ transform:scale(.7) rotate(0deg); opacity:.6;} 50%{ transform:scale(1) rotate(90deg); opacity:1;} }
+@keyframes lmRise{ 0%{ transform:translateY(0) scale(.6); opacity:0;} 15%{ opacity:.6;} 80%{ opacity:.45;} 100%{ transform:translateY(-165px) scale(1); opacity:0;} }
+
+/* ── Responsive: hoja inferior en móvil (mismo breakpoint 640px que la vista) ── */
+@media (max-width:640px){
+  #modalLimpieza .lm-dialog{
+    width:100%; max-width:none; max-height:92dvh;
+    border-radius:24px 24px 0 0; border-bottom:0;
+    animation:lmSheetIn .34s cubic-bezier(.22,1,.36,1);
+  }
+  #modalLimpieza .lm-dialog::before{
+    display:none;
+  }
+  #modalLimpieza .lm-header{ min-height:94px; padding:20px 24px 20px 22px; gap:16px; }
+  #modalLimpieza .lm-emblem{ width:50px; height:50px; }
+  #modalLimpieza .lm-title{ font-size:1.58rem; line-height:1.1; }
+  #modalLimpieza .lm-subtitle{ font-size:.78rem; }
+  #modalLimpieza .lm-toolbar{ padding:12px 16px; flex-wrap:wrap; gap:12px; }
+  #modalLimpieza .lm-progress{ max-width:none; }
+  #modalLimpieza .lm-select{ width:100%; }
+  #modalLimpieza .lm-select__btn{ flex:1; justify-content:center; min-height:42px; }
+  #modalLimpieza .lm-body{ padding:14px 16px 18px; }
+  #modalLimpieza .lm-room{ padding:12px 14px; gap:12px; }
+  #modalLimpieza .lm-room__emblem{ width:38px; height:38px; }
+  #modalLimpieza .lm-room__name{ font-size:1.05rem; }
+  #modalLimpieza .lm-footer{ padding:14px 16px; padding-bottom:max(14px, env(safe-area-inset-bottom)); gap:10px; }
+  #modalLimpieza .lm-btn{ flex:1; min-height:50px; }
+  #modalLimpieza .lm-btn--ghost{ flex:0 0 auto; padding:0 16px; }
+}
+@media (max-width:380px){
+  #modalLimpieza .lm-badge span{ display:none; }
+  #modalLimpieza .lm-badge{ padding:6px 9px; }
+  #modalLimpieza .lm-room{ gap:10px; }
+}
+
+/* ── Accesibilidad: respetar reduce-motion ── */
+@media (prefers-reduced-motion: reduce){
+  #modalLimpieza .lm-dialog,
+  #modalLimpieza .lm-emblem__spark,
+  #modalLimpieza .lm-btn__shine,
+  #modalLimpieza .lm-progress__bar{ animation:none!important; transition:none!important; }
+  #modalLimpieza .lm-bubble{ display:none; }
+  #modalLimpieza .lm-emblem__spark{ opacity:.9; }
+}
+</style>
+<div id="modalLimpieza"
+     class="lm-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+     role="dialog" aria-modal="true" aria-labelledby="lmTitle" aria-describedby="lmSubtitle"
+     onclick="if(event.target===this)cerrarModalLimpieza()">
+    <div class="lm-dialog" role="document">
+
+        <!-- Header: identidad de limpieza -->
+        <header class="lm-header">
+            <div class="lm-bubbles" aria-hidden="true">
+                <span class="lm-bubble lm-bubble--1"></span>
+                <span class="lm-bubble lm-bubble--2"></span>
+                <span class="lm-bubble lm-bubble--3"></span>
+                <span class="lm-bubble lm-bubble--4"></span>
+                <span class="lm-bubble lm-bubble--5"></span>
+            </div>
+            <div class="lm-header__main">
+                <span class="lm-emblem" aria-hidden="true">
+                    <i class="fas fa-broom"></i>
+                    <span class="lm-emblem__spark"></span>
+                </span>
+                <div class="lm-header__text">
+                    <h3 id="lmTitle" class="lm-title">Marcar Habitaciones Limpias</h3>
+                    <p id="lmSubtitle" class="lm-subtitle">Selecciona las habitaciones que ya están listas</p>
                 </div>
             </div>
-            <button onclick="cerrarModalLimpieza()"
-                    class="text-white hover:text-blue-100 transition-colors p-2 hover:bg-white/10 rounded-lg">
-                <i class="fas fa-times text-xl"></i>
+            <button type="button" onclick="cerrarModalLimpieza()" class="lm-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
             </button>
+        </header>
+
+        <!-- Toolbar: progreso + selección rápida -->
+        <div class="lm-toolbar">
+            <div class="lm-progress-wrap">
+                <p class="lm-count">
+                    <span id="contadorSeleccionadas" class="lm-count__n">0</span>
+                    <span class="lm-count__sep">de</span>
+                    <span class="lm-count__total"><?= count($habitaciones_limpieza) ?></span>
+                    <span class="lm-count__label">habitaciones seleccionadas</span>
+                </p>
+                <div class="lm-progress" role="progressbar" aria-label="Habitaciones seleccionadas" aria-valuemin="0" aria-valuemax="<?= count($habitaciones_limpieza) ?>">
+                    <span id="lmProgress" class="lm-progress__bar"></span>
+                </div>
+            </div>
+            <div class="lm-select" role="group" aria-label="Selección rápida">
+                <button type="button" id="lmSelAll" class="lm-select__btn" onclick="seleccionarTodasLimpieza(true)">
+                    <i class="fas fa-check-double"></i><span>Todas</span>
+                </button>
+                <button type="button" id="lmSelNone" class="lm-select__btn lm-select__btn--ghost" onclick="seleccionarTodasLimpieza(false)">
+                    <i class="fas fa-eraser"></i><span>Ninguna</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Contenido del modal -->
-        <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-            <!-- Contador y botones de selección -->
-            <div class="flex items-center justify-between mb-4 pb-4 border-b">
-                <div class="text-sm text-gray-600">
-                    <span id="contadorSeleccionadas" class="font-bold text-lg text-blue-600">0</span>
-                    <span> de </span>
-                    <span class="font-bold"><?= count($habitaciones_limpieza) ?></span>
-                    <span> habitaciones seleccionadas</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="seleccionarTodasLimpieza(true)"
-                            class="text-xs px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium">
-                        <i class="fas fa-check-square mr-1"></i>Todas
-                    </button>
-                    <button onclick="seleccionarTodasLimpieza(false)"
-                            class="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
-                        <i class="fas fa-square mr-1"></i>Ninguna
-                    </button>
-                </div>
-            </div>
-
-            <!-- Lista de habitaciones -->
-            <div class="space-y-2" id="listaHabitacionesLimpieza">
+        <!-- Lista de habitaciones en limpieza -->
+        <div class="lm-body">
+            <div id="listaHabitacionesLimpieza" class="lm-list">
                 <?php foreach ($habitaciones_limpieza as $hab): ?>
-                <label class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-blue-400 transition-all group">
-                    <input
-                        type="checkbox"
-                        value="<?= $hab['id'] ?>"
-                        class="checkbox-limpieza w-5 h-5 text-blue-600 rounded focus:ring-blue-500 mr-4"
-                        onchange="actualizarContadorLimpieza()"
-                    >
-                    <div class="flex-1 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-blue-600 text-white rounded-lg p-2 group-hover:bg-blue-700 transition-colors">
-                                <i class="fas fa-door-open text-lg"></i>
-                            </div>
-                            <div>
-                                <span class="font-bold text-gray-800 text-lg">Habitación <?= $hab['numero'] ?></span>
-                                <div class="text-xs text-gray-600 mt-0.5">
-                                    <span class="inline-flex items-center">
-                                        <i class="fas fa-layer-group mr-1"></i>
-                                        <?= $pisos[$hab['piso']] ?? 'Piso ' . $hab['piso'] ?>
-                                    </span>
-                                    <span class="mx-2">•</span>
-                                    <span><?= $hab['tipo'] ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                <i class="fas fa-broom"></i>
-                                <span>En limpieza</span>
-                            </div>
-                        </div>
-                    </div>
+                <label class="lm-room">
+                    <input type="checkbox" value="<?= $hab['id'] ?>" class="checkbox-limpieza lm-room__input" onchange="actualizarContadorLimpieza()">
+                    <span class="lm-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                    <span class="lm-room__emblem" aria-hidden="true"><i class="fas fa-door-open"></i></span>
+                    <span class="lm-room__info">
+                        <span class="lm-room__name">Habitación <?= $hab['numero'] ?></span>
+                        <span class="lm-room__meta">
+                            <span class="lm-room__chip"><i class="fas fa-layer-group"></i><?= $pisos[$hab['piso']] ?? 'Piso ' . $hab['piso'] ?></span>
+                            <span class="lm-room__dot">•</span>
+                            <span class="lm-room__type"><?= $hab['tipo'] ?></span>
+                        </span>
+                    </span>
+                    <span class="lm-badge"><i class="fas fa-broom"></i><span>En limpieza</span></span>
                 </label>
                 <?php endforeach; ?>
             </div>
 
             <?php if (empty($habitaciones_limpieza)): ?>
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
-                <p class="font-medium">No hay habitaciones en limpieza</p>
-                <p class="text-sm">Todas las habitaciones están disponibles</p>
+            <div class="lm-empty">
+                <span class="lm-empty__icon" aria-hidden="true"><i class="fas fa-check-circle"></i></span>
+                <p class="lm-empty__title">Todo impecable</p>
+                <p class="lm-empty__text">No hay habitaciones en limpieza ahora mismo.</p>
             </div>
             <?php endif; ?>
         </div>
 
-        <!-- Footer con botones -->
-        <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t">
-            <button onclick="cerrarModalLimpieza()"
-                    class="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium">
-                <i class="fas fa-times mr-2"></i>Cancelar
+        <!-- Footer con acciones -->
+        <footer class="lm-footer">
+            <button type="button" onclick="cerrarModalLimpieza()" class="lm-btn lm-btn--ghost">
+                <i class="fas fa-times"></i><span>Cancelar</span>
             </button>
-            <button onclick="marcarHabitacionesLimpias()"
-                    id="btnMarcarLimpias"
-                    class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled>
-                <i class="fas fa-check-circle mr-2"></i>Marcar como Limpias
+            <button type="button" id="btnMarcarLimpias" onclick="marcarHabitacionesLimpias()" class="lm-btn lm-btn--primary" disabled>
+                <span class="lm-btn__shine" aria-hidden="true"></span>
+                <i class="fas fa-check-double"></i>
+                <span class="lm-btn__label">Marcar como Limpias</span>
+                <span id="lmBtnCount" class="lm-btn__count">0</span>
             </button>
-        </div>
+        </footer>
+
     </div>
 </div>
 
@@ -12902,6 +13174,100 @@ body.hb-modal-open{ overflow:hidden; }
         z-index: 10040 !important;
     }
 }
+
+/* Correccion final: header real del modal de limpieza.
+   Esta capa vive al final porque la vista conserva overrides antiguos para
+   #modalLimpieza basados en el markup previo. */
+#modalLimpieza.lm-overlay > .lm-dialog::before {
+    content: none !important;
+    display: none !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 16px !important;
+    min-height: 94px !important;
+    padding: 20px 24px 20px 22px !important;
+    border-radius: 24px 24px 0 0 !important;
+    background: linear-gradient(135deg, #2E6FD2 0%, #3D82EA 58%, #60A1FA 100%) !important;
+    color: #fff !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header .lm-header__main {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    min-width: 0 !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header .lm-emblem {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.16) !important;
+    border: 1px solid rgba(255,255,255,.34) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 8px 18px -12px rgba(0,0,0,.42) !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header h3.lm-title {
+    margin: 0 !important;
+    color: #fff !important;
+    font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important;
+    font-size: 1.58rem !important;
+    font-weight: 600 !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0 !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header .lm-subtitle {
+    margin: 4px 0 0 !important;
+    color: rgba(255,255,255,.88) !important;
+    font-size: .78rem !important;
+    font-weight: 700 !important;
+    line-height: 1.28 !important;
+}
+
+#modalLimpieza.lm-overlay > .lm-dialog > .lm-header .lm-close {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 9px !important;
+    border: 1px solid rgba(255,255,255,.22) !important;
+    background: rgba(255,255,255,.1) !important;
+    color: #fff !important;
+}
+
+@media (max-width: 640px) {
+    #modalLimpieza.lm-overlay,
+    body.hotel-layout-scope #modalLimpieza.lm-overlay {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 24px !important;
+    }
+
+    #modalLimpieza.lm-overlay > .lm-dialog,
+    body.hotel-layout-scope #modalLimpieza.lm-overlay > .lm-dialog {
+        width: min(680px, 100%) !important;
+        max-width: 680px !important;
+        height: auto !important;
+        max-height: min(88vh, 760px) !important;
+        max-height: min(88dvh, 760px) !important;
+        border-radius: 24px !important;
+        animation: lmPop .3s cubic-bezier(.22,1,.36,1) !important;
+    }
+
+    #modalLimpieza.lm-overlay > .lm-dialog > .lm-header {
+        min-height: 94px !important;
+        padding: 20px 24px 20px 22px !important;
+    }
+
+    #modalLimpieza.lm-overlay > .lm-dialog > .lm-header h3.lm-title {
+        font-size: 1.58rem !important;
+        line-height: 1.1 !important;
+    }
+}
 </style>
 
 <script>
@@ -15182,6 +15548,26 @@ function actualizarContadorLimpieza() {
             btnMarcar.disabled = true;
             btnMarcar.classList.add('opacity-50', 'cursor-not-allowed');
         }
+    }
+
+    // Rediseño "limpieza": feedback visual adicional (aditivo y defensivo, no cambia el contrato)
+    const totalLimpieza = document.querySelectorAll('.checkbox-limpieza').length;
+    const barraProgreso = document.getElementById('lmProgress');
+    if (barraProgreso) {
+        barraProgreso.style.width = (totalLimpieza ? Math.round((contador / totalLimpieza) * 100) : 0) + '%';
+    }
+    const chipConteo = document.getElementById('lmBtnCount');
+    if (chipConteo) {
+        chipConteo.textContent = contador;
+        chipConteo.classList.toggle('is-visible', contador > 0);
+    }
+    const progressWrap = document.querySelector('#modalLimpieza .lm-progress');
+    if (progressWrap) {
+        progressWrap.setAttribute('aria-valuenow', contador);
+    }
+    const btnTodas = document.getElementById('lmSelAll');
+    if (btnTodas) {
+        btnTodas.classList.toggle('is-active', totalLimpieza > 0 && contador === totalLimpieza);
     }
 }
 

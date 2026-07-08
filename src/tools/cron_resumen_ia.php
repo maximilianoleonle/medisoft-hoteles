@@ -1,6 +1,6 @@
 <?php
 /**
- * Cron matutino: genera el resumen IA del dia anterior y envia el push a
+ * Cron matutino: genera el resumen inteligente del dia anterior y envia el push a
  * direccion, para TODOS los hoteles con los bloques ia_ejecutiva y
  * notificaciones contratados. Idempotente (cache + dedupe por dia): puede
  * correr varias veces sin duplicar ni re-pagar tokens.
@@ -54,7 +54,7 @@ $stmt = $db->query(
 $hoteles = $stmt ? $stmt->fetchAll() : [];
 
 $fecha = date('Y-m-d', strtotime('-1 day'));
-echo 'Cron resumen IA — briefing del ' . $fecha . ' — ' . count($hoteles) . " hotel(es) elegible(s)\n";
+echo 'Cron resumen inteligente — briefing del ' . $fecha . ' — ' . count($hoteles) . " hotel(es) elegible(s)\n";
 
 $servicio = new IaEjecutivaService($db);
 if (!$servicio->configurado()) {
@@ -77,7 +77,7 @@ foreach ($hoteles as $hotel) {
         }
     } catch (Throwable $e) {
         echo "  FAIL  {$hotel['nombre']} (hotel {$hotel['id']}) -> " . $e->getMessage() . "\n";
-        error_log('Cron resumen IA: fallo en hotel ' . $hotel['id'] . ': ' . $e->getMessage());
+        error_log('Cron resumen inteligente: fallo en hotel ' . $hotel['id'] . ': ' . $e->getMessage());
         $fallas++;
     }
 }

@@ -118,57 +118,42 @@ $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url
     ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
     : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
 $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context();
-$sidebarNotificacionesNoLeidas = 0;
-$sidebarFacturasPendientes = 0;
-
-if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_id')) {
-    $sidebarHotelId = (int) current_hotel_id();
-
-    try {
-        require_once APP_PATH . '/models/Notificacion.php';
-        $sidebarNotificacionModel = new Notificacion();
-        $sidebarResumenNotificaciones = $sidebarNotificacionModel->resumenPorHotel(
-            $sidebarHotelId,
-            function_exists('current_hotel_user_role') ? current_hotel_user_role() : null,
-            function_exists('user_id') ? user_id() : null
-        );
-        $sidebarNotificacionesNoLeidas = (int)($sidebarResumenNotificaciones['nuevas'] ?? 0);
-    } catch (Throwable $e) {
-        error_log('No se pudo contar notificaciones del sidebar: ' . $e->getMessage());
-        $sidebarNotificacionesNoLeidas = 0;
-    }
-
-    if ($mostrarFacturacion && $sidebarHotelId > 0 && class_exists('Database')) {
-        try {
-            $sidebarDb = Database::getInstance();
-            $sidebarTablaFacturas = $sidebarDb->query(
-                "SELECT 1
-                 FROM information_schema.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE()
-                   AND TABLE_NAME = 'solicitudes_factura'
-                 LIMIT 1"
-            );
-
-            if ($sidebarTablaFacturas && $sidebarTablaFacturas->fetch()) {
-                $sidebarFacturasStmt = $sidebarDb->query(
-                    "SELECT COUNT(*) AS total
-                     FROM solicitudes_factura
-                     WHERE hotel_id = ?
-                       AND estatus IN ('pendiente', 'datos_capturados')",
-                    [$sidebarHotelId]
-                );
-
-                if ($sidebarFacturasStmt) {
-                    $sidebarFacturasRow = $sidebarFacturasStmt->fetch(PDO::FETCH_ASSOC);
-                    $sidebarFacturasPendientes = (int)($sidebarFacturasRow['total'] ?? 0);
-                }
-            }
-        } catch (Throwable $e) {
-            error_log('No se pudo contar facturas pendientes del sidebar: ' . $e->getMessage());
-            $sidebarFacturasPendientes = 0;
-        }
-    }
+// Novedades por seccion (burbujas del sidebar). Fuente unica y defensiva.
+$sidebarNovedades = [];
+if (!$sidebarEsPanelSaas) {
+    require_once APP_PATH . '/helpers/sidebar_novedades.php';
+    $sidebarNovedades = sidebar_novedades();
 }
+
+/**
+ * Burbuja de una entrada del menu. Se oculta en la seccion activa (ya estas ahi).
+ *   - ['dot' => true]  -> punto de novedad (algo nuevo desde tu ultima visita)
+ *   - ['count' => int] -> numero de pendientes
+ */
+$sidebarBadge = static function (string $ruta, bool $activo = false) use ($sidebarNovedades): string {
+    if ($activo) {
+        return '';
+    }
+
+    $info = $sidebarNovedades[$ruta] ?? null;
+    if (!$info) {
+        return '';
+    }
+
+    if (!empty($info['dot'])) {
+        return '<span class="nav-badge nav-badge-novedad" aria-label="Novedad" title="Hay algo nuevo aquí"></span>';
+    }
+
+    $n = (int) ($info['count'] ?? 0);
+    if ($n <= 0) {
+        return '';
+    }
+
+    $tono = $info['tono'] ?? 'count';
+    $sufijo = $tono === 'notify' ? 'notifications' : ($tono === 'billing' ? 'billing' : 'count');
+
+    return '<span class="nav-badge nav-badge-' . $sufijo . '">' . ($n > 99 ? '99+' : (string) $n) . '</span>';
+};
 ?>
 
 <?php
@@ -424,12 +409,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveHabitaciones ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-bed"></i>
-                    <?php
-                    $habitaciones_ocupadas = $habitaciones_ocupadas ?? 0;
-                    if ($habitaciones_ocupadas > 0):
-                    ?>
-                    <span class="nav-badge"><?= $habitaciones_ocupadas ?></span>
-                    <?php endif; ?>
+                    <?= $sidebarBadge('habitaciones', $sidebarActiveHabitaciones) ?>
                 </div>
                 <span class="nav-text">Habitaciones</span>
             </a>
@@ -440,12 +420,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-check"></i>
-                    <?php
-                    $pending_reservations = $pending_reservations ?? 0;
-                    if ($pending_reservations > 0):
-                    ?>
-                    <span class="nav-badge"><?= $pending_reservations ?></span>
-                    <?php endif; ?>
+                    <?= $sidebarBadge('reservaciones', $sidebarActiveReservaciones) ?>
                 </div>
                 <span class="nav-text">Reservaciones</span>
             </a>
@@ -456,6 +431,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveHuespedes ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-users"></i>
+                    <?= $sidebarBadge('huespedes', $sidebarActiveHuespedes) ?>
                 </div>
                 <span class="nav-text">Huéspedes</span>
             </a>
@@ -466,6 +442,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-id-badge"></i>
+                    <?= $sidebarBadge('checkin-digital', $sidebarActiveCheckinDigital) ?>
                 </div>
                 <span class="nav-text">Check-in digital</span>
             </a>
@@ -500,6 +477,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveCuentasPorCobrar ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-hand-holding-dollar"></i>
+                    <?= $sidebarBadge('cuentas-por-cobrar', $sidebarActiveCuentasPorCobrar) ?>
                 </div>
                 <span class="nav-text">Cuentas por cobrar</span>
             </a>
@@ -510,9 +488,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveFacturacion ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice"></i>
-                    <?php if ($sidebarFacturasPendientes > 0): ?>
-                    <span class="nav-badge nav-badge-billing"><?= $sidebarFacturasPendientes > 99 ? '99+' : (int)$sidebarFacturasPendientes ?></span>
-                    <?php endif; ?>
+                    <?= $sidebarBadge('facturacion', $sidebarActiveFacturacion) ?>
                 </div>
                 <span class="nav-text">Facturación</span>
             </a>
@@ -523,6 +499,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveCuentasPorPagar ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice-dollar"></i>
+                    <?= $sidebarBadge('cuentas-por-pagar', $sidebarActiveCuentasPorPagar) ?>
                 </div>
                 <span class="nav-text">Cuentas por pagar</span>
             </a>
@@ -542,6 +519,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveTareas ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-tasks"></i>
+                    <?= $sidebarBadge('tareas', $sidebarActiveTareas) ?>
                 </div>
                 <span class="nav-text">Tareas</span>
             </a>
@@ -552,6 +530,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveCamarista ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-broom"></i>
+                    <?= $sidebarBadge('camarista', $sidebarActiveCamarista) ?>
                 </div>
                 <span class="nav-text">Limpieza</span>
             </a>
@@ -621,6 +600,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveMotorReservas ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-globe"></i>
+                    <?= $sidebarBadge('motor-reservas', $sidebarActiveMotorReservas) ?>
                 </div>
                 <span class="nav-text">Motor de reservas</span>
             </a>
@@ -652,7 +632,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 <div class="nav-icon">
                     <i class="fas fa-wand-magic-sparkles"></i>
                 </div>
-                <span class="nav-text">Asesor IA</span>
+                <span class="nav-text">Asesor inteligente</span>
             </a>
             <?php endif; ?>
 
@@ -661,6 +641,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveReputacion ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-star"></i>
+                    <?= $sidebarBadge('reputacion', $sidebarActiveReputacion) ?>
                 </div>
                 <span class="nav-text">Reputación</span>
             </a>
@@ -729,9 +710,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                class="nav-item <?= $sidebarActiveNotificaciones ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-bell"></i>
-                    <?php if ($sidebarNotificacionesNoLeidas > 0): ?>
-                    <span class="nav-badge nav-badge-notifications"><?= $sidebarNotificacionesNoLeidas > 99 ? '99+' : (int)$sidebarNotificacionesNoLeidas ?></span>
-                    <?php endif; ?>
+                    <?= $sidebarBadge('notificaciones', $sidebarActiveNotificaciones) ?>
                 </div>
                 <span class="nav-text">Notificaciones</span>
             </a>
@@ -916,6 +895,48 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 .nav-item.active .nav-badge.nav-badge-billing {
     background: var(--brand-accent, #B45309) !important;
     color: #FFFEFB !important;
+}
+
+/* Burbuja de conteo (accion): numero de pendientes por seccion. */
+.hotel-layout-scope .hotel-sidebar .nav-badge.nav-badge-count,
+.nav-badge.nav-badge-count {
+    top: -2px !important;
+    right: -3px !important;
+    min-width: 15px !important;
+    height: 15px !important;
+    border-radius: 999px !important;
+    padding: 0 4px !important;
+    font-size: .52rem !important;
+    line-height: 15px !important;
+    font-weight: 800 !important;
+    background: var(--brand-accent, #B45309) !important;
+    color: #FFFEFB !important;
+    box-shadow: 0 0 0 2px var(--hotel-panel, #FFFFFF), 0 6px 14px rgba(15, 23, 42, 0.18) !important;
+    animation: none !important;
+}
+
+/* Punto de novedad (informativo): "hay algo nuevo aqui" desde tu ultima visita. */
+.hotel-layout-scope .hotel-sidebar .nav-badge.nav-badge-novedad,
+.nav-badge.nav-badge-novedad {
+    top: 1px !important;
+    right: 1px !important;
+    min-width: 9px !important;
+    width: 9px !important;
+    height: 9px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    background: var(--brand-accent, #B45309) !important;
+    box-shadow: 0 0 0 2px var(--hotel-panel, #FFFFFF) !important;
+    animation: sidebarNovedadPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes sidebarNovedadPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.22); opacity: .72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-badge.nav-badge-novedad { animation: none !important; }
 }
 </style>
 

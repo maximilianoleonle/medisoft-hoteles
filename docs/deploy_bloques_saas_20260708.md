@@ -77,7 +77,7 @@ SAAS_COBRO_DIA_VENCIMIENTO=10             # opcional (dia limite de pago; defaul
 
 > Tras cambiar el `.env`, **recrear el contenedor** para que tome las variables.
 
-El Copiloto y el Asesor IA usan `ANTHROPIC_API_KEY` (ya existe). Sin ella, el
+El Copiloto y el Asesor inteligente usan `ANTHROPIC_API_KEY` (ya existe). Sin ella, el
 Copiloto sigue funcionando **solo con reglas** (datos + FAQ), sin costo de API.
 
 ---
@@ -107,7 +107,7 @@ Para cada hotel que los contrate:
    - **reputacion**: link de Google Reviews en `/reputacion`.
    - **motor_idiomas**: nada; el selector ES/EN aparece solo.
    - **promociones / upsells**: crear cupones/extras en el motor.
-   - **copiloto**: opcional apagar la IA con `copiloto.ia_activa` (solo reglas).
+   - **copiloto**: opcional apagar la respuesta asistida con `copiloto.ia_activa` (solo reglas).
 
 ---
 

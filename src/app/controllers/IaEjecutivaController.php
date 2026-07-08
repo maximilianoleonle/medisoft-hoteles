@@ -1,6 +1,6 @@
 <?php
 /**
- * IA Ejecutiva (bloque ia_ejecutiva): resumen gerencial diario narrado.
+ * Asesor inteligente (bloque ia_ejecutiva): resumen gerencial diario narrado.
  */
 
 require_once __DIR__ . '/../services/IaEjecutivaService.php';
@@ -32,7 +32,7 @@ class IaEjecutivaController extends Controller {
         $resultado = $servicio->resumenGerencialDiario($hotelId, $fecha, false, user_id());
 
         View::renderTemplate('ia/resumen_diario', [
-            'title' => 'Asesor IA - ' . current_hotel_display_name(),
+            'title' => 'Asesor inteligente - ' . current_hotel_display_name(),
             'fecha' => $fecha,
             'resultado' => $resultado,
             'configurado' => $servicio->configurado(),

@@ -73,9 +73,9 @@ check "exportaciones ON  -> exportar Excel responde" "200" "$(status_de "reserva
 echo
 echo "── Bloque 'ia_ejecutiva' ──"
 toggle ia_ejecutiva 0
-check "ia OFF -> Asesor IA bloqueado" "302" "$(status_de "ia/resumen-diario")"
+check "ia OFF -> Asesor inteligente bloqueado" "302" "$(status_de "ia/resumen-diario")"
 toggle ia_ejecutiva 1
-check "ia ON  -> Asesor IA accesible" "200" "$(status_de "ia/resumen-diario")"
+check "ia ON  -> Asesor inteligente accesible" "200" "$(status_de "ia/resumen-diario")"
 
 echo
 echo "── Bloque 'motor_reservas' (pagina publica, sin sesion) ──"

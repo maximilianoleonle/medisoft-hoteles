@@ -1280,8 +1280,8 @@ $cortesias_actuales = array_column(array_filter($habitaciones_seleccionadas, fun
 </div>
 
 <!-- Modal de cortesías -->
-<div id="modalCortesias" class="modal">
-    <div class="modal-content">
+<div id="modalCortesias" class="modal" data-ms-overlay-close>
+    <div class="modal-content ms-anim-panel">
         <div class="modal-header">
             <h3 style="margin: 0;">
                 <i class="fas fa-gift" style="margin-right: 8px; color: var(--er-accent);"></i>
@@ -1475,7 +1475,11 @@ function mostrarModalCortesias() {
     html += '</div>';
 
     document.getElementById('listaHabitacionesCortesia').innerHTML = html;
-    modal.style.display = 'block';
+    if (window.msModal) {
+        window.msModal.open(modal, { display: 'block' });
+    } else {
+        modal.style.display = 'block';
+    }
 }
 
 function toggleCortesiaModal(habId, element) {
@@ -1529,7 +1533,12 @@ function aplicarCortesias() {
 }
 
 function cerrarModalCortesias() {
-    document.getElementById('modalCortesias').style.display = 'none';
+    const modal = document.getElementById('modalCortesias');
+    if (window.msModal) {
+        window.msModal.close(modal, { display: 'block' });
+    } else if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function actualizarResumen() {

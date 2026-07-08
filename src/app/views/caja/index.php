@@ -609,6 +609,8 @@ if (!function_exists('cj_finance_sentence')) {
     --cash-modal-on-action:var(--brand-action-text, #FFFEFB);
     --cash-modal-income:#14784B;
     --cash-modal-expense:#A33A31;
+    --cash-ease:cubic-bezier(.22,1,.36,1);
+    --cash-sk:color-mix(in srgb, var(--cash-modal-muted) 20%, var(--cash-modal-surface-soft));
     background:rgba(16,20,18,.68) !important;
     backdrop-filter:none !important;
     overflow-y:auto; padding:16px;
@@ -853,6 +855,110 @@ if (!function_exists('cj_finance_sentence')) {
     #modalIngreso .cash-modal-grid, #modalGasto .cash-modal-grid { grid-template-columns:1fr; }
     #modalIngreso .cash-modal-actions, #modalGasto .cash-modal-actions { margin-inline:-16px; padding:14px 16px 16px; }
     #modalIngreso .cash-modal-btn, #modalGasto .cash-modal-btn { flex:1; }
+}
+
+/* ══ Deleite Sereno: entrada del modal + skeleton de carga ══ */
+/* Fondo oscuro: aparece con un desvanecido suave */
+#modalIngreso, #modalGasto {
+    opacity:0;
+    transition:opacity .26s var(--cash-ease);
+}
+#modalIngreso.is-open, #modalGasto.is-open { opacity:1; }
+
+/* Diálogo: entra con un "pop" (leve subida + escala) en escritorio */
+#modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog {
+    position:relative;
+    opacity:0;
+    transform:translateY(18px) scale(.965);
+    transform-origin:center bottom;
+    transition:opacity .3s ease, transform .42s var(--cash-ease);
+    will-change:transform, opacity;
+}
+#modalIngreso.is-open .cash-modal-dialog, #modalGasto.is-open .cash-modal-dialog {
+    opacity:1;
+    transform:translateY(0) scale(1);
+}
+
+/* Skeleton: cubre el diálogo mientras "carga" y se desvanece al revelar el form */
+#modalIngreso .cash-modal-skeleton, #modalGasto .cash-modal-skeleton {
+    position:absolute; inset:0; z-index:5;
+    display:flex; flex-direction:column; gap:14px;
+    padding:18px 20px 20px;
+    background:var(--cash-modal-surface);
+    border-radius:inherit;
+    opacity:1;
+    transition:opacity .34s ease;
+}
+#modalIngreso .cash-modal-dialog:not(.is-loading) .cash-modal-skeleton,
+#modalGasto  .cash-modal-dialog:not(.is-loading) .cash-modal-skeleton {
+    opacity:0; pointer-events:none;
+}
+#modalIngreso .cash-sk-head, #modalGasto .cash-sk-head {
+    display:flex; align-items:center; gap:12px; margin-bottom:4px;
+}
+#modalIngreso .cash-sk-chip, #modalGasto .cash-sk-chip {
+    width:42px; height:42px; flex:0 0 42px; border-radius:12px;
+}
+#modalIngreso .cash-sk-heading, #modalGasto .cash-sk-heading {
+    flex:1; min-width:0; display:grid; gap:7px;
+}
+#modalIngreso .cash-sk-field, #modalGasto .cash-sk-field { display:grid; gap:8px; }
+#modalIngreso .cash-sk-row, #modalGasto .cash-sk-row {
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px;
+}
+#modalIngreso .cash-sk-actions, #modalGasto .cash-sk-actions {
+    display:flex; justify-content:flex-end; gap:10px; margin-top:auto; padding-top:8px;
+}
+#modalIngreso .cash-sk-bar, #modalGasto .cash-sk-bar {
+    position:relative; overflow:hidden; border-radius:9px;
+    background:var(--cash-sk);
+}
+#modalIngreso .cash-sk-bar::after, #modalGasto .cash-sk-bar::after {
+    content:''; position:absolute; inset:0; transform:translateX(-100%);
+    background:linear-gradient(90deg, transparent, color-mix(in srgb, #fff 78%, transparent), transparent);
+    animation:cashSkShimmer 1.25s ease-in-out infinite;
+}
+#modalIngreso .cash-sk-bar.sk-label, #modalGasto .cash-sk-bar.sk-label { height:11px; width:38%; }
+#modalIngreso .cash-sk-bar.sk-label.sk-sm, #modalGasto .cash-sk-bar.sk-label.sk-sm { width:26%; }
+#modalIngreso .cash-sk-bar.sk-input, #modalGasto .cash-sk-bar.sk-input { height:46px; }
+#modalIngreso .cash-sk-bar.sk-area, #modalGasto .cash-sk-bar.sk-area { height:78px; }
+#modalIngreso .cash-sk-bar.sk-title, #modalGasto .cash-sk-bar.sk-title { height:15px; width:62%; }
+#modalIngreso .cash-sk-bar.sk-kicker, #modalGasto .cash-sk-bar.sk-kicker { height:9px; width:44%; }
+#modalIngreso .cash-sk-bar.sk-btn, #modalGasto .cash-sk-bar.sk-btn { height:42px; width:104px; border-radius:11px; }
+@keyframes cashSkShimmer { 100% { transform:translateX(100%); } }
+
+/* Móvil: el diálogo entra como hoja inferior (sube desde abajo) + agarradera */
+@media (max-width:640px) {
+    #modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog {
+        opacity:1;
+        transform:translateY(100%);
+        transition:transform .4s var(--cash-ease);
+    }
+    #modalIngreso.is-open .cash-modal-dialog, #modalGasto.is-open .cash-modal-dialog {
+        transform:translateY(0);
+    }
+    #modalIngreso .cash-modal-dialog::before, #modalGasto .cash-modal-dialog::before {
+        content:''; position:absolute; top:7px; left:50%; transform:translateX(-50%);
+        width:42px; height:4px; border-radius:999px; z-index:6;
+        background:color-mix(in srgb, var(--cash-modal-muted) 42%, transparent);
+    }
+    #modalIngreso .cash-modal-header, #modalGasto .cash-modal-header { padding-top:20px; }
+    #modalIngreso .cash-modal-skeleton, #modalGasto .cash-modal-skeleton { padding-top:22px; }
+}
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+    #modalIngreso, #modalGasto,
+    #modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog,
+    #modalIngreso .cash-modal-skeleton, #modalGasto .cash-modal-skeleton {
+        transition-duration:.01ms !important;
+    }
+    #modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog {
+        transform:none !important;
+    }
+    #modalIngreso .cash-sk-bar::after, #modalGasto .cash-sk-bar::after {
+        animation:none !important;
+    }
 }
 </style>
 
@@ -1524,19 +1630,74 @@ function obtenerSidebarCaja() {
     return document.getElementById('sidebar') || document.querySelector('[data-sidebar]');
 }
 
-function abrirModalCaja(modalId) {
+// ── Deleite Sereno: entrada coreografiada + skeleton de carga ──
+const CASH_SKELETON_MS = 520;
+
+function cashPrefersReduced() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function cashEnsureSkeleton(dialog) {
+    if (!dialog || dialog.querySelector('.cash-modal-skeleton')) {
+        return;
+    }
+    const sk = document.createElement('div');
+    sk.className = 'cash-modal-skeleton';
+    sk.setAttribute('aria-hidden', 'true');
+    sk.innerHTML =
+        '<div class="cash-sk-head">' +
+            '<div class="cash-sk-bar cash-sk-chip"></div>' +
+            '<div class="cash-sk-heading">' +
+                '<div class="cash-sk-bar sk-kicker"></div>' +
+                '<div class="cash-sk-bar sk-title"></div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="cash-sk-field"><div class="cash-sk-bar sk-label"></div><div class="cash-sk-bar sk-input"></div></div>' +
+        '<div class="cash-sk-field"><div class="cash-sk-bar sk-label sk-sm"></div><div class="cash-sk-bar sk-area"></div></div>' +
+        '<div class="cash-sk-row">' +
+            '<div class="cash-sk-field"><div class="cash-sk-bar sk-label"></div><div class="cash-sk-bar sk-input"></div></div>' +
+            '<div class="cash-sk-field"><div class="cash-sk-bar sk-label"></div><div class="cash-sk-bar sk-input"></div></div>' +
+        '</div>' +
+        '<div class="cash-sk-field"><div class="cash-sk-bar sk-label sk-sm"></div><div class="cash-sk-bar sk-input"></div></div>' +
+        '<div class="cash-sk-actions"><div class="cash-sk-bar sk-btn"></div><div class="cash-sk-bar sk-btn"></div></div>';
+    dialog.appendChild(sk);
+}
+
+function abrirModalCaja(modalId, opts) {
     const modal = document.getElementById(modalId);
     if (!modal) {
         return;
     }
+    opts = opts || {};
 
     const sidebar = obtenerSidebarCaja();
     if (sidebar) {
         sidebar.style.display = 'none';
     }
 
+    const dialog = modal.querySelector('.cash-modal-dialog');
+    const usarSkeleton = opts.skeleton !== false && !cashPrefersReduced();
+    if (dialog) {
+        if (usarSkeleton) {
+            cashEnsureSkeleton(dialog);
+            dialog.classList.add('is-loading');
+            if (dialog._skTimer) {
+                clearTimeout(dialog._skTimer);
+            }
+            dialog._skTimer = setTimeout(function () {
+                dialog.classList.remove('is-loading');
+            }, CASH_SKELETON_MS);
+        } else {
+            dialog.classList.remove('is-loading');
+        }
+    }
+
     modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
+
+    // Fuerza el cálculo del estado inicial (oculto) y dispara la transición de entrada.
+    void modal.offsetWidth;
+    modal.classList.add('is-open');
 }
 
 function cerrarModalCaja(modalId) {
@@ -1545,18 +1706,53 @@ function cerrarModalCaja(modalId) {
         return;
     }
 
-    const sidebar = obtenerSidebarCaja();
-    if (sidebar) {
-        sidebar.style.display = '';
+    const dialog = modal.querySelector('.cash-modal-dialog');
+
+    const finalizar = function () {
+        modal.classList.add('hidden');
+
+        const sidebar = obtenerSidebarCaja();
+        if (sidebar) {
+            sidebar.style.display = '';
+        }
+
+        document.body.classList.remove('overflow-hidden');
+
+        const form = modal.querySelector('form');
+        if (form) {
+            form.reset();
+        }
+
+        if (dialog) {
+            if (dialog._skTimer) {
+                clearTimeout(dialog._skTimer);
+            }
+            dialog.classList.remove('is-loading');
+        }
+    };
+
+    modal.classList.remove('is-open');
+
+    if (!dialog || cashPrefersReduced()) {
+        finalizar();
+        return;
     }
 
-    modal.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-
-    const form = modal.querySelector('form');
-    if (form) {
-        form.reset();
-    }
+    // Espera a que termine la transición del diálogo (o un respaldo por tiempo).
+    let cerrado = false;
+    const alTerminar = function (e) {
+        if (e && (e.target !== dialog || (e.propertyName && e.propertyName !== 'transform'))) {
+            return;
+        }
+        if (cerrado) {
+            return;
+        }
+        cerrado = true;
+        dialog.removeEventListener('transitionend', alTerminar);
+        finalizar();
+    };
+    dialog.addEventListener('transitionend', alTerminar);
+    setTimeout(alTerminar, 500);
 }
 
 function mostrarModalIngreso() {
@@ -1574,6 +1770,23 @@ function mostrarModalGasto() {
 function cerrarModalGasto() {
     cerrarModalCaja('modalGasto');
 }
+
+// Cerrar al hacer clic en el fondo oscuro (fuera del diálogo)
+function cashBindOverlayClose(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        return;
+    }
+    modal.addEventListener('mousedown', function (e) {
+        const esFondo = e.target === modal ||
+            (e.target.classList && e.target.classList.contains('cash-modal-shell'));
+        if (esFondo) {
+            cerrarModalCaja(modalId);
+        }
+    });
+}
+cashBindOverlayClose('modalIngreso');
+cashBindOverlayClose('modalGasto');
 
 // Cerrar modales con Escape
 document.addEventListener('keydown', function(e) {
@@ -1642,7 +1855,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    abrirModalCaja(modalId);
+    // Reapertura por error de validación: mostramos el contenido al instante (sin skeleton).
+    abrirModalCaja(modalId, { skeleton: false });
 
     if (cajaOldOrigin === 'ingreso' && metodoPagoIngreso) {
         metodoPagoIngreso.dispatchEvent(new Event('change'));

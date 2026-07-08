@@ -870,6 +870,53 @@
     border-color: var(--inv-line) !important;
 }
 
+/* Keep the movements panel content-height instead of stretching to match
+   the (much taller) products table in the shared grid row. */
+.inv-page .mov-panel {
+    align-self: start;
+}
+
+/* Scroll container + day separators for Movimientos Recientes */
+.inv-page .mov-scroll {
+    padding-bottom: 8px;
+    overscroll-behavior: contain;
+}
+
+.inv-page .mov-day-sep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 14px 2px;
+    padding: 4px 0 2px;
+}
+
+.inv-page .mov-day-sep:first-child {
+    margin-top: 2px;
+}
+
+.inv-page .mov-day-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--inv-line-soft);
+}
+
+.inv-page .mov-day-sep span {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 11px;
+    border-radius: 999px;
+    background: var(--inv-surface-warm);
+    border: 1px solid var(--inv-line);
+    color: var(--inv-muted);
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .03);
+}
+
 .inv-page .producto-card-mobile {
     min-height: 78px;
     gap: 12px;
@@ -1589,7 +1636,7 @@
             </div>
 
             <!-- Recent Movements -->
-            <div class="inv-panel">
+            <div class="inv-panel mov-panel">
                 <div class="panel-hd">
                     <div class="flex items-center gap-2.5">
                         <div class="panel-hd-icon"><i class="fas fa-history text-white text-xs"></i></div>
@@ -1606,8 +1653,27 @@
                         <p class="text-gray-400 text-sm">Sin movimientos recientes</p>
                     </div>
                 <?php else: ?>
-                    <div class="max-h-[460px] overflow-y-auto lc-scroll">
-                        <?php foreach (array_slice($movimientos_recientes, 0, 10) as $mov): ?>
+                    <div class="max-h-[560px] overflow-y-auto lc-scroll mov-scroll">
+                        <?php
+                        $mov_dia_actual = null;
+                        $mov_meses = [1=>'ene',2=>'feb',3=>'mar',4=>'abr',5=>'may',6=>'jun',7=>'jul',8=>'ago',9=>'sep',10=>'oct',11=>'nov',12=>'dic'];
+                        $mov_hoy  = date('Y-m-d');
+                        $mov_ayer = date('Y-m-d', strtotime('-1 day'));
+                        foreach ($movimientos_recientes as $mov):
+                            $mov_ts  = strtotime($mov['created_at']);
+                            $mov_dia = date('Y-m-d', $mov_ts);
+                            if ($mov_dia !== $mov_dia_actual):
+                                $mov_dia_actual = $mov_dia;
+                                if ($mov_dia === $mov_hoy) {
+                                    $mov_dia_label = 'Hoy';
+                                } elseif ($mov_dia === $mov_ayer) {
+                                    $mov_dia_label = 'Ayer';
+                                } else {
+                                    $mov_dia_label = (int)date('j', $mov_ts) . ' ' . $mov_meses[(int)date('n', $mov_ts)] . '. ' . date('Y', $mov_ts);
+                                }
+                        ?>
+                        <div class="mov-day-sep"><span><?= $mov_dia_label ?></span></div>
+                        <?php endif; ?>
                         <div class="mov-row">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex items-start gap-2.5">
@@ -1629,7 +1695,7 @@
                                             <?= htmlspecialchars($mov['producto_nombre']) ?>
                                         </p>
                                         <p class="text-xs text-gray-400 mt-0.5">
-                                            <?= date('d/m H:i', strtotime($mov['created_at'])) ?>
+                                            <?= date('H:i', $mov_ts) ?>
                                             <?php if ($mov['habitacion_numero']): ?> · Hab <?= $mov['habitacion_numero'] ?><?php endif; ?>
                                         </p>
                                         <?php if ($mov['motivo']): ?>

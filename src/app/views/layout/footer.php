@@ -433,5 +433,178 @@
     })();
     </script>
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         ms-modal-motion · capa de movimiento para modales (global, opt-in)
+         Deleite Sereno: entrada coreografiada + skeleton reutilizable.
+         Uso: overlay con clase .ms-anim y diálogo con .ms-anim-panel
+              (+ .ms-anim-sheet para hoja inferior en móvil).
+              Abrir/cerrar con window.msModal.open(el, {skeleton}) / .close(el)
+         ═══════════════════════════════════════════════════════════════════ -->
+    <style>
+        :root{
+            --ms-ease:cubic-bezier(.22,1,.36,1);
+            --ms-sk-bg:var(--brand-surface, #FFFFFF);
+            --ms-sk-bar:color-mix(in srgb, var(--brand-muted, #6B7280) 18%, var(--brand-surface-soft, #F4F1EA));
+        }
+        /* Fondo oscuro: se desvanece al entrar/salir */
+        .ms-anim{ opacity:0; transition:opacity .26s var(--ms-ease); }
+        .ms-anim.ms-anim-in{ opacity:1; }
+        /* Diálogo: "pop" (leve subida + escala) en escritorio */
+        .ms-anim .ms-anim-panel{
+            opacity:0; transform:translateY(18px) scale(.965); transform-origin:center bottom;
+            will-change:transform, opacity;
+            transition:opacity .3s ease, transform .42s var(--ms-ease);
+        }
+        .ms-anim.ms-anim-in .ms-anim-panel{ opacity:1; transform:none; }
+        /* El panel es contexto de posicionamiento sólo si lleva skeleton */
+        .ms-anim-panel:has(.ms-sk-layer){ position:relative; }
+
+        /* Skeleton reutilizable (se inyecta dentro del panel) */
+        .ms-anim-panel .ms-sk-layer{
+            position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; gap:14px;
+            padding:18px 20px 20px; background:var(--ms-sk-bg); border-radius:inherit;
+            opacity:1; transition:opacity .34s ease;
+        }
+        .ms-anim-panel:not(.is-loading) .ms-sk-layer{ opacity:0; pointer-events:none; }
+        .ms-sk{ position:relative; overflow:hidden; border-radius:9px; background:var(--ms-sk-bar); }
+        .ms-sk::after{
+            content:''; position:absolute; inset:0; transform:translateX(-100%);
+            background:linear-gradient(90deg, transparent, color-mix(in srgb, #fff 78%, transparent), transparent);
+            animation:msSkShimmer 1.25s ease-in-out infinite;
+        }
+        .ms-sk.sk-label{ height:11px; width:38%; } .ms-sk.sk-label.sk-sm{ width:26%; }
+        .ms-sk.sk-input{ height:46px; } .ms-sk.sk-area{ height:78px; }
+        .ms-sk.sk-title{ height:15px; width:60%; } .ms-sk.sk-kicker{ height:9px; width:44%; }
+        .ms-sk.sk-chip{ width:42px; height:42px; flex:0 0 42px; border-radius:12px; }
+        .ms-sk.sk-btn{ height:42px; width:104px; border-radius:11px; }
+        .ms-sk-head{ display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+        .ms-sk-heading{ flex:1; min-width:0; display:grid; gap:7px; }
+        .ms-sk-field{ display:grid; gap:8px; }
+        .ms-sk-row{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+        .ms-sk-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:auto; padding-top:8px; }
+        @keyframes msSkShimmer{ 100%{ transform:translateX(100%); } }
+
+        /* Móvil: hoja inferior + agarradera (opt-in con .ms-anim-sheet) */
+        @media (max-width:640px){
+            .ms-anim .ms-anim-panel.ms-anim-sheet{ opacity:1; transform:translateY(100%); transition:transform .4s var(--ms-ease); }
+            .ms-anim.ms-anim-in .ms-anim-panel.ms-anim-sheet{ transform:translateY(0); }
+            .ms-anim .ms-anim-panel.ms-anim-sheet::before{
+                content:''; position:absolute; top:7px; left:50%; transform:translateX(-50%);
+                width:42px; height:4px; border-radius:999px; z-index:6;
+                background:color-mix(in srgb, var(--brand-muted, #6B7280) 42%, transparent);
+            }
+        }
+
+        /* Respeta a quien prefiere menos movimiento */
+        @media (prefers-reduced-motion: reduce){
+            .ms-anim, .ms-anim .ms-anim-panel, .ms-anim-panel .ms-sk-layer{ transition-duration:.01ms !important; }
+            .ms-anim .ms-anim-panel{ transform:none !important; }
+            .ms-sk::after{ animation:none !important; }
+        }
+    </style>
+    <script>
+    (function(){
+        if (window.__msModalMotionReady) { return; }
+        window.__msModalMotionReady = true;
+
+        var EXIT_FALLBACK = 520;
+
+        function prefersReduced(){
+            return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
+        function panelOf(overlay){
+            return overlay.querySelector('.ms-anim-panel') || null;
+        }
+        function buildSkeleton(panel){
+            if (!panel || panel.querySelector('.ms-sk-layer')) { return; }
+            var sk = document.createElement('div');
+            sk.className = 'ms-sk-layer';
+            sk.setAttribute('aria-hidden', 'true');
+            sk.innerHTML =
+                '<div class="ms-sk-head"><div class="ms-sk sk-chip"></div><div class="ms-sk-heading"><div class="ms-sk sk-kicker"></div><div class="ms-sk sk-title"></div></div></div>' +
+                '<div class="ms-sk-field"><div class="ms-sk sk-label"></div><div class="ms-sk sk-input"></div></div>' +
+                '<div class="ms-sk-field"><div class="ms-sk sk-label sk-sm"></div><div class="ms-sk sk-area"></div></div>' +
+                '<div class="ms-sk-row"><div class="ms-sk-field"><div class="ms-sk sk-label"></div><div class="ms-sk sk-input"></div></div><div class="ms-sk-field"><div class="ms-sk sk-label"></div><div class="ms-sk sk-input"></div></div></div>' +
+                '<div class="ms-sk-actions"><div class="ms-sk sk-btn"></div><div class="ms-sk sk-btn"></div></div>';
+            panel.appendChild(sk);
+        }
+        function resolve(overlay){
+            return (typeof overlay === 'string') ? document.getElementById(overlay) : overlay;
+        }
+        function open(overlay, opts){
+            overlay = resolve(overlay);
+            if (!overlay) { return; }
+            opts = opts || {};
+
+            overlay.classList.add('ms-anim');
+            overlay.classList.remove('hidden');
+            // Convención alterna: modales .modal que se muestran con display inline
+            if (opts.display) { overlay.style.display = opts.display; }
+
+            var panel = panelOf(overlay);
+            if (panel) {
+                var sk = opts.skeleton;
+                if (sk && !prefersReduced()) {
+                    buildSkeleton(panel);
+                    panel.classList.add('is-loading');
+                    if (panel._msSkTimer) { clearTimeout(panel._msSkTimer); }
+                    panel._msSkTimer = setTimeout(function(){ panel.classList.remove('is-loading'); }, (typeof sk === 'number' ? sk : 520));
+                } else {
+                    panel.classList.remove('is-loading');
+                }
+            }
+
+            if (opts.lockScroll !== false) { document.body.classList.add('overflow-hidden'); }
+
+            // Fuerza el estado inicial (oculto) y dispara la transición de entrada.
+            void overlay.offsetWidth;
+            overlay.classList.add('ms-anim-in');
+
+            if (typeof opts.onOpen === 'function') { opts.onOpen(overlay, panel); }
+        }
+        function close(overlay, opts){
+            overlay = resolve(overlay);
+            if (!overlay) { return; }
+            opts = opts || {};
+
+            var panel = panelOf(overlay);
+            var finish = function(){
+                overlay.classList.add('hidden');
+                if (opts.display) { overlay.style.display = 'none'; }
+                if (opts.lockScroll !== false) { document.body.classList.remove('overflow-hidden'); }
+                if (panel) { if (panel._msSkTimer) { clearTimeout(panel._msSkTimer); } panel.classList.remove('is-loading'); }
+                if (typeof opts.onClose === 'function') { opts.onClose(overlay, panel); }
+            };
+
+            overlay.classList.remove('ms-anim-in');
+
+            if (!panel || prefersReduced()) { finish(); return; }
+
+            var done = false;
+            var onEnd = function(e){
+                if (e && (e.target !== panel || (e.propertyName && e.propertyName !== 'transform'))) { return; }
+                if (done) { return; }
+                done = true;
+                panel.removeEventListener('transitionend', onEnd);
+                finish();
+            };
+            panel.addEventListener('transitionend', onEnd);
+            setTimeout(onEnd, EXIT_FALLBACK);
+        }
+
+        // Cierre al hacer clic en el fondo (opt-in con data-ms-overlay-close en el overlay)
+        document.addEventListener('mousedown', function(e){
+            var overlay = e.target;
+            if (!(overlay instanceof Element)) { return; }
+            overlay = overlay.closest('.ms-anim[data-ms-overlay-close]');
+            if (!overlay) { return; }
+            var panel = panelOf(overlay);
+            if (panel && !panel.contains(e.target)) { close(overlay); }
+        });
+
+        window.msModal = { open: open, close: close, buildSkeleton: buildSkeleton, panelOf: panelOf };
+    })();
+    </script>
+
 </body>
 </html>
