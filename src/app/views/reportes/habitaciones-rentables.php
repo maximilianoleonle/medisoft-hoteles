@@ -904,10 +904,12 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
                 </p>
 
                 <div class="rent-hero-actions">
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                     <button type="button" onclick="exportarPDF()" class="rent-btn is-accent">
                         <i class="fas fa-file-pdf"></i>
                         Exportar PDF
                     </button>
+                    <?php endif; ?>
                     <a href="#rankingRentabilidad" class="rent-btn is-soft">
                         <i class="fas fa-list-ol"></i>
                         Ver ranking

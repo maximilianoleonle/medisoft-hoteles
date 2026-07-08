@@ -175,7 +175,7 @@ $exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== 
                 <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
                 <a class="wk-btn" href="<?= url('trabajadores/reporte') ?>"><i class="fas fa-chart-pie"></i> Reporte</a>
                 <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador') ?>"><i class="fas fa-cash-register"></i> Simulador</a>
-                <?php if ($tablaDisponible): ?><a class="wk-btn" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
+                <?php if ($tablaDisponible && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones'))): ?><a class="wk-btn" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
             </div>
             <span class="wk-pill"><i class="fas fa-eye"></i> Solo consulta</span>
         </section>

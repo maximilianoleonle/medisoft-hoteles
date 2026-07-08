@@ -344,6 +344,7 @@ $exportUrl = url('trabajadores/nomina/periodos/pagos-snapshot/exportar' . ($expo
                     <div class="snap-label">Ingreso por reversion</div>
                     <div class="text-2xl font-black mt-1"><?= trab_snap_pay_money($resumen['reversion_caja_total'] ?? 0) ?></div>
                 </div>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                 <div class="snap-stat snap-stat-soft">
                     <div class="snap-label">Export</div>
                     <a class="snap-btn mt-2" href="<?= $exportUrl ?>">
@@ -351,6 +352,7 @@ $exportUrl = url('trabajadores/nomina/periodos/pagos-snapshot/exportar' . ($expo
                         Exportar CSV
                     </a>
                 </div>
+                <?php endif; ?>
             </div>
 
             <?php if (!empty($porPeriodo)): ?>

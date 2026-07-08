@@ -285,10 +285,12 @@ $exportUrl = url('trabajadores/nomina/periodos/exportar' . ($exportQuery !== '' 
                     <i class="fas fa-clipboard-list"></i>
                     Preview nomina
                 </a>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                 <a class="payroll-btn" href="<?= $exportUrl ?>">
                     <i class="fas fa-file-csv"></i>
                     Exportar CSV
                 </a>
+                <?php endif; ?>
             </div>
             <span class="payroll-report-badge">
                 <i class="fas fa-lock"></i>

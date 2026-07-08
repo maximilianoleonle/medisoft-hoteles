@@ -1033,10 +1033,12 @@ foreach ($porEstado as $estadoDato) {
                         Explora de dónde llegan los huéspedes, qué estados generan más reservaciones y cómo se mueve la demanda por región.
                     </p>
                     <div class="geo-actions">
+                        <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                         <button type="button" onclick="exportarPDF()" class="geo-btn is-accent">
                             <i class="fas fa-file-pdf"></i>
                             Exportar PDF
                         </button>
+                        <?php endif; ?>
                         <?php if ($topEstado): ?>
                             <span class="geo-btn is-soft">
                                 <i class="fas fa-trophy"></i>

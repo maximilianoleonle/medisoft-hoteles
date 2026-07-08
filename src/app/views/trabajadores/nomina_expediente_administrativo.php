@@ -282,7 +282,7 @@ $exportUrl = url('trabajadores/nomina/expediente/exportar' . ($exportQuery !== '
                 <a class="exp-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
                 <a class="exp-btn" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Periodos</a>
                 <a class="exp-btn" href="<?= url('trabajadores/nomina/auditoria') ?>"><i class="fas fa-clipboard-check"></i> Auditoria nomina</a>
-                <a class="exp-btn exp-btn-primary" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?><a class="exp-btn exp-btn-primary" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
             </div>
             <span class="exp-badge"><i class="fas fa-lock"></i> GET / read-only</span>
         </div>

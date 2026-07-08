@@ -925,6 +925,7 @@ $metodoMeta = [
                         Revisa cuanto dinero entro, cuanto se devolvio, cuanto se gasto y que resultado dejo el periodo.
                     </p>
                     <div class="profit-hero-actions">
+                        <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                         <button type="button" onclick="exportarPDF()" class="profit-btn is-accent">
                             <i class="fas fa-file-pdf"></i>
                             Exportar PDF
@@ -937,6 +938,7 @@ $metodoMeta = [
                             <i class="fas fa-chart-bar"></i>
                             Detalle de ingresos
                         </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
