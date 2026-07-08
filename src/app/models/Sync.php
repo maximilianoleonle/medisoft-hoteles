@@ -14,6 +14,7 @@ class Sync
 {
     private Database $db;
     private array $reservacionesTemporales = [];
+    private array $huespedesTemporales = [];
     private int $hotelId = 0;
 
     public function __construct()
@@ -104,12 +105,14 @@ class Sync
         $payload = $this->resolverReservacionTemporal($payload);
 
         return match ($tipo) {
+            'crear_huesped'             => $this->crearHuesped($payload),
             'crear_reservacion'        => $this->crearReservacion($payload, $op['usuario_id'] ?? null),
             'cambiar_estado_habitacion' => $this->cambiarEstadoHabitacion($payload),
             'checkin'                   => $this->hacerCheckin($payload),
             'checkout'                  => $this->hacerCheckout($payload),
             'pago_caja'                 => $this->registrarMovimientoCaja($payload, $op['usuario_id'] ?? null, 'ingreso'),
             'gasto_caja'                => $this->registrarMovimientoCaja($payload, $op['usuario_id'] ?? null, 'gasto'),
+            'pre_corte_caja'            => $this->preCorteCaja($payload, $op['usuario_id'] ?? null),
             default                     => throw new InvalidArgumentException("Tipo de operación desconocido: '$tipo'"),
         };
     }
@@ -124,12 +127,14 @@ class Sync
         }
 
         $permisos = [
+            'crear_huesped' => 'huespedes.create',
             'crear_reservacion' => 'huespedes.create',
             'cambiar_estado_habitacion' => 'habitaciones.mantenimiento',
             'checkin' => 'habitaciones.checkin',
             'checkout' => 'habitaciones.checkout',
             'pago_caja' => 'caja.cobros',
             'gasto_caja' => 'caja.movimientos',
+            'pre_corte_caja' => 'caja.corte',
         ];
 
         if (!isset($permisos[$tipo])) {
@@ -150,6 +155,72 @@ class Sync
      * Payload: { habitacion_id, estado_nuevo, motivo? }
      * Estados válidos: disponible | ocupada | mantenimiento | limpieza
      */
+    /**
+     * Crea un huesped capturado offline.
+     * Payload: { client_temp_id?, nombre_completo, telefono?, email?,
+     *            procedencia_estado?, procedencia_ciudad?, notas? }
+     *
+     * Si ya existe un huesped del hotel con el mismo telefono, NO se duplica:
+     * el temp_id se mapea al existente y la operacion cuenta como exitosa.
+     */
+    private function crearHuesped(array $p): string
+    {
+        $this->requerir($p, ['nombre_completo']);
+
+        $nombre = trim((string) $p['nombre_completo']);
+        if (mb_strlen($nombre) < 3) {
+            throw new InvalidArgumentException('El nombre del huesped es demasiado corto');
+        }
+
+        $telefono = trim((string) ($p['telefono'] ?? ''));
+        $temp_id = (string) ($p['client_temp_id'] ?? '');
+
+        if ($telefono !== '') {
+            $stmt = $this->db->query(
+                "SELECT id, nombre_completo FROM huespedes WHERE telefono = ? AND hotel_id = ? LIMIT 1",
+                [$telefono, $this->hotelId]
+            );
+            $existente = $stmt ? $stmt->fetch() : null;
+            if ($existente) {
+                if ($temp_id !== '') {
+                    $this->huespedesTemporales[$temp_id] = (int) $existente['id'];
+                }
+                return "Huesped offline ya existia por telefono #{$existente['id']}" .
+                    ($temp_id !== '' ? " [temp:{$temp_id}]" : '');
+            }
+        }
+
+        $stmt = $this->db->query(
+            "INSERT INTO huespedes
+             (hotel_id, nombre_completo, telefono, email, procedencia_estado, procedencia_ciudad, notas, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [
+                $this->hotelId,
+                $nombre,
+                $telefono !== '' ? $telefono : null,
+                trim((string) ($p['email'] ?? '')) ?: null,
+                trim((string) ($p['procedencia_estado'] ?? '')) ?: null,
+                trim((string) ($p['procedencia_ciudad'] ?? '')) ?: null,
+                trim((string) ($p['notas'] ?? '')) ?: null,
+            ]
+        );
+
+        if (!$stmt) {
+            throw new RuntimeException('No se pudo crear el huesped offline en el servidor');
+        }
+
+        $huesped_id = (int) $this->db->lastInsertId();
+        if ($huesped_id <= 0) {
+            throw new RuntimeException('No se pudo obtener el ID del huesped creado');
+        }
+
+        if ($temp_id !== '') {
+            $this->huespedesTemporales[$temp_id] = $huesped_id;
+        }
+
+        return "Huesped offline creado #{$huesped_id}" . ($temp_id !== '' ? " [temp:{$temp_id}]" : '');
+    }
+
     /**
      * Crea una reservacion capturada offline.
      * Payload: {
@@ -277,7 +348,7 @@ class Sync
             $this->reservacionesTemporales[(string) $temp_id] = $reservacion_id;
         }
 
-        return "Reservacion offline creada #{$reservacion_id}";
+        return "Reservacion offline creada #{$reservacion_id}" . ($temp_id ? " [temp:{$temp_id}]" : '');
     }
 
     private function cambiarEstadoHabitacion(array $p): string
@@ -418,7 +489,15 @@ class Sync
      */
     /**
      * Registra un ingreso o gasto en caja.
-     * Payload: { monto, metodo_pago, descripcion, categoria?, referencia?, reservacion_id? }
+     * Payload: { monto, metodo_pago, descripcion, categoria?, referencia?, reservacion_id?,
+     *            corte_id_capturado?, capturado_offline_at? }
+     *
+     * Candados offline (politica 2026-07-08): si el movimiento trae
+     * corte_id_capturado (el corte que estaba abierto cuando se capturo sin
+     * internet) y ese corte ya no es el abierto, se RECHAZA en vez de
+     * aplicarse a un corte equivocado — recepcion lo ve como fallido y lo
+     * registra a mano. Ademas la descripcion queda marcada como capturada
+     * offline para auditoria.
      *
      * @param string $tipo_movimiento  'ingreso' | 'gasto'
      */
@@ -448,6 +527,27 @@ class Sync
         if (!$corte) {
             throw new RuntimeException("No hay corte de caja abierto en el hotel actual. Abre la caja antes de sincronizar.");
         }
+
+        // Candado: el corte no debe haber cambiado entre la captura offline y el sync
+        $corte_capturado = isset($p['corte_id_capturado']) ? (int) $p['corte_id_capturado'] : 0;
+        if ($corte_capturado > 0 && $corte_capturado !== (int) $corte['id']) {
+            throw new RuntimeException(
+                "El corte de caja cambió desde que se capturó este movimiento sin internet " .
+                "(corte #{$corte_capturado} → #{$corte['id']}). Regístralo manualmente en el corte actual."
+            );
+        }
+
+        // Marca de auditoria: el movimiento se capturo sin internet
+        $descripcion = trim((string) $p['descripcion']);
+        if ($corte_capturado > 0 || !empty($p['capturado_offline_at'])) {
+            $marca = 'capturado offline';
+            if (!empty($p['capturado_offline_at'])) {
+                $capturado = date('d/m/Y H:i', strtotime((string) $p['capturado_offline_at']) ?: time());
+                $marca .= ' ' . $capturado;
+            }
+            $descripcion .= " [{$marca}]";
+        }
+        $p['descripcion'] = $descripcion;
 
         // Si el pago viene ligado a una reservacion, debe pertenecer al hotel
         $reservacion_id = isset($p['reservacion_id']) ? (int) $p['reservacion_id'] : null;
@@ -502,6 +602,96 @@ class Sync
 
         $simbolo = $tipo_movimiento === 'ingreso' ? '+' : '-';
         return "{$simbolo}\${$monto} ({$p['metodo_pago']}) → {$tipo_movimiento} en corte {$corte['id']}";
+    }
+
+    /**
+     * Cierra el corte de caja capturado offline (pre-corte, fase 4).
+     * Payload: { corte_id_capturado, efectivo_contado, observaciones?,
+     *            efectivo_esperado_local?, capturado_offline_at? }
+     *
+     * El dispositivo contó el efectivo sin internet contra SUS datos locales.
+     * Aquí el servidor recalcula el esperado con TODOS los movimientos (los de
+     * otros equipos incluidos) y cierra el corte con esa verdad. Si el esperado
+     * del servidor difiere del que vio el dispositivo, se deja constancia en
+     * las observaciones y en el resultado para que recepción lo revise.
+     *
+     * Candado: solo cierra el MISMO corte que estaba abierto al capturar.
+     * IMPORTANTE: procesarLote ordena por timestamp, así que los cobros/gastos
+     * encolados antes del pre-corte se aplican primero y entran al corte.
+     */
+    private function preCorteCaja(array $p, ?int $usuario_id): string
+    {
+        $this->requerir($p, ['corte_id_capturado', 'efectivo_contado']);
+
+        $corte_capturado = (int) $p['corte_id_capturado'];
+        $efectivo_contado = (float) $p['efectivo_contado'];
+        if ($efectivo_contado < 0) {
+            throw new InvalidArgumentException('El efectivo contado no puede ser negativo');
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id FROM cortes_caja
+             WHERE hotel_id = ? AND estado = 'abierto'
+             ORDER BY fecha_apertura DESC LIMIT 1",
+            [$this->hotelId]
+        );
+        $corte = $stmt ? $stmt->fetch() : null;
+
+        if (!$corte) {
+            throw new RuntimeException(
+                "El corte #{$corte_capturado} ya no está abierto (alguien lo cerró con internet). " .
+                "Revisa el historial de cortes y verifica el efectivo contado."
+            );
+        }
+
+        if ((int) $corte['id'] !== $corte_capturado) {
+            throw new RuntimeException(
+                "El corte cambió desde que se capturó el cierre sin internet " .
+                "(corte #{$corte_capturado} → #{$corte['id']}). Haz el corte manualmente."
+            );
+        }
+
+        if (!class_exists('Caja')) {
+            require_once __DIR__ . '/Caja.php';
+        }
+
+        $observaciones = trim((string) ($p['observaciones'] ?? ''));
+        $marca = 'Cierre capturado OFFLINE';
+        if (!empty($p['capturado_offline_at'])) {
+            $marca .= ' el ' . date('d/m/Y H:i', strtotime((string) $p['capturado_offline_at']) ?: time());
+        }
+        $esperado_local = isset($p['efectivo_esperado_local']) ? (float) $p['efectivo_esperado_local'] : null;
+        if ($esperado_local !== null) {
+            $marca .= sprintf('; el equipo esperaba $%.2f en efectivo', $esperado_local);
+        }
+        $observaciones = $observaciones === '' ? "[$marca]" : $observaciones . "\n[$marca]";
+
+        $cajaModel = new Caja();
+        $resultado = $cajaModel->cerrarCaja($corte_capturado, $efectivo_contado, $observaciones, $usuario_id ?: 1);
+
+        if (empty($resultado['success'])) {
+            throw new RuntimeException($resultado['message'] ?? 'No se pudo cerrar el corte');
+        }
+
+        $esperado_servidor = (float) ($resultado['resumen']['efectivo_en_caja'] ?? 0);
+        $diferencia = (float) ($resultado['diferencia'] ?? 0);
+
+        $detalle = sprintf(
+            'Corte #%d cerrado (pre-corte offline): contado $%.2f, esperado $%.2f, diferencia $%+.2f',
+            $corte_capturado,
+            $efectivo_contado,
+            $esperado_servidor,
+            $diferencia
+        );
+
+        if ($esperado_local !== null && abs($esperado_local - $esperado_servidor) > 0.004) {
+            $detalle .= sprintf(
+                '. OJO: el equipo esperaba $%.2f — hubo movimientos de otros equipos; revisa el corte.',
+                $esperado_local
+            );
+        }
+
+        return $detalle;
     }
 
     // =========================================================================
@@ -620,21 +810,53 @@ class Sync
 
     private function resolverReservacionTemporal(array $payload): array
     {
-        if (!isset($payload['reservacion_id'])) {
-            return $payload;
+        if (isset($payload['reservacion_id']) && !is_numeric($payload['reservacion_id'])) {
+            $payload['reservacion_id'] = $this->resolverIdTemporal(
+                (string) $payload['reservacion_id'],
+                $this->reservacionesTemporales,
+                'crear_reservacion',
+                'Reservacion'
+            );
         }
 
-        $reservacion_id = $payload['reservacion_id'];
-        if (is_numeric($reservacion_id)) {
-            return $payload;
+        if (isset($payload['huesped_id']) && !is_numeric($payload['huesped_id'])) {
+            $payload['huesped_id'] = $this->resolverIdTemporal(
+                (string) $payload['huesped_id'],
+                $this->huespedesTemporales,
+                'crear_huesped',
+                'Huesped'
+            );
         }
 
-        $clave = (string) $reservacion_id;
-        if (!isset($this->reservacionesTemporales[$clave])) {
-            throw new RuntimeException("Reservacion temporal {$clave} aun no fue creada en este lote");
-        }
-
-        $payload['reservacion_id'] = $this->reservacionesTemporales[$clave];
         return $payload;
+    }
+
+    /**
+     * Resuelve un id temporal (tmp_res_* / tmp_hue_*) al id real del servidor.
+     * Primero busca en el mapa del lote actual; si la operacion que lo creo
+     * se sincronizo en un lote anterior, lo recupera del registro
+     * operaciones_sync usando el marcador "[temp:...]" del detalle.
+     */
+    private function resolverIdTemporal(string $clave, array $mapa, string $tipoOrigen, string $etiqueta): int
+    {
+        if (isset($mapa[$clave])) {
+            return (int) $mapa[$clave];
+        }
+
+        // Solo formatos de id temporal generados por la PWA
+        if (preg_match('/^tmp_[a-z]+_[A-Za-z0-9_.-]+$/', $clave)) {
+            $stmt = $this->db->query(
+                "SELECT detalle FROM operaciones_sync
+                 WHERE tipo = ? AND resultado = 'ok' AND detalle LIKE ?
+                 ORDER BY procesado_at DESC LIMIT 1",
+                [$tipoOrigen, '%[temp:' . $clave . ']%']
+            );
+            $fila = $stmt ? $stmt->fetch() : null;
+            if ($fila && preg_match('/#(\d+)/', (string) $fila['detalle'], $m)) {
+                return (int) $m[1];
+            }
+        }
+
+        throw new RuntimeException("{$etiqueta} temporal {$clave} aun no fue sincronizado en el servidor");
     }
 }

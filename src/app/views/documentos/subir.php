@@ -92,7 +92,7 @@ $docUploadMaxBytes = 10485760;
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--dc-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, var(--dc-ivory-2), var(--dc-ivory));
 }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .doc-upload-page .dc-shell { display: grid; gap: 14px; }
 .doc-upload-page .dc-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }

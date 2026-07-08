@@ -4,6 +4,20 @@
  */
 
 class PwaController extends Controller {
+
+    /**
+     * Pantalla "Operaciones offline": lo pendiente, lo sincronizado y lo
+     * rechazado por /api/sync. El contenido se renderiza 100% en el cliente
+     * desde IndexedDB, así la pantalla también funciona sin internet.
+     */
+    public function pendientesAction() {
+        $this->requireAuth();
+
+        View::renderTemplate('pwa/pendientes', [
+            'title' => 'Operaciones offline - ' . (function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Medisoft Hoteles'),
+        ]);
+    }
+
     public function manifestAction($slug) {
         $slug = $this->normalizarSlug($slug);
         if ($slug === '') {

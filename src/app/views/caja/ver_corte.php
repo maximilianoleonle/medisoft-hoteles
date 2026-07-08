@@ -185,7 +185,7 @@ if ($diferencia > 0) {
 ?>
 
 <style id="cash-cut-detail-redesign">
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800;900&display=swap');
+    @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
     .cut-detail-page {
         --cut-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));

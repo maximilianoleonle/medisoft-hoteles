@@ -239,7 +239,7 @@
 </style>
 
 <style id="inventory-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .inv-page {
     --inv-brand: var(--brand-primary, #1B2746);

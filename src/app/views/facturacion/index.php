@@ -144,7 +144,7 @@ if ($total_paginas > 1) {
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .billing-page {
     --billing-brand: var(--brand-primary, #24485a);

@@ -53,7 +53,7 @@ $riesgoRows = [
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 </style><style>
 .gd-view {
     --gd-brand: var(--brand-primary, #1B2746);

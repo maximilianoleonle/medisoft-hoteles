@@ -562,7 +562,7 @@ if (!function_exists('usuario_form_error_attrs')) {
 </style>
 
 <style id="usuarios-form-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 .worker-page {
     --worker-brand: var(--brand-primary, #1B2746) !important;
     --worker-brand-dark: color-mix(in srgb, var(--worker-brand), #000 20%) !important;

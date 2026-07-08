@@ -7,13 +7,16 @@
  *   - Formulario "Registrar Gasto"   (#modalGasto form)
  *
  * Cuando hay internet:   el formulario se envía al servidor normalmente (sin tocar nada).
- * Cuando no hay internet: se BLOQUEA el registro con un aviso claro. El dinero es
- *                          online-only (política 2026-07-02): un cobro encolado que
- *                          falla al sincronizar descuadra la caja sin que nadie lo note.
- *                          El servidor también rechaza pago_caja/gasto_caja en /api/sync.
+ * Cuando no hay internet: el movimiento se ENCOLA con candados (política 2026-07-08,
+ *                          reemplaza el bloqueo de 2026-07-02):
  *
- * El panel de pendientes se conserva para que los movimientos encolados por versiones
- * anteriores sigan visibles hasta que sincronicen (el servidor los marcará con error).
+ *   1. Solo se encola si hay un corte de caja abierto en el caché offline.
+ *   2. El payload lleva corte_id_capturado: si al sincronizar el corte ya
+ *      cambió, el servidor RECHAZA el movimiento y recepción lo ve marcado
+ *      como fallido (nunca se aplica a un corte equivocado).
+ *   3. El servidor marca la descripción como "capturado offline" para auditoría.
+ *
+ * La apertura y el cierre de corte siguen siendo online-only.
  *
  * Depende de: offline-data.js (window.OfflineData) y pwa.js (window.PWA)
  */
@@ -26,8 +29,9 @@
     const esCaja = document.getElementById('modalIngreso') || document.getElementById('modalGasto');
     if (!esCaja) return;
 
-    _instalarInterceptorIngreso();
-    _instalarInterceptorGasto();
+    _instalarInterceptor('modalIngreso', 'pago_caja', 'ingreso');
+    _instalarInterceptor('modalGasto', 'gasto_caja', 'gasto');
+    _instalarInterceptorCorte();
     _actualizarBannerOffline();
 
     window.addEventListener('online',  () => _actualizarBannerOffline());
@@ -36,7 +40,7 @@
     // Al sincronizar: recargar la página para mostrar los movimientos reales
     window.addEventListener('online', async () => {
       // offline-data.js ya llama sincronizar() al detectar 'online'
-      // Esperamos 3s para que termine y recargamos
+      // Esperamos 3.5s para que termine y recargamos
       setTimeout(() => {
         if (navigator.onLine) window.location.reload();
       }, 3500);
@@ -44,79 +48,289 @@
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 1. INTERCEPTOR: FORMULARIO DE INGRESO
+  // 1. INTERCEPTORES DE FORMULARIOS (ingreso y gasto)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function _instalarInterceptorIngreso() {
-    const modal = document.getElementById('modalIngreso');
+  function _instalarInterceptor(modalId, tipoOperacion, tipoLabel) {
+    const modal = document.getElementById(modalId);
     if (!modal) return;
 
     const form = modal.querySelector('form');
     if (!form) return;
 
     form.addEventListener('submit', function (e) {
-      // Online → dejar pasar al servidor
-      if (navigator.onLine) return;
+      // Online real → dejar pasar al servidor. navigator.onLine solo detecta
+      // la interfaz de red: si el wifi sigue arriba pero no hay internet,
+      // PWA.isOnline() (ping real) es quien detecta el corte.
+      if (navigator.onLine && window.PWA?.isOnline?.() !== false) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      _bloquearRegistroOffline('cobro');
+      _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel);
     });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 2. INTERCEPTOR: FORMULARIO DE GASTO
+  // 2. ENCOLAR MOVIMIENTO OFFLINE (con candados)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  function _instalarInterceptorGasto() {
-    const modal = document.getElementById('modalGasto');
-    if (!modal) return;
+  async function _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel) {
+    if (!window.OfflineData) {
+      _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
+      return;
+    }
 
-    const form = modal.querySelector('form');
-    if (!form) return;
+    // Candado: si ya hay un pre-corte encolado, el efectivo ya fue contado.
+    // Registrar más movimientos después del conteo descuadraría el corte.
+    if (await _hayPreCortePendiente()) {
+      _avisar(
+        'warning',
+        'Cierre de caja pendiente',
+        'Ya capturaste el cierre de este corte sin internet. No se pueden registrar ' +
+        'más movimientos hasta que sincronice y se abra un corte nuevo.'
+      );
+      return;
+    }
 
-    form.addEventListener('submit', function (e) {
-      if (navigator.onLine) return;
+    // Candado 1: debe existir un corte abierto en el caché offline.
+    let corte = null;
+    try {
+      const snapshot = await window.OfflineData.obtenerCajaSnapshot();
+      corte = snapshot?.corte || null;
+    } catch (_) {}
+
+    if (!corte || corte.estado !== 'abierto' || !corte.id) {
+      _avisar(
+        'warning',
+        'Sin corte en caché',
+        'No hay un corte de caja abierto en los datos offline de este equipo. ' +
+        'Este movimiento NO quedó guardado — regístralo cuando vuelva la conexión.'
+      );
+      return;
+    }
+
+    // Recolectar datos del formulario
+    const data = new FormData(form);
+    const monto = parseFloat(String(data.get('monto') || '').replace(/,/g, ''));
+    const metodo = String(data.get('metodo_pago') || '').trim();
+    const descripcion = String(data.get('descripcion') || '').trim();
+    const categoriaId = String(data.get('categoria_id') || '').trim();
+    const categoriaNombre = _textoOpcionSeleccionada(form, 'categoria_id');
+
+    if (!isFinite(monto) || monto <= 0 || !metodo || !descripcion || !categoriaId) {
+      _avisar('warning', 'Datos incompletos', 'Completa categoría, descripción, monto y método de pago.');
+      return;
+    }
+
+    const payload = {
+      monto,
+      metodo_pago: metodo,
+      descripcion,
+      categoria_id: Number(categoriaId),
+      categoria: categoriaNombre || undefined,
+      referencia: String(data.get('referencia') || '').trim() || undefined,
+      comprobante: String(data.get('comprobante') || '').trim() || undefined,
+      proveedor: String(data.get('proveedor') || '').trim() || undefined,
+      // Candado 2: el servidor rechaza el movimiento si el corte cambió
+      corte_id_capturado: Number(corte.id),
+      capturado_offline_at: new Date().toISOString(),
+    };
+
+    const etiqueta = tipoLabel === 'ingreso'
+      ? `Ingreso $${monto.toFixed(2)} (${metodo})`
+      : `Gasto $${monto.toFixed(2)} (${metodo})`;
+
+    try {
+      await window.OfflineData.encolarOperacion(tipoOperacion, payload, etiqueta);
+    } catch (err) {
+      console.error('[CajaOffline] No se pudo encolar el movimiento:', err);
+      _avisar('error', 'No se pudo guardar', 'El movimiento NO quedó guardado. Intenta de nuevo o espera la conexión.');
+      return;
+    }
+
+    // Cerrar modal y limpiar el formulario
+    form.reset();
+    if (typeof window.cerrarModalCaja === 'function') {
+      window.cerrarModalCaja(modalId);
+    } else {
+      document.getElementById(modalId)?.classList.add('hidden');
+    }
+
+    _actualizarPanelPendientes(
+      { descripcion, metodo_pago: metodo, categoria: categoriaNombre || 'Sin categoría', monto },
+      tipoLabel
+    );
+
+    _avisar(
+      'success',
+      tipoLabel === 'ingreso' ? 'Ingreso guardado offline' : 'Gasto guardado offline',
+      'Quedó guardado en este equipo dentro del corte actual y se enviará a Caja al volver internet. ' +
+      'Si el corte se cierra antes de sincronizar, se te avisará para registrarlo a mano.'
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 2b. PRE-CORTE DE CAJA OFFLINE (fase 4)
+  //     Offline, el botón "Hacer Corte" abre este flujo: se calcula el efectivo
+  //     esperado con los datos locales (snapshot + movimientos encolados), se
+  //     captura el efectivo contado y se encola. Al volver internet el servidor
+  //     recalcula con TODOS los movimientos y cierra el corte de verdad.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function _hayPreCortePendiente() {
+    try {
+      const pendientes = await window.OfflineData.obtenerPendientes();
+      return pendientes.some(o => o.tipo === 'pre_corte_caja');
+    } catch (_) { return false; }
+  }
+
+  function _instalarInterceptorCorte() {
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('a[href], button');
+      if (!link) return;
+
+      // Solo el botón "Hacer Corte" (la página caja/corte exacta, no caja/corte/123)
+      const href = link.getAttribute('href') || '';
+      let esBotonCorte = false;
+      try {
+        esBotonCorte = href && new URL(href, location.origin).pathname.replace(/\/$/, '').endsWith('/caja/corte');
+      } catch (_) {}
+      if (!esBotonCorte) return;
+
+      // Online real → flujo normal (página de corte)
+      if (navigator.onLine && window.PWA?.isOnline?.() !== false) return;
 
       e.preventDefault();
       e.stopPropagation();
-
-      _bloquearRegistroOffline('gasto');
-    });
+      _preCorteOffline();
+    }, true);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 3. BLOQUEO DE DINERO OFFLINE
-  // ═══════════════════════════════════════════════════════════════════════════
+  async function _preCorteOffline() {
+    if (!window.OfflineData?.obtenerCajaSnapshot) {
+      _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
+      return;
+    }
 
-  /**
-   * El dinero es online-only: avisa que el movimiento NO quedó guardado.
-   * El formulario conserva lo capturado para reintentarlo al volver internet.
-   */
-  function _bloquearRegistroOffline(tipoLabel) {
-    const titulo = tipoLabel === 'cobro' ? 'Cobro no registrado' : 'Gasto no registrado';
-    const texto  = 'Sin conexión a internet. Los cobros y gastos solo se registran en línea ' +
-                   'para no descuadrar la caja. Este movimiento NO quedó guardado — ' +
-                   'vuelve a registrarlo cuando regrese la conexión.';
+    if (await _hayPreCortePendiente()) {
+      _avisar('warning', 'Cierre ya capturado', 'El cierre de este corte ya está esperando internet para aplicarse.');
+      return;
+    }
 
+    const snapshot = await window.OfflineData.obtenerCajaSnapshot().catch(() => null);
+    const corte = snapshot?.corte;
+    if (!corte || corte.estado !== 'abierto' || !corte.id) {
+      _avisar('warning', 'Sin corte en caché', 'No hay un corte abierto en los datos offline de este equipo.');
+      return;
+    }
+
+    // Efectivo esperado local = lo del último snapshot + lo encolado en este equipo
+    const base = Number(snapshot?.resumen?.efectivo_en_caja ?? 0);
+    let pendienteEfectivo = 0;
+    try {
+      const pendientes = await window.OfflineData.obtenerPendientes();
+      for (const op of pendientes) {
+        if (op.payload?.metodo_pago !== 'efectivo') continue;
+        if (op.tipo === 'pago_caja') pendienteEfectivo += Number(op.payload.monto || 0);
+        if (op.tipo === 'gasto_caja') pendienteEfectivo -= Number(op.payload.monto || 0);
+      }
+    } catch (_) {}
+    const esperadoLocal = base + pendienteEfectivo;
+
+    if (!window.Swal) {
+      _avisar('error', 'No disponible', 'El cierre offline necesita la interfaz completa. Intenta desde la pantalla de Caja.');
+      return;
+    }
+
+    const fmt = n => '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+    const { value: valores, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: 'Cierre de caja sin internet',
+      html: `
+        <div style="text-align:left;font-size:.92rem;">
+          <p style="background:#FEF3C7;color:#92400E;border-radius:8px;padding:8px 10px;margin-bottom:12px;">
+            <strong>Se cerrará con datos de este equipo.</strong> Si otra recepción registró
+            movimientos, el esperado real puede cambiar: el sistema lo recalculará y te avisará al volver internet.
+          </p>
+          <p style="margin-bottom:4px;">Corte <strong>#${corte.id}</strong></p>
+          <p style="margin-bottom:10px;">Efectivo esperado según este equipo: <strong>${fmt(esperadoLocal)}</strong>
+            ${pendienteEfectivo !== 0 ? `<br><span style="font-size:.8rem;color:#92400E;">(incluye ${fmt(pendienteEfectivo)} de movimientos offline sin sincronizar)</span>` : ''}
+          </p>
+          <label style="display:block;font-weight:600;margin-bottom:4px;">Efectivo contado</label>
+          <input id="precorte-contado" type="number" step="0.01" min="0" class="swal2-input" style="margin:0 0 10px;width:100%;" placeholder="0.00">
+          <label style="display:block;font-weight:600;margin-bottom:4px;">Observaciones (opcional)</label>
+          <textarea id="precorte-obs" class="swal2-textarea" style="margin:0;width:100%;" rows="2"></textarea>
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Capturar cierre',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#B45309',
+      reverseButtons: true,
+      focusConfirm: false,
+      preConfirm: () => {
+        const contado = parseFloat(document.getElementById('precorte-contado').value);
+        if (!isFinite(contado) || contado < 0) {
+          Swal.showValidationMessage('Escribe el efectivo contado (puede ser 0).');
+          return false;
+        }
+        return { contado, obs: document.getElementById('precorte-obs').value.trim() };
+      },
+    });
+
+    if (!isConfirmed || !valores) return;
+
+    try {
+      await window.OfflineData.encolarOperacion('pre_corte_caja', {
+        corte_id_capturado: Number(corte.id),
+        efectivo_contado: valores.contado,
+        efectivo_esperado_local: esperadoLocal,
+        observaciones: valores.obs || undefined,
+        capturado_offline_at: new Date().toISOString(),
+      }, `Cierre de caja corte #${corte.id} — contado ${fmt(valores.contado)}`);
+    } catch (err) {
+      console.error('[CajaOffline] No se pudo encolar el pre-corte:', err);
+      _avisar('error', 'No se pudo capturar', 'El cierre NO quedó guardado. Intenta de nuevo.');
+      return;
+    }
+
+    _actualizarPanelPendientes(
+      { descripcion: `Cierre corte #${corte.id}`, metodo_pago: 'efectivo', categoria: 'Pre-corte', monto: valores.contado },
+      'gasto'
+    );
+
+    const diferenciaLocal = valores.contado - esperadoLocal;
+    _avisar(
+      'success',
+      'Cierre capturado en este equipo',
+      `Contado ${fmt(valores.contado)} vs esperado local ${fmt(esperadoLocal)} ` +
+      `(diferencia ${fmt(diferenciaLocal)}). El corte se cerrará al volver internet con TODOS los movimientos ` +
+      'y se te avisará si el esperado real cambió. Ya no registres movimientos en este corte.'
+    );
+  }
+
+  function _textoOpcionSeleccionada(form, nombreSelect) {
+    const select = form.querySelector(`select[name="${nombreSelect}"]`);
+    const opcion = select?.selectedOptions?.[0];
+    return (opcion?.textContent || '').trim();
+  }
+
+  function _avisar(icon, titulo, texto) {
     if (window.Swal) {
       Swal.fire({
-        icon:              'warning',
-        title:             titulo,
-        text:              texto,
+        icon,
+        title: titulo,
+        text: texto,
         confirmButtonText: 'Entendido',
-        confirmButtonColor:'#B45309',
+        confirmButtonColor: icon === 'success' ? '#4A6340' : '#B45309',
       });
     } else {
-      window.PWA?.showToast(`${titulo}: ${texto}`, 'error', 8000);
+      window.PWA?.showToast(`${titulo}: ${texto}`, icon === 'success' ? 'success' : 'error', 8000);
     }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 5. UI: LISTA DE MOVIMIENTOS PENDIENTES OFFLINE (legacy)
-  //    Solo muestra operaciones encoladas por versiones anteriores de la PWA,
-  //    hasta que el servidor las marque (error) al sincronizar.
+  // 3. UI: LISTA DE MOVIMIENTOS PENDIENTES OFFLINE
   // ═══════════════════════════════════════════════════════════════════════════
 
   /**
@@ -155,7 +369,7 @@
         <div id="caja-offline-list" style="overflow-y:auto;max-height:240px;padding:6px 8px;"></div>
         <div style="padding:6px 10px;border-top:1px solid #fde68a;background:#fffbeb;
                     font-size:0.75em;color:#92400e;text-align:center;">
-          Al volver internet revisa estos movimientos en Caja: deberás registrarlos manualmente
+          Se enviarán a Caja automáticamente al volver internet
         </div>
       `;
       document.body.appendChild(panel);
@@ -174,11 +388,11 @@
         const simbolo    = tipo === 'ingreso' ? '+' : '-';
         item.innerHTML = `
           <div>
-            <div style="font-weight:600;color:#374151;">${_truncar(datosNuevo.descripcion, 22)}</div>
-            <div style="color:#6B7280;font-size:0.78em;">${datosNuevo.metodo_pago} · ${datosNuevo.categoria}</div>
+            <div style="font-weight:600;color:#374151;">${_esc(_truncar(datosNuevo.descripcion, 22))}</div>
+            <div style="color:#6B7280;font-size:0.78em;">${_esc(datosNuevo.metodo_pago)} · ${_esc(datosNuevo.categoria)}</div>
           </div>
           <div style="font-weight:700;color:${colorMonto};white-space:nowrap;">
-            ${simbolo}$${datosNuevo.monto.toFixed(2)}
+            ${simbolo}$${Number(datosNuevo.monto).toFixed(2)}
           </div>
         `;
         lista.prepend(item);
@@ -205,19 +419,10 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 6. BANNER DE MODO OFFLINE EN LA VISTA DE CAJA
+  // 4. BANNER DE MODO OFFLINE EN LA VISTA DE CAJA
   // ═══════════════════════════════════════════════════════════════════════════
 
   function _actualizarBannerOffline() {
-    document.getElementById('caja-offline-banner')?.remove();
-    if (!navigator.onLine) {
-      _deshabilitarBotonesRiesgosos();
-      _cargarPendientesExistentes();
-      return;
-    }
-    _habilitarBotonesRiesgosos();
-    _actualizarContadorPendientes();
-    return;
     const estaOffline = !navigator.onLine;
     let banner = document.getElementById('caja-offline-banner');
 
@@ -243,8 +448,8 @@
           <div>
             <strong>Caja en modo offline</strong>
             <span style="display:block;font-size:0.82em;opacity:0.9;margin-top:1px;">
-              Los ingresos y gastos que registres se guardan localmente y se envían al volver internet.
-              <strong>No cierres la caja offline.</strong>
+              Los ingresos, gastos y el cierre de corte que registres se guardan en este equipo
+              y se aplican al volver internet. La apertura de un corte nuevo sí requiere conexión.
             </span>
           </div>
         `;
@@ -270,11 +475,13 @@
     }
   }
 
-  /** Botones que no deben usarse offline: apertura/cierre de corte */
+  /**
+   * Offline solo se bloquea la APERTURA de corte (crear un corte requiere
+   * servidor). El cierre ya NO se bloquea: el botón "Hacer Corte" abre el
+   * flujo de pre-corte offline (ver _instalarInterceptorCorte).
+   */
   function _deshabilitarBotonesRiesgosos() {
-    document.querySelectorAll(
-      '[href*="caja/corte"], [href*="caja/apertura"], [onclick*="corte"], [data-action="corte"]'
-    ).forEach(btn => {
+    document.querySelectorAll('[href*="caja/apertura"], [href*="caja/abrir"]').forEach(btn => {
       btn.dataset.offlineDisabled = 'true';
       btn.style.opacity           = '0.4';
       btn.style.pointerEvents     = 'none';
@@ -303,18 +510,31 @@
         _actualizarPanelPendientes(null, null); // crea el panel vacío
         cajaPend.forEach(op => {
           const tipo = op.tipo === 'pago_caja' ? 'ingreso' : 'gasto';
-          _actualizarPanelPendientes(op.payload, tipo);
+          _actualizarPanelPendientes({
+            descripcion: op.payload?.descripcion || op.label || 'Movimiento',
+            metodo_pago: op.payload?.metodo_pago || '-',
+            categoria: op.payload?.categoria || 'Sin categoría',
+            monto: Number(op.payload?.monto || 0),
+          }, tipo);
         });
       }
     } catch (_) {}
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 7. HELPERS
+  // 5. HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
   function _truncar(texto, max) {
     return texto.length > max ? texto.substring(0, max) + '…' : texto;
+  }
+
+  function _esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
 })();

@@ -10,7 +10,7 @@
   const SW_BASE_PATH = new URL((BASE_LIMPIO || '') + '/', window.location.origin).pathname.replace(/\/$/, '');
   const SW_URL = `${window.location.origin}${SW_BASE_PATH}/service-worker.js`;
   const SW_SCOPE = `${SW_BASE_PATH || ''}/`;
-  const DB_VERSION = 4;           // v4: agrega indice global y reservaciones para busqueda offline
+  const DB_VERSION = 5;           // v5: snapshots de caja, categorias y tarifas para modo offline
   let db = null;
   let missingContextWarned = false;
 
@@ -273,6 +273,21 @@
           opStore.createIndex('timestamp', 'timestamp');
           opStore.createIndex('tipo',      'tipo');
         }
+
+        // v5: snapshots de caja (corte + resumen), movimientos, categorias y tarifas
+        if (!db.objectStoreNames.contains('caja')) {
+          db.createObjectStore('caja', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('caja_movimientos')) {
+          const movStore = db.createObjectStore('caja_movimientos', { keyPath: 'id' });
+          movStore.createIndex('tipo', 'tipo');
+        }
+        if (!db.objectStoreNames.contains('caja_categorias')) {
+          db.createObjectStore('caja_categorias', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('tarifas_incrementos')) {
+          db.createObjectStore('tarifas_incrementos', { keyPath: 'id' });
+        }
       };
 
       req.onsuccess = e => {
@@ -390,6 +405,8 @@
     try {
       if (scopeChanged) {
         clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+        // Las pantallas guardadas del hotel anterior no deben verse en el nuevo contexto
+        postToSW({ type: 'CLEAR_PAGES_CACHE' });
         console.warn('[PWA] Datos offline previos preservados por seguridad al cambiar de contexto.');
       }
     } catch (err) {
@@ -402,6 +419,9 @@
   async function clearLocalPrivateData() {
     try {
       clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+      // El HTML guardado de pantallas contiene datos del usuario/hotel: fuera al cerrar sesion.
+      // IndexedDB se preserva para no perder operaciones pendientes de sincronizar.
+      postToSW({ type: 'CLEAR_PAGES_CACHE' });
       console.warn('[PWA] Datos offline locales preservados por seguridad durante logout.');
     } catch (err) {
       console.warn('[PWA] No se pudieron actualizar los marcadores locales:', err);

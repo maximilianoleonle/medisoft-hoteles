@@ -71,6 +71,10 @@ $router->get('/api/reservaciones/{id:[0-9]+}/habitaciones', [
     'controller' => 'Reservacion',
     'action' => 'habitacionesApi'
 ]);
+$router->get('/api/reservaciones/{id:[0-9]+}/limpieza-personal', [
+    'controller' => 'Reservacion',
+    'action' => 'limpiezaPersonalApi'
+]);
 $router->get('/api/reservaciones/{id:[0-9]+}/resumen-pagos', [
     'controller' => 'Api',
     'action' => 'reservacionResumenPagos'
@@ -701,6 +705,11 @@ $router->get('/api/huespedes/search', ['controller' => 'Api', 'action' => 'busca
 $router->get('/api/dashboard/stats', ['controller' => 'Api', 'action' => 'estadisticasDashboard']);
 $router->post('/api/habitaciones/verificar-disponibilidad', ['controller' => 'Api', 'action' => 'verificarDisponibilidad']);
 $router->get('/api/habitaciones/calcular-precio', ['controller' => 'Api', 'action' => 'calcularPrecio']);
+// Snapshots para modo offline PWA (solo lectura)
+$router->get('/api/caja/snapshot', ['controller' => 'Api', 'action' => 'cajaSnapshot']);
+$router->get('/api/tarifas/incrementos', ['controller' => 'Api', 'action' => 'incrementosTarifaActivos']);
+// Pantalla de operaciones offline (pendientes, sincronizadas y rechazadas)
+$router->get('/offline/pendientes', ['controller' => 'Pwa', 'action' => 'pendientes']);
 
 
 

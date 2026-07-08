@@ -72,7 +72,7 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cj-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, var(--cj-ivory-2), var(--cj-ivory));
 }
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .caja-open .cj-wrap { width: 100%; max-width: 30rem; }
 .caja-open .cj-head { text-align: center; margin-bottom: 22px; }
@@ -193,7 +193,7 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 <script>
 // Auto-focus en el campo de monto
 document.addEventListener('DOMContentLoaded', function() {

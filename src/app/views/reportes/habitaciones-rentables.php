@@ -91,7 +91,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 </style><style>
 .rentables-view {
     --rent-primary: var(--brand-primary, #1B2746);
@@ -1307,7 +1307,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script>
 const rentabilidadData = <?= json_encode($rentabilidad, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
 const ocupacionTipoData = <?= json_encode($ocupacionPorTipo, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;

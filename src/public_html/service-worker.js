@@ -3,13 +3,19 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v19';
+const SW_VERSION = 'v23';
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
   shell:   `loscedros-shell-${SW_VERSION}`,   // assets estÃ¡ticos locales
   ext:     `loscedros-ext-${SW_VERSION}`,     // librerÃ­as externas (CDN)
+  pages:   `loscedros-pages-${SW_VERSION}`,   // ultima copia buena de pantallas clave
 };
+
+// Pantallas operativas que se guardan para navegacion offline (network-first
+// con respaldo). Se limpian al cerrar sesion o cambiar de hotel via
+// CLEAR_PAGES_CACHE. Login, reportes y pantallas publicas /h/{slug} quedan fuera.
+const OFFLINE_PAGE_PATHS = /^(dashboard|habitaciones|reservaciones|huespedes|caja|offline\/pendientes)([\/?#]|$)/;
 
 // â”€â”€â”€ Assets del shell de la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SHELL_ASSETS = [
@@ -25,32 +31,33 @@ const SHELL_ASSETS = [
   'js/pwa.js',
   'js/offline-data.js',
   'js/buscador-global.js',
+  'js/checkout-limpieza.js',
   'js/reservaciones-offline.js',
   'js/habitaciones-offline.js',
   'js/caja-offline.js',
+  'js/huespedes-offline.js',
   'js/dashboard.js',
   'js/loading-screen.js',
   'img/logo.png',
   'img/icons/icon-192x192.png',
   'img/icons/icon-512x512.png',
+  // LibrerÃ­as self-hosted (fase 6): antes venÃ­an de CDNs externos
+  'vendor/tailwind/tailwindcdn.js',
+  'vendor/fontawesome/css/all.min.css',
+  'vendor/fontawesome/webfonts/fa-solid-900.woff2',
+  'vendor/fontawesome/webfonts/fa-regular-400.woff2',
+  'vendor/fontawesome/webfonts/fa-brands-400.woff2',
+  'vendor/sweetalert2/sweetalert2.all.min.js',
+  'vendor/sweetalert2/sweetalert2.min.css',
+  'vendor/jquery/jquery-3.6.0.min.js',
+  'vendor/chartjs/chart.umd.min.js',
+  'vendor/fonts/fonts.css',
 ];
 
 // â”€â”€â”€ LibrerÃ­as CDN que necesitamos offline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const CDN_ASSETS = [
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2',
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css',
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js',
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11',
-  'https://code.jquery.com/jquery-3.6.0.min.js',
-  'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
-  'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
-  'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js',
-  'https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js',
-];
+// Fase 6: vacÃ­a — todo es self-hosted. Se conserva la estrategia SWR para
+// cualquier recurso externo residual (p.ej. Google Fonts de pÃ¡ginas pÃºblicas).
+const CDN_ASSETS = [];
 
 // â”€â”€â”€ PÃ¡ginas dinamicas excluidas del cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function cacheKeyPages() {
@@ -154,9 +161,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // â”€â”€ 5. PÃ¡ginas HTML privadas/dinamicas â†’ Network Only + offline.html â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ 5. PÃ¡ginas HTML privadas/dinamicas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (request.mode === 'navigate' ||
       (request.headers.get('accept') || '').includes('text/html')) {
+    // Pantallas operativas clave: network-first + ultima copia buena offline
+    if (isOfflineCacheablePage(url)) {
+      event.respondWith(networkFirstPage(request));
+      return;
+    }
     event.respondWith(networkOnlyPage(request));
     return;
   }
@@ -272,6 +284,10 @@ self.addEventListener('message', event => {
       event.waitUntil(clearPrivateCaches());
       break;
 
+    case 'CLEAR_PAGES_CACHE':
+      event.waitUntil(clearPagesCache());
+      break;
+
     case 'CACHE_OFFLINE_BRANDING':
       event.waitUntil(cacheOfflineBrandingAssets(event.data.assets));
       break;
@@ -374,6 +390,59 @@ async function staleWhileRevalidate(request, cacheName) {
     .catch(() => null);
 
   return cached || fetchPromise || new Response('', { status: 503 });
+}
+
+/** Path relativo al scope del SW (ej. "dashboard", "caja/movimientos"). */
+function pathWithinScope(url) {
+  const scopePath = new URL(BASE).pathname;
+  return url.pathname.startsWith(scopePath)
+    ? url.pathname.slice(scopePath.length)
+    : url.pathname.replace(/^\/+/, '');
+}
+
+function isOfflineCacheablePage(url) {
+  return url.origin === self.location.origin &&
+    OFFLINE_PAGE_PATHS.test(pathWithinScope(url));
+}
+
+/**
+ * Network First para pantallas operativas: intenta red y guarda la copia buena;
+ * sin red sirve la ultima copia guardada (y offline.html como ultimo recurso).
+ * No guarda respuestas redirigidas (ej. sesion expirada -> login) ni errores,
+ * para nunca "congelar" una pantalla equivocada.
+ */
+async function networkFirstPage(request) {
+  try {
+    const response = await fetch(request);
+    notifyClients({ type: 'ONLINE' });
+
+    if (response.ok && !response.redirected && response.status === 200) {
+      const cache = await caches.open(CACHE.pages);
+      cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch {
+    notifyClients({ type: 'OFFLINE' });
+
+    const cache = await caches.open(CACHE.pages);
+    const copia = await cache.match(request) ||
+      await cache.match(request, { ignoreSearch: true });
+    if (copia) return copia;
+
+    const offline = await caches.match(BASE + 'offline.html');
+    if (offline) return offline;
+
+    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
+      status: 503,
+      headers: { 'Content-Type': 'text/html' },
+    });
+  }
+}
+
+async function clearPagesCache() {
+  await caches.delete(CACHE.pages);
+  console.log('[SW] Cache de pantallas limpiado (logout o cambio de hotel)');
 }
 
 /** Network Only para HTML privado/dinamico: no guarda pantallas con datos de hotel. */

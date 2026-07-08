@@ -594,7 +594,7 @@ $hero_image_url = null;
 if (function_exists('hotel_branding_asset_url') && !empty($hotel_branding['login_background_url'])) {
     $hero_image_url = hotel_branding_asset_url($hotel_branding['login_background_url']);
 }
-$hero_image_url = $hero_image_url ?: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1600&q=80';
+$hero_image_url = $hero_image_url ?: asset('img/hero-dashboard.jpg');
 
 $habitaciones_total = (int)($stats['habitaciones']['total'] ?? 0);
 $habitaciones_ocupadas = (int)($stats['habitaciones']['ocupadas'] ?? 0);
@@ -730,7 +730,7 @@ $m_bar_width = static function ($count) use ($habitaciones_total) {
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 :root {
     --dash-primary: var(--brand-action-bg, var(--brand-primary, #1B2746));

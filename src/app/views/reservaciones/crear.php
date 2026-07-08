@@ -565,7 +565,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 </style>
 
 <style id="reservation-create-boutique">
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .vista-reservacion {
     --rc-brand: var(--brand-primary, #1B2746);
@@ -1576,6 +1576,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
 .vista-reservacion .habitacion-card.selected > div,
 .vista-reservacion .habitacion-card.selected.es-cortesia > div {
+    border-width: 3px !important;
     border-color: color-mix(in srgb, var(--rc-success) 66%, var(--rc-brand)) !important;
     background: color-mix(in srgb, var(--rc-success) 22%, #FFFFFF) !important;
     box-shadow:
@@ -2731,12 +2732,14 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
         transform: scale(.992);
     }
     .vista-reservacion .habitacion-card.selected .rc-room-card {
-        border-color: color-mix(in srgb, var(--rc-success) 58%, var(--rc-line)) !important;
+        border-width: 3px !important;
+        border-color: color-mix(in srgb, var(--rc-success) 70%, var(--rc-line)) !important;
         background: color-mix(in srgb, var(--rc-success) 6%, #FFFFFF) !important;
         box-shadow: 0 2px 10px rgba(30, 158, 99, .12), 0 16px 30px -22px rgba(30, 158, 99, .4) !important;
     }
     .vista-reservacion .habitacion-card.selected.es-cortesia .rc-room-card {
-        border-color: color-mix(in srgb, var(--rc-warning) 58%, var(--rc-line)) !important;
+        border-width: 3px !important;
+        border-color: color-mix(in srgb, var(--rc-warning) 70%, var(--rc-line)) !important;
         background: color-mix(in srgb, var(--rc-warning) 8%, #FFFFFF) !important;
     }
 
@@ -3363,8 +3366,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 </div>
 
 <!-- ── Libraries ── -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/jquery/jquery-3.6.0.min.js') ?>"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 
 <script>
 $(document).ready(function() {
@@ -3424,10 +3427,14 @@ $(document).ready(function() {
                                     if (!card.hasClass('selected')) card.addClass('selected');
 
                                     Swal.fire({
-                                        position: 'top-end', icon: 'success',
-                                        title: 'Habitación preseleccionada',
-                                        text: `Habitación ${card.find('[data-numero]').data('numero')} lista para reservar`,
-                                        showConfirmButton: false, timer: 2000, toast: true
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: `Habitación ${card.find('[data-numero]').data('numero')} lista para reservar`,
+                                        showConfirmButton: false,
+                                        timer: 2500,
+                                        timerProgressBar: true,
+                                        width: '360px'
                                     });
                                 }, 500);
                             }
@@ -4678,9 +4685,16 @@ $(document).ready(function() {
         const tempId = `tmp_res_${Date.now()}_${Math.random().toString(16).slice(2)}`;
         const total = calcularTotalLocal();
 
+        // Los huespedes registrados offline tienen id temporal string (tmp_hue_*):
+        // el servidor lo resuelve al id real durante la sincronizacion.
+        const huespedIdNumerico = Number(huesped.id);
+        const huespedIdPayload = Number.isFinite(huespedIdNumerico) && huespedIdNumerico > 0
+            ? huespedIdNumerico
+            : String(huesped.id);
+
         const payload = {
             client_temp_id: tempId,
-            huesped_id: Number(huesped.id),
+            huesped_id: huespedIdPayload,
             fecha_entrada: fe,
             fecha_salida: fs,
             hora_llegada: hl,
@@ -4693,7 +4707,7 @@ $(document).ready(function() {
 
         const localReservacion = {
             id: tempId,
-            huesped_id: Number(huesped.id),
+            huesped_id: huespedIdPayload,
             huesped_nombre: huesped.nombre_completo,
             huesped_telefono: huesped.telefono || '',
             fecha_entrada: fe,
@@ -4710,6 +4724,26 @@ $(document).ready(function() {
         };
 
         try {
+            // Validacion local de choque de fechas contra el snapshot (~30 dias).
+            // Mejor esfuerzo: el servidor revalida SIEMPRE al sincronizar.
+            if (window.OfflineData.verificarDisponibilidadLocal) {
+                const conflictos = await window.OfflineData.verificarDisponibilidadLocal(
+                    payload.habitaciones, fe, fs, tempId
+                );
+                if (conflictos.length > 0) {
+                    const detalle = conflictos.slice(0, 3)
+                        .map(c => `Reservacion #${c.reservacion_id} (${c.huesped_nombre}, ${c.fechas})`)
+                        .join('\n');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Habitacion ocupada segun los datos locales',
+                        text: `Una o mas habitaciones chocan con:\n${detalle}\n\nElige otra habitacion u otras fechas.`,
+                        confirmButtonColor: 'var(--lc-green)'
+                    });
+                    return;
+                }
+            }
+
             await window.OfflineData.guardarHuespedes?.([huesped]);
             await window.OfflineData.encolarOperacion(
                 'crear_reservacion',

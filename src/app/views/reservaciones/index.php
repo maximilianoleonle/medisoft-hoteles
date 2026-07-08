@@ -233,7 +233,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .res-bookings {
     --res-brand: var(--brand-primary, #1B2746);
@@ -5012,7 +5012,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     <input type="hidden" name="hora_salida" value="<?= date('H:i:s') ?>">
 </form>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 <script>
 const baseUrl = '<?= url('') ?>';
 const resIndexDefaultDate = <?= json_encode($fecha_filtro ?: date('Y-m-d')) ?>;

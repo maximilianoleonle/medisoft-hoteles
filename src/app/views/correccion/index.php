@@ -10,8 +10,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Corrección de precios - Medisoft Hoteles</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
+    <link href="<?= asset('vendor/fonts/marca.css') ?>" rel="stylesheet">
     <style>
         :root {
             --co-brand: var(--brand-primary, #1B2746);
