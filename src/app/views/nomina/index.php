@@ -7,6 +7,7 @@ $nomConfig = is_array($config ?? null) ? $config : [];
 $nomStats = is_array($stats ?? null) ? $stats : [];
 $nomPersonalActivo = !empty($personalActivo);
 $nomPuedeConfigurar = !empty($puedeConfigurar);
+$nomPuedeGestionarRoles = function_exists('can') && can('roles.manage');
 $nomUltimo = is_array($nomStats['ultimo_periodo'] ?? null) ? $nomStats['ultimo_periodo'] : null;
 
 $nomModoLabels = [
@@ -58,6 +59,12 @@ $nomEstadoPeriodoLabels = [
 .nomina-page .nom-btn:hover { border-color: var(--nom-gold); transform: translateY(-1px); }
 .nomina-page .nom-btn-primary { background: var(--nom-brand); border-color: var(--nom-brand); color: #fff; }
 .nomina-page .nom-btn-primary:hover { border-color: var(--nom-brand); opacity: .92; }
+.nomina-page .nom-permission-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px dashed var(--nom-border); border-radius: 12px;
+    padding: 9px 13px; font-size: 12.5px; font-weight: 600;
+    color: var(--nom-muted); background: color-mix(in srgb, var(--nom-card) 78%, transparent);
+}
 .nomina-page .nom-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
 @media (max-width: 900px) { .nomina-page .nom-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .nomina-page .nom-kpi {
@@ -112,7 +119,7 @@ $nomEstadoPeriodoLabels = [
     </div>
     <p class="nom-subtitle">
         Modo actual: <strong><?= htmlspecialchars($nomModoLabel) ?></strong>.
-        El control de empleados, conceptos y periodos vive en Personal; aquí se configura y supervisa la nómina del negocio.
+        Aquí se revisan catálogos, empleados, incidencias y periodos; los pagos y datos base del personal siguen conectados con Personal.
     </p>
 
     <div class="nom-navrow">
@@ -120,10 +127,14 @@ $nomEstadoPeriodoLabels = [
         <a href="<?= url('nomina/configuracion') ?>" class="nom-btn nom-btn-primary ms-pressable">
             <i class="fas fa-sliders"></i> Configuración
         </a>
+        <?php else: ?>
+        <span class="nom-permission-pill">
+            <i class="fas fa-lock"></i> Modo lectura: sin permiso para configurar
+        </span>
+        <?php endif; ?>
         <a href="<?= url('nomina/catalogos') ?>" class="nom-btn ms-pressable">
             <i class="fas fa-layer-group"></i> Catálogos
         </a>
-        <?php endif; ?>
         <a href="<?= url('nomina/empleados') ?>" class="nom-btn ms-pressable">
             <i class="fas fa-address-book"></i> Empleados
         </a>
@@ -133,7 +144,23 @@ $nomEstadoPeriodoLabels = [
         <a href="<?= url('nomina/periodos') ?>" class="nom-btn ms-pressable">
             <i class="fas fa-calendar-week"></i> Periodos
         </a>
+        <?php if (!$nomPuedeConfigurar && $nomPuedeGestionarRoles): ?>
+        <a href="<?= url('configuracion/roles') ?>" class="nom-btn ms-pressable">
+            <i class="fas fa-user-lock"></i> Roles y permisos
+        </a>
+        <?php endif; ?>
     </div>
+
+    <?php if (!$nomPuedeConfigurar): ?>
+    <div class="nom-notice">
+        <i class="fas fa-circle-info"></i>
+        <div>
+            <strong>Tu usuario puede consultar nómina, pero no configurarla.</strong><br>
+            Puedes entrar a Catálogos para revisar lo existente. Para crear departamentos, puestos, contratos o grupos de pago,
+            entra con un rol con <strong>nomina.configurar</strong> o pide que ajusten tus permisos.
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if (!$nomPersonalActivo): ?>
     <div class="nom-notice">
@@ -202,9 +229,11 @@ $nomEstadoPeriodoLabels = [
             <h2>Qué sigue</h2>
             <?php if ($nomPersonalActivo && ($nomStats['trabajadores_activos'] ?? 0) > 0): ?>
             <ul>
-                <li><span class="nom-dato">Empleados y ledger laboral</span><span class="nom-valor"><a href="<?= url('trabajadores') ?>">Abrir Personal</a></span></li>
-                <li><span class="nom-dato">Previsualización de pre-nómina</span><span class="nom-valor"><a href="<?= url('trabajadores/nomina/preview') ?>">Abrir preview</a></span></li>
-                <li><span class="nom-dato">Cierres y aprobaciones</span><span class="nom-valor"><a href="<?= url('trabajadores/nomina/periodos') ?>">Ver periodos</a></span></li>
+                <li><span class="nom-dato">Catálogos base</span><span class="nom-valor"><a href="<?= url('nomina/catalogos') ?>"><?= $nomPuedeConfigurar ? 'Configurar' : 'Ver' ?></a></span></li>
+                <li><span class="nom-dato">Ficha laboral y salarios</span><span class="nom-valor"><a href="<?= url('nomina/empleados') ?>">Abrir empleados</a></span></li>
+                <li><span class="nom-dato">Incidencias del periodo</span><span class="nom-valor"><a href="<?= url('nomina/incidencias') ?>">Capturar</a></span></li>
+                <li><span class="nom-dato">Preview, cierre y aprobación</span><span class="nom-valor"><a href="<?= url('nomina/periodos') ?>">Ver periodos</a></span></li>
+                <li><span class="nom-dato">Alta o baja de personal</span><span class="nom-valor"><a href="<?= url('trabajadores') ?>">Abrir Personal</a></span></li>
             </ul>
             <?php else: ?>
             <div class="nom-empty">
@@ -219,7 +248,7 @@ $nomEstadoPeriodoLabels = [
     </div>
 
     <p class="nom-roadmap">
-        Nómina avanzada — Fase 1 (base técnica). Catálogos de puestos y departamentos, grupos de pago,
-        incidencias y motor de cálculo se habilitan en las siguientes fases.
+        Nómina avanzada: configuración, catálogos, empleados, incidencias, periodos y recibos internos.
+        Los cálculos se revisan antes de cerrar; los pagos reales siguen controlados por Caja/Personal.
     </p>
 </div>

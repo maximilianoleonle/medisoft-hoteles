@@ -1393,6 +1393,9 @@ class Trabajador extends Model
             [$periodoId, $hotelId]
         );
         $periodo['detalles'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $conciliado = $this->conciliarNominaPeriodoSnapshotConPagosCaja($periodo, $periodo['detalles'], $hotelId);
+        $periodo = $conciliado['periodo'];
+        $periodo['detalles'] = $conciliado['detalles'];
 
         $stmt = $this->db->query(
             "SELECT e.id,
@@ -1418,6 +1421,110 @@ class Trabajador extends Model
         $periodo['resumen_snapshot'] = $this->decodificarJsonArray($periodo['resumen_json'] ?? null);
 
         return $periodo;
+    }
+
+    public function conciliarNominaPeriodoSnapshotConPagosCaja(array $periodo, array $detalles, int $hotelId): array
+    {
+        $periodoId = (int)($periodo['id'] ?? 0);
+        if ($periodoId <= 0 || $hotelId <= 0 || empty($detalles) || !$this->tablasReporteNominaPagosSnapshotDisponibles()) {
+            return [
+                'periodo' => $periodo,
+                'detalles' => $detalles,
+            ];
+        }
+
+        $pagosPorDetalle = $this->pagosCajaSnapshotPorDetalle($hotelId, $periodoId);
+        if (empty($pagosPorDetalle)) {
+            return [
+                'periodo' => $periodo,
+                'detalles' => $detalles,
+            ];
+        }
+
+        $totales = [
+            'pagos_caja_aplicados_total' => 0.0,
+            'reversiones_detectadas_total' => 0.0,
+            'pendiente_pago_total' => 0.0,
+        ];
+
+        foreach ($detalles as $idx => $detalle) {
+            $detalleId = (int)($detalle['id'] ?? 0);
+            $pagos = $pagosPorDetalle[$detalleId] ?? null;
+
+            $snapshotCaja = (float)($detalle['pagos_caja_aplicados'] ?? 0);
+            $snapshotPendiente = (float)($detalle['pendiente_pago_sugerido'] ?? 0);
+            $snapshotReversiones = (float)($detalle['reversiones_detectadas'] ?? 0);
+
+            $pagoCajaPostSnapshot = $pagos ? (float)($pagos['pagado_total'] ?? 0) : 0.0;
+            $reversionCajaPostSnapshot = $pagos ? (float)($pagos['reversion_caja_total'] ?? 0) : 0.0;
+            $cajaAplicada = $snapshotCaja + $pagoCajaPostSnapshot;
+            $pendienteReal = max(0.0, $snapshotPendiente - $pagoCajaPostSnapshot);
+
+            $detalles[$idx]['snapshot_pagos_caja_aplicados'] = $this->decimal($snapshotCaja);
+            $detalles[$idx]['snapshot_pendiente_pago_sugerido'] = $this->decimal($snapshotPendiente);
+            $detalles[$idx]['pagos_caja_count'] = (int)($detalle['pagos_caja_count'] ?? 0) + (int)($pagos['total'] ?? 0);
+            $detalles[$idx]['pagos_caja_pagados'] = (int)($detalle['pagos_caja_pagados'] ?? 0) + (int)($pagos['pagados'] ?? 0);
+            $detalles[$idx]['pagos_caja_revertidos'] = (int)($detalle['pagos_caja_revertidos'] ?? 0) + (int)($pagos['revertidos'] ?? 0);
+            $detalles[$idx]['pagos_caja_aplicados'] = $this->decimal($cajaAplicada);
+            $detalles[$idx]['pagos_caja_revertidos_total'] = $this->decimal(
+                (float)($detalle['pagos_caja_revertidos_total'] ?? 0) + (float)($pagos['revertido_total'] ?? 0)
+            );
+            $detalles[$idx]['reversiones_detectadas'] = $this->decimal($snapshotReversiones + $reversionCajaPostSnapshot);
+            $detalles[$idx]['ultimo_pago_caja'] = $pagos['ultimo_pago'] ?? ($detalle['ultimo_pago_caja'] ?? null);
+            $detalles[$idx]['pendiente_pago_sugerido'] = $this->decimal($pendienteReal);
+
+            if ($pendienteReal <= 0.004 && (string)($detalle['estado_preview_nomina'] ?? '') === 'por_pagar') {
+                $detalles[$idx]['estado_preview_nomina'] = 'cubierto';
+            }
+
+            $totales['pagos_caja_aplicados_total'] += $cajaAplicada;
+            $totales['reversiones_detectadas_total'] += $snapshotReversiones + $reversionCajaPostSnapshot;
+            $totales['pendiente_pago_total'] += $pendienteReal;
+        }
+
+        $periodo['snapshot_pagos_caja_aplicados_total'] = $this->decimal($periodo['pagos_caja_aplicados_total'] ?? 0);
+        $periodo['snapshot_reversiones_detectadas_total'] = $this->decimal($periodo['reversiones_detectadas_total'] ?? 0);
+        $periodo['snapshot_pendiente_pago_total'] = $this->decimal($periodo['pendiente_pago_total'] ?? 0);
+        $periodo['pagos_caja_aplicados_total'] = $this->decimal($totales['pagos_caja_aplicados_total']);
+        $periodo['reversiones_detectadas_total'] = $this->decimal($totales['reversiones_detectadas_total']);
+        $periodo['pendiente_pago_total'] = $this->decimal($totales['pendiente_pago_total']);
+
+        return [
+            'periodo' => $periodo,
+            'detalles' => $detalles,
+        ];
+    }
+
+    private function pagosCajaSnapshotPorDetalle(int $hotelId, int $periodoId): array
+    {
+        $stmt = $this->db->query(
+            "SELECT pc.nomina_periodo_detalle_id AS detalle_id,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END), 0) AS pagado_total,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END), 0) AS revertido_total,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja_total,
+                    MAX(pc.fecha_pago) AS ultimo_pago
+             FROM trabajador_pagos_caja pc
+             LEFT JOIN movimientos_caja mcr
+                ON mcr.hotel_id = pc.hotel_id
+               AND mcr.tipo = 'ingreso'
+               AND mcr.categoria = 'Reversion Pago laboral'
+               AND mcr.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+             WHERE pc.hotel_id = ?
+               AND pc.nomina_periodo_id = ?
+               AND pc.nomina_periodo_detalle_id IS NOT NULL
+             GROUP BY pc.nomina_periodo_detalle_id",
+            [$hotelId, $periodoId]
+        );
+
+        $mapa = [];
+        foreach ($stmt ? ($stmt->fetchAll() ?: []) : [] as $fila) {
+            $mapa[(int)($fila['detalle_id'] ?? 0)] = $fila;
+        }
+
+        return $mapa;
     }
 
     public function cerrarNominaPeriodoPersistenteParaHotel(int $hotelId, array $datos, ?int $usuarioId = null, bool $manageTransaction = true): int

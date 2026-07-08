@@ -4703,6 +4703,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         <form id="formCheckInModal" method="POST" action="" class="res-checkin-form">
             <?= csrf_field() ?>
             <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
+            <input type="hidden" name="checkin_return_to" id="checkin_return_to" value="reservaciones">
             <div class="res-checkin-body">
                 <div class="res-checkin-summary" data-ci-step="1">
                     <div class="res-ci-total">
@@ -5723,6 +5724,10 @@ function abrirModalCheckIn(id, total) {
     totalReservacion = parseFloat(total || 0);
     form.action = baseUrl + '/reservaciones/check-in/' + id;
     form.reset();
+    const returnInput = document.getElementById('checkin_return_to');
+    if (returnInput) {
+        returnInput.value = 'reservaciones' + window.location.search;
+    }
     resetearFormularioPago();
     resetearFacturaCheckIn();
 
@@ -6411,6 +6416,41 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
     resMoneySanitize(this);
     this.submit();
 });
+
+(function mostrarResultadoCheckInIndex() {
+    const params = new URLSearchParams(window.location.search);
+    const reservacionId = parseInt(params.get('checkin_ok') || '0', 10);
+    if (!reservacionId) return;
+
+    params.delete('checkin_ok');
+    const cleanQuery = params.toString();
+    const cleanUrl = window.location.pathname + (cleanQuery ? '?' + cleanQuery : '') + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    const verUrl = baseUrl + '/reservaciones/ver/' + reservacionId;
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Check-in registrado',
+            text: 'La reservacion paso a check-in y el listado ya se actualizo.',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-eye"></i> Ver reservacion',
+            cancelButtonText: 'Quedarme aqui',
+            confirmButtonColor: 'var(--brand-primary, #1B2746)',
+            cancelButtonColor: '#6B7280',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = verUrl;
+            }
+        });
+        return;
+    }
+
+    if (typeof resIndexToast === 'function') {
+        resIndexToast('Check-in registrado. El listado ya se actualizo.', 'success');
+    }
+})();
 
 function confirmarCheckOut(id) {
     const form = document.getElementById('formCheckOut');

@@ -865,6 +865,7 @@ $cash_ing_total_metodos = $cash_ing_efectivo + $cash_ing_tarjeta + $cash_ing_tra
 $cash_ing_bruto_total   = (float) ($resumen['ingresos']['total'] ?? 0);
 $cash_reversos_total    = (float) ($resumen['reversos']['total'] ?? 0);
 $cash_gastos_reales_total = (float) ($resumen['gastos_reales']['total'] ?? ($resumen['gastos']['total'] ?? 0));
+$cash_balance_operativo = (float) ($resumen['balance_operativo'] ?? ($cash_ing_total_metodos - $cash_gastos_reales_total));
 
 $cash_pct_efectivo = $cash_pct_tarjeta = $cash_pct_transferencia = 0;
 if ($cash_ing_total_metodos > 0) {
@@ -968,9 +969,9 @@ $cash_methods = [
                                 <strong class="cj-kpi-value">$<?= number_format($resumen['monto_inicial'] ?? 0, 2) ?></strong>
                             </div>
                             <div class="cj-kpi">
-                                <span class="cj-kpi-label">Dinero que quedo</span>
-                                <strong class="cj-kpi-value <?= $cash_ing_total_metodos >= 0 ? 'is-income' : 'is-expense' ?>">
-                                    <?= $cash_ing_total_metodos >= 0 ? '+' : '-' ?>$<?= number_format(abs($cash_ing_total_metodos), 2) ?>
+                                <span class="cj-kpi-label">Balance del corte</span>
+                                <strong class="cj-kpi-value <?= $cash_balance_operativo >= 0 ? 'is-income' : 'is-expense' ?>">
+                                    <?= $cash_balance_operativo >= 0 ? '+' : '-' ?>$<?= number_format(abs($cash_balance_operativo), 2) ?>
                                 </strong>
                             </div>
                             <div class="cj-kpi">
@@ -1017,7 +1018,7 @@ $cash_methods = [
                                     <div class="cj-method-bar">
                                         <div class="cj-method-fill m-<?= $key ?>" style="width:<?= $pct ?>%"></div>
                                     </div>
-                                    <div class="cj-method-pct"><?= $pct ?>% del dinero que quedo</div>
+                                    <div class="cj-method-pct"><?= $pct ?>% del dinero cobrado</div>
                                 </div>
                                 <div class="cj-method-amount"><?= $total < 0 ? '-' : '' ?>$<?= number_format(abs($total), 2) ?></div>
                             </div>

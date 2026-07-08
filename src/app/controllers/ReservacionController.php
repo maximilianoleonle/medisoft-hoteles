@@ -22,6 +22,43 @@ class ReservacionController extends Controller {
     private $cajaModel;
     private $db;
     
+    private function normalizarRetornoCheckIn($valor): ?string {
+        $valor = trim((string)$valor);
+        if ($valor === '' || preg_match('/^[a-z][a-z0-9+.-]*:/i', $valor)) {
+            return null;
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        $valor = explode('#', $valor, 2)[0];
+        $valor = ltrim($valor, '/');
+        if ($valor === '') {
+            return null;
+        }
+
+        $partes = explode('?', $valor, 2);
+        $ruta = trim($partes[0], '/');
+        if (!in_array($ruta, ['habitaciones', 'reservaciones'], true)) {
+            return null;
+        }
+
+        $query = $partes[1] ?? '';
+        return $ruta . ($query !== '' ? '?' . $query : '');
+    }
+
+    private function agregarCheckInOkRetorno(string $retorno, int $reservacionId): string {
+        $partes = explode('?', $retorno, 2);
+        $ruta = $partes[0];
+        $query = [];
+        if (!empty($partes[1])) {
+            parse_str($partes[1], $query);
+        }
+
+        unset($query['checkin_ok']);
+        $query['checkin_ok'] = $reservacionId;
+
+        return $ruta . '?' . http_build_query($query);
+    }
+
     /**
      * Constructor
      */
@@ -1149,22 +1186,34 @@ public function checkOutParcialAction() {
             $this->procesarRecogidaRemotosCheckOutParcial($id, $habitaciones_ids);
 
             // Generar tareas de limpieza para los cuartos liberados (+ responsable opcional)
+            $habitaciones_limpieza_ids = array_map('intval', $resultado['habitaciones_liberadas_ids'] ?? []);
             $asignaciones = [];
             $rawAsign = $this->getPost('limpieza_responsable', []);
             if (is_array($rawAsign)) {
                 foreach ($rawAsign as $hId => $tId) {
                     $hId = (int)$hId;
                     $tId = (int)$tId;
-                    if ($hId > 0 && $tId > 0) {
+                    if ($hId > 0 && $tId > 0 && in_array($hId, $habitaciones_limpieza_ids, true)) {
                         $asignaciones[$hId] = $tId;
                     }
                 }
             }
-            $this->generarTareasLimpiezaCheckOut($id, $habitaciones_ids, $asignaciones);
+            if (!empty($habitaciones_limpieza_ids)) {
+                $this->generarTareasLimpiezaCheckOut($id, $habitaciones_limpieza_ids, $asignaciones);
+            }
 
             $mensaje = 'Check-out realizado correctamente. ';
-            $mensaje .= 'Se liberaron ' . $resultado['habitaciones_liberadas'] . ' habitación(es): ';
-            $mensaje .= implode(', ', $resultado['numeros_liberados']);
+            if (!empty($resultado['numeros_liberados'])) {
+                $mensaje .= 'Se enviaron a limpieza ' . $resultado['habitaciones_liberadas'] . ' habitación(es): ';
+                $mensaje .= implode(', ', $resultado['numeros_liberados']);
+            } else {
+                $mensaje .= 'No se cambiaron habitaciones a limpieza';
+            }
+
+            if (!empty($resultado['numeros_ocupadas_otro_flujo'])) {
+                $mensaje .= '. Siguen ocupadas por otra reservacion activa: '
+                    . implode(', ', $resultado['numeros_ocupadas_otro_flujo']) . '.';
+            }
             
             if (!$resultado['checkout_completo']) {
                 $mensaje .= '. Quedan ' . $resultado['habitaciones_restantes'] . ' habitación(es) ocupada(s).';
@@ -1178,8 +1227,10 @@ public function checkOutParcialAction() {
                     'message' => $mensaje,
                     'checkout_completo' => $resultado['checkout_completo'],
                     'habitaciones_liberadas' => $resultado['habitaciones_liberadas'],
+                    'habitaciones_liberadas_ids' => $resultado['habitaciones_liberadas_ids'] ?? [],
                     'habitaciones_restantes' => $resultado['habitaciones_restantes'],
-                    'numeros_liberados' => $resultado['numeros_liberados']
+                    'numeros_liberados' => $resultado['numeros_liberados'],
+                    'numeros_ocupadas_otro_flujo' => $resultado['numeros_ocupadas_otro_flujo'] ?? []
                 ]);
                 exit;
             }
@@ -3472,6 +3523,8 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
      */
     public function checkInAction() {
         $id = $this->route_params['id'] ?? 0;
+        $checkInOk = false;
+        $checkInReturnTo = $this->normalizarRetornoCheckIn($this->getPost('checkin_return_to', ''));
         
         if (!$this->isPost()) {
             $this->redirect('reservaciones/ver/' . $id);
@@ -3616,6 +3669,7 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
                     $mensaje .= sprintf('. Saldo pendiente: $%s. Aparecera en Cuentas por cobrar.', number_format($saldoPosterior, 2));
                 }
                 set_mensaje($mensaje, 'success');
+                $checkInOk = true;
             } else {
                 throw new Exception('Error al procesar el check-in');
             }
@@ -3625,6 +3679,10 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
         }
         
+        if ($checkInOk && $checkInReturnTo !== null) {
+            $this->redirect($this->agregarCheckInOkRetorno($checkInReturnTo, (int)$id));
+        }
+
         $this->redirect('reservaciones/ver/' . $id);
     }
     /**

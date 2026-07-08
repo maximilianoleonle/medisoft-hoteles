@@ -1138,6 +1138,185 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 e.stopPropagation();
             });
         }
+
+        initSidebarScrollMemory(sidebar);
+    }
+
+    function initSidebarScrollMemory(sidebar) {
+        if (!sidebar || sidebar.dataset.scrollMemoryReady === 'true') {
+            return;
+        }
+
+        const nav = sidebar.querySelector('.sidebar-nav');
+        if (!nav) {
+            return;
+        }
+
+        sidebar.dataset.scrollMemoryReady = 'true';
+
+        const storageKey = getSidebarScrollStorageKey();
+        const maxAge = 8 * 60 * 60 * 1000;
+        let lastClickedHref = '';
+        let saveTimer = 0;
+
+        const normalizeHref = function(href) {
+            if (!href || href === '#') {
+                return '';
+            }
+
+            try {
+                const url = new URL(href, window.location.href);
+                if (url.origin !== window.location.origin) {
+                    return '';
+                }
+                return url.pathname.replace(/\/+$/, '') + url.search;
+            } catch (error) {
+                return '';
+            }
+        };
+
+        const activeLinkHref = function() {
+            const active = nav.querySelector('a.nav-item.active[href]');
+            return active ? normalizeHref(active.getAttribute('href')) : '';
+        };
+
+        const currentPath = function() {
+            return window.location.pathname.replace(/\/+$/, '') + window.location.search;
+        };
+
+        const save = function(href) {
+            try {
+                window.sessionStorage.setItem(storageKey, JSON.stringify({
+                    top: nav.scrollTop || 0,
+                    href: href || lastClickedHref || activeLinkHref(),
+                    path: currentPath(),
+                    savedAt: Date.now()
+                }));
+            } catch (error) {}
+        };
+
+        const scheduleSave = function() {
+            if (saveTimer) {
+                return;
+            }
+
+            saveTimer = window.setTimeout(function() {
+                saveTimer = 0;
+                save();
+            }, 120);
+        };
+
+        const readRecord = function() {
+            try {
+                const raw = window.sessionStorage.getItem(storageKey);
+                if (!raw) {
+                    return null;
+                }
+
+                const record = JSON.parse(raw);
+                const top = Number(record && record.top);
+                const savedAt = Number(record && record.savedAt);
+                if (!Number.isFinite(top) || (savedAt && Date.now() - savedAt > maxAge)) {
+                    return null;
+                }
+
+                return {
+                    top: Math.max(0, top),
+                    href: String(record.href || ''),
+                    path: String(record.path || '')
+                };
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const activeIsVisible = function() {
+            const active = nav.querySelector('a.nav-item.active[href]');
+            if (!active) {
+                return true;
+            }
+
+            const navRect = nav.getBoundingClientRect();
+            const activeRect = active.getBoundingClientRect();
+            return activeRect.top >= navRect.top + 8 && activeRect.bottom <= navRect.bottom - 8;
+        };
+
+        const centerActive = function() {
+            const active = nav.querySelector('a.nav-item.active[href]');
+            if (!active) {
+                return;
+            }
+
+            const targetTop = active.offsetTop - Math.max(0, (nav.clientHeight - active.offsetHeight) / 2);
+            const maxTop = Math.max(0, nav.scrollHeight - nav.clientHeight);
+            nav.scrollTop = Math.max(0, Math.min(targetTop, maxTop));
+        };
+
+        const restore = function(attempt) {
+            const record = readRecord();
+            if (!record) {
+                centerActive();
+                return;
+            }
+
+            const maxTop = Math.max(0, nav.scrollHeight - nav.clientHeight);
+            const activeHref = activeLinkHref();
+            const shouldTrustRecord = !record.href || !activeHref || record.href === activeHref || record.path === currentPath();
+
+            if (shouldTrustRecord) {
+                nav.scrollTop = Math.max(0, Math.min(record.top, maxTop));
+            } else if (!activeIsVisible()) {
+                centerActive();
+            }
+
+            if (attempt < 3 && maxTop <= 0 && record.top > 0) {
+                window.setTimeout(function() {
+                    restore(attempt + 1);
+                }, attempt === 0 ? 80 : 180);
+            }
+        };
+
+        window.requestAnimationFrame(function() {
+            restore(0);
+        });
+
+        nav.addEventListener('scroll', scheduleSave, { passive: true });
+
+        nav.addEventListener('click', function(event) {
+            const link = event.target instanceof Element ? event.target.closest('a.nav-item[href]') : null;
+            if (!link || event.defaultPrevented) {
+                return;
+            }
+
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                return;
+            }
+
+            const href = normalizeHref(link.getAttribute('href'));
+            if (!href) {
+                return;
+            }
+
+            lastClickedHref = href;
+            save(href);
+        }, true);
+
+        window.addEventListener('pagehide', function() {
+            save();
+        }, { passive: true });
+
+        window.addEventListener('beforeunload', function() {
+            save();
+        });
+    }
+
+    function getSidebarScrollStorageKey() {
+        const hotelId = window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
+            ? String(window.MEDISOFT_CONTEXT.hotel_id)
+            : 'global';
+        const sidebar = document.getElementById('sidebar');
+        const scope = sidebar && sidebar.classList.contains('sidebar-saas') ? 'saas' : 'hotel';
+        return 'medisoft:sidebar-scroll:v2:' + scope + ':' + hotelId;
     }
 
     if (document.readyState === 'loading') {

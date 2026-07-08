@@ -2918,7 +2918,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <?php endif; ?>
                         </p>
                     </div>
-                    <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
+                    <a href="<?= url('reservaciones/ver/' . $checkin['id'] . '?checkin_return_to=habitaciones') ?>#checkin"
                        title="Abrir reservación para hacer check-in"
                        class="hb-alerts-btn hb-alerts-btn--pending">
                         <i class="fas fa-sign-in-alt"></i><span>Check-in</span>
@@ -14312,7 +14312,7 @@ function hacerCheckInRapido(reservacionId) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '<?= url('reservaciones/ver/') ?>' + reservacionId + '#checkin';
+            window.location.href = '<?= url('reservaciones/ver/') ?>' + reservacionId + '?checkin_return_to=habitaciones#checkin';
         }
     });
 }
@@ -14320,6 +14320,41 @@ function hacerCheckInRapido(reservacionId) {
 // ============================================================================
 // FUNCIÓN MEJORADA: Check-out con selección de habitaciones
 // ============================================================================
+
+(function mostrarResultadoCheckInHabitaciones() {
+    const params = new URLSearchParams(window.location.search);
+    const reservacionId = parseInt(params.get('checkin_ok') || '0', 10);
+    if (!reservacionId) return;
+
+    params.delete('checkin_ok');
+    const cleanQuery = params.toString();
+    const cleanUrl = window.location.pathname + (cleanQuery ? '?' + cleanQuery : '') + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    const verUrl = '<?= url('reservaciones/ver/') ?>' + reservacionId;
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Check-in registrado',
+            text: 'La habitacion quedo ocupada y las alertas se actualizaron.',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-eye"></i> Ver reservacion',
+            cancelButtonText: 'Quedarme aqui',
+            confirmButtonColor: 'var(--brand-primary, #1B2746)',
+            cancelButtonColor: '#6B7280',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = verUrl;
+            }
+        });
+        return;
+    }
+
+    if (window.msToast) {
+        window.msToast('success', null, 'Check-in registrado. Las alertas se actualizaron.');
+    }
+})();
 
 function confirmarCheckOut(reservacionId) {
     // Mostrar loading mientras obtenemos los datos
