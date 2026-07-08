@@ -1261,7 +1261,18 @@ public function vehiculosHuespedAction() {
             View::renderJSON(['success' => false, 'message' => 'Metodo no permitido. Usa POST.'], 405);
             return;
         }
-        $this->validateCSRF();
+
+        // Defensa CSRF para sync (fase 7): header custom en vez de token de sesión.
+        // Un sitio externo no puede enviar X-Requested-With cross-origin sin pasar
+        // por un preflight CORS (que este servidor no autoriza), así que exigirlo
+        // equivale a la protección del token. El token de sesión NO sirve aquí:
+        // las pantallas cacheadas offline traen el token viejo y, cuando el
+        // remember-token renueva la sesión, el sync quedaba bloqueado con 403
+        // para siempre (la cola nunca se vaciaba).
+        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest') {
+            View::renderJSON(['success' => false, 'message' => 'Solicitud no valida.'], 403);
+            return;
+        }
 
         $body = json_decode(file_get_contents('php://input') ?: '', true);
         $operaciones = is_array($body['operaciones'] ?? null) ? $body['operaciones'] : [];

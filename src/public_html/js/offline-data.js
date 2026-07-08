@@ -893,6 +893,35 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   let _sincronizando = false;
+  let _avisoSesionMostrado = false;
+
+  /**
+   * La sesión del servidor expiró y no hay remember-token que la restaure.
+   * La cola queda INTACTA en este equipo: solo hay que volver a iniciar
+   * sesión y se enviará sola. Se avisa una vez por carga de página.
+   */
+  function _avisarSesionExpirada() {
+    if (_avisoSesionMostrado) return;
+    _avisoSesionMostrado = true;
+
+    const loginUrl = `${BASE}/login`;
+    if (window.Swal) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tu sesión expiró',
+        text: 'Hay operaciones offline esperando. No se pierden: inicia sesión de nuevo y se enviarán solas.',
+        confirmButtonText: 'Iniciar sesión',
+        showCancelButton: true,
+        cancelButtonText: 'Ahora no',
+        confirmButtonColor: '#4A6340',
+        reverseButtons: true,
+      }).then(res => {
+        if (res.isConfirmed) window.location.href = loginUrl;
+      });
+    } else {
+      window.PWA?.showToast('Tu sesión expiró. Inicia sesión para enviar las operaciones pendientes.', 'warning', 8000);
+    }
+  }
 
   /**
    * Envía todas las operaciones pendientes a /api/sync.
@@ -928,6 +957,14 @@
         headers,
         body: JSON.stringify({ operaciones: pendientes }),
       });
+
+      // Sesión expirada sin remember-token: la cola se conserva tal cual y
+      // se reintenta después del re-login (sync automático al cargar página).
+      if (res.status === 401) {
+        console.warn('[OfflineData] Sync detenido: sesión expirada. La cola queda intacta.');
+        _avisarSesionExpirada();
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(`Servidor respondió ${res.status}`);
@@ -1065,6 +1102,13 @@
 
     // Mantener chico el historial de operaciones ya sincronizadas
     purgarSincronizadasAntiguas(7);
+
+    // Sincronizar pendientes al cargar página con internet (fase 7): cubre el
+    // caso de re-login tras sesión expirada y cortes de red que el navegador
+    // no reportó con el evento 'online'.
+    setTimeout(() => {
+      if (navigator.onLine) sincronizar();
+    }, 1500);
 
     // Actualizar badge de pendientes
     _actualizarBadgePendientes();
