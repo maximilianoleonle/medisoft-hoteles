@@ -582,10 +582,15 @@ class HuespedController extends Controller {
         $total = $resultado['total'];
     }
     
-    // Agregar conteo de reservaciones a cada huésped
+    // Conteo de reservaciones en UNA query para toda la pagina (antes: N+1)
+    $totalesReservaciones = $this->huespedModel->contarReservacionesPorHotelLote(
+        array_column($huespedes, 'id'),
+        $hotelId
+    );
     foreach ($huespedes as &$huesped) {
-        $huesped['total_reservaciones'] = $this->huespedModel->contarReservacionesPorHotel($huesped['id'], $hotelId);
+        $huesped['total_reservaciones'] = $totalesReservaciones[(int)$huesped['id']] ?? 0;
     }
+    unset($huesped);
     
     // Calcular paginación
     $total_paginas = ceil($total / $por_pagina);

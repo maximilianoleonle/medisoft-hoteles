@@ -267,6 +267,36 @@ class Huesped extends Model {
         return (int)($result['total'] ?? 0);
     }
 
+    /**
+     * Conteo de reservaciones para VARIOS huespedes en una sola query
+     * (evita el N+1 del listado: antes era un COUNT por fila).
+     * Devuelve [huesped_id => total]; los ids sin reservaciones no aparecen.
+     */
+    public function contarReservacionesPorHotelLote(array $huesped_ids, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        $huesped_ids = array_values(array_filter(array_map('intval', $huesped_ids), function ($id) {
+            return $id > 0;
+        }));
+
+        if ($hotelId <= 0 || empty($huesped_ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($huesped_ids), '?'));
+        $sql = "SELECT huesped_id, COUNT(*) as total
+                FROM reservaciones
+                WHERE hotel_id = ? AND huesped_id IN ($placeholders)
+                GROUP BY huesped_id";
+        $stmt = $this->db->query($sql, array_merge([$hotelId], $huesped_ids));
+
+        $totales = [];
+        foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+            $totales[(int)$row['huesped_id']] = (int)$row['total'];
+        }
+
+        return $totales;
+    }
+
     public function existeTelefonoPorHotel($telefono, $hotelId = null, $excluir_id = null) {
         $hotelId = $this->hotelIdActual($hotelId);
         if ($hotelId <= 0 || empty($telefono)) {
