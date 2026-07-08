@@ -1149,18 +1149,7 @@ public function checkOutParcialAction() {
             $this->procesarRecogidaRemotosCheckOutParcial($id, $habitaciones_ids);
 
             // Generar tareas de limpieza para los cuartos liberados (+ responsable opcional)
-            $asignaciones = [];
-            $rawAsign = $this->getPost('limpieza_responsable', []);
-            if (is_array($rawAsign)) {
-                foreach ($rawAsign as $hId => $tId) {
-                    $hId = (int)$hId;
-                    $tId = (int)$tId;
-                    if ($hId > 0 && $tId > 0) {
-                        $asignaciones[$hId] = $tId;
-                    }
-                }
-            }
-            $this->generarTareasLimpiezaCheckOut($id, $habitaciones_ids, $asignaciones);
+            $this->generarTareasLimpiezaCheckOut($id, $habitaciones_ids, $this->obtenerAsignacionesLimpiezaPost($habitaciones_ids));
 
             $mensaje = 'Check-out realizado correctamente. ';
             $mensaje .= 'Se liberaron ' . $resultado['habitaciones_liberadas'] . ' habitación(es): ';
@@ -3717,14 +3706,17 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
 
     // Obtener hora de salida
     $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
-    
+
+    // Habitaciones de la reservacion (antes del check-out) para poder asignar limpieza.
+    $habitacionIds = $this->reservacionModel->obtenerHabitacionIds($id);
+
     // Usar el método checkOut del modelo
     $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
-    
+
     if ($resultado) {
         $this->procesarRecogidaLlavesCheckOut($id);
         $this->procesarRecogidaRemotosCheckOut($id);
-        $this->generarTareasLimpiezaCheckOut($id);
+        $this->generarTareasLimpiezaCheckOut($id, $habitacionIds, $this->obtenerAsignacionesLimpiezaPost($habitacionIds));
         set_mensaje('Check-out realizado exitosamente. Las habitaciones pasaron a limpieza.', 'success');
     } else {
         set_mensaje('Error al realizar check-out', 'error');
@@ -3732,6 +3724,94 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
     
     $this->redirect('reservaciones/ver/' . $id);
 }
+
+    /**
+     * Lee del POST la asignacion opcional de responsables de limpieza.
+     * Acepta:
+     *  - limpieza_responsable[habitacion_id] = trabajador_id (por cuarto)
+     *  - limpieza_responsable_todas = trabajador_id (mismo responsable para todos)
+     * Devuelve [habitacion_id => trabajador_id] solo con valores validos.
+     */
+    private function obtenerAsignacionesLimpiezaPost(array $habitacionIds): array {
+        $asignaciones = [];
+
+        $rawAsign = $this->getPost('limpieza_responsable', []);
+        if (is_array($rawAsign)) {
+            foreach ($rawAsign as $hId => $tId) {
+                $hId = (int)$hId;
+                $tId = (int)$tId;
+                if ($hId > 0 && $tId > 0) {
+                    $asignaciones[$hId] = $tId;
+                }
+            }
+        }
+
+        $global = (int)$this->getPost('limpieza_responsable_todas', 0);
+        if ($global > 0) {
+            foreach ($habitacionIds as $hId) {
+                $hId = (int)$hId;
+                if ($hId > 0 && !isset($asignaciones[$hId])) {
+                    $asignaciones[$hId] = $global;
+                }
+            }
+        }
+
+        return $asignaciones;
+    }
+
+    /**
+     * API: personal activo y habitaciones de la reservacion para el selector
+     * de responsable de limpieza que se muestra al hacer check-out.
+     * GET /api/reservaciones/{id}/limpieza-personal
+     */
+    public function limpiezaPersonalApiAction() {
+        header('Content-Type: application/json');
+
+        $id = (int)($this->route_params['id'] ?? 0);
+
+        try {
+            $reservacion = $this->reservacionModel->obtenerPorId($id);
+            if (!$reservacion) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Reservación no encontrada']);
+                exit;
+            }
+
+            $personal = [];
+            if (!class_exists('TareaOperativa')) {
+                require_once __DIR__ . '/../models/TareaOperativa.php';
+            }
+            $tareaModel = new TareaOperativa();
+            if ($tareaModel->tablaDisponible() && $tareaModel->eventosDisponibles()) {
+                foreach ($tareaModel->trabajadoresActivosOpciones((int)$this->hotelIdActual()) as $t) {
+                    $personal[] = [
+                        'id' => (int)$t['id'],
+                        'nombre' => $t['nombre_completo'],
+                        'rol' => $t['rol_laboral'] ?? '',
+                    ];
+                }
+            }
+
+            $habitaciones = [];
+            foreach ($this->reservacionModel->getHabitaciones($id) as $hab) {
+                $habitaciones[] = [
+                    'habitacion_id' => (int)$hab['habitacion_id'],
+                    'numero' => $hab['numero'],
+                ];
+            }
+
+            echo json_encode([
+                'success' => true,
+                'disponible' => !empty($personal),
+                'personal' => $personal,
+                'habitaciones' => $habitaciones,
+            ]);
+        } catch (Throwable $e) {
+            // Fail-open: el selector es opcional, nunca debe bloquear el check-out.
+            echo json_encode(['success' => true, 'disponible' => false, 'personal' => [], 'habitaciones' => []]);
+        }
+        exit;
+    }
 
     /**
      * Genera automaticamente una tarea operativa de limpieza por cada habitacion
@@ -5100,14 +5180,19 @@ public function checkOutRapidoAction() {
         
         // Obtener hora de salida
         $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
-        
+
+        // IDs de habitaciones (antes del check-out) para asignar responsables de limpieza.
+        $habitacionIds = array_map(function($hab) {
+            return (int)$hab['habitacion_id'];
+        }, $habitaciones);
+
         // Usar el método checkOut del modelo
         $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
-        
+
         if ($resultado) {
             $this->procesarRecogidaLlavesCheckOut($id);
             $this->procesarRecogidaRemotosCheckOut($id);
-            $this->generarTareasLimpiezaCheckOut($id);
+            $this->generarTareasLimpiezaCheckOut($id, $habitacionIds, $this->obtenerAsignacionesLimpiezaPost($habitacionIds));
             $response = [
                 'success' => true,
                 'huesped' => $huesped['nombre_completo'],
