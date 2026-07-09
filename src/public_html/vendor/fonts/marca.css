@@ -1,0 +1,7 @@
+/* marca.css — reconstruido (stopgap) con las familias de marca originales.
+   Antes: @import a fonts.googleapis.com (DM Sans + Outfit + Cormorant Garamond
+   + Manrope) según las vistas de inventario/habitaciones/otras.
+   NOTA: usa @import a Google Fonts (no 100% offline). Reemplazar por la
+   versión self-hosted canónica de la PC Surface cuando esté disponible. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');

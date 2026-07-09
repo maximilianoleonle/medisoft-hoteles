@@ -17,6 +17,12 @@ logs/
 vendor/
 node_modules/
 
+# EXCEPCIÓN: assets self-hosted de la PWA offline (Font Awesome, Tailwind,
+# Chart.js, SweetAlert2, fuentes...). Son parte de la app y DEBEN versionarse
+# para que producción y clones nuevos no queden sin íconos/estilos.
+!/src/public_html/vendor/
+!/src/public_html/vendor/**
+
 # Archivos temporales de editores
 .vscode/
 .idea/

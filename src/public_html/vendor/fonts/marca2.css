@@ -1,0 +1,5 @@
+/* marca2.css — reconstruido (stopgap) con las familias originales de habitaciones.
+   Antes: @import a fonts.googleapis.com (DM Sans + Outfit).
+   NOTA: usa @import a Google Fonts (no 100% offline). Reemplazar por la
+   versión self-hosted canónica de la PC Surface cuando esté disponible. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@400;500;600;700;800&display=swap');

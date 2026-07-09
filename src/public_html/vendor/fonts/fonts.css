@@ -1,0 +1,5 @@
+/* fonts.css — reconstruido (stopgap) con las familias originales del header.
+   Antes: <link> a fonts.googleapis.com con Playfair Display + Inter.
+   NOTA: usa @import a Google Fonts (no 100% offline). Reemplazar por la
+   versión self-hosted canónica de la PC Surface cuando esté disponible. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
