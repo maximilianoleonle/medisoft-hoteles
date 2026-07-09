@@ -83,6 +83,29 @@ class NominaCierreService {
                 $this->db->safeBeginTransaction();
             }
 
+            // Candado de concurrencia: la validacion de solape del preview corre
+            // ANTES de la transaccion y la UNIQUE del rango solo detiene rangos
+            // identicos; dos cierres casi simultaneos con rangos solapados
+            // (1-15 y 2-16) pasarian ambos y los conceptos se contarian dos
+            // veces. Serializar por grupo (FOR UPDATE) y re-validar aqui dentro.
+            $st = $this->pdo->prepare(
+                'SELECT id FROM nomina_grupos WHERE id = ? AND hotel_id = ? FOR UPDATE'
+            );
+            $st->execute([(int) $grupo['id'], $hotelId]);
+            if (!$st->fetch()) {
+                throw new Exception('El grupo de pago ya no existe en este negocio.');
+            }
+
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) AS total FROM trabajador_nomina_periodos
+                 WHERE hotel_id = ? AND grupo_nomina_id = ? AND estado != 'anulado'
+                   AND fecha_inicio <= ? AND fecha_fin >= ?"
+            );
+            $st->execute([$hotelId, (int) $grupo['id'], $fechaFin, $fechaInicio]);
+            if ((int) ($st->fetch()['total'] ?? 0) > 0) {
+                throw new Exception('El rango se solapa con un periodo vigente del grupo (otro cierre acaba de registrarse): actualiza la vista e intentalo de nuevo.');
+            }
+
             // Cabecera del periodo (motor v2).
             $st = $this->pdo->prepare(
                 "INSERT INTO trabajador_nomina_periodos
@@ -331,17 +354,6 @@ class NominaCierreService {
             throw new Exception('El periodo ya esta anulado.');
         }
 
-        // Bloqueo: pagos snapshot vigentes ligados al periodo.
-        $st = $this->pdo->prepare(
-            "SELECT COUNT(*) AS total FROM trabajador_pagos_caja
-             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'"
-        );
-        $st->execute([$hotelId, $periodoId]);
-        $pagosVigentes = (int) ($st->fetch()['total'] ?? 0);
-        if ($pagosVigentes > 0) {
-            throw new Exception('El periodo tiene ' . $pagosVigentes . ' pago(s) de Caja vigentes: revierte los pagos antes de anular.');
-        }
-
         $ownTransaction = !$this->db->enTransaccion();
 
         try {
@@ -358,6 +370,15 @@ class NominaCierreService {
             $st->execute([$usuarioId, $motivo, $periodoId, $hotelId]);
             if ($st->rowCount() !== 1) {
                 throw new Exception('No se pudo anular el periodo (estado cambiado por otro usuario).');
+            }
+
+            // Bloqueo: pagos snapshot vigentes ligados al periodo. DENTRO de la
+            // transaccion y con FOR UPDATE: un pago trazado concurrente queda
+            // serializado por el candado de fila del periodo (el UPDATE de
+            // arriba vs el FOR UPDATE de validarTrazabilidadSnapshot).
+            $pagosVigentes = $this->contarPagosSnapshotVigentes($hotelId, $periodoId);
+            if ($pagosVigentes > 0) {
+                throw new Exception('El periodo tiene ' . $pagosVigentes . ' pago(s) de Caja vigentes: revierte los pagos antes de anular.');
             }
 
             // Candado anti doble pago: los pagos del riel libre (perfil del
@@ -426,15 +447,6 @@ class NominaCierreService {
             throw new Exception('Solo un periodo APROBADO puede reabrirse (estado: ' . $periodo['estado'] . ').');
         }
 
-        $st = $this->pdo->prepare(
-            "SELECT COUNT(*) AS total FROM trabajador_pagos_caja
-             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'"
-        );
-        $st->execute([$hotelId, $periodoId]);
-        if ((int) ($st->fetch()['total'] ?? 0) > 0) {
-            throw new Exception('El periodo tiene pagos de Caja vigentes: revierte los pagos antes de reabrir.');
-        }
-
         $ownTransaction = !$this->db->enTransaccion();
 
         try {
@@ -450,6 +462,11 @@ class NominaCierreService {
             $st->execute([$periodoId, $hotelId]);
             if ($st->rowCount() !== 1) {
                 throw new Exception('No se pudo reabrir el periodo (estado cambiado por otro usuario).');
+            }
+
+            // Bloqueo: pagos snapshot vigentes, DENTRO de la transaccion (ver anular()).
+            if ($this->contarPagosSnapshotVigentes($hotelId, $periodoId) > 0) {
+                throw new Exception('El periodo tiene pagos de Caja vigentes: revierte los pagos antes de reabrir.');
             }
 
             // Candado anti doble pago: pagos del riel libre (sin
@@ -497,6 +514,21 @@ class NominaCierreService {
     }
 
     /* ------------------------------------------------------------------ */
+
+    /**
+     * Cuenta (y bloquea con FOR UPDATE) los pagos snapshot vigentes ligados al
+     * periodo. Debe llamarse DENTRO de la transaccion de anular/reabrir.
+     */
+    private function contarPagosSnapshotVigentes(int $hotelId, int $periodoId): int {
+        $st = $this->pdo->prepare(
+            "SELECT id FROM trabajador_pagos_caja
+             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'
+             FOR UPDATE"
+        );
+        $st->execute([$hotelId, $periodoId]);
+
+        return count($st->fetchAll());
+    }
 
     /**
      * Candado anti doble pago para anular/reabrir: los creditos NOMV2 activos
