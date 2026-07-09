@@ -154,6 +154,10 @@ class CopilotoService
             && $tiene(['ganancia', 'gane', 'ingreso', 'vendi', 'venta', 'utilidad', 'facture', 'cuanto hice', 'cuanto entro', 'cuanto llevo'])) {
             return 'ganancias_mes_actual';
         }
+        if ($tiene(['reserva'])
+            && $tiene(['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'setiembre', 'octubre', 'noviembre', 'diciembre', 'proximo mes', 'mes que viene', 'siguiente mes', 'este mes'])) {
+            return 'reservaciones_mes';
+        }
         if ($tiene(['caja', 'efectivo', 'corte', 'cuanto llevo', 'cuanto hay en'])) {
             return 'caja';
         }
@@ -419,6 +423,21 @@ class CopilotoService
                 return [
                     'texto' => "Tus mayores gastos de {$gc['mes']}: " . implode(', ', $gc['items']) . '.',
                     'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ];
+
+            case 'reservaciones_mes':
+                $mref = $this->resolverMesReferido($norm);
+                if ($mref === null) {
+                    return ['texto' => 'No identifique de que mes me hablas. Prueba con "cuantas reservaciones para diciembre".', 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                $rm = $this->reservacionesDelMes($hotelId, $mref['desde'], $mref['hasta']);
+                if ($rm['total'] === 0) {
+                    return ['texto' => "No hay reservaciones con llegada en **{$mref['etiqueta']}** (sin contar canceladas).", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                $extraRm = $rm['habitaciones'] > 0 ? " ({$rm['habitaciones']} habitacion(es), {$rm['noches']} noche(s)-habitacion)" : '';
+                return [
+                    'texto' => "En **{$mref['etiqueta']}** hay **{$rm['total']} reservacion(es)** con llegada" . $extraRm . '.',
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
                 ];
         }
 
@@ -950,6 +969,78 @@ class CopilotoService
         }
 
         return ['hay' => !empty($items), 'items' => $items, 'mes' => $this->nombreMes((int) date('n'))];
+    }
+
+    /**
+     * Resuelve un mes nombrado ("diciembre") o relativo ("este mes", "proximo mes")
+     * a su OCURRENCIA MAS CERCANA (past. o fut., dentro de ~6 meses). Devuelve el
+     * rango [desde, hasta) y una etiqueta "diciembre 2026". Null si no reconoce.
+     */
+    private function resolverMesReferido(string $norm): ?array
+    {
+        $meses = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7, 'agosto' => 8, 'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
+
+        $anio = (int) date('Y');
+        $n = null;
+        foreach ($meses as $es => $num) {
+            if (strpos($norm, $es) !== false) {
+                $n = $num;
+                $diff = $num - (int) date('n');
+                if ($diff < -6) {
+                    $anio++;
+                } elseif ($diff > 6) {
+                    $anio--;
+                }
+                break;
+            }
+        }
+
+        if ($n === null) {
+            if (strpos($norm, 'proximo mes') !== false || strpos($norm, 'mes que viene') !== false || strpos($norm, 'siguiente mes') !== false) {
+                $ref = strtotime('first day of next month');
+            } elseif (strpos($norm, 'este mes') !== false) {
+                $ref = strtotime('first day of this month');
+            } else {
+                return null;
+            }
+            $anio = (int) date('Y', $ref);
+            $n = (int) date('n', $ref);
+        }
+
+        $desde = sprintf('%04d-%02d-01', $anio, $n);
+
+        return [
+            'desde' => $desde,
+            'hasta' => date('Y-m-01', strtotime($desde . ' +1 month')),
+            'etiqueta' => $this->nombreMes($n) . ' ' . $anio,
+        ];
+    }
+
+    /** Reservaciones (no canceladas) con llegada en el rango, con habitaciones y noches-habitacion. */
+    private function reservacionesDelMes(int $hotelId, string $desde, string $hasta): array
+    {
+        $total = 0;
+        $habs = 0;
+        $noches = 0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(DISTINCT r.id) total, COUNT(rh.id) habs,
+                        COALESCE(SUM(DATEDIFF(r.fecha_salida, r.fecha_entrada)), 0) noches
+                 FROM reservaciones r
+                 LEFT JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                 WHERE r.hotel_id = ? AND r.estado <> 'cancelada'
+                   AND r.fecha_entrada >= ? AND r.fecha_entrada < ?"
+            );
+            $stmt->execute([$hotelId, $desde, $hasta]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $total = (int) ($f['total'] ?? 0);
+            $habs = (int) ($f['habs'] ?? 0);
+            $noches = (int) ($f['noches'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error reservaciones mes: ' . $e->getMessage());
+        }
+
+        return ['total' => $total, 'habitaciones' => $habs, 'noches' => $noches];
     }
 
     private function nombreMes(int $m): string
