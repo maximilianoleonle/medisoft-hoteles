@@ -130,6 +130,24 @@ class CopilotoService
         if ($tiene(['ocupacion', 'cuartos libres', 'habitaciones libres', 'cuartos disponibles', 'habitaciones disponibles', 'cuanto tengo lleno', 'que tan lleno', 'disponibilidad hoy'])) {
             return 'ocupacion';
         }
+        if ($tiene(['noches vendidas', 'noches vendi', 'room night', 'room-night', 'habitaciones vendidas', 'cuartos noche', 'cuantas noches vendi'])) {
+            return 'noches_vendidas';
+        }
+        if ($tiene(['tarifa promedio', 'tarifa media', 'precio promedio', 'tarifa por noche', 'cuanto cobro por noche', 'rate promedio'])) {
+            return 'tarifa_promedio';
+        }
+        if ($tiene(['estancia promedio', 'estadia promedio', 'cuanto se quedan', 'cuanto tiempo se quedan', 'cuantas noches se quedan', 'noches promedio', 'duracion de estancia', 'duracion promedio'])) {
+            return 'estancia_promedio';
+        }
+        if ($tiene(['cancelacion', 'canceladas', 'me cancelaron', 'cuantas cancel', 'tasa de cancelacion', 'reservas canceladas'])) {
+            return 'cancelaciones_mes';
+        }
+        if ($tiene(['entraron hoy', 'reservas que entraron', 'cuantas reservas entraron', 'reservas nuevas', 'reservaciones nuevas', 'se registraron hoy', 'cuantas reservas hicieron', 'reservas de hoy nuevas'])) {
+            return 'reservas_hoy';
+        }
+        if ($tiene(['que limpiar', 'limpiar hoy', 'por limpiar', 'que hay que limpiar', 'pendientes de limpieza', 'habitaciones a limpiar', 'cuartos por limpiar', 'que limpio'])) {
+            return 'limpiar_hoy';
+        }
         if ($tiene(['mejor o peor', 'mejor que el mes', 'peor que el mes', 'comparado con el mes', 'comparada con el mes', 'comparacion con el mes', 'contra el mes pasado', 'vs el mes pasado', 'versus el mes pasado', 'como voy comparado'])) {
             return 'comparar_meses';
         }
@@ -439,6 +457,75 @@ class CopilotoService
                     'texto' => "En **{$mref['etiqueta']}** hay **{$rm['total']} reservacion(es)** con llegada" . $extraRm . '.',
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
                 ];
+
+            case 'noches_vendidas':
+                $mrv = $this->metricasReservasMes($hotelId);
+                if ($mrv['n'] === 0) {
+                    return ['texto' => "Aun no tienes reservaciones con llegada en {$mrv['mes']}.", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                return [
+                    'texto' => "En {$mrv['mes']} llevas **{$mrv['roomnights']} noches-habitacion vendidas** (de {$mrv['n']} reservacion(es) con llegada este mes).",
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'tarifa_promedio':
+                $mrv = $this->metricasReservasMes($hotelId);
+                if ($mrv['roomnights'] <= 0) {
+                    return ['texto' => "Aun no tengo noches vendidas en {$mrv['mes']} para calcular la tarifa promedio.", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                $adr = number_format($mrv['rev'] / $mrv['roomnights'], 2);
+                return [
+                    'texto' => "Tu **tarifa promedio (ADR)** de {$mrv['mes']} es **\${$adr} por noche-habitacion** (sobre \$" . number_format($mrv['rev'], 2) . " en {$mrv['roomnights']} noches vendidas).",
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'estancia_promedio':
+                $mrv = $this->metricasReservasMes($hotelId);
+                if ($mrv['n'] === 0) {
+                    return ['texto' => "Aun no tengo reservaciones con llegada en {$mrv['mes']} para el promedio de estancia.", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                $prom = number_format($mrv['nights'] / $mrv['n'], 1);
+                return [
+                    'texto' => "Tus huespedes con llegada en {$mrv['mes']} se quedan en promedio **{$prom} noche(s)** por reservacion.",
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'cancelaciones_mes':
+                $cm = $this->cancelacionesMes($hotelId);
+                if ($cm['total'] === 0) {
+                    return ['texto' => "No tienes reservaciones con llegada en {$cm['mes']} todavia.", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                if ($cm['canceladas'] === 0) {
+                    return ['texto' => "En {$cm['mes']} no tienes cancelaciones de {$cm['total']} reservaciones. 🎉", 'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones']];
+                }
+                $pctCanc = (int) round($cm['canceladas'] * 100 / $cm['total']);
+                return [
+                    'texto' => "En {$cm['mes']} llevas **{$cm['canceladas']} cancelacion(es)** de {$cm['total']} reservaciones (**{$pctCanc}% de cancelacion**).",
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'reservas_hoy':
+                $rhoy = $this->reservasCreadasHoy($hotelId);
+                return [
+                    'texto' => $rhoy === 0
+                        ? 'Hoy no se ha registrado ninguna reservacion nueva todavia.'
+                        : "Hoy se han registrado **{$rhoy} reservacion(es) nueva(s)**.",
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'limpiar_hoy':
+                $lh = $this->limpiezaHoy($hotelId);
+                if ($lh['limpieza'] === 0 && $lh['salidas'] === 0) {
+                    return ['texto' => 'No tienes habitaciones en limpieza ni salidas pendientes hoy. Todo al dia. ✔', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
+                }
+                $partesLh = [];
+                if ($lh['limpieza'] > 0) {
+                    $partesLh[] = "**{$lh['limpieza']} habitacion(es) en limpieza** ahora";
+                }
+                if ($lh['salidas'] > 0) {
+                    $partesLh[] = "**{$lh['salidas']} salida(s) de hoy** por limpiar";
+                }
+                return ['texto' => 'Para limpieza: ' . implode(' y ', $partesLh) . '.', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
         }
 
         return ['texto' => $this->textoFallback(), 'enlace' => null];
@@ -1041,6 +1128,74 @@ class CopilotoService
         }
 
         return ['total' => $total, 'habitaciones' => $habs, 'noches' => $noches];
+    }
+
+    /** Metricas de las reservaciones (no canceladas) con llegada en el mes en curso. */
+    private function metricasReservasMes(int $hotelId): array
+    {
+        $out = ['n' => 0, 'roomnights' => 0, 'nights' => 0, 'rev' => 0.0];
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) n,
+                        COALESCE(SUM(DATEDIFF(fecha_salida, fecha_entrada) * total_habitaciones), 0) roomnights,
+                        COALESCE(SUM(DATEDIFF(fecha_salida, fecha_entrada)), 0) nights,
+                        COALESCE(SUM(precio_total), 0) rev
+                 FROM reservaciones
+                 WHERE hotel_id = ? AND estado <> 'cancelada' AND fecha_entrada >= ? AND fecha_entrada < ?"
+            );
+            $stmt->execute([$hotelId, date('Y-m-01'), date('Y-m-01', strtotime('first day of next month'))]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $out['n'] = (int) ($f['n'] ?? 0);
+            $out['roomnights'] = (int) ($f['roomnights'] ?? 0);
+            $out['nights'] = (int) ($f['nights'] ?? 0);
+            $out['rev'] = (float) ($f['rev'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error metricas reservas: ' . $e->getMessage());
+        }
+        $out['mes'] = $this->nombreMes((int) date('n'));
+        return $out;
+    }
+
+    /** Cancelaciones vs total de reservaciones con llegada en el mes en curso. */
+    private function cancelacionesMes(int $hotelId): array
+    {
+        $canc = 0;
+        $noc = 0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT SUM(estado = 'cancelada') canc, SUM(estado <> 'cancelada') noc
+                 FROM reservaciones
+                 WHERE hotel_id = ? AND fecha_entrada >= ? AND fecha_entrada < ?"
+            );
+            $stmt->execute([$hotelId, date('Y-m-01'), date('Y-m-01', strtotime('first day of next month'))]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $canc = (int) ($f['canc'] ?? 0);
+            $noc = (int) ($f['noc'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error cancelaciones: ' . $e->getMessage());
+        }
+        return ['canceladas' => $canc, 'total' => $canc + $noc, 'mes' => $this->nombreMes((int) date('n'))];
+    }
+
+    /** Reservaciones registradas hoy (por fecha de creacion). */
+    private function reservasCreadasHoy(int $hotelId): int
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM reservaciones WHERE hotel_id = ? AND DATE(created_at) = CURDATE()");
+            $stmt->execute([$hotelId]);
+            return (int) $stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Copiloto: error reservas hoy: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /** Carga de limpieza de hoy: habitaciones en estado limpieza + salidas del dia. */
+    private function limpiezaHoy(int $hotelId): array
+    {
+        $estados = $this->habitacionesPorEstado($hotelId);
+        $salidas = $this->reservasPorFecha($hotelId, 'salida');
+        return ['limpieza' => (int) ($estados['limpieza'] ?? 0), 'salidas' => (int) $salidas['total']];
     }
 
     private function nombreMes(int $m): string
