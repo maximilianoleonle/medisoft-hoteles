@@ -228,14 +228,31 @@ class NominaCierreService {
                 throw new Exception('No se pudo aprobar el periodo (estado cambiado por otro usuario).');
             }
 
-            // Emitir el credito del neto en el ledger: desde este momento (y solo
-            // desde este momento) el periodo es pagable por los rieles de Caja.
+            // Emitir el credito en el ledger para habilitar el pago por Caja: desde
+            // este momento (y solo desde este) el periodo es pagable por los rieles.
+            //
+            // CRITICO: el credito cubre SOLO la porcion del neto que el ledger v1 aun
+            // NO aporta al saldo (salario + incidencias - fiscal). Las lineas de ledger
+            // v1 del periodo (bono/comision/descuento) YA cuentan en
+            // saldoLaboralDisponible(); emitir el neto COMPLETO las contaria dos veces
+            // y el riel libre pagaria de mas. credito = neto - ledger_favorable_periodo.
             $st = $this->pdo->prepare(
                 "SELECT trabajador_id, neto_sugerido FROM trabajador_nomina_periodo_detalles
                  WHERE periodo_id = ? AND hotel_id = ? AND neto_sugerido > 0"
             );
             $st->execute([$periodoId, $hotelId]);
             $detallesPagables = $st->fetchAll();
+
+            // Aporte NETO del ledger v1 del trabajador dentro del rango del periodo
+            // (a_favor - en_contra), excluyendo creditos NOMV2. Mismo criterio de
+            // atribucion por fecha que usa el motor de calculo.
+            $stLedgerFavorable = $this->pdo->prepare(
+                "SELECT COALESCE(SUM(CASE WHEN efecto = 'a_favor' THEN monto ELSE -monto END), 0) AS neto_ledger
+                 FROM trabajador_pagos
+                 WHERE hotel_id = ? AND trabajador_id = ? AND estado = 'activo'
+                   AND (referencia IS NULL OR referencia NOT LIKE 'NOMV2-%')
+                   AND fecha BETWEEN ? AND ?"
+            );
 
             $stLedger = $this->pdo->prepare(
                 "INSERT INTO trabajador_pagos
@@ -246,15 +263,28 @@ class NominaCierreService {
 
             $creditosEmitidos = 0;
             foreach ($detallesPagables as $d) {
+                $trabajadorId = (int) $d['trabajador_id'];
+                $neto = round((float) $d['neto_sugerido'], 2);
+
+                $stLedgerFavorable->execute([$hotelId, $trabajadorId, $periodo['fecha_inicio'], $periodo['fecha_fin']]);
+                $ledgerFavorable = round((float) ($stLedgerFavorable->fetch()['neto_ledger'] ?? 0), 2);
+
+                // Solo la parte del neto que el ledger v1 no cubre ya.
+                $credito = round($neto - $ledgerFavorable, 2);
+                if ($credito <= 0.004) {
+                    // El ledger v1 ya cubre (o excede) el neto: no se emite credito.
+                    continue;
+                }
+
                 $stLedger->execute([
                     $hotelId,
-                    (int) $d['trabajador_id'],
-                    $d['neto_sugerido'],
-                    mb_substr('Nomina aprobada: ' . $periodo['etiqueta'], 0, 160),
+                    $trabajadorId,
+                    number_format($credito, 2, '.', ''),
+                    mb_substr('Nomina aprobada (neto no cubierto por ledger v1): ' . $periodo['etiqueta'], 0, 160),
                     $periodo['fecha_inicio'],
                     $periodo['fecha_fin'],
                     $periodo['fecha_fin'],
-                    'NOMV2-' . $periodoId . '-' . (int) $d['trabajador_id'],
+                    'NOMV2-' . $periodoId . '-' . $trabajadorId,
                     $usuarioId,
                 ]);
                 $creditosEmitidos++;
@@ -297,13 +327,12 @@ class NominaCierreService {
             throw new Exception('El periodo ya esta anulado.');
         }
 
-        // Bloqueo: pagos snapshot vigentes ligados al periodo.
-        $st = $this->pdo->prepare(
-            "SELECT COUNT(*) AS total FROM trabajador_pagos_caja
-             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'"
-        );
-        $st->execute([$hotelId, $periodoId]);
-        $pagosVigentes = (int) ($st->fetch()['total'] ?? 0);
+        // Bloqueo: pagos de Caja vigentes del periodo. Incluye tanto los pagos
+        // trazados al snapshot (nomina_periodo_id = ?) como los del riel LIBRE
+        // (nomina_periodo_id NULL) a trabajadores del periodo dentro del rango de
+        // fechas: de lo contrario un pago libre quedaria invisible y se podria
+        // anular/reabrir un periodo ya cobrado (doble pago).
+        $pagosVigentes = $this->contarPagosVigentesDelPeriodo($hotelId, $periodoId, $periodo);
         if ($pagosVigentes > 0) {
             throw new Exception('El periodo tiene ' . $pagosVigentes . ' pago(s) de Caja vigentes: revierte los pagos antes de anular.');
         }
@@ -385,12 +414,8 @@ class NominaCierreService {
             throw new Exception('Solo un periodo APROBADO puede reabrirse (estado: ' . $periodo['estado'] . ').');
         }
 
-        $st = $this->pdo->prepare(
-            "SELECT COUNT(*) AS total FROM trabajador_pagos_caja
-             WHERE hotel_id = ? AND nomina_periodo_id = ? AND estado = 'pagado'"
-        );
-        $st->execute([$hotelId, $periodoId]);
-        if ((int) ($st->fetch()['total'] ?? 0) > 0) {
+        // Mismo criterio amplio que en anular: incluye pagos del riel libre.
+        if ($this->contarPagosVigentesDelPeriodo($hotelId, $periodoId, $periodo) > 0) {
             throw new Exception('El periodo tiene pagos de Caja vigentes: revierte los pagos antes de reabrir.');
         }
 
@@ -461,6 +486,40 @@ class NominaCierreService {
             throw new Exception('El periodo v2 no existe en este negocio.');
         }
         return $periodo;
+    }
+
+    /**
+     * Cuenta los pagos de Caja vigentes (estado 'pagado') atribuibles al periodo:
+     * los trazados por snapshot (nomina_periodo_id) MAS los del riel libre
+     * (nomina_periodo_id NULL) hechos a trabajadores del periodo dentro de su
+     * rango de fechas. Cierra el hueco por el que un pago libre quedaria
+     * invisible al guard de anular/reabrir.
+     */
+    private function contarPagosVigentesDelPeriodo(int $hotelId, int $periodoId, array $periodo): int {
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total
+             FROM trabajador_pagos_caja pc
+             WHERE pc.hotel_id = ? AND pc.estado = 'pagado'
+               AND (
+                    pc.nomina_periodo_id = ?
+                 OR (pc.nomina_periodo_id IS NULL
+                     AND DATE(pc.fecha_pago) BETWEEN ? AND ?
+                     AND pc.trabajador_id IN (
+                         SELECT trabajador_id FROM trabajador_nomina_periodo_detalles
+                         WHERE periodo_id = ? AND hotel_id = ?
+                     ))
+               )"
+        );
+        $st->execute([
+            $hotelId,
+            $periodoId,
+            $periodo['fecha_inicio'],
+            $periodo['fecha_fin'],
+            $periodoId,
+            $hotelId,
+        ]);
+
+        return (int) ($st->fetch()['total'] ?? 0);
     }
 
     private function registrarEvento(int $periodoId, int $hotelId, string $tipo, string $estadoResultante, string $descripcion, ?string $motivo, ?int $usuarioId): void {
