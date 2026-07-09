@@ -24,6 +24,10 @@ $reservasPrev = (int) ($pickup['reservas_prev'] ?? 0);
 $deltaPickup = $reservas7 - $reservasPrev;
 
 $dias30 = array_slice($porDia, 0, 30, true);
+
+// Copiloto IA (bloque copiloto_ia): teaser visible aunque el hotel no tenga el
+// bloque (el servidor administra la prueba gratis); requiere IA en el servidor.
+$fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 ?>
 
 <style>
@@ -49,6 +53,18 @@ $dias30 = array_slice($porDia, 0, 30, true);
 .fc-delta-pos { color: #15803D; font-weight: 700; }
 .fc-delta-neg { color: #B91C1C; font-weight: 700; }
 .fc-ocup-pill { display: inline-block; min-width: 58px; text-align: center; padding: 3px 8px; border-radius: 999px; font-weight: 700; font-size: .8rem; }
+
+/* Copiloto IA */
+.fcia-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .03em; background: rgba(189,148,65,.14); color: #8A6A24; vertical-align: 2px; }
+.fcia-controles { padding: 12px 16px 14px; }
+.fcia-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; cursor: pointer; background: var(--brand-primary, #1B2746); color: #fff; font-size: .82rem; font-weight: 700; }
+.fcia-btn.sec { background: #fff; color: var(--brand-primary, #1B2746); border: 1px solid #D8D4C9; }
+.fcia-panel { padding: 12px 16px 16px; border-top: 1px dashed #E3DFD3; background: #FBFAF5; }
+.fcia-texto { font-size: .88rem; color: #333C4E; line-height: 1.55; background: #fff; border: 1px solid #E9E5DA; border-radius: 10px; padding: 12px 14px; }
+.fcia-meta { font-size: .74rem; color: #8A93A6; margin-top: 6px; }
+.fcia-botones { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.fcia-upsell { font-size: .85rem; background: rgba(189,148,65,.1); border: 1px solid rgba(189,148,65,.35); color: #7A5E23; border-radius: 10px; padding: 12px 14px; line-height: 1.5; }
+.fcia-error { font-size: .85rem; background: rgba(220,38,38,.07); border: 1px solid rgba(220,38,38,.2); color: #B91C1C; border-radius: 10px; padding: 10px 12px; }
 </style>
 
 <div class="fc">
@@ -124,6 +140,17 @@ $dias30 = array_slice($porDia, 0, 30, true);
         </table>
     </div>
 
+    <?php if ($fcIaOk): ?>
+    <div class="fc-card">
+        <h2>💡 Consejo de tarifa <span class="fcia-tag">✨ Copiloto IA</span></h2>
+        <p class="nota">Lee tu proyección, tu ritmo de ventas y la comparativa anual, y te sugiere si conviene subir, mantener o bajar tarifa. La decisión siempre es tuya.</p>
+        <div class="fcia-controles">
+            <button type="button" id="fcia-generar" class="fcia-btn">Ver el consejo de hoy</button>
+        </div>
+        <div id="fcia-consejo" class="fcia-panel" hidden></div>
+    </div>
+    <?php endif; ?>
+
     <div class="fc-card">
         <h2>Próximas 12 semanas vs el año pasado</h2>
         <p class="nota">La columna "hace 1 año" usa la ocupación real que tuviste en esas mismas fechas del año anterior.</p>
@@ -160,3 +187,62 @@ $dias30 = array_slice($porDia, 0, 30, true);
         </table>
     </div>
 </div>
+
+<?php if ($fcIaOk): ?>
+<script>
+(function () {
+    'use strict';
+    var URL_TARIFA = <?= json_encode(url('copiloto-ia/tarifa')) ?>;
+    var TOKEN = <?= json_encode(function_exists('csrf_token') ? csrf_token() : '') ?>;
+
+    function post(params, cb) {
+        var datos = new URLSearchParams();
+        datos.append('csrf_token', TOKEN);
+        Object.keys(params).forEach(function (k) { datos.append(k, params[k]); });
+        fetch(URL_TARIFA, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': TOKEN, 'X-Requested-With': 'XMLHttpRequest' },
+            body: datos.toString()
+        }).then(function (r) { return r.json(); }).then(cb).catch(function () {
+            cb({ success: false, message: 'No se pudo conectar. Revisa tu internet e intenta de nuevo.' });
+        });
+    }
+
+    // Texto de la IA: se escapa todo y solo se permiten **negritas** y saltos de linea.
+    function iaHtml(t) {
+        var d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    }
+
+    var btn = document.getElementById('fcia-generar');
+    var cont = document.getElementById('fcia-consejo');
+    if (!btn || !cont) { return; }
+
+    function pintar(data) {
+        if (data.success) {
+            var partes = ['<div class="fcia-texto">' + iaHtml(data.texto) + '</div>'];
+            partes.push('<div class="fcia-meta">' + (data.desde_cache ? 'Generado el ' + iaHtml(data.generado_en || '') : 'Recién generado') + ' · Sugerencia orientativa: ningún precio se cambia solo.</div>');
+            if (data.prueba && typeof data.prueba.restantes === 'number') {
+                partes.push('<div class="fcia-meta">✨ Prueba gratis del bloque Copiloto IA · te quedan <strong>' + data.prueba.restantes + '</strong> usos de esta función.</div>');
+            }
+            partes.push('<div class="fcia-botones"><button type="button" class="fcia-btn sec" id="fcia-regen">Regenerar</button></div>');
+            cont.innerHTML = partes.join('');
+            document.getElementById('fcia-regen').addEventListener('click', function () { cargar(true); });
+        } else if (data.upsell) {
+            cont.innerHTML = '<div class="fcia-upsell">🔒 ' + iaHtml(data.message) + '</div>';
+        } else {
+            cont.innerHTML = '<div class="fcia-error">' + iaHtml(data.message || 'No se pudo generar. Intenta de nuevo.') + '</div>';
+        }
+    }
+
+    function cargar(regen) {
+        cont.hidden = false;
+        cont.innerHTML = '<div class="fcia-meta">💡 Leyendo tu proyección y ritmo de ventas…</div>';
+        post({ regenerar: regen ? '1' : '0' }, pintar);
+    }
+
+    btn.addEventListener('click', function () { cargar(false); });
+})();
+</script>
+<?php endif; ?>

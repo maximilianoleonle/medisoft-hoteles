@@ -270,6 +270,12 @@ $router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina',
 // Copiloto Medisoft (bloque copiloto: asistente hibrido, solo lectura)
 $router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'preguntar']);
 
+// Copiloto IA (bloque copiloto_ia: IA sobre reputacion/forecast, solo lectura;
+// el gate del bloque lo resuelve el servicio para permitir la prueba gratis)
+$router->post('/copiloto-ia/resena', ['controller' => 'CopilotoIa', 'action' => 'resena']);
+$router->post('/copiloto-ia/analisis', ['controller' => 'CopilotoIa', 'action' => 'analisis']);
+$router->post('/copiloto-ia/tarifa', ['controller' => 'CopilotoIa', 'action' => 'tarifa']);
+
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);
 $router->post('/lealtad/generar/{id:[0-9]+}', ['controller' => 'Lealtad', 'action' => 'generar']);
