@@ -181,6 +181,29 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
         bottom: auto;
     }
 }
+/* ── Copiloto: fondo difuminado suave + panel centrado SOLO en móvil ──
+   (En escritorio se queda como widget de esquina y la sidebar permanece visible;
+    el ocultador global lo ignora por el atributo data-ms-keep-sidebar del panel.) */
+#cop-backdrop { display: none; }
+@media (max-width: 640px) {
+    #cop-backdrop {
+        position: fixed; inset: 0; z-index: 9990;
+        background: rgba(20,28,45,.20);
+        -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+        opacity: 0; visibility: hidden;
+        transition: opacity .22s ease, visibility .22s ease;
+    }
+    body.cop-abierto #cop-backdrop { display: block; opacity: 1; visibility: visible; }
+
+    /* Centrar el panel y ocultar el FAB de esquina para enfocarse en el copiloto */
+    body.cop-abierto #cop-panel.abierto {
+        left: 50%; right: auto; top: 50%; bottom: auto;
+        transform: translate(-50%, -50%);
+        width: min(420px, calc(100vw - 28px));
+        max-height: min(74dvh, calc(100dvh - 96px));
+    }
+    body.cop-abierto #cop-fab { display: none; }
+}
 </style>
 
 <button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir asesor inteligente">
@@ -190,7 +213,8 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
     </span>
     <span class="cop-fab-label" aria-hidden="true">Asesor inteligente</span>
 </button>
-<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft">
+<div id="cop-backdrop" aria-hidden="true"></div>
+<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft" data-ms-keep-sidebar>
     <div class="cop-head">
         <span class="cop-logo-mark" aria-hidden="true">
             <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
@@ -271,8 +295,10 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
         return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     }
 
+    var backdrop = document.getElementById('cop-backdrop');
     function abrir(v) {
         panel.classList.toggle('abierto', v);
+        document.body.classList.toggle('cop-abierto', v);
         if (v) {
             marcarDescubierto();
             setTimeout(function () { input.focus(); }, 50);
@@ -280,6 +306,7 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
     }
     fab.addEventListener('click', function () { abrir(!panel.classList.contains('abierto')); });
     closeBtn.addEventListener('click', function () { abrir(false); });
+    if (backdrop) { backdrop.addEventListener('click', function () { abrir(false); }); }
 
     function escapar(s) {
         return String(s).replace(/[&<>"]/g, function (c) {

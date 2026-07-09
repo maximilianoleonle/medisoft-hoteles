@@ -204,12 +204,350 @@ $visibles = count($compras);
     .purchases-page .cp-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .purchases-page .cp-title { font-size: 2rem; }
 }
+
+/* Documents-aligned polish: calmer ink, lighter weights, same purchasing rhythm. */
+.purchases-page {
+    --cp-gold-ink: color-mix(in srgb, var(--cp-gold) 58%, var(--cp-brand));
+    --cp-border: color-mix(in srgb, var(--cp-brand) 6%, #E9E1D6);
+    --cp-text: color-mix(in srgb, var(--cp-brand) 46%, #707B8C);
+    --cp-muted: #8791A2;
+    --cp-heading: color-mix(in srgb, var(--cp-brand) 66%, #566172);
+}
+.purchases-page .font-bold,
+.purchases-page .font-semibold {
+    font-weight: 650 !important;
+}
+.purchases-page .cp-shell {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+.purchases-page .cp-hero-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start !important;
+    justify-content: stretch !important;
+    gap: 12px !important;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 2px 0 6px;
+}
+.purchases-page .cp-title-lockup {
+    justify-self: start;
+    max-width: min(100%, 780px);
+}
+.purchases-page .cp-title-lockup > div:last-child {
+    min-width: 0;
+}
+.purchases-page .cp-kicker,
+.purchases-page .cp-title,
+.purchases-page .cp-btn,
+.purchases-page .cp-summary-label,
+.purchases-page .cp-summary-value,
+.purchases-page .cp-panel-title,
+.purchases-page .cp-count-pill,
+.purchases-page .cp-table th,
+.purchases-page .cp-id,
+.purchases-page .cp-prov,
+.purchases-page .cp-cell-strong,
+.purchases-page .cp-badge,
+.purchases-page .cp-action,
+.purchases-page .cp-mini-label,
+.purchases-page .cp-mini-value,
+.purchases-page .cp-empty h2,
+.purchases-page .cp-notice strong {
+    font-weight: 650;
+}
+.purchases-page .cp-title {
+    color: var(--cp-heading);
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    overflow-wrap: anywhere;
+}
+.purchases-page .cp-subtitle {
+    max-width: 48rem;
+    color: var(--cp-muted);
+}
+.purchases-page .cp-btn {
+    min-height: 44px;
+    white-space: nowrap;
+}
+.purchases-page .cp-btn-gold {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--cp-gold) 86%, #fff), color-mix(in srgb, var(--cp-gold) 72%, var(--cp-brand)));
+    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--cp-gold) 42%, transparent);
+}
+.purchases-page .cp-btn-brand {
+    background: color-mix(in srgb, var(--cp-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--cp-gold) 28%, #ECE1D1);
+    color: var(--cp-gold-ink);
+    box-shadow: 0 8px 18px -18px color-mix(in srgb, var(--cp-gold) 34%, transparent);
+}
+.purchases-page .cp-btn-muted {
+    background: rgba(255,255,255,.86);
+    border-color: var(--cp-border);
+    color: var(--cp-muted);
+}
+.purchases-page .cp-summary-item,
+.purchases-page .cp-panel,
+.purchases-page .cp-mobile-card {
+    background: rgba(255,255,255,.86);
+    border-color: var(--cp-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
+}
+.purchases-page .cp-summary-value.is-draft {
+    color: color-mix(in srgb, var(--cp-warning) 72%, var(--cp-text));
+}
+.purchases-page .cp-summary-value.is-received {
+    color: color-mix(in srgb, var(--cp-success) 68%, var(--cp-text));
+}
+.purchases-page .cp-control {
+    min-height: 44px;
+    color: var(--cp-text);
+    font-weight: 560;
+}
+.purchases-page .cp-control::placeholder {
+    color: color-mix(in srgb, var(--cp-muted) 82%, #B8C0CB);
+    font-weight: 520;
+}
+.purchases-page .cp-panel-head,
+.purchases-page .cp-table thead {
+    background: var(--cp-surface-warm);
+}
+.purchases-page .cp-count-pill {
+    background: color-mix(in srgb, var(--cp-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--cp-gold) 28%, #ECE1D1);
+}
+.purchases-page .cp-row:hover {
+    background: rgba(251,248,242,.72);
+    box-shadow: 0 10px 24px -25px rgba(27,39,70,.32);
+}
+.purchases-page .cp-id,
+.purchases-page .cp-prov,
+.purchases-page .cp-cell-strong,
+.purchases-page .cp-mini-value {
+    color: var(--cp-heading);
+}
+.purchases-page .cp-badge.is-borrador {
+    color: color-mix(in srgb, var(--cp-warning) 72%, var(--cp-text));
+}
+.purchases-page .cp-badge.is-recibida {
+    color: color-mix(in srgb, var(--cp-success) 70%, var(--cp-text));
+}
+.purchases-page .cp-badge.is-cancelada {
+    color: color-mix(in srgb, var(--cp-danger) 72%, var(--cp-text));
+}
+.purchases-page .cp-action {
+    min-height: 44px;
+    border-color: var(--cp-border);
+    background: var(--cp-surface-warm);
+    color: var(--cp-muted);
+}
+.purchases-page .cp-action-view {
+    color: var(--cp-info);
+}
+.purchases-page .cp-btn-receive {
+    background: var(--cp-success-bg);
+    border-color: color-mix(in srgb, var(--cp-success) 24%, #fff);
+    color: color-mix(in srgb, var(--cp-success) 72%, var(--cp-text));
+    box-shadow: none;
+}
+.purchases-page .cp-btn-receive:hover {
+    background: color-mix(in srgb, var(--cp-success) 14%, #FFFFFF);
+}
+.purchases-page .cp-btn-receive.is-confirming {
+    background: var(--cp-warning-bg);
+    border-color: color-mix(in srgb, var(--cp-warning) 26%, #fff);
+    color: color-mix(in srgb, var(--cp-warning) 74%, var(--cp-text));
+}
+.purchases-page .cp-empty {
+    background: rgba(251,248,242,.78);
+    border-color: var(--cp-border);
+}
+.purchases-page .cp-empty h2 {
+    color: var(--cp-heading);
+}
+.purchases-page .cp-notice {
+    background: color-mix(in srgb, var(--cp-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--cp-gold) 28%, #ECE1D1);
+}
+.purchase-toast {
+    box-shadow: 0 16px 36px rgba(24,32,48,.14);
+    font-weight: 560;
+}
+
+@media (min-width: 1024px) {
+    .purchases-page .cp-hero-section {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 16px 28px !important;
+        padding-bottom: 10px;
+    }
+    .purchases-page .cp-hero-section > .cp-btn {
+        justify-self: end;
+        min-width: max-content;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .purchases-page .cp-filter-form {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .purchases-page .cp-search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767px) {
+    .purchases-page {
+        --cp-mobile-ink: color-mix(in srgb, var(--cp-brand) 62%, #6F7784);
+        --cp-mobile-text: color-mix(in srgb, var(--cp-brand) 42%, #778394);
+        --cp-mobile-muted: #98A2B3;
+        padding: 10px 12px 18px !important;
+        background:
+            radial-gradient(520px 220px at 92% -6%, color-mix(in srgb, var(--cp-gold) 12%, transparent), transparent 62%),
+            linear-gradient(180deg, #FBF8F0 0%, #F3EDE2 100%);
+    }
+    .purchases-page .cp-shell {
+        gap: 10px;
+    }
+    .purchases-page .cp-hero-section {
+        position: relative;
+        overflow: hidden;
+        min-height: 126px;
+        margin: 0;
+        padding: 16px 14px 14px;
+        border-radius: 22px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 88% 14%, rgba(255,255,255,.17), transparent 92px),
+            linear-gradient(135deg, color-mix(in srgb, var(--cp-brand) 94%, #000) 0%, color-mix(in srgb, var(--cp-brand-2) 78%, var(--cp-gold)) 100%);
+        box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--cp-brand) 72%, transparent);
+    }
+    .purchases-page .cp-hero-section::after {
+        content: "";
+        position: absolute;
+        right: -44px;
+        top: -44px;
+        width: 150px;
+        height: 150px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        pointer-events: none;
+    }
+    .purchases-page .cp-title-lockup {
+        position: relative;
+        z-index: 1;
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+        align-items: start;
+    }
+    .purchases-page .cp-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+        background: rgba(255,255,255,.16);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,.22);
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+    }
+    .purchases-page .cp-kicker {
+        color: rgba(255,255,255,.76);
+        font-size: .64rem;
+    }
+    .purchases-page .cp-title {
+        color: #fff;
+        font-size: clamp(2rem, 12vw, 2.55rem);
+    }
+    .purchases-page .cp-subtitle {
+        color: rgba(255,255,255,.72);
+        font-size: .84rem;
+        line-height: 1.43;
+    }
+    .purchases-page .cp-hero-section > .cp-btn {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        background: rgba(255,255,255,.94);
+        border-color: rgba(255,255,255,.28);
+        color: var(--cp-brand);
+        box-shadow: 0 12px 24px -18px rgba(0,0,0,.38);
+    }
+    .purchases-page .cp-summary {
+        display: flex;
+        grid-template-columns: none;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 2px 2px;
+        margin: 0 -2px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .purchases-page .cp-summary::-webkit-scrollbar {
+        display: none;
+    }
+    .purchases-page .cp-summary-item {
+        flex: 0 0 155px;
+        padding: 10px 12px;
+        border-radius: 14px;
+    }
+    .purchases-page .cp-summary-label,
+    .purchases-page .cp-mini-label {
+        font-size: .62rem;
+    }
+    .purchases-page .cp-summary-value {
+        color: var(--cp-mobile-ink);
+        font-size: 1.36rem;
+    }
+    .purchases-page .cp-filter-form {
+        gap: 8px;
+    }
+    .purchases-page .cp-filter-form .cp-btn {
+        width: 100%;
+    }
+    .purchases-page .cp-panel {
+        border-radius: 15px;
+    }
+    .purchases-page .cp-panel-head {
+        align-items: flex-start;
+        padding: 12px;
+    }
+    .purchases-page .cp-panel-title,
+    .purchases-page .cp-mobile-card .cp-id,
+    .purchases-page .cp-mini-value {
+        color: var(--cp-mobile-ink);
+    }
+    .purchases-page .cp-mobile {
+        padding: 10px;
+    }
+    .purchases-page .cp-mobile-card {
+        border-radius: 15px;
+        padding: 12px;
+    }
+    .purchases-page .cp-mobile-top {
+        align-items: flex-start;
+    }
+    .purchases-page .cp-mobile-meta {
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+    .purchases-page .cp-mobile-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    }
+    .purchases-page .cp-mobile-actions .cp-action,
+    .purchases-page .cp-mobile-actions .cp-inline-form {
+        min-width: 0;
+    }
+}
 </style>
 
 <div class="purchases-page p-4 sm:p-6">
     <div class="cp-shell">
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <section class="cp-hero-section flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div class="cp-title-lockup">
                 <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
                 <div>

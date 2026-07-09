@@ -4869,6 +4869,23 @@ if ($tiene_doble_movimiento) {
 #modalLimpieza .lm-badge i{ font-size:.72rem; }
 
 /* ── Estado vacío ── */
+/* Personal que hizo la limpieza (selector obligatorio del modal masivo) */
+#modalLimpieza .lm-staff{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--lm-line); }
+#modalLimpieza .lm-staff__title{ margin:0; display:flex; align-items:center; gap:7px; font-weight:700; font-size:.9rem; color:var(--lm-ink); }
+#modalLimpieza .lm-staff__title i{ color:var(--lm-clean); font-size:.85rem; }
+#modalLimpieza .lm-staff__hint{ margin:3px 0 10px; font-size:.76rem; color:var(--lm-ink-soft); }
+#modalLimpieza .lm-staff__list{ display:flex; flex-wrap:wrap; gap:8px; }
+#modalLimpieza .lm-staff__chip{ display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border:1.5px solid var(--lm-line);
+  border-radius:999px; cursor:pointer; background:var(--lm-surface); font-size:.82rem; font-weight:600; color:var(--lm-ink);
+  transition:border-color .15s ease, background .15s ease, color .15s ease; }
+#modalLimpieza .lm-staff__chip:hover{ border-color:var(--lm-clean); background:var(--lm-clean-mist); }
+#modalLimpieza .lm-staff__chip input{ width:15px; height:15px; accent-color:var(--lm-clean); margin:0; flex:0 0 auto; }
+#modalLimpieza .lm-staff__chip:has(input:checked){ border-color:var(--lm-clean); background:var(--lm-clean-soft); color:var(--lm-clean-deep); }
+#modalLimpieza .lm-staff__chip--none{ border-style:dashed; color:var(--lm-ink-soft); }
+#modalLimpieza .lm-staff__chip--none input{ accent-color:var(--lm-ink-faint); }
+#modalLimpieza .lm-staff__chip--none:hover{ border-color:var(--lm-ink-faint); background:var(--lm-surface-warm); }
+#modalLimpieza .lm-staff__chip--none:has(input:checked){ border-color:var(--lm-ink-faint); background:var(--lm-slate-soft, #EEF1F4); color:var(--lm-ink); }
+
 #modalLimpieza .lm-empty{ text-align:center; padding:40px 20px; }
 #modalLimpieza .lm-empty__icon{ display:grid; place-items:center; width:64px; height:64px; margin:0 auto 14px; border-radius:20px; background:var(--lm-clean-soft); color:var(--lm-clean); font-size:1.7rem; }
 #modalLimpieza .lm-empty__title{ margin:0; font-family:var(--lm-serif); font-weight:700; font-size:1.3rem; color:var(--lm-ink); }
@@ -5036,6 +5053,26 @@ if ($tiene_doble_movimiento) {
                 <span class="lm-empty__icon" aria-hidden="true"><i class="fas fa-check-circle"></i></span>
                 <p class="lm-empty__title">Todo impecable</p>
                 <p class="lm-empty__text">No hay habitaciones en limpieza ahora mismo.</p>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($habitaciones_limpieza) && !empty($personal_limpieza['disponible'])): ?>
+            <!-- Personal que hizo la limpieza (obligatorio: personas o "sin registrar") -->
+            <div class="lm-staff">
+                <p class="lm-staff__title"><i class="fas fa-user-check" aria-hidden="true"></i>¿Quién hizo la limpieza?</p>
+                <p class="lm-staff__hint">Se registrará para todas las habitaciones seleccionadas. Puedes elegir a más de una persona.</p>
+                <div class="lm-staff__list">
+                    <?php foreach (($personal_limpieza['personal'] ?? []) as $pLimpieza): ?>
+                    <label class="lm-staff__chip">
+                        <input type="checkbox" class="lm-staff-check" value="<?= (int)$pLimpieza['id'] ?>">
+                        <span><?= htmlspecialchars((string)$pLimpieza['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                    <label class="lm-staff__chip lm-staff__chip--none">
+                        <input type="checkbox" id="lmSinPersonal">
+                        <span>Sin registrar personal</span>
+                    </label>
+                </div>
             </div>
             <?php endif; ?>
         </div>
@@ -13270,6 +13307,175 @@ body.hb-modal-open{ overflow:hidden; }
 }
 </style>
 
+<style id="lm-caja-motion">
+/* ══ Entrada coreografiada estilo Caja (registrar ingreso/gasto) + skeleton de carga ══
+   Reemplaza el keyframe lmPop por una transición gobernada por .is-open (reflow síncrono),
+   suma un skeleton de ~520ms y respeta prefers-reduced-motion. La sidebar/cabecera se
+   ocultan desde JS (mostrarModalLimpieza), igual que en Caja. */
+
+/* Fondo oscuro: aparece con un desvanecido suave */
+#modalLimpieza.lm-overlay{ opacity:0; transition:opacity .26s cubic-bezier(.22,1,.36,1); }
+#modalLimpieza.lm-overlay.is-open{ opacity:1; }
+
+/* El overlay cubre TODO el viewport (incluida la franja de la sidebar) para que el
+   MISMO backdrop oscuro+blur del modal la cubra igual que el resto del sistema. La
+   sidebar no se oculta: el difuminador global la deja en z-index:1 (debajo), así que
+   este backdrop full-bleed la unifica con el contenido — sin la franja más clara. */
+@media (min-width:1025px){
+  body.hotel-layout-scope #modalLimpieza.lm-overlay{
+    left:0 !important; right:0 !important; top:0 !important; bottom:0 !important; width:100% !important;
+  }
+}
+
+/* Diálogo: entra con un "pop" (leve subida + escala) — anula lmPop en todos los tamaños */
+#modalLimpieza.lm-overlay .lm-dialog,
+#modalLimpieza.lm-overlay > .lm-dialog{
+  animation:none !important;
+  opacity:0; transform:translateY(18px) scale(.965); transform-origin:center bottom;
+  transition:opacity .3s ease, transform .42s cubic-bezier(.22,1,.36,1);
+  will-change:transform, opacity;
+}
+#modalLimpieza.lm-overlay.is-open .lm-dialog,
+#modalLimpieza.lm-overlay.is-open > .lm-dialog{
+  opacity:1 !important; transform:translateY(0) scale(1) !important;
+}
+
+/* ── Skeleton: cubre el diálogo mientras "carga" y se desvanece al revelar el contenido ── */
+#modalLimpieza .lm-skeleton{
+  position:absolute; inset:0; z-index:9;
+  display:flex; flex-direction:column;
+  background:var(--lm-surface, #fff);
+  border-radius:var(--lm-radius, 24px);
+  opacity:1; transition:opacity .34s ease;
+}
+#modalLimpieza .lm-dialog:not(.is-loading) .lm-skeleton{ opacity:0; pointer-events:none; }
+#modalLimpieza .lm-sk-head{
+  flex:0 0 auto; min-height:94px; padding:20px 24px;
+  display:flex; align-items:center; gap:14px;
+  background:linear-gradient(135deg, #2E6FD2 0%, #3D82EA 58%, #60A1FA 100%);
+  border-radius:var(--lm-radius, 24px) var(--lm-radius, 24px) 0 0;
+}
+#modalLimpieza .lm-sk-htext{ flex:1; min-width:0; display:grid; gap:9px; }
+#modalLimpieza .lm-sk-toolbar{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 20px; border-bottom:1px solid var(--lm-line, #E7E1D4);
+}
+#modalLimpieza .lm-sk-pills{ display:flex; gap:8px; }
+#modalLimpieza .lm-sk-body{ flex:1 1 auto; display:flex; flex-direction:column; gap:10px; padding:16px 20px; overflow:hidden; }
+#modalLimpieza .lm-sk-room{
+  display:flex; align-items:center; gap:14px; padding:14px 16px;
+  border:1px solid var(--lm-line, #E7E1D4); border-radius:15px;
+}
+#modalLimpieza .lm-sk-lines{ flex:1; min-width:0; display:grid; gap:8px; }
+#modalLimpieza .lm-sk-footer{
+  flex:0 0 auto; display:flex; justify-content:flex-end; gap:10px;
+  padding:16px 20px; border-top:1px solid var(--lm-line, #E7E1D4);
+}
+#modalLimpieza .lm-sk-bar{
+  position:relative; overflow:hidden; border-radius:9px;
+  background:color-mix(in srgb, var(--lm-ink-faint, #8B94A3) 20%, var(--lm-surface-warm, #FCFAF5));
+}
+#modalLimpieza .lm-sk-head .lm-sk-bar{ background:rgba(255,255,255,.28); }
+#modalLimpieza .lm-sk-bar::after{
+  content:''; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, #fff 72%, transparent), transparent);
+  animation:lmSkShimmer 1.25s ease-in-out infinite;
+}
+#modalLimpieza .lm-sk-head .lm-sk-bar::after{ background:linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent); }
+/* Modificadores de tamaño (después de la base para ganar) */
+#modalLimpieza .lm-sk-bar.sk-emblem{ flex:0 0 50px; width:50px; height:50px; border-radius:14px; }
+#modalLimpieza .lm-sk-bar.sk-title{ height:16px; width:60%; }
+#modalLimpieza .lm-sk-bar.sk-sub{ height:11px; width:44%; }
+#modalLimpieza .lm-sk-bar.sk-count{ height:22px; width:min(220px, 60%); }
+#modalLimpieza .lm-sk-bar.sk-pill{ height:38px; width:92px; border-radius:11px; }
+#modalLimpieza .lm-sk-bar.sk-em{ flex:0 0 44px; width:44px; height:44px; border-radius:12px; }
+#modalLimpieza .lm-sk-bar.sk-name{ height:15px; width:52%; }
+#modalLimpieza .lm-sk-bar.sk-meta{ height:10px; width:74%; }
+#modalLimpieza .lm-sk-bar.sk-btn{ height:48px; width:150px; border-radius:14px; }
+#modalLimpieza .lm-sk-bar.sk-btn--sm{ width:104px; }
+@keyframes lmSkShimmer{ 100%{ transform:translateX(100%); } }
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce){
+  #modalLimpieza.lm-overlay,
+  #modalLimpieza.lm-overlay .lm-dialog,
+  #modalLimpieza .lm-skeleton{ transition-duration:.01ms !important; }
+  #modalLimpieza.lm-overlay .lm-dialog{ transform:none !important; }
+  #modalLimpieza .lm-sk-bar::after{ animation:none !important; }
+}
+</style>
+
+<style id="hb-reserve-caja-motion">
+/* ══ Wizard "Crear reservación" (SweetAlert .hb-reserve-swal): entrada estilo Caja + skeleton ══
+   La sidebar ya queda cubierta por el overlay de SweetAlert; aquí sumamos el "pop" de entrada
+   (reemplaza el zoom por defecto de swal2) y un skeleton que se auto-desvanece (~560ms). */
+
+/* Entrada: pop (sube + escala) en vez del zoom por defecto — gana por especificidad a .swal2-show */
+.swal2-popup.hb-reserve-swal.swal2-show{
+  animation:hbReservePop .42s cubic-bezier(.22,1,.36,1);
+}
+@keyframes hbReservePop{
+  0%{ opacity:0; transform:translateY(18px) scale(.965); }
+  100%{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* ── Skeleton: cubre el shell mientras "carga" y se desvanece revelando el contenido ── */
+.hb-reserve-shell{ position:relative; }
+.hb-reserve-swal .hb-reserve-sk{
+  position:absolute; inset:0; z-index:6;
+  display:grid; grid-template-columns:inherit;   /* sigue el colapso responsivo del shell */
+  background:var(--hb-reserve-surface, #FBFAF7);
+  border-radius:inherit; overflow:hidden;
+  animation:hbReserveSkHide .34s ease 560ms forwards;
+}
+.hb-reserve-swal .hb-reserve-sk__side{
+  padding:26px; display:flex; flex-direction:column; gap:14px;
+  background:linear-gradient(155deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #101827), color-mix(in srgb, var(--brand-primary, #1B2746) 78%, #1F2937));
+}
+.hb-reserve-swal .hb-reserve-sk__main{ padding:30px 34px; display:flex; flex-direction:column; gap:14px; }
+.hb-reserve-swal .hb-reserve-sk__datebox{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+.hb-reserve-swal .hb-reserve-sk__steps{ display:flex; flex-direction:column; gap:12px; margin-top:auto; }
+.hb-reserve-swal .hb-reserve-sk__cards{ display:flex; flex-direction:column; gap:14px; margin-top:6px; }
+.hb-reserve-swal .hb-reserve-sk__foot{ margin-top:auto; display:flex; justify-content:flex-end; }
+.hb-reserve-swal .hb-reserve-sk-card{
+  height:88px; border-radius:16px; position:relative; overflow:hidden;
+  border:1px solid var(--hb-reserve-line, #E8DFD1); background:var(--hb-reserve-paper, #FFFEFB);
+}
+.hb-reserve-swal .hb-reserve-sk-bar{
+  position:relative; overflow:hidden; border-radius:8px;
+  background:color-mix(in srgb, var(--hb-reserve-muted, #6B7686) 20%, var(--hb-reserve-paper, #FFFEFB));
+}
+.hb-reserve-swal .hb-reserve-sk__side .hb-reserve-sk-bar{ background:rgba(255,255,255,.16); }
+.hb-reserve-swal .hb-reserve-sk-bar::after,
+.hb-reserve-swal .hb-reserve-sk-card::after{
+  content:''; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, #fff 55%, transparent), transparent);
+  animation:hbReserveShimmer 1.25s ease-in-out infinite;
+}
+.hb-reserve-swal .hb-reserve-sk__side .hb-reserve-sk-bar::after{ background:linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent); }
+/* Tamaños (después de la base para ganar) */
+.hb-reserve-swal .hb-reserve-sk-bar.sk-eyebrow{ height:9px; width:44%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-h2{ height:20px; width:72%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-h2--2{ width:52%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-p{ height:11px; width:88%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-date{ height:38px; width:100%; border-radius:12px; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-step{ height:14px; width:62%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-title{ height:22px; width:66%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-line{ height:11px; width:92%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-line--short{ width:60%; }
+.hb-reserve-swal .hb-reserve-sk-bar.sk-btn{ height:44px; width:150px; border-radius:12px; }
+@keyframes hbReserveShimmer{ 100%{ transform:translateX(100%); } }
+@keyframes hbReserveSkHide{ from{ opacity:1; } to{ opacity:0; visibility:hidden; } }
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce){
+  .swal2-popup.hb-reserve-swal.swal2-show{ animation-duration:.01ms; }
+  .hb-reserve-swal .hb-reserve-sk{ animation:hbReserveSkHide .01s linear 300ms forwards; }
+  .hb-reserve-swal .hb-reserve-sk-bar::after,
+  .hb-reserve-swal .hb-reserve-sk-card::after{ animation:none; }
+}
+</style>
+
 <script>
 /* Filtro client-side (sin recargar): chips de estado + tipo + piso + búsqueda, con animación */
 (function(){
@@ -13666,6 +13872,41 @@ function hbReservaSidebar(fechaEntrada, fechaSalida, paso, habitacionId) {
     `;
 }
 
+// Skeleton de carga del wizard (estilo Caja): réplica del shell de dos columnas.
+// Se auto-desvanece por CSS (~560ms). Solo se inyecta en las plantillas de escritorio (Swal).
+function hbReservaSkeleton() {
+    return `
+        <div class="hb-reserve-sk" aria-hidden="true">
+            <div class="hb-reserve-sk__side">
+                <div class="hb-reserve-sk-bar sk-eyebrow"></div>
+                <div class="hb-reserve-sk-bar sk-h2"></div>
+                <div class="hb-reserve-sk-bar sk-h2 sk-h2--2"></div>
+                <div class="hb-reserve-sk-bar sk-p"></div>
+                <div class="hb-reserve-sk__datebox">
+                    <div class="hb-reserve-sk-bar sk-date"></div>
+                    <div class="hb-reserve-sk-bar sk-date"></div>
+                    <div class="hb-reserve-sk-bar sk-date"></div>
+                </div>
+                <div class="hb-reserve-sk__steps">
+                    <div class="hb-reserve-sk-bar sk-step"></div>
+                    <div class="hb-reserve-sk-bar sk-step"></div>
+                </div>
+            </div>
+            <div class="hb-reserve-sk__main">
+                <div class="hb-reserve-sk-bar sk-eyebrow"></div>
+                <div class="hb-reserve-sk-bar sk-title"></div>
+                <div class="hb-reserve-sk-bar sk-line"></div>
+                <div class="hb-reserve-sk-bar sk-line sk-line--short"></div>
+                <div class="hb-reserve-sk__cards">
+                    <div class="hb-reserve-sk-card"></div>
+                    <div class="hb-reserve-sk-card"></div>
+                </div>
+                <div class="hb-reserve-sk__foot"><div class="hb-reserve-sk-bar sk-btn"></div></div>
+            </div>
+        </div>
+    `;
+}
+
 function hbReservaMobileIntro(fechaEntrada, fechaSalida, paso, habitacionId) {
     const entradaLabel = formatearFechaReservaCorta(new Date(fechaEntrada + 'T00:00:00'));
     const salidaLabel = formatearFechaReservaCorta(new Date(fechaSalida + 'T00:00:00'));
@@ -13937,6 +14178,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         title: '',
         html: `
             <div class="hb-reserve-shell" data-tipo="nuevo">
+                ${hbReservaSkeleton()}
                 ${hbReservaSidebar(fechaEntrada, fechaSalida, 1, habitacionId)}
                 <section class="hb-reserve-main" aria-label="Tipo de cliente">
                     ${hbReservaMobileIntro(fechaEntrada, fechaSalida, 1, habitacionId)}
@@ -14520,6 +14762,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
             title: '',
             html: `
                 <div class="hb-reserve-shell" data-tipo="${tipo}">
+                    ${hbReservaSkeleton()}
                     ${hbReservaSidebar(fechaEntrada, fechaSalida, 2, habitacionId)}
                     <section class="hb-reserve-main" aria-label="Hora de llegada">
                         ${hbReservaMobileIntro(fechaEntrada, fechaSalida, 2, habitacionId)}
@@ -15249,74 +15492,102 @@ async function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
     });
 }
 
-function liberarHabitacion(id) {
-    Swal.fire({
-        title: '¿Marcar como disponible?',
-        text: 'La habitación quedará lista para nuevas reservaciones',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#059669',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: '<i class="fas fa-check mr-2"></i>Sí, está limpia',
-        cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Mostrar loader
-            Swal.fire({
-                title: 'Procesando...',
-                html: 'Actualizando estado de la habitación',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+<?php
+// Personal de limpieza para el selector obligatorio de "quién limpió".
+$hbPersonalLimpieza = $personal_limpieza ?? ['disponible' => false, 'personal' => [], 'asignadas' => []];
+?>
+// Personal activo del hotel + asignados a la limpieza activa de cada cuarto (preselección).
+const HB_LIMPIEZA_PERSONAL = <?= json_encode($hbPersonalLimpieza['personal'] ?? []) ?>;
+const HB_LIMPIEZA_ASIGNADAS = <?= json_encode(!empty($hbPersonalLimpieza['asignadas']) ? $hbPersonalLimpieza['asignadas'] : new stdClass()) ?>;
 
-            // Hacer la petición AJAX
-            fetch('<?= url('habitaciones/') ?>' + id + '/liberar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'csrf_token=<?= csrf_token() ?>'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Habitación Disponible!',
-                        html: `
-                            <div class="text-center">
-                                <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
-                                <p class="text-lg mb-2">Habitación <strong>${data.numero || id}</strong></p>
-                                <p class="text-gray-600">Ha sido marcada como disponible</p>
-                            </div>
-                        `,
-                        confirmButtonColor: '#059669',
-                        confirmButtonText: 'Entendido'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.message || 'No se pudo actualizar el estado de la habitación',
-                        confirmButtonColor: '#dc2626'
-                    });
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al procesar la solicitud',
-                    confirmButtonColor: '#dc2626'
-                });
+async function liberarHabitacion(id) {
+    // Selector obligatorio: quién hizo la limpieza (una o más personas) o
+    // la elección explícita "Sin registrar personal". No se puede omitir.
+    let seleccion = { trabajadorIds: [], sinPersonal: false, omitido: true };
+    if (window.LimpiezaPersonal) {
+        seleccion = await LimpiezaPersonal.elegir({
+            personal: HB_LIMPIEZA_PERSONAL,
+            preseleccion: HB_LIMPIEZA_ASIGNADAS[id] || HB_LIMPIEZA_ASIGNADAS[String(id)] || null,
+            textoIntro: 'La habitación quedará disponible. Indica quién hizo la limpieza (puedes elegir a más de una persona).'
+        });
+        if (seleccion === null) return; // canceló
+    }
+
+    if (seleccion.omitido) {
+        // Sin personal registrado o módulo de tareas apagado: confirmación simple.
+        const result = await Swal.fire({
+            title: '¿Marcar como disponible?',
+            text: 'La habitación quedará lista para nuevas reservaciones',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: '<i class="fas fa-check mr-2"></i>Sí, está limpia',
+            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
+            reverseButtons: true
+        });
+        if (!result.isConfirmed) return;
+    }
+
+    // Mostrar loader
+    Swal.fire({
+        title: 'Procesando...',
+        html: 'Actualizando estado de la habitación',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    const cuerpoLiberar = new URLSearchParams();
+    cuerpoLiberar.append('csrf_token', '<?= csrf_token() ?>');
+    if (window.LimpiezaPersonal) {
+        LimpiezaPersonal.aplicarAFormData(cuerpoLiberar, seleccion);
+    }
+
+    // Hacer la petición AJAX
+    fetch('<?= url('habitaciones/') ?>' + id + '/liberar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: cuerpoLiberar.toString()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Habitación Disponible!',
+                html: `
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                        <p class="text-lg mb-2">Habitación <strong>${data.numero || id}</strong></p>
+                        <p class="text-gray-600">Ha sido marcada como disponible</p>
+                    </div>
+                `,
+                confirmButtonColor: '#059669',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'No se pudo actualizar el estado de la habitación',
+                confirmButtonColor: '#dc2626'
             });
         }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al procesar la solicitud',
+            confirmButtonColor: '#dc2626'
+        });
     });
 }
 
@@ -15511,24 +15782,139 @@ document.addEventListener('keydown', function(e) {
  * ========================================
  */
 
+// ── Deleite Sereno / estilo Caja: entrada coreografiada + skeleton de carga ──
+const LM_SKELETON_MS = 520;
+
+function lmPrefersReduced() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function lmEnsureSkeleton(dialog) {
+    if (!dialog || dialog.querySelector('.lm-skeleton')) {
+        return;
+    }
+    let rooms = '';
+    for (let i = 0; i < 3; i++) {
+        rooms +=
+            '<div class="lm-sk-room">' +
+                '<div class="lm-sk-bar sk-em"></div>' +
+                '<div class="lm-sk-lines"><div class="lm-sk-bar sk-name"></div><div class="lm-sk-bar sk-meta"></div></div>' +
+            '</div>';
+    }
+    const sk = document.createElement('div');
+    sk.className = 'lm-skeleton';
+    sk.setAttribute('aria-hidden', 'true');
+    sk.innerHTML =
+        '<div class="lm-sk-head">' +
+            '<div class="lm-sk-bar sk-emblem"></div>' +
+            '<div class="lm-sk-htext"><div class="lm-sk-bar sk-title"></div><div class="lm-sk-bar sk-sub"></div></div>' +
+        '</div>' +
+        '<div class="lm-sk-toolbar">' +
+            '<div class="lm-sk-bar sk-count"></div>' +
+            '<div class="lm-sk-pills"><div class="lm-sk-bar sk-pill"></div><div class="lm-sk-bar sk-pill"></div></div>' +
+        '</div>' +
+        '<div class="lm-sk-body">' + rooms + '</div>' +
+        '<div class="lm-sk-footer"><div class="lm-sk-bar sk-btn sk-btn--sm"></div><div class="lm-sk-bar sk-btn"></div></div>';
+    dialog.appendChild(sk);
+}
+
 /**
- * Mostrar modal de limpieza
+ * Mostrar modal de limpieza (entrada coreografiada + skeleton, sidebar/cabecera ocultas)
  */
 function mostrarModalLimpieza() {
-    document.getElementById('modalLimpieza').classList.remove('hidden');
+    const modal = document.getElementById('modalLimpieza');
+    if (!modal) {
+        return;
+    }
+
+    const dialog = modal.querySelector('.lm-dialog');
+    if (dialog) {
+        if (!lmPrefersReduced()) {
+            lmEnsureSkeleton(dialog);
+            dialog.classList.add('is-loading');
+            if (dialog._lmSkTimer) {
+                clearTimeout(dialog._lmSkTimer);
+            }
+            dialog._lmSkTimer = setTimeout(function () {
+                dialog.classList.remove('is-loading');
+            }, LM_SKELETON_MS);
+        } else {
+            dialog.classList.remove('is-loading');
+        }
+    }
+
+    modal.classList.remove('hidden');
     document.body.classList.add('hb-modal-open');
     document.body.classList.add('overflow-hidden');
+
+    // Fuerza el estado inicial (oculto) y dispara la transición de entrada — reflow, no rAF.
+    void modal.offsetWidth;
+    modal.classList.add('is-open');
+
     actualizarContadorLimpieza();
 }
 
 /**
- * Cerrar modal de limpieza
+ * Cerrar modal de limpieza (espera la transición de salida, restaura sidebar/cabecera)
  */
 function cerrarModalLimpieza() {
-    document.getElementById('modalLimpieza').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    hbSincronizarBloqueoModales();
+    const modal = document.getElementById('modalLimpieza');
+    if (!modal) {
+        return;
+    }
+    const dialog = modal.querySelector('.lm-dialog');
+
+    const finalizar = function () {
+        modal.classList.add('hidden');
+
+        document.body.classList.remove('overflow-hidden');
+
+        if (dialog) {
+            if (dialog._lmSkTimer) {
+                clearTimeout(dialog._lmSkTimer);
+            }
+            dialog.classList.remove('is-loading');
+        }
+
+        hbSincronizarBloqueoModales();
+    };
+
+    modal.classList.remove('is-open');
+
+    if (!dialog || lmPrefersReduced()) {
+        finalizar();
+        return;
+    }
+
+    // Espera a que termine la transición del diálogo (con respaldo por tiempo).
+    let cerrado = false;
+    const alTerminar = function (e) {
+        if (e && (e.target !== dialog || (e.propertyName && e.propertyName !== 'transform'))) {
+            return;
+        }
+        if (cerrado) {
+            return;
+        }
+        cerrado = true;
+        dialog.removeEventListener('transitionend', alTerminar);
+        finalizar();
+    };
+    dialog.addEventListener('transitionend', alTerminar);
+    setTimeout(alTerminar, 500);
 }
+
+// Exclusión mutua: "Sin registrar personal" limpia a las personas y viceversa.
+(function() {
+    const sinPersonal = document.getElementById('lmSinPersonal');
+    if (!sinPersonal) return;
+    const staffChecks = document.querySelectorAll('#modalLimpieza .lm-staff-check');
+    sinPersonal.addEventListener('change', function() {
+        if (sinPersonal.checked) staffChecks.forEach(c => { c.checked = false; });
+    });
+    staffChecks.forEach(c => c.addEventListener('change', function() {
+        if (c.checked) sinPersonal.checked = false;
+    }));
+})();
 
 /**
  * Seleccionar/deseleccionar todas las habitaciones
@@ -15610,6 +15996,23 @@ function marcarHabitacionesLimpias() {
         return;
     }
 
+    // Personal que hizo la limpieza: obligatorio cuando el selector está presente
+    // (una o más personas, o la elección explícita "Sin registrar personal").
+    const staffSection = document.querySelector('#modalLimpieza .lm-staff');
+    const staffChecks = document.querySelectorAll('#modalLimpieza .lm-staff-check:checked');
+    const sinPersonalEl = document.getElementById('lmSinPersonal');
+    const sinPersonal = !!(sinPersonalEl && sinPersonalEl.checked);
+
+    if (staffSection && !sinPersonal && staffChecks.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: '¿Quién hizo la limpieza?',
+            text: 'Selecciona al menos una persona o marca "Sin registrar personal".',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+
     // Mostrar loading
     Swal.fire({
         title: 'Procesando...',
@@ -15627,6 +16030,14 @@ function marcarHabitacionesLimpias() {
     habitacionesIds.forEach(id => {
         formData.append('habitaciones_ids[]', id);
     });
+    if (staffSection) {
+        formData.append('personal_confirmado', '1');
+        if (sinPersonal) {
+            formData.append('sin_personal', '1');
+        } else {
+            staffChecks.forEach(chk => formData.append('trabajador_ids[]', chk.value));
+        }
+    }
 
     const url = '<?= url('habitaciones/liberar-multiples') ?>';
 

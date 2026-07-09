@@ -193,3 +193,248 @@
         aplicarAForm: aplicarAForm
     };
 })();
+
+/**
+ * Selector de personal al MARCAR una habitacion como limpia (quien la limpio).
+ *
+ * A diferencia de CheckoutLimpieza (opcional, al hacer check-out), este selector
+ * es OBLIGATORIO: no deja continuar sin elegir una o mas personas o marcar
+ * explicitamente "Sin registrar personal". Si el modulo de tareas/personal no
+ * esta disponible se omite en silencio (fail-open) y devuelve omitido:true.
+ *
+ * Uso:
+ *   const sel = await LimpiezaPersonal.elegir({
+ *       personal: [{id, nombre, rol}, ...],   // o infoUrl para pedirlos al servidor
+ *       preseleccion: [3, 7],                 // opcional: asignados a la tarea activa
+ *       habitacionId: 12                      // opcional, con infoUrl: preselecciona asignados
+ *   });
+ *   if (sel === null) return;                        // usuario cancelo
+ *   LimpiezaPersonal.aplicarAFormData(formData, sel); // o aplicarAForm(form, sel)
+ */
+(function() {
+    'use strict';
+
+    function escapeHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    async function obtenerInfo(infoUrl) {
+        try {
+            const resp = await fetch(infoUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            });
+            if (!resp.ok) return null;
+            const contentType = resp.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) return null;
+            return await resp.json();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function construirHtml(personal, preseleccion, textoIntro) {
+        const pre = (preseleccion || []).map(Number);
+        const filas = personal.map(function(p) {
+            const checked = pre.indexOf(Number(p.id)) !== -1 ? ' checked' : '';
+            const rol = p.rol ? '<span class="lp-room__badge">' + escapeHtml(p.rol) + '</span>' : '';
+            const inicial = escapeHtml(String(p.nombre || '?').trim().charAt(0).toUpperCase() || '?');
+            return '<label class="lp-room">' +
+                '<input type="checkbox" class="lp-check-input lp-check" value="' + p.id + '"' + checked + '>' +
+                '<span class="lp-check-box" aria-hidden="true"><i class="fas fa-check"></i></span>' +
+                '<span class="lp-room__emblem" aria-hidden="true">' + inicial + '</span>' +
+                '<span class="lp-room__name">' + escapeHtml(p.nombre) + '</span>' +
+                rol +
+            '</label>';
+        }).join('');
+
+        const intro = textoIntro || 'Puedes seleccionar a una o varias personas.';
+
+        return '' +
+            '<div class="lp-selector">' +
+                '<p class="lp-selector__intro">' + escapeHtml(intro) + '</p>' +
+                '<div class="lp-selector__list">' + filas + '</div>' +
+                '<label class="lp-room lp-room--none">' +
+                    '<input type="checkbox" id="lpSinPersonal" class="lp-check-input">' +
+                    '<span class="lp-check-box" aria-hidden="true"><i class="fas fa-check"></i></span>' +
+                    '<span class="lp-room__emblem lp-room__emblem--none" aria-hidden="true"><i class="fas fa-user-slash"></i></span>' +
+                    '<span class="lp-room__name lp-room__name--none">Sin registrar personal</span>' +
+                '</label>' +
+            '</div>';
+    }
+
+    // Inyecta una sola vez el "look" del modal de limpieza (#modalLimpieza) para el
+    // selector de personal: serif Cormorant, emblema/acento azul, filas tipo .lm-room
+    // con check que se rellena, y botón primario azul. Se aplica en todas las vistas
+    // que usan LimpiezaPersonal (habitaciones/index, ver, motor).
+    function inyectarEstiloLP() {
+        if (document.getElementById('lp-personal-style')) return;
+        const st = document.createElement('style');
+        st.id = 'lp-personal-style';
+        st.textContent = [
+            "@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap');",
+            ".lp-swal-personal.swal2-popup{",
+            "  --lp-clean:#2F77E0; --lp-clean-deep:#1E5FBF; --lp-clean-soft:#E6EFFC;",
+            "  --lp-surface:#FFFEFB; --lp-surface-warm:#FCFAF5; --lp-line:#E7E1D4;",
+            "  --lp-ink:#20293A; --lp-ink-soft:#5C6675; --lp-ink-faint:#8B94A3;",
+            "  --lp-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;",
+            "  border-radius:22px !important; background:var(--lp-surface) !important;",
+            "  padding:26px 24px 22px !important; box-shadow:0 34px 80px -30px rgba(16,32,64,.5) !important; }",
+            ".lp-swal-personal .swal2-icon{ border:0 !important; width:74px !important; height:74px !important;",
+            "  margin:4px auto 12px !important; border-radius:20px; display:grid; place-items:center;",
+            "  background:linear-gradient(135deg,#2E6FD2 0%,#3D82EA 55%,#60A1FA 100%) !important;",
+            "  box-shadow:0 14px 30px -12px rgba(47,119,224,.6); }",
+            ".lp-swal-personal .swal2-icon .swal2-icon-content, .lp-swal-personal .swal2-icon i{ color:#fff !important; font-size:1.9rem !important; }",
+            ".lp-swal-personal .swal2-title{ font-family:var(--lp-serif) !important; font-weight:700 !important;",
+            "  font-size:1.7rem !important; color:var(--lp-ink) !important; padding:0 !important; margin:2px 0 6px !important; }",
+            ".lp-swal-personal .lp-selector{ text-align:left; max-width:430px; margin:0 auto; }",
+            ".lp-swal-personal .lp-selector__intro{ margin:0 0 12px; color:var(--lp-ink-soft); font-size:.9rem; line-height:1.45; }",
+            ".lp-swal-personal .lp-selector__list{ display:flex; flex-direction:column; gap:8px; max-height:250px; overflow-y:auto; padding:2px; }",
+            ".lp-swal-personal .lp-room{ position:relative; display:flex; align-items:center; gap:12px; padding:11px 13px;",
+            "  border:1px solid var(--lp-line); border-radius:13px; background:var(--lp-surface); cursor:pointer;",
+            "  transition:border-color .16s ease, background .16s ease, box-shadow .16s ease; }",
+            ".lp-swal-personal .lp-room:hover{ border-color:color-mix(in srgb,var(--lp-clean) 40%,var(--lp-line)); background:var(--lp-surface-warm); }",
+            ".lp-swal-personal .lp-room:has(.lp-check-input:checked){ border-color:var(--lp-clean); background:var(--lp-clean-soft); box-shadow:0 10px 22px -14px rgba(47,119,224,.5); }",
+            ".lp-swal-personal .lp-check-input{ position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none; }",
+            ".lp-swal-personal .lp-check-box{ flex:0 0 auto; width:24px; height:24px; border-radius:8px;",
+            "  border:2px solid color-mix(in srgb,var(--lp-ink-faint) 55%,transparent); display:grid; place-items:center;",
+            "  background:#fff; transition:all .16s ease; }",
+            ".lp-swal-personal .lp-check-box i{ font-size:.7rem; color:#fff; opacity:0; transform:scale(.4); transition:all .18s ease; }",
+            ".lp-swal-personal .lp-check-input:checked + .lp-check-box{ background:var(--lp-clean); border-color:var(--lp-clean); }",
+            ".lp-swal-personal .lp-check-input:checked + .lp-check-box i{ opacity:1; transform:scale(1); }",
+            ".lp-swal-personal .lp-room__emblem{ flex:0 0 auto; width:36px; height:36px; border-radius:11px; display:grid; place-items:center;",
+            "  background:var(--lp-clean-soft); color:var(--lp-clean-deep); font-weight:800; font-size:.95rem; }",
+            ".lp-swal-personal .lp-room__emblem--none{ background:#F1F0EC; color:var(--lp-ink-faint); }",
+            ".lp-swal-personal .lp-room__name{ font-family:var(--lp-serif); font-weight:700; font-size:1.08rem; color:var(--lp-ink); line-height:1.1; }",
+            ".lp-swal-personal .lp-room__name--none{ font-family:inherit; font-weight:600; font-size:.9rem; color:var(--lp-ink-soft); }",
+            ".lp-swal-personal .lp-room__badge{ margin-left:auto; font-size:.7rem; color:var(--lp-clean-deep); background:var(--lp-clean-soft); padding:3px 9px; border-radius:999px; font-weight:700; white-space:nowrap; }",
+            ".lp-swal-personal .lp-room--none{ margin-top:9px; border-style:dashed; background:var(--lp-surface-warm); }",
+            ".lp-swal-personal .swal2-actions{ gap:10px !important; margin-top:18px !important; }",
+            ".lp-swal-personal .swal2-confirm{ background:var(--lp-clean) !important; border-radius:12px !important; font-weight:700 !important; box-shadow:0 14px 26px -12px rgba(47,119,224,.6) !important; }",
+            ".lp-swal-personal .swal2-confirm:hover{ background:var(--lp-clean-deep) !important; }",
+            ".lp-swal-personal .swal2-cancel{ border-radius:12px !important; font-weight:700 !important; }",
+            "@media (prefers-reduced-motion: reduce){ .lp-swal-personal .lp-room, .lp-swal-personal .lp-check-box, .lp-swal-personal .lp-check-box i{ transition:none !important; } }"
+        ].join('\n');
+        (document.head || document.documentElement).appendChild(st);
+    }
+
+    /**
+     * Muestra el selector obligatorio. Devuelve:
+     *  - { trabajadorIds: [..], sinPersonal: bool }        -> continuar
+     *  - { trabajadorIds: [], sinPersonal:false, omitido:true } -> sin datos, continuar sin selector
+     *  - null                                              -> el usuario cancelo
+     */
+    async function elegir(opts) {
+        opts = opts || {};
+
+        if (typeof Swal === 'undefined') {
+            return { trabajadorIds: [], sinPersonal: false, omitido: true };
+        }
+
+        let personal = Array.isArray(opts.personal) && opts.personal.length > 0 ? opts.personal : null;
+        let preseleccion = opts.preseleccion || null;
+
+        if (!personal && opts.infoUrl) {
+            const info = await obtenerInfo(opts.infoUrl);
+            if (info && info.success && info.disponible && Array.isArray(info.personal) && info.personal.length > 0) {
+                personal = info.personal;
+                if (!preseleccion && opts.habitacionId && info.asignadas && info.asignadas[opts.habitacionId]) {
+                    preseleccion = info.asignadas[opts.habitacionId];
+                }
+            }
+        }
+
+        if (!personal || personal.length === 0) {
+            return { trabajadorIds: [], sinPersonal: false, omitido: true };
+        }
+
+        inyectarEstiloLP();
+
+        const result = await Swal.fire({
+            title: opts.titulo || '¿Quién hizo la limpieza?',
+            html: construirHtml(personal, preseleccion, opts.textoIntro),
+            iconHtml: '<i class="fas fa-broom" style="color:#0EA5E9;font-size:0.8em;"></i>',
+            iconColor: '#0EA5E9',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: opts.confirmText || '<i class="fas fa-check"></i> Confirmar limpieza',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#2F77E0',
+            cancelButtonColor: '#6B7280',
+            reverseButtons: true,
+            allowOutsideClick: false,
+            customClass: { popup: 'lp-swal-personal' },
+            preConfirm: function() {
+                const popup = Swal.getPopup();
+                const sin = popup.querySelector('#lpSinPersonal');
+                const sinPersonal = !!(sin && sin.checked);
+                const ids = Array.prototype.slice.call(popup.querySelectorAll('.lp-check:checked'))
+                    .map(function(c) { return parseInt(c.value, 10) || 0; })
+                    .filter(function(v) { return v > 0; });
+
+                if (!sinPersonal && ids.length === 0) {
+                    Swal.showValidationMessage('Selecciona quién hizo la limpieza o marca "Sin registrar personal".');
+                    return false;
+                }
+
+                return { trabajadorIds: sinPersonal ? [] : ids, sinPersonal: sinPersonal };
+            },
+            didOpen: function() {
+                const popup = Swal.getPopup();
+                const sin = popup.querySelector('#lpSinPersonal');
+                const checks = popup.querySelectorAll('.lp-check');
+                if (sin) {
+                    sin.addEventListener('change', function() {
+                        if (sin.checked) {
+                            checks.forEach(function(c) { c.checked = false; });
+                        }
+                    });
+                }
+                checks.forEach(function(c) {
+                    c.addEventListener('change', function() {
+                        if (c.checked && sin) sin.checked = false;
+                    });
+                });
+            }
+        });
+
+        if (!result.isConfirmed) {
+            return null;
+        }
+
+        return result.value || { trabajadorIds: [], sinPersonal: false, omitido: true };
+    }
+
+    function aplicarAFormData(formData, seleccion) {
+        if (!seleccion || seleccion.omitido) return;
+        formData.append('personal_confirmado', '1');
+        if (seleccion.sinPersonal) formData.append('sin_personal', '1');
+        (seleccion.trabajadorIds || []).forEach(function(id) {
+            formData.append('trabajador_ids[]', id);
+        });
+    }
+
+    function aplicarAForm(form, seleccion) {
+        if (!seleccion || seleccion.omitido) return;
+        const agregar = function(name, value) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+        };
+        agregar('personal_confirmado', '1');
+        if (seleccion.sinPersonal) agregar('sin_personal', '1');
+        (seleccion.trabajadorIds || []).forEach(function(id) {
+            agregar('trabajador_ids[]', id);
+        });
+    }
+
+    window.LimpiezaPersonal = {
+        elegir: elegir,
+        aplicarAFormData: aplicarAFormData,
+        aplicarAForm: aplicarAForm
+    };
+})();

@@ -121,9 +121,20 @@ $visibles = count($documentos);
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
-.docs-page .dc-shell { display: grid; gap: 14px; min-width: 0; max-width: 100%; }
-.docs-page .dc-hero-section { display: flex; flex-direction: column; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
-.docs-page .dc-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; max-width: 100%; }
+.docs-page .dc-shell { display: grid; gap: 14px; min-width: 0; width: 100%; max-width: 100%; }
+.docs-page .dc-hero-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start !important;
+    justify-content: stretch !important;
+    gap: 12px !important;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 2px 0 6px;
+}
+.docs-page .dc-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; justify-self: start; min-width: 0; max-width: min(100%, 760px); text-align: left; }
 .docs-page .dc-title-lockup > div:last-child { min-width: 0; }
 .docs-page .dc-hero-icon {
     width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
@@ -133,10 +144,12 @@ $visibles = count($documentos);
 .docs-page .dc-kicker { margin: 0 0 2px; color: var(--dc-muted); font-size: .72rem; font-weight: 650; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .docs-page .dc-title { margin: 0; font-family: var(--dc-serif); color: var(--dc-heading); font-weight: 650; font-size: clamp(2.1rem, 4vw, 3rem); line-height: .98; overflow-wrap: anywhere; }
 .docs-page .dc-subtitle { max-width: 48rem; margin: 9px 0 0; color: var(--dc-muted); font-size: .94rem; font-weight: 500; line-height: 1.5; }
+.docs-page .dc-hero-actions { display: flex !important; flex-wrap: wrap; align-items: center; justify-content: flex-start; justify-self: start; gap: 8px; min-width: 0; max-width: 100%; }
 
 .docs-page .dc-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: 0 18px;
     border-radius: 11px; border: 1px solid transparent; font-weight: 650; font-size: .9rem; line-height: 1; cursor: pointer; text-decoration: none;
+    white-space: nowrap;
     transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease;
 }
 .docs-page .dc-btn:hover { transform: translateY(-1px); }
@@ -232,9 +245,22 @@ $visibles = count($documentos);
     .docs-page .dc-desktop { display: block; }
     .docs-page .dc-mobile { display: none; }
 }
+@media (min-width: 1024px) {
+    .docs-page .dc-hero-section {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 16px 28px !important;
+        padding-bottom: 10px;
+    }
+    .docs-page .dc-hero-actions {
+        justify-content: flex-end;
+        justify-self: end;
+        min-width: max-content;
+    }
+}
 @media (min-width: 768px) and (max-width: 1023px) {
     .docs-page .dc-hero-section {
-        flex-direction: column !important;
+        grid-template-columns: minmax(0, 1fr);
         align-items: stretch !important;
     }
     .docs-page .dc-hero-actions {
@@ -265,6 +291,7 @@ $visibles = count($documentos);
         position: relative;
         overflow: hidden;
         display: grid !important;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px !important;
         min-height: 126px;
         margin: 0;
@@ -594,7 +621,7 @@ $visibles = count($documentos);
 <div class="docs-page p-4 sm:p-6">
     <div class="dc-shell">
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <section class="dc-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <section class="dc-hero-section">
             <div class="dc-title-lockup">
                 <div class="dc-hero-icon"><i class="fas fa-folder-open"></i></div>
                 <div>
@@ -604,7 +631,7 @@ $visibles = count($documentos);
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
-                <div class="dc-hero-actions flex flex-wrap gap-2">
+                <div class="dc-hero-actions">
                     <?php if ($esEntidad): ?>
                         <a class="dc-btn dc-btn-muted" href="<?= url('documentos') ?>">
                             <i class="fas fa-arrow-left"></i>

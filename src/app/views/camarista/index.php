@@ -5,10 +5,16 @@
  */
 $habitaciones = $habitaciones ?? [];
 $salidasHoy = $salidasHoy ?? [];
+$personal = $personal ?? [];
+$tareasLimpieza = $tareasLimpieza ?? [];
+$camHayPersonal = !empty($personal);
 
 $camSafe = static function ($v) {
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 };
+
+$camHoy = date('Y-m-d');
+$camManana = date('Y-m-d', strtotime('+1 day'));
 
 // Orden de trabajo: en limpieza primero, luego salidas de hoy, luego el resto.
 $prioridad = static function ($hab) use ($salidasHoy) {
@@ -163,6 +169,79 @@ $camTodoAlDia = ($porLimpiar === 0);
   background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform:translateX(-160%) skewX(-18deg); }
 .cam-btn.done:hover .cam-btn__shine{ transition:transform .7s ease; transform:translateX(330%) skewX(-18deg); }
 
+/* ── Meta de limpieza en tarjeta: personal asignado / fecha programada ── */
+.cam-meta{ display:flex; flex-wrap:wrap; gap:6px; }
+.cam-chip{ display:inline-flex; align-items:center; gap:5px; max-width:100%; padding:4px 10px; border-radius:999px;
+  font-size:.7rem; font-weight:600; background:var(--dx-ivory); color:var(--dx-ink-soft); }
+.cam-chip i{ font-size:.66rem; color:var(--dx-ink-faint); flex:0 0 auto; }
+.cam-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cam-chip--staff{ background:var(--dx-clean-soft); color:var(--dx-clean-deep); }
+.cam-chip--staff i{ color:var(--dx-clean); }
+.cam-chip--fecha{ background:#FBF3E2; color:#8A6A1F; }
+.cam-chip--fecha i{ color:var(--dx-gold); }
+
+/* ── Acciones de tarjeta ── */
+.cam-foot{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
+.cam-foot form{ margin:0; }
+.cam-btn.mini{ min-height:40px; font-size:.82rem; background:transparent; color:var(--dx-ink-soft);
+  border:1.5px dashed var(--dx-line); }
+.cam-btn.mini:hover{ color:var(--dx-clean-deep); border-color:var(--dx-clean); background:var(--dx-clean-mist); }
+
+/* ── Modales del tablero (quién limpió / programar limpieza) ── */
+.cam-modal{ position:fixed; inset:0; z-index:120; display:flex; align-items:flex-end; justify-content:center;
+  background:rgba(18,22,34,.5); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  opacity:0; transition:opacity .22s var(--dx-ease); }
+.cam-modal.is-open{ opacity:1; }
+.cam-modal.hidden{ display:none; }
+.cam-modal__panel{ width:100%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;
+  background:var(--dx-surface); border-radius:22px 22px 0 0; box-shadow:0 -18px 44px -20px rgba(20,40,80,.55);
+  transform:translateY(24px); transition:transform .24s var(--dx-ease); }
+.cam-modal.is-open .cam-modal__panel{ transform:translateY(0); }
+@media (min-width:640px){
+  .cam-modal{ align-items:center; padding:20px; }
+  .cam-modal__panel{ border-radius:22px; transform:translateY(12px) scale(.98); }
+  .cam-modal.is-open .cam-modal__panel{ transform:translateY(0) scale(1); }
+}
+.cam-modal__head{ position:relative; padding:20px 54px 14px 20px; color:#fff;
+  background:linear-gradient(135deg, var(--dx-clean-deep), var(--dx-clean) 60%, var(--dx-clean-bright)); }
+.cam-modal__head h2{ margin:0; font-family:var(--dx-serif); font-weight:700; font-size:1.45rem; line-height:1.1; color:#fff; }
+.cam-modal__sub{ margin:4px 0 0; font-size:.8rem; color:rgba(255,255,255,.88); }
+.cam-modal__close{ position:absolute; top:14px; right:14px; width:34px; height:34px; display:grid; place-items:center;
+  border:1px solid rgba(255,255,255,.3); border-radius:10px; background:rgba(255,255,255,.14); color:#fff; cursor:pointer; }
+.cam-modal__close:active{ transform:scale(.94); }
+.cam-modal__body{ padding:14px 16px; overflow-y:auto; flex:1 1 auto; }
+.cam-modal__label{ display:block; margin:0 0 6px; font-size:.78rem; font-weight:700; color:var(--dx-ink-soft); }
+.cam-modal__fecha{ width:100%; min-height:46px; padding:10px 12px; margin-bottom:12px; font-family:inherit; font-size:.92rem;
+  color:var(--dx-ink); background:var(--dx-surface-warm); border:1.5px solid var(--dx-line); border-radius:12px; }
+.cam-modal__fecha:focus{ outline:2px solid var(--dx-clean); outline-offset:1px; }
+.cam-persona{ position:relative; display:flex; align-items:center; gap:11px; padding:11px 12px; margin-bottom:8px; cursor:pointer;
+  background:var(--dx-surface); border:1.5px solid var(--dx-line); border-radius:13px;
+  transition:border-color .15s var(--dx-ease), background .15s var(--dx-ease); }
+.cam-persona:hover{ border-color:var(--dx-clean); background:var(--dx-clean-mist); }
+.cam-persona input{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.cam-persona__check{ flex:0 0 auto; width:22px; height:22px; display:grid; place-items:center; border-radius:7px;
+  border:1.5px solid var(--dx-line); background:#fff; color:#fff; transition:all .16s var(--dx-ease); }
+.cam-persona__check i{ font-size:.62rem; opacity:0; transform:scale(.4); transition:all .16s var(--dx-ease); }
+.cam-persona:has(input:checked){ border-color:var(--dx-clean); background:var(--dx-clean-soft); }
+.cam-persona:has(input:checked) .cam-persona__check{ border-color:var(--dx-clean); background:var(--dx-clean); }
+.cam-persona:has(input:checked) .cam-persona__check i{ opacity:1; transform:scale(1); }
+.cam-persona__nombre{ font-size:.92rem; font-weight:600; color:var(--dx-ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cam-persona__rol{ margin-left:auto; flex:0 0 auto; font-size:.68rem; font-weight:600; color:var(--dx-ink-faint);
+  background:var(--dx-ivory); padding:3px 8px; border-radius:999px; }
+.cam-persona--none{ border-style:dashed; }
+.cam-persona--none .cam-persona__nombre{ color:var(--dx-ink-soft); }
+.cam-persona--none:hover{ border-color:var(--dx-ink-faint); background:var(--dx-surface-warm); }
+.cam-persona--none:has(input:checked){ border-color:var(--dx-ink-faint); background:var(--dx-slate-soft); }
+.cam-persona--none:has(input:checked) .cam-persona__check{ border-color:var(--dx-slate); background:var(--dx-slate); }
+.cam-modal__error{ margin:2px 2px 0; padding:10px 12px; border-radius:11px; font-size:.8rem; font-weight:600;
+  color:#B0352B; background:#FBE9E7; border:1px solid #F0B9B2; }
+.cam-modal__error.hidden{ display:none; }
+.cam-modal__foot{ display:flex; gap:10px; padding:12px 16px; padding-bottom:max(12px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--dx-line); background:var(--dx-surface-warm); }
+.cam-modal__foot .cam-btn{ flex:1; }
+.cam-btn.ghost{ background:transparent; color:var(--dx-ink-soft); border:1.5px solid var(--dx-line); flex:0 0 auto; padding:0 18px; width:auto; }
+.cam-btn.ghost:hover{ background:var(--dx-surface-warm); color:var(--dx-ink); }
+
 /* ── Vacío ── */
 .cam-empty{ text-align:center; padding:44px 16px; color:var(--dx-ink-soft); }
 .cam-empty i{ display:block; margin-bottom:10px; font-size:1.9rem; color:var(--dx-ink-faint); }
@@ -254,6 +333,22 @@ $camTodoAlDia = ($porLimpiar === 0);
             $estado = (string) $hab['estado'];
             $esSalidaHoy = isset($salidasHoy[$id]);
             $cardMod = $estado === 'limpieza' ? ' is-pend' : (($esSalidaHoy && $estado !== 'disponible') ? ' is-salida' : '');
+
+            // Limpieza activa del cuarto: personal asignado y/o fecha programada.
+            $tarea = $tareasLimpieza[$id] ?? null;
+            $asignadosCsv = $tarea ? implode(',', $tarea['trabajador_ids']) : '';
+            $asignadosNombres = $tarea ? trim((string) $tarea['trabajador_nombres']) : '';
+            $fechaProg = '';
+            $fechaProgLabel = '';
+            if ($tarea && (string) $tarea['fecha_programada'] !== '') {
+                $ts = strtotime((string) $tarea['fecha_programada']);
+                if ($ts) {
+                    $fechaProg = date('Y-m-d', $ts);
+                    if ($fechaProg > $camHoy) {
+                        $fechaProgLabel = $fechaProg === $camManana ? 'mañana' : date('d/m', $ts);
+                    }
+                }
+            }
             ?>
             <div class="cam-card<?= $cardMod ?>">
                 <div class="cam-head">
@@ -271,23 +366,62 @@ $camTodoAlDia = ($porLimpiar === 0);
                     <span class="cam-badge b-maint"><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i>Mantenimiento</span>
                 <?php endif; ?>
 
+                <?php if ($asignadosNombres !== '' || $fechaProgLabel !== ''): ?>
+                <div class="cam-meta">
+                    <?php if ($fechaProgLabel !== ''): ?>
+                        <span class="cam-chip cam-chip--fecha"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>Programada <?= $camSafe($fechaProgLabel) ?></span></span>
+                    <?php endif; ?>
+                    <?php if ($asignadosNombres !== ''): ?>
+                        <span class="cam-chip cam-chip--staff" title="<?= $camSafe($asignadosNombres) ?>"><i class="fas fa-user" aria-hidden="true"></i><span><?= $camSafe($asignadosNombres) ?></span></span>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+
                 <?php if ($estado === 'limpieza'): ?>
-                    <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="estado" value="disponible">
-                        <button type="submit" class="cam-btn done">
-                            <span class="cam-btn__shine" aria-hidden="true"></span>
-                            <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
+                    <div class="cam-foot">
+                        <?php if ($camHayPersonal): ?>
+                            <button type="button" class="cam-btn done js-cam-marcar"
+                                    data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                    data-asignados="<?= $camSafe($asignadosCsv) ?>">
+                                <span class="cam-btn__shine" aria-hidden="true"></span>
+                                <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
+                            </button>
+                            <button type="button" class="cam-btn mini js-cam-prog"
+                                    data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                    data-asignados="<?= $camSafe($asignadosCsv) ?>"
+                                    data-fecha="<?= $camSafe($fechaProg !== '' ? $fechaProg : $camHoy) ?>">
+                                <i class="fas fa-user-plus" aria-hidden="true"></i><?= $asignadosNombres !== '' ? 'Cambiar personal' : 'Asignar personal' ?>
+                            </button>
+                        <?php else: ?>
+                            <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="estado" value="disponible">
+                                <button type="submit" class="cam-btn done">
+                                    <span class="cam-btn__shine" aria-hidden="true"></span>
+                                    <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                <?php elseif ($estado === 'ocupada' && $camHayPersonal): ?>
+                    <div class="cam-foot">
+                        <button type="button" class="cam-btn mini js-cam-prog"
+                                data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                data-asignados="<?= $camSafe($asignadosCsv) ?>"
+                                data-fecha="<?= $camSafe($fechaProg !== '' ? $fechaProg : $camManana) ?>">
+                            <i class="fas fa-calendar-plus" aria-hidden="true"></i><?= $fechaProgLabel !== '' ? 'Reprogramar limpieza' : 'Programar limpieza' ?>
                         </button>
-                    </form>
+                    </div>
                 <?php elseif ($estado === 'disponible'): ?>
-                    <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="estado" value="limpieza">
-                        <button type="submit" class="cam-btn pend">
-                            <i class="fas fa-broom" aria-hidden="true"></i>Marcar por limpiar
-                        </button>
-                    </form>
+                    <div class="cam-foot">
+                        <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="estado" value="limpieza">
+                            <button type="submit" class="cam-btn pend">
+                                <i class="fas fa-broom" aria-hidden="true"></i>Marcar por limpiar
+                            </button>
+                        </form>
+                    </div>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
@@ -298,6 +432,179 @@ $camTodoAlDia = ($porLimpiar === 0);
             <i class="fas fa-broom" aria-hidden="true"></i>
             <p>No hay habitaciones activas para mostrar.</p>
         </div>
+    <?php endif; ?>
+
+    <?php if ($camHayPersonal): ?>
+    <!-- Modal: ¿quién hizo la limpieza? (obligatorio al marcar como limpia) -->
+    <div id="camModalMarcar" class="cam-modal hidden" role="dialog" aria-modal="true" aria-labelledby="camMarcarTitulo">
+        <div class="cam-modal__panel">
+            <div class="cam-modal__head">
+                <h2 id="camMarcarTitulo">¿Quién hizo la limpieza?</h2>
+                <p class="cam-modal__sub">Hab <span data-cam-numero></span> · elige a una o más personas.</p>
+                <button type="button" class="cam-modal__close" data-cam-cerrar aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+            </div>
+            <form method="POST" action="" data-action-base="<?= url('camarista/marcar') ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="estado" value="disponible">
+                <div class="cam-modal__body">
+                    <?php foreach ($personal as $p): ?>
+                    <label class="cam-persona">
+                        <input type="checkbox" name="trabajador_ids[]" value="<?= (int) $p['id'] ?>">
+                        <span class="cam-persona__check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        <span class="cam-persona__nombre"><?= $camSafe($p['nombre']) ?></span>
+                        <?php if ((string) $p['rol'] !== ''): ?><span class="cam-persona__rol"><?= $camSafe($p['rol']) ?></span><?php endif; ?>
+                    </label>
+                    <?php endforeach; ?>
+                    <label class="cam-persona cam-persona--none">
+                        <input type="checkbox" name="sin_personal" value="1" class="js-cam-sin">
+                        <span class="cam-persona__check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        <span class="cam-persona__nombre">Sin registrar personal</span>
+                    </label>
+                    <p class="cam-modal__error hidden" data-cam-error>Selecciona quién hizo la limpieza o marca "Sin registrar personal".</p>
+                </div>
+                <div class="cam-modal__foot">
+                    <button type="button" class="cam-btn ghost" data-cam-cerrar>Cancelar</button>
+                    <button type="submit" class="cam-btn done">
+                        <span class="cam-btn__shine" aria-hidden="true"></span>
+                        <i class="fas fa-check" aria-hidden="true"></i>Confirmar limpieza
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: programar limpieza (fecha + personal, incluso con el cuarto ocupado) -->
+    <div id="camModalProg" class="cam-modal hidden" role="dialog" aria-modal="true" aria-labelledby="camProgTitulo">
+        <div class="cam-modal__panel">
+            <div class="cam-modal__head">
+                <h2 id="camProgTitulo">Programar limpieza</h2>
+                <p class="cam-modal__sub">Hab <span data-cam-numero></span> · elige fecha y quién se encargará.</p>
+                <button type="button" class="cam-modal__close" data-cam-cerrar aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
+            </div>
+            <form method="POST" action="" data-action-base="<?= url('camarista/programar') ?>">
+                <?= csrf_field() ?>
+                <div class="cam-modal__body">
+                    <label class="cam-modal__label" for="camProgFecha">¿Para cuándo?</label>
+                    <input type="date" id="camProgFecha" name="fecha" class="cam-modal__fecha" required
+                           min="<?= $camHoy ?>" max="<?= date('Y-m-d', strtotime('+60 days')) ?>" value="<?= $camHoy ?>">
+                    <span class="cam-modal__label">¿Quién se encargará?</span>
+                    <?php foreach ($personal as $p): ?>
+                    <label class="cam-persona">
+                        <input type="checkbox" name="trabajador_ids[]" value="<?= (int) $p['id'] ?>">
+                        <span class="cam-persona__check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        <span class="cam-persona__nombre"><?= $camSafe($p['nombre']) ?></span>
+                        <?php if ((string) $p['rol'] !== ''): ?><span class="cam-persona__rol"><?= $camSafe($p['rol']) ?></span><?php endif; ?>
+                    </label>
+                    <?php endforeach; ?>
+                    <p class="cam-modal__error hidden" data-cam-error>Selecciona al menos una persona para programar la limpieza.</p>
+                </div>
+                <div class="cam-modal__foot">
+                    <button type="button" class="cam-btn ghost" data-cam-cerrar>Cancelar</button>
+                    <button type="submit" class="cam-btn done">
+                        <span class="cam-btn__shine" aria-hidden="true"></span>
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>Programar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var marcarModal = document.getElementById('camModalMarcar');
+        var progModal = document.getElementById('camModalProg');
+        if (!marcarModal && !progModal) return;
+
+        function abrir(modal, datos) {
+            if (!modal) return;
+            var form = modal.querySelector('form');
+            form.action = form.getAttribute('data-action-base') + '/' + datos.habId;
+
+            modal.querySelectorAll('[data-cam-numero]').forEach(function (el) { el.textContent = datos.numero || ''; });
+
+            // Preseleccionar al personal ya asignado a la limpieza activa.
+            var pre = (datos.asignados || '').split(',').map(function (s) { return parseInt(s, 10) || 0; }).filter(function (v) { return v > 0; });
+            form.querySelectorAll('input[name="trabajador_ids[]"]').forEach(function (chk) {
+                chk.checked = pre.indexOf(parseInt(chk.value, 10)) !== -1;
+            });
+            var sin = form.querySelector('.js-cam-sin');
+            if (sin) sin.checked = false;
+            var err = modal.querySelector('[data-cam-error]');
+            if (err) err.classList.add('hidden');
+
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            modal.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrar(modal) {
+            modal.classList.remove('is-open');
+            setTimeout(function () {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 230);
+        }
+
+        document.querySelectorAll('.js-cam-marcar').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrir(marcarModal, { habId: btn.getAttribute('data-hab-id'), numero: btn.getAttribute('data-hab-numero'), asignados: btn.getAttribute('data-asignados') });
+            });
+        });
+
+        document.querySelectorAll('.js-cam-prog').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                abrir(progModal, { habId: btn.getAttribute('data-hab-id'), numero: btn.getAttribute('data-hab-numero'), asignados: btn.getAttribute('data-asignados') });
+                var fecha = progModal ? progModal.querySelector('input[name="fecha"]') : null;
+                if (fecha) fecha.value = btn.getAttribute('data-fecha') || fecha.min;
+            });
+        });
+
+        [marcarModal, progModal].forEach(function (modal) {
+            if (!modal) return;
+            modal.addEventListener('click', function (e) { if (e.target === modal) cerrar(modal); });
+            modal.querySelectorAll('[data-cam-cerrar]').forEach(function (b) { b.addEventListener('click', function () { cerrar(modal); }); });
+
+            var form = modal.querySelector('form');
+            var sin = form.querySelector('.js-cam-sin');
+            var checks = form.querySelectorAll('input[name="trabajador_ids[]"]');
+
+            // "Sin registrar personal" y las personas son excluyentes.
+            if (sin) {
+                sin.addEventListener('change', function () {
+                    if (sin.checked) checks.forEach(function (c) { c.checked = false; });
+                });
+            }
+            checks.forEach(function (c) {
+                c.addEventListener('change', function () {
+                    if (c.checked && sin) sin.checked = false;
+                });
+            });
+
+            // No dejar pasar sin la elección: personas o "sin registrar personal".
+            form.addEventListener('submit', function (e) {
+                var alguno = Array.prototype.some.call(checks, function (c) { return c.checked; });
+                var sinOk = !!(sin && sin.checked);
+                if (!alguno && !sinOk) {
+                    e.preventDefault();
+                    var err = modal.querySelector('[data-cam-error]');
+                    if (err) {
+                        err.classList.remove('hidden');
+                        err.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Cerrar con Escape.
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            [marcarModal, progModal].forEach(function (modal) {
+                if (modal && !modal.classList.contains('hidden')) cerrar(modal);
+            });
+        });
+    })();
+    </script>
     <?php endif; ?>
   </div>
 </div>

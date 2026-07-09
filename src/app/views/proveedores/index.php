@@ -514,12 +514,364 @@ $visibles = count($proveedores);
     .providers-page .pv-summary-value { font-size: 1.4rem; }
     .providers-page .pv-title { font-size: 2rem; }
 }
+
+/* Documents-aligned polish: calmer ink, lighter weights, same provider rhythm. */
+.providers-page {
+    --pv-gold-ink: color-mix(in srgb, var(--pv-gold) 58%, var(--pv-brand));
+    --pv-border: color-mix(in srgb, var(--pv-brand) 6%, #E9E1D6);
+    --pv-text: color-mix(in srgb, var(--pv-brand) 46%, #707B8C);
+    --pv-muted: #8791A2;
+    --pv-heading: color-mix(in srgb, var(--pv-brand) 66%, #566172);
+}
+.providers-page .font-bold,
+.providers-page .font-semibold {
+    font-weight: 650 !important;
+}
+.providers-page .pv-shell {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+.providers-page .pv-hero-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start !important;
+    justify-content: stretch !important;
+    gap: 12px !important;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 2px 0 6px;
+}
+.providers-page .pv-title-lockup {
+    justify-self: start;
+    max-width: min(100%, 780px);
+}
+.providers-page .pv-title-lockup > div:last-child {
+    min-width: 0;
+}
+.providers-page .pv-kicker,
+.providers-page .pv-title,
+.providers-page .pv-btn,
+.providers-page .pv-summary-label,
+.providers-page .pv-summary-value,
+.providers-page .pv-panel-title,
+.providers-page .pv-count-pill,
+.providers-page .pv-table th,
+.providers-page .pv-avatar,
+.providers-page .pv-name,
+.providers-page .pv-badge,
+.providers-page .pv-card-btn,
+.providers-page .pv-empty h2,
+.providers-page .pv-notice strong {
+    font-weight: 650;
+}
+.providers-page .pv-title {
+    color: var(--pv-heading);
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    overflow-wrap: anywhere;
+}
+.providers-page .pv-subtitle {
+    max-width: 48rem;
+    color: var(--pv-muted);
+    font-weight: 500;
+}
+.providers-page .pv-btn {
+    min-height: 44px;
+    white-space: nowrap;
+}
+.providers-page .pv-btn-gold {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--pv-gold) 86%, #fff), color-mix(in srgb, var(--pv-gold) 72%, var(--pv-brand)));
+    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--pv-gold) 42%, transparent);
+}
+.providers-page .pv-btn-brand {
+    background: color-mix(in srgb, var(--pv-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--pv-gold) 28%, #ECE1D1);
+    color: var(--pv-gold-ink);
+    box-shadow: 0 8px 18px -18px color-mix(in srgb, var(--pv-gold) 34%, transparent);
+}
+.providers-page .pv-btn-muted {
+    background: rgba(255,255,255,.86);
+    border-color: var(--pv-border);
+    color: var(--pv-muted);
+}
+.providers-page .pv-summary-item,
+.providers-page .pv-panel,
+.providers-page .pv-mobile-card {
+    background: rgba(255,255,255,.86);
+    border-color: var(--pv-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
+}
+.providers-page .pv-summary-value.is-active {
+    color: color-mix(in srgb, var(--pv-success) 68%, var(--pv-text));
+}
+.providers-page .pv-summary-value.is-inactive {
+    color: color-mix(in srgb, var(--pv-muted) 82%, var(--pv-text));
+}
+.providers-page .pv-control {
+    min-height: 44px;
+    color: var(--pv-text);
+    font-weight: 560;
+}
+.providers-page .pv-control::placeholder {
+    color: color-mix(in srgb, var(--pv-muted) 82%, #B8C0CB);
+    font-weight: 520;
+}
+.providers-page .pv-panel-head,
+.providers-page .pv-table thead {
+    background: var(--pv-surface-warm);
+}
+.providers-page .pv-count-pill {
+    background: color-mix(in srgb, var(--pv-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--pv-gold) 28%, #ECE1D1);
+}
+.providers-page .pv-row:hover {
+    background: rgba(251,248,242,.72);
+    box-shadow: 0 10px 24px -25px rgba(27,39,70,.32);
+}
+.providers-page .pv-name,
+.providers-page .pv-rfc {
+    color: var(--pv-heading);
+}
+.providers-page .pv-line {
+    color: var(--pv-text);
+}
+.providers-page .pv-avatar {
+    color: color-mix(in srgb, var(--pv-avatar-fg, var(--pv-brand)) 76%, var(--pv-text));
+    background: color-mix(in srgb, var(--pv-avatar-bg, var(--pv-surface-warm)) 74%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--pv-avatar-border, var(--pv-border)) 78%, #FFFFFF);
+}
+.providers-page .pv-badge.is-active {
+    color: color-mix(in srgb, var(--pv-success) 70%, var(--pv-text));
+}
+.providers-page .pv-badge.is-inactive {
+    color: color-mix(in srgb, var(--pv-muted) 78%, var(--pv-text));
+    background: var(--pv-surface-warm);
+    border-color: var(--pv-border);
+}
+.providers-page .pv-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    border-color: var(--pv-border);
+    background: var(--pv-surface-warm);
+    color: var(--pv-muted);
+}
+.providers-page .pv-action-view {
+    color: var(--pv-info);
+}
+.providers-page .pv-action-edit {
+    color: var(--pv-gold-ink);
+}
+.providers-page .pv-action-off {
+    color: color-mix(in srgb, var(--pv-danger) 76%, var(--pv-text));
+}
+.providers-page .pv-action-on {
+    color: color-mix(in srgb, var(--pv-success) 76%, var(--pv-text));
+}
+.providers-page .pv-card-btn {
+    min-height: 44px;
+    color: var(--pv-text);
+}
+.providers-page .pv-card-btn.is-off {
+    color: color-mix(in srgb, var(--pv-danger) 76%, var(--pv-text));
+}
+.providers-page .pv-card-btn.is-on {
+    color: color-mix(in srgb, var(--pv-success) 76%, var(--pv-text));
+}
+.providers-page .pv-empty {
+    background: rgba(251,248,242,.78);
+    border-color: var(--pv-border);
+}
+.providers-page .pv-empty h2 {
+    color: var(--pv-heading);
+}
+.providers-page .pv-notice {
+    background: color-mix(in srgb, var(--pv-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--pv-gold) 28%, #ECE1D1);
+}
+
+@media (min-width: 1024px) {
+    .providers-page .pv-hero-section {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 16px 28px !important;
+        padding-bottom: 10px;
+    }
+    .providers-page .pv-hero-section > .pv-btn {
+        justify-self: end;
+        min-width: max-content;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .providers-page .pv-filter-form {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .providers-page .pv-search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767px) {
+    .providers-page {
+        --pv-mobile-ink: color-mix(in srgb, var(--pv-brand) 62%, #6F7784);
+        --pv-mobile-text: color-mix(in srgb, var(--pv-brand) 42%, #778394);
+        --pv-mobile-muted: #98A2B3;
+        padding: 10px 12px 18px !important;
+        background:
+            radial-gradient(520px 220px at 92% -6%, color-mix(in srgb, var(--pv-gold) 12%, transparent), transparent 62%),
+            linear-gradient(180deg, #FBF8F0 0%, #F3EDE2 100%);
+    }
+    .providers-page .pv-shell {
+        gap: 10px;
+    }
+    .providers-page .pv-hero-section {
+        position: relative;
+        overflow: hidden;
+        min-height: 126px;
+        margin: 0;
+        padding: 16px 14px 14px;
+        border-radius: 22px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 88% 14%, rgba(255,255,255,.17), transparent 92px),
+            linear-gradient(135deg, color-mix(in srgb, var(--pv-brand) 94%, #000) 0%, color-mix(in srgb, var(--pv-brand-2) 78%, var(--pv-gold)) 100%);
+        box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--pv-brand) 72%, transparent);
+    }
+    .providers-page .pv-hero-section::after {
+        content: "";
+        position: absolute;
+        right: -44px;
+        top: -44px;
+        width: 150px;
+        height: 150px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        pointer-events: none;
+    }
+    .providers-page .pv-title-lockup {
+        position: relative;
+        z-index: 1;
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+        align-items: start;
+    }
+    .providers-page .pv-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+        background: rgba(255,255,255,.16);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,.22);
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+    }
+    .providers-page .pv-kicker {
+        color: rgba(255,255,255,.76);
+        font-size: .64rem;
+    }
+    .providers-page .pv-title {
+        color: #fff;
+        font-size: clamp(2rem, 12vw, 2.55rem);
+    }
+    .providers-page .pv-subtitle {
+        color: rgba(255,255,255,.72);
+        font-size: .84rem;
+        line-height: 1.43;
+    }
+    .providers-page .pv-hero-section > .pv-btn {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        background: rgba(255,255,255,.94);
+        border-color: rgba(255,255,255,.28);
+        color: var(--pv-brand);
+        box-shadow: 0 12px 24px -18px rgba(0,0,0,.38);
+    }
+    .providers-page .pv-summary {
+        display: flex;
+        grid-template-columns: none;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 2px 2px;
+        margin: 0 -2px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .providers-page .pv-summary::-webkit-scrollbar {
+        display: none;
+    }
+    .providers-page .pv-summary-item {
+        flex: 0 0 145px;
+        padding: 10px 12px;
+        border-radius: 14px;
+    }
+    .providers-page .pv-summary-label {
+        font-size: .62rem;
+    }
+    .providers-page .pv-summary-value {
+        color: var(--pv-mobile-ink);
+        font-size: 1.36rem;
+    }
+    .providers-page .pv-filter-form {
+        gap: 8px;
+    }
+    .providers-page .pv-filter-form .pv-btn {
+        width: 100%;
+    }
+    .providers-page .pv-panel {
+        border-radius: 15px;
+    }
+    .providers-page .pv-panel-head {
+        align-items: flex-start;
+        padding: 12px;
+    }
+    .providers-page .pv-panel-title,
+    .providers-page .pv-mobile-card .pv-name,
+    .providers-page .pv-rfc {
+        color: var(--pv-mobile-ink);
+    }
+    .providers-page .pv-mobile {
+        padding: 10px;
+    }
+    .providers-page .pv-mobile-card {
+        border-radius: 15px;
+        padding: 12px;
+    }
+    .providers-page .pv-mobile-top {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+    .providers-page .pv-mobile-top .pv-badge {
+        grid-column: 1 / -1;
+        width: fit-content;
+    }
+    .providers-page .pv-mobile-contact {
+        gap: 7px;
+    }
+    .providers-page .pv-mobile-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .providers-page *,
+    .providers-page *::before,
+    .providers-page *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
 </style>
 
 <div class="providers-page p-4 sm:p-6">
     <div class="pv-shell">
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <section class="pv-hero-section flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div class="pv-title-lockup">
                 <div class="pv-hero-icon"><i class="fas fa-truck-field"></i></div>
                 <div>

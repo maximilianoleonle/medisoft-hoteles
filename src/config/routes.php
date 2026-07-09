@@ -75,6 +75,10 @@ $router->get('/api/reservaciones/{id:[0-9]+}/limpieza-personal', [
     'controller' => 'Reservacion',
     'action' => 'limpiezaPersonalApi'
 ]);
+$router->get('/api/habitaciones/limpieza-personal', [
+    'controller' => 'Habitacion',
+    'action' => 'limpiezaPersonalApi'
+]);
 $router->get('/api/reservaciones/{id:[0-9]+}/resumen-pagos', [
     'controller' => 'Api',
     'action' => 'reservacionResumenPagos'
@@ -290,6 +294,7 @@ $router->post('/canales/sincronizar', ['controller' => 'Canales', 'action' => 's
 // App de camarista (bloque camarista): tablero movil de limpieza
 $router->get('/camarista', ['controller' => 'Camarista', 'action' => 'index']);
 $router->post('/camarista/marcar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'marcar']);
+$router->post('/camarista/programar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'programar']);
 
 // WhatsApp del hotel (bloque whatsapp): conexion y toggles
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);

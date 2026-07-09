@@ -1401,6 +1401,254 @@ class TareaOperativa extends Model
         }
     }
 
+    /**
+     * Cierra el ciclo de limpieza de una habitacion registrando quien la hizo.
+     * - Si hay tarea de limpieza activa: fija el personal indicado (o lo limpia
+     *   si se eligio "sin registrar personal") y la completa.
+     * - Si no hay tarea activa: crea un registro de limpieza ya completado
+     *   (bitacora) para que siempre quede constancia de quien limpio.
+     * Lista vacia de trabajadores = cierre explicito sin registrar personal.
+     */
+    public function completarLimpiezaConPersonalParaHotel(int $hotelId, int $habitacionId, array $trabajadorIdsRaw, ?int $usuarioId = null): bool
+    {
+        if ($hotelId <= 0 || $habitacionId <= 0 || !$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            return false;
+        }
+
+        $trabajadores = $this->validarTrabajadoresHotel($trabajadorIdsRaw, $hotelId);
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
+        $lider = !empty($trabajadores) ? (int)$trabajadores[0]['id'] : null;
+        $nota = !empty($trabajadores)
+            ? 'Limpieza realizada por: ' . $this->nombresTrabajadores($trabajadores) . '.'
+            : 'Limpieza cerrada sin registrar personal.';
+
+        $tarea = $this->buscarTareaActivaLimpiezaPorHabitacionHotel($hotelId, $habitacionId);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            if ($tarea && !empty($tarea['id'])) {
+                $tareaId = (int)$tarea['id'];
+                $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+
+                $stmt = $this->db->query(
+                    "UPDATE tareas_operativas
+                     SET trabajador_id = ?,
+                         asignada_por_usuario_id = CASE WHEN ? IS NULL THEN NULL ELSE ? END,
+                         estado = 'completada',
+                         fecha_inicio = COALESCE(fecha_inicio, NOW()),
+                         fecha_cierre = NOW(),
+                         cerrada_por_usuario_id = ?,
+                         notas_cierre = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?
+                       AND estado IN ('pendiente', 'asignada', 'en_proceso')",
+                    [$lider, $lider, $usuarioId, $usuarioId, $nota, $tareaId, $hotelId]
+                );
+
+                if (!$stmt || $stmt->rowCount() !== 1) {
+                    throw new RuntimeException('No se pudo completar la tarea de limpieza.');
+                }
+
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'completada',
+                    $estadoAnterior,
+                    'completada',
+                    'Habitacion marcada como limpia. ' . $nota,
+                    $usuarioId
+                );
+            } else {
+                $stmtHab = $this->db->query(
+                    "SELECT numero FROM habitaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                    [$habitacionId, $hotelId]
+                );
+                $hab = $stmtHab ? $stmtHab->fetch() : null;
+                $numero = (string)($hab['numero'] ?? $habitacionId);
+
+                $stmt = $this->db->query(
+                    "INSERT INTO tareas_operativas
+                        (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                         habitacion_id, trabajador_id, fecha_programada, fecha_inicio, fecha_cierre,
+                         creada_por_usuario_id, asignada_por_usuario_id, cerrada_por_usuario_id,
+                         notas_cierre, origen, created_at)
+                     VALUES
+                        (?, 'limpieza', ?, 'Registro generado al marcar la habitacion como limpia.', 'media', 'completada',
+                         ?, ?, NOW(), NOW(), NOW(),
+                         ?, ?, ?,
+                         ?, 'habitacion', NOW())",
+                    [
+                        $hotelId,
+                        'Limpieza habitacion ' . $numero,
+                        $habitacionId,
+                        $lider,
+                        $usuarioId,
+                        ($lider !== null ? $usuarioId : null),
+                        $usuarioId,
+                        $nota,
+                    ]
+                );
+
+                if (!$stmt) {
+                    throw new RuntimeException('No se pudo registrar la limpieza completada.');
+                }
+
+                $tareaId = (int)$this->db->lastInsertId();
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'completada',
+                    null,
+                    'completada',
+                    'Habitacion marcada como limpia. ' . $nota,
+                    $usuarioId
+                );
+            }
+
+            $this->db->safeCommit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Programa (o reprograma) la limpieza de una habitacion para una fecha dada,
+     * con el personal que se encargara. Funciona con la habitacion en cualquier
+     * estado (p. ej. ocupada hoy con limpieza programada para manana): si ya hay
+     * una tarea de limpieza activa se actualiza, si no se crea una nueva.
+     */
+    public function programarLimpiezaParaHotel(int $hotelId, int $habitacionId, string $fechaRaw, array $trabajadorIdsRaw, ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0 || $habitacionId <= 0) {
+            throw new InvalidArgumentException('Habitacion no valida para programar limpieza.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $fecha = $this->normalizarFechaSimple($fechaRaw, date('Y-m-d'));
+        if (strtotime($fecha) < strtotime(date('Y-m-d'))) {
+            throw new InvalidArgumentException('La fecha de la limpieza no puede ser anterior a hoy.');
+        }
+        if (strtotime($fecha) > strtotime('+60 days')) {
+            throw new InvalidArgumentException('La limpieza solo puede programarse hasta 60 dias adelante.');
+        }
+
+        $trabajadores = $this->validarTrabajadoresHotel($trabajadorIdsRaw, $hotelId);
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
+        $lider = !empty($trabajadores) ? (int)$trabajadores[0]['id'] : null;
+
+        $stmtHab = $this->db->query(
+            "SELECT id, numero, estado FROM habitaciones
+             WHERE id = ? AND hotel_id = ? AND COALESCE(activa, 1) = 1
+             LIMIT 1",
+            [$habitacionId, $hotelId]
+        );
+        $habitacion = $stmtHab ? $stmtHab->fetch() : null;
+        if (!$habitacion) {
+            throw new RuntimeException('Habitacion no encontrada para el hotel actual.');
+        }
+
+        $fechaProgramada = $fecha . ' 00:00:00';
+        $etiquetaFecha = date('d/m/Y', strtotime($fecha));
+        $detallePersonal = $lider !== null
+            ? 'Asignada a: ' . $this->nombresTrabajadores($trabajadores) . '.'
+            : 'Sin personal asignado todavia.';
+
+        $tarea = $this->buscarTareaActivaLimpiezaPorHabitacionHotel($hotelId, $habitacionId);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            if ($tarea && !empty($tarea['id'])) {
+                $tareaId = (int)$tarea['id'];
+                $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+                $estadoNuevo = $estadoAnterior === 'en_proceso'
+                    ? 'en_proceso'
+                    : ($lider !== null ? 'asignada' : 'pendiente');
+
+                $stmt = $this->db->query(
+                    "UPDATE tareas_operativas
+                     SET trabajador_id = ?,
+                         asignada_por_usuario_id = CASE WHEN ? IS NULL THEN NULL ELSE ? END,
+                         fecha_programada = ?,
+                         estado = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?",
+                    [$lider, $lider, $usuarioId, $fechaProgramada, $estadoNuevo, $tareaId, $hotelId]
+                );
+
+                if (!$stmt) {
+                    throw new RuntimeException('No se pudo reprogramar la limpieza.');
+                }
+
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'actualizada',
+                    $estadoAnterior,
+                    $estadoNuevo,
+                    'Limpieza programada para el ' . $etiquetaFecha . '. ' . $detallePersonal,
+                    $usuarioId
+                );
+            } else {
+                $estadoNuevo = $lider !== null ? 'asignada' : 'pendiente';
+                $stmt = $this->db->query(
+                    "INSERT INTO tareas_operativas
+                        (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                         habitacion_id, trabajador_id, fecha_programada,
+                         creada_por_usuario_id, asignada_por_usuario_id, origen, created_at)
+                     VALUES
+                        (?, 'limpieza', ?, ?, 'media', ?,
+                         ?, ?, ?,
+                         ?, ?, 'habitacion', NOW())",
+                    [
+                        $hotelId,
+                        'Limpieza habitacion ' . (string)($habitacion['numero'] ?? $habitacionId),
+                        'Limpieza programada desde el tablero de limpieza. Estado de la habitacion al programar: ' . (string)($habitacion['estado'] ?? '-') . '.',
+                        $estadoNuevo,
+                        $habitacionId,
+                        $lider,
+                        $fechaProgramada,
+                        $usuarioId,
+                        ($lider !== null ? $usuarioId : null),
+                    ]
+                );
+
+                if (!$stmt) {
+                    throw new RuntimeException('No se pudo programar la limpieza.');
+                }
+
+                $tareaId = (int)$this->db->lastInsertId();
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'creada',
+                    null,
+                    $estadoNuevo,
+                    'Limpieza programada para el ' . $etiquetaFecha . '. ' . $detallePersonal,
+                    $usuarioId
+                );
+            }
+
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     public function trabajadoresTablaDisponible(): bool
     {
         return $this->tablaExiste('tarea_trabajadores');

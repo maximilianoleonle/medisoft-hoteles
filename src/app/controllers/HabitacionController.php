@@ -297,6 +297,7 @@ public function indexAction() {
         'checkins_pendientes' => $alertasPendientes['checkins'],
         'checkouts_vencidos' => $alertasPendientes['checkouts'],
         'llegadas_tardias' => $alertasPendientes['llegadas_tardias'],
+        'personal_limpieza' => $this->personalLimpiezaVista($hotelId),
     ]);
 }
 
@@ -572,6 +573,7 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         'checkins_pendientes' => $alertasPendientes['checkins'],
         'checkouts_vencidos' => $alertasPendientes['checkouts'],
         'llegadas_tardias' => $alertasPendientes['llegadas_tardias'],
+        'personal_limpieza' => $this->personalLimpiezaVista((int)$hotelId),
     ]);
 }
     
@@ -2206,13 +2208,29 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
             ]);
             exit;
         }
-        
+
+        // Personal que hizo la limpieza (obligatorio cuando el selector estuvo presente).
+        $personalPost = $this->personalLimpiezaPost();
+        $errorPersonal = $this->validarPersonalLimpiezaPost($personalPost);
+        if ($errorPersonal !== null) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $errorPersonal
+            ]);
+            exit;
+        }
+
         // Actualizar estado a disponible
         $actualizado = $this->habitacionModel->update($id, ['estado' => 'disponible']);
 
         if ($actualizado) {
-            // Sincronizar tarea operativa: cerrar la limpieza activa de este cuarto.
-            $this->completarTareaLimpiezaAuto((int)$id);
+            // Sincronizar tarea operativa: cerrar la limpieza activa registrando quien la hizo.
+            if ($personalPost['confirmado']) {
+                $this->registrarLimpiezaConPersonal((int)$id, $personalPost['sin_personal'] ? [] : $personalPost['ids']);
+            } else {
+                $this->completarTareaLimpiezaAuto((int)$id);
+            }
 
             header('Content-Type: application/json');
             echo json_encode([
@@ -2941,20 +2959,27 @@ public function liberarMultiplesAction() {
         if (empty($habitaciones_ids)) {
             throw new Exception('IDs de habitaciones inválidos');
         }
-        
+
+        // Personal que hizo la limpieza (obligatorio cuando el selector estuvo presente).
+        $personalPost = $this->personalLimpiezaPost();
+        $errorPersonal = $this->validarPersonalLimpiezaPost($personalPost);
+        if ($errorPersonal !== null) {
+            throw new Exception($errorPersonal);
+        }
+
         $habitacion = new Habitacion();
         $actualizadas = 0;
         $numeros_habitaciones = [];
-        
+
         // Procesar cada habitación
         foreach ($habitaciones_ids as $id) {
             // Obtener información de la habitación
             $hab = $habitacion->find($id);
-            
+
             if (!$hab) {
                 continue; // Saltar si no existe
             }
-            
+
             // Solo actualizar si está en limpieza
             if ($hab['estado'] === 'limpieza') {
                 $resultado = $habitacion->cambiarEstado($id, 'disponible');
@@ -2962,8 +2987,12 @@ public function liberarMultiplesAction() {
                 if ($resultado) {
                     $actualizadas++;
                     $numeros_habitaciones[] = $hab['numero'];
-                    // Sincronizar tarea operativa: cerrar la limpieza activa de este cuarto.
-                    $this->completarTareaLimpiezaAuto((int)$id);
+                    // Sincronizar tarea operativa: cerrar la limpieza activa registrando quien la hizo.
+                    if ($personalPost['confirmado']) {
+                        $this->registrarLimpiezaConPersonal((int)$id, $personalPost['sin_personal'] ? [] : $personalPost['ids']);
+                    } else {
+                        $this->completarTareaLimpiezaAuto((int)$id);
+                    }
                 }
             }
         }
@@ -3024,6 +3053,165 @@ public function liberarMultiplesAction() {
         } catch (Throwable $e) {
             error_log('completarTareaLimpiezaAuto hab #' . $habitacionId . ': ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Cierra la limpieza de un cuarto registrando quien la hizo (uno o mas
+     * trabajadores, o lista vacia = "sin registrar personal"). Fail-open: si el
+     * registro falla, al menos se cierra la tarea activa como antes.
+     */
+    private function registrarLimpiezaConPersonal(int $habitacionId, array $trabajadorIds): void
+    {
+        try {
+            if (!$this->tareaModel || !$this->tareaModel->tablaDisponible() || !$this->tareaModel->eventosDisponibles()) {
+                return;
+            }
+
+            $hotelId = (int)$this->hotelIdActual();
+            if ($hotelId <= 0 || $habitacionId <= 0) {
+                return;
+            }
+
+            $usuarioId = function_exists('user_id') ? user_id() : null;
+            $this->tareaModel->completarLimpiezaConPersonalParaHotel($hotelId, $habitacionId, $trabajadorIds, $usuarioId);
+        } catch (Throwable $e) {
+            error_log('registrarLimpiezaConPersonal hab #' . $habitacionId . ': ' . $e->getMessage());
+            $this->completarTareaLimpiezaAuto($habitacionId);
+        }
+    }
+
+    /**
+     * Lee del POST la seleccion de personal de limpieza del selector obligatorio.
+     *  - personal_confirmado=1: el cliente mostro el selector (aplica validacion).
+     *  - trabajador_ids[]: uno o mas trabajadores que hicieron la limpieza.
+     *  - sin_personal=1: eleccion explicita de no registrar personal.
+     * Sin el flag (clientes viejos / cola offline) se conserva el flujo anterior.
+     */
+    private function personalLimpiezaPost(): array
+    {
+        $ids = [];
+        $raw = $_POST['trabajador_ids'] ?? [];
+        if (is_array($raw)) {
+            foreach ($raw as $valor) {
+                $valor = (int)$valor;
+                if ($valor > 0) {
+                    $ids[$valor] = $valor;
+                }
+            }
+        }
+
+        return [
+            'confirmado' => (string)($_POST['personal_confirmado'] ?? '') === '1',
+            'sin_personal' => (string)($_POST['sin_personal'] ?? '') === '1',
+            'ids' => array_values($ids),
+        ];
+    }
+
+    /**
+     * Valida la seleccion de personal. Devuelve un mensaje de error o null si es valida.
+     */
+    private function validarPersonalLimpiezaPost(array $personalPost): ?string
+    {
+        if (!$personalPost['confirmado']) {
+            return null;
+        }
+
+        if (!$personalPost['sin_personal'] && empty($personalPost['ids'])) {
+            return 'Indica quién hizo la limpieza o marca "Sin registrar personal".';
+        }
+
+        if (!empty($personalPost['ids']) && $this->tareaModel && $this->tareaModel->tablaDisponible()) {
+            $activos = [];
+            foreach ($this->tareaModel->trabajadoresActivosOpciones((int)$this->hotelIdActual()) as $t) {
+                $activos[(int)$t['id']] = true;
+            }
+            foreach ($personalPost['ids'] as $tid) {
+                if (!isset($activos[$tid])) {
+                    return 'Uno de los trabajadores seleccionados ya no está activo en el hotel.';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Datos de personal de limpieza para los selectores de la vista:
+     * lista de trabajadores activos (roles de limpieza primero) y personal ya
+     * asignado a la limpieza activa de cada cuarto (para preseleccionar).
+     */
+    private function personalLimpiezaVista(int $hotelId): array
+    {
+        $datos = ['disponible' => false, 'personal' => [], 'asignadas' => []];
+
+        try {
+            if ($hotelId <= 0 || !$this->tareaModel || !$this->tareaModel->tablaDisponible() || !$this->tareaModel->eventosDisponibles()) {
+                return $datos;
+            }
+
+            foreach ($this->tareaModel->trabajadoresActivosOpciones($hotelId) as $t) {
+                $datos['personal'][] = [
+                    'id' => (int)$t['id'],
+                    'nombre' => (string)$t['nombre_completo'],
+                    'rol' => (string)($t['rol_laboral'] ?? ''),
+                ];
+            }
+
+            usort($datos['personal'], static function (array $a, array $b): int {
+                $esLimpieza = static function (array $p): int {
+                    $rol = strtolower($p['rol']);
+                    return (strpos($rol, 'camarist') !== false || strpos($rol, 'limpiez') !== false) ? 0 : 1;
+                };
+                $orden = $esLimpieza($a) <=> $esLimpieza($b);
+                return $orden !== 0 ? $orden : strcasecmp($a['nombre'], $b['nombre']);
+            });
+
+            $datos['disponible'] = !empty($datos['personal']);
+            if (!$datos['disponible']) {
+                return $datos;
+            }
+
+            foreach ($this->tareaModel->listarPorHotel($hotelId, ['categoria' => 'limpieza'], 300) as $tarea) {
+                $habId = (int)($tarea['habitacion_id'] ?? 0);
+                $estado = (string)($tarea['estado'] ?? '');
+                if ($habId <= 0 || !in_array($estado, ['pendiente', 'asignada', 'en_proceso'], true) || isset($datos['asignadas'][$habId])) {
+                    continue;
+                }
+
+                $ids = array_values(array_filter(array_map('intval', explode(',', (string)($tarea['trabajadores_ids'] ?? '')))));
+                if (!empty($ids)) {
+                    $datos['asignadas'][$habId] = $ids;
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('personalLimpiezaVista: ' . $e->getMessage());
+        }
+
+        return $datos;
+    }
+
+    /**
+     * API: personal activo para los selectores de limpieza de otras vistas
+     * (p. ej. "Finalizar limpieza" en el detalle de habitacion).
+     * GET /api/habitaciones/limpieza-personal
+     */
+    public function limpiezaPersonalApiAction()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $datos = $this->personalLimpiezaVista((int)$this->hotelIdActual());
+            echo json_encode([
+                'success' => true,
+                'disponible' => $datos['disponible'],
+                'personal' => $datos['personal'],
+                'asignadas' => $datos['asignadas'],
+            ]);
+        } catch (Throwable $e) {
+            // Fail-open: el selector es opcional para el cliente si no hay datos.
+            echo json_encode(['success' => true, 'disponible' => false, 'personal' => [], 'asignadas' => []]);
+        }
+        exit;
     }
 
     /**

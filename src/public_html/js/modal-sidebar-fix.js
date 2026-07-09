@@ -1,10 +1,21 @@
 /**
  * modal-sidebar-fix.js
  *
- * Oculta la barra lateral (#sidebar) mientras haya CUALQUIER modal abierto y la
- * restaura al cerrarse el ultimo. Es global y agnostico al patron de modal que
- * use cada vista: detecta la apertura observando el DOM en lugar de depender de
- * que cada boton llame a una funcion especifica.
+ * Mientras haya CUALQUIER modal abierto, baja la barra lateral (#sidebar) a
+ * z-index:1 (y pointer-events:none) para que el BACKDROP del propio modal la cubra
+ * y difumine igual que al resto del contenido, y la restaura al cerrarse el ultimo.
+ *
+ * Historia: (1) antes la ocultaba con display:none -> salto de layout (desaparecia
+ * al abrir / reaparecia al cerrar). (2) luego le aplicaba un filter:blur propio ->
+ * como la clase se quita tarde (cuando el modal se marca `hidden` al terminar su
+ * animacion de cierre) la sidebar "entraba tarde", desfasada del backdrop. (3) ahora
+ * no le aplica ningun filtro: solo la manda debajo del modal y deja que el backdrop
+ * (que aparece/desvanece CON la animacion del modal) la difumine en sincronia. Sin
+ * reflow y sin desfase. Requiere que el modal sea full-bleed (cubra la franja de la
+ * sidebar); los modales del sistema lo son (p.ej. #modalLimpieza tiene override).
+ *
+ * Es global y agnostico al patron de modal que use cada vista: detecta la apertura
+ * observando el DOM en lugar de depender de que cada boton llame a una funcion.
  *
  * Patrones de modal soportados en el proyecto:
  *   - Estandar ARIA: <div role="dialog" aria-modal="true"> (p.ej. Caja: "fixed inset-0 hidden")
@@ -55,6 +66,11 @@
     function hayModalAbierto() {
         var nodos = document.querySelectorAll(MODAL_SELECTORS);
         for (var i = 0; i < nodos.length; i++) {
+            // Opt-out: los nodos marcados con data-ms-keep-sidebar (p.ej. el panel del
+            // Copiloto, que es un widget flotante no bloqueante) NO ocultan la sidebar.
+            if (nodos[i].closest('[data-ms-keep-sidebar]')) {
+                continue;
+            }
             if (esVisible(nodos[i])) {
                 return true;
             }
@@ -94,10 +110,24 @@
         }
         var style = document.createElement('style');
         style.id = 'ms-modal-sidebar-fix-style';
+        // Selectores con clases suficientes para ganar (por especificidad) al
+        // z-index:900 !important base de la sidebar y dejarla DEBAJO del modal.
+        //
+        // NO le aplicamos un filter propio a la sidebar: eso creaba un desfase de
+        // timing (el filter se quitaba tarde, al marcarse el modal `hidden` tras su
+        // animación de cierre, así que la sidebar "entraba tarde"). En su lugar la
+        // bajamos a z-index:1 y dejamos que el BACKDROP del propio modal (oscuro +
+        // blur) la cubra igual que al resto del contenido: como ese backdrop aparece
+        // y se desvanece CON la animación del modal, la sidebar entra/sale en perfecta
+        // sincronía con el resto del sistema. (Requiere que el modal sea full-bleed;
+        // p.ej. #modalLimpieza tiene su override desktop para cubrir la franja.)
         style.textContent =
+            'body.' + BODY_CLASS + ' #sidebar.sidebar-main.hotel-sidebar,' +
+            'body.' + BODY_CLASS + ' #sidebar.sidebar-main.sidebar-saas,' +
             'body.' + BODY_CLASS + ' #sidebar,' +
             'body.' + BODY_CLASS + ' .sidebar-main {' +
-            ' display: none !important;' +
+            ' z-index: 1 !important;' +
+            ' pointer-events: none !important;' +
             '}';
         (document.head || document.documentElement).appendChild(style);
     }

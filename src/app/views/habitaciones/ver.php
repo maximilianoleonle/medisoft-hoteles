@@ -1626,6 +1626,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                   action="<?= url('habitaciones/' . $habitacion_id . '/liberar') ?>"
                                   class="js-finalizar-limpieza-form"
                                   data-room-number="<?= room_detail_safe($habitacion_numero) ?>"
+                                  data-habitacion-id="<?= (int)$habitacion_id ?>"
                                   style="margin-top:4px;">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="accion" value="finalizar">
@@ -2238,7 +2239,7 @@ async function realizarCheckout(reservacionId) {
 }
 
 document.querySelectorAll('.js-finalizar-limpieza-form').forEach(function(form) {
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         const submitButton = form.querySelector('button[type="submit"]');
         const roomNumber = form.dataset.roomNumber || 'esta habitacion';
@@ -2255,6 +2256,23 @@ document.querySelectorAll('.js-finalizar-limpieza-form').forEach(function(form) 
             }
             window.msToast('error', 'No se pudo finalizar', message || 'La habitacion no pudo marcarse como disponible.');
         };
+
+        // Selector obligatorio: quien hizo la limpieza (una o mas personas)
+        // o la eleccion explicita "Sin registrar personal".
+        if (window.LimpiezaPersonal) {
+            const seleccionPersonal = await LimpiezaPersonal.elegir({
+                infoUrl: '<?= url('api/habitaciones/limpieza-personal') ?>',
+                habitacionId: parseInt(form.dataset.habitacionId || '0', 10) || undefined
+            });
+            if (seleccionPersonal === null) {
+                if (submitButton) { submitButton.disabled = false; submitButton.innerHTML = originalButtonHtml; }
+                return; // usuario cancelo
+            }
+            // Evitar duplicados si el envio anterior fallo y se reintenta.
+            form.querySelectorAll('input[name="personal_confirmado"], input[name="sin_personal"], input[name="trabajador_ids[]"]').forEach(function(el) { el.remove(); });
+            LimpiezaPersonal.aplicarAForm(form, seleccionPersonal);
+        }
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({ title: 'Procesando...', html: 'Actualizando el estado de la habitacion.', allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
         }
