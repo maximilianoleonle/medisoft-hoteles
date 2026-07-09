@@ -143,6 +143,8 @@ $valoresFormulario = [
             </div>
         </section>
 
+        <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
         <form method="POST" action="<?= $action ?>" class="wk-panel p-5">
             <?= csrf_field() ?>
 

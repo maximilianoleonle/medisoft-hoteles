@@ -76,18 +76,21 @@ $exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== 
     --wk-gold: var(--brand-accent, #BD9441);
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
-    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 58%, var(--wk-brand));
     --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
     --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
-    --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
+    --wk-text: color-mix(in srgb, var(--wk-brand) 46%, #707B8C);
+    --wk-muted: #8791A2;
+    --wk-muted-2: color-mix(in srgb, var(--wk-brand) 34%, #8590A1);
+    --wk-heading: color-mix(in srgb, var(--wk-brand) 66%, #566172);
     --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;
     --wk-danger: #B4392B; --wk-danger-bg: #F8EAE5;
-    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans);
+    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 450; line-height: 1.5;
     background: radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%), linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
@@ -97,35 +100,80 @@ $exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== 
 .labor-cash-report .wk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
     background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
-.labor-cash-report .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
-.labor-cash-report .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
+.labor-cash-report .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 600; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.labor-cash-report .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 650; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
 .labor-cash-report .wk-subtitle { max-width: 52rem; margin: 8px 0 0; color: var(--wk-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
 
 .labor-cash-report .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .labor-cash-report .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 14px;
-    border-radius: 11px; border: 1px solid var(--wk-border); background: var(--wk-surface); color: var(--wk-muted); font-weight: 700; font-size: .82rem; text-decoration: none; cursor: pointer;
+    border-radius: 11px; border: 1px solid var(--wk-border); background: rgba(255,255,255,.86); color: var(--wk-text); font-weight: 650; font-size: .84rem; text-decoration: none; cursor: pointer;
     transition: transform .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .labor-cash-report .wk-btn:hover { transform: translateY(-1px); border-color: var(--wk-gold-line); color: var(--wk-gold-ink); }
-.labor-cash-report .wk-btn-brand { background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); border-color: transparent; color: #fff; }
+.labor-cash-report .wk-btn-brand { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--wk-brand) 58%, transparent); }
 .labor-cash-report .wk-btn-brand:hover { color: #fff; border-color: transparent; }
-.labor-cash-report .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 700; }
+.labor-cash-report .wk-btn-brand::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.4), transparent);
+    transform: translateX(-170%) skewX(-18deg);
+}
+.labor-cash-report .wk-btn-brand:hover::after { transition: transform .7s ease; transform: translateX(330%) skewX(-18deg); }
+.labor-cash-report .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 650; }
+
+/* Toggle segmentado Historial | Simular pago (mismo patrón que las pestañas de la ficha) */
+.labor-cash-report .wk-tabs {
+    display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
+    background: color-mix(in srgb, var(--wk-brand) 5%, var(--wk-ivory-2));
+    border: 1px solid var(--wk-border); border-radius: 15px;
+}
+.labor-cash-report .wk-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: transparent; color: var(--wk-muted-2);
+    min-height: 40px; padding: 0 16px 2px; font-size: .85rem; font-weight: 650; cursor: pointer;
+    font-family: var(--wk-sans); line-height: 1; white-space: nowrap; text-decoration: none;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.labor-cash-report .wk-tab i { font-size: .8rem; color: color-mix(in srgb, var(--wk-muted) 80%, #fff); transition: color .16s ease; }
+.labor-cash-report .wk-tab:hover { color: var(--wk-heading); background: rgba(255,255,255,.65); }
+.labor-cash-report .wk-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wk-ring); }
+.labor-cash-report .wk-tab.is-active {
+    background: var(--wk-surface); color: var(--wk-heading); border-color: var(--wk-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 6px 14px -8px color-mix(in srgb, var(--wk-brand) 38%, transparent);
+}
+.labor-cash-report .wk-tab.is-active i { color: var(--wk-gold-ink); }
+.labor-cash-report .wk-tab.is-active::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 40%, #fff));
+}
+@keyframes wkRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 
 .labor-cash-report .wk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.labor-cash-report .wk-stat { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
-.labor-cash-report .wk-stat.is-warm { background: var(--wk-surface-warm); }
-.labor-cash-report .wk-stat-label { color: var(--wk-muted); font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.labor-cash-report .wk-stat-value { margin-top: 3px; font-family: var(--wk-serif); font-size: 1.55rem; font-weight: 700; line-height: 1; color: var(--wk-heading); }
+.labor-cash-report .wk-stat { position: relative; background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px 13px 18px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); animation: wkRise .5s cubic-bezier(.22,1,.36,1) backwards; }
+.labor-cash-report .wk-stat:nth-child(1) { animation-delay: .05s; }
+.labor-cash-report .wk-stat:nth-child(2) { animation-delay: .11s; }
+.labor-cash-report .wk-stat:nth-child(3) { animation-delay: .17s; }
+.labor-cash-report .wk-stat:nth-child(4) { animation-delay: .23s; }
+.labor-cash-report .wk-stat::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--wk-border); }
+.labor-cash-report .wk-stat.is-ok::before { background: color-mix(in srgb, var(--wk-success) 55%, #fff); }
+.labor-cash-report .wk-stat.is-warn::before { background: color-mix(in srgb, var(--wk-warning) 55%, #fff); }
+.labor-cash-report .wk-stat.is-gold::before { background: var(--wk-gold-line); }
+.labor-cash-report .wk-stat.is-ok { background: color-mix(in srgb, var(--wk-success-bg) 26%, #fff); border-color: color-mix(in srgb, var(--wk-success) 14%, var(--wk-border)); }
+.labor-cash-report .wk-stat-label { color: var(--wk-muted); font-size: .66rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.labor-cash-report .wk-stat-value { margin-top: 3px; font-family: var(--wk-serif); font-size: 1.55rem; font-weight: 650; line-height: 1; color: var(--wk-heading); }
+.labor-cash-report .wk-stat.is-ok .wk-stat-value { color: var(--wk-success); }
 .labor-cash-report .wk-stat-foot { color: var(--wk-muted); font-size: .7rem; margin-top: 3px; }
 
 .labor-cash-report .wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .labor-cash-report .wk-control { width: 100%; min-height: 40px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--wk-text); font-weight: 600; font-size: .85rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .labor-cash-report .wk-control:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; }
 .labor-cash-report select.wk-control { cursor: pointer; }
-.labor-cash-report .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: center; }
+.labor-cash-report .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: end; }
+.labor-cash-report .wk-filter-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.labor-cash-report .wk-filter-label { color: var(--wk-muted); font-size: .64rem; font-weight: 650; letter-spacing: .06em; line-height: 1; text-transform: uppercase; }
 
 .labor-cash-report .wk-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.labor-cash-report .wk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--wk-border); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.labor-cash-report .wk-panel-title { font-family: var(--wk-serif); font-size: 1.3rem; font-weight: 700; color: var(--wk-heading); }
+.labor-cash-report .wk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--wk-surface-warm) 82%, #fff), rgba(255,255,255,.92)); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.labor-cash-report .wk-panel-title { font-family: var(--wk-serif); font-size: 1.3rem; font-weight: 650; color: var(--wk-heading); }
 .labor-cash-report .wk-panel-sub { font-size: .8rem; color: var(--wk-muted); margin-top: 3px; }
 .labor-cash-report .wk-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
 .labor-cash-report .wk-table thead { background: var(--wk-surface-warm); border-bottom: 1px solid var(--wk-border); }
@@ -156,29 +204,43 @@ $exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== 
 
 @media (min-width: 1100px) { .labor-cash-report .wk-filter-form { grid-template-columns: 110px minmax(180px,1fr) 140px 160px 110px 140px 140px auto auto; } }
 @media (max-width: 980px) { .labor-cash-report .wk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .labor-cash-report .wk-grid3 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+    .labor-cash-report .wk-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .labor-cash-report .wk-tabs::-webkit-scrollbar { display: none; }
+    .labor-cash-report .wk-tab { flex: 1 0 auto; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .labor-cash-report .wk-btn-brand::after { display: none; }
+    .labor-cash-report .wk-stat { animation: none !important; }
+    .labor-cash-report * { transition-duration: .01ms !important; }
+}
 </style>
 
 <div class="labor-cash-report p-4 sm:p-6">
     <div class="wk-shell">
-        <section class="wk-title-lockup">
-            <div class="wk-hero-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-            <div>
-                <p class="wk-kicker">Personal del hotel</p>
-                <h1 class="wk-title">Pagos en Caja</h1>
-                <p class="wk-subtitle">Todos los pagos que le has hecho a tu personal desde Caja, con su corte, referencia y estado. Es solo para consultar.</p>
+        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="wk-title-lockup">
+                <div class="wk-hero-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div>
+                    <p class="wk-kicker">Personal del hotel</p>
+                    <h1 class="wk-title">Pagos en Caja</h1>
+                    <p class="wk-subtitle">Todos los pagos que le has hecho a tu personal desde Caja, con su corte, referencia y estado. Es solo para consultar.</p>
+                </div>
+            </div>
+            <div class="wk-toolbar lg:justify-end" style="justify-content: flex-start;">
+                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
+                <?php if ($tablaDisponible && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones'))): ?><a class="wk-btn" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
+                <span class="wk-pill"><i class="fas fa-eye"></i> Solo consulta</span>
             </div>
         </section>
 
-        <section class="wk-toolbar">
-            <div class="flex flex-wrap gap-2">
-                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
-                <a class="wk-btn" href="<?= url('trabajadores/reporte') ?>"><i class="fas fa-chart-pie"></i> Reporte</a>
-                <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador') ?>"><i class="fas fa-cash-register"></i> Simulador</a>
-                <?php if ($tablaDisponible && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones'))): ?><a class="wk-btn" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
-            </div>
-            <span class="wk-pill"><i class="fas fa-eye"></i> Solo consulta</span>
-        </section>
+        <?php $subnav_section = 'personal'; $subnav_active = 'pagos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
+        <nav class="wk-tabs" aria-label="Vistas de pagos">
+            <span class="wk-tab is-active" aria-current="page"><i class="fas fa-file-invoice-dollar"></i> Historial</span>
+            <a class="wk-tab" href="<?= url('trabajadores/pagos-caja/simulador') ?>"><i class="fas fa-cash-register"></i> Simular pago</a>
+        </nav>
 
         <?php if (!$tablaDisponible): ?>
             <section class="wk-notice">
@@ -191,32 +253,53 @@ $exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== 
         <?php else: ?>
             <section class="wk-panel p-3 md:p-4">
                 <form method="GET" action="<?= url('trabajadores/pagos-caja/reporte') ?>" class="wk-filter-form" data-auto-filter-form>
-                    <input class="wk-control" type="number" min="1" name="trabajador_id" value="<?= $trabajadorId > 0 ? (int)$trabajadorId : '' ?>" placeholder="ID">
-                    <input class="wk-control" type="search" name="buscar" value="<?= trab_cash_report_safe($buscar, '') ?>" placeholder="Buscar trabajador, referencia o caja">
-                    <select class="wk-control" name="estado">
-                        <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
-                        <option value="pagado" <?= $estado === 'pagado' ? 'selected' : '' ?>>Pagado</option>
-                        <option value="revertido" <?= $estado === 'revertido' ? 'selected' : '' ?>>Revertido</option>
-                    </select>
-                    <select class="wk-control" name="metodo_pago">
-                        <option value="todos" <?= $metodoPago === 'todos' ? 'selected' : '' ?>>Todos los m&eacute;todos</option>
-                        <option value="efectivo" <?= $metodoPago === 'efectivo' ? 'selected' : '' ?>>Efectivo</option>
-                        <option value="tarjeta" <?= $metodoPago === 'tarjeta' ? 'selected' : '' ?>>Tarjeta</option>
-                        <option value="transferencia" <?= $metodoPago === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
-                    </select>
-                    <input class="wk-control" type="number" min="1" name="corte_id" value="<?= $corteId > 0 ? (int)$corteId : '' ?>" placeholder="Corte">
-                    <input class="wk-control" type="date" name="fecha_inicio" value="<?= trab_cash_report_safe($fechaInicio, '') ?>">
-                    <input class="wk-control" type="date" name="fecha_fin" value="<?= trab_cash_report_safe($fechaFin, '') ?>">
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">ID trabajador</span>
+                        <input class="wk-control" type="number" min="1" name="trabajador_id" value="<?= $trabajadorId > 0 ? (int)$trabajadorId : '' ?>" placeholder="Todos">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Buscar</span>
+                        <input class="wk-control" type="search" name="buscar" value="<?= trab_cash_report_safe($buscar, '') ?>" placeholder="Trabajador, referencia o caja">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Estado</span>
+                        <select class="wk-control" name="estado">
+                            <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
+                            <option value="pagado" <?= $estado === 'pagado' ? 'selected' : '' ?>>Pagado</option>
+                            <option value="revertido" <?= $estado === 'revertido' ? 'selected' : '' ?>>Revertido</option>
+                        </select>
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">M&eacute;todo</span>
+                        <select class="wk-control" name="metodo_pago">
+                            <option value="todos" <?= $metodoPago === 'todos' ? 'selected' : '' ?>>Todos los m&eacute;todos</option>
+                            <option value="efectivo" <?= $metodoPago === 'efectivo' ? 'selected' : '' ?>>Efectivo</option>
+                            <option value="tarjeta" <?= $metodoPago === 'tarjeta' ? 'selected' : '' ?>>Tarjeta</option>
+                            <option value="transferencia" <?= $metodoPago === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
+                        </select>
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Corte</span>
+                        <input class="wk-control" type="number" min="1" name="corte_id" value="<?= $corteId > 0 ? (int)$corteId : '' ?>" placeholder="Todos">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Desde</span>
+                        <input class="wk-control" type="date" name="fecha_inicio" value="<?= trab_cash_report_safe($fechaInicio, '') ?>">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Hasta</span>
+                        <input class="wk-control" type="date" name="fecha_fin" value="<?= trab_cash_report_safe($fechaFin, '') ?>">
+                    </label>
                     <button class="wk-btn wk-btn-brand" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/reporte') ?>"><i class="fas fa-rotate-left"></i> Limpiar</a>
                 </form>
             </section>
 
             <section class="wk-stats">
-                <div class="wk-stat is-warm"><p class="wk-stat-label">Pagado (vigente)</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['pagado_vigente_total'] ?? 0) ?></p><p class="wk-stat-foot"><?= trab_cash_report_num($resumen['pagados_count'] ?? 0) ?> pago(s) aplicados</p></div>
+                <div class="wk-stat is-ok"><p class="wk-stat-label">Pagado (vigente)</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['pagado_vigente_total'] ?? 0) ?></p><p class="wk-stat-foot"><?= trab_cash_report_num($resumen['pagados_count'] ?? 0) ?> pago(s) aplicados</p></div>
                 <div class="wk-stat"><p class="wk-stat-label">Total emitido</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['egreso_original_total'] ?? 0) ?></p><p class="wk-stat-foot">Suma hist&oacute;rica</p></div>
-                <div class="wk-stat"><p class="wk-stat-label">Revertido</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['revertido_total'] ?? 0) ?></p><p class="wk-stat-foot"><?= trab_cash_report_num($resumen['revertidos_count'] ?? 0) ?> registro(s)</p></div>
-                <div class="wk-stat"><p class="wk-stat-label">Devuelto a Caja</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['reversion_caja_total'] ?? 0) ?></p><p class="wk-stat-foot">Por reversiones</p></div>
+                <div class="wk-stat is-warn"><p class="wk-stat-label">Revertido</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['revertido_total'] ?? 0) ?></p><p class="wk-stat-foot"><?= trab_cash_report_num($resumen['revertidos_count'] ?? 0) ?> registro(s)</p></div>
+                <div class="wk-stat is-gold"><p class="wk-stat-label">Devuelto a Caja</p><p class="wk-stat-value"><?= trab_cash_report_money($resumen['reversion_caja_total'] ?? 0) ?></p><p class="wk-stat-foot">Por reversiones</p></div>
             </section>
 
             <div class="wk-grid3">

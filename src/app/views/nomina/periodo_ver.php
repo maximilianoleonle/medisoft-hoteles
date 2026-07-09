@@ -80,10 +80,12 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <?= !empty($pd['motivo_anulacion']) ? ' · Motivo: ' . htmlspecialchars((string) $pd['motivo_anulacion']) : '' ?>
     </p>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'periodos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <?php if (!$pdEsV2): ?>
     <div class="pd-aviso">
         Este periodo fue generado por la pre-nómina del bloque Personal.
-        Consúltalo en <a href="<?= url('trabajadores/nomina/periodos/' . (int) ($pd['id'] ?? 0)) ?>">su vista original</a>.
+        Consúltalo en <a href="<?= url('trabajadores/nomina/periodos/' . (int) ($pd['id'] ?? 0)) ?>">Personal · Pre-nómina</a>.
     </div>
     <?php endif; ?>
 
@@ -127,7 +129,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <?php endif; ?>
         <?php if (($pd['estado'] ?? '') === 'aprobado'): ?>
         <a class="pd-btn ms-pressable" href="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id']) ?>">
-            <i class="fas fa-hand-holding-dollar"></i> Registrar pagos (Caja)
+            <i class="fas fa-hand-holding-dollar"></i> Registrar pagos en Personal (Caja)
         </a>
         <?php if ($pdPuedeAprobar): ?>
         <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/recibos/emitir') ?>">

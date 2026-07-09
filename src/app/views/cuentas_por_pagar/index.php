@@ -180,11 +180,305 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
     .cxp-page .cx-title { font-size: 1.9rem; }
 }
 </style>
+<style>
+.cxp-page {
+    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 58%, var(--cx-brand));
+    --cx-border: color-mix(in srgb, var(--cx-brand) 6%, #E9E1D6);
+    --cx-text: color-mix(in srgb, var(--cx-brand) 46%, #707B8C);
+    --cx-muted: #8791A2;
+    --cx-heading: color-mix(in srgb, var(--cx-brand) 66%, #566172);
+    padding: 18px 16px 42px !important;
+}
+
+.cxp-page .cx-shell {
+    width: 100%;
+    max-width: 1120px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.cxp-page .cx-hero-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start !important;
+    justify-content: stretch !important;
+    gap: 12px !important;
+    min-width: 0;
+    width: 100%;
+    padding: 2px 0 6px;
+}
+
+.cxp-page .cx-title-lockup {
+    max-width: min(100%, 780px);
+}
+
+.cxp-page .cx-title-lockup > div:last-child {
+    min-width: 0;
+}
+
+.cxp-page .cx-hero-icon {
+    color: var(--cx-gold-ink);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.88), rgba(251,247,238,.9)),
+        radial-gradient(circle at 36% 28%, color-mix(in srgb, var(--cx-gold) 22%, transparent), transparent 58%);
+    border: 1px solid color-mix(in srgb, var(--cx-gold) 26%, var(--cx-border));
+    box-shadow: 0 16px 30px rgba(15, 23, 42, .08);
+}
+
+.cxp-page .cx-kicker,
+.cxp-page .cx-title,
+.cxp-page .cx-btn,
+.cxp-page .cx-summary-label,
+.cxp-page .cx-summary-value,
+.cxp-page .cx-hint-pill,
+.cxp-page .cx-control,
+.cxp-page .cx-panel-title,
+.cxp-page .cx-count-pill,
+.cxp-page .cx-table th,
+.cxp-page .cx-id,
+.cxp-page .cx-prov,
+.cxp-page .cx-cell-strong,
+.cxp-page .cx-saldo,
+.cxp-page .cx-badge,
+.cxp-page .cx-action,
+.cxp-page .cx-mini-label,
+.cxp-page .cx-mini-value,
+.cxp-page .cx-empty h2,
+.cxp-page .cx-notice strong {
+    font-weight: 650;
+}
+
+.cxp-page .cx-title {
+    color: var(--cx-heading);
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.cxp-page .cx-subtitle {
+    max-width: 48rem;
+    color: var(--cx-muted);
+}
+
+.cxp-page .cx-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    color: var(--cx-text);
+    white-space: nowrap;
+}
+
+.cxp-page .cx-btn-brand {
+    color: #fff;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--cx-gold) 86%, #fff), color-mix(in srgb, var(--cx-gold) 72%, var(--cx-brand)));
+    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--cx-gold) 42%, transparent);
+}
+
+.cxp-page .cx-btn-brand:hover {
+    color: #fff;
+    box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--cx-gold) 54%, transparent);
+}
+
+.cxp-page .cx-btn-muted {
+    color: var(--cx-muted);
+    background: rgba(255,255,255,.86);
+}
+
+.cxp-page .cx-btn-muted:hover,
+.cxp-page .cx-action:hover,
+.cxp-page .cx-card-btn:hover {
+    border-color: color-mix(in srgb, var(--cx-gold) 28%, #ECE1D1);
+    background: color-mix(in srgb, var(--cx-gold) 10%, #FFFFFF);
+    color: var(--cx-gold-ink);
+}
+
+.cxp-page .cx-summary-item,
+.cxp-page .cx-panel,
+.cxp-page .cx-mobile-card {
+    background: rgba(255,255,255,.86);
+    border-color: var(--cx-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
+}
+
+.cxp-page .cx-summary-value,
+.cxp-page .cx-panel-title,
+.cxp-page .cx-id,
+.cxp-page .cx-prov,
+.cxp-page .cx-cell-strong,
+.cxp-page .cx-saldo,
+.cxp-page .cx-mini-value {
+    color: var(--cx-heading);
+}
+
+.cxp-page .cx-summary-value.is-danger,
+.cxp-page .cx-saldo.is-danger {
+    color: color-mix(in srgb, var(--cx-danger) 74%, var(--cx-text));
+}
+
+.cxp-page .cx-filter-form {
+    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px) auto auto;
+}
+
+.cxp-page .cx-control {
+    min-height: 44px;
+    color: var(--cx-text);
+    background: var(--cx-surface-warm);
+}
+
+.cxp-page .cx-control::placeholder {
+    color: color-mix(in srgb, var(--cx-muted) 82%, #B8C0CB);
+    font-weight: 520;
+}
+
+.cxp-page .cx-panel-head {
+    background: var(--cx-surface-warm);
+    border-color: var(--cx-border);
+}
+
+.cxp-page .cx-panel-title {
+    color: var(--cx-heading);
+    letter-spacing: 0;
+}
+
+.cxp-page .cx-count-pill {
+    color: var(--cx-gold-ink);
+    background: color-mix(in srgb, var(--cx-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--cx-gold) 28%, #ECE1D1);
+}
+
+.cxp-page .cx-table thead {
+    background: rgba(251,248,242,.86);
+}
+
+.cxp-page .cx-table th,
+.cxp-page .cx-sub,
+.cxp-page .cx-panel-sub,
+.cxp-page .cx-mini-label,
+.cxp-page .cx-empty p,
+.cxp-page .cx-notice p {
+    color: var(--cx-muted);
+}
+
+.cxp-page .cx-table td,
+.cxp-page .cx-mobile-card {
+    color: var(--cx-text);
+}
+
+.cxp-page .cx-row:hover {
+    background: rgba(251,248,242,.72);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--cx-gold) 42%, transparent);
+}
+
+.cxp-page .cx-action {
+    min-height: 44px;
+    color: var(--cx-text);
+}
+
+.cxp-page .cx-empty {
+    background: var(--cx-ivory-2);
+}
+
+.cxp-page .cx-empty h2,
+.cxp-page .cx-notice strong {
+    color: var(--cx-heading);
+}
+
+@media (min-width: 1024px) {
+    .cxp-page .cx-hero-section {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 16px 28px !important;
+        padding-bottom: 10px;
+    }
+
+    .cxp-page .cx-hero-section > .flex {
+        justify-content: flex-end;
+        justify-self: end;
+        min-width: max-content;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .cxp-page .cx-filter-form {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .cxp-page .cx-search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 767px) {
+    .cxp-page {
+        padding: 12px 12px 28px !important;
+        background:
+            radial-gradient(520px 220px at 92% -6%, color-mix(in srgb, var(--cx-gold) 10%, transparent), transparent 62%),
+            linear-gradient(180deg, #FBF8F0 0%, #F3EDE2 100%);
+    }
+
+    .cxp-page .cx-shell {
+        gap: 10px;
+    }
+
+    .cxp-page .cx-hero-section {
+        padding: 4px 0 8px;
+    }
+
+    .cxp-page .cx-title-lockup {
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+    }
+
+    .cxp-page .cx-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+    }
+
+    .cxp-page .cx-title {
+        font-size: clamp(1.9rem, 10vw, 2.35rem);
+        line-height: 1;
+    }
+
+    .cxp-page .cx-subtitle {
+        font-size: .88rem;
+    }
+
+    .cxp-page .cx-hero-section > .flex,
+    .cxp-page .cx-filter-form {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    .cxp-page .cx-btn,
+    .cxp-page .cx-filter-submit,
+    .cxp-page .cx-reset {
+        width: 100%;
+    }
+
+    .cxp-page .cx-summary {
+        gap: 8px;
+    }
+
+    .cxp-page .cx-summary-item {
+        padding: 11px 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cxp-page .cx-btn,
+    .cxp-page .cx-row,
+    .cxp-page .cx-mobile-card,
+    .cxp-page .cx-action,
+    .cxp-page [data-cxp-results-region] {
+        transition: none;
+    }
+}
+</style>
 
 <div class="cxp-page p-4 sm:p-6">
     <div class="cx-shell">
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <section class="cx-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="cx-title-lockup">
                 <div class="cx-hero-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                 <div>

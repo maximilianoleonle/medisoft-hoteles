@@ -89,6 +89,8 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
         · <a href="<?= url('trabajadores/' . (int) ($fiTrab['id'] ?? 0)) ?>">Ver expediente en Personal</a>
     </p>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'empleados'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <div class="fi-card">
         <h2>Asignaciones de nómina</h2>
         <p class="fi-hint">Puesto, departamento, contrato y grupo de pago. El grupo define con qué periodicidad entra a los periodos de nómina.</p>

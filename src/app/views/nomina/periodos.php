@@ -66,6 +66,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
     <p class="nom-kicker">Nómina</p>
     <h1 class="nom-title">Periodos de nómina</h1>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'periodos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <?php if ($pePuedeCalcular): ?>
     <div class="per-card">
         <h2><i class="fas fa-calculator" style="color:var(--nom-gold)"></i> Previsualizar periodo</h2>

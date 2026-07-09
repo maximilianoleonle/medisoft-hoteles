@@ -157,6 +157,8 @@ if (!function_exists('trab_report_estado_meta')) {
             </div>
         </section>
 
+        <?php $subnav_section = 'personal'; $subnav_active = 'informes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
         <?php if (!$tablaDisponible): ?>
             <section class="wk-notice">
                 <i class="fas fa-circle-info"></i>

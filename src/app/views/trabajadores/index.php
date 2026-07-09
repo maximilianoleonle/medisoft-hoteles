@@ -341,6 +341,8 @@ $visibles = count($trabajadores);
             <?php endif; ?>
         </section>
 
+        <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
         <?php if (!$tablaDisponible): ?>
             <section class="wk-notice">
                 <i class="fas fa-circle-info"></i>
@@ -350,14 +352,6 @@ $visibles = count($trabajadores);
                 </div>
             </section>
         <?php else: ?>
-            <section class="wk-navrow">
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores/reporte') ?>"><i class="fas fa-chart-pie"></i> Reporte</a>
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Per&iacute;odos</a>
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores/nomina/preview') ?>"><i class="fas fa-clipboard-list"></i> Pre-n&oacute;mina</a>
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores/pagos-caja/simulador') ?>"><i class="fas fa-cash-register"></i> Simulador de pagos</a>
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores/pagos-caja/reporte') ?>"><i class="fas fa-file-invoice-dollar"></i> Pagos en Caja</a>
-            </section>
-
             <section class="wk-summary">
                 <div class="wk-summary-item"><p class="wk-summary-label">Total</p><p class="wk-summary-value"><?= number_format((int)($resumen['total'] ?? 0)) ?></p></div>
                 <div class="wk-summary-item"><p class="wk-summary-label">Activos</p><p class="wk-summary-value is-active"><?= number_format((int)($resumen['activos'] ?? 0)) ?></p></div>

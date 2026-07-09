@@ -390,6 +390,7 @@ $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' =
 // Fase NP-A/NP-F-A/5E-C/5E-D-A: Personal base, ledger laboral, reporte, simulador Caja y pago laboral controlado.
 $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
 $router->get('/trabajadores/reporte', ['controller' => 'Trabajador', 'action' => 'reporte']);
+$router->get('/trabajadores/informes', ['controller' => 'Trabajador', 'action' => 'informes']);
 $router->get('/trabajadores/nomina/periodos', ['controller' => 'Trabajador', 'action' => 'nominaPeriodos']);
 $router->get('/trabajadores/nomina/periodos/preview', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoPreview']);
 $router->get('/trabajadores/nomina/periodos/reporte', ['controller' => 'Trabajador', 'action' => 'reporteNominaPeriodos']);

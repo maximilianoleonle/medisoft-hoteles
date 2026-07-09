@@ -81,6 +81,13 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function informesAction(): void
+    {
+        View::renderTemplate('trabajadores/informes', [
+            'title' => 'Informes de Personal - ' . current_hotel_display_name(),
+        ]);
+    }
+
     public function nominaPeriodosAction(): void
     {
         $hotelId = $this->hotelIdActual();

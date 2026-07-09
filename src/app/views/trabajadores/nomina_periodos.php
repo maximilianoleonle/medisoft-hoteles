@@ -302,95 +302,258 @@ $previewNominaQuery = http_build_query([
     --period-line: color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #E7E1D4) !important;
     --period-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #FCFAF5) !important;
     --wk-gold: var(--brand-accent, #BD9441);
+    --wk-gold-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--brand-accent, #BD9441) 42%, #E4D4B0);
-    color: #171717 !important;
+    --wk-gold-ink: color-mix(in srgb, var(--brand-accent, #BD9441) 58%, var(--period-brand));
+    --pd-text: color-mix(in srgb, var(--period-brand) 46%, #707B8C);
+    --pd-muted: #8791A2;
+    --pd-heading: color-mix(in srgb, var(--period-brand) 66%, #566172);
+    --pd-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
+    --pd-success: #1E9E63; --pd-success-bg: #E7F4EC;
+    --pd-warning: #C2841C; --pd-warning-bg: #FAF0DC;
+    --pd-danger: #B4392B; --pd-danger-bg: #F8EAE5;
+    color: var(--pd-text) !important;
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-weight: 450;
     background:
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
         linear-gradient(180deg, #FBF8F2, #F6F2EA) !important;
 }
-.nomina-periodos .period-title { font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important; font-weight: 700 !important; font-size: clamp(2rem, 3.6vw, 2.9rem) !important; }
-.nomina-periodos .period-stat-hero .text-2xl, .nomina-periodos .period-stat-hero .text-xl { font-family: 'Cormorant Garamond', Georgia, serif !important; }
-.nomina-periodos .period-panel, .nomina-periodos .period-card, .nomina-periodos .period-stat { background: #FFFFFF !important; border-color: var(--period-line) !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.3) !important; }
+
+/* Hero claro (antes: banda oscura con degradado) */
+.nomina-periodos .period-hero { background: transparent !important; color: var(--pd-text) !important; padding: 24px 24px 0 !important; }
+.nomina-periodos .period-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
+.nomina-periodos .period-hero-icon {
+    width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--period-brand) 54%, color-mix(in srgb, var(--period-brand) 68%, var(--wk-gold)));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--period-brand) 72%, transparent);
+}
+.nomina-periodos .period-kicker { color: var(--pd-muted) !important; opacity: 1 !important; font-weight: 600 !important; letter-spacing: .11em !important; }
+.nomina-periodos .period-title { margin: 2px 0 0 !important; font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important; font-weight: 650 !important; font-size: clamp(2rem, 3.6vw, 2.9rem) !important; color: var(--pd-heading) !important; line-height: 1 !important; }
+.nomina-periodos .period-subtitle { color: var(--pd-muted) !important; font-size: .92rem !important; font-weight: 500 !important; max-width: 52rem; }
+.nomina-periodos .period-stat-hero {
+    position: relative; background: #FFFFFF !important; border: 1px solid var(--period-line) !important; border-radius: 14px !important;
+    color: var(--pd-text) !important; padding: 13px 14px 13px 18px !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22) !important;
+    animation: pdRise .5s cubic-bezier(.22,1,.36,1) backwards;
+}
+.nomina-periodos .period-stat-hero:nth-child(1) { animation-delay: .05s; }
+.nomina-periodos .period-stat-hero:nth-child(2) { animation-delay: .11s; }
+.nomina-periodos .period-stat-hero:nth-child(3) { animation-delay: .17s; }
+.nomina-periodos .period-stat-hero:nth-child(4) { animation-delay: .23s; }
+.nomina-periodos .period-stat-hero::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--period-line); }
+.nomina-periodos .period-stat-hero.is-gold::before { background: var(--wk-gold-line); }
+.nomina-periodos .period-stat-hero.is-warn::before { background: color-mix(in srgb, var(--pd-warning) 55%, #fff); }
+.nomina-periodos .period-stat-hero .text-xs { opacity: 1 !important; color: var(--pd-muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .66rem; }
+.nomina-periodos .period-stat-hero .text-2xl, .nomina-periodos .period-stat-hero .text-xl { font-family: 'Cormorant Garamond', Georgia, serif !important; color: var(--pd-heading); }
+@keyframes pdRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+
+/* Pesos boutique: nunca 800/900 */
+.nomina-periodos .font-black { font-weight: 650 !important; }
+.nomina-periodos .font-bold { font-weight: 620 !important; }
+.nomina-periodos .period-label, .nomina-periodos .period-filter-label { color: var(--pd-muted) !important; font-weight: 650 !important; }
+.nomina-periodos .period-filter-hint { color: var(--pd-muted) !important; font-weight: 500 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nomina-periodos .period-check { font-weight: 600 !important; color: var(--pd-text) !important; border-radius: 11px !important; background: #FCFAF5 !important; }
+.nomina-periodos .period-check input[type=checkbox] { accent-color: var(--wk-gold); }
+
+/* Calidez sobre los grises fríos de Tailwind que quedaban en el cuerpo */
+.nomina-periodos .text-slate-500, .nomina-periodos .text-slate-600 { color: var(--pd-muted) !important; }
+.nomina-periodos .border-slate-200 { border-color: var(--period-line) !important; }
+.nomina-periodos .bg-slate-50 { background: #FCFAF5 !important; }
+.nomina-periodos .period-panel > div.border-b { background: linear-gradient(180deg, color-mix(in srgb, #FCFAF5 82%, #fff), rgba(255,255,255,.92)); border-radius: 16px 16px 0 0; }
+.nomina-periodos a.underline { color: var(--pd-heading); text-decoration-color: var(--wk-gold); text-underline-offset: 3px; }
+
+/* Estados vacíos con el chip dorado de la casa */
+.nomina-periodos .text-4xl.text-slate-300 { font-size: 1.2rem !important; }
+.nomina-periodos .text-4xl.text-slate-300 > i {
+    width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto;
+    border-radius: 16px; background: var(--wk-gold-soft); color: var(--wk-gold-ink);
+}
+
+/* Superficies y radios serenos */
+.nomina-periodos .period-panel, .nomina-periodos .period-card, .nomina-periodos .period-stat { background: #FFFFFF !important; border-color: var(--period-line) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.3) !important; }
+.nomina-periodos .period-stat { border-radius: 14px !important; }
 .nomina-periodos .period-stat-soft { background: #FCFAF5 !important; }
-.nomina-periodos .period-stat .text-2xl, .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { color: #111827 !important; }
+.nomina-periodos .period-stat .text-2xl, .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { color: var(--pd-heading) !important; }
+.nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { font-family: 'Cormorant Garamond', Georgia, serif !important; font-size: 1.25rem; }
 .nomina-periodos .period-stat .text-2xl { font-family: 'Cormorant Garamond', Georgia, serif !important; }
 .nomina-periodos .period-card-active { border-color: var(--wk-gold-line) !important; box-shadow: 0 0 0 1px var(--wk-gold-line), 0 14px 32px -26px rgba(27,39,70,.32) !important; }
-.nomina-periodos .period-input { background: #FCFAF5 !important; border-color: var(--period-line) !important; border-radius: 11px !important; }
-.nomina-periodos .period-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--wk-gold) 26%, transparent) !important; }
-.nomina-periodos .period-btn-primary { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)) !important; border-color: transparent !important; color: #fff !important; }
-.nomina-periodos .period-table th { color: #667085 !important; }
+
+/* Controles */
+.nomina-periodos .period-input { background: #FCFAF5 !important; border-color: var(--period-line) !important; border-radius: 11px !important; color: var(--pd-text) !important; font-weight: 560; transition: border-color .16s ease, box-shadow .16s ease; }
+.nomina-periodos .period-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px var(--pd-ring) !important; outline: none; }
+.nomina-periodos .period-btn {
+    border-radius: 11px !important; background: rgba(255,255,255,.86) !important; border-color: var(--period-line) !important;
+    color: var(--pd-text) !important; font-weight: 650 !important;
+    transition: transform .16s ease, border-color .16s ease, color .16s ease, background .16s ease;
+}
+.nomina-periodos .period-btn:hover { transform: translateY(-1px); border-color: var(--wk-gold-line) !important; color: var(--wk-gold-ink) !important; }
+.nomina-periodos .period-btn-primary {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)) !important;
+    border-color: transparent !important; color: #fff !important;
+    box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent);
+}
+.nomina-periodos .period-btn-primary:hover { color: #fff !important; }
+.nomina-periodos .period-btn-primary::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent);
+    transform: translateX(-170%) skewX(-18deg);
+}
+.nomina-periodos .period-btn-primary:hover::after { transition: transform .7s ease; transform: translateX(330%) skewX(-18deg); }
+
+/* Badges semánticos redondeados */
+.nomina-periodos .period-badge { border-radius: 999px !important; font-weight: 650 !important; color: var(--pd-muted); }
+/* Badges que son acciones (enlaces): afordancia de botón suave */
+.nomina-periodos a.period-badge {
+    background: #FFFFFF !important; border-color: var(--period-line) !important; color: var(--pd-text) !important;
+    text-decoration: none; transition: transform .16s ease, border-color .16s ease, color .16s ease;
+}
+.nomina-periodos a.period-badge:hover { transform: translateY(-1px); border-color: var(--wk-gold-line) !important; color: var(--wk-gold-ink) !important; }
+.nomina-periodos a.period-badge i { color: var(--wk-gold-ink); }
+.nomina-periodos .period-badge-ok { background: var(--pd-success-bg) !important; border-color: color-mix(in srgb, var(--pd-success) 26%, #fff) !important; color: color-mix(in srgb, var(--pd-success) 78%, #000) !important; }
+.nomina-periodos .period-badge-warn { background: var(--pd-warning-bg) !important; border-color: color-mix(in srgb, var(--pd-warning) 28%, #fff) !important; color: color-mix(in srgb, var(--pd-warning) 82%, #000) !important; }
+.nomina-periodos .period-badge-danger { background: var(--pd-danger-bg) !important; border-color: color-mix(in srgb, var(--pd-danger) 26%, #fff) !important; color: color-mix(in srgb, var(--pd-danger) 82%, #000) !important; }
+
+/* Tabla */
+.nomina-periodos .period-table th { color: var(--pd-muted) !important; font-weight: 600 !important; }
+.nomina-periodos .period-table td { color: var(--pd-text); }
+.nomina-periodos .period-table tbody tr { transition: background .14s ease; }
 .nomina-periodos .period-table tbody tr:hover td { background: #FBF8F2 !important; }
+
+/* Toggle segmentado Periodos | Calcular pre-nómina */
+.nomina-periodos .period-tabs {
+    display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
+    background: color-mix(in srgb, var(--period-brand) 5%, #FBF8F2);
+    border: 1px solid var(--period-line); border-radius: 15px;
+}
+.nomina-periodos .period-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: transparent; color: var(--pd-muted);
+    min-height: 40px; padding: 0 16px 2px; font-size: .85rem; font-weight: 650; cursor: pointer;
+    line-height: 1; white-space: nowrap; text-decoration: none;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.nomina-periodos .period-tab i { font-size: .8rem; color: color-mix(in srgb, var(--pd-muted) 80%, #fff); transition: color .16s ease; }
+.nomina-periodos .period-tab:hover { color: var(--pd-heading); background: rgba(255,255,255,.65); }
+.nomina-periodos .period-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--pd-ring); }
+.nomina-periodos .period-tab.is-active {
+    background: #FFFFFF; color: var(--pd-heading); border-color: var(--period-line);
+    box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 6px 14px -8px color-mix(in srgb, var(--period-brand) 38%, transparent);
+}
+.nomina-periodos .period-tab.is-active i { color: var(--wk-gold-ink); }
+.nomina-periodos .period-tab.is-active::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 40%, #fff));
+}
+@media (max-width: 768px) {
+    .nomina-periodos .period-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .nomina-periodos .period-tabs::-webkit-scrollbar { display: none; }
+    .nomina-periodos .period-tab { flex: 1 0 auto; justify-content: center; }
+}
+@media (max-width: 640px) {
+    .nomina-periodos .period-hero [class*="min-w-"] { min-width: 0 !important; }
+}
+/* Neutraliza el .grid{min-height:200px} global de performance-optimization.css: inflaba tarjetas y stats con huecos */
+.nomina-periodos .grid { min-height: 0 !important; }
+
+/* Acentos en las stats del detalle (Bruto oro, Pendiente ámbar) */
+.nomina-periodos .period-stat { position: relative; padding: 13px 14px 13px 18px !important; }
+.nomina-periodos .period-stat::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--period-line); }
+.nomina-periodos .period-stat:nth-child(1)::before { background: var(--wk-gold-line); }
+.nomina-periodos .period-stat:nth-child(4)::before { background: color-mix(in srgb, var(--pd-warning) 55%, #fff); }
+
+/* Tarjeta de periodo compacta (antes: sub-grid 2col label/valor que inflaba la tarjeta y dejaba huecos) */
+.nomina-periodos .pc-card { display: flex; flex-direction: column; gap: 9px; padding: 14px 16px !important; }
+.nomina-periodos .pc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.nomina-periodos .pc-heading { min-width: 0; }
+.nomina-periodos .pc-heading h2 { font-size: 1.02rem !important; line-height: 1.15; }
+.nomina-periodos .pc-dates { margin-top: 2px; font-size: .78rem; color: var(--pd-muted); }
+.nomina-periodos .pc-badge { flex: none; white-space: nowrap; align-self: flex-start; }
+.nomina-periodos .pc-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: .82rem; color: var(--pd-muted); }
+.nomina-periodos .pc-meta strong { color: var(--pd-heading); font-weight: 650; }
+.nomina-periodos .pc-sep { width: 3px; height: 3px; border-radius: 999px; background: var(--pd-muted); opacity: .45; }
+.nomina-periodos .pc-motivo { font-size: .76rem; color: var(--pd-danger); font-weight: 620; display: flex; align-items: center; gap: 6px; }
+.nomina-periodos .pc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 3px; border-top: 1px solid color-mix(in srgb, var(--period-line) 70%, transparent); margin-top: 2px; }
+.nomina-periodos .pc-actions form { margin: 0; }
+.nomina-periodos .period-card-active { position: relative; }
+.nomina-periodos .period-card-active::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 999px; background: var(--wk-gold); }
+
+/* Filtros: 4 columnas fluidas en escritorio (la fila única de 8 desbordaba el panel) */
+@media (min-width: 1280px) {
+    .nomina-periodos .period-panel form.grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    .nomina-periodos .period-filter-action { justify-self: end; align-items: flex-end; }
+    .nomina-periodos .period-filter-action .period-btn { width: auto; min-width: 170px; padding: 0 24px; }
+    /* Riel de periodos angosto + detalle que sigue al hacer scroll (llena el vacío de la derecha) */
+    .nomina-periodos [class*="xl:grid-cols-3"] { grid-template-columns: 360px minmax(0, 1fr) !important; align-items: start; gap: 16px; }
+    .nomina-periodos [class*="xl:col-span-1"], .nomina-periodos [class*="xl:col-span-2"] { grid-column: auto !important; }
+    .nomina-periodos [class*="xl:col-span-2"] { position: sticky; top: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .nomina-periodos .period-btn-primary::after { display: none; }
+    .nomina-periodos .period-stat-hero { animation: none !important; }
+    .nomina-periodos * { transition-duration: .01ms !important; }
+}
 </style>
 
 <div class="nomina-periodos">
     <section class="period-hero">
-        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
-            <div>
-                <div class="period-kicker">Personal / Pre-nomina</div>
-                <h1 class="period-title">Periodos de pre-nomina</h1>
-                <p class="period-subtitle">
-                    Revision interna de periodos laborales con cierre persistente controlado. No genera nomina oficial, no registra pago y no modifica Caja.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[360px]">
-                <div class="period-stat-hero">
-                    <div class="text-xs opacity-75">Periodos</div>
-                    <div class="text-2xl font-black"><?= trab_periodo_num(count($periodos)) ?></div>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="period-lockup">
+                <div class="period-hero-icon"><i class="fas fa-calendar-check"></i></div>
+                <div>
+                    <div class="period-kicker">Personal del hotel</div>
+                    <h1 class="period-title">Pre-n&oacute;mina</h1>
+                    <p class="period-subtitle">
+                        Revisi&oacute;n interna de periodos laborales con cierre persistente controlado. No genera n&oacute;mina oficial, no registra pago y no modifica Caja.
+                    </p>
                 </div>
-                <div class="period-stat-hero">
-                    <div class="text-xs opacity-75">Trabajadores</div>
-                    <div class="text-2xl font-black"><?= trab_periodo_num($resumen['trabajadores_total'] ?? 0) ?></div>
-                </div>
-                <div class="period-stat-hero">
-                    <div class="text-xs opacity-75">Neto sugerido</div>
-                    <div class="text-xl font-black"><?= trab_periodo_money($resumen['neto_sugerido_total'] ?? 0) ?></div>
-                </div>
-                <div class="period-stat-hero">
-                    <div class="text-xs opacity-75">Pendiente</div>
-                    <div class="text-xl font-black"><?= trab_periodo_money($resumen['pendiente_pago_total'] ?? 0) ?></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="p-6 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap gap-2">
-                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a class="period-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>">
-                    <i class="fas fa-arrow-left"></i>
-                    Personal
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/nomina/preview') ?>">
-                    <i class="fas fa-clipboard-list"></i>
-                    Preview nomina
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/nomina/periodos/reporte') ?>">
-                    <i class="fas fa-file-lines"></i>
-                    Reporte snapshots
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/nomina/periodos/pagos-snapshot') ?>">
-                    <i class="fas fa-link"></i>
-                    Conciliacion pagos
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/nomina/auditoria') ?>">
-                    <i class="fas fa-list-check"></i>
-                    Auditoria nomina
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/nomina/expediente') ?>">
-                    <i class="fas fa-folder-open"></i>
-                    Expediente
-                </a>
-                <a class="period-btn" href="<?= url('trabajadores/reporte') ?>">
-                    <i class="fas fa-chart-pie"></i>
-                    Reporte
-                </a>
             </div>
             <span class="period-badge">
                 <i class="fas fa-lock"></i>
                 Preview GET / Cierre controlado
             </span>
+        </div>
+    </section>
+
+    <section class="p-6 space-y-4">
+        <?php $subnav_section = 'personal'; $subnav_active = 'prenomina'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+        <div class="flex flex-wrap items-center gap-3">
+            <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a class="period-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>">
+                <i class="fas fa-arrow-left"></i>
+                Personal
+            </a>
+            <nav class="period-tabs" aria-label="Vistas de pre-n&oacute;mina">
+                <span class="period-tab is-active" aria-current="page">
+                    <i class="fas fa-calendar-check"></i>
+                    Periodos
+                </span>
+                <a class="period-tab" href="<?= url('trabajadores/nomina/preview') ?>">
+                    <i class="fas fa-clipboard-list"></i>
+                    Calcular pre-n&oacute;mina
+                </a>
+            </nav>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="period-stat-hero">
+                <div class="text-xs opacity-75">Periodos</div>
+                <div class="text-2xl font-black"><?= trab_periodo_num(count($periodos)) ?></div>
+            </div>
+            <div class="period-stat-hero">
+                <div class="text-xs opacity-75">Trabajadores</div>
+                <div class="text-2xl font-black"><?= trab_periodo_num($resumen['trabajadores_total'] ?? 0) ?></div>
+            </div>
+            <div class="period-stat-hero is-gold">
+                <div class="text-xs opacity-75">Neto sugerido</div>
+                <div class="text-2xl font-black"><?= trab_periodo_money($resumen['neto_sugerido_total'] ?? 0) ?></div>
+            </div>
+            <div class="period-stat-hero is-warn">
+                <div class="text-xs opacity-75">Pendiente</div>
+                <div class="text-2xl font-black"><?= trab_periodo_money($resumen['pendiente_pago_total'] ?? 0) ?></div>
+            </div>
         </div>
 
         <?php if (!$tablaDisponible): ?>
@@ -399,70 +562,6 @@ $previewNominaQuery = http_build_query([
                 <p class="text-sm text-slate-500 mt-1">Faltan tablas laborales o de Caja para calcular periodos con seguridad.</p>
             </div>
         <?php else: ?>
-            <?php if (!$tablaPersistenteDisponible): ?>
-                <div class="period-panel p-5 bg-slate-50">
-                    <strong>Cierre persistente no disponible.</strong>
-                    <p class="text-sm text-slate-500 mt-1">Faltan las tablas de snapshots de pre-nomina. El preview queda disponible sin cierre.</p>
-                </div>
-            <?php elseif (!empty($periodosPersistentes)): ?>
-                <div class="period-panel overflow-hidden">
-                    <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 class="font-black text-lg">Cierres persistentes recientes</h2>
-                            <p class="text-sm text-slate-500 mt-1">Snapshots administrativos; no son pago, CFDI, timbrado ni movimiento de Caja.</p>
-                        </div>
-                        <span class="period-badge">
-                            <i class="fas fa-box-archive"></i>
-                            <?= trab_periodo_num(count($periodosPersistentes)) ?> visible(s)
-                        </span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="period-table min-w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th class="text-left">Periodo</th>
-                                    <th class="text-left">Estado</th>
-                                    <th class="text-right">Trabajadores</th>
-                                    <th class="text-right">Pendiente</th>
-                                    <th class="text-left">Cierre</th>
-                                    <th class="text-right">Accion</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($periodosPersistentes as $snapshot): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="font-black"><?= trab_periodo_safe($snapshot['etiqueta'] ?? 'Periodo cerrado') ?></div>
-                                            <div class="text-xs text-slate-500">
-                                                <?= trab_periodo_date($snapshot['fecha_inicio'] ?? '') ?> - <?= trab_periodo_date($snapshot['fecha_fin'] ?? '') ?>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="<?= trab_periodo_snapshot_badge_class($snapshot['estado'] ?? '') ?>">
-                                                <i class="fas fa-circle"></i>
-                                                <?= trab_periodo_snapshot_label($snapshot['estado'] ?? '') ?>
-                                            </span>
-                                        </td>
-                                        <td class="text-right font-black"><?= trab_periodo_num($snapshot['trabajadores_total'] ?? 0) ?></td>
-                                        <td class="text-right font-black"><?= trab_periodo_money($snapshot['pendiente_pago_total'] ?? 0) ?></td>
-                                        <td>
-                                            <div class="text-sm font-bold"><?= trab_periodo_safe($snapshot['cerrado_por_nombre'] ?? 'Usuario') ?></div>
-                                            <div class="text-xs text-slate-500"><?= trab_periodo_safe($snapshot['cerrado_at'] ?? '-') ?></div>
-                                        </td>
-                                        <td class="text-right">
-                                            <a class="period-badge" href="<?= url('trabajadores/nomina/periodos/' . (int)($snapshot['id'] ?? 0)) ?>">
-                                                <i class="fas fa-eye"></i>
-                                                Ver snapshot
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            <?php endif; ?>
-
             <div class="period-panel p-4">
                 <form method="GET" action="<?= url('trabajadores/nomina/periodos') ?>" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[150px_150px_150px_150px_150px_minmax(190px,1fr)_130px_120px] gap-3 items-end">
                     <label class="period-filter">
@@ -562,33 +661,26 @@ $previewNominaQuery = http_build_query([
                                 $periodoTokenKey = (string)($periodo['fecha_inicio'] ?? '') . ':' . (string)($periodo['fecha_fin'] ?? '');
                                 $cierreToken = (string)($cierreTokens[$periodoTokenKey] ?? '');
                             ?>
-                            <article class="period-card <?= $isActive ? 'period-card-active' : '' ?> p-4 space-y-3">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div>
+                            <article class="period-card <?= $isActive ? 'period-card-active' : '' ?> pc-card">
+                                <div class="pc-head">
+                                    <div class="pc-heading">
                                         <h2 class="font-black"><?= trab_periodo_safe($periodo['etiqueta'] ?? 'Periodo') ?></h2>
-                                        <p class="text-sm text-slate-500">
-                                            <?= trab_periodo_date($periodo['fecha_inicio'] ?? '') ?> - <?= trab_periodo_date($periodo['fecha_fin'] ?? '') ?>
-                                        </p>
+                                        <p class="pc-dates"><?= trab_periodo_date($periodo['fecha_inicio'] ?? '') ?> &ndash; <?= trab_periodo_date($periodo['fecha_fin'] ?? '') ?></p>
                                     </div>
-                                    <span class="<?= trab_periodo_badge_class($periodo['estado_periodo'] ?? '') ?>">
+                                    <span class="pc-badge <?= trab_periodo_badge_class($periodo['estado_periodo'] ?? '') ?>">
                                         <i class="fas fa-circle"></i>
                                         <?= trab_periodo_safe($periodo['estado_label'] ?? 'Revision') ?>
                                     </span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 text-sm">
-                                    <div>
-                                        <div class="period-label">Trabajadores</div>
-                                        <div class="font-black"><?= trab_periodo_num($periodoResumen['trabajadores_total'] ?? 0) ?></div>
-                                    </div>
-                                    <div>
-                                        <div class="period-label">Pendiente</div>
-                                        <div class="font-black"><?= trab_periodo_money($periodoResumen['pendiente_pago_total'] ?? 0) ?></div>
-                                    </div>
+                                <div class="pc-meta">
+                                    <span><strong><?= trab_periodo_num($periodoResumen['trabajadores_total'] ?? 0) ?></strong> trabajador(es)</span>
+                                    <span class="pc-sep"></span>
+                                    <span>Pendiente <strong><?= trab_periodo_money($periodoResumen['pendiente_pago_total'] ?? 0) ?></strong></span>
                                 </div>
                                 <?php if (trim((string)($periodo['motivo_bloqueo'] ?? '')) !== ''): ?>
-                                    <p class="text-xs text-red-700 font-bold"><?= trab_periodo_safe($periodo['motivo_bloqueo'] ?? '') ?></p>
+                                    <p class="pc-motivo"><i class="fas fa-triangle-exclamation"></i> <?= trab_periodo_safe($periodo['motivo_bloqueo'] ?? '') ?></p>
                                 <?php endif; ?>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="pc-actions">
                                     <a class="period-badge" href="<?= $detalleUrl ?>">
                                         <i class="fas fa-eye"></i>
                                         Detalle
@@ -780,6 +872,70 @@ $previewNominaQuery = http_build_query([
                     </div>
                 </div>
             </div>
+
+            <?php if (!$tablaPersistenteDisponible): ?>
+                <div class="period-panel p-5 bg-slate-50">
+                    <strong>Cierre persistente no disponible.</strong>
+                    <p class="text-sm text-slate-500 mt-1">Faltan las tablas de snapshots de pre-nomina. El preview queda disponible sin cierre.</p>
+                </div>
+            <?php elseif (!empty($periodosPersistentes)): ?>
+                <div class="period-panel overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-black text-lg">Cierres recientes</h2>
+                            <p class="text-sm text-slate-500 mt-1">Snapshots administrativos; no son pago, CFDI, timbrado ni movimiento de Caja.</p>
+                        </div>
+                        <span class="period-badge">
+                            <i class="fas fa-box-archive"></i>
+                            <?= trab_periodo_num(count($periodosPersistentes)) ?> visible(s)
+                        </span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="period-table min-w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Periodo</th>
+                                    <th class="text-left">Estado</th>
+                                    <th class="text-right">Trabajadores</th>
+                                    <th class="text-right">Pendiente</th>
+                                    <th class="text-left">Cierre</th>
+                                    <th class="text-right">Accion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($periodosPersistentes as $snapshot): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="font-black"><?= trab_periodo_safe($snapshot['etiqueta'] ?? 'Periodo cerrado') ?></div>
+                                            <div class="text-xs text-slate-500">
+                                                <?= trab_periodo_date($snapshot['fecha_inicio'] ?? '') ?> - <?= trab_periodo_date($snapshot['fecha_fin'] ?? '') ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="<?= trab_periodo_snapshot_badge_class($snapshot['estado'] ?? '') ?>">
+                                                <i class="fas fa-circle"></i>
+                                                <?= trab_periodo_snapshot_label($snapshot['estado'] ?? '') ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-right font-black"><?= trab_periodo_num($snapshot['trabajadores_total'] ?? 0) ?></td>
+                                        <td class="text-right font-black"><?= trab_periodo_money($snapshot['pendiente_pago_total'] ?? 0) ?></td>
+                                        <td>
+                                            <div class="text-sm font-bold"><?= trab_periodo_safe($snapshot['cerrado_por_nombre'] ?? 'Usuario') ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_periodo_safe($snapshot['cerrado_at'] ?? '-') ?></div>
+                                        </td>
+                                        <td class="text-right">
+                                            <a class="period-badge" href="<?= url('trabajadores/nomina/periodos/' . (int)($snapshot['id'] ?? 0)) ?>">
+                                                <i class="fas fa-eye"></i>
+                                                Ver snapshot
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 </div>

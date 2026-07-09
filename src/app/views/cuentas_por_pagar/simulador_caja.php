@@ -141,10 +141,294 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
 @media (max-width: 980px) { .cxp-cash-page .cx-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cxp-cash-page .cx-filter-form { grid-template-columns: 1fr; } }
 </style>
+<style>
+.cxp-cash-page {
+    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 58%, var(--cx-brand));
+    --cx-border: color-mix(in srgb, var(--cx-brand) 6%, #E9E1D6);
+    --cx-text: color-mix(in srgb, var(--cx-brand) 46%, #707B8C);
+    --cx-muted: #8791A2;
+    --cx-heading: color-mix(in srgb, var(--cx-brand) 66%, #566172);
+    padding: 18px 16px 42px !important;
+}
+
+.cxp-cash-page .cx-shell {
+    width: 100%;
+    max-width: 1120px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.cxp-cash-page .cx-cash-hero-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start !important;
+    justify-content: stretch !important;
+    gap: 12px !important;
+    min-width: 0;
+    width: 100%;
+    padding: 2px 0 6px;
+}
+
+.cxp-cash-page .cx-title-lockup {
+    max-width: min(100%, 810px);
+}
+
+.cxp-cash-page .cx-title-lockup > div:last-child {
+    min-width: 0;
+}
+
+.cxp-cash-page .cx-hero-icon {
+    color: var(--cx-gold-ink);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.88), rgba(251,247,238,.9)),
+        radial-gradient(circle at 36% 28%, color-mix(in srgb, var(--cx-gold) 22%, transparent), transparent 58%);
+    border: 1px solid color-mix(in srgb, var(--cx-gold) 26%, var(--cx-border));
+    box-shadow: 0 16px 30px rgba(15, 23, 42, .08);
+}
+
+.cxp-cash-page .cx-kicker,
+.cxp-cash-page .cx-title,
+.cxp-cash-page .cx-stat-label,
+.cxp-cash-page .cx-stat-value,
+.cxp-cash-page .cx-btn,
+.cxp-cash-page .cx-meta-label,
+.cxp-cash-page .cx-meta-value,
+.cxp-cash-page .cx-strong,
+.cxp-cash-page .cx-control,
+.cxp-cash-page .cx-badge,
+.cxp-cash-page .cx-panel-title,
+.cxp-cash-page .cx-table th,
+.cxp-cash-page .cx-link,
+.cxp-cash-page .cx-empty h2,
+.cxp-cash-page .cx-notice strong {
+    font-weight: 650;
+}
+
+.cxp-cash-page .cx-title {
+    color: var(--cx-heading);
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    line-height: .98;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.cxp-cash-page .cx-subtitle {
+    max-width: 52rem;
+    color: var(--cx-muted);
+}
+
+.cxp-cash-page .cx-stat,
+.cxp-cash-page .cx-panel {
+    background: rgba(255,255,255,.86);
+    border-color: var(--cx-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
+}
+
+.cxp-cash-page .cx-stat-value,
+.cxp-cash-page .cx-meta-value,
+.cxp-cash-page .cx-strong,
+.cxp-cash-page .cx-panel-title,
+.cxp-cash-page .cx-link {
+    color: var(--cx-heading);
+}
+
+.cxp-cash-page .cx-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    color: var(--cx-text);
+}
+
+.cxp-cash-page .cx-btn-brand {
+    color: #fff;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--cx-gold) 86%, #fff), color-mix(in srgb, var(--cx-gold) 72%, var(--cx-brand)));
+    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--cx-gold) 42%, transparent);
+}
+
+.cxp-cash-page .cx-btn-brand:hover {
+    color: #fff;
+    box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--cx-gold) 54%, transparent);
+}
+
+.cxp-cash-page .cx-btn-muted {
+    color: var(--cx-muted);
+    background: rgba(255,255,255,.86);
+}
+
+.cxp-cash-page .cx-btn-muted:hover {
+    border-color: color-mix(in srgb, var(--cx-gold) 28%, #ECE1D1);
+    background: color-mix(in srgb, var(--cx-gold) 10%, #FFFFFF);
+    color: var(--cx-gold-ink);
+}
+
+.cxp-cash-page .cx-meta-label,
+.cxp-cash-page .cx-sub,
+.cxp-cash-page .cx-faint,
+.cxp-cash-page .cx-table th,
+.cxp-cash-page .cx-empty p,
+.cxp-cash-page .cx-notice p {
+    color: var(--cx-muted);
+}
+
+.cxp-cash-page .cx-filter-form {
+    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px) auto;
+}
+
+.cxp-cash-page .cx-control {
+    min-height: 44px;
+    color: var(--cx-text);
+    background: var(--cx-surface-warm);
+}
+
+.cxp-cash-page .cx-control::placeholder {
+    color: color-mix(in srgb, var(--cx-muted) 82%, #B8C0CB);
+    font-weight: 520;
+}
+
+.cxp-cash-page .cx-badge.is-pendiente {
+    color: color-mix(in srgb, var(--cx-info) 70%, var(--cx-text));
+}
+
+.cxp-cash-page .cx-badge.is-parcial,
+.cxp-cash-page .cx-badge-blocked {
+    color: color-mix(in srgb, var(--cx-warning) 72%, var(--cx-text));
+}
+
+.cxp-cash-page .cx-badge.is-vencida {
+    color: color-mix(in srgb, var(--cx-danger) 72%, var(--cx-text));
+}
+
+.cxp-cash-page .cx-badge.is-pagada,
+.cxp-cash-page .cx-badge-ok {
+    color: color-mix(in srgb, var(--cx-success) 70%, var(--cx-text));
+}
+
+.cxp-cash-page .cx-badge.is-soft,
+.cxp-cash-page .cx-badge.is-cancelada {
+    color: var(--cx-muted);
+}
+
+.cxp-cash-page .cx-panel-head {
+    background: var(--cx-surface-warm);
+    border-color: var(--cx-border);
+}
+
+.cxp-cash-page .cx-panel-title {
+    font-size: clamp(1.12rem, 2vw, 1.32rem);
+    line-height: 1.05;
+}
+
+.cxp-cash-page .cx-table thead {
+    background: rgba(251,248,242,.86);
+}
+
+.cxp-cash-page .cx-table td {
+    color: var(--cx-text);
+}
+
+.cxp-cash-page .cx-table tbody tr:hover {
+    background: rgba(251,248,242,.72);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--cx-gold) 42%, transparent);
+}
+
+.cxp-cash-page .cx-empty {
+    margin: 14px;
+    padding: 40px 18px;
+    border: 1px dashed var(--cx-border);
+    border-radius: 16px;
+    background: var(--cx-ivory-2);
+}
+
+.cxp-cash-page .cx-empty h2,
+.cxp-cash-page .cx-notice strong {
+    color: var(--cx-heading);
+}
+
+.cxp-cash-page .cx-notice {
+    background: color-mix(in srgb, var(--cx-gold) 10%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--cx-gold) 28%, #ECE1D1);
+}
+
+@media (min-width: 1024px) {
+    .cxp-cash-page .cx-cash-hero-section {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 16px 28px !important;
+        padding-bottom: 10px;
+    }
+
+    .cxp-cash-page .cx-cash-hero-section > .cx-badge {
+        justify-self: end;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .cxp-cash-page .cx-filter-form {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .cxp-cash-page .cx-filter-form input[type="search"] {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 720px) {
+    .cxp-cash-page {
+        padding: 12px 12px 28px !important;
+        background:
+            radial-gradient(520px 220px at 92% -6%, color-mix(in srgb, var(--cx-gold) 10%, transparent), transparent 62%),
+            linear-gradient(180deg, #FBF8F0 0%, #F3EDE2 100%);
+    }
+
+    .cxp-cash-page .cx-shell {
+        gap: 10px;
+    }
+
+    .cxp-cash-page .cx-title-lockup {
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+    }
+
+    .cxp-cash-page .cx-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+    }
+
+    .cxp-cash-page .cx-title {
+        font-size: clamp(1.9rem, 10vw, 2.35rem);
+        line-height: 1;
+    }
+
+    .cxp-cash-page .cx-subtitle {
+        font-size: .88rem;
+    }
+
+    .cxp-cash-page .cx-toolbar > .flex,
+    .cxp-cash-page .cx-btn,
+    .cxp-cash-page .cx-filter-form {
+        width: 100%;
+    }
+
+    .cxp-cash-page .cx-filter-form,
+    .cxp-cash-page .cx-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cxp-cash-page .cx-btn,
+    .cxp-cash-page .cx-table tbody tr,
+    .cxp-cash-page .cx-control {
+        transition: none;
+    }
+}
+</style>
 
 <div class="cxp-cash-page p-4 sm:p-6">
     <div class="cx-shell">
-        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <section class="cx-cash-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="cx-title-lockup">
                 <div class="cx-hero-icon"><i class="fas fa-cash-register"></i></div>
                 <div>

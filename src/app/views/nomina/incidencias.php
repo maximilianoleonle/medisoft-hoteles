@@ -7,6 +7,7 @@ $inFiltros = is_array($filtros ?? null) ? $filtros : [];
 $inConceptos = is_array($conceptos ?? null) ? $conceptos : [];
 $inTrabajadores = is_array($trabajadores ?? null) ? $trabajadores : [];
 $inPuedeCapturar = !empty($puedeCapturar);
+$inPuedeRegistrar = $inPuedeCapturar && $inConceptos !== [] && $inTrabajadores !== [];
 
 $back_arrow_href = url('nomina');
 include APP_PATH . '/views/partials/back_arrow.php';
@@ -29,6 +30,12 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-inc-page .inc-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .nomina-inc-page .inc-field { display: flex; flex-direction: column; gap: 4px; min-width: 140px; flex: 1 1 160px; }
 .nomina-inc-page .inc-field label { font-size: 11.5px; font-weight: 700; color: var(--nom-muted); }
+.nomina-inc-page .inc-help { margin: -4px 0 12px; font-size: 12.5px; color: var(--nom-muted); }
+.nomina-inc-page .inc-alert {
+    border: 1px solid rgba(191,144,0,.28); background: rgba(191,144,0,.08); color: #7a5c00;
+    border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
+}
+.nomina-inc-page .inc-alert a { color: inherit; font-weight: 700; text-decoration: underline; }
 .nomina-inc-page .inc-field input, .nomina-inc-page .inc-field select {
     border: 1px solid var(--nom-border); border-radius: 10px; padding: 9px 11px; font-size: 16px; background: #fff; color: var(--nom-text); width: 100%;
 }
@@ -36,6 +43,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
     display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--nom-brand); border-radius: 11px;
     padding: 9px 15px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--nom-brand); color: #fff;
 }
+.nomina-inc-page .inc-btn:disabled { opacity: .55; cursor: not-allowed; }
 .nomina-inc-page .inc-btn-sec { background: var(--nom-card); border-color: var(--nom-border); color: var(--nom-text); }
 .nomina-inc-page table.inc-tabla { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .nomina-inc-page table.inc-tabla th { text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--nom-muted); padding: 9px 10px; border-bottom: 1px solid var(--nom-border); }
@@ -59,15 +67,29 @@ include APP_PATH . '/views/partials/back_arrow.php';
     <p class="nom-kicker">Nómina</p>
     <h1 class="nom-title">Incidencias</h1>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'incidencias'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <?php if ($inPuedeCapturar): ?>
     <div class="inc-card">
         <h2><i class="fas fa-plus" style="color:var(--nom-gold)"></i> Nueva incidencia</h2>
+        <?php if ($inConceptos === []): ?>
+        <div class="inc-alert">
+            No hay conceptos activos de nomina. Abre <a href="<?= url('nomina/catalogos?tipo=conceptos') ?>">Catalogos &gt; Conceptos</a>
+            y activa o crea el concepto que vas a usar.
+        </div>
+        <?php elseif ($inTrabajadores === []): ?>
+        <div class="inc-alert">
+            No hay empleados activos para registrar incidencias.
+        </div>
+        <?php else: ?>
+        <p class="inc-help">El concepto define si la incidencia suma o descuenta en nomina: bono, descuento, horas extra, ajuste, etc.</p>
+        <?php endif; ?>
         <form method="POST" action="<?= url('nomina/incidencias') ?>" class="inc-form">
             <?= csrf_field() ?>
             <div class="inc-field" style="flex:2 1 200px;">
                 <label>Empleado *</label>
-                <select name="trabajador_id" required>
-                    <option value="">— Selecciona —</option>
+                <select name="trabajador_id" required <?= $inTrabajadores === [] ? 'disabled' : '' ?>>
+                    <option value=""><?= $inTrabajadores === [] ? 'Sin empleados activos' : '-- Selecciona --' ?></option>
                     <?php foreach ($inTrabajadores as $t): ?>
                     <option value="<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['nombre_completo']) ?></option>
                     <?php endforeach; ?>
@@ -75,8 +97,10 @@ include APP_PATH . '/views/partials/back_arrow.php';
             </div>
             <div class="inc-field" style="flex:2 1 200px;">
                 <label>Concepto *</label>
-                <select name="concepto_id" required>
-                    <option value="">— Selecciona —</option>
+                <select name="concepto_id" required <?= $inConceptos === [] ? 'disabled' : '' ?>
+                        oninvalid="this.setCustomValidity('Selecciona el concepto de la incidencia.')"
+                        onchange="this.setCustomValidity('')">
+                    <option value=""><?= $inConceptos === [] ? 'Sin conceptos activos' : '-- Selecciona --' ?></option>
                     <?php foreach ($inConceptos as $c): ?>
                     <option value="<?= (int) $c['id'] ?>">
                         <?= htmlspecialchars($c['nombre']) ?> (<?= $c['tipo'] === 'percepcion' ? '+' : '−' ?>)
@@ -101,7 +125,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
                 <input type="text" name="descripcion" maxlength="200">
             </div>
             <div class="inc-field" style="flex:0 0 auto;">
-                <button type="submit" class="inc-btn ms-pressable"><i class="fas fa-check"></i> Registrar</button>
+                <button type="submit" class="inc-btn ms-pressable" <?= $inPuedeRegistrar ? '' : 'disabled' ?>><i class="fas fa-check"></i> Registrar</button>
             </div>
         </form>
     </div>

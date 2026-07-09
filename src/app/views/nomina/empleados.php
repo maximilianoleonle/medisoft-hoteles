@@ -52,6 +52,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
     <p class="nom-kicker">Nómina</p>
     <h1 class="nom-title">Empleados</h1>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'empleados'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <form method="GET" action="<?= url('nomina/empleados') ?>" class="emp-filtros" data-auto-filter-form>
         <input type="text" name="buscar" placeholder="Buscar por nombre…" value="<?= htmlspecialchars($empBuscar) ?>">
         <select name="estado">

@@ -113,6 +113,26 @@ class TrabajadorPagoCajaService
             $corte = $this->obtenerCorteAbierto($hotelId, true);
             $this->bloquearFilasLaborales($hotelId, $trabajadorId);
             $trazabilidadDisponible = $this->trazabilidadSnapshotDisponible();
+            if (!$trazabilidadSnapshot['requiere_trazabilidad'] && $trazabilidadDisponible) {
+                $trazabilidadSnapshot = $this->inferirTrazabilidadSnapshotNominaV2(
+                    $hotelId,
+                    $trabajadorId,
+                    $monto,
+                    $periodoInicio,
+                    $periodoFin
+                );
+
+                if ($trazabilidadSnapshot['requiere_trazabilidad']) {
+                    $periodoInicio = $periodoInicio ?: ($trazabilidadSnapshot['periodo_inicio'] ?? null);
+                    $periodoFin = $periodoFin ?: ($trazabilidadSnapshot['periodo_fin'] ?? null);
+                    if ($concepto === null && !empty($trazabilidadSnapshot['concepto_sugerido'])) {
+                        $concepto = $this->normalizarTextoNullable($trazabilidadSnapshot['concepto_sugerido'], 160);
+                    }
+                    if (!empty($trazabilidadSnapshot['nota_sistema'])) {
+                        $notas = $this->anexarNotaSistema($notas, (string)$trazabilidadSnapshot['nota_sistema']);
+                    }
+                }
+            }
             if ($trazabilidadSnapshot['requiere_trazabilidad'] && !$trazabilidadDisponible) {
                 throw new Exception('La trazabilidad de snapshot aun no esta disponible en trabajador_pagos_caja');
             }
@@ -740,11 +760,7 @@ class TrabajadorPagoCajaService
         $tieneDetalle = trim((string)($detalleRaw ?? '')) !== '';
 
         if (!$tienePeriodo && !$tieneDetalle) {
-            return [
-                'requiere_trazabilidad' => false,
-                'nomina_periodo_id' => null,
-                'nomina_periodo_detalle_id' => null,
-            ];
+            return $this->trazabilidadSnapshotVacia();
         }
 
         if ($tienePeriodo !== $tieneDetalle) {
@@ -758,6 +774,15 @@ class TrabajadorPagoCajaService
         ];
     }
 
+    private function trazabilidadSnapshotVacia(): array
+    {
+        return [
+            'requiere_trazabilidad' => false,
+            'nomina_periodo_id' => null,
+            'nomina_periodo_detalle_id' => null,
+        ];
+    }
+
     private function trazabilidadSnapshotDisponible(): bool
     {
         if ($this->snapshotTraceColumnsAvailable !== null) {
@@ -768,6 +793,141 @@ class TrabajadorPagoCajaService
             && $this->columnaExiste('trabajador_pagos_caja', 'nomina_periodo_detalle_id');
 
         return (bool)$this->snapshotTraceColumnsAvailable;
+    }
+
+    private function inferirTrazabilidadSnapshotNominaV2(
+        int $hotelId,
+        int $trabajadorId,
+        float $monto,
+        ?string $periodoInicio,
+        ?string $periodoFin
+    ): array {
+        if (!$this->tablasNominaSnapshotDisponibles()) {
+            return $this->trazabilidadSnapshotVacia();
+        }
+
+        $where = [
+            "p.hotel_id = ?",
+            "p.estado = 'aprobado'",
+            "p.motor = 'v2'",
+            "d.trabajador_id = ?",
+            "d.estado_preview_nomina = 'por_pagar'",
+            "tp.estado = 'activo'",
+            "tp.efecto = 'a_favor'",
+        ];
+        $params = [$hotelId, $trabajadorId];
+
+        if ($periodoInicio !== null && $periodoFin !== null) {
+            $where[] = 'p.fecha_inicio = ?';
+            $where[] = 'p.fecha_fin = ?';
+            $params[] = $periodoInicio;
+            $params[] = $periodoFin;
+        } elseif ($periodoInicio !== null) {
+            $where[] = 'p.fecha_inicio = ?';
+            $params[] = $periodoInicio;
+        } elseif ($periodoFin !== null) {
+            $where[] = 'p.fecha_fin = ?';
+            $params[] = $periodoFin;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT p.id AS periodo_id,
+                    p.fecha_inicio,
+                    p.fecha_fin,
+                    p.etiqueta,
+                    d.id AS detalle_id,
+                    d.neto_sugerido,
+                    COALESCE((
+                        SELECT SUM(pc.monto)
+                        FROM trabajador_pagos_caja pc
+                        WHERE pc.hotel_id = p.hotel_id
+                          AND pc.trabajador_id = d.trabajador_id
+                          AND pc.nomina_periodo_id = p.id
+                          AND pc.nomina_periodo_detalle_id = d.id
+                          AND pc.estado = 'pagado'
+                    ), 0) AS pagos_trazados
+             FROM trabajador_nomina_periodos p
+             INNER JOIN trabajador_nomina_periodo_detalles d
+                ON d.periodo_id = p.id
+               AND d.hotel_id = p.hotel_id
+             INNER JOIN trabajador_pagos tp
+                ON tp.hotel_id = p.hotel_id
+               AND tp.trabajador_id = d.trabajador_id
+               AND tp.referencia = CONCAT('NOMV2-', p.id, '-', d.trabajador_id)
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY p.fecha_fin DESC, p.id DESC
+             LIMIT 5"
+        );
+        $stmt->execute($params);
+
+        $candidatos = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $pendiente = max(0.0, (float)($row['neto_sugerido'] ?? 0) - (float)($row['pagos_trazados'] ?? 0));
+            if ($pendiente <= 0.004) {
+                continue;
+            }
+
+            $row['pendiente_vivo'] = $pendiente;
+            $candidatos[] = $row;
+            if (count($candidatos) > 1) {
+                break;
+            }
+        }
+
+        if (count($candidatos) > 1) {
+            throw new Exception('Hay mas de un periodo de nomina aprobado con saldo pendiente. Registra el pago desde el periodo correcto para no cruzar saldos.');
+        }
+
+        if (!$candidatos) {
+            return $this->trazabilidadSnapshotVacia();
+        }
+
+        $candidato = $candidatos[0];
+        $pendiente = (float)($candidato['pendiente_vivo'] ?? 0);
+        if ($monto > $pendiente + 0.00001) {
+            throw new Exception(
+                'El monto excede el pendiente del periodo de nomina aprobado ($'
+                . number_format($pendiente, 2)
+                . '). Registra el pago desde el periodo o divide el pago.'
+            );
+        }
+
+        $periodoId = (int)$candidato['periodo_id'];
+        $detalleId = (int)$candidato['detalle_id'];
+        $fechaInicio = (string)$candidato['fecha_inicio'];
+        $fechaFin = (string)$candidato['fecha_fin'];
+
+        return [
+            'requiere_trazabilidad' => true,
+            'nomina_periodo_id' => $periodoId,
+            'nomina_periodo_detalle_id' => $detalleId,
+            'periodo_inicio' => $fechaInicio,
+            'periodo_fin' => $fechaFin,
+            'concepto_sugerido' => 'Pago desde snapshot pre-nomina #' . $periodoId . ' detalle #' . $detalleId,
+            'nota_sistema' => $this->limitar(
+                'Trazabilidad automatica: pago ligado al periodo de nomina #'
+                . $periodoId
+                . ', detalle #'
+                . $detalleId
+                . ', periodo '
+                . $fechaInicio
+                . ' a '
+                . $fechaFin
+                . '.',
+                1000
+            ),
+        ];
+    }
+
+    private function tablasNominaSnapshotDisponibles(): bool
+    {
+        foreach (['trabajador_nomina_periodos', 'trabajador_nomina_periodo_detalles', 'trabajador_pagos'] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function validarTrazabilidadSnapshot(
@@ -932,6 +1092,19 @@ class TrabajadorPagoCajaService
         }
 
         return $this->limitar($texto, $maxLength);
+    }
+
+    private function anexarNotaSistema(?string $notas, string $notaSistema): ?string
+    {
+        $notaSistema = trim($notaSistema);
+        if ($notaSistema === '') {
+            return $notas;
+        }
+
+        $notas = trim((string)($notas ?? ''));
+        $texto = $notas !== '' ? $notas . "\n\n" . $notaSistema : $notaSistema;
+
+        return $this->limitar($texto, 1000);
     }
 
     private function normalizarFechaNullable($value, string $message): ?string

@@ -12,175 +12,660 @@ $repSafe = static function ($v) {
 };
 $repBadge = static function ($estado) {
     $map = [
-        'respondida' => ['💬 Respondida', 'background:rgba(22,163,74,.12);color:#15803D;'],
-        'enviada' => ['✉️ Enviada, sin responder', 'background:rgba(245,158,11,.14);color:#92600A;'],
-        'pendiente' => ['🔗 Link listo', 'background:rgba(37,99,235,.1);color:#1D4ED8;'],
-        'expirada' => ['⌛ Expirada', 'background:rgba(100,116,139,.12);color:#64748B;'],
+        'respondida' => ['Respondida', 'is-ok', 'fa-comment-dots'],
+        'enviada' => ['Enviada, sin responder', 'is-warning', 'fa-envelope'],
+        'pendiente' => ['Link listo', 'is-info', 'fa-link'],
+        'expirada' => ['Expirada', 'is-muted', 'fa-hourglass-end'],
     ];
-    return $map[$estado] ?? ['— Sin encuesta', 'background:rgba(100,116,139,.08);color:#94A3B8;'];
+    return $map[$estado] ?? ['Sin encuesta', 'is-soft', 'fa-circle-dot'];
 };
 $repEstrellas = static function ($n) {
-    $n = (int) $n;
-    return $n >= 1 ? str_repeat('★', $n) . str_repeat('☆', 5 - $n) : '';
+    $n = max(0, min(5, (int) $n));
+    if ($n < 1) {
+        return '';
+    }
+
+    $html = '';
+    for ($i = 1; $i <= 5; $i++) {
+        $html .= '<i class="' . ($i <= $n ? 'fa-solid' : 'fa-regular') . ' fa-star" aria-hidden="true"></i>';
+    }
+    return $html;
 };
+
+$promedio = array_key_exists('promedio', $kpis) && $kpis['promedio'] !== null
+    ? number_format((float) $kpis['promedio'], 1)
+    : '-';
+$respondidas = (int) ($kpis['respondidas'] ?? 0);
+$generadas = (int) ($kpis['generadas'] ?? 0);
+$tasaRespuesta = array_key_exists('tasa_respuesta', $kpis) && $kpis['tasa_respuesta'] !== null
+    ? ((int) $kpis['tasa_respuesta']) . '%'
+    : '-';
+$nps = array_key_exists('nps', $kpis) && $kpis['nps'] !== null ? (string) ((int) $kpis['nps']) : '-';
+$totalCheckouts = count($filas);
 ?>
 
 <style>
-.rep { max-width: 1080px; margin: 0 auto; padding: 18px 16px 40px; font-size: .92rem; }
-.rep h1 { margin: 0 0 4px; font-size: 1.35rem; color: var(--brand-primary, #1B2746); }
-.rep .sub { margin: 0 0 16px; color: #6B7486; }
-.rep-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.rep-kpi { background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E6E2D8); border-radius: 12px; padding: 14px 16px; }
-.rep-kpi .valor { font-size: 1.5rem; font-weight: 800; color: var(--brand-primary, #1B2746); }
-.rep-kpi .valor small { font-size: .85rem; font-weight: 600; color: #8A93A6; }
-.rep-kpi .nombre { font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: #8A93A6; margin-top: 2px; }
-.rep-card { background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E6E2D8); border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
-.rep table { width: 100%; border-collapse: collapse; }
-.rep th { padding: 10px 12px; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #8A93A6; border-bottom: 1px solid #EDE9DF; white-space: nowrap; }
-.rep td { padding: 11px 12px; border-bottom: 1px solid #F2EFE7; vertical-align: middle; }
-.rep-badge { display: inline-flex; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; white-space: nowrap; }
-.rep-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; cursor: pointer; background: var(--brand-primary, #1B2746); color: #fff; font-size: .8rem; font-weight: 700; text-decoration: none; }
-.rep-btn.sec { background: #fff; color: var(--brand-primary, #1B2746); border: 1px solid #D8D4C9; }
-.rep-vacio { padding: 30px 16px; text-align: center; color: #8A93A6; }
-.rep-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
-.rep-estrellas { color: var(--brand-accent, #BD9441); letter-spacing: 2px; white-space: nowrap; }
-.rep-comentario { font-size: .8rem; color: #667086; max-width: 260px; }
-.rep-config { padding: 16px; }
-.rep-config h2 { margin: 0 0 10px; font-size: 1rem; color: var(--brand-primary, #1B2746); }
-.rep-config .fila { display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end; }
-.rep-config label { display: block; font-size: .76rem; font-weight: 700; color: #55607A; margin-bottom: 4px; }
-.rep-config input, .rep-config select { width: 100%; min-height: 40px; border: 1px solid #D8D4C9; border-radius: 8px; padding: 0 10px; font-size: .9rem; }
-.rep-config .hint { font-size: .74rem; color: #8A93A6; margin-top: 6px; }
-@media (max-width: 640px) { .rep-config .fila { grid-template-columns: 1fr; } }
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
+
+.rep {
+    --rep-brand: var(--brand-primary, #1B2746);
+    --rep-brand-2: var(--brand-secondary, #0F172A);
+    --rep-gold: var(--brand-accent, #BD9441);
+    --rep-gold-soft: color-mix(in srgb, var(--rep-gold) 15%, #FFFFFF);
+    --rep-gold-line: color-mix(in srgb, var(--rep-gold) 42%, #E4D4B0);
+    --rep-gold-ink: color-mix(in srgb, var(--rep-gold) 58%, var(--rep-brand));
+    --rep-ivory: #F6F2EA;
+    --rep-ivory-2: #FBF8F2;
+    --rep-surface: #FFFFFF;
+    --rep-surface-warm: #FCFAF5;
+    --rep-border: color-mix(in srgb, var(--rep-brand) 6%, #E9E1D6);
+    --rep-ring: color-mix(in srgb, var(--rep-gold) 32%, transparent);
+    --rep-text: color-mix(in srgb, var(--rep-brand) 46%, #707B8C);
+    --rep-muted: #8791A2;
+    --rep-heading: color-mix(in srgb, var(--rep-brand) 66%, #566172);
+    --rep-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --rep-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --rep-success: #1E9E63;
+    --rep-success-bg: #E7F4EC;
+    --rep-warning: #C2841C;
+    --rep-warning-bg: #FAF0DC;
+    --rep-danger: #B4392B;
+    --rep-danger-bg: #F8EAE5;
+    --rep-info: #2F77E0;
+    --rep-info-bg: #E6EFFC;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 18px 16px 40px;
+    color: var(--rep-text);
+    font-family: var(--rep-sans);
+    font-size: .92rem;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--rep-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--rep-ivory-2), var(--rep-ivory));
+}
+.rep * { box-sizing: border-box; }
+.rep-shell {
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    max-width: 1100px;
+    min-width: 0;
+    margin: 0 auto;
+}
+.rep-hero-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px 28px;
+    padding: 2px 0 6px;
+}
+.rep-title-lockup {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+    min-width: 0;
+    max-width: min(100%, 780px);
+}
+.rep-title-lockup > div:last-child { min-width: 0; }
+.rep-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 1.15rem;
+    background:
+        radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
+        linear-gradient(145deg, var(--rep-gold), var(--rep-brand) 54%, color-mix(in srgb, var(--rep-brand) 68%, var(--rep-gold)));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--rep-brand) 72%, transparent);
+}
+.rep-kicker {
+    margin: 0 0 2px;
+    color: var(--rep-muted);
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .11em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.rep-title {
+    margin: 0;
+    color: var(--rep-heading);
+    font-family: var(--rep-serif);
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    font-weight: 650;
+    line-height: .98;
+    overflow-wrap: anywhere;
+}
+.rep-subtitle {
+    max-width: 50rem;
+    margin: 9px 0 0;
+    color: var(--rep-muted);
+    font-size: .94rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+.rep-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rep-gold-line);
+    background: var(--rep-gold-soft);
+    color: var(--rep-gold-ink);
+    font-size: .78rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.rep-alert {
+    padding: 12px 14px;
+    border-radius: 13px;
+    font-size: .88rem;
+    font-weight: 560;
+    line-height: 1.45;
+}
+.rep-alert.is-success { background: var(--rep-success-bg); color: color-mix(in srgb, var(--rep-success) 70%, var(--rep-text)); border: 1px solid color-mix(in srgb, var(--rep-success) 24%, #fff); }
+.rep-alert.is-error { background: var(--rep-danger-bg); color: color-mix(in srgb, var(--rep-danger) 72%, var(--rep-text)); border: 1px solid color-mix(in srgb, var(--rep-danger) 24%, #fff); }
+.rep-alert.is-info { background: var(--rep-gold-soft); color: var(--rep-gold-ink); border: 1px solid var(--rep-gold-line); }
+.rep-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+.rep-kpi {
+    background: rgba(255,255,255,.82);
+    border: 1px solid var(--rep-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 10px 22px -21px rgba(27,39,70,.18);
+}
+.rep-kpi .nombre {
+    color: var(--rep-muted);
+    font-size: .68rem;
+    font-weight: 650;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+.rep-kpi .valor {
+    margin-top: 2px;
+    color: var(--rep-heading);
+    font-family: var(--rep-serif);
+    font-size: 1.72rem;
+    font-weight: 650;
+    line-height: 1.1;
+}
+.rep-kpi .valor.is-good { color: color-mix(in srgb, var(--rep-success) 68%, var(--rep-text)); }
+.rep-kpi .valor small {
+    color: var(--rep-muted);
+    font-family: var(--rep-sans);
+    font-size: .82rem;
+    font-weight: 560;
+}
+.rep-card {
+    background: rgba(255,255,255,.86);
+    border: 1px solid var(--rep-border);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
+    overflow: hidden;
+}
+.rep-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--rep-border);
+}
+.rep-card-title {
+    margin: 0;
+    color: var(--rep-heading);
+    font-size: .9rem;
+    font-weight: 650;
+}
+.rep-card-sub {
+    margin: 3px 0 0;
+    color: var(--rep-muted);
+    font-size: .78rem;
+    font-weight: 500;
+    line-height: 1.45;
+}
+.rep-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .36rem .66rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rep-gold) 10%, #FFFFFF);
+    color: var(--rep-gold-ink);
+    border: 1px solid color-mix(in srgb, var(--rep-gold) 28%, #ECE1D1);
+    font-size: .72rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.rep-table-wrap { overflow-x: auto; }
+.rep-table {
+    width: 100%;
+    min-width: 840px;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+.rep-table thead {
+    background: var(--rep-surface-warm);
+    border-bottom: 1px solid var(--rep-border);
+}
+.rep-table th {
+    padding: 12px 16px;
+    color: var(--rep-muted);
+    font-size: .68rem;
+    font-weight: 650;
+    letter-spacing: .07em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.rep-table th.is-end,
+.rep-table td.is-end { text-align: right; }
+.rep-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--rep-border);
+    vertical-align: middle;
+}
+.rep-table tbody tr:last-child td { border-bottom: 0; }
+.rep-table tbody tr { transition: background .16s ease, box-shadow .16s ease; }
+.rep-table tbody tr:hover {
+    background: rgba(251,248,242,.72);
+    box-shadow: 0 10px 24px -25px rgba(27,39,70,.32);
+}
+.rep-date,
+.rep-guest-name,
+.rep-cell-strong {
+    color: var(--rep-heading);
+    font-weight: 650;
+}
+.rep-date { white-space: nowrap; }
+.rep-guest-sub {
+    margin-top: 3px;
+    color: var(--rep-muted);
+    font-size: .74rem;
+    font-weight: 500;
+}
+.rep-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: .74rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.rep-badge.is-ok { color: color-mix(in srgb, var(--rep-success) 70%, var(--rep-text)); background: var(--rep-success-bg); border-color: color-mix(in srgb, var(--rep-success) 24%, #fff); }
+.rep-badge.is-warning { color: color-mix(in srgb, var(--rep-warning) 72%, var(--rep-text)); background: var(--rep-warning-bg); border-color: color-mix(in srgb, var(--rep-warning) 26%, #fff); }
+.rep-badge.is-info { color: color-mix(in srgb, var(--rep-info) 70%, var(--rep-text)); background: var(--rep-info-bg); border-color: color-mix(in srgb, var(--rep-info) 22%, #fff); }
+.rep-badge.is-muted,
+.rep-badge.is-soft { color: var(--rep-muted); background: var(--rep-surface-warm); border-color: var(--rep-border); }
+.rep-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--rep-gold);
+    white-space: nowrap;
+}
+.rep-nps {
+    margin-top: 4px;
+    color: var(--rep-muted);
+    font-size: .74rem;
+    font-weight: 560;
+}
+.rep-comentario {
+    max-width: 280px;
+    margin-top: 5px;
+    color: var(--rep-muted);
+    font-size: .78rem;
+    line-height: 1.45;
+}
+.rep-muted-dash { color: var(--rep-muted); }
+.rep-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+.rep-inline-form {
+    display: inline-flex;
+    margin: 0;
+}
+.rep-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rep-gold) 86%, #fff), color-mix(in srgb, var(--rep-gold) 72%, var(--rep-brand)));
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .84rem;
+    font-weight: 650;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--rep-gold) 42%, transparent);
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease;
+}
+.rep-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.rep-btn:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.rep-btn:focus-visible,
+.rep-control:focus-visible {
+    outline: 3px solid var(--rep-ring);
+    outline-offset: 2px;
+}
+.rep-btn.sec {
+    background: var(--rep-surface);
+    color: var(--rep-gold-ink);
+    border-color: var(--rep-gold-line);
+    box-shadow: none;
+}
+.rep-empty {
+    padding: 42px 18px !important;
+    text-align: center;
+    color: var(--rep-muted);
+    background: var(--rep-ivory-2);
+}
+.rep-config {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+}
+.rep-config .rep-card-head {
+    padding: 0;
+    border-bottom: 0;
+}
+.rep-config-grid {
+    display: grid;
+    grid-template-columns: minmax(240px, 2fr) minmax(180px, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+}
+.rep-field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+.rep-field label {
+    color: var(--rep-muted);
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+.rep-control {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--rep-border);
+    border-radius: 11px;
+    background: var(--rep-surface-warm);
+    color: var(--rep-text);
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 560;
+    padding: 0 12px;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.rep-control::placeholder {
+    color: color-mix(in srgb, var(--rep-muted) 82%, #B8C0CB);
+    font-weight: 520;
+}
+.rep-control:focus {
+    border-color: var(--rep-gold);
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--rep-ring);
+    outline: none;
+}
+.rep-hint {
+    margin: 0;
+    color: var(--rep-muted);
+    font-size: .78rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .rep-hero-section {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+    }
+    .rep-status-pill { justify-self: start; }
+    .rep-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rep-config-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .rep {
+        padding: 14px 12px 34px;
+    }
+    .rep-title-lockup {
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+    }
+    .rep-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+    }
+    .rep-title { font-size: 2rem; }
+    .rep-kpis { grid-template-columns: 1fr; }
+    .rep-card-head {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .rep-count-pill { justify-self: start; }
+    .rep-table { min-width: 760px; }
+    .rep-actions,
+    .rep-inline-form,
+    .rep-actions .rep-btn,
+    .rep-config-grid .rep-btn {
+        width: 100%;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rep *,
+    .rep *::before,
+    .rep *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
 </style>
 
 <div class="rep">
-    <h1>Reputacion y encuestas</h1>
-    <p class="sub">Manda la encuesta a tus checkouts recientes; las buenas calificaciones van a Google y las malas te llegan a ti primero.</p>
-
-    <?php if ($mensaje = get_mensaje()): ?>
-        <?php $tipo = $mensaje['tipo'] ?? 'info'; ?>
-        <div style="margin-bottom:14px;padding:11px 14px;border-radius:10px;font-size:.88rem;<?= $tipo === 'error' ? 'background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.2);' : 'background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2);' ?>">
-            <?= $mensaje['texto'] ?? '' ?>
-        </div>
-    <?php endif; ?>
-
-    <div class="rep-kpis">
-        <div class="rep-kpi">
-            <div class="valor"><?= $kpis['promedio'] !== null ? $repSafe(number_format((float) $kpis['promedio'], 1)) : '—' ?> <small>/ 5</small></div>
-            <div class="nombre">Calificacion promedio</div>
-        </div>
-        <div class="rep-kpi">
-            <div class="valor"><?= (int) ($kpis['respondidas'] ?? 0) ?> <small>de <?= (int) ($kpis['generadas'] ?? 0) ?></small></div>
-            <div class="nombre">Encuestas respondidas</div>
-        </div>
-        <div class="rep-kpi">
-            <div class="valor"><?= $kpis['tasa_respuesta'] !== null ? (int) $kpis['tasa_respuesta'] . '<small>%</small>' : '—' ?></div>
-            <div class="nombre">Tasa de respuesta</div>
-        </div>
-        <div class="rep-kpi">
-            <div class="valor"><?= $kpis['nps'] !== null ? (int) $kpis['nps'] : '—' ?></div>
-            <div class="nombre">NPS (90 dias)</div>
-        </div>
-    </div>
-
-    <div class="rep-card">
-        <table>
-            <thead>
-                <tr>
-                    <th>Salida</th><th>Huésped</th><th>Encuesta</th><th>Calificación</th><th></th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php if (empty($filas)): ?>
-                <tr><td colspan="5" class="rep-vacio">No hay checkouts en los últimos 30 días.</td></tr>
-            <?php else: ?>
-                <?php foreach ($filas as $fila): ?>
-                    <?php
-                    [$badgeTexto, $badgeStyle] = $repBadge($fila['encuesta_estado'] ?? null);
-                    $urlPublica = !empty($fila['token'])
-                        ? url('h/' . $slugHotel . '/encuesta/' . $fila['token'])
-                        : null;
-                    $estadoEncuesta = $fila['encuesta_estado'] ?? null;
-                    ?>
-                    <tr>
-                        <td style="white-space:nowrap;font-weight:600;"><?= $repSafe(date('d/m/Y', strtotime((string) $fila['fecha_salida']))) ?></td>
-                        <td>
-                            <div style="font-weight:600;"><?= $repSafe($fila['nombre_completo']) ?></div>
-                            <div style="font-size:.76rem;color:#8A93A6;"><?= $repSafe($fila['email'] ?: ($fila['telefono'] ?: '')) ?></div>
-                        </td>
-                        <td><span class="rep-badge" style="<?= $badgeStyle ?>"><?= $badgeTexto ?></span></td>
-                        <td>
-                            <?php if ($estadoEncuesta === 'respondida'): ?>
-                                <div class="rep-estrellas" title="<?= (int) $fila['calificacion'] ?> de 5"><?= $repEstrellas($fila['calificacion']) ?></div>
-                                <?php if ($fila['nps'] !== null): ?>
-                                    <div style="font-size:.74rem;color:#8A93A6;">NPS <?= (int) $fila['nps'] ?>/10</div>
-                                <?php endif; ?>
-                                <?php if (!empty($fila['comentario'])): ?>
-                                    <div class="rep-comentario">"<?= $repSafe(mb_strimwidth((string) $fila['comentario'], 0, 140, '…', 'UTF-8')) ?>"</div>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <span style="color:#94A3B8;">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <div class="rep-acciones">
-                                <?php if (!$fila['token'] || $estadoEncuesta === 'expirada'): ?>
-                                    <form method="POST" action="<?= url('reputacion/generar/' . (int) $fila['reservacion_id']) ?>">
-                                        <?= csrf_field() ?>
-                                        <button type="submit" class="rep-btn">Generar encuesta</button>
-                                    </form>
-                                <?php elseif (in_array($estadoEncuesta, ['pendiente', 'enviada'], true)): ?>
-                                    <?php if (!empty($fila['email'])): ?>
-                                        <form method="POST" action="<?= url('reputacion/enviar/' . (int) $fila['encuesta_id']) ?>">
-                                            <?= csrf_field() ?>
-                                            <button type="submit" class="rep-btn">Enviar por correo</button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <?php if (!empty($fila['telefono'])): ?>
-                                        <a class="rep-btn sec" target="_blank" rel="noopener"
-                                           href="https://wa.me/52<?= $repSafe(preg_replace('/\D/', '', substr((string) $fila['telefono'], -10))) ?>?text=<?= rawurlencode('Hola ' . $fila['nombre_completo'] . ', gracias por hospedarte con nosotros. ¿Nos cuentas como te fue? ' . $urlPublica) ?>">
-                                            WhatsApp
-                                        </a>
-                                    <?php endif; ?>
-                                    <button type="button" class="rep-btn sec"
-                                            data-link="<?= $repSafe($urlPublica) ?>"
-                                            onclick="navigator.clipboard && navigator.clipboard.writeText(this.dataset.link).then(() => { this.textContent='Copiado ✓'; })">
-                                        Copiar link
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="rep-card rep-config">
-        <h2>Configuración</h2>
-        <form method="POST" action="<?= url('reputacion/config') ?>">
-            <?= csrf_field() ?>
-            <div class="fila">
-                <div>
-                    <label for="rep-google">Link de reseñas de Google</label>
-                    <input type="url" id="rep-google" name="google_review_url" maxlength="500"
-                           placeholder="https://g.page/r/..." value="<?= $repSafe($config['google_review_url']) ?>">
+    <div class="rep-shell">
+        <section class="rep-hero-section">
+            <div class="rep-title-lockup">
+                <div class="rep-hero-icon" aria-hidden="true">
+                    <i class="fa-solid fa-star"></i>
                 </div>
                 <div>
-                    <label for="rep-umbral">Alertarme si califican con</label>
-                    <select id="rep-umbral" name="umbral_alerta">
-                        <?php foreach ([1 => '1 estrella o menos', 2 => '2 estrellas o menos', 3 => '3 estrellas o menos', 4 => '4 estrellas o menos'] as $v => $txt): ?>
-                            <option value="<?= $v ?>" <?= (int) $config['umbral_alerta'] === $v ? 'selected' : '' ?>><?= $txt ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <button type="submit" class="rep-btn" style="min-height:40px;">Guardar</button>
+                    <p class="rep-kicker">Encuestas post-estancia</p>
+                    <h1 class="rep-title">Reputacion y encuestas</h1>
+                    <p class="rep-subtitle">Manda la encuesta a tus checkouts recientes; las buenas calificaciones van a Google y las bajas te llegan a ti primero.</p>
                 </div>
             </div>
-            <p class="hint">Al huésped que califica con 4-5 estrellas se le invita a dejar reseña en Google con este link. Las calificaciones bajas generan una notificación interna para el gerente (requiere el bloque de notificaciones).</p>
-        </form>
+            <span class="rep-status-pill">
+                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                Ultimos 30 dias
+            </span>
+        </section>
+
+        <?php if ($mensaje = get_mensaje()): ?>
+            <?php
+                $tipo = (string) ($mensaje['tipo'] ?? 'info');
+                $tipo = in_array($tipo, ['success', 'error', 'info'], true) ? $tipo : 'info';
+            ?>
+            <div class="rep-alert is-<?= $repSafe($tipo) ?>">
+                <?= $mensaje['texto'] ?? '' ?>
+            </div>
+        <?php endif; ?>
+
+        <section class="rep-kpis" aria-label="Indicadores de reputacion">
+            <div class="rep-kpi">
+                <div class="nombre">Calificacion promedio</div>
+                <div class="valor <?= $promedio !== '-' ? 'is-good' : '' ?>"><?= $repSafe($promedio) ?> <small>/ 5</small></div>
+            </div>
+            <div class="rep-kpi">
+                <div class="nombre">Encuestas respondidas</div>
+                <div class="valor"><?= (int) $respondidas ?> <small>de <?= (int) $generadas ?></small></div>
+            </div>
+            <div class="rep-kpi">
+                <div class="nombre">Tasa de respuesta</div>
+                <div class="valor"><?= $repSafe($tasaRespuesta) ?></div>
+            </div>
+            <div class="rep-kpi">
+                <div class="nombre">NPS (90 dias)</div>
+                <div class="valor"><?= $repSafe($nps) ?></div>
+            </div>
+        </section>
+
+        <section class="rep-card">
+            <div class="rep-card-head">
+                <div>
+                    <h2 class="rep-card-title">Checkouts recientes</h2>
+                    <p class="rep-card-sub">Genera, envia y copia encuestas para huespedes que ya hicieron checkout.</p>
+                </div>
+                <span class="rep-count-pill"><?= (int) $totalCheckouts ?> checkouts</span>
+            </div>
+            <div class="rep-table-wrap">
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th>Salida</th>
+                            <th>Huesped</th>
+                            <th>Encuesta</th>
+                            <th>Calificacion</th>
+                            <th class="is-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($filas)): ?>
+                        <tr><td colspan="5" class="rep-empty">No hay checkouts en los ultimos 30 dias.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($filas as $fila): ?>
+                            <?php
+                            [$badgeTexto, $badgeClass, $badgeIcon] = $repBadge($fila['encuesta_estado'] ?? null);
+                            $urlPublica = !empty($fila['token'])
+                                ? url('h/' . $slugHotel . '/encuesta/' . $fila['token'])
+                                : null;
+                            $estadoEncuesta = $fila['encuesta_estado'] ?? null;
+                            $telefonoDigits = preg_replace('/\D/', '', substr((string) ($fila['telefono'] ?? ''), -10));
+                            ?>
+                            <tr>
+                                <td class="rep-date"><?= $repSafe(date('d/m/Y', strtotime((string) $fila['fecha_salida']))) ?></td>
+                                <td>
+                                    <div class="rep-guest-name"><?= $repSafe($fila['nombre_completo']) ?></div>
+                                    <div class="rep-guest-sub"><?= $repSafe($fila['email'] ?: ($fila['telefono'] ?: 'Sin contacto')) ?></div>
+                                </td>
+                                <td>
+                                    <span class="rep-badge <?= $repSafe($badgeClass) ?>">
+                                        <i class="fa-solid <?= $repSafe($badgeIcon) ?>" aria-hidden="true"></i>
+                                        <?= $repSafe($badgeTexto) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if ($estadoEncuesta === 'respondida'): ?>
+                                        <div class="rep-stars" title="<?= (int) $fila['calificacion'] ?> de 5"><?= $repEstrellas($fila['calificacion']) ?></div>
+                                        <?php if ($fila['nps'] !== null): ?>
+                                            <div class="rep-nps">NPS <?= (int) $fila['nps'] ?>/10</div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($fila['comentario'])): ?>
+                                            <div class="rep-comentario">"<?= $repSafe(mb_strimwidth((string) $fila['comentario'], 0, 140, '...', 'UTF-8')) ?>"</div>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="rep-muted-dash">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="is-end">
+                                    <div class="rep-actions">
+                                        <?php if (!$fila['token'] || $estadoEncuesta === 'expirada'): ?>
+                                            <form method="POST" action="<?= url('reputacion/generar/' . (int) $fila['reservacion_id']) ?>" class="rep-inline-form">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="rep-btn">
+                                                    <i class="fa-solid fa-link" aria-hidden="true"></i>Generar encuesta
+                                                </button>
+                                            </form>
+                                        <?php elseif (in_array($estadoEncuesta, ['pendiente', 'enviada'], true)): ?>
+                                            <?php if (!empty($fila['email'])): ?>
+                                                <form method="POST" action="<?= url('reputacion/enviar/' . (int) $fila['encuesta_id']) ?>" class="rep-inline-form">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="rep-btn">
+                                                        <i class="fa-solid fa-envelope" aria-hidden="true"></i>Enviar correo
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if (!empty($fila['telefono'])): ?>
+                                                <a class="rep-btn sec" target="_blank" rel="noopener"
+                                                   href="https://wa.me/52<?= $repSafe($telefonoDigits) ?>?text=<?= rawurlencode('Hola ' . $fila['nombre_completo'] . ', gracias por hospedarte con nosotros. Nos cuentas como te fue? ' . $urlPublica) ?>">
+                                                    <i class="fab fa-whatsapp" aria-hidden="true"></i>WhatsApp
+                                                </a>
+                                            <?php endif; ?>
+                                            <button type="button" class="rep-btn sec"
+                                                    data-link="<?= $repSafe($urlPublica) ?>"
+                                                    onclick="navigator.clipboard && navigator.clipboard.writeText(this.dataset.link).then(() => { this.textContent='Copiado'; })">
+                                                <i class="fa-solid fa-copy" aria-hidden="true"></i>Copiar link
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="rep-card rep-config">
+            <div class="rep-card-head">
+                <div>
+                    <h2 class="rep-card-title">Configuracion</h2>
+                    <p class="rep-card-sub">Define el destino de Google y el umbral que dispara alertas internas.</p>
+                </div>
+            </div>
+            <form method="POST" action="<?= url('reputacion/config') ?>">
+                <?= csrf_field() ?>
+                <div class="rep-config-grid">
+                    <div class="rep-field">
+                        <label for="rep-google">Link de resenas de Google</label>
+                        <input type="url" id="rep-google" name="google_review_url" maxlength="500"
+                               placeholder="https://g.page/r/..." value="<?= $repSafe($config['google_review_url']) ?>" class="rep-control">
+                    </div>
+                    <div class="rep-field">
+                        <label for="rep-umbral">Alertarme si califican con</label>
+                        <select id="rep-umbral" name="umbral_alerta" class="rep-control">
+                            <?php foreach ([1 => '1 estrella o menos', 2 => '2 estrellas o menos', 3 => '3 estrellas o menos', 4 => '4 estrellas o menos'] as $v => $txt): ?>
+                                <option value="<?= $v ?>" <?= (int) $config['umbral_alerta'] === $v ? 'selected' : '' ?>><?= $txt ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="rep-btn">
+                            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>Guardar
+                        </button>
+                    </div>
+                </div>
+                <p class="rep-hint">Al huesped que califica con 4-5 estrellas se le invita a dejar resena en Google con este link. Las calificaciones bajas generan una notificacion interna para el gerente si el bloque de notificaciones esta disponible.</p>
+            </form>
+        </section>
     </div>
 </div>

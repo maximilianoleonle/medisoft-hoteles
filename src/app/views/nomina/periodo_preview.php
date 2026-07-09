@@ -66,6 +66,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
     <h1 class="nom-title"><?= htmlspecialchars((string) ($pvGrupo['nombre'] ?? '')) ?> · <?= htmlspecialchars((string) ($pv['fecha_inicio'] ?? '')) ?> — <?= htmlspecialchars((string) ($pv['fecha_fin'] ?? '')) ?></h1>
     <p class="pv-sub"><?= (int) ($pv['dias'] ?? 0) ?> días · periodicidad <?= htmlspecialchars((string) ($pvGrupo['periodicidad'] ?? '')) ?> · redondeo a <?= ($pv['redondeo'] ?? 'centavos') === 'pesos' ? 'pesos enteros' : 'centavos' ?></p>
 
+    <?php $subnav_section = 'nomina'; $subnav_active = 'periodos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
     <?php foreach ($pvAlertas as $a): ?>
     <div class="pv-alerta <?= $pvBloqueado ? 'bloqueante' : '' ?>">
         <i class="fas fa-triangle-exclamation" style="color:<?= $pvBloqueado ? '#c62828' : '#9a7400' ?>; margin-top:2px;"></i>

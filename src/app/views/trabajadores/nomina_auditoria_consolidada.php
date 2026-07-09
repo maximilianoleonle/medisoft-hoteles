@@ -271,13 +271,11 @@ $exportUrl = url('trabajadores/nomina/auditoria/exportar' . ($exportQuery !== ''
     </section>
 
     <div class="p-5 space-y-5">
+        <?php $subnav_section = 'personal'; $subnav_active = 'informes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a class="audit-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Personal</a>
-                <a class="audit-btn" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Periodos</a>
-                <a class="audit-btn" href="<?= url('trabajadores/nomina/periodos/pagos-snapshot') ?>"><i class="fas fa-scale-balanced"></i> Pagos snapshot</a>
-                <a class="audit-btn" href="<?= url('trabajadores/nomina/expediente') ?>"><i class="fas fa-folder-open"></i> Expediente</a>
+                <?php $back_arrow_href = back_url('trabajadores/informes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="audit-btn ms-back-legacy" href="<?= back_url('trabajadores/informes') ?>"><i class="fas fa-arrow-left"></i> Informes</a>
                 <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?><a class="audit-btn audit-btn-primary" href="<?= $exportUrl ?>"><i class="fas fa-file-csv"></i> Exportar CSV</a><?php endif; ?>
             </div>
             <span class="audit-badge"><i class="fas fa-lock"></i> GET / read-only</span>

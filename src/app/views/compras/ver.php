@@ -132,6 +132,156 @@ foreach ($detalles as $detalle) {
 
 @media (max-width: 720px) { .purchase-detail-page .cp-stats { grid-template-columns: 1fr; } .purchase-detail-page .cp-title { font-size: 1.9rem; } }
 </style>
+<style>
+    .purchase-detail-page {
+        --cp-gold-ink: color-mix(in srgb, var(--cp-gold) 58%, var(--cp-brand));
+        --cp-border: color-mix(in srgb, var(--cp-brand) 6%, #E9E1D6);
+        --cp-text: color-mix(in srgb, var(--cp-brand) 44%, #737D8D);
+        --cp-muted: #8791A2;
+        --cp-heading: color-mix(in srgb, var(--cp-brand) 66%, #566172);
+        padding: 18px 16px 42px !important;
+    }
+
+    .purchase-detail-page .cp-shell {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .purchase-detail-page .cp-title-lockup {
+        max-width: min(100%, 790px);
+    }
+
+    .purchase-detail-page .cp-hero-icon {
+        color: var(--cp-gold-ink);
+        background:
+            linear-gradient(145deg, rgba(255,255,255,.88), rgba(251,247,238,.9)),
+            radial-gradient(circle at 36% 28%, color-mix(in srgb, var(--cp-gold) 22%, transparent), transparent 58%);
+        border-color: color-mix(in srgb, var(--cp-gold) 26%, var(--cp-border));
+        box-shadow: 0 16px 30px rgba(15, 23, 42, .08);
+    }
+
+    .purchase-detail-page .cp-kicker,
+    .purchase-detail-page .cp-stat-label,
+    .purchase-detail-page .cp-stat-value,
+    .purchase-detail-page .cp-btn,
+    .purchase-detail-page .cp-badge,
+    .purchase-detail-page .cp-panel-title,
+    .purchase-detail-page .cp-meta-label,
+    .purchase-detail-page .cp-meta-value,
+    .purchase-detail-page .cp-strong,
+    .purchase-detail-page .cp-table th {
+        font-weight: 650;
+    }
+
+    .purchase-detail-page .cp-title {
+        color: var(--cp-heading);
+        font-size: clamp(2.1rem, 4vw, 3rem);
+        font-weight: 650;
+        letter-spacing: 0;
+    }
+
+    .purchase-detail-page .cp-subtitle {
+        color: var(--cp-muted);
+        max-width: 680px;
+    }
+
+    .purchase-detail-page .cp-stat,
+    .purchase-detail-page .cp-panel,
+    .purchase-detail-page .cp-toolbar {
+        background: rgba(255, 255, 255, .86);
+        border-color: var(--cp-border);
+        box-shadow: 0 16px 36px rgba(15, 23, 42, .055);
+    }
+
+    .purchase-detail-page .cp-stat-value {
+        color: var(--cp-heading);
+    }
+
+    .purchase-detail-page .cp-toolbar {
+        align-items: center;
+    }
+
+    .purchase-detail-page .cp-btn {
+        min-height: 44px;
+        color: var(--cp-text);
+    }
+
+    .purchase-detail-page .cp-btn:hover {
+        background: var(--cp-gold-soft);
+        border-color: color-mix(in srgb, var(--cp-gold) 26%, var(--cp-border));
+        color: var(--cp-heading);
+    }
+
+    .purchase-detail-page .cp-panel-head {
+        background: var(--cp-surface-warm);
+        border-color: var(--cp-border);
+    }
+
+    .purchase-detail-page .cp-panel-title {
+        font-family: var(--cp-sans);
+        font-size: .95rem;
+        color: var(--cp-heading);
+        letter-spacing: 0;
+    }
+
+    .purchase-detail-page .cp-meta-label {
+        color: var(--cp-muted);
+    }
+
+    .purchase-detail-page .cp-meta-value,
+    .purchase-detail-page .cp-strong,
+    .purchase-detail-page .cp-table td {
+        color: var(--cp-text);
+    }
+
+    .purchase-detail-page .cp-table thead {
+        background: rgba(251, 248, 242, .86);
+    }
+
+    .purchase-detail-page .cp-table th {
+        color: var(--cp-muted);
+    }
+
+    .purchase-detail-page .cp-table tbody tr:hover {
+        background: rgba(251, 248, 242, .72);
+        box-shadow: inset 3px 0 0 color-mix(in srgb, var(--cp-gold) 42%, transparent);
+    }
+
+    .purchase-detail-page .cp-empty {
+        margin: 14px;
+        border: 1px dashed var(--cp-border);
+        border-radius: 16px;
+        background: var(--cp-ivory-2);
+    }
+
+    @media (max-width: 720px) {
+        .purchase-detail-page {
+            padding: 16px 12px 34px !important;
+        }
+
+        .purchase-detail-page .cp-title-lockup {
+            grid-template-columns: 42px minmax(0, 1fr);
+        }
+
+        .purchase-detail-page .cp-hero-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+        }
+
+        .purchase-detail-page .cp-title {
+            font-size: clamp(1.9rem, 10vw, 2.35rem);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .purchase-detail-page .cp-btn,
+        .purchase-detail-page .cp-table tbody tr {
+            transition: none;
+        }
+    }
+</style>
 
 <div class="purchase-detail-page p-4 sm:p-6">
     <div class="cp-shell">

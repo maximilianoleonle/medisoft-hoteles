@@ -243,28 +243,13 @@ $exportUrl = url('trabajadores/nomina/periodos/pagos-snapshot/exportar' . ($expo
     </section>
 
     <section class="p-6 space-y-4">
+        <?php $subnav_section = 'personal'; $subnav_active = 'informes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <?php $back_arrow_href = back_url('trabajadores/nomina/periodos'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a class="snap-btn ms-back-legacy" href="<?= back_url('trabajadores/nomina/periodos') ?>">
+                <?php $back_arrow_href = back_url('trabajadores/informes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="snap-btn ms-back-legacy" href="<?= back_url('trabajadores/informes') ?>">
                     <i class="fas fa-arrow-left"></i>
-                    Periodos
-                </a>
-                <a class="snap-btn" href="<?= url('trabajadores/nomina/periodos/reporte') ?>">
-                    <i class="fas fa-file-lines"></i>
-                    Reporte snapshots
-                </a>
-                <a class="snap-btn" href="<?= url('trabajadores/pagos-caja/reporte') ?>">
-                    <i class="fas fa-cash-register"></i>
-                    Pagos Caja
-                </a>
-                <a class="snap-btn" href="<?= url('trabajadores/nomina/auditoria') ?>">
-                    <i class="fas fa-list-check"></i>
-                    Auditoria nomina
-                </a>
-                <a class="snap-btn" href="<?= url('trabajadores/nomina/expediente') ?>">
-                    <i class="fas fa-folder-open"></i>
-                    Expediente
+                    Informes
                 </a>
             </div>
             <span class="snap-badge">

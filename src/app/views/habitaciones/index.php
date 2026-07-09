@@ -4977,6 +4977,7 @@ if ($tiene_doble_movimiento) {
 <div id="modalLimpieza"
      class="lm-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
      role="dialog" aria-modal="true" aria-labelledby="lmTitle" aria-describedby="lmSubtitle"
+     data-ms-keep-sidebar
      onclick="if(event.target===this)cerrarModalLimpieza()">
     <div class="lm-dialog" role="document">
 
@@ -12380,7 +12381,9 @@ body.hb-modal-open{ overflow:hidden; }
     }
 
     .swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal .swal2-close{
-        display: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal .swal2-html-container,
@@ -13327,6 +13330,15 @@ body.hb-modal-open{ overflow:hidden; }
   }
 }
 
+/* Sincronía sidebar↔modal SIN el observador genérico (que iba con lag). La propia
+   apertura/cierre pone/quita `body.hb-lm-sidebar-under` (síncrono con la animación), y esto
+   baja la sidebar bajo el backdrop full-bleed, que la cubre/difumina y aparece/desvanece CON
+   el modal. El modal lleva `data-ms-keep-sidebar` para que el fix global lo ignore. */
+body.hb-lm-sidebar-under #sidebar.sidebar-main.hotel-sidebar,
+body.hb-lm-sidebar-under #sidebar.sidebar-main.sidebar-saas{
+  z-index:1 !important; pointer-events:none !important;
+}
+
 /* Diálogo: entra con un "pop" (leve subida + escala) — anula lmPop en todos los tamaños */
 #modalLimpieza.lm-overlay .lm-dialog,
 #modalLimpieza.lm-overlay > .lm-dialog{
@@ -14226,7 +14238,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         `,
         showConfirmButton: false,
         showCancelButton: false,
-        showCloseButton: false,
+        showCloseButton: true,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
@@ -14802,7 +14814,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
             `,
             showConfirmButton: false,
             showCancelButton: false,
-            showCloseButton: false,
+            showCloseButton: true,
             allowOutsideClick: true,
             allowEscapeKey: true,
             returnFocus: false,
@@ -15827,6 +15839,10 @@ function mostrarModalLimpieza() {
         return;
     }
 
+    // Baja la sidebar bajo el modal en el MISMO frame que se abre (sin lag del
+    // observador global). El backdrop full-bleed la cubre y la difumina en sincronía.
+    document.body.classList.add('hb-lm-sidebar-under');
+
     const dialog = modal.querySelector('.lm-dialog');
     if (dialog) {
         if (!lmPrefersReduced()) {
@@ -15868,6 +15884,7 @@ function cerrarModalLimpieza() {
         modal.classList.add('hidden');
 
         document.body.classList.remove('overflow-hidden');
+        document.body.classList.remove('hb-lm-sidebar-under');
 
         if (dialog) {
             if (dialog._lmSkTimer) {

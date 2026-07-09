@@ -269,6 +269,9 @@ $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Y
     </section>
 
     <section class="p-6 space-y-4">
+        <div class="receipt-no-print">
+            <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+        </div>
         <div class="receipt-no-print flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 <?php $back_arrow_href = $volverUrl; $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
@@ -278,7 +281,7 @@ $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Y
                 </a>
                 <a class="receipt-btn" href="<?= $previewUrl ?>">
                     <i class="fas fa-table-list"></i>
-                    Preview nomina
+                    Preview del periodo
                 </a>
                 <?php if ($tablaDisponible && empty($bloqueos) && !empty($calculo)): ?>
                     <a class="receipt-btn" href="<?= $pdfUrl ?>">

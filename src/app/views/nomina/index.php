@@ -122,34 +122,7 @@ $nomEstadoPeriodoLabels = [
         Aquí se revisan catálogos, empleados, incidencias y periodos; los pagos y datos base del personal siguen conectados con Personal.
     </p>
 
-    <div class="nom-navrow">
-        <?php if ($nomPuedeConfigurar): ?>
-        <a href="<?= url('nomina/configuracion') ?>" class="nom-btn nom-btn-primary ms-pressable">
-            <i class="fas fa-sliders"></i> Configuración
-        </a>
-        <?php else: ?>
-        <span class="nom-permission-pill">
-            <i class="fas fa-lock"></i> Modo lectura: sin permiso para configurar
-        </span>
-        <?php endif; ?>
-        <a href="<?= url('nomina/catalogos') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-layer-group"></i> Catálogos
-        </a>
-        <a href="<?= url('nomina/empleados') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-address-book"></i> Empleados
-        </a>
-        <a href="<?= url('nomina/incidencias') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-clipboard-list"></i> Incidencias
-        </a>
-        <a href="<?= url('nomina/periodos') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-calendar-week"></i> Periodos
-        </a>
-        <?php if (!$nomPuedeConfigurar && $nomPuedeGestionarRoles): ?>
-        <a href="<?= url('configuracion/roles') ?>" class="nom-btn ms-pressable">
-            <i class="fas fa-user-lock"></i> Roles y permisos
-        </a>
-        <?php endif; ?>
-    </div>
+    <?php $subnav_section = 'nomina'; $subnav_active = 'inicio'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
     <?php if (!$nomPuedeConfigurar): ?>
     <div class="nom-notice">
@@ -158,6 +131,11 @@ $nomEstadoPeriodoLabels = [
             <strong>Tu usuario puede consultar nómina, pero no configurarla.</strong><br>
             Puedes entrar a Catálogos para revisar lo existente. Para crear departamentos, puestos, contratos o grupos de pago,
             entra con un rol con <strong>nomina.configurar</strong> o pide que ajusten tus permisos.
+            <?php if ($nomPuedeGestionarRoles): ?>
+            <div style="margin-top:10px;">
+                <a href="<?= url('configuracion/roles') ?>" class="nom-btn ms-pressable"><i class="fas fa-user-lock"></i> Roles y permisos</a>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>

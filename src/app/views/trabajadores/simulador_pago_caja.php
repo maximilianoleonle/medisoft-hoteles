@@ -78,16 +78,66 @@ $referencia = (string)($filtros['referencia'] ?? '');
 .worker-cash-page .wk-subtitle { max-width: 52rem; margin: 8px 0 0; color: var(--wk-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
 
 .worker-cash-page .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+/* Neutraliza el .grid{min-height:200px} global de performance-optimization.css */
+.worker-cash-page .grid { min-height: 0; }
+
+/* Toggle segmentado Historial | Simular pago (mismo patrón que el historial y la ficha) */
+.worker-cash-page .wk-tabs {
+    display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
+    background: color-mix(in srgb, var(--wk-brand) 5%, var(--wk-ivory-2, #FBF8F2));
+    border: 1px solid var(--wk-border); border-radius: 15px;
+}
+.worker-cash-page .wk-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: transparent; color: var(--wk-muted);
+    min-height: 40px; padding: 0 16px 2px; font-size: .85rem; font-weight: 650; cursor: pointer;
+    font-family: var(--wk-sans); line-height: 1; white-space: nowrap; text-decoration: none;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.worker-cash-page .wk-tab i { font-size: .8rem; color: color-mix(in srgb, var(--wk-muted) 80%, #fff); transition: color .16s ease; }
+.worker-cash-page .wk-tab:hover { color: var(--wk-heading); background: rgba(255,255,255,.65); }
+.worker-cash-page .wk-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wk-ring); }
+.worker-cash-page .wk-tab.is-active {
+    background: var(--wk-surface); color: var(--wk-heading); border-color: var(--wk-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 6px 14px -8px color-mix(in srgb, var(--wk-brand) 38%, transparent);
+}
+.worker-cash-page .wk-tab.is-active i { color: var(--wk-gold-ink); }
+.worker-cash-page .wk-tab.is-active::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 40%, #fff));
+}
+@media (max-width: 768px) {
+    .worker-cash-page .wk-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .worker-cash-page .wk-tabs::-webkit-scrollbar { display: none; }
+    .worker-cash-page .wk-tab { flex: 1 0 auto; justify-content: center; }
+}
 .worker-cash-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 16px;
     border-radius: 11px; border: 1px solid transparent; font-weight: 650; font-size: .85rem; text-decoration: none; cursor: pointer;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .worker-cash-page .wk-btn:hover { transform: translateY(-1px); }
-.worker-cash-page .wk-btn-brand { background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--wk-brand) 60%, transparent); }
+.worker-cash-page .wk-btn-brand { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--wk-brand) 60%, transparent); }
+.worker-cash-page .wk-btn-brand::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.4), transparent);
+    transform: translateX(-170%) skewX(-18deg);
+}
+.worker-cash-page .wk-btn-brand:hover::after { transition: transform .7s ease; transform: translateX(330%) skewX(-18deg); }
 .worker-cash-page .wk-btn-muted { background: rgba(255,255,255,.86); border-color: var(--wk-border); color: var(--wk-muted); }
 .worker-cash-page .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 650; }
 
 .worker-cash-page .wk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.worker-cash-page .wk-stat { background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 10px 22px -20px rgba(27,39,70,.18); }
+.worker-cash-page .wk-stat { position: relative; background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px 13px 18px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 10px 22px -20px rgba(27,39,70,.18); animation: wkRise .5s cubic-bezier(.22,1,.36,1) backwards; }
+.worker-cash-page .wk-stat:nth-child(1) { animation-delay: .05s; }
+.worker-cash-page .wk-stat:nth-child(2) { animation-delay: .11s; }
+.worker-cash-page .wk-stat:nth-child(3) { animation-delay: .17s; }
+.worker-cash-page .wk-stat:nth-child(4) { animation-delay: .23s; }
+.worker-cash-page .wk-stat::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--wk-border); }
+.worker-cash-page .wk-stat.is-ok::before { background: color-mix(in srgb, var(--wk-success) 55%, #fff); }
+.worker-cash-page .wk-stat.is-warn::before { background: color-mix(in srgb, var(--wk-warning) 55%, #fff); }
+.worker-cash-page .wk-stat.is-gold::before { background: var(--wk-gold-line); }
+.worker-cash-page .wk-stat.is-ok .wk-stat-value { color: var(--wk-success); }
+@keyframes wkRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 .worker-cash-page .wk-stat-label { color: var(--wk-muted); font-size: .66rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
 .worker-cash-page .wk-stat-value { margin-top: 3px; font-family: var(--wk-serif); font-size: 1.48rem; font-weight: 650; line-height: 1; color: var(--wk-heading); }
 
@@ -101,7 +151,9 @@ $referencia = (string)($filtros['referencia'] ?? '');
 .worker-cash-page .wk-control::placeholder { color: color-mix(in srgb, var(--wk-muted) 78%, #B8C0CB); font-weight: 520; }
 .worker-cash-page .wk-control:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; }
 .worker-cash-page select.wk-control { cursor: pointer; }
-.worker-cash-page .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: center; max-width: 1080px; }
+.worker-cash-page .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: end; max-width: 1080px; }
+.worker-cash-page .wk-filter-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.worker-cash-page .wk-filter-label { color: var(--wk-muted); font-size: .64rem; font-weight: 650; letter-spacing: .06em; line-height: 1; text-transform: uppercase; }
 
 .worker-cash-page .wk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
 .worker-cash-page .wk-badge-ok { color: color-mix(in srgb, var(--wk-success) 78%, #000); background: var(--wk-success-bg); border-color: color-mix(in srgb, var(--wk-success) 26%, #fff); }
@@ -135,6 +187,12 @@ $referencia = (string)($filtros['referencia'] ?? '');
     .worker-cash-page .wk-stats,
     .worker-cash-page .wk-filter-form { grid-template-columns: 1fr; }
     .worker-cash-page .wk-btn { width: 100%; }
+    .worker-cash-page .wk-toolbar { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .worker-cash-page .wk-btn-brand::after { display: none; }
+    .worker-cash-page .wk-stat { animation: none !important; }
+    .worker-cash-page * { transition-duration: .01ms !important; }
 }
 </style>
 
@@ -149,16 +207,20 @@ $referencia = (string)($filtros['referencia'] ?? '');
                     <p class="wk-subtitle">A qu&eacute; trabajadores podr&iacute;as pagarles ahora con Caja, seg&uacute;n su saldo y el corte abierto. Solo consulta: no registra pagos ni cambia saldos.</p>
                 </div>
             </div>
-            <span class="wk-pill"><i class="fas fa-eye"></i> Solo GET / read-only</span>
-        </section>
-
-        <section class="wk-toolbar">
-            <div class="flex flex-wrap gap-2">
+            <div class="wk-toolbar lg:justify-end" style="justify-content: flex-start;">
                 <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a class="wk-btn wk-btn-muted ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
-                <a class="wk-btn wk-btn-muted" href="<?= url('caja') ?>"><i class="fas fa-cash-register"></i> Ver Caja</a>
+                <a class="wk-btn wk-btn-muted ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+                <a class="wk-btn wk-btn-muted" href="<?= url('caja') ?>"><i class="fas fa-cash-register"></i> Abrir Caja</a>
+                <span class="wk-pill"><i class="fas fa-eye"></i> Solo consulta</span>
             </div>
         </section>
+
+        <?php $subnav_section = 'personal'; $subnav_active = 'pagos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
+        <nav class="wk-tabs" aria-label="Vistas de pagos">
+            <a class="wk-tab" href="<?= url('trabajadores/pagos-caja/reporte') ?>"><i class="fas fa-file-invoice-dollar"></i> Historial</a>
+            <span class="wk-tab is-active" aria-current="page"><i class="fas fa-cash-register"></i> Simular pago</span>
+        </nav>
 
         <?php if (!$tablaDisponible): ?>
             <section class="wk-notice">
@@ -171,9 +233,9 @@ $referencia = (string)($filtros['referencia'] ?? '');
         <?php else: ?>
             <section class="wk-stats">
                 <div class="wk-stat"><p class="wk-stat-label">Trabajadores</p><p class="wk-stat-value"><?= (int)($resumen['total'] ?? 0) ?></p></div>
-                <div class="wk-stat"><p class="wk-stat-label">Se les puede pagar</p><p class="wk-stat-value"><?= (int)($resumen['elegibles'] ?? 0) ?></p></div>
-                <div class="wk-stat"><p class="wk-stat-label">Monto simulado</p><p class="wk-stat-value"><?= trab_cash_money($resumen['monto_simulado_total'] ?? 0) ?></p></div>
-                <div class="wk-stat"><p class="wk-stat-label">Corte abierto</p><p class="wk-stat-value"><?= !empty($corte) ? '#' . (int)$corte['id'] : 'No' ?></p></div>
+                <div class="wk-stat is-ok"><p class="wk-stat-label">Se les puede pagar</p><p class="wk-stat-value"><?= (int)($resumen['elegibles'] ?? 0) ?></p></div>
+                <div class="wk-stat is-gold"><p class="wk-stat-label">Monto simulado</p><p class="wk-stat-value"><?= trab_cash_money($resumen['monto_simulado_total'] ?? 0) ?></p></div>
+                <div class="wk-stat <?= !empty($corte) ? 'is-ok' : 'is-warn' ?>"><p class="wk-stat-label">Corte abierto</p><p class="wk-stat-value"><?= !empty($corte) ? '#' . (int)$corte['id'] : 'No' ?></p></div>
             </section>
 
             <div class="wk-panel p-5">
@@ -194,17 +256,38 @@ $referencia = (string)($filtros['referencia'] ?? '');
 
             <section class="wk-panel p-3 md:p-4">
                 <form method="GET" action="<?= url('trabajadores/pagos-caja/simulador') ?>" class="wk-filter-form" data-auto-filter-form>
-                    <input class="wk-control" type="number" min="1" name="trabajador_id" value="<?= $trabajadorId > 0 ? (int)$trabajadorId : '' ?>" placeholder="ID">
-                    <input class="wk-control" type="search" name="buscar" value="<?= trab_cash_safe($buscar, '') ?>" placeholder="Buscar trabajador, identificaci&oacute;n o rol">
-                    <input class="wk-control" type="date" name="periodo_inicio" value="<?= trab_cash_safe($periodoInicio, '') ?>">
-                    <input class="wk-control" type="date" name="periodo_fin" value="<?= trab_cash_safe($periodoFin, '') ?>">
-                    <select class="wk-control" name="metodo_pago">
-                        <option value="efectivo" <?= $metodoPago === 'efectivo' ? 'selected' : '' ?>>Efectivo</option>
-                        <option value="tarjeta" <?= $metodoPago === 'tarjeta' ? 'selected' : '' ?>>Tarjeta</option>
-                        <option value="transferencia" <?= $metodoPago === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
-                    </select>
-                    <input class="wk-control" type="number" data-money-format="true" min="0" step="0.01" name="monto" value="<?= trab_cash_safe($monto, '') ?>" placeholder="Monto">
-                    <input class="wk-control" type="text" name="referencia" value="<?= trab_cash_safe($referencia, '') ?>" placeholder="Referencia (opcional)">
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">ID trabajador</span>
+                        <input class="wk-control" type="number" min="1" name="trabajador_id" value="<?= $trabajadorId > 0 ? (int)$trabajadorId : '' ?>" placeholder="Todos">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Buscar</span>
+                        <input class="wk-control" type="search" name="buscar" value="<?= trab_cash_safe($buscar, '') ?>" placeholder="Trabajador, identificaci&oacute;n o rol">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Periodo desde</span>
+                        <input class="wk-control" type="date" name="periodo_inicio" value="<?= trab_cash_safe($periodoInicio, '') ?>">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Periodo hasta</span>
+                        <input class="wk-control" type="date" name="periodo_fin" value="<?= trab_cash_safe($periodoFin, '') ?>">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">M&eacute;todo</span>
+                        <select class="wk-control" name="metodo_pago">
+                            <option value="efectivo" <?= $metodoPago === 'efectivo' ? 'selected' : '' ?>>Efectivo</option>
+                            <option value="tarjeta" <?= $metodoPago === 'tarjeta' ? 'selected' : '' ?>>Tarjeta</option>
+                            <option value="transferencia" <?= $metodoPago === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
+                        </select>
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Monto</span>
+                        <input class="wk-control" type="number" data-money-format="true" min="0" step="0.01" name="monto" value="<?= trab_cash_safe($monto, '') ?>" placeholder="Sugerido">
+                    </label>
+                    <label class="wk-filter-field">
+                        <span class="wk-filter-label">Referencia</span>
+                        <input class="wk-control" type="text" name="referencia" value="<?= trab_cash_safe($referencia, '') ?>" placeholder="Opcional">
+                    </label>
                     <button class="wk-btn wk-btn-brand" type="submit"><i class="fas fa-filter"></i> Evaluar</button>
                 </form>
             </section>

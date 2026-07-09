@@ -202,13 +202,57 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-badge.is-warn { color: color-mix(in srgb, var(--wk-warning) 82%, #000); background: var(--wk-warning-bg); border-color: color-mix(in srgb, var(--wk-warning) 28%, #fff); }
 
 .worker-detail-page .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Neutraliza el .grid{min-height:200px} global de performance-optimization.css */
+.worker-detail-page .grid { min-height: 0; }
+
+/* Pestañas de la ficha: control segmentado (local), distinto de la subnav de sección */
+.worker-detail-page .wk-tabs {
+    display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
+    background: color-mix(in srgb, var(--wk-brand) 5%, var(--wk-ivory-2));
+    border: 1px solid var(--wk-border); border-radius: 15px;
+}
+.worker-detail-page .wk-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: transparent; color: var(--wk-muted-2);
+    min-height: 40px; padding: 0 16px 2px; font-size: .85rem; font-weight: 650; cursor: pointer;
+    font-family: var(--wk-sans); line-height: 1; white-space: nowrap;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.worker-detail-page .wk-tab i { font-size: .8rem; color: color-mix(in srgb, var(--wk-muted) 80%, #fff); transition: color .16s ease; }
+.worker-detail-page .wk-tab:hover { color: var(--wk-heading); background: rgba(255,255,255,.65); }
+.worker-detail-page .wk-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wk-ring); }
+.worker-detail-page .wk-tab.is-active {
+    background: var(--wk-surface); color: var(--wk-heading); border-color: var(--wk-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 6px 14px -8px color-mix(in srgb, var(--wk-brand) 38%, transparent);
+}
+.worker-detail-page .wk-tab.is-active i { color: var(--wk-gold-ink); }
+.worker-detail-page .wk-tab.is-active::after {
+    content: ""; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 40%, #fff));
+}
+.worker-detail-page.wk-tabs-ready .wk-tabpane:not(.is-open) { display: none; }
+.worker-detail-page.wk-tabs-ready .wk-tabpane.is-open { animation: wkRise .32s var(--wk-ease, cubic-bezier(.22,1,.36,1)); }
+.worker-detail-page .wk-tabpane { display: grid; gap: 20px; }
+@keyframes wkRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@media (max-width: 768px) {
+    .worker-detail-page .wk-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .worker-detail-page .wk-tabs::-webkit-scrollbar { display: none; }
+    .worker-detail-page .wk-tab { flex: 1 0 auto; justify-content: center; }
+}
 .worker-detail-page .wk-toolbar form { display: inline-flex; margin: 0; }
 .worker-detail-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 15px;
     border-radius: 11px; border: 1px solid var(--wk-border); background: rgba(255,255,255,.86); color: var(--wk-text); font-weight: 650; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .worker-detail-page .wk-btn:hover { transform: translateY(-1px); border-color: var(--wk-gold-line); color: var(--wk-gold-ink); }
-.worker-detail-page .wk-btn-gold { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent); }
+.worker-detail-page .wk-btn-gold { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent); }
 .worker-detail-page .wk-btn-gold:hover { color: #fff; border-color: transparent; }
+.worker-detail-page .wk-btn-gold::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent);
+    transform: translateX(-170%) skewX(-18deg);
+}
+.worker-detail-page .wk-btn-gold:hover::after { transition: transform .7s ease; transform: translateX(330%) skewX(-18deg); }
 .worker-detail-page .wk-btn-off { color: var(--wk-danger); border-color: color-mix(in srgb, var(--wk-danger) 24%, var(--wk-border)); }
 .worker-detail-page .wk-btn-off:hover { color: var(--wk-danger); background: var(--wk-danger-bg); }
 .worker-detail-page .wk-btn-on { color: var(--wk-success); border-color: color-mix(in srgb, var(--wk-success) 24%, var(--wk-border)); }
@@ -223,7 +267,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 
 .worker-detail-page .wk-panel { background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); }
 .worker-detail-page .wk-panel-pad { padding: 20px; }
-.worker-detail-page .wk-panel-head { padding: 13px 16px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--wk-surface-warm) 82%, #fff), rgba(255,255,255,.92)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.worker-detail-page .wk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--wk-surface-warm) 82%, #fff), rgba(255,255,255,.92)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .worker-detail-page .wk-panel-title { font-family: var(--wk-serif); font-size: 1.35rem; font-weight: 650; color: var(--wk-heading); line-height: 1.1; }
 .worker-detail-page .wk-panel-sub { font-size: .84rem; color: var(--wk-muted); margin-top: 4px; line-height: 1.5; max-width: 64ch; font-weight: 500; }
 .worker-detail-page .wk-sec-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -236,14 +280,24 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 
 /* Resumen de cuenta (hero) */
 .worker-detail-page .wk-summary { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.3fr); gap: 14px; }
-.worker-detail-page .wk-balance { border-radius: 16px; border: 1px solid var(--wk-border); padding: 18px; background: linear-gradient(160deg, rgba(255,255,255,.9), var(--wk-surface-warm)); box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 12px 28px -25px rgba(27,39,70,.22); }
+.worker-detail-page .wk-balance { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid var(--wk-border); padding: 18px; background: linear-gradient(160deg, rgba(255,255,255,.9), var(--wk-surface-warm)); box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 12px 28px -25px rgba(27,39,70,.22); }
+.worker-detail-page .wk-balance::after {
+    content: ""; position: absolute; right: -36px; bottom: -48px; width: 150px; height: 150px; border-radius: 999px; pointer-events: none;
+    border: 1.5px solid color-mix(in srgb, var(--wk-gold) 34%, transparent);
+    box-shadow: 0 0 0 24px color-mix(in srgb, var(--wk-gold) 7%, transparent), 0 0 0 52px color-mix(in srgb, var(--wk-gold) 4%, transparent);
+}
+.worker-detail-page .wk-balance > * { position: relative; z-index: 1; }
 .worker-detail-page .wk-balance-label { color: var(--wk-muted); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.worker-detail-page .wk-balance-value { margin-top: 6px; font-family: var(--wk-serif); font-size: clamp(2.25rem, 5vw, 3rem); font-weight: 650; line-height: 1; color: var(--wk-heading); }
+.worker-detail-page .wk-balance-value { margin-top: 6px; font-family: var(--wk-serif); font-size: clamp(2.25rem, 5vw, 3rem); font-weight: 650; line-height: 1; color: var(--wk-heading); animation: wkRise .5s cubic-bezier(.22,1,.36,1) .08s backwards; }
 .worker-detail-page .wk-balance.is-positive .wk-balance-value { color: var(--wk-success); }
 .worker-detail-page .wk-balance.is-negative .wk-balance-value { color: var(--wk-warning); }
 .worker-detail-page .wk-balance-caption { margin-top: 10px; color: var(--wk-muted-2); font-size: .86rem; line-height: 1.55; }
 .worker-detail-page .wk-factors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
-.worker-detail-page .wk-factor { border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; background: var(--wk-surface); }
+.worker-detail-page .wk-factor { position: relative; border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px 13px 18px; background: var(--wk-surface); }
+.worker-detail-page .wk-factor::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--wk-border); }
+.worker-detail-page .wk-factor.is-plus::before { background: color-mix(in srgb, var(--wk-success) 55%, #fff); }
+.worker-detail-page .wk-factor.is-minus::before { background: color-mix(in srgb, var(--wk-danger) 45%, #fff); }
+.worker-detail-page .wk-factor.is-gold::before { background: var(--wk-gold-line); }
 .worker-detail-page .wk-factor small { display: block; color: var(--wk-muted); font-size: .69rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .worker-detail-page .wk-factor strong { display: block; margin-top: 5px; font-family: var(--wk-serif); font-size: 1.4rem; font-weight: 650; color: var(--wk-heading); }
 .worker-detail-page .wk-factor.is-plus strong { color: var(--wk-success); }
@@ -291,13 +345,18 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     gap: 12px;
     max-width: 980px;
     align-items: end;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--wk-success) 16%, var(--wk-border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--wk-success-bg) 22%, #fff);
 }
 .worker-detail-page .wk-pay-grid > div { min-width: 0; }
 .worker-detail-page .wk-pay-grid > [style*="grid-column"] { grid-column: 1 / -1 !important; }
 
 /* Pago cards */
 .worker-detail-page .wk-pay-list { display: grid; gap: 12px; }
-.worker-detail-page .wk-pay-card { border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; background: rgba(255,255,255,.9); }
+.worker-detail-page .wk-pay-card { border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; background: rgba(255,255,255,.9); transition: border-color .16s ease, box-shadow .16s ease; }
+.worker-detail-page .wk-pay-card:hover { border-color: var(--wk-gold-line); box-shadow: 0 12px 26px -22px rgba(27,39,70,.35); }
 .worker-detail-page .wk-pay-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .worker-detail-page .wk-pay-amount { font-family: var(--wk-serif); font-size: 1.42rem; font-weight: 650; color: var(--wk-heading); }
 .worker-detail-page .wk-pay-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 14px; margin-top: 11px; }
@@ -318,7 +377,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-ledger-amount.is-plus { color: var(--wk-success); }
 .worker-detail-page .wk-ledger-amount.is-minus, .worker-detail-page .wk-ledger-amount.is-debt { color: var(--wk-danger); }
 .worker-detail-page .wk-empty-box { display: grid; place-items: center; min-height: 150px; padding: 24px; text-align: center; color: var(--wk-muted); }
-.worker-detail-page .wk-empty-box i { font-size: 1.8rem; color: color-mix(in srgb, var(--wk-gold) 50%, #cbd5e1); margin-bottom: 8px; }
+.worker-detail-page .wk-empty-box i { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; background: var(--wk-gold-soft); color: var(--wk-gold-ink); font-size: 1.2rem; margin-bottom: 10px; }
 .worker-detail-page .wk-empty-box strong { display: block; color: var(--wk-heading); font-weight: 650; }
 .worker-detail-page .wk-empty-box span { display: block; max-width: 26rem; margin-top: 4px; font-size: .84rem; line-height: 1.45; }
 
@@ -327,6 +386,8 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-table th { padding: 11px 13px; color: var(--wk-muted); font-size: .66rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
 .worker-detail-page .wk-table th.is-end, .worker-detail-page .wk-table td.is-end { text-align: right; }
 .worker-detail-page .wk-table td { padding: 12px 13px; border-bottom: 1px solid var(--wk-border); vertical-align: middle; }
+.worker-detail-page .wk-table tbody tr { transition: background .14s ease; }
+.worker-detail-page .wk-table tbody tr:hover { background: var(--wk-ivory-2); }
 .worker-detail-page .wk-table tbody tr:last-child td { border-bottom: 0; }
 .worker-detail-page .wk-strong { font-weight: 620; color: var(--wk-heading); }
 .worker-detail-page .wk-sub { color: var(--wk-muted-2); font-size: .78rem; }
@@ -342,6 +403,13 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     .worker-detail-page .wk-factors, .worker-detail-page .wk-meta-grid { grid-template-columns: 1fr; }
     .worker-detail-page .wk-revert { grid-template-columns: 1fr; }
     .worker-detail-page .wk-panel-pad > .wk-details .wk-form-pad > .grid { grid-template-columns: 1fr !important; }
+    .worker-detail-page .wk-toolbar { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .worker-detail-page .wk-btn-gold::after { display: none; }
+    .worker-detail-page .wk-balance-value,
+    .worker-detail-page.wk-tabs-ready .wk-tabpane.is-open { animation: none !important; }
+    .worker-detail-page * { transition-duration: .01ms !important; }
 }
 </style>
 
@@ -364,26 +432,26 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     </div>
                 </div>
             </div>
+            <div class="wk-toolbar lg:justify-end">
+                <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+                <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+                <a class="wk-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>"><i class="fas fa-pen"></i> Editar datos</a>
+                <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>"><i class="fas fa-cash-register"></i> Simulador</a>
+                <?php if ($estadoTrabajador === 'baja'): ?>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
+                        <?= csrf_field() ?>
+                        <button class="wk-btn wk-btn-on" type="submit"><i class="fas fa-rotate-left"></i> Reactivar</button>
+                    </form>
+                <?php else: ?>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Dar de baja al trabajador?" data-ms-msg="La baja conserva el registro del trabajador; podrás reactivarlo después." data-ms-ok="Confirmar baja">
+                        <?= csrf_field() ?>
+                        <button class="wk-btn wk-btn-off" type="submit"><i class="fas fa-user-slash"></i> Dar de baja</button>
+                    </form>
+                <?php endif; ?>
+            </div>
         </section>
 
-        <!-- Acciones -->
-        <section class="wk-toolbar">
-            <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-            <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
-            <a class="wk-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>"><i class="fas fa-pen"></i> Editar datos</a>
-            <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>"><i class="fas fa-cash-register"></i> Simulador de pagos</a>
-            <?php if ($estadoTrabajador === 'baja'): ?>
-                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
-                    <?= csrf_field() ?>
-                    <button class="wk-btn wk-btn-on" type="submit"><i class="fas fa-rotate-left"></i> Reactivar</button>
-                </form>
-            <?php else: ?>
-                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" data-ms-confirm data-ms-type="warning" data-ms-icon="logout" data-ms-title="¿Dar de baja al trabajador?" data-ms-msg="La baja conserva el registro del trabajador; podrás reactivarlo después." data-ms-ok="Confirmar baja">
-                    <?= csrf_field() ?>
-                    <button class="wk-btn wk-btn-off" type="submit"><i class="fas fa-user-slash"></i> Dar de baja</button>
-                </form>
-            <?php endif; ?>
-        </section>
+        <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
         <!-- Resumen de cuenta -->
         <section class="wk-summary">
@@ -403,6 +471,14 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             </div>
         </section>
 
+        <div class="wk-tabs" role="tablist" aria-label="Secciones de la ficha">
+            <button type="button" class="wk-tab is-active" data-wk-tab="resumen" role="tab" aria-selected="true"><i class="fas fa-id-card"></i> Resumen</button>
+            <button type="button" class="wk-tab" data-wk-tab="pagos" role="tab" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Pagos</button>
+            <button type="button" class="wk-tab" data-wk-tab="cuenta" role="tab" aria-selected="false"><i class="fas fa-scale-balanced"></i> Cuenta</button>
+            <button type="button" class="wk-tab" data-wk-tab="actividad" role="tab" aria-selected="false"><i class="fas fa-calendar-check"></i> Actividad</button>
+        </div>
+
+        <div class="wk-tabpane is-open" data-wk-pane="resumen">
         <!-- Datos del trabajador -->
         <section class="wk-panel">
             <div class="wk-panel-head">
@@ -428,6 +504,13 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             </div>
         </section>
 
+        <?php View::partial('documentos_entidad', [
+            'documentosEntidad' => $documentosEntidad ?? [],
+            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+        ]); ?>
+        </div>
+
+        <div class="wk-tabpane" data-wk-pane="pagos">
         <!-- Pagar al trabajador con Caja -->
         <section class="wk-panel">
             <div class="wk-panel-head">
@@ -588,12 +671,9 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <?php endif; ?>
             </div>
         </section>
+        </div>
 
-        <?php View::partial('documentos_entidad', [
-            'documentosEntidad' => $documentosEntidad ?? [],
-            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
-        ]); ?>
-
+        <div class="wk-tabpane" data-wk-pane="cuenta">
         <!-- Cuenta del trabajador (ledger) -->
         <section class="wk-panel">
             <div class="wk-panel-head">
@@ -787,7 +867,9 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             </div>
             </div>
         </section>
+        </div>
 
+        <div class="wk-tabpane" data-wk-pane="actividad">
         <!-- Tareas asignadas -->
         <section>
             <?php
@@ -875,9 +957,46 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <?php endif; ?>
             <?php endif; ?>
         </section>
+        </div>
     </div>
 </div>
 
 <script>
 /* La confirmación de baja usa el modal global msConfirm (data-ms-confirm en el form). */
+/* Pestañas de la ficha: solo presentación. Sin JS, todas las secciones quedan visibles. */
+(function () {
+    var page = document.querySelector('.worker-detail-page');
+    if (!page) return;
+    var tabs = page.querySelectorAll('.wk-tab[data-wk-tab]');
+    var panes = page.querySelectorAll('.wk-tabpane[data-wk-pane]');
+    if (!tabs.length || !panes.length) return;
+
+    function activar(clave, actualizarHash) {
+        var existe = false;
+        panes.forEach(function (p) {
+            var abierta = p.getAttribute('data-wk-pane') === clave;
+            p.classList.toggle('is-open', abierta);
+            if (abierta) existe = true;
+        });
+        if (!existe) return activar('resumen', false);
+        tabs.forEach(function (t) {
+            var activa = t.getAttribute('data-wk-tab') === clave;
+            t.classList.toggle('is-active', activa);
+            t.setAttribute('aria-selected', activa ? 'true' : 'false');
+        });
+        if (actualizarHash && history.replaceState) {
+            history.replaceState(null, '', '#t=' + clave);
+        }
+    }
+
+    tabs.forEach(function (t) {
+        t.addEventListener('click', function () {
+            activar(t.getAttribute('data-wk-tab'), true);
+        });
+    });
+
+    var hash = (location.hash || '').replace(/^#t=/, '');
+    page.classList.add('wk-tabs-ready');
+    activar(hash || 'resumen', false);
+})();
 </script>

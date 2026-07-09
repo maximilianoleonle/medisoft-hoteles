@@ -253,6 +253,7 @@ if (!function_exists('trab_nom_det_status_label')) {
     </section>
 
     <section class="p-6 space-y-4">
+        <?php $subnav_section = 'personal'; $subnav_active = 'prenomina'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 <?php $back_arrow_href = back_url('trabajadores/nomina/periodos'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
