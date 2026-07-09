@@ -6,17 +6,24 @@
  * (trabajador_nomina_periodos/_detalles/_eventos) con motor='v2' y
  * grupo_nomina_id, mas las lineas normalizadas en nomina_periodo_conceptos.
  *
- * Al APROBAR (no al cerrar), acredita el NETO de cada trabajador en el ledger
- * laboral (trabajador_pagos, referencia 'NOMV2-{periodo}-{trabajador}') para
- * que el riel de pagos por Caja existente funcione sin tocar una linea del
- * subsistema de Caja. Emitir el credito hasta la aprobacion garantiza que
- * NINGUN riel de pago (ni el libre) pueda pagar un periodo sin aprobar.
- * El motor v2 excluye esas referencias de calculos futuros (sin doble conteo).
+ * Al APROBAR (no al cerrar), acredita en el ledger laboral (trabajador_pagos,
+ * referencia 'NOMV2-{periodo}-{trabajador}') el BRUTO del snapshot MENOS el
+ * neto de las lineas ledger v1 absorbidas: esas filas (bonos/comisiones)
+ * siguen activas y contando en el saldo del riel libre, asi que acreditar el
+ * neto completo duplicaria el saldo pagable. Con este resto, el saldo
+ * disponible del trabajador queda exactamente en el neto del periodo (los
+ * anticipos/prestamos, ya restados del neto sugerido, los resta el propio
+ * riel de pago). Emitir el credito hasta la aprobacion garantiza que NINGUN
+ * riel de pago (ni el libre) pueda pagar un periodo sin aprobar. El motor v2
+ * excluye esas referencias de calculos futuros (sin doble conteo).
  *
  * Anulacion v2: exige motivo, bloquea si hay pagos snapshot vigentes y anula
  * los creditos NOMV2 del ledger en la misma transaccion. La reapertura
  * (aprobado -> cerrado) tambien anula los creditos: sin aprobacion no hay
- * saldo pagable.
+ * saldo pagable. Ambas verifican ademas que los creditos NOMV2 sigan SIN
+ * consumir por pagos de Caja (incluido el riel libre del perfil, que no viaja
+ * con nomina_periodo_id): si un pago ya salio respaldado por el credito, hay
+ * que revertirlo antes de anular/reabrir.
  */
 
 require_once __DIR__ . '/../../core/Database.php';
@@ -228,33 +235,60 @@ class NominaCierreService {
                 throw new Exception('No se pudo aprobar el periodo (estado cambiado por otro usuario).');
             }
 
-            // Emitir el credito del neto en el ledger: desde este momento (y solo
+            // Emitir el credito del periodo en el ledger: desde este momento (y solo
             // desde este momento) el periodo es pagable por los rieles de Caja.
+            // El credito es el BRUTO del snapshot MENOS el neto de las lineas
+            // ledger v1 absorbidas: esas filas siguen activas y contando en el
+            // saldo del riel libre, asi que acreditar el neto completo las
+            // duplicaria. Si el ledger absorbido supera al bruto (p.ej. bono v1
+            // neutralizado por deducciones del snapshot), se emite el ajuste
+            // en_contra para que el saldo pagable quede exactamente en el neto.
             $st = $this->pdo->prepare(
-                "SELECT trabajador_id, neto_sugerido FROM trabajador_nomina_periodo_detalles
-                 WHERE periodo_id = ? AND hotel_id = ? AND neto_sugerido > 0"
+                "SELECT trabajador_id, bruto_periodo FROM trabajador_nomina_periodo_detalles
+                 WHERE periodo_id = ? AND hotel_id = ?"
             );
             $st->execute([$periodoId, $hotelId]);
-            $detallesPagables = $st->fetchAll();
+            $detalles = $st->fetchAll();
+
+            $st = $this->pdo->prepare(
+                "SELECT trabajador_id,
+                        COALESCE(SUM(CASE WHEN tipo = 'percepcion' THEN monto ELSE -monto END), 0) AS neto_ledger
+                 FROM nomina_periodo_conceptos
+                 WHERE periodo_id = ? AND hotel_id = ? AND origen = 'ledger'
+                 GROUP BY trabajador_id"
+            );
+            $st->execute([$periodoId, $hotelId]);
+            $ledgerAbsorbido = [];
+            foreach ($st->fetchAll() as $row) {
+                $ledgerAbsorbido[(int) $row['trabajador_id']] = (float) $row['neto_ledger'];
+            }
 
             $stLedger = $this->pdo->prepare(
                 "INSERT INTO trabajador_pagos
                     (hotel_id, trabajador_id, tipo, efecto, monto, concepto,
                      periodo_inicio, periodo_fin, fecha, referencia, estado, created_by)
-                 VALUES (?, ?, 'pago', 'a_favor', ?, ?, ?, ?, ?, ?, 'activo', ?)"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo', ?)"
             );
 
             $creditosEmitidos = 0;
-            foreach ($detallesPagables as $d) {
+            foreach ($detalles as $d) {
+                $trabajadorId = (int) $d['trabajador_id'];
+                $credito = round((float) $d['bruto_periodo'] - ($ledgerAbsorbido[$trabajadorId] ?? 0.0), 2);
+                if (abs($credito) < 0.005) {
+                    continue;
+                }
+
                 $stLedger->execute([
                     $hotelId,
-                    (int) $d['trabajador_id'],
-                    $d['neto_sugerido'],
-                    mb_substr('Nomina aprobada: ' . $periodo['etiqueta'], 0, 160),
+                    $trabajadorId,
+                    $credito > 0 ? 'pago' : 'ajuste',
+                    $credito > 0 ? 'a_favor' : 'en_contra',
+                    number_format(abs($credito), 2, '.', ''),
+                    mb_substr(($credito > 0 ? 'Nomina aprobada: ' : 'Nomina aprobada (ajuste por conceptos previos): ') . $periodo['etiqueta'], 0, 160),
                     $periodo['fecha_inicio'],
                     $periodo['fecha_fin'],
                     $periodo['fecha_fin'],
-                    'NOMV2-' . $periodoId . '-' . (int) $d['trabajador_id'],
+                    'NOMV2-' . $periodoId . '-' . $trabajadorId,
                     $usuarioId,
                 ]);
                 $creditosEmitidos++;
@@ -325,6 +359,13 @@ class NominaCierreService {
             if ($st->rowCount() !== 1) {
                 throw new Exception('No se pudo anular el periodo (estado cambiado por otro usuario).');
             }
+
+            // Candado anti doble pago: los pagos del riel libre (perfil del
+            // trabajador) no viajan con nomina_periodo_id y son invisibles al
+            // bloqueo de arriba. Si ya consumieron el credito aprobado, anular
+            // los creditos dejaria ese dinero sin respaldo y el periodo podria
+            // re-cerrarse y volver a pagarse.
+            $this->verificarCreditosNoConsumidos($hotelId, $periodoId, 'anular');
 
             // Anular los creditos del ledger emitidos por este cierre.
             $st = $this->pdo->prepare(
@@ -411,6 +452,12 @@ class NominaCierreService {
                 throw new Exception('No se pudo reabrir el periodo (estado cambiado por otro usuario).');
             }
 
+            // Candado anti doble pago: pagos del riel libre (sin
+            // nomina_periodo_id) que ya consumieron el credito aprobado deben
+            // revertirse antes de reabrir; si no, el periodo re-cerrado con
+            // otras fechas volveria a ser pagable y el dinero saldria dos veces.
+            $this->verificarCreditosNoConsumidos($hotelId, $periodoId, 'reabrir');
+
             // Sin aprobacion no hay saldo pagable: anular los creditos NOMV2.
             $st = $this->pdo->prepare(
                 "UPDATE trabajador_pagos SET estado = 'anulado', updated_by = ?
@@ -450,6 +497,74 @@ class NominaCierreService {
     }
 
     /* ------------------------------------------------------------------ */
+
+    /**
+     * Candado anti doble pago para anular/reabrir: los creditos NOMV2 activos
+     * del periodo solo pueden retirarse si siguen SIN consumir. Los pagos del
+     * riel libre no viajan con nomina_periodo_id, asi que el consumo se
+     * verifica con el invariante del pool laboral por trabajador:
+     * (conceptos activos netos - pagos de Caja vigentes) >= credito a retirar.
+     * Si no alcanza, algun pago ya salio respaldado por este credito y hay que
+     * revertirlo primero. Debe llamarse DENTRO de la transaccion: bloquea las
+     * mismas filas laborales que el riel de pago para serializar contra un
+     * pago concurrente.
+     */
+    private function verificarCreditosNoConsumidos(int $hotelId, int $periodoId, string $accion): void {
+        $st = $this->pdo->prepare(
+            "SELECT trabajador_id,
+                    SUM(CASE WHEN efecto = 'a_favor' THEN monto ELSE -monto END) AS credito
+             FROM trabajador_pagos
+             WHERE hotel_id = ? AND referencia LIKE ? AND estado = 'activo'
+             GROUP BY trabajador_id"
+        );
+        $st->execute([$hotelId, 'NOMV2-' . $periodoId . '-%']);
+        $creditos = $st->fetchAll();
+        if (!$creditos) {
+            return;
+        }
+
+        $stLockPagos = $this->pdo->prepare(
+            'SELECT id FROM trabajador_pagos WHERE hotel_id = ? AND trabajador_id = ? FOR UPDATE'
+        );
+        $stLockCaja = $this->pdo->prepare(
+            'SELECT id FROM trabajador_pagos_caja WHERE hotel_id = ? AND trabajador_id = ? FOR UPDATE'
+        );
+        $stConceptos = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(CASE WHEN efecto = 'a_favor' THEN monto ELSE -monto END), 0)
+             FROM trabajador_pagos
+             WHERE hotel_id = ? AND trabajador_id = ? AND estado = 'activo'"
+        );
+        $stPagos = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(monto), 0)
+             FROM trabajador_pagos_caja
+             WHERE hotel_id = ? AND trabajador_id = ? AND estado = 'pagado'"
+        );
+
+        foreach ($creditos as $c) {
+            $credito = (float) $c['credito'];
+            if ($credito <= 0.004) {
+                continue;
+            }
+            $trabajadorId = (int) $c['trabajador_id'];
+
+            $stLockPagos->execute([$hotelId, $trabajadorId]);
+            $stLockPagos->fetchAll();
+            $stLockCaja->execute([$hotelId, $trabajadorId]);
+            $stLockCaja->fetchAll();
+
+            $stConceptos->execute([$hotelId, $trabajadorId]);
+            $conceptos = (float) $stConceptos->fetchColumn();
+            $stPagos->execute([$hotelId, $trabajadorId]);
+            $pagos = (float) $stPagos->fetchColumn();
+
+            if ($conceptos - $pagos < $credito - 0.004) {
+                throw new Exception(
+                    'El trabajador #' . $trabajadorId . ' tiene pagos de Caja que ya consumieron el neto aprobado de este periodo'
+                    . ' (incluye pagos hechos desde su perfil): revierte esos pagos antes de ' . $accion . '.'
+                );
+            }
+        }
+    }
 
     private function obtenerPeriodoV2(int $hotelId, int $periodoId): array {
         $st = $this->pdo->prepare(
