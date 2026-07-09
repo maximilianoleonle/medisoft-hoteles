@@ -32,6 +32,17 @@ $repEstrellas = static function ($n) {
     return $html;
 };
 
+// Copiloto IA (bloque copiloto_ia): la UI se muestra como teaser aunque el
+// hotel no tenga el bloque (el servidor administra la prueba gratis), pero
+// solo si el servidor tiene la IA configurada.
+$repIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
+$repIaMeses = [];
+$repNombresMes = [1 => 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+for ($i = 0; $i < 6; $i++) {
+    $ts = strtotime(date('Y-m-01') . " -{$i} months");
+    $repIaMeses[date('Y-m', $ts)] = $repNombresMes[(int) date('n', $ts)] . ' ' . date('Y', $ts);
+}
+
 $promedio = array_key_exists('promedio', $kpis) && $kpis['promedio'] !== null
     ? number_format((float) $kpis['promedio'], 1)
     : '-';
@@ -440,6 +451,19 @@ $totalCheckouts = count($filas);
     line-height: 1.5;
 }
 
+/* Copiloto IA (bloque copiloto_ia) */
+.repia-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 650; letter-spacing: .03em; background: var(--rep-gold-soft); color: var(--rep-gold-ink); vertical-align: 2px; }
+.repia-btn-resena { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 3px 9px; border: 1px solid var(--rep-gold-line); border-radius: 999px; background: var(--rep-surface); color: var(--rep-gold-ink); font-family: inherit; font-size: .74rem; font-weight: 650; cursor: pointer; }
+.repia-btn-resena:hover { background: var(--rep-gold-soft); }
+.repia-panel { padding: 12px 14px; background: var(--rep-ivory-2); }
+.repia-texto { font-size: .88rem; color: var(--rep-text); line-height: 1.55; background: var(--rep-surface); border: 1px solid var(--rep-border); border-radius: 10px; padding: 12px 14px; white-space: normal; }
+.repia-meta { font-size: .74rem; color: var(--rep-muted); margin-top: 6px; }
+.repia-botones { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.repia-upsell { font-size: .85rem; background: var(--rep-gold-soft); border: 1px solid var(--rep-gold-line); color: var(--rep-gold-ink); border-radius: 10px; padding: 12px 14px; line-height: 1.5; }
+.repia-error { font-size: .85rem; background: var(--rep-danger-bg); border: 1px solid color-mix(in srgb, var(--rep-danger) 24%, #fff); color: var(--rep-danger); border-radius: 10px; padding: 10px 12px; }
+.repia-controles { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 0 16px 14px; }
+.repia-controles select { min-height: 40px; border: 1px solid var(--rep-border); border-radius: 11px; background: var(--rep-surface-warm); color: var(--rep-text); font-family: inherit; font-size: .88rem; font-weight: 560; padding: 0 12px; }
+
 @media (max-width: 900px) {
     .rep-hero-section {
         grid-template-columns: minmax(0, 1fr);
@@ -591,6 +615,9 @@ $totalCheckouts = count($filas);
                                         <?php if (!empty($fila['comentario'])): ?>
                                             <div class="rep-comentario">"<?= $repSafe(mb_strimwidth((string) $fila['comentario'], 0, 140, '...', 'UTF-8')) ?>"</div>
                                         <?php endif; ?>
+                                        <?php if ($repIaOk && !empty($fila['encuesta_id'])): ?>
+                                            <button type="button" class="repia-btn-resena" data-encuesta="<?= (int) $fila['encuesta_id'] ?>">✨ Responder con IA</button>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="rep-muted-dash">-</span>
                                     <?php endif; ?>
@@ -635,6 +662,26 @@ $totalCheckouts = count($filas);
             </div>
         </section>
 
+        <?php if ($repIaOk): ?>
+        <section class="rep-card">
+            <div class="rep-card-head">
+                <div>
+                    <h2 class="rep-card-title">Análisis del mes <span class="repia-tag">✨ Copiloto IA</span></h2>
+                    <p class="rep-card-sub">Lee todas las encuestas del periodo y te dice qué se repite: las quejas, los elogios y qué atender primero.</p>
+                </div>
+            </div>
+            <div class="repia-controles">
+                <select id="repia-mes">
+                    <?php foreach ($repIaMeses as $repMesVal => $repMesTxt): ?>
+                        <option value="<?= $repSafe($repMesVal) ?>"><?= $repSafe($repMesTxt) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" id="repia-analizar" class="rep-btn">Ver análisis</button>
+            </div>
+            <div id="repia-analisis" class="repia-panel" style="border-top:1px dashed var(--rep-border);" hidden></div>
+        </section>
+        <?php endif; ?>
+
         <section class="rep-card rep-config">
             <div class="rep-card-head">
                 <div>
@@ -669,3 +716,110 @@ $totalCheckouts = count($filas);
         </section>
     </div>
 </div>
+
+<?php if ($repIaOk): ?>
+<script>
+(function () {
+    'use strict';
+    var URL_RESENA = <?= json_encode(url('copiloto-ia/resena')) ?>;
+    var URL_ANALISIS = <?= json_encode(url('copiloto-ia/analisis')) ?>;
+    var TOKEN = <?= json_encode(function_exists('csrf_token') ? csrf_token() : '') ?>;
+
+    function post(url, params, cb) {
+        var datos = new URLSearchParams();
+        datos.append('csrf_token', TOKEN);
+        Object.keys(params).forEach(function (k) { datos.append(k, params[k]); });
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': TOKEN, 'X-Requested-With': 'XMLHttpRequest' },
+            body: datos.toString()
+        }).then(function (r) { return r.json(); }).then(cb).catch(function () {
+            cb({ success: false, message: 'No se pudo conectar. Revisa tu internet e intenta de nuevo.' });
+        });
+    }
+
+    // Texto de la IA: se escapa todo y solo se permiten **negritas** y saltos de linea.
+    function iaHtml(t) {
+        var d = document.createElement('div');
+        d.textContent = t || '';
+        return d.innerHTML.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    }
+
+    function pintar(cont, data, recargar, textoCopiable) {
+        if (data.success) {
+            var partes = ['<div class="repia-texto">' + iaHtml(data.texto) + '</div>'];
+            partes.push('<div class="repia-meta">' + (data.desde_cache ? 'Generado el ' + iaHtml(data.generado_en || '') : 'Recién generado') + '</div>');
+            if (data.prueba && typeof data.prueba.restantes === 'number') {
+                partes.push('<div class="repia-meta">✨ Prueba gratis del bloque Copiloto IA · te quedan <strong>' + data.prueba.restantes + '</strong> usos de esta función.</div>');
+            }
+            partes.push('<div class="repia-botones">'
+                + (textoCopiable ? '<button type="button" class="rep-btn repia-copiar">Copiar</button>' : '')
+                + '<button type="button" class="rep-btn sec repia-regen">Regenerar</button>'
+                + '</div>');
+            cont.innerHTML = partes.join('');
+            var btnCopiar = cont.querySelector('.repia-copiar');
+            if (btnCopiar) {
+                btnCopiar.addEventListener('click', function () {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(data.texto).then(function () { btnCopiar.textContent = 'Copiado ✓'; });
+                    }
+                });
+            }
+            cont.querySelector('.repia-regen').addEventListener('click', function () { recargar(true); });
+        } else if (data.upsell) {
+            cont.innerHTML = '<div class="repia-upsell">🔒 ' + iaHtml(data.message) + '</div>';
+        } else {
+            cont.innerHTML = '<div class="repia-error">' + iaHtml(data.message || 'No se pudo generar. Intenta de nuevo.') + '</div>';
+        }
+    }
+
+    // Borrador de respuesta por encuesta (panel en una fila nueva de la tabla).
+    document.querySelectorAll('.repia-btn-resena').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.dataset.encuesta;
+            var tr = btn.closest('tr');
+            var filaPanel = document.getElementById('repia-row-' + id);
+            if (filaPanel) {
+                filaPanel.hidden = !filaPanel.hidden;
+                return;
+            }
+            filaPanel = document.createElement('tr');
+            filaPanel.id = 'repia-row-' + id;
+            var td = document.createElement('td');
+            td.colSpan = 5;
+            td.style.padding = '0';
+            var cont = document.createElement('div');
+            cont.className = 'repia-panel';
+            td.appendChild(cont);
+            filaPanel.appendChild(td);
+            tr.parentNode.insertBefore(filaPanel, tr.nextSibling);
+
+            var cargar = function (regen) {
+                cont.innerHTML = '<div class="repia-meta">✨ Redactando borrador…</div>';
+                post(URL_RESENA, { encuesta_id: id, regenerar: regen ? '1' : '0' }, function (data) {
+                    pintar(cont, data, cargar, true);
+                });
+            };
+            cargar(false);
+        });
+    });
+
+    // Analisis mensual.
+    var btnAnalizar = document.getElementById('repia-analizar');
+    if (btnAnalizar) {
+        btnAnalizar.addEventListener('click', function () {
+            var cont = document.getElementById('repia-analisis');
+            var mes = document.getElementById('repia-mes').value;
+            cont.hidden = false;
+            var cargar = function (regen) {
+                cont.innerHTML = '<div class="repia-meta">✨ Leyendo las encuestas de ese mes…</div>';
+                post(URL_ANALISIS, { mes: mes, regenerar: regen ? '1' : '0' }, function (data) {
+                    pintar(cont, data, cargar, false);
+                });
+            };
+            cargar(false);
+        });
+    }
+})();
+</script>
+<?php endif; ?>

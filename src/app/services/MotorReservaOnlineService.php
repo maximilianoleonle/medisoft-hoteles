@@ -247,6 +247,16 @@ class MotorReservaOnlineService
             return ['success' => false, 'message' => 'Monto cobrado insuficiente; requiere atencion manual.'];
         }
 
+        // Serializar la confirmacion por habitacion: dos webhooks concurrentes para la
+        // misma habitacion+fechas no pueden verificar-y-crear a la vez. Sin esto, el
+        // SELECT de disponibilidad (sin lock, fuera de la transaccion de insercion) y el
+        // INSERT de la reserva forman un TOCTOU que permite doble reserva sin reembolso.
+        // GET_LOCK es por sesion: se libera solo al cerrar la conexion aunque algo falle;
+        // si no se obtiene dentro del timeout, se procede igual (no bloquear un pago real).
+        if (!$this->adquirirLockHabitacion($hotelId, $habitacionId)) {
+            error_log('Motor online: confirmacion sin lock de habitacion (pago ' . $pago['id'] . '); posible contencion.');
+        }
+
         // Re-verificacion final de disponibilidad (carrera entre dos pagos).
         $reservacionModel = new Reservacion();
         $sigueDisponible = $reservacionModel->verificarDisponibilidadMultiple([$habitacionId], $entrada, $salida);
@@ -260,10 +270,12 @@ class MotorReservaOnlineService
                 'referencia_cobro' => $referenciaCobro,
             ]);
             $this->eliminarHold($holdToken);
+            $this->liberarLockHabitacion($hotelId, $habitacionId);
             error_log('Motor online: pago ' . $pago['id'] . ' sin disponibilidad al confirmar; reembolso ' . ($reembolsado ? 'OK' : 'PENDIENTE MANUAL'));
             return ['success' => false, 'message' => 'Habitacion no disponible; pago marcado para reembolso.'];
         }
 
+        $reservacionId = 0;
         try {
             $huespedId = $this->buscarOCrearHuesped($hotelId, $pago);
             $habitacion = $this->habitacionDelHotel($hotelId, $habitacionId);
@@ -276,23 +288,38 @@ class MotorReservaOnlineService
 
             // Re-aplicar el cupon CONGELADO al iniciar el pago (dato escrito por el
             // servidor, no por el navegador) sobre el precio recien recalculado.
+            // El uso se CONSUME de forma ATOMICA ANTES de aplicar el descuento: si
+            // varios pagos concurrentes del mismo codigo llegan aqui, solo los
+            // primeros `limite_usos` obtienen descuento; el resto paga tarifa completa
+            // (su anticipo ya cobrado queda como abono). Nota: si crearConHabitaciones
+            // fallara tras consumir, un reintento puede volver a consumir; el efecto
+            // es conservador (uso desperdiciado, nunca sobre-redencion por la guardia).
             $cuponPayload = is_array($payload['cupon'] ?? null) ? $payload['cupon'] : null;
             $notaCupon = '';
-            if ($cuponPayload) {
-                $cuponService = $this->cuponService();
-                $reaplicado = $cuponService->aplicar(
-                    ['tipo' => (string) ($cuponPayload['tipo'] ?? 'porcentaje'), 'valor' => (float) ($cuponPayload['valor'] ?? 0)],
-                    $precios['total'],
-                    $precios['primera_noche']
-                );
-                if (!empty($reaplicado['ok'])) {
-                    $precios['total'] = $reaplicado['total'];
-                    $precios['primera_noche'] = $reaplicado['primera_noche'];
-                    $notaCupon = sprintf(
-                        ' Cupon %s aplicado (-$%s).',
-                        (string) ($cuponPayload['codigo'] ?? ''),
-                        number_format((float) $reaplicado['descuento'], 2)
+            if ($cuponPayload && !empty($cuponPayload['id'])) {
+                if ($this->cuponService()->consumir((int) $cuponPayload['id'])) {
+                    $reaplicado = $this->cuponService()->aplicar(
+                        ['tipo' => (string) ($cuponPayload['tipo'] ?? 'porcentaje'), 'valor' => (float) ($cuponPayload['valor'] ?? 0)],
+                        $precios['total'],
+                        $precios['primera_noche']
                     );
+                    if (!empty($reaplicado['ok'])) {
+                        $precios['total'] = $reaplicado['total'];
+                        $precios['primera_noche'] = $reaplicado['primera_noche'];
+                        $notaCupon = sprintf(
+                            ' Cupon %s aplicado (-$%s).',
+                            (string) ($cuponPayload['codigo'] ?? ''),
+                            number_format((float) $reaplicado['descuento'], 2)
+                        );
+                    }
+                } else {
+                    // Cupon agotado entre validar (iniciarPago) y confirmar: no se aplica
+                    // descuento; la reserva queda a tarifa completa con el anticipo como abono.
+                    $notaCupon = sprintf(
+                        ' Cupon %s NO aplicado (agotado al confirmar); tarifa completa.',
+                        (string) ($cuponPayload['codigo'] ?? '')
+                    );
+                    error_log('Motor online: cupon ' . (int) $cuponPayload['id'] . ' agotado al confirmar pago ' . $pago['id'] . '; reserva a tarifa completa.');
                 }
             }
             // Extras congelados al iniciar el pago (importes escritos por el servidor).
@@ -354,10 +381,7 @@ class MotorReservaOnlineService
 
             $this->eliminarHold($holdToken);
 
-            // Consumir el uso del cupon UNA sola vez (estamos dentro del claim atomico).
-            if ($cuponPayload && !empty($cuponPayload['id'])) {
-                $this->cuponService()->consumir((int) $cuponPayload['id']);
-            }
+            // (El cupon ya se consumio de forma atomica antes de aplicar el descuento.)
 
             // WhatsApp best-effort (bloque whatsapp): confirmacion al huesped + aviso al dueno.
             try {
@@ -398,8 +422,27 @@ class MotorReservaOnlineService
             return ['success' => true, 'reservacion_id' => (int) $reservacionId];
         } catch (Throwable $e) {
             error_log('Motor online: error al confirmar pago ' . $pago['id'] . ': ' . $e->getMessage());
-            // Devolver el pago a 'pendiente' (solo si seguimos duenos del claim) para que
-            // el tablero interno (F5) lo muestre y un reintento del webhook lo reprocese.
+
+            // Si la reservacion YA se creo (crearConHabitaciones hace commit en su propia
+            // transaccion) pero fallo un paso posterior, NUNCA revertir a 'pendiente': un
+            // reintento del webhook veria la habitacion ocupada por ESTA misma reserva y
+            // reembolsaria a un huesped que si tiene reservacion confirmada. En su lugar,
+            // finalizar el pago; si no se puede, dejarlo en 'procesando' (el guard superior
+            // corta por idempotencia sin duplicar y NO entra a la rama de reembolso).
+            if ($reservacionId > 0) {
+                try {
+                    $this->pdo->prepare(
+                        "UPDATE motor_pagos_online SET estado = 'pagado', reservacion_id = ?, updated_at = NOW()
+                         WHERE id = ? AND estado = 'procesando'"
+                    )->execute([(int) $reservacionId, (int) $pago['id']]);
+                    $this->eliminarHold($holdToken);
+                } catch (Throwable $e3) {
+                    error_log('Motor online: reserva ' . $reservacionId . ' creada pero no se pudo finalizar el pago ' . $pago['id'] . ' (queda en procesando, revisar tablero): ' . $e3->getMessage());
+                }
+                return ['success' => true, 'reservacion_id' => (int) $reservacionId, 'message' => 'Reservacion creada; finalizacion con incidencias, revisar tablero.'];
+            }
+
+            // Reservacion NO creada: seguro revertir a 'pendiente' para un reintento limpio.
             try {
                 $this->pdo->prepare(
                     "UPDATE motor_pagos_online SET estado = 'pendiente', updated_at = NOW()
@@ -409,6 +452,11 @@ class MotorReservaOnlineService
                 error_log('Motor online: no se pudo revertir el claim del pago ' . $pago['id'] . ': ' . $e2->getMessage());
             }
             return ['success' => false, 'message' => 'Error al crear la reservacion; requiere atencion manual.'];
+        } finally {
+            // Liberar el lock de habitacion en TODA salida del bloque de creacion
+            // (exito, reembolso interno, excepcion). GET_LOCK ademas se auto-libera
+            // al cerrar la conexion del webhook como respaldo.
+            $this->liberarLockHabitacion($hotelId, $habitacionId);
         }
     }
 
@@ -659,6 +707,35 @@ class MotorReservaOnlineService
             $this->pdo->prepare("DELETE FROM motor_holds WHERE hotel_id = ? AND expires_at < NOW()")->execute([$hotelId]);
         } catch (Throwable $e) {
             error_log('Motor online: no se pudieron liberar holds expirados: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Lock consultivo por hotel+habitacion para serializar la confirmacion de dos
+     * webhooks concurrentes sobre la misma habitacion (evita el TOCTOU de doble
+     * reserva). Es por sesion MySQL: cada webhook es un proceso/conexion distinto,
+     * asi que GET_LOCK en uno bloquea al otro. Timeout de 10s (una confirmacion son
+     * pocas queries). Devuelve true si se obtuvo el lock.
+     */
+    private function adquirirLockHabitacion(int $hotelId, int $habitacionId): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT GET_LOCK(?, 10)");
+            $stmt->execute(['motor_res_' . $hotelId . '_' . $habitacionId]);
+            return (int) $stmt->fetchColumn() === 1;
+        } catch (Throwable $e) {
+            error_log('Motor online: no se pudo adquirir lock de habitacion ' . $habitacionId . ': ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /** Libera el lock consultivo de la habitacion (idempotente: sin efecto si no se tenia). */
+    private function liberarLockHabitacion(int $hotelId, int $habitacionId): void
+    {
+        try {
+            $this->pdo->prepare("SELECT RELEASE_LOCK(?)")->execute(['motor_res_' . $hotelId . '_' . $habitacionId]);
+        } catch (Throwable $e) {
+            error_log('Motor online: no se pudo liberar lock de habitacion ' . $habitacionId . ': ' . $e->getMessage());
         }
     }
 
