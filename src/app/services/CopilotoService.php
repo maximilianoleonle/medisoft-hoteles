@@ -119,6 +119,10 @@ class CopilotoService
         if ($tiene(['quien esta hospedado', 'quienes estan hospedados', 'huespedes actuales', 'quien esta en el hotel', 'quienes estan en el hotel', 'huespedes dentro', 'cuantos huespedes tengo'])) {
             return 'hospedados';
         }
+        if (($tiene(['calificaciones bajas', 'bajas calificaciones', 'malas calificaciones', 'calificaciones malas', 'resenas negativas', 'malas resenas', 'resenas malas', 'quejas']))
+            && $this->tieneModulo('reputacion', $hotelId)) {
+            return 'calificaciones_bajas';
+        }
         if (($tiene(['calificacion', 'como me califican', 'que dicen los huespedes', 'mis resenas', 'promedio de encuestas', 'como va mi reputacion']))
             && $this->tieneModulo('reputacion', $hotelId)) {
             return 'calificacion';
@@ -126,6 +130,22 @@ class CopilotoService
         if (($tiene(['cupones activos', 'que cupones tengo', 'cupones vigentes', 'codigos activos']))
             && $this->tieneModulo('promociones', $hotelId)) {
             return 'cupones_activos';
+        }
+        if (($tiene(['por agotarse', 'agotandose', 'se esta acabando', 'stock bajo', 'bajo minimo', 'bajo el minimo', 'inventario bajo', 'por acabarse', 'productos por acabar', 'falta de stock', 'bajo de stock']))
+            && $this->tieneModulo('inventario', $hotelId)) {
+            return 'inventario_bajo';
+        }
+        if (($tiene(['debo a proveedor', 'cuanto debo', 'le debo a', 'deuda con proveedor', 'pagos pendientes a proveedor', 'que le debo']))
+            && $this->tieneModulo('compras', $hotelId)) {
+            return 'cxp_debo';
+        }
+        if (($tiene(['quien me debe', 'quienes me deben', 'me deben', 'cuanto me deben', 'por cobrar', 'deudas de clientes']))
+            && $this->tieneModulo('cuentas_cobrar', $hotelId)) {
+            return 'cxc_deben';
+        }
+        if (($tiene(['nomina del periodo', 'cuanto de nomina', 'cuanto llevo de nomina', 'total de nomina', 'nomina de este periodo', 'cuanto es la nomina', 'cuanto pago de nomina']))
+            && $this->tieneModulo('nomina_avanzada', $hotelId)) {
+            return 'nomina_periodo';
         }
         if ($tiene(['ocupacion', 'cuartos libres', 'habitaciones libres', 'cuartos disponibles', 'habitaciones disponibles', 'cuanto tengo lleno', 'que tan lleno', 'disponibilidad hoy'])) {
             return 'ocupacion';
@@ -526,6 +546,64 @@ class CopilotoService
                     $partesLh[] = "**{$lh['salidas']} salida(s) de hoy** por limpiar";
                 }
                 return ['texto' => 'Para limpieza: ' . implode(' y ', $partesLh) . '.', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
+
+            case 'calificaciones_bajas':
+                $cb = $this->calificacionesBajas($hotelId);
+                return [
+                    'texto' => $cb['n'] === 0
+                        ? 'No tienes calificaciones bajas (3 o menos) en los ultimos 90 dias. 👏'
+                        : "Tienes **{$cb['n']} calificacion(es) baja(s)** (3 o menos) en los ultimos 90 dias, promedio {$cb['prom']}/5. Vale la pena revisarlas.",
+                    'enlace' => ['url' => 'reputacion', 'texto' => 'Ver reputacion'],
+                ];
+
+            case 'inventario_bajo':
+                $ib = $this->inventarioBajo($hotelId);
+                if ($ib['n'] === 0) {
+                    return ['texto' => 'No tienes productos por agotarse; todo esta por encima de su minimo. ✔', 'enlace' => ['url' => 'inventario', 'texto' => 'Ver inventario']];
+                }
+                $muestraIb = implode(', ', $ib['items']);
+                if ($ib['n'] > count($ib['items'])) {
+                    $muestraIb .= ' y ' . ($ib['n'] - count($ib['items'])) . ' mas';
+                }
+                return [
+                    'texto' => "Tienes **{$ib['n']} producto(s) por agotarse** (en o bajo su minimo): {$muestraIb}.",
+                    'enlace' => ['url' => 'inventario', 'texto' => 'Ver inventario'],
+                ];
+
+            case 'cxp_debo':
+                $cxp = $this->deudaProveedores($hotelId);
+                if ($cxp['n'] === 0) {
+                    return ['texto' => 'No tienes cuentas por pagar pendientes con proveedores. ✔', 'enlace' => ['url' => 'compras', 'texto' => 'Ver compras']];
+                }
+                $vtxtP = $cxp['vencidas'] > 0 ? " ({$cxp['vencidas']} vencida(s))" : '';
+                return [
+                    'texto' => "Debes **\${$cxp['saldo']}** a proveedores en **{$cxp['n']} cuenta(s) por pagar**{$vtxtP}.",
+                    'enlace' => ['url' => 'compras', 'texto' => 'Ver compras'],
+                ];
+
+            case 'cxc_deben':
+                $cxc = $this->porCobrar($hotelId);
+                if ($cxc['n'] === 0) {
+                    return ['texto' => 'Nadie te debe ahorita; no tienes cuentas por cobrar pendientes. ✔', 'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ver cuentas por cobrar']];
+                }
+                $vtxtC = $cxc['vencidas'] > 0 ? " ({$cxc['vencidas']} vencida(s))" : '';
+                return [
+                    'texto' => "Te deben **\${$cxc['saldo']}** en **{$cxc['n']} cuenta(s) por cobrar**{$vtxtC}.",
+                    'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ver cuentas por cobrar'],
+                ];
+
+            case 'nomina_periodo':
+                $np = $this->nominaPeriodo($hotelId);
+                if ($np === null) {
+                    return ['texto' => 'Aun no tienes ningun periodo de nomina cerrado.', 'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nomina']];
+                }
+                $rango = date('d/m', strtotime((string) $np['fecha_inicio'])) . '-' . date('d/m', strtotime((string) $np['fecha_fin']));
+                $neto = number_format((float) $np['neto_sugerido_total'], 2);
+                $txtNp = "Tu ultimo periodo de nomina ({$np['tipo_periodo']}, {$rango}, {$np['estado']}): **{$np['trabajadores_total']} trabajador(es)**, neto **\${$neto}**";
+                if ((float) $np['pendiente_pago_total'] > 0) {
+                    $txtNp .= ', pendiente de pago **$' . number_format((float) $np['pendiente_pago_total'], 2) . '**';
+                }
+                return ['texto' => $txtNp . '.', 'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nomina']];
         }
 
         return ['texto' => $this->textoFallback(), 'enlace' => null];
@@ -1198,6 +1276,110 @@ class CopilotoService
         return ['limpieza' => (int) ($estados['limpieza'] ?? 0), 'salidas' => (int) $salidas['total']];
     }
 
+    /** Calificaciones bajas (<=3) respondidas en los ultimos 90 dias (bloque reputacion). */
+    private function calificacionesBajas(int $hotelId): array
+    {
+        $n = 0;
+        $prom = null;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) n, AVG(calificacion) prom FROM reputacion_encuestas
+                 WHERE hotel_id = ? AND estado = 'respondida' AND calificacion IS NOT NULL
+                   AND calificacion <= 3 AND respondida_at >= NOW() - INTERVAL 90 DAY"
+            );
+            $stmt->execute([$hotelId]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $n = (int) ($f['n'] ?? 0);
+            $prom = $n > 0 ? number_format((float) $f['prom'], 1) : null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error calificaciones bajas: ' . $e->getMessage());
+        }
+        return ['n' => $n, 'prom' => $prom];
+    }
+
+    /** Productos en o bajo su stock minimo (bloque inventario). */
+    private function inventarioBajo(int $hotelId): array
+    {
+        $items = [];
+        $n = 0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT nombre FROM inventario_productos
+                 WHERE hotel_id = ? AND activo = 1 AND stock_minimo > 0 AND stock_actual <= stock_minimo
+                 ORDER BY (stock_actual / NULLIF(stock_minimo, 0)) ASC LIMIT 5"
+            );
+            $stmt->execute([$hotelId]);
+            $items = array_column($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'nombre');
+
+            $c = $this->pdo->prepare("SELECT COUNT(*) FROM inventario_productos WHERE hotel_id = ? AND activo = 1 AND stock_minimo > 0 AND stock_actual <= stock_minimo");
+            $c->execute([$hotelId]);
+            $n = (int) $c->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Copiloto: error inventario bajo: ' . $e->getMessage());
+        }
+        return ['n' => $n, 'items' => $items];
+    }
+
+    /** Saldo pendiente por pagar a proveedores (bloque compras). */
+    private function deudaProveedores(int $hotelId): array
+    {
+        $n = 0;
+        $saldo = 0.0;
+        $venc = 0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) n, COALESCE(SUM(saldo), 0) saldo, SUM(estado = 'vencida') venc
+                 FROM cuentas_por_pagar WHERE hotel_id = ? AND estado IN ('pendiente', 'parcial', 'vencida')"
+            );
+            $stmt->execute([$hotelId]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $n = (int) ($f['n'] ?? 0);
+            $saldo = (float) ($f['saldo'] ?? 0);
+            $venc = (int) ($f['venc'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error cxp: ' . $e->getMessage());
+        }
+        return ['n' => $n, 'saldo' => number_format($saldo, 2), 'vencidas' => $venc];
+    }
+
+    /** Saldo pendiente por cobrar a clientes (bloque cuentas_cobrar). */
+    private function porCobrar(int $hotelId): array
+    {
+        $n = 0;
+        $saldo = 0.0;
+        $venc = 0;
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) n, COALESCE(SUM(saldo), 0) saldo, SUM(estado = 'vencida') venc
+                 FROM cuentas_por_cobrar WHERE hotel_id = ? AND estado IN ('pendiente', 'parcial', 'vencida')"
+            );
+            $stmt->execute([$hotelId]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $n = (int) ($f['n'] ?? 0);
+            $saldo = (float) ($f['saldo'] ?? 0);
+            $venc = (int) ($f['venc'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error cxc: ' . $e->getMessage());
+        }
+        return ['n' => $n, 'saldo' => number_format($saldo, 2), 'vencidas' => $venc];
+    }
+
+    /** Ultimo periodo de nomina cerrado (bloque nomina_avanzada). */
+    private function nominaPeriodo(int $hotelId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT tipo_periodo, fecha_inicio, fecha_fin, estado, trabajadores_total, neto_sugerido_total, pendiente_pago_total
+                 FROM trabajador_nomina_periodos WHERE hotel_id = ? ORDER BY fecha_fin DESC, id DESC LIMIT 1"
+            );
+            $stmt->execute([$hotelId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error nomina periodo: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     private function nombreMes(int $m): string
     {
         $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
@@ -1222,6 +1404,10 @@ class CopilotoService
         // tambien es intent (evita que "cuanto vendi ayer" caiga en la FAQ de Reportes).
         if (preg_match('/(lunes|martes|miercoles|jueves|viernes|sabado|domingo|hoy|ayer|antier|anteayer)/', $norm)
             && preg_match('/(ganancia|gane|ingreso|vendi|venta|utilidad|cuanto|como nos|como fue|como estuvo|como me fue)/', $norm)) {
+            return null;
+        }
+        // "quien me debe" / "me deben" es dato (monto por cobrar), no ayuda de la seccion.
+        if (preg_match('/(quien(es)? me debe|me deben|cuanto me deben)/', $norm)) {
             return null;
         }
 
