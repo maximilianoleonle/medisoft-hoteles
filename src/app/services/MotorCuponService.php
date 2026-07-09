@@ -119,15 +119,27 @@ class MotorCuponService
         return '$' . number_format((float) $cupon['valor'], 2) . ' de descuento';
     }
 
-    /** Consume un uso. Se llama UNA vez, al crear la reservacion confirmada. */
-    public function consumir(int $cuponId): void
+    /**
+     * Consume un uso de forma ATOMICA: solo incrementa si aun queda cupo
+     * (`usos < limite_usos`). Sin esta guardia, N pagos concurrentes del mismo
+     * codigo que validaron cuando `usos` aun estaba bajo se confirmaban todos y
+     * canjeaban un cupon de `limite_usos=1` N veces (sobre-redencion). Mismo
+     * patron que LealtadService/CopilotoService. Devuelve true si se consumio un
+     * uso; false si el cupon ya estaba agotado o hubo error.
+     */
+    public function consumir(int $cuponId): bool
     {
         try {
-            $this->pdo->prepare(
-                "UPDATE motor_cupones SET usos = usos + 1, updated_at = NOW() WHERE id = ?"
-            )->execute([$cuponId]);
+            $stmt = $this->pdo->prepare(
+                "UPDATE motor_cupones
+                 SET usos = usos + 1, updated_at = NOW()
+                 WHERE id = ? AND (limite_usos IS NULL OR usos < limite_usos)"
+            );
+            $stmt->execute([$cuponId]);
+            return $stmt->rowCount() === 1;
         } catch (Throwable $e) {
             error_log('Cupones: no se pudo consumir uso del cupon ' . $cuponId . ': ' . $e->getMessage());
+            return false;
         }
     }
 
