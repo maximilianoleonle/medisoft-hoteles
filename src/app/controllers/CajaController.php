@@ -27,6 +27,12 @@ class CajaController extends Controller {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('caja');
+        // Acceso base al modulo. Las acciones sensibles piden su permiso fino
+        // (caja.cobros, caja.movimientos, caja.corte, caja.ajustes) y quedan
+        // configurables por rol desde el editor de roles del hotel.
+        if (function_exists('require_permission')) {
+            require_permission('caja.view');
+        }
         return true;
 }
     public function indexAction() {
@@ -171,11 +177,14 @@ public function arqueoMetodosAction() {
      * Abrir caja
      */
     public function abrirAction() {
+        if (function_exists('require_permission')) {
+            require_permission('caja.corte');
+        }
         if (!$this->isPost()) {
             $this->redirect('caja');
             return;
         }
-        
+
         $this->validateCSRF();
         
         $caja_id = intval($this->getPost('caja_id'));
@@ -215,11 +224,14 @@ public function arqueoMetodosAction() {
      * Registrar ingreso
      */
     public function registrarIngresoAction() {
+        if (function_exists('require_permission')) {
+            require_permission('caja.cobros');
+        }
         if (!$this->isPost()) {
             $this->redirect('caja');
             return;
         }
-        
+
         $this->validateCSRF();
         
         // Recopilar datos
@@ -267,11 +279,14 @@ public function arqueoMetodosAction() {
      * Registrar gasto
      */
     public function registrarGastoAction() {
+        if (function_exists('require_permission')) {
+            require_permission('caja.movimientos');
+        }
         if (!$this->isPost()) {
             $this->redirect('caja');
             return;
         }
-        
+
         $this->validateCSRF();
         
         // Recopilar datos
@@ -511,11 +526,14 @@ public function arqueoMetodosAction() {
  * Cerrar corte
  */
 public function cerrarCorteAction() {
+    if (function_exists('require_permission')) {
+        require_permission('caja.corte');
+    }
     if (!$this->isPost()) {
         $this->redirect('caja/corte');
         return;
     }
-    
+
     $this->validateCSRF();
     
     $corte_id = intval($this->getPost('corte_id'));
@@ -719,7 +737,11 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function editarMovimientoAction() {
         $this->requireAjax();
-        
+
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
+
         if (!$this->isPost()) {
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
             return;
@@ -1027,7 +1049,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      * Configuración de categorías
      */
     public function categoriasAction() {
-        $this->requireRole('gerente');
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
         
         $categorias = $this->categoriaModel->orderBy('tipo', 'ASC');
         $estadisticas = $this->categoriaModel->obtenerEstadisticasUso();
@@ -1056,7 +1080,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function crearCategoriaAction() {
         $this->requireAjax();
-        $this->requireRole('gerente');
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
         
         if (!$this->isPost()) {
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
@@ -1082,7 +1108,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function actualizarCategoriaAction() {
         $this->requireAjax();
-        $this->requireRole('gerente');
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
         
         if (!$this->isPost()) {
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
@@ -1114,7 +1142,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function toggleCategoriaAction() {
         $this->requireAjax();
-        $this->requireRole('gerente');
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
         
         if (!$this->isPost()) {
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
@@ -1135,7 +1165,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function ordenCategoriaAction() {
         $this->requireAjax();
-        $this->requireRole('gerente');
+        if (function_exists('require_permission')) {
+            require_permission('caja.ajustes');
+        }
         
         if (!$this->isPost()) {
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
