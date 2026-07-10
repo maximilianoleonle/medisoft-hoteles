@@ -531,13 +531,15 @@ function can_legacy($permission) {
             'usuarios.view', 'usuarios.create', 'usuarios.edit', 'usuarios.delete',
             'configuracion.view', 'configuracion.edit',
             'reportes.all', 'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte', 'caja.ajustes',
-            'habitaciones.all', 'huespedes.all', 'inventarios.all'
+            'habitaciones.all', 'huespedes.all', 'inventarios.all',
+            'personal.view', 'personal.gestionar', 'personal.pagar'
         ],
         'administrador' => [
             'usuarios.view', 'usuarios.create', 'usuarios.edit',
             'reportes.view', 'reportes.export',
             'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte',
-            'habitaciones.all', 'huespedes.all', 'inventarios.all'
+            'habitaciones.all', 'huespedes.all', 'inventarios.all',
+            'personal.view', 'personal.gestionar', 'personal.pagar'
         ],
         'recepcionista' => [
             'habitaciones.view', 'habitaciones.checkin', 'habitaciones.checkout',

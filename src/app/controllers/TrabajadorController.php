@@ -44,7 +44,7 @@ class TrabajadorController extends Controller
         }
 
         if (function_exists('require_permission')) {
-            require_permission('usuarios.view');
+            require_permission('personal.view');
         }
 
         return true;
@@ -199,7 +199,7 @@ class TrabajadorController extends Controller
 
     public function registrarPagoSnapshotNominaAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.pagar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores/nomina/periodos');
@@ -242,7 +242,7 @@ class TrabajadorController extends Controller
 
     public function cerrarNominaPeriodoAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores/nomina/periodos');
@@ -280,7 +280,7 @@ class TrabajadorController extends Controller
 
     public function aprobarNominaPeriodoAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores/nomina/periodos');
@@ -310,7 +310,7 @@ class TrabajadorController extends Controller
 
     public function anularNominaPeriodoAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores/nomina/periodos');
@@ -719,7 +719,7 @@ class TrabajadorController extends Controller
 
     public function crearAction(): void
     {
-        $this->requireWritePermission('usuarios.create');
+        $this->requireWritePermission('personal.gestionar');
         $hotelId = $this->hotelIdActual();
 
         View::renderTemplate('trabajadores/form', [
@@ -732,7 +732,7 @@ class TrabajadorController extends Controller
 
     public function guardarAction(): void
     {
-        $this->requireWritePermission('usuarios.create');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -764,7 +764,7 @@ class TrabajadorController extends Controller
 
     public function editarAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         $hotelId = $this->hotelIdActual();
         $trabajador = $this->trabajadorActual($hotelId);
@@ -784,7 +784,7 @@ class TrabajadorController extends Controller
 
     public function actualizarAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -835,7 +835,7 @@ class TrabajadorController extends Controller
 
     public function registrarConceptoLaboralAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -873,7 +873,7 @@ class TrabajadorController extends Controller
 
     public function registrarAnticipoLaboralAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -911,7 +911,7 @@ class TrabajadorController extends Controller
 
     public function registrarPrestamoLaboralAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -949,7 +949,7 @@ class TrabajadorController extends Controller
 
     public function registrarAsistenciaLaboralAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -987,7 +987,7 @@ class TrabajadorController extends Controller
 
     public function registrarPagoCajaAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.pagar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -1027,7 +1027,7 @@ class TrabajadorController extends Controller
 
     public function revertirPagoCajaAction(): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.pagar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
@@ -1069,7 +1069,7 @@ class TrabajadorController extends Controller
 
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
-        $this->requireWritePermission('usuarios.edit');
+        $this->requireWritePermission('personal.gestionar');
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores');
