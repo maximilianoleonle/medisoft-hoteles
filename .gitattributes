@@ -1,3 +1,6 @@
 # Assets de terceros self-hosted (PWA offline): tratar como binario para que
 # se mantengan byte-idénticos entre PCs y no sufran conversión CRLF<->LF.
 src/public_html/vendor/** binary
+
+# Scripts de shell: SIEMPRE LF (con CRLF bash falla en el VPS con "\r: command not found")
+*.sh text eol=lf
