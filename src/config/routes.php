@@ -311,6 +311,11 @@ $router->post('/whatsapp/probar', ['controller' => 'WhatsApp', 'action' => 'prob
 $router->get('/ia/resumen-diario', ['controller' => 'IaEjecutiva', 'action' => 'resumenDiario']);
 $router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' => 'regenerarResumen']);
 
+// Vigilancia financiera: informe forense IA sobre la conciliacion determinista
+// (gating temporal en ia_ejecutiva; al monetizar, bloque vigilancia_financiera)
+$router->get('/ia/vigilancia-financiera', ['controller' => 'VigilanciaFinanciera', 'action' => 'index']);
+$router->post('/ia/vigilancia-financiera/regenerar', ['controller' => 'VigilanciaFinanciera', 'action' => 'regenerar']);
+
 // Motor de reservas interno: tablero, conciliacion a Caja y configuracion
 $router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);
 $router->post('/motor-reservas/pagos/{id:[0-9]+}/conciliar', ['controller' => 'MotorReservas', 'action' => 'conciliar']);

@@ -39,6 +39,8 @@ $mostrarAuditoria = $menuModuloActivo('auditoria') && in_array($sidebarRolHotel,
 $mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+// Vigilancia financiera: gating temporal en ia_ejecutiva (al monetizar, usar su propio modulo).
+$mostrarVigilanciaFinanciera = $mostrarIaEjecutiva;
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
@@ -95,7 +97,8 @@ $sidebarActiveNomina = $sidebarPathStarts('nomina');
 $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
-$sidebarActiveIaEjecutiva = $sidebarPathStarts('ia');
+$sidebarActiveVigilanciaFinanciera = $sidebarPathStarts('ia/vigilancia-financiera');
+$sidebarActiveIaEjecutiva = $sidebarPathStarts('ia') && !$sidebarActiveVigilanciaFinanciera;
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
 $sidebarActiveReputacion = $sidebarPathStarts('reputacion');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
@@ -635,6 +638,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-wand-magic-sparkles"></i>
                 </div>
                 <span class="nav-text">Asesor inteligente</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarVigilanciaFinanciera): ?>
+            <a href="<?= url('ia/vigilancia-financiera') ?>"
+               class="nav-item <?= $sidebarActiveVigilanciaFinanciera ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <span class="nav-text">Vigilancia financiera</span>
             </a>
             <?php endif; ?>
 
