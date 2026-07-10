@@ -34,6 +34,13 @@ class CuentaPorPagarController extends Controller
             require_hotel_module('compras');
         }
 
+        // Acceso base de lectura. Las acciones de dinero (registrar/revertir
+        // pago, generar CxP) piden cuentas_por_pagar.pagar, configurable por
+        // rol desde el editor de roles del hotel.
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_pagar.view');
+        }
+
         return true;
     }
 
@@ -200,6 +207,9 @@ class CuentaPorPagarController extends Controller
 
     public function generarDesdeCompraAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_pagar.pagar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-pagar/generacion-preview');
             return;
@@ -226,6 +236,9 @@ class CuentaPorPagarController extends Controller
 
     public function registrarPagoCajaAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_pagar.pagar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-pagar');
             return;
@@ -272,6 +285,9 @@ class CuentaPorPagarController extends Controller
 
     public function revertirPagoCajaAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_pagar.pagar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-pagar');
             return;

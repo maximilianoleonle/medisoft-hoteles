@@ -70,23 +70,48 @@ class MovimientoCaja extends Model {
  */
 public function registrarMovimiento($data) {
     $db = Database::getInstance();
+    $pdo = $db->getConnection();
     $hotel_id = $this->hotelIdActual();
-    
+
+    $ownTransaction = !$db->enTransaccion();
+
     try {
+        if ($ownTransaction) {
+            $db->safeBeginTransaction();
+        }
+
         // Obtener corte actual
         $cajaModel = new Caja();
         $corteActual = $cajaModel->obtenerCorteActual();
-        
+
         if (!$corteActual) {
+            if ($ownTransaction) { $db->safeRollBack(); }
             return ['success' => false, 'message' => 'No hay una caja abierta'];
         }
 
-        if ((int)($corteActual['hotel_id'] ?? 0) !== $hotel_id) {
+        // Bloquear el corte FOR UPDATE y revalidar estado. Serializa contra
+        // cerrarCaja(): si el cierre esta en curso, esperamos y luego veremos
+        // 'cerrado' -> se rechaza el movimiento en vez de colarlo en un corte
+        // ya arqueado (descuadre). Sin este candado el movimiento podia caer
+        // en el corte despues de congelar sus totales.
+        $lock = $pdo->prepare(
+            "SELECT id, estado, hotel_id FROM cortes_caja WHERE id = ? FOR UPDATE"
+        );
+        $lock->execute([$corteActual['id']]);
+        $corteLock = $lock->fetch();
+
+        if (!$corteLock || ($corteLock['estado'] ?? '') !== 'abierto') {
+            if ($ownTransaction) { $db->safeRollBack(); }
+            return ['success' => false, 'message' => 'La caja se cerro: recarga antes de registrar el movimiento'];
+        }
+
+        if ((int)($corteLock['hotel_id'] ?? 0) !== $hotel_id) {
+            if ($ownTransaction) { $db->safeRollBack(); }
             return ['success' => false, 'message' => 'El corte abierto no pertenece al hotel actual'];
         }
-        
+
         // Agregar corte_id y usuario_id
-        $data['corte_id'] = $corteActual['id'];
+        $data['corte_id'] = $corteLock['id'];
         $data['usuario_id'] = $_SESSION['user_id'] ?? null;
         $data['hotel_id'] = $hotel_id;
         
@@ -111,10 +136,12 @@ public function registrarMovimiento($data) {
         
         // Asegurarse de que los campos requeridos estén presentes
         if (empty($data['descripcion'])) {
+            if ($ownTransaction) { $db->safeRollBack(); }
             return ['success' => false, 'message' => 'La descripción es requerida'];
         }
-        
+
         if (empty($data['monto']) || $data['monto'] <= 0) {
+            if ($ownTransaction) { $db->safeRollBack(); }
             return ['success' => false, 'message' => 'El monto debe ser mayor a 0'];
         }
 
@@ -127,6 +154,7 @@ public function registrarMovimiento($data) {
             $stmt = $db->query($sql, [$data['reservacion_id'], $hotel_id]);
 
             if (!$stmt || !$stmt->fetch()) {
+                if ($ownTransaction) { $db->safeRollBack(); }
                 return ['success' => false, 'message' => 'Reservacion no encontrada para el hotel actual'];
             }
         }
@@ -155,19 +183,22 @@ public function registrarMovimiento($data) {
         ];
         
         $result = $db->query($sql, $params);
-        
+
         if ($result) {
             $movimiento_id = $db->lastInsertId();
+            if ($ownTransaction) { $db->safeCommit(); }
             return [
                 'success' => true,
                 'movimiento_id' => $movimiento_id,
                 'message' => 'Movimiento registrado exitosamente'
             ];
         } else {
+            if ($ownTransaction) { $db->safeRollBack(); }
             return ['success' => false, 'message' => 'Error al insertar el movimiento en la base de datos'];
         }
-        
-    } catch (Exception $e) {
+
+    } catch (Throwable $e) {
+        if ($ownTransaction && $db->enTransaccion()) { $db->safeRollBack(); }
         error_log("Error en registrarMovimiento: " . $e->getMessage());
         error_log("Stack trace: " . $e->getTraceAsString());
         return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];

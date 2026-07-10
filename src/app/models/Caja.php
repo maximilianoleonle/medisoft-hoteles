@@ -199,34 +199,67 @@ class Caja extends Model {
      */
     public function abrirCaja($caja_id, $monto_inicial, $usuario_id) {
         $db = Database::getInstance();
+        $pdo = $db->getConnection();
         $hotel_id = $this->hotelIdActual();
 
         if (!$this->obtenerCajaPorId($caja_id, $hotel_id)) {
             return ['success' => false, 'message' => 'Caja no encontrada para el hotel actual'];
         }
-        
-        // Verificar que no haya un corte abierto
-        if ($this->tieneCorteAbierto($caja_id)) {
-            return ['success' => false, 'message' => 'Ya existe un corte de caja abierto'];
-        }
-        
-        // Crear nuevo corte
-        $sql = "INSERT INTO cortes_caja 
-                (hotel_id, caja_id, fecha_apertura, monto_inicial, usuario_apertura_id, estado)
-                VALUES (?, ?, NOW(), ?, ?, 'abierto')";
-        
-        $stmt = $db->query($sql, [$hotel_id, $caja_id, $monto_inicial, $usuario_id]);
-        
-        if ($stmt) {
-            $corte_id = $db->lastInsertId();
+
+        $ownTransaction = !$db->enTransaccion();
+
+        try {
+            if ($ownTransaction) {
+                $db->safeBeginTransaction();
+            }
+
+            // Serializar las aperturas de ESTA caja bloqueando su fila padre.
+            // Sin esto, dos requests casi simultaneos pasan ambos la
+            // verificacion de "corte abierto" y crean dos cortes 'abierto' en
+            // la misma caja (no hay UNIQUE parcial que lo impida): a partir de
+            // ahi los movimientos y el arqueo se corrompen.
+            $lock = $pdo->prepare("SELECT id FROM cajas WHERE id = ? AND hotel_id = ? FOR UPDATE");
+            $lock->execute([$caja_id, $hotel_id]);
+            if (!$lock->fetch()) {
+                throw new Exception('Caja no encontrada para el hotel actual');
+            }
+
+            // Re-verificar DENTRO del candado.
+            $chk = $pdo->prepare(
+                "SELECT COUNT(*) FROM cortes_caja WHERE caja_id = ? AND hotel_id = ? AND estado = 'abierto'"
+            );
+            $chk->execute([$caja_id, $hotel_id]);
+            if ((int) $chk->fetchColumn() > 0) {
+                if ($ownTransaction) {
+                    $db->safeCommit();
+                }
+                return ['success' => false, 'message' => 'Ya existe un corte de caja abierto'];
+            }
+
+            $ins = $pdo->prepare(
+                "INSERT INTO cortes_caja
+                    (hotel_id, caja_id, fecha_apertura, monto_inicial, usuario_apertura_id, estado)
+                 VALUES (?, ?, NOW(), ?, ?, 'abierto')"
+            );
+            $ins->execute([$hotel_id, $caja_id, $monto_inicial, $usuario_id]);
+            $corte_id = $pdo->lastInsertId();
+
+            if ($ownTransaction) {
+                $db->safeCommit();
+            }
+
             return [
-                'success' => true, 
+                'success' => true,
                 'corte_id' => $corte_id,
                 'message' => 'Caja abierta exitosamente'
             ];
+        } catch (Throwable $e) {
+            if ($ownTransaction && $db->enTransaccion()) {
+                $db->safeRollBack();
+            }
+            error_log('Error al abrir caja: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error al abrir la caja'];
         }
-        
-        return ['success' => false, 'message' => 'Error al abrir la caja'];
     }
     
     /**
@@ -419,22 +452,50 @@ class Caja extends Model {
      */
     public function cerrarCaja($corte_id, $efectivo_contado, $observaciones, $usuario_cierre_id) {
         $db = Database::getInstance();
+        $pdo = $db->getConnection();
         $hotel_id = $this->hotelIdActual();
-        
+
+        $ownTransaction = !$db->enTransaccion();
+
         try {
-            // Obtener resumen actual
-            $resumen = $this->obtenerResumenCaja($corte_id);
-            
-            if (!$resumen) {
+            if ($ownTransaction) {
+                $db->safeBeginTransaction();
+            }
+
+            // Bloquear el corte FOR UPDATE y revalidar que siga 'abierto'. Esto
+            // (a) serializa el cierre contra registrarMovimiento(), que bloquea
+            // la misma fila antes de insertar: ningun movimiento puede caer en
+            // el corte mientras se congela el arqueo; (b) hace atomico el par
+            // "leer resumen -> escribir totales"; (c) bloquea el doble cierre.
+            $lock = $pdo->prepare(
+                "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE"
+            );
+            $lock->execute([$corte_id, $hotel_id]);
+            $corteLock = $lock->fetch();
+
+            if (!$corteLock) {
+                if ($ownTransaction) { $db->safeRollBack(); }
                 return ['success' => false, 'message' => 'Corte no encontrado'];
             }
-            
+            if (($corteLock['estado'] ?? '') !== 'abierto') {
+                if ($ownTransaction) { $db->safeRollBack(); }
+                return ['success' => false, 'message' => 'El corte ya fue cerrado'];
+            }
+
+            // Obtener resumen actual (bajo el candado: nadie inserta movimientos)
+            $resumen = $this->obtenerResumenCaja($corte_id);
+
+            if (!$resumen) {
+                if ($ownTransaction) { $db->safeRollBack(); }
+                return ['success' => false, 'message' => 'Corte no encontrado'];
+            }
+
             // Calcular diferencia (solo sobre efectivo)
             $efectivo_esperado = $resumen['efectivo_en_caja'];
             $diferencia = $efectivo_contado - $efectivo_esperado;
-            
+
             // Actualizar corte con totales por método
-            $sql = "UPDATE cortes_caja SET 
+            $sql = "UPDATE cortes_caja SET
                     fecha_cierre = NOW(),
                     total_ingresos_efectivo = ?,
                     total_ingresos_tarjeta = ?,
@@ -469,18 +530,27 @@ class Caja extends Model {
             ];
             
             $result = $db->query($sql, $params);
-            
+
             if ($result && $result->rowCount() > 0) {
+                if ($ownTransaction) {
+                    $db->safeCommit();
+                }
                 return [
                     'success' => true,
                     'diferencia' => $diferencia,
                     'resumen' => $resumen
                 ];
             }
-            
+
+            if ($ownTransaction) {
+                $db->safeRollBack();
+            }
             return ['success' => false, 'message' => 'Error al cerrar el corte'];
-            
-        } catch (Exception $e) {
+
+        } catch (Throwable $e) {
+            if ($ownTransaction && $db->enTransaccion()) {
+                $db->safeRollBack();
+            }
             error_log("Error en cerrarCaja: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
