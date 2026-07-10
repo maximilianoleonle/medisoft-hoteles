@@ -1992,16 +1992,20 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .cash-day-balance span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
     color: color-mix(in srgb, var(--dash-on-brand) 78%, transparent);
     font-size: 11px;
     font-weight: 900;
-    letter-spacing: .1em;
+    letter-spacing: .06em;
     text-transform: uppercase;
 }
 
 .cash-day-balance strong {
+    flex: 0 0 auto;
     color: var(--dash-on-brand);
-    font-size: clamp(16px, 1.15vw, 18px);
+    font-size: clamp(15px, 1.15vw, 18px);
     font-weight: 950;
     font-variant-numeric: tabular-nums;
     text-align: right;
@@ -3047,10 +3051,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 .cash-box .amount {
     margin-top: 8px;
     color: var(--dash-navy);
-    font-size: 17px;
+    font-size: clamp(14px, 1.15vw, 17px);
     line-height: 1;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
 }
 
 .cash-box.dark .amount {

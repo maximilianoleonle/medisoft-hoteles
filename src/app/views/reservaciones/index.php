@@ -3831,6 +3831,14 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     /* Icono no aplica en formato pill */
     .res-metric-icon { display: none; }
 
+    /* 3b ── Alertas pendientes: mismo margen lateral (16px) que el resto de
+       bloques. El shell movil va con padding:0, asi que cada seccion pone su
+       propio inset; esta tarjeta se quedaba a ras del borde. */
+    .res-shell .habitaciones-view .hb-alerts {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+
     /* 4 ── Filterbar ──────────────────────────────────────────────────── */
     .res-filterbar {
         display: block;

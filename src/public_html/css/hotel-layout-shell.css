@@ -660,9 +660,15 @@ body.hotel-layout-scope {
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--hotel-secondary) 30%, #CBD5E1) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
+}
+
+.hotel-layout-scope .hotel-sidebar .sidebar-nav::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-section {

@@ -207,8 +207,13 @@
                 fila.appendChild(ch);
 
                 fila.addEventListener('mouseenter', function () { abrirFly(grupo, fila); });
-                fila.addEventListener('click', function () {
-                    if (abierto === fila) { cerrarFly(); } else { abrirFly(grupo, fila); }
+                fila.addEventListener('click', function (e) {
+                    /* El hover ya abre el flyout; el clic NO debe cerrarlo
+                       (se sentia como que "no pasaba nada" y el acordeon se
+                       cerraba solo). Solo lo abrimos si aun no esta abierto,
+                       p. ej. por teclado o pantalla tactil sin hover. */
+                    e.preventDefault();
+                    if (abierto !== fila) { abrirFly(grupo, fila); }
                 });
                 fila.addEventListener('keydown', function (e) {
                     if (e.key === 'Escape') { cerrarFly(); }

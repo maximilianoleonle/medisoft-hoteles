@@ -44,12 +44,14 @@
             linear-gradient(180deg, var(--sr-surface) 0%, var(--sr-ivory-2) 100%) !important;
         border-right: 1px solid var(--sr-line) !important;
         box-shadow: 14px 0 34px color-mix(in srgb, var(--sr-secondary) 6%, transparent) !important;
+        /* Sube la marca: menos aire muerto arriba para que respire la sidebar. */
+        padding-top: 14px !important;
     }
 
     /* ── Cabecera de marca: aire, serif navy y firma oro→navy ── */
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header {
         position: relative;
-        padding: 20px 16px 16px !important;
+        padding: 6px 16px 14px !important;
         background: transparent !important;
         border-bottom: 0 !important;
     }
@@ -129,20 +131,34 @@
         color: color-mix(in srgb, var(--sr-muted) 70%, var(--sr-gold)) !important;
     }
 
-    /* Scrollbar cálida (espejo del dashboard) */
+    /* Scroll sin barra visible (se conserva el desplazamiento) */
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-nav {
-        scrollbar-width: thin;
-        scrollbar-color: #E2D9C8 transparent !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
 
-    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-nav::-webkit-scrollbar-thumb {
-        background: #E2D9C8 !important;
-        border-radius: 99px;
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-nav::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+    }
+
+    /* Canal horizontal simétrico: sin él, overflow-x:hidden corta la sombra
+       de las tarjetas del rail contra el borde derecho (efecto "cortado"). */
+    .hotel-layout-scope #sidebar.hotel-sidebar.ms-rail-on .sidebar-nav {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
     }
 
     /* ── Nivel 1: el rail ── */
+    /* .sidebar-nav es display:grid; como ítem del grid, el rail hereda
+       min-width:auto y las etiquetas nowrap estiran la columna más allá del
+       ancho visible (las tarjetas se salían y overflow-x:hidden cortaba el
+       borde derecho de la sección activa). min-width:0 deja que la columna
+       respete el ancho de la sidebar. */
     .hotel-layout-scope #sidebar.hotel-sidebar .ms-rail {
         display: block;
+        min-width: 0;
         padding: 10px 0 14px;
     }
 
@@ -175,7 +191,7 @@
         border-color: var(--sr-line-soft);
         color: var(--sr-primary);
         transform: translateX(2px);
-        box-shadow: 0 10px 22px color-mix(in srgb, var(--sr-secondary) 7%, transparent);
+        box-shadow: 0 5px 12px color-mix(in srgb, var(--sr-secondary) 8%, transparent);
     }
 
     .ms-rail-g.ms-on {
@@ -183,7 +199,7 @@
         border-color: var(--sr-line);
         color: var(--sr-primary);
         font-weight: 700;
-        box-shadow: 0 12px 26px color-mix(in srgb, var(--sr-secondary) 9%, transparent);
+        box-shadow: 0 6px 13px color-mix(in srgb, var(--sr-secondary) 10%, transparent);
     }
 
     /* Firma editorial: marcador vertical oro→navy en la sección activa */
@@ -351,11 +367,17 @@
         border-top: 1px solid var(--sr-line-soft) !important;
     }
 
-    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-sidebar-status,
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-section {
         border: 1px solid var(--sr-line) !important;
         border-radius: 13px !important;
         background: var(--sr-surface-warm) !important;
+    }
+
+    /* El estado de conexión va como texto plano, sin recuadro. */
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-sidebar-status {
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-avatar {
@@ -450,4 +472,24 @@
     .ms-rail-ch,
     .ms-rail-fi,
     .ms-rail-fly { transition: none !important; transform: none !important; }
+}
+
+/* Pantallas de PC de poca altura (p. ej. laptops 1366×768): se compacta el
+   encabezado y los espacios para que la marca suba y la navegación respire. */
+@media (min-width: 1025px) and (max-height: 820px) {
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar {
+        padding-top: 10px !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header {
+        padding: 2px 16px 10px !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .hotel-boutique-brand { gap: 6px; padding-bottom: 2px; }
+    .hotel-layout-scope .hotel-sidebar .hotel-boutique-home { gap: 6px; }
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .hotel-boutique-mark { width: 42px; height: 42px; }
+
+    .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-search { padding-top: 6px !important; padding-bottom: 8px !important; }
+    .hotel-layout-scope #sidebar.hotel-sidebar .ms-rail { padding: 4px 0 8px; }
+    .ms-rail-g { min-height: 39px; margin: 2px 12px; }
 }
