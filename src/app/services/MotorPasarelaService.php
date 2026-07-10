@@ -320,7 +320,17 @@ class MotorPasarelaService
         }
 
         $llave = base64_decode($b64, true);
-        return ($llave !== false && strlen($llave) === 32) ? $llave : hash('sha256', $b64, true);
+        if ($llave === false || strlen($llave) !== 32) {
+            // NO derivar la llave con sha256 del string: enmascara una mala
+            // configuracion con entropia debil (la del texto tecleado). Mejor
+            // fallar visible — cifrar/descifrar devuelven null y los tableros
+            // muestran "pasarela no configurada" — y corregir el .env.
+            // Generar bien: openssl rand -base64 32
+            error_log('Motor pasarela: MOTOR_PASARELA_KEY invalida — debe ser base64 de exactamente 32 bytes crudos (openssl rand -base64 32). Se rechaza para no derivar una llave debil.');
+            return null;
+        }
+
+        return $llave;
     }
 
     private function http(string $metodo, string $url, array $headers, ?string $body = null): array

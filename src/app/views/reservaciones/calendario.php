@@ -1988,12 +1988,20 @@ function exportarCalendario() {
     for (let d = 1; d <= <?= (int)$diasEnMes ?>; d++) csv += `,${d}`;
     csv += '\n';
 
+    // CSV injection: una celda que inicia con = + - @ o tab se ejecuta como
+    // formula al abrir en Excel/Sheets. Nombres de huesped/habitacion son
+    // texto capturado por usuarios: se neutralizan con apostrofe.
+    const csvCelda = (v) => {
+        const texto = String(v || '').replace(/,/g, ';').trim();
+        return /^[=+\-@\t]/.test(texto) ? "'" + texto : texto;
+    };
+
     tabla.querySelectorAll('tbody tr').forEach(tr => {
         const badge = tr.querySelector('.hcal-room-badge');
-        csv += badge ? badge.textContent.trim() : '';
+        csv += csvCelda(badge ? badge.textContent : '');
         tr.querySelectorAll('td:not(.hcal-sticky)').forEach(td => {
             const bar = td.querySelector('.hcal-res-bar');
-            csv += ',' + (bar ? (bar.dataset.ttNombre || 'Reservado').replace(/,/g, ';') : 'Libre');
+            csv += ',' + (bar ? csvCelda(bar.dataset.ttNombre || 'Reservado') : 'Libre');
         });
         csv += '\n';
     });

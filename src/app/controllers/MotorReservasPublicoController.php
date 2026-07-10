@@ -15,8 +15,11 @@ require_once __DIR__ . '/../services/MotorReservaOnlineService.php';
 
 class MotorReservasPublicoController extends Controller {
 
-    private const THROTTLE_MAX = 30;      // solicitudes
+    private const THROTTLE_MAX = 30;      // solicitudes por IP+hotel
     private const THROTTLE_VENTANA = 60;  // segundos
+    // Tope GLOBAL de iniciar-pago por hotel (todas las IPs juntas): frena el
+    // acaparamiento de holds/sesiones de pasarela desde IPs distribuidas.
+    private const THROTTLE_PAGO_HOTEL_MAX = 60;
 
     public function reservarAction($slug) {
         $hotel = $this->resolverHotel($slug);
@@ -136,7 +139,10 @@ class MotorReservasPublicoController extends Controller {
             $this->jsonPublico(['success' => false, 'message' => 'Reservas en linea no disponibles para este hotel.'], 404);
         }
 
-        if (!$this->permitirSolicitud((string) $hotel['slug'])) {
+        // Ruta de dinero: fail-closed (un error de BD no desactiva el throttle)
+        // + tope global por hotel contra IPs distribuidas.
+        if (!$this->permitirSolicitud((string) $hotel['slug'], false)
+            || !$this->permitirPagoGlobalHotel((string) $hotel['slug'])) {
             $this->jsonPublico(['success' => false, 'message' => 'Demasiadas solicitudes. Intenta de nuevo en un minuto.'], 429);
         }
 
@@ -338,9 +344,15 @@ class MotorReservasPublicoController extends Controller {
 
     /**
      * Rate-limit por IP+slug sobre la tabla login_intentos (clave con prefijo motor|).
-     * Ventana fija de 60s; falla abierto si la tabla no existe.
+     * Ventana fija de 60s.
+     *
+     * $failOpen: en consultas baratas (disponibilidad, cupon) un error del
+     * limitador deja pasar (no castigar al huesped por un blip de BD). En la
+     * ruta de DINERO (iniciar-pago) se pasa false: si el limitador no esta
+     * disponible se NIEGA — un error de BD no debe desactivar el throttle
+     * justo donde se crean holds de 20 min y sesiones de pasarela.
      */
-    private function permitirSolicitud(string $slug) {
+    private function permitirSolicitud(string $slug, bool $failOpen = true) {
         $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'desconocida');
         $clave = hash('sha256', 'motor|' . $ip . '|' . $slug);
 
@@ -361,7 +373,37 @@ class MotorReservasPublicoController extends Controller {
             return (int) ($row['intentos'] ?? 0) <= self::THROTTLE_MAX;
         } catch (Throwable $e) {
             error_log('Motor publico: rate limit no disponible: ' . $e->getMessage());
-            return true;
+            return $failOpen;
+        }
+    }
+
+    /**
+     * Tope GLOBAL por hotel para iniciar-pago (sin IP): el bucket por IP no
+     * frena a un atacante con IPs distribuidas acaparando holds (20 min c/u)
+     * y creando sesiones de pasarela en masa. 60/min por hotel es holgado
+     * para cualquier hotel real chico/mediano. Fail-closed.
+     */
+    private function permitirPagoGlobalHotel(string $slug) {
+        $clave = hash('sha256', 'motor-hotel-pago|' . $slug);
+
+        try {
+            $db = Database::getInstance();
+            $db->query(
+                "INSERT INTO login_intentos (clave, ip, nombre_usuario, hotel_slug, intentos, ultimo_intento, created_at)
+                 VALUES (?, 'global', 'motor_pago_hotel', ?, 1, NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE
+                    intentos = IF(ultimo_intento < NOW() - INTERVAL " . self::THROTTLE_VENTANA . " SECOND, 1, intentos + 1),
+                    ultimo_intento = NOW()",
+                [$clave, substr($slug, 0, 120)]
+            );
+
+            $stmt = $db->query("SELECT intentos FROM login_intentos WHERE clave = ? LIMIT 1", [$clave]);
+            $row = $stmt ? $stmt->fetch() : null;
+
+            return (int) ($row['intentos'] ?? 0) <= self::THROTTLE_PAGO_HOTEL_MAX;
+        } catch (Throwable $e) {
+            error_log('Motor publico: rate limit global de pago no disponible: ' . $e->getMessage());
+            return false;
         }
     }
 
