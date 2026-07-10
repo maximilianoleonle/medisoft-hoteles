@@ -33,7 +33,7 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 - [ ] phpMyAdmin: NO exponer en producción (quitar del compose o proteger por IP/VPN).
 - [x] Puerto MySQL no expuesto públicamente (compose prod sin `ports` en db).
 - [x] Backups automáticos diarios de BD + uploads — ver sección 6b (falta solo el offsite).
-- [ ] Deudas MEDIAS de auditorías previas antes del go-live: rate-limit fail-closed del motor público, `llave()` a 32 bytes, CSV injection en exportes de nómina, TOCTOU en cierre de nómina.
+- [x] Deudas MEDIAS de auditorías previas (cerradas 2026-07-10): rate-limit fail-closed en iniciar-pago + tope global 60/min por hotel (probado), `llave()` exige 32 bytes (probado), CSV injection neutralizado en todos los exports (server y client-side), TOCTOU de cierre/reabrir nómina ya corregido en commits previos (verificado).
 
 ## 5. Motor de reservas (por hotel que lo contrate)
 - [ ] Cambiar credenciales a `sk_live_`/`pk_live_` y modo "Producción" en su tablero.
