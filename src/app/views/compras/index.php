@@ -61,7 +61,7 @@ $visibles = count($compras);
     --cp-text: #171717;
     --cp-muted: #667085;
     --cp-heading: #111827;
-    --cp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cp-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cp-success: #1E9E63;
     --cp-success-bg: #E7F4EC;

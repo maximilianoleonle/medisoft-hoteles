@@ -106,7 +106,7 @@ $visibles = count($documentos);
     --dc-text: color-mix(in srgb, var(--dc-brand) 46%, #707B8C);
     --dc-muted: #8791A2;
     --dc-heading: color-mix(in srgb, var(--dc-brand) 66%, #566172);
-    --dc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --dc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-success: #1E9E63; --dc-success-bg: #E7F4EC;
     --dc-warning: #C2841C; --dc-warning-bg: #FAF0DC;

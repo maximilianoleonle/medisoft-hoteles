@@ -64,7 +64,7 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
     --cj-ring: color-mix(in srgb, var(--cj-gold) 32%, transparent);
     --cj-text: #171717; --cj-muted: #667085; --cj-heading: #111827;
     --cj-warning: #C2841C; --cj-warning-bg: #FAF0DC;
-    --cj-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cj-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cj-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
     color: var(--cj-text); font-family: var(--cj-sans);

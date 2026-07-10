@@ -261,7 +261,7 @@
     --inv-auto: #6F5FD2;
     --inv-auto-bg: #EFECFB;
     --inv-shadow: 0 2px 8px color-mix(in srgb, var(--inv-brand-2) 6%, transparent), 0 12px 28px color-mix(in srgb, var(--inv-brand-2) 7%, transparent);
-    --inv-serif: 'Cormorant Garamond', Georgia, serif;
+    --inv-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --inv-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     background:

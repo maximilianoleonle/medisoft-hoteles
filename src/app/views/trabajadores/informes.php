@@ -58,7 +58,7 @@ $infReportes = [
     color: var(--inf-brand); font-size: 20px;
 }
 .informes-page .inf-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--inf-gold); font-weight: 700; margin: 0; }
-.informes-page .inf-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; margin: 2px 0 0; font-weight: 600; }
+.informes-page .inf-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 30px; line-height: 1.1; margin: 2px 0 0; font-weight: 600; }
 .informes-page .inf-subtitle { color: var(--inf-muted); font-size: 14px; margin: 6px 0 18px; }
 .informes-page .inf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .informes-page .inf-card {

@@ -146,7 +146,7 @@ $severidadLabels = [
     --cfin-text: color-mix(in srgb, var(--cfin-brand) 46%, #707B8C);
     --cfin-muted: #8791A2;
     --cfin-heading: color-mix(in srgb, var(--cfin-brand) 66%, #566172);
-    --cfin-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cfin-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cfin-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cfin-success: #1E9E63;
     --cfin-success-bg: #E7F4EC;

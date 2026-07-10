@@ -31,7 +31,7 @@ $resumenPermisos = static function ($permisosJson) {
     --rv-surface: #FFFFFF;
     --rv-bg: #F7F4EE;
     --rv-border: color-mix(in srgb, var(--rv-brand) 9%, #E7E1D4);
-    --rv-serif: 'Cormorant Garamond', Georgia, serif;
+    --rv-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rv-sans: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
     font-family: var(--rv-sans);
     color: var(--rv-text);

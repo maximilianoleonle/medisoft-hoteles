@@ -239,7 +239,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     --res-brand: var(--brand-primary, #1B2746);
     --res-brand-2: var(--brand-secondary, #0F172A);
     --res-accent: var(--brand-accent, #BD9441);
-    --res-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --res-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --res-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --res-bg: color-mix(in srgb, var(--res-brand) 2%, #F7F2EA);
     --res-card: rgba(255,255,255,.94);
@@ -592,7 +592,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-upcoming-head h2 {
     margin: 0;
     color: var(--res-heading);
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.42rem;
     font-weight: 800;
     line-height: 1.05;
@@ -636,7 +636,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     border: 1px solid color-mix(in srgb, var(--res-accent) 24%, var(--res-line));
 }
 .res-upcoming-date span {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.65rem;
     font-weight: 800;
     line-height: 1;
@@ -3716,7 +3716,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-kicker { display: none; }
     .res-title {
         font-size: 1.55rem;
-        font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-weight: 600;
         line-height: 1;
         letter-spacing: 0;

@@ -590,7 +590,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     --rc-danger-soft: #FBE9E7;
     --rc-info: #2F77E0;
     --rc-info-soft: #E6EFFC;
-    --rc-serif: 'Cormorant Garamond', Georgia, serif;
+    --rc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     background:

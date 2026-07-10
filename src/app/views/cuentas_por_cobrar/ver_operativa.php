@@ -141,7 +141,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
     --cx-text: color-mix(in srgb, var(--cx-brand) 34%, #647080);
     --cx-text-soft: color-mix(in srgb, var(--cx-brand) 24%, #7B8492);
     --cx-muted: #7A8493; --cx-heading: color-mix(in srgb, var(--cx-brand) 62%, #6B7280);
-    --cx-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cx-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-success: #1E9E63; --cx-success-bg: #E7F4EC;
     --cx-warning: #C2841C; --cx-warning-bg: #FAF0DC;

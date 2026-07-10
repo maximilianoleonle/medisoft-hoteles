@@ -80,7 +80,7 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
     --iav-text: color-mix(in srgb, var(--iav-brand) 46%, #707B8C);
     --iav-muted: #8791A2;
     --iav-heading: color-mix(in srgb, var(--iav-brand) 66%, #566172);
-    --iav-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --iav-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --iav-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --iav-success: #1E9E63;
     --iav-success-bg: #E7F4EC;

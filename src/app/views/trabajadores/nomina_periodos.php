@@ -329,7 +329,7 @@ $previewNominaQuery = http_build_query([
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--period-brand) 72%, transparent);
 }
 .nomina-periodos .period-kicker { color: var(--pd-muted) !important; opacity: 1 !important; font-weight: 600 !important; letter-spacing: .11em !important; }
-.nomina-periodos .period-title { margin: 2px 0 0 !important; font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important; font-weight: 650 !important; font-size: clamp(2rem, 3.6vw, 2.9rem) !important; color: var(--pd-heading) !important; line-height: 1 !important; }
+.nomina-periodos .period-title { margin: 2px 0 0 !important; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-weight: 650 !important; font-size: clamp(2rem, 3.6vw, 2.9rem) !important; color: var(--pd-heading) !important; line-height: 1 !important; }
 .nomina-periodos .period-subtitle { color: var(--pd-muted) !important; font-size: .92rem !important; font-weight: 500 !important; max-width: 52rem; }
 .nomina-periodos .period-stat-hero {
     position: relative; background: #FFFFFF !important; border: 1px solid var(--period-line) !important; border-radius: 14px !important;
@@ -345,7 +345,7 @@ $previewNominaQuery = http_build_query([
 .nomina-periodos .period-stat-hero.is-gold::before { background: var(--wk-gold-line); }
 .nomina-periodos .period-stat-hero.is-warn::before { background: color-mix(in srgb, var(--pd-warning) 55%, #fff); }
 .nomina-periodos .period-stat-hero .text-xs { opacity: 1 !important; color: var(--pd-muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .66rem; }
-.nomina-periodos .period-stat-hero .text-2xl, .nomina-periodos .period-stat-hero .text-xl { font-family: 'Cormorant Garamond', Georgia, serif !important; color: var(--pd-heading); }
+.nomina-periodos .period-stat-hero .text-2xl, .nomina-periodos .period-stat-hero .text-xl { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: var(--pd-heading); }
 @keyframes pdRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 
 /* Pesos boutique: nunca 800/900 */
@@ -375,8 +375,8 @@ $previewNominaQuery = http_build_query([
 .nomina-periodos .period-stat { border-radius: 14px !important; }
 .nomina-periodos .period-stat-soft { background: #FCFAF5 !important; }
 .nomina-periodos .period-stat .text-2xl, .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { color: var(--pd-heading) !important; }
-.nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { font-family: 'Cormorant Garamond', Georgia, serif !important; font-size: 1.25rem; }
-.nomina-periodos .period-stat .text-2xl { font-family: 'Cormorant Garamond', Georgia, serif !important; }
+.nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-size: 1.25rem; }
+.nomina-periodos .period-stat .text-2xl { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
 .nomina-periodos .period-card-active { border-color: var(--wk-gold-line) !important; box-shadow: 0 0 0 1px var(--wk-gold-line), 0 14px 32px -26px rgba(27,39,70,.32) !important; }
 
 /* Controles */

@@ -209,7 +209,7 @@ if ($diferencia > 0) {
         --cut-violet-soft: #F0EDFC;
         --cut-shadow: 0 16px 42px -30px color-mix(in srgb, var(--cut-brand-deep) 34%, transparent);
         --cut-shadow-soft: 0 1px 2px rgba(15, 23, 42, .04), 0 18px 40px -34px rgba(15, 23, 42, .32);
-        --cut-serif: 'Cormorant Garamond', Georgia, serif;
+        --cut-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         --cut-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         min-height: 100dvh;
         background:

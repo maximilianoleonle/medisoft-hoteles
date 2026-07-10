@@ -143,6 +143,19 @@ if (!function_exists('cj_finance_sentence')) {
     font-family:var(--cj-sans);
     color:var(--cj-text);
     -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+}
+
+/* ── Tipografía unificada con el dashboard: Manrope + Cormorant en TODA la vista,
+   incluidos los controles de formulario y los modales que cuelgan fuera de .cj-page
+   (por defecto input/select/textarea/button NO heredan la familia del contenedor). ── */
+.cj-page input, .cj-page select, .cj-page textarea, .cj-page button,
+#modalIngreso, #modalGasto,
+#modalIngreso input, #modalIngreso select, #modalIngreso textarea, #modalIngreso button,
+#modalGasto input, #modalGasto select, #modalGasto textarea, #modalGasto button {
+    font-family:var(--cj-sans);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
 }
 
 /* ── Topbar ── */
@@ -246,11 +259,11 @@ if (!function_exists('cj_finance_sentence')) {
 /* título más equilibrado: reducido para no dominar el header */
 .cj-resh-name {
     margin:0 0 5px;
-    font-family:var(--cj-serif);
-    font-size:clamp(1.6rem, 2.6vw, 2.2rem);
-    font-weight:600; line-height:1.1;
+    font-family:var(--cj-sans);
+    font-size:clamp(1.55rem, 2.5vw, 2.1rem);
+    font-weight:700; line-height:1.12;
     color:#FFFFFF;
-    letter-spacing:-.01em;
+    letter-spacing:-.02em;
 }
 
 .cj-resh-hotel {
@@ -336,15 +349,16 @@ if (!function_exists('cj_finance_sentence')) {
 }
 .cj-card-head h2 {
     margin:0;
-    font-family:var(--cj-serif);
-    font-size:1.12rem; font-weight:600;
-    color:var(--cj-text); line-height:1.2;
+    font-family:var(--cj-sans);
+    font-size:1.02rem; font-weight:700;
+    letter-spacing:-.01em;
+    color:var(--cj-navy); line-height:1.2;
     flex:1; min-width:0;
 }
 /* En PC los títulos de bloque ganan un poco más de presencia */
 @media (min-width:769px) {
     .cj-card-head h2 {
-        font-size:1.26rem; font-weight:700;
+        font-size:1.12rem; font-weight:700;
         color:var(--cj-navy);
     }
 }
@@ -374,9 +388,10 @@ if (!function_exists('cj_finance_sentence')) {
 }
 .cj-kpi-label { font-size:.68rem; font-weight:700; color:var(--cj-muted); text-transform:uppercase; letter-spacing:.06em; }
 .cj-kpi-value {
-    font-family:var(--cj-serif);
-    font-size:1.48rem; font-weight:600;
-    color:var(--cj-text); line-height:1;
+    font-family:var(--cj-sans);
+    font-size:1.5rem; font-weight:700;
+    letter-spacing:-.02em;
+    color:var(--cj-navy); line-height:1;
     font-variant-numeric:tabular-nums;
 }
 .cj-kpi-value.is-income { color:var(--cj-green); }
@@ -412,9 +427,10 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-method-pct { font-size:.7rem; font-weight:700; color:var(--cj-muted); margin-top:3px; }
 .cj-method-amount {
     text-align:right;
-    font-family:var(--cj-serif);
-    font-size:1.06rem; font-weight:600;
-    color:var(--cj-text); white-space:nowrap;
+    font-family:var(--cj-sans);
+    font-size:1.04rem; font-weight:700;
+    letter-spacing:-.01em;
+    color:var(--cj-navy); white-space:nowrap;
     font-variant-numeric:tabular-nums;
 }
 
@@ -557,8 +573,9 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-badge.income  { background:color-mix(in srgb, var(--cj-green) 12%, transparent); color:var(--cj-green); }
 .cj-badge.expense { background:color-mix(in srgb, var(--cj-red)   10%, transparent); color:var(--cj-red); }
 .cj-mov-amount {
-    font-family:var(--cj-serif);
-    font-size:1rem; font-weight:600;
+    font-family:var(--cj-sans);
+    font-size:1rem; font-weight:700;
+    letter-spacing:-.01em;
     font-variant-numeric:tabular-nums; white-space:nowrap;
     padding-top:3px;
 }
@@ -656,11 +673,12 @@ if (!function_exists('cj_finance_sentence')) {
 }
 #modalIngreso .cash-modal-kicker, #modalGasto .cash-modal-kicker {
     margin:0 0 3px; color:var(--cash-modal-muted);
-    font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
 }
 #modalIngreso .cash-modal-title, #modalGasto .cash-modal-title {
     margin:0; color:var(--cash-modal-text) !important;
-    font-size:18px; line-height:1.2; font-weight:850;
+    font-family:var(--cj-sans);
+    font-size:18px; line-height:1.2; font-weight:700; letter-spacing:-.01em;
 }
 #modalIngreso .cash-modal-close, #modalGasto .cash-modal-close {
     width:38px; height:38px; flex:0 0 38px;
@@ -687,7 +705,7 @@ if (!function_exists('cj_finance_sentence')) {
 #modalIngreso .cash-field.hidden, #modalGasto .cash-field.hidden { display:none !important; }
 #modalIngreso .modal-label, #modalGasto .modal-label, #modalGasto .modal-label-red {
     margin:0; color:var(--cash-modal-text) !important;
-    font-size:12px; font-weight:800; line-height:1.2;
+    font-size:12px; font-weight:700; line-height:1.2;
 }
 #modalIngreso .modal-label span, #modalGasto .modal-label span { color:var(--cash-modal-expense) !important; }
 #modalIngreso .modal-input, #modalGasto .modal-input, #modalGasto .modal-input-red {
@@ -716,7 +734,7 @@ if (!function_exists('cj_finance_sentence')) {
     display:block;
     color:#B4392B;
     font-size:12px;
-    font-weight:800;
+    font-weight:700;
     line-height:1.35;
 }
 #modalIngreso .cash-error-summary, #modalGasto .cash-error-summary {
@@ -726,16 +744,16 @@ if (!function_exists('cj_finance_sentence')) {
     background:#FFF7F6;
     color:#9E2A1D;
     font-size:13px;
-    font-weight:800;
+    font-weight:700;
     line-height:1.35;
 }
 #modalIngreso .cash-money-field, #modalGasto .cash-money-field { position:relative; }
 #modalIngreso .cash-money-prefix, #modalGasto .cash-money-prefix {
     position:absolute; left:13px; top:50%; transform:translateY(-50%);
-    color:var(--cash-modal-muted); font-size:14px; font-weight:850; pointer-events:none;
+    color:var(--cash-modal-muted); font-size:14px; font-weight:700; pointer-events:none;
 }
 #modalIngreso .cash-money-field .modal-input, #modalGasto .cash-money-field .modal-input {
-    padding-left:30px !important; font-size:16px; font-weight:850; font-variant-numeric:tabular-nums;
+    padding-left:30px !important; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
 }
 #modalIngreso .cash-modal-actions, #modalGasto .cash-modal-actions {
     position:sticky; bottom:0;
@@ -748,7 +766,7 @@ if (!function_exists('cj_finance_sentence')) {
     min-height:42px;
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
     padding:0 16px; border-radius:11px;
-    font-size:13px; font-weight:850; line-height:1;
+    font-size:13px; font-weight:700; line-height:1;
     transition:transform .18s, background .18s, border-color .18s;
 }
 #modalIngreso .cash-modal-btn.secondary, #modalGasto .cash-modal-btn.secondary {
@@ -960,6 +978,110 @@ if (!function_exists('cj_finance_sentence')) {
         animation:none !important;
     }
 }
+
+/* ============================================================
+   Header "hero" de Caja — banda de marca luminosa y glossy,
+   calcada del header de Habitaciones (#hb-header-hero):
+   gradiente marca → marca aclarada + brillo blanco especular +
+   emblema de vidrio con destello dorado + punto "en vivo" que late.
+   White-label: todo se deriva de --cj-navy / --cj-gold (= --brand-*).
+   Va al final del <style> para ganar por orden de cascada.
+   ============================================================ */
+.cj-resh {
+    --cj-hero-lift: color-mix(in srgb, var(--cj-navy) 66%, #ffffff);
+    background:
+        radial-gradient(ellipse 60% 74% at 92% -12%, color-mix(in srgb, var(--cj-gold) 26%, transparent), transparent 55%),
+        linear-gradient(116deg,
+            var(--cj-navy) 0%,
+            var(--cj-navy) 30%,
+            var(--cj-hero-lift) 74%,
+            color-mix(in srgb, var(--cj-navy) 82%, #ffffff) 100%) !important;
+    border:1px solid color-mix(in srgb, var(--cj-navy) 20%, transparent) !important;
+    border-radius:var(--cj-r-xl) !important;
+    box-shadow:
+        0 34px 64px -34px color-mix(in srgb, var(--cj-navy) 82%, #000),
+        0 14px 34px -24px color-mix(in srgb, var(--cj-navy) 58%, #000),
+        inset 0 1px 0 rgba(255,255,255,.24) !important;
+}
+/* Capa glossy blanca: specular + segundo brillo + sheen superior */
+.cj-resh::before {
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background:
+        radial-gradient(100% 90% at 8% -42%, rgba(255,255,255,.40), transparent 56%),
+        radial-gradient(55% 120% at 76% -24%, rgba(255,255,255,.20), transparent 55%),
+        linear-gradient(180deg, rgba(255,255,255,.16), transparent 44%);
+}
+/* El contenido queda por encima del brillo */
+.cj-resh > * { position:relative; z-index:1; }
+
+/* Grupo izquierdo: emblema + info alineados */
+.cj-resh-lead {
+    display:flex; align-items:center; gap:18px;
+    flex:1 1 280px; min-width:0;
+}
+.cj-resh-info { flex:1 1 auto; }
+
+/* Emblema de vidrio con destello dorado (misma primitiva que el modal/hero) */
+.cj-resh-emblem {
+    position:relative; flex:0 0 auto;
+    width:54px; height:54px; display:grid; place-items:center;
+    border-radius:16px;
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.38);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 24px -14px rgba(0,0,0,.5);
+    -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+}
+.cj-resh-emblem i { font-size:1.35rem; color:#fff; }
+.cj-resh-emblem::after {
+    content:''; position:absolute; top:-5px; right:-5px; width:15px; height:15px;
+    background:linear-gradient(135deg,#fff,var(--cj-gold));
+    clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+    filter:drop-shadow(0 0 5px rgba(255,255,255,.85));
+    animation:cj-emblem-twinkle 2.6s ease-in-out infinite;
+}
+@keyframes cj-emblem-twinkle{ 0%,100%{transform:scale(.7) rotate(0);opacity:.6} 50%{transform:scale(1) rotate(90deg);opacity:1} }
+
+/* Título/subtítulo legibles sobre las zonas más claras del gradiente */
+.cj-resh-name, .cj-resh-hotel { text-shadow:0 1px 2px rgba(0,0,0,.18); }
+
+/* Punto "en vivo" que late — mismo verde y anillo que el hero de Habitaciones */
+.cj-resh-dot {
+    background:#42D392;
+    box-shadow:0 0 0 0 rgba(66,211,146,.55);
+    animation:cj-live-pulse 2.2s ease-out infinite;
+}
+@keyframes cj-live-pulse{ 0%{box-shadow:0 0 0 0 rgba(66,211,146,.5)} 70%{box-shadow:0 0 0 7px rgba(66,211,146,0)} 100%{box-shadow:0 0 0 0 rgba(66,211,146,0)} }
+
+/* Botones de acción: conservan su color semántico (verde=ingreso, rojo=gasto,
+   azul=corte) pero con acabado glossy + brillo que barre, para lucir sobre la
+   banda como los del hero. Se preservan onclick/href/IDs (solo cromado). */
+.cj-act-btn {
+    position:relative; overflow:hidden;
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 12px 26px -16px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.cj-act-btn::after {
+    content:''; position:absolute; top:0; bottom:0; left:0; width:42%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent);
+    transform:translateX(-185%) skewX(-18deg); pointer-events:none;
+}
+.cj-act-btn:hover::after { transition:transform .7s ease; transform:translateX(320%) skewX(-18deg); }
+.cj-act-income  { background:linear-gradient(135deg,#25B974,#159257) !important; }
+.cj-act-expense { background:linear-gradient(135deg,#E15A4D,#C13B30) !important; }
+.cj-act-corte   { background:linear-gradient(135deg,#4088EF,#2560CC) !important; }
+
+/* En móviles muy angostos el emblema se oculta para no apretar el header */
+@media (max-width:560px) {
+    .cj-resh-emblem { display:none; }
+    .cj-resh-lead { gap:0; }
+}
+
+/* Respeto por reduced-motion: se apagan destello, latido y brillo */
+@media (prefers-reduced-motion: reduce) {
+    .cj-resh-emblem::after,
+    .cj-resh-dot { animation:none !important; }
+    .cj-act-btn::after { display:none !important; }
+}
 </style>
 
 <?php
@@ -989,6 +1111,13 @@ $cash_hora_apertura_label  = !empty($corte['fecha_apertura'])
     ? date('H:i', strtotime($corte['fecha_apertura']))
     : '--:--';
 $cash_caja_nombre   = $caja['nombre'] ?? 'Caja';
+// Título del header: capitaliza solo la primera letra (p.ej. "caja" → "Caja"),
+// respetando el resto del nombre. Guarda mb_* como el resto del proyecto.
+if ($cash_caja_nombre !== '') {
+    $cash_caja_nombre = function_exists('mb_strtoupper')
+        ? mb_strtoupper(mb_substr($cash_caja_nombre, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($cash_caja_nombre, 1, null, 'UTF-8')
+        : ucfirst($cash_caja_nombre);
+}
 $cash_responsable   = $corte['usuario_apertura'] ?? 'Responsable no asignado';
 $cash_hotel_nombre  = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Hotel';
 $cash_methods = [
@@ -1027,7 +1156,9 @@ $cash_methods = [
 
         <!-- ── Header card (resh) ── -->
         <div class="cj-resh">
-            <div class="cj-resh-info">
+            <div class="cj-resh-lead">
+                <span class="cj-resh-emblem" aria-hidden="true"><i class="fas fa-wallet"></i></span>
+                <div class="cj-resh-info">
                 <div class="cj-resh-state">
                     <span class="cj-resh-dot"></span>
                     Caja abierta
@@ -1039,7 +1170,8 @@ $cash_methods = [
                     <span><i class="fas fa-clock"></i> Apertura <?= htmlspecialchars($cash_hora_apertura_label) ?></span>
                     <span><i class="fas fa-calendar-alt"></i> <?= htmlspecialchars($cash_fecha_apertura_label) ?></span>
                 </div>
-            </div>
+                </div><!-- /.cj-resh-info -->
+            </div><!-- /.cj-resh-lead -->
             <div class="cj-resh-acts">
                 <button id="cop-ancla-ingreso" type="button" onclick="mostrarModalIngreso()" class="cj-act-btn cj-act-income">
                     <i class="fas fa-plus"></i> Registrar Ingreso

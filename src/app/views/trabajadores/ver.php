@@ -172,7 +172,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     --wk-text: color-mix(in srgb, var(--wk-brand) 46%, #707B8C);
     --wk-muted: #8791A2;
     --wk-heading: color-mix(in srgb, var(--wk-brand) 66%, #566172);
-    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;

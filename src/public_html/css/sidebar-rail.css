@@ -166,11 +166,11 @@
         position: relative;
         display: flex;
         align-items: center;
-        gap: 11px;
+        gap: 10px;
         width: calc(100% - 24px);
-        min-height: 43px;
+        min-height: 40px;
         margin: 3px 12px;
-        padding: 10px 12px;
+        padding: 9px 12px;
         border: 1px solid transparent;
         border-radius: 12px;
         background: none;
@@ -179,7 +179,7 @@
         text-decoration: none;
         color: color-mix(in srgb, var(--sr-ink) 86%, var(--sr-muted));
         font-family: inherit;
-        font-size: .9rem;
+        font-size: .84rem;
         font-weight: 600;
         letter-spacing: .005em;
         transition: background .18s var(--sr-ease), border-color .18s var(--sr-ease), color .18s var(--sr-ease), transform .18s var(--sr-ease), box-shadow .18s var(--sr-ease);
@@ -217,8 +217,8 @@
 
     .ms-rail-ic {
         position: relative;
-        width: 27px;
-        height: 27px;
+        width: 24px;
+        height: 24px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -227,7 +227,7 @@
         transition: color .18s var(--sr-ease);
     }
 
-    .ms-rail-ic i { font-size: .98rem; }
+    .ms-rail-ic i { font-size: .9rem; }
 
     .ms-rail-g:hover .ms-rail-ic,
     .ms-rail-g.ms-open .ms-rail-ic,
@@ -270,6 +270,20 @@
 
     .ms-rail-g:hover .ms-rail-ch,
     .ms-rail-g.ms-open .ms-rail-ch { opacity: .9; transform: translateX(2px); }
+
+    /* Fijado (clic): la sección queda "bloqueada" abierta con anillo dorado y el
+       chevron girado hacia abajo; persiste aunque el cursor salga del rail. */
+    .ms-rail-g.ms-pinned {
+        background: linear-gradient(180deg, var(--sr-surface), var(--sr-ivory-2));
+        border-color: color-mix(in srgb, var(--sr-gold) 42%, var(--sr-line));
+        color: var(--sr-primary);
+        transform: translateX(2px);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--sr-gold) 18%, transparent),
+                    0 6px 14px color-mix(in srgb, var(--sr-secondary) 10%, transparent);
+    }
+
+    .ms-rail-g.ms-pinned .ms-rail-ic { color: var(--sr-primary); }
+    .ms-rail-g.ms-pinned .ms-rail-ch { opacity: .95; transform: rotate(90deg); }
 
     /* ── Nivel 2: flyout editorial ── */
     .ms-rail-fly {
@@ -426,6 +440,15 @@
     html[data-theme="dark"] .ms-rail-g.ms-on::before {
         background: linear-gradient(180deg, #38BDF8, #2563EB);
     }
+
+    html[data-theme="dark"] .ms-rail-g.ms-pinned {
+        background: rgba(148, 163, 184, .14);
+        border-color: rgba(56, 189, 248, .38);
+        color: #F8FAFC;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, .16);
+    }
+
+    html[data-theme="dark"] .ms-rail-g.ms-pinned .ms-rail-ic { color: #E2E8F0; }
 
     html[data-theme="dark"] .ms-rail-ic,
     html[data-theme="dark"] .ms-rail-fi i { color: #94A3B8; }

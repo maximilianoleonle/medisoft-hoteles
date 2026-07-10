@@ -80,7 +80,7 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
     --dc-text: #171717;
     --dc-muted: #667085;
     --dc-heading: #111827;
-    --dc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --dc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100%;
     color: var(--dc-text);

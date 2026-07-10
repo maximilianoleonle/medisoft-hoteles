@@ -250,7 +250,7 @@ $metodoMeta = [
     max-width: 12ch;
     margin: 14px 0 14px;
     color: var(--pr-on-action);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2.4rem, 5vw, 5.15rem);
     line-height: .9;
     font-weight: 700;
@@ -338,7 +338,7 @@ $metodoMeta = [
 .profit-period-value {
     margin-top: 7px;
     color: var(--pr-primary);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.45rem, 3vw, 2.3rem);
     font-weight: 700;
     line-height: 1;

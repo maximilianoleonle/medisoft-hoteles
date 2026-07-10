@@ -367,7 +367,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('dashboard') ?>"
                class="nav-item <?= $sidebarActiveDashboard ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-th-large"></i>
+                    <i class="fas fa-compass"></i>
                 </div>
                 <span class="nav-text">Dashboard</span>
             </a>
@@ -387,7 +387,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('forecast') ?>"
                class="nav-item <?= $sidebarActiveForecast ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-arrow-trend-up"></i>
                 </div>
                 <span class="nav-text">Forecast</span>
             </a>
@@ -446,7 +446,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('checkin-digital') ?>"
                class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-id-badge"></i>
+                    <i class="fas fa-qrcode"></i>
                     <?= $sidebarBadge('checkin-digital', $sidebarActiveCheckinDigital) ?>
                 </div>
                 <span class="nav-text">Check-in digital</span>
@@ -545,7 +545,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('inventario') ?>"
                class="nav-item <?= $sidebarActiveInventario ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-box"></i>
+                    <i class="fas fa-boxes-stacked"></i>
                 </div>
                 <span class="nav-text">Inventarios</span>
             </a>
@@ -704,7 +704,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('nomina') ?>"
                class="nav-item <?= $sidebarActiveNomina ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fas fa-money-check-dollar"></i>
                 </div>
                 <span class="nav-text">Nómina</span>
             </a>
@@ -735,7 +735,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <a href="<?= url('auditoria') ?>"
                class="nav-item <?= $sidebarActiveAuditoria ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-shield-halved"></i>
+                    <i class="fas fa-clock-rotate-left"></i>
                 </div>
                 <span class="nav-text">Bitácora</span>
             </a>
@@ -1481,7 +1481,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         width: 48px; height: 48px; border-radius: 14px;
         display: grid; place-items: center;
         color: #fff;
-        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-weight: 600; font-size: 19px;
         background: linear-gradient(150deg, var(--brand-secondary, #2E3F66), var(--brand-primary, #1B2746));
         flex: none; position: relative;

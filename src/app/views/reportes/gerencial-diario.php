@@ -95,7 +95,7 @@ $riesgoRows = [
 .gd-title {
     margin: 0;
     color: var(--gd-brand);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2rem, 4vw, 3rem);
     line-height: .98;
     letter-spacing: 0;
@@ -172,7 +172,7 @@ $riesgoRows = [
     display: block;
     margin-top: 7px;
     color: var(--gd-brand);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.5rem, 2.4vw, 2.2rem);
     line-height: 1;
     font-weight: 700;

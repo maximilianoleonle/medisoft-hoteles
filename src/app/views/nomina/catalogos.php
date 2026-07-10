@@ -119,7 +119,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
     color: var(--nom-text); max-width: 1120px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-cat-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-cat-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
+.nomina-cat-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
 .nomina-cat-page .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .nomina-cat-page .cat-tab {
     display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
@@ -129,7 +129,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
 .nomina-cat-page .cat-tab.activa { background: var(--nom-brand); border-color: var(--nom-brand); color: #fff; }
 .nomina-cat-page .cat-tab .cat-count { font-size: 11px; opacity: .75; }
 .nomina-cat-page .cat-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
-.nomina-cat-page .cat-card h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
+.nomina-cat-page .cat-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
 .nomina-cat-page .cat-notice {
     display: flex; gap: 12px; align-items: flex-start;
     border: 1px solid color-mix(in srgb, var(--nom-gold) 45%, var(--nom-border));

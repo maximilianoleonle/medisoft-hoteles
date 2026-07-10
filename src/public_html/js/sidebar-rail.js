@@ -13,13 +13,13 @@
 
     /* Icono representativo por área; si no hay mapeo, hereda el del primer ítem. */
     var ICONOS = {
-        'dashboard': 'fas fa-th-large',
-        'gestion': 'fas fa-bed',
-        'finanzas': 'fas fa-wallet',
-        'operacion-interna': 'fas fa-clipboard-list',
-        'ventas': 'fas fa-globe',
-        'admin': 'fas fa-chart-line',
-        'config': 'fas fa-cog'
+        'dashboard': 'fas fa-compass',
+        'gestion': 'fas fa-bell-concierge',
+        'finanzas': 'fas fa-coins',
+        'operacion-interna': 'fas fa-gears',
+        'ventas': 'fas fa-bullhorn',
+        'admin': 'fas fa-briefcase',
+        'config': 'fas fa-sliders'
     };
 
     function sentenceCase(s) {
@@ -117,17 +117,19 @@
         document.body.appendChild(fly);
 
         var abierto = null;   /* botón de grupo con flyout abierto */
+        var pinned = false;   /* clic = flyout fijado; no se cierra al salir el cursor */
         var hideT = 0;
 
         function cerrarFly() {
             fly.classList.remove('ms-open');
-            if (abierto) { abierto.classList.remove('ms-open'); abierto.setAttribute('aria-expanded', 'false'); }
+            if (abierto) { abierto.classList.remove('ms-open', 'ms-pinned'); abierto.setAttribute('aria-expanded', 'false'); }
             abierto = null;
+            pinned = false;
         }
 
         function abrirFly(grupo, boton) {
             clearTimeout(hideT);
-            if (abierto && abierto !== boton) { abierto.classList.remove('ms-open'); abierto.setAttribute('aria-expanded', 'false'); }
+            if (abierto && abierto !== boton) { abierto.classList.remove('ms-open', 'ms-pinned'); abierto.setAttribute('aria-expanded', 'false'); }
             abierto = boton;
             boton.classList.add('ms-open');
             boton.setAttribute('aria-expanded', 'true');
@@ -163,7 +165,17 @@
             fly.style.top = Math.round(Math.max(8, Math.min(top, max))) + 'px';
         }
 
+        /* Clic sobre un grupo: fija (bloquea) el flyout abierto. Persiste aunque
+           el cursor salga del rail; solo cierra con clic fuera, otra sección,
+           Escape o un segundo clic sobre la misma. */
+        function fijarFly(grupo, boton) {
+            abrirFly(grupo, boton);
+            pinned = true;
+            boton.classList.add('ms-pinned');
+        }
+
         function programarCierre() {
+            if (pinned) { return; }   /* fijado: el hover ya no lo cierra */
             clearTimeout(hideT);
             hideT = window.setTimeout(cerrarFly, 240);
         }
@@ -196,7 +208,9 @@
 
             if (esDirecto) {
                 fila.href = grupo.items[0].href;
-                fila.addEventListener('mouseenter', cerrarFly);
+                /* Enlace directo: en modo fijado no debe cerrar el flyout de otra
+                   sección solo por rozarlo con el cursor. */
+                fila.addEventListener('mouseenter', function () { if (!pinned) { cerrarFly(); } });
             } else {
                 fila.type = 'button';
                 fila.setAttribute('aria-haspopup', 'true');
@@ -206,14 +220,18 @@
                 ch.setAttribute('aria-hidden', 'true');
                 fila.appendChild(ch);
 
-                fila.addEventListener('mouseenter', function () { abrirFly(grupo, fila); });
+                fila.addEventListener('mouseenter', function () {
+                    /* En modo fijado el hover no cambia el flyout: la sección
+                       clicada manda hasta que el usuario cierre o elija otra. */
+                    if (pinned) { return; }
+                    abrirFly(grupo, fila);
+                });
                 fila.addEventListener('click', function (e) {
-                    /* El hover ya abre el flyout; el clic NO debe cerrarlo
-                       (se sentia como que "no pasaba nada" y el acordeon se
-                       cerraba solo). Solo lo abrimos si aun no esta abierto,
-                       p. ej. por teclado o pantalla tactil sin hover. */
+                    /* Clic = botón: fija (bloquea) el flyout de esta sección.
+                       Si ya está fijada, un segundo clic la cierra (toggle). */
                     e.preventDefault();
-                    if (abierto !== fila) { abrirFly(grupo, fila); }
+                    if (pinned && abierto === fila) { cerrarFly(); }
+                    else { fijarFly(grupo, fila); }
                 });
                 fila.addEventListener('keydown', function (e) {
                     if (e.key === 'Escape') { cerrarFly(); }

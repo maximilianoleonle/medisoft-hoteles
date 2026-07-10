@@ -528,7 +528,7 @@ foreach ($filas as $fila) {
     <div class="cdi-shell">
         <section class="cdi-hero-section" aria-labelledby="cdi-title">
             <div class="cdi-title-lockup">
-                <div class="cdi-hero-icon" aria-hidden="true"><i class="fas fa-id-badge"></i></div>
+                <div class="cdi-hero-icon" aria-hidden="true"><i class="fas fa-qrcode"></i></div>
                 <div>
                     <p class="cdi-kicker">Recepcion / Pre-registro</p>
                     <h1 class="cdi-title" id="cdi-title">Check-in digital</h1>

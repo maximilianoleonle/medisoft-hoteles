@@ -53,7 +53,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
     --cx-text: #171717;
     --cx-muted: #667085;
     --cx-heading: #111827;
-    --cx-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cx-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-success: #1E9E63; --cx-success-bg: #E7F4EC;
     --cx-warning: #C2841C; --cx-warning-bg: #FAF0DC;

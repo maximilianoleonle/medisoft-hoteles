@@ -37,7 +37,7 @@
 .ms-cf-ic{ width:58px; height:58px; border-radius:17px; background:var(--ms-bg,#FAF0DC); color:var(--ms-c,#C2841C);
     display:grid; place-items:center; margin:0 auto 14px; }
 .ms-cf-ic svg{ width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-.ms-cf-t{ font-family:'Cormorant Garamond', Georgia, serif; font-size:22px; font-weight:600; color:#1B2746; line-height:1.1; }
+.ms-cf-t{ font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:22px; font-weight:600; color:#1B2746; line-height:1.1; }
 .ms-cf-m{ font-size:13.5px; color:#6C7689; line-height:1.55; margin-top:8px; }
 .ms-cf-x{ display:none; }
 .ms-cf-btns{ display:flex; flex-direction:column; gap:9px; margin-top:20px; }
@@ -91,7 +91,7 @@
 .ms-ps-pulse{ position:absolute; inset:0; border-radius:28px; border:2px solid var(--ms-c,#1E9E63);
     animation:msPsPulse 2s ease-out infinite; opacity:0; }
 @keyframes msPsPulse{ 0%{ transform:scale(1); opacity:.5; } 100%{ transform:scale(1.5); opacity:0; } }
-.ms-ps-t{ font-family:'Cormorant Garamond', Georgia, serif; font-size:28px; font-weight:600; color:#1B2746; }
+.ms-ps-t{ font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:28px; font-weight:600; color:#1B2746; }
 .ms-ps-m{ font-size:14px; color:#6C7689; line-height:1.6; margin-top:10px; max-width:320px; }
 .ms-ps-btns{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:340px; margin-top:28px; }
 .ms-ps-btns .ms-cf-btn.ok{ background:var(--ms-c,#1E9E63); }

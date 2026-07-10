@@ -900,7 +900,7 @@ $noches = $rdNoches;
     --rd-warning: #B7791F;
     --rd-danger: #C24135;
     --rd-info: #2D6BB3;
-    --rd-serif: "Cormorant Garamond", Georgia, serif;
+    --rd-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rd-sans: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     min-height: 100vh;
     background:
@@ -2088,7 +2088,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-titleline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 .rdv3-titleline h1 {
     margin: 0;
-    font-family: "Cormorant Garamond", Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2rem, 2vw, 2.75rem);
     line-height: .95;
     font-weight: 600;
@@ -2201,7 +2201,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-icon--blue { color: #3b82f6; background: #eaf2ff; }
 .rdv3-icon--green { color: #2dbd79; background: #e7f8ef; }
 .rdv3-icon--violet { color: #6252d8; background: #eeebff; }
-.rdv3-card-title { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.22rem; line-height: 1.1; font-weight: 600; overflow-wrap: anywhere; }
+.rdv3-card-title { margin: 0; color: var(--rdv3-primary); font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.22rem; line-height: 1.1; font-weight: 600; overflow-wrap: anywhere; }
 .rdv3-card-body { position: relative; z-index: 1; padding: 12px 42px 32px; }
 .rdv3-stay { display: grid; grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr); border: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); border-radius: 16px; overflow: hidden; background: #FFFFFF; }
 .rdv3-date { padding: 18px; }
@@ -2210,13 +2210,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-date:last-child { text-align: right; }
 .rdv3-label { display: block; color: var(--rdv3-muted-2); font-size: .69rem; font-weight: 950; text-transform: uppercase; letter-spacing: .03em; }
 .rdv3-label--green { color: #26a96f; }
-.rdv3-date strong { display: block; margin-top: 6px; color: var(--rdv3-blue); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.35rem; line-height: 1; }
+.rdv3-date strong { display: block; margin-top: 6px; color: var(--rdv3-blue); font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.35rem; line-height: 1; }
 .rdv3-date span { display: block; margin-top: 6px; color: #8992a5; font-size: .78rem; font-weight: 600; }
 .rdv3-nights { display: grid; place-items: center; text-align: center; border-left: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); border-right: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); color: var(--rdv3-muted); background: #FAFAF8; }
 .rdv3-nights b { display: block; font-size: 1.35rem; line-height: 1; }
 .rdv3-nights span { display: block; margin-top: 5px; color: var(--rdv3-muted-2); font-size: .62rem; font-weight: 950; text-transform: uppercase; }
 .rdv3-total { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 86px; padding: 17px 18px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--rdv3-green) 16%, transparent); background: color-mix(in srgb, var(--rdv3-green) 5%, #fff); }
-.rdv3-total .rdv3-amount { margin-top: 5px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 600; color: var(--rdv3-primary); }
+.rdv3-total .rdv3-amount { margin-top: 5px; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.7rem; font-weight: 600; color: var(--rdv3-primary); }
 .rdv3-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; color: #37b77d; font-size: .74rem; font-weight: 950; }
 .rdv3-pill.is-paid { color: #15835A; background: rgba(255,255,255,.86); }
 .rdv3-pill.is-pending { color: color-mix(in srgb, var(--rdv3-gold) 86%, #5f481d); background: #fff8ec; }
@@ -2295,7 +2295,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     background: linear-gradient(180deg, #FFFDF9, #FBF5EA);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
     color: var(--rdv3-primary);
-    font-family: "Cormorant Garamond", Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1rem, .55rem + 1vw, 1.5rem);
     line-height: 1.02;
     font-weight: 700;
@@ -2395,7 +2395,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-card--guest .rdv3-card-body { padding-bottom: 18px; }
 .rdv3-guest-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 8px 10px 12px; border-radius: 15px; background: linear-gradient(90deg, rgba(19,168,198,.08), transparent); }
 .rdv3-avatar { flex: 0 0 auto; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-primary) 85%, #7258ff), #6252d8); color: #fff; font-size: 1.15rem; font-weight: 950; }
-.rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }
+.rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }
 .rdv3-guest-sub { margin-top: 5px; color: #7e879b; font-size: .83rem; font-weight: 600; }
 .rdv3-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 10%, transparent); border-radius: 12px; background: #FFFFFF; min-width: 0; }
@@ -2643,7 +2643,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-step-meta { margin-top: 2px; color: #8b94a8; font-size: .72rem; font-weight: 600; line-height: 1.3; }
 .rdv3-payment-total { text-align: center; border-radius: 14px; border: 1px solid rgba(45, 189, 121, .26); background: radial-gradient(circle at 15% 0, rgba(45,189,121,.18), transparent 12rem), rgba(45, 189, 121, .13); padding: 18px; margin-bottom: 14px; }
 .rdv3-payment-total small { display: block; color: #27a96e; font-size: .67rem; font-weight: 950; text-transform: uppercase; }
-.rdv3-payment-total b { display: block; margin-top: 7px; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.65rem; }
+.rdv3-payment-total b { display: block; margin-top: 7px; color: var(--rdv3-primary); font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.65rem; }
 .rdv3-payment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; color: var(--rdv3-primary); }
 .rdv3-payment-row + .rdv3-payment-row { border-top: 1px solid var(--rdv3-line); }
 .rdv3-payment-method { display: flex; align-items: center; gap: 11px; min-width: 0; }
@@ -2712,7 +2712,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3 .documentos-entidad-panel > div:first-child > div:first-child h2 {
     margin: 0;
     color: var(--rdv3-primary);
-    font-family: "Cormorant Garamond", Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.22rem;
     font-weight: 600;
     line-height: 1.1;
@@ -2903,7 +2903,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-crumb-prefix { display: none; }
     .rdv3-crumbs {
         color: var(--rdv3-primary);
-        font-family: "Cormorant Garamond", Georgia, serif;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size: 1.13rem;
         line-height: 1;
         font-weight: 700;
@@ -9907,7 +9907,7 @@ document.addEventListener('DOMContentLoaded', function () {
 #modalCheckIn .rv-checkin-titleblock h3 {
     margin: 0;
     color: var(--rv-checkin-ink);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.35rem, 3vw, 1.75rem);
     font-weight: 600;
     line-height: 1;
@@ -10090,7 +10090,7 @@ document.addEventListener('DOMContentLoaded', function () {
 #modalCheckIn #totalACobrar {
     display: block;
     color: var(--rv-checkin-ink) !important;
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2rem, 6vw, 2.65rem) !important;
     font-weight: 800 !important;
     line-height: .92 !important;
@@ -10197,7 +10197,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 #modalCheckIn .rv-room-card strong {
     color: var(--rv-checkin-ink);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.48rem;
     font-weight: 600;
     line-height: 1;
@@ -10736,7 +10736,7 @@ document.addEventListener('DOMContentLoaded', function () {
     padding: 13px 16px;
     background: linear-gradient(135deg, var(--rv-checkin-brand), var(--rv-checkin-ink));
     color: #fff !important;
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.05rem !important;
     font-weight: 800 !important;
 }
@@ -11018,7 +11018,7 @@ document.addEventListener('DOMContentLoaded', function () {
     display: grid;
     gap: 14px;
     color: #fff !important;
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2rem, 4vw, 2.8rem) !important;
     font-weight: 700 !important;
     line-height: .9 !important;

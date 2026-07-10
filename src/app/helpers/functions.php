@@ -304,6 +304,28 @@ function back_url($fallback = '') {
         return $fallbackUrl;
     }
 
+    // No "regresar" a la pagina en la que ya estamos. Cubre el mismo recurso con
+    // otra query (?filtros, deep-link, flash) y las sub-rutas de accion del propio
+    // recurso (/tareas/5/completar, /iniciar, ...) que redirigen a si mismas tras
+    // un POST: en todos esos casos el destino correcto es el indice (fallback), no
+    // la ficha que acabamos de dejar.
+    $currentNormPath = back_url_normalized_path($currentPath, $baseDir);
+    $refererNormPath = back_url_normalized_path($refererPath, $baseDir);
+
+    if ($currentNormPath !== '' && $refererNormPath === $currentNormPath) {
+        return $fallbackUrl;
+    }
+
+    $refererLastSegment = ($slashPos = strrpos($refererNormPath, '/')) !== false
+        ? substr($refererNormPath, $slashPos + 1)
+        : '';
+    if ($currentNormPath !== '' && $refererLastSegment !== '' && !ctype_digit($refererLastSegment)) {
+        $refererParentPath = (string) preg_replace('#/[^/]+$#', '', $refererNormPath);
+        if ($refererParentPath === $currentNormPath) {
+            return $fallbackUrl;
+        }
+    }
+
     if (back_url_is_form_route($refererPath, $baseDir) && !back_url_is_form_route($currentPath, $baseDir)) {
         return $fallbackUrl;
     }

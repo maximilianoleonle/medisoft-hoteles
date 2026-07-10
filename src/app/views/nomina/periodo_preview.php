@@ -26,13 +26,13 @@ include APP_PATH . '/views/partials/back_arrow.php';
     color: var(--nom-text); max-width: 1120px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-pv-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-pv-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; margin: 2px 0 4px; font-weight: 600; }
+.nomina-pv-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 26px; margin: 2px 0 4px; font-weight: 600; }
 .nomina-pv-page .pv-sub { color: var(--nom-muted); font-size: 13.5px; margin: 0 0 16px; }
 .nomina-pv-page .pv-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 @media (max-width: 900px) { .nomina-pv-page .pv-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .nomina-pv-page .pv-kpi { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 14px; padding: 14px 16px; }
 .nomina-pv-page .pv-kpi-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--nom-muted); font-weight: 700; }
-.nomina-pv-page .pv-kpi-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 24px; font-weight: 600; margin-top: 4px; }
+.nomina-pv-page .pv-kpi-value { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 24px; font-weight: 600; margin-top: 4px; }
 .nomina-pv-page .pv-alerta {
     display: flex; gap: 10px; align-items: flex-start;
     border: 1px solid rgba(191,144,0,.4); background: rgba(191,144,0,.08);
@@ -42,7 +42,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-pv-page .pv-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
 .nomina-pv-page .pv-emp { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .nomina-pv-page .pv-emp strong { font-size: 14.5px; }
-.nomina-pv-page .pv-emp .pv-neto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; }
+.nomina-pv-page .pv-emp .pv-neto { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 22px; font-weight: 600; }
 .nomina-pv-page .pv-badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
 .nomina-pv-page .pv-badge.por_pagar { background: rgba(46,125,50,.12); color: #2e7d32; }
 .nomina-pv-page .pv-badge.sin_saldo, .nomina-pv-page .pv-badge.sin_movimientos { background: rgba(120,120,120,.14); color: #666; }

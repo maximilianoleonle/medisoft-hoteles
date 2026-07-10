@@ -144,7 +144,7 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
     --ntx-primary: var(--brand-primary, #1f3f46);
     --ntx-secondary: var(--brand-secondary, #27333f);
     --ntx-accent: var(--brand-accent, #b58a3c);
-    --ntx-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --ntx-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --ntx-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --ntx-action: var(--brand-action-bg, var(--ntx-primary));
     --ntx-action-hover: var(--brand-action-bg-hover, color-mix(in srgb, var(--ntx-action) 90%, #111827));

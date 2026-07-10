@@ -23,7 +23,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
     color: var(--nom-text); max-width: 1120px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-emp-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-emp-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
+.nomina-emp-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
 .nomina-emp-page .emp-filtros { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 .nomina-emp-page .emp-filtros input, .nomina-emp-page .emp-filtros select {
     border: 1px solid var(--nom-border); border-radius: 10px; padding: 9px 12px; font-size: 16px; background: #fff; color: var(--nom-text);

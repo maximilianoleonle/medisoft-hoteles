@@ -114,7 +114,7 @@ $hallazgos = (int) ($totales['hallazgos'] ?? 0);
     --vgf-text: color-mix(in srgb, var(--vgf-brand) 46%, #707B8C);
     --vgf-muted: #8791A2;
     --vgf-heading: color-mix(in srgb, var(--vgf-brand) 66%, #566172);
-    --vgf-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --vgf-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --vgf-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --vgf-success: #1E9E63;
     --vgf-success-bg: #E7F4EC;

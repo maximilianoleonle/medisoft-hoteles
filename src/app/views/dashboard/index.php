@@ -140,7 +140,7 @@ if (!function_exists('dashboard_notif_icon')) {
             'caja' => 'fa-wallet',
             'habitaciones' => 'fa-bed',
             'facturacion' => 'fa-file-invoice',
-            'inventario' => 'fa-box',
+            'inventario' => 'fa-boxes-stacked',
             'reservaciones' => 'fa-calendar-check',
         ];
 

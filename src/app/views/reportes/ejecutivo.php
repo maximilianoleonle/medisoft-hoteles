@@ -67,7 +67,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
 .exec-page{--exec-brand:var(--brand-primary,#1B2746);--exec-brand-2:var(--brand-secondary,#0F172A);--exec-accent:var(--brand-accent,#BD9441);--exec-text:var(--brand-text,#172033);--exec-muted:var(--brand-muted,#64748B);--exec-border:var(--brand-border,#E5E7EB);--exec-soft:color-mix(in srgb,var(--exec-brand) 5%,#F8FAFC);--exec-accent-soft:color-mix(in srgb,var(--exec-accent) 12%,#FFFFFF);max-width:1440px;margin:0 auto;padding:24px;color:var(--exec-text)}
 .exec-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--exec-border)}
 .exec-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--exec-muted);font-weight:700}
-.exec-title{margin:5px 0 7px;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;line-height:1.08;font-weight:700;letter-spacing:0}
+.exec-title{margin:5px 0 7px;color:var(--exec-brand-2);font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:32px;line-height:1.08;font-weight:700;letter-spacing:0}
 .exec-subtitle{margin:0;max-width:820px;color:var(--exec-muted);font-size:14px;line-height:1.5}
 .exec-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
 .exec-btn,.exec-badge{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:9px 12px;border-radius:8px;border:1px solid var(--exec-border);background:#fff;color:var(--exec-text);font-size:13px;font-weight:700;text-decoration:none}
@@ -81,19 +81,19 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
 .exec-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .exec-metric{border:1px solid var(--exec-border);border-radius:8px;background:#fff;padding:14px;min-height:104px}
 .exec-metric span{display:block;color:var(--exec-muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.exec-metric strong{display:block;margin-top:8px;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;line-height:1.08;font-weight:700}
+.exec-metric strong{display:block;margin-top:8px;color:var(--exec-brand-2);font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:24px;line-height:1.08;font-weight:700}
 .exec-metric small{display:block;margin-top:7px;color:var(--exec-muted);font-size:12px;font-weight:600}
 .exec-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:14px}
 .exec-stack{display:grid;gap:14px}
 .exec-panel{border:1px solid var(--exec-border);border-radius:8px;background:#fff;overflow:hidden}
 .exec-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--exec-border);background:var(--exec-soft)}
-.exec-panel-title{margin:0;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700}
+.exec-panel-title{margin:0;color:var(--exec-brand-2);font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:18px;font-weight:700}
 .exec-panel-subtitle{margin:4px 0 0;color:var(--exec-muted);font-size:12px}
 .exec-panel-body{padding:14px 16px}
 .exec-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .exec-stat{border:1px solid color-mix(in srgb,var(--exec-border) 78%,transparent);border-radius:8px;padding:11px;background:#fff}
 .exec-stat span{display:block;color:var(--exec-muted);font-size:11px;font-weight:700}
-.exec-stat strong{display:block;margin-top:5px;color:var(--exec-brand);font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:700}
+.exec-stat strong{display:block;margin-top:5px;color:var(--exec-brand);font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:20px;font-weight:700}
 .exec-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;border-top:1px solid color-mix(in srgb,var(--exec-border) 70%,transparent)}
 .exec-row:first-child{border-top:0}
 .exec-row span{color:var(--exec-muted);font-size:13px;font-weight:600}

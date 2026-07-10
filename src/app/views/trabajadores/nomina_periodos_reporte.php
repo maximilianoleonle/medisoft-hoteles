@@ -140,7 +140,7 @@ $exportUrl = url('trabajadores/nomina/periodos/exportar' . ($exportQuery !== '' 
     --pr-success: #1E9E63; --pr-success-bg: #E7F4EC;
     --pr-warning: #C2841C; --pr-warning-bg: #FAF0DC;
     --pr-danger: #B4392B; --pr-danger-bg: #F8EAE5;
-    --pr-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --pr-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --pr-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--pr-text);
     font-family: var(--pr-sans);

@@ -46,7 +46,7 @@ $nomEstadoPeriodoLabels = [
     color: var(--nom-brand); font-size: 20px;
 }
 .nomina-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; margin: 2px 0 0; font-weight: 600; }
+.nomina-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 30px; line-height: 1.1; margin: 2px 0 0; font-weight: 600; }
 .nomina-page .nom-subtitle { color: var(--nom-muted); font-size: 14px; margin: 6px 0 18px; }
 .nomina-page .nom-navrow { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
 .nomina-page .nom-btn {
@@ -72,7 +72,7 @@ $nomEstadoPeriodoLabels = [
     border-radius: 16px; padding: 16px 18px;
 }
 .nomina-page .nom-kpi-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--nom-muted); font-weight: 700; margin-bottom: 6px; }
-.nomina-page .nom-kpi-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; font-weight: 600; line-height: 1.1; }
+.nomina-page .nom-kpi-value { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 26px; font-weight: 600; line-height: 1.1; }
 .nomina-page .nom-kpi-hint { font-size: 12px; color: var(--nom-muted); margin-top: 4px; }
 .nomina-page .nom-badge {
     display: inline-flex; align-items: center; gap: 6px;
@@ -94,7 +94,7 @@ $nomEstadoPeriodoLabels = [
     background: var(--nom-card); border: 1px solid var(--nom-border);
     border-radius: 16px; padding: 18px 20px;
 }
-.nomina-page .nom-card h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; margin: 0 0 10px; font-weight: 600; }
+.nomina-page .nom-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 20px; margin: 0 0 10px; font-weight: 600; }
 .nomina-page .nom-card ul { margin: 0; padding: 0; list-style: none; }
 .nomina-page .nom-card li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--nom-border); font-size: 13.5px; }
 .nomina-page .nom-card li:last-child { border-bottom: 0; }

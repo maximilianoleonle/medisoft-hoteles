@@ -57,7 +57,7 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
 .lim-rep-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:start;margin-bottom:20px}
 .lim-rep-kicker{display:inline-flex;align-items:center;gap:8px;color:var(--lr-muted);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
 .lim-rep-kicker::before{content:"";width:24px;height:1px;background:var(--lr-clean-dark);opacity:.55}
-.lim-rep-title{margin:4px 0 4px;color:#111827;font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(2.2rem,3.2vw,3.15rem);font-weight:700;line-height:.98;letter-spacing:0}
+.lim-rep-title{margin:4px 0 4px;color:#111827;font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:clamp(2.2rem,3.2vw,3.15rem);font-weight:700;line-height:.98;letter-spacing:0}
 .lim-rep-subtitle{max-width:780px;margin:0;color:var(--lr-muted);font-size:.95rem;font-weight:650;line-height:1.42}
 .lim-rep-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .lim-rep-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 15px;border:1px solid var(--lr-line);border-radius:8px;background:#fff;color:var(--lr-ink);font-size:.84rem;font-weight:900;text-decoration:none;box-shadow:0 1px 2px rgba(15,23,42,.04)}
@@ -70,7 +70,7 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
 .lim-rep-metric:nth-child(4)::before{background:var(--lr-sun)}
 .lim-rep-metric:nth-child(5)::before{background:var(--lr-clean-dark)}
 .lim-rep-metric span{display:block;color:var(--lr-muted);font-size:.74rem;font-weight:900;letter-spacing:.055em;line-height:1.1;text-transform:uppercase}
-.lim-rep-metric strong{display:block;margin-top:14px;color:#111827;font-family:'Cormorant Garamond',Georgia,serif;font-size:2.65rem;font-weight:750;line-height:.82}
+.lim-rep-metric strong{display:block;margin-top:14px;color:#111827;font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:2.65rem;font-weight:750;line-height:.82}
 .lim-rep-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,380px);gap:18px;align-items:start}
 .lim-rep-panel{border:1px solid var(--lr-line);border-radius:10px;background:var(--lr-panel);box-shadow:0 14px 34px -28px rgba(15,23,42,.42);overflow:hidden}
 .lim-rep-panel-head{padding:18px 20px;border-bottom:1px solid var(--lr-line);background:linear-gradient(90deg,#fffefd,#f2f8f5)}
