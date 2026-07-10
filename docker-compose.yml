@@ -1,5 +1,15 @@
-﻿services:
+﻿# Rotacion de logs de docker: sin limite crecen hasta llenar el disco
+# (causa #1 de caidas tontas de VPS). 10MB x 3 archivos por servicio.
+x-logging: &log-rotado
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
   app:
+    <<: *log-rotado
     build:
       context: ./docker/php
     container_name: medisoft_hoteles_app
@@ -25,6 +35,7 @@
         condition: service_healthy
 
   db:
+    <<: *log-rotado
     image: mysql:8.0
     container_name: medisoft_hoteles_db
     restart: unless-stopped
@@ -62,6 +73,7 @@
       retries: 10
 
   phpmyadmin:
+    <<: *log-rotado
     image: phpmyadmin/phpmyadmin
     container_name: medisoft_hoteles_phpmyadmin
     restart: unless-stopped

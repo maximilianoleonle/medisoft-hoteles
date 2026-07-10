@@ -9,8 +9,18 @@
 #   APP_DOMAIN=app.tudominio.com docker compose -f docker-compose.prod.yml up -d --build
 # (APP_DOMAIN tambien puede ir en .env)
 
+# Rotacion de logs de docker: sin limite crecen hasta llenar el disco
+# (causa #1 de caidas tontas de VPS). 10MB x 3 archivos por servicio.
+x-logging: &log-rotado
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   caddy:
+    <<: *log-rotado
     image: caddy:2-alpine
     container_name: medisoft_caddy
     restart: unless-stopped
@@ -27,6 +37,7 @@ services:
       - app
 
   app:
+    <<: *log-rotado
     build:
       context: ./docker/php
     container_name: medisoft_hoteles_app
@@ -37,8 +48,9 @@ services:
       - ./docs:/var/www/docs:ro
       - ./migrations:/var/www/migrations:ro
       - ./.env:/var/www/.env:ro
-      # OPcache menos agresivo revalidando archivos (solo produccion).
-      - ./docker/php/opcache-prod.ini:/usr/local/etc/php/conf.d/zz-opcache-prod.ini:ro
+      # Endurecimiento PHP solo-produccion: errores fuera de pantalla,
+      # cookie de sesion Secure, OPcache menos agresivo revalidando.
+      - ./docker/php/php-prod.ini:/usr/local/etc/php/conf.d/zz-php-prod.ini:ro
     env_file:
       - .env
     environment:
@@ -53,6 +65,7 @@ services:
         condition: service_healthy
 
   db:
+    <<: *log-rotado
     image: mysql:8.0
     container_name: medisoft_hoteles_db
     restart: unless-stopped

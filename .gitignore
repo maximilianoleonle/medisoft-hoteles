@@ -42,6 +42,7 @@ _local_quarantine_sensitive/
 backups/
 src/app/uploads/
 src/storage/documentos/
+src/storage/reportes/
 src/public_html/uploads/branding/
 src/public_html/uploads/temp/
 *.sql
