@@ -111,6 +111,7 @@ spl_autoload_register(function ($class) {
 });
 
 // Cargar helpers
+require_once APP_PATH . '/helpers/cache.php';
 require_once APP_PATH . '/helpers/functions.php';
 require_once APP_PATH . '/helpers/auth.php';
 require_once APP_PATH . '/helpers/hotel_config.php';

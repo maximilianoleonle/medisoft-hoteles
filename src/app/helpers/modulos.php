@@ -33,16 +33,25 @@ function hotel_active_module_keys($hotelId = null) {
         return $cache[$cacheKey];
     }
 
-    try {
-        $moduloModel = new Modulo();
-        $modulos = $moduloModel->listarActivosDeHotel((int) $hotelId);
-        $cache[$cacheKey] = array_values(array_unique(array_filter(array_column($modulos, 'clave'))));
-        return $cache[$cacheKey];
-    } catch (Throwable $e) {
-        error_log('Error al consultar modulos activos por hotel: ' . $e->getMessage());
-        $cache[$cacheKey] = null;
-        return null;
-    }
+    // Capa APCu (60s, compartida entre requests y usuarios) sobre el cache
+    // estatico por request de arriba. Un toggle de modulo la invalida al
+    // instante (ver Modulo.php); el TTL corto es la garantia de fondo.
+    $consultar = static function () use ($hotelId) {
+        try {
+            $moduloModel = new Modulo();
+            $modulos = $moduloModel->listarActivosDeHotel((int) $hotelId);
+            return array_values(array_unique(array_filter(array_column($modulos, 'clave'))));
+        } catch (Throwable $e) {
+            error_log('Error al consultar modulos activos por hotel: ' . $e->getMessage());
+            return null; // null no se cachea: el fallo no se pega 60s.
+        }
+    };
+
+    $cache[$cacheKey] = function_exists('ms_cache_remember')
+        ? ms_cache_remember('modulos_hotel_' . $cacheKey, 60, $consultar)
+        : $consultar();
+
+    return $cache[$cacheKey];
 }
 
 function current_hotel_has_module($clave) {

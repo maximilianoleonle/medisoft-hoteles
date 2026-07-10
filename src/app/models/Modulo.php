@@ -114,6 +114,11 @@ class Modulo extends Model {
             ]
         );
 
+        // Invalida el cache APCu de modulos del hotel (helpers/modulos.php).
+        if (function_exists('ms_cache_forget')) {
+            ms_cache_forget('modulos_hotel_' . (int) $hotelId);
+        }
+
         return $stmt !== false;
     }
 
@@ -135,6 +140,11 @@ class Modulo extends Model {
                 $enabledBy ? (int) $enabledBy : null
             ]
         );
+
+        // Invalida el cache APCu de modulos del hotel (helpers/modulos.php).
+        if (function_exists('ms_cache_forget')) {
+            ms_cache_forget('modulos_hotel_' . (int) $hotelId);
+        }
 
         return $stmt !== false;
     }

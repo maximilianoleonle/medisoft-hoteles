@@ -147,17 +147,28 @@ class Rol extends Model {
             return $cache[$roleId];
         }
 
-        $rows = $this->query(
-            "SELECT permisos_json FROM {$this->table} WHERE id = ? AND activo = 1 LIMIT 1",
-            [$roleId]
-        );
+        // Capa APCu (60s, compartida entre requests) sobre el cache estatico:
+        // can() consulta esto en cada pagina de cada usuario. Editar el rol
+        // la invalida al instante (actualizarRol); el TTL corto es la red.
+        $consultar = function () use ($roleId) {
+            $rows = $this->query(
+                "SELECT permisos_json FROM {$this->table} WHERE id = ? AND activo = 1 LIMIT 1",
+                [$roleId]
+            );
 
-        if (empty($rows)) {
-            return $cache[$roleId] = [];
-        }
+            if (empty($rows)) {
+                return [];
+            }
 
-        $permisos = json_decode($rows[0]['permisos_json'] ?? '[]', true);
-        return $cache[$roleId] = is_array($permisos) ? $permisos : [];
+            $permisos = json_decode($rows[0]['permisos_json'] ?? '[]', true);
+            return is_array($permisos) ? $permisos : [];
+        };
+
+        $cache[$roleId] = function_exists('ms_cache_remember')
+            ? ms_cache_remember('rol_permisos_' . $roleId, 60, $consultar)
+            : $consultar();
+
+        return $cache[$roleId];
     }
 
     public function contarUsuarios($roleId) {
@@ -326,6 +337,11 @@ class Rol extends Model {
             $params
         );
 
+        // Invalida el cache APCu de permisos del rol (lo consume can()).
+        if (function_exists('ms_cache_forget')) {
+            ms_cache_forget('rol_permisos_' . (int) $rol['id']);
+        }
+
         return $stmt !== false;
     }
 
@@ -348,6 +364,11 @@ class Rol extends Model {
             "DELETE FROM {$this->table} WHERE id = ? AND hotel_id = ? AND es_sistema = 0",
             [(int) $rol['id'], (int) $hotelId]
         );
+
+        // Invalida el cache APCu de permisos del rol (lo consume can()).
+        if (function_exists('ms_cache_forget')) {
+            ms_cache_forget('rol_permisos_' . (int) $rol['id']);
+        }
 
         return $stmt !== false;
     }

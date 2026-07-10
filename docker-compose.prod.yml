@@ -37,6 +37,8 @@ services:
       - ./docs:/var/www/docs:ro
       - ./migrations:/var/www/migrations:ro
       - ./.env:/var/www/.env:ro
+      # OPcache menos agresivo revalidando archivos (solo produccion).
+      - ./docker/php/opcache-prod.ini:/usr/local/etc/php/conf.d/zz-opcache-prod.ini:ro
     env_file:
       - .env
     environment:
@@ -55,6 +57,21 @@ services:
     container_name: medisoft_hoteles_db
     restart: unless-stopped
     # Sin ports: la BD no se expone a internet.
+    # Tuning por flags (mismo bloque que en dev; ver comentario alla).
+    # MYSQL_BUFFER_POOL: subir en .env segun la RAM del servidor
+    # (~50-60% si MySQL comparte maquina con PHP; ej. 2G en un VPS de 4 GB).
+    command:
+      - --innodb-buffer-pool-size=${MYSQL_BUFFER_POOL:-1G}
+      - --innodb-redo-log-capacity=256M
+      - --innodb-flush-log-at-trx-commit=1
+      - --max-connections=200
+      - --tmp-table-size=64M
+      - --max-heap-table-size=64M
+      - --table-open-cache=2000
+      - --skip-name-resolve
+      - --slow-query-log=1
+      - --slow-query-log-file=/var/lib/mysql/slow.log
+      - --long-query-time=0.5
     environment:
       MYSQL_DATABASE: ${DB_NAME:-medisoft_hoteles}
       MYSQL_USER: ${DB_USER:-medisoft_user}
