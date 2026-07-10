@@ -84,8 +84,9 @@ return [
             'label' => 'Cuentas por cobrar',
             'modulo' => null,
             'permisos' => [
-                'cuentas_por_cobrar.view' => ['label' => 'Ver cuentas por cobrar', 'tipo' => 'acceso'],
-                'cuentas_por_cobrar.all'  => ['label' => 'Control total de cuentas por cobrar', 'tipo' => 'wildcard'],
+                'cuentas_por_cobrar.view'   => ['label' => 'Ver cuentas por cobrar', 'tipo' => 'acceso'],
+                'cuentas_por_cobrar.cobrar' => ['label' => 'Registrar y revertir cobros de CxC', 'tipo' => 'accion'],
+                'cuentas_por_cobrar.all'    => ['label' => 'Control total de cuentas por cobrar', 'tipo' => 'wildcard'],
             ],
         ],
         'inventario' => [
@@ -116,8 +117,9 @@ return [
             'label' => 'Cuentas por pagar',
             'modulo' => null,
             'permisos' => [
-                'cuentas_por_pagar.view' => ['label' => 'Ver cuentas por pagar', 'tipo' => 'acceso'],
-                'cuentas_por_pagar.all'  => ['label' => 'Control total de cuentas por pagar', 'tipo' => 'wildcard'],
+                'cuentas_por_pagar.view'  => ['label' => 'Ver cuentas por pagar', 'tipo' => 'acceso'],
+                'cuentas_por_pagar.pagar' => ['label' => 'Registrar y revertir pagos de CxP', 'tipo' => 'accion'],
+                'cuentas_por_pagar.all'   => ['label' => 'Control total de cuentas por pagar', 'tipo' => 'wildcard'],
             ],
         ],
         'documentos' => [
@@ -256,7 +258,8 @@ return [
                 'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte',
                 'habitaciones.all', 'reservaciones.all', 'huespedes.all', 'inventarios.all',
                 'compras.all', 'proveedores.all', 'facturacion.view',
-                'cuentas_por_cobrar.view', 'cuentas_por_pagar.view',
+                'cuentas_por_cobrar.view', 'cuentas_por_cobrar.cobrar',
+                'cuentas_por_pagar.view', 'cuentas_por_pagar.pagar',
                 'documentos.all', 'tareas.all',
                 'personal.view', 'personal.gestionar', 'personal.pagar',
                 'nomina.view', 'nomina.incidencias', 'nomina.calcular',

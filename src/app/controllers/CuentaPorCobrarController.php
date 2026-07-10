@@ -34,6 +34,13 @@ class CuentaPorCobrarController extends Controller
             require_hotel_module('cuentas_cobrar');
         }
 
+        // Acceso base de lectura. Las acciones de dinero (registrar/revertir
+        // cobro, generar CxC) piden cuentas_por_cobrar.cobrar, configurable por
+        // rol desde el editor de roles del hotel.
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_cobrar.view');
+        }
+
         return true;
     }
 
@@ -191,6 +198,9 @@ class CuentaPorCobrarController extends Controller
 
     public function generarDesdeReservacionAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_cobrar.cobrar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-cobrar');
             return;
@@ -220,6 +230,9 @@ class CuentaPorCobrarController extends Controller
 
     public function registrarCobroCajaAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_cobrar.cobrar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-cobrar/operativas');
             return;
@@ -269,6 +282,9 @@ class CuentaPorCobrarController extends Controller
 
     public function revertirCobroCajaAction(): void
     {
+        if (function_exists('require_permission')) {
+            require_permission('cuentas_por_cobrar.cobrar');
+        }
         if (!$this->isPost()) {
             $this->redirect('cuentas-por-cobrar/operativas');
             return;
