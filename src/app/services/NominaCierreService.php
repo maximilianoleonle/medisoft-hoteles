@@ -17,6 +17,10 @@
  * riel de pago (ni el libre) pueda pagar un periodo sin aprobar. El motor v2
  * excluye esas referencias de calculos futuros (sin doble conteo).
  *
+ * Si nomina.requiere_aprobacion_cierre esta en false, cerrar() aprueba el
+ * periodo en la misma transaccion (cierre y aprobacion atomicos): es la
+ * unica via por la que un cierre emite creditos sin segundo paso.
+ *
  * Anulacion v2: exige motivo, bloquea si hay pagos snapshot vigentes y anula
  * los creditos NOMV2 del ledger en la misma transaccion. La reapertura
  * (aprobado -> cerrado) tambien anula los creditos: sin aprobacion no hay
@@ -220,6 +224,16 @@ class NominaCierreService {
                 'descripcion' => 'Cerro periodo v2 ' . $etiqueta . ' (' . count($preview['trabajadores']) . ' trabajadores)',
                 'datos_despues' => $preview['totales'],
             ]);
+
+            // Negocio configurado SIN segundo paso de aprobacion: el periodo
+            // se aprueba aqui mismo, en la MISMA transaccion (snapshot +
+            // creditos NOMV2 atomicos; si la aprobacion falla no queda
+            // periodo cerrado a medias). La aprobacion es la que emite los
+            // creditos: sin este paso el periodo seria impagable y el toggle
+            // de configuracion no tendria efecto.
+            if (empty($reglasSnapshot['configuracion']['requiere_aprobacion_cierre'])) {
+                $this->aprobar($hotelId, $periodoId, $usuarioId);
+            }
 
             if ($ownTransaction) {
                 $this->db->safeCommit();

@@ -556,7 +556,13 @@ class NominaController extends Controller {
                 (string) $this->getPost('fin'),
                 user_id()
             );
-            set_mensaje('Periodo cerrado. Revisa el snapshot y apruebalo para habilitar pagos.', 'success');
+            $requiereAprobacion = ConfiguracionHotelRegistry::getBool('nomina.requiere_aprobacion_cierre', true, $hotelId);
+            set_mensaje(
+                $requiereAprobacion
+                    ? 'Periodo cerrado. Revisa el snapshot y apruebalo para habilitar pagos.'
+                    : 'Periodo cerrado y aprobado en un solo paso (configuracion del negocio): los pagos por Caja quedan habilitados.',
+                'success'
+            );
             $this->redirect('nomina/periodos/' . $periodoId);
         } catch (Throwable $e) {
             set_mensaje($e->getMessage(), 'error');

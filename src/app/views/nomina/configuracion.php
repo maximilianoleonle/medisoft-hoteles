@@ -192,7 +192,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
                 </label>
                 <label class="nom-switch">
                     <input type="checkbox" name="requiere_aprobacion_cierre" value="1" <?= !empty($nomConfig['requiere_aprobacion_cierre']) ? 'checked' : '' ?>>
-                    <span><strong>El cierre requiere aprobación</strong><span>Un periodo cerrado debe aprobarse en un segundo paso antes de pagarse.</span></span>
+                    <span><strong>El cierre requiere aprobación</strong><span>Un periodo cerrado debe aprobarse en un segundo paso antes de pagarse. Si se desactiva, cada cierre se aprueba automáticamente y habilita pagos de inmediato.</span></span>
                 </label>
                 <label class="nom-switch">
                     <input type="checkbox" name="permitir_reapertura" value="1" <?= !empty($nomConfig['permitir_reapertura']) ? 'checked' : '' ?>>
