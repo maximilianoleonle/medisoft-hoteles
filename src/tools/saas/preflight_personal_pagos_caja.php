@@ -674,18 +674,25 @@ if ($pdo instanceof PDO) {
         );
     }
 
+    // Los creditos del motor de nomina v2 (referencia NOMV2-%) son filas
+    // legitimas del ledger con tipo 'pago'/'ajuste' y concepto 'Nomina
+    // aprobada...': el prefijo esta reservado al motor (el modelo rechaza
+    // capturarlo a mano), asi que se excluyen de estos checks.
     lpcReportZero(
         'trabajador_pagos con tipos que parecen pagos reales',
-        lpcCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos WHERE LOWER(COALESCE(tipo, '')) IN ('pago', 'nomina', 'nÃƒÆ’Ã‚Â³mina', 'pago_laboral', 'pago_nomina')"),
+        lpcCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos
+            WHERE LOWER(COALESCE(tipo, '')) IN ('pago', 'nomina', 'nÃƒÆ’Ã‚Â³mina', 'pago_laboral', 'pago_nomina')
+              AND COALESCE(referencia, '') NOT LIKE 'NOMV2-%'"),
         'Normalizar trabajador_pagos como conceptos laborales: comision, bono, descuento o ajuste.'
     );
     lpcReportZero(
         'trabajador_pagos con concepto textual de Caja/Nomina',
         lpcCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos
-            WHERE LOWER(COALESCE(concepto, '')) LIKE '%nomina%'
+            WHERE (LOWER(COALESCE(concepto, '')) LIKE '%nomina%'
                OR LOWER(COALESCE(concepto, '')) LIKE '%nÃƒÆ’Ã‚Â³mina%'
                OR LOWER(COALESCE(concepto, '')) LIKE '%pago laboral%'
-               OR LOWER(COALESCE(referencia, '')) LIKE '%movimiento_caja%'"),
+               OR LOWER(COALESCE(referencia, '')) LIKE '%movimiento_caja%')
+              AND COALESCE(referencia, '') NOT LIKE 'NOMV2-%'"),
         'Revisar conceptos laborales para no usarlos como pagos reales ni referencias directas a Caja.'
     );
     lpcReportZero(

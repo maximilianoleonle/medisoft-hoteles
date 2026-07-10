@@ -1898,6 +1898,7 @@ class Trabajador extends Model
 
         $concepto = $this->normalizarConceptoLaboral($datos);
         $this->validarConceptoLaboral($concepto);
+        $this->assertFechaFueraDePeriodoNominaCongelado($trabajadorId, $hotelId, (string)$concepto['fecha']);
 
         $this->db->safeBeginTransaction();
 
@@ -4544,6 +4545,57 @@ class Trabajador extends Model
 
         if ($datos['periodo_inicio'] !== null && $datos['periodo_fin'] !== null && $datos['periodo_fin'] < $datos['periodo_inicio']) {
             throw new Exception('El periodo fin no puede ser anterior al periodo inicio');
+        }
+
+        // El prefijo NOMV2- identifica los creditos que emite el motor de
+        // nomina v2: el calculo los excluye y anular/reabrir los retira por
+        // LIKE. Una referencia manual con ese prefijo quedaria fuera de toda
+        // nomina y podria anularse por accidente junto con un periodo.
+        if ($datos['referencia'] !== null && stripos($datos['referencia'], 'NOMV2-') === 0) {
+            throw new Exception('La referencia NOMV2- esta reservada para los creditos que emite el motor de nomina');
+        }
+    }
+
+    /**
+     * Un concepto con fecha dentro de un periodo v2 NO anulado quedaria
+     * huerfano: el snapshot ya esta congelado y ningun periodo futuro puede
+     * solapar ese rango, asi que la fila jamas seria absorbida por una nomina
+     * (solo seria pagable por el riel libre, por encima del neto aprobado).
+     */
+    private function assertFechaFueraDePeriodoNominaCongelado(int $trabajadorId, int $hotelId, string $fecha): void
+    {
+        if (!$this->tablaExiste('trabajador_nomina_periodos')) {
+            return;
+        }
+
+        $st = $this->db->query(
+            "SELECT grupo_nomina_id FROM trabajadores WHERE id = ? AND hotel_id = ?",
+            [$trabajadorId, $hotelId]
+        );
+        $grupoId = $st !== false ? (int)(($st->fetch()['grupo_nomina_id'] ?? 0)) : 0;
+
+        $st = $this->db->query(
+            "SELECT p.etiqueta, p.fecha_inicio, p.fecha_fin
+             FROM trabajador_nomina_periodos p
+             WHERE p.hotel_id = ? AND p.motor = 'v2' AND p.estado != 'anulado'
+               AND ? BETWEEN p.fecha_inicio AND p.fecha_fin
+               AND (
+                    (p.grupo_nomina_id IS NOT NULL AND p.grupo_nomina_id = ?)
+                 OR EXISTS (
+                        SELECT 1 FROM trabajador_nomina_periodo_detalles d
+                        WHERE d.periodo_id = p.id AND d.trabajador_id = ?
+                    )
+               )
+             LIMIT 1",
+            [$hotelId, $fecha, $grupoId, $trabajadorId]
+        );
+        $periodo = $st !== false ? $st->fetch() : null;
+        if ($periodo) {
+            throw new Exception(
+                'La fecha cae dentro del periodo de nomina ya cerrado "' . (string)$periodo['etiqueta'] . '" ('
+                . (string)$periodo['fecha_inicio'] . ' a ' . (string)$periodo['fecha_fin']
+                . '): el concepto ya no entraria a esa nomina ni a ninguna futura. Captura una fecha posterior al periodo o anula el periodo.'
+            );
         }
     }
 

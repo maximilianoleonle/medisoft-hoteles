@@ -699,6 +699,40 @@ class TrabajadorPagoCajaService
         $prestamosSaldo = (float)($prestamos['saldo'] ?? 0);
         $pagosCajaTotal = (float)($pagosCaja['monto'] ?? 0);
         $base = $aFavor - $enContra - $anticiposSaldo - $prestamosSaldo;
+        $disponible = $base - $pagosCajaTotal;
+
+        // Candado de pool global: la ventana de periodo decide que conceptos y
+        // pagos se MUESTRAN, pero el tope pagable jamas puede superar el saldo
+        // global del trabajador (conceptos activos - pagos vigentes, sin
+        // ventana). El filtro de ventana es de solape: dos pagos con
+        // sub-ventanas disjuntas dentro del mismo periodo aprobado se excluyen
+        // entre si pero ambos ven el credito NOMV2 completo, y sin este tope
+        // el mismo neto saldria de Caja dos veces.
+        $disponibleGlobal = $disponible;
+        if ($periodoInicio !== null || $periodoFin !== null) {
+            $stmt = $this->pdo->prepare(
+                "SELECT COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'a_favor' THEN monto ELSE 0 END), 0) AS a_favor,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'en_contra' THEN monto ELSE 0 END), 0) AS en_contra
+                 FROM trabajador_pagos
+                 WHERE hotel_id = ? AND trabajador_id = ?"
+            );
+            $stmt->execute([$hotelId, $trabajadorId]);
+            $conceptosGlobal = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $stmt = $this->pdo->prepare(
+                "SELECT COALESCE(SUM(CASE WHEN estado = 'pagado' THEN monto ELSE 0 END), 0) AS monto
+                 FROM trabajador_pagos_caja
+                 WHERE hotel_id = ? AND trabajador_id = ?"
+            );
+            $stmt->execute([$hotelId, $trabajadorId]);
+            $pagosCajaGlobal = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $disponibleGlobal = ((float)($conceptosGlobal['a_favor'] ?? 0) - (float)($conceptosGlobal['en_contra'] ?? 0)
+                - $anticiposSaldo - $prestamosSaldo) - (float)($pagosCajaGlobal['monto'] ?? 0);
+            if ($disponibleGlobal < $disponible) {
+                $disponible = $disponibleGlobal;
+            }
+        }
 
         $resumen['conceptos_count'] = (int)($conceptos['total'] ?? 0);
         $resumen['conceptos_a_favor'] = $this->decimal($aFavor);
@@ -710,7 +744,8 @@ class TrabajadorPagoCajaService
         $resumen['pagos_caja_count'] = (int)($pagosCaja['total'] ?? 0);
         $resumen['pagos_caja_total'] = $this->decimal($pagosCajaTotal);
         $resumen['saldo_base'] = $this->decimal($base);
-        $resumen['saldo_disponible'] = $this->decimal($base - $pagosCajaTotal);
+        $resumen['saldo_disponible'] = $this->decimal($disponible);
+        $resumen['saldo_disponible_global'] = $this->decimal($disponibleGlobal);
 
         return $resumen;
     }
@@ -729,6 +764,7 @@ class TrabajadorPagoCajaService
             'pagos_caja_total' => '0.00',
             'saldo_base' => '0.00',
             'saldo_disponible' => '0.00',
+            'saldo_disponible_global' => '0.00',
         ];
     }
 

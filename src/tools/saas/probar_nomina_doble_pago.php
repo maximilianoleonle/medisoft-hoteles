@@ -8,8 +8,17 @@
  *  #2 Candado anti doble pago en anular/reabrir: un pago del riel LIBRE
  *     (nomina_periodo_id NULL) que ya consumio el credito aprobado debe
  *     bloquear anular/reabrir (verificarCreditosNoConsumidos).
+ *  #3 Sub-ventanas de periodo: el filtro de solape del saldo no puede
+ *     puentear el pool global. Con el saldo ya consumido, un pago con
+ *     ventana parcial (que excluye los pagos previos pero ve el credito
+ *     NOMV2 completo) debe quedar BLOQUEADO por el tope global.
+ *  G1/G2 Guardas del ledger v1: referencia NOMV2- reservada y rechazo de
+ *     conceptos con fecha dentro de un periodo v2 congelado (huerfanos).
  *
  * Todo corre dentro de una transaccion que SE REVIERTE: no persiste nada.
+ * NOTA de orden: G2 y #3 corren ANTES del intento de anular de #2, porque
+ * ese anular fallido deja el periodo en 'anulado' dentro de la transaccion
+ * (los servicios no hacen rollback propio cuando la transaccion es externa).
  * Uso: php src/tools/saas/probar_nomina_doble_pago.php
  */
 
@@ -22,8 +31,10 @@ define('CORE_PATH', ROOT_PATH . '/core');
 
 require_once CORE_PATH . '/Database.php';
 require_once APP_PATH . '/models/ConfiguracionHotelRegistry.php';
+require_once APP_PATH . '/models/Trabajador.php';
 require_once APP_PATH . '/services/NominaCalculoService.php';
 require_once APP_PATH . '/services/NominaCierreService.php';
+require_once APP_PATH . '/services/TrabajadorPagoCajaService.php';
 
 $HOTEL = 2;
 $fallos = 0;
@@ -112,6 +123,35 @@ try {
     echo "  INFO  saldo pagable (bono + credito) = " . number_format($saldoPagable, 2) . "\n";
     check('#1 saldo pagable == bruto (sin exceso por doble conteo)', abs($saldoPagable - $brutoTest) < 0.01);
 
+    // --- GUARDAS del ledger v1 (con el periodo aun aprobado) ---
+    $modelo = new Trabajador();
+
+    // G1: el prefijo NOMV2- esta reservado al motor (el throw ocurre en la
+    // validacion, antes de que el modelo abra/commitee transaccion).
+    $prefijoBloqueado = false;
+    try {
+        $modelo->registrarConceptoLaboralParaHotel($trabId, $HOTEL, [
+            'tipo' => 'bono', 'efecto' => 'a_favor', 'monto' => '100',
+            'concepto' => 'Test prefijo reservado', 'fecha' => '2035-04-01',
+            'referencia' => 'NOMV2-999-1',
+        ], null);
+    } catch (Throwable $e) {
+        $prefijoBloqueado = (stripos($e->getMessage(), 'reservada') !== false);
+    }
+    check('G1 referencia NOMV2- manual RECHAZADA (prefijo reservado del motor)', $prefijoBloqueado);
+
+    // G2: concepto con fecha dentro del periodo v2 congelado = huerfano.
+    $huerfanoBloqueado = false;
+    try {
+        $modelo->registrarConceptoLaboralParaHotel($trabId, $HOTEL, [
+            'tipo' => 'bono', 'efecto' => 'a_favor', 'monto' => '100',
+            'concepto' => 'Test concepto tardio', 'fecha' => '2035-03-12',
+        ], null);
+    } catch (Throwable $e) {
+        $huerfanoBloqueado = (stripos($e->getMessage(), 'ya cerrado') !== false);
+    }
+    check('G2 concepto v1 con fecha dentro del periodo v2 cerrado RECHAZADO (huerfano)', $huerfanoBloqueado);
+
     // --- CRITICO #2: candado detecta credito consumido por el riel libre ---
     // Simular un pago libre que consume todo el saldo (bono + credito NOMV2):
     // movimiento_caja + trabajador_pagos_caja con nomina_periodo_id NULL.
@@ -128,6 +168,56 @@ try {
         "INSERT INTO trabajador_pagos_caja (hotel_id, trabajador_id, movimiento_caja_id, corte_id, nomina_periodo_id, nomina_periodo_detalle_id, monto, metodo_pago, referencia, fecha_pago, estado, created_at, updated_at)
          VALUES (?, ?, ?, ?, NULL, NULL, ?, 'efectivo', ?, ?, 'pagado', NOW(), NOW())"
     )->execute([$HOTEL, $trabId, $movId, (int) $corte, number_format($brutoTest, 2, '.', ''), 'TEST-LIBRE-' . $trabId, $inicio . ' 12:00:00']);
+
+    // --- CRITICO #3: sub-ventanas de periodo no puentean el pool global ---
+    // El pago libre de arriba (sin periodo_inicio/fin, fecha_pago 01-mar) ya
+    // consumio TODO el saldo. Una ventana parcial 12..14-mar lo excluye del
+    // filtro de solape pero sigue viendo el credito NOMV2 (01..15-mar)
+    // completo: sin el tope global, este pago volveria a sacar el dinero.
+    $pagoSvc = new TrabajadorPagoCajaService($db, ['manage_transaction' => false]);
+
+    $evalSub = $pagoSvc->evaluarPago($HOTEL, $trabId, [
+        'periodo_inicio' => '2035-03-12',
+        'periodo_fin' => '2035-03-14',
+    ]);
+    check('#3 evaluarPago con sub-ventana reporta tope 0.00 (pool global agotado)', abs((float) $evalSub['monto_maximo']) < 0.01);
+
+    // Corte abierto para intentar el pago real (si no hay, se abre uno; todo
+    // se revierte con el rollback final).
+    $corteAbierto = $pdo->query(
+        "SELECT cc.id FROM cortes_caja cc
+         INNER JOIN cajas c ON c.id = cc.caja_id AND c.hotel_id = cc.hotel_id
+         WHERE cc.hotel_id = {$HOTEL} AND cc.estado = 'abierto' AND COALESCE(c.activa, 1) = 1
+         ORDER BY cc.id DESC LIMIT 1"
+    )->fetchColumn();
+    if (!$corteAbierto) {
+        $cajaId = $pdo->query("SELECT id FROM cajas WHERE hotel_id = {$HOTEL} AND COALESCE(activa, 1) = 1 ORDER BY id LIMIT 1")->fetchColumn();
+        if ($cajaId) {
+            $pdo->prepare(
+                "INSERT INTO cortes_caja (hotel_id, caja_id, fecha_apertura, monto_inicial, estado, usuario_apertura_id)
+                 VALUES (?, ?, NOW(), 0.00, 'abierto', ?)"
+            )->execute([$HOTEL, (int) $cajaId, $usuarioTest]);
+            $corteAbierto = (int) $pdo->lastInsertId();
+        }
+    }
+
+    if ($corteAbierto) {
+        $subVentanaBloqueado = false;
+        try {
+            $pagoSvc->registrarPago($HOTEL, $trabId, [
+                'monto' => '100.00',
+                'metodo_pago' => 'efectivo',
+                'referencia' => 'TEST-SUBVENTANA-' . $trabId,
+                'periodo_inicio' => '2035-03-12',
+                'periodo_fin' => '2035-03-14',
+            ], $usuarioTest);
+        } catch (Throwable $e) {
+            $subVentanaBloqueado = (stripos($e->getMessage(), 'saldo laboral disponible') !== false);
+        }
+        check('#3 pago con sub-ventana BLOQUEADO: no ve de nuevo el credito ya pagado', $subVentanaBloqueado);
+    } else {
+        echo "  INFO  #3 (pago real) omitido: no hay caja activa para abrir corte en hotel {$HOTEL}.\n";
+    }
 
     // Con el credito ya consumido por el pago libre, anular DEBE fallar
     // (verificarCreditosNoConsumidos: conceptos - pagos < credito a retirar).

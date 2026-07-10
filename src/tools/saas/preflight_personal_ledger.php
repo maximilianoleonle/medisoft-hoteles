@@ -278,7 +278,11 @@ if ($pdo instanceof PDO) {
     );
     npPfReportZero(
         'conceptos laborales con tipo invalido',
-        npPfCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos WHERE tipo NOT IN ('comision', 'bono', 'descuento', 'ajuste')"),
+        // Los creditos del motor de nomina v2 (referencia NOMV2-%, prefijo
+        // reservado al motor) usan tipo 'pago'/'ajuste' y son legitimos.
+        npPfCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos
+            WHERE tipo NOT IN ('comision', 'bono', 'descuento', 'ajuste')
+              AND COALESCE(referencia, '') NOT LIKE 'NOMV2-%'"),
         'Normalizar tipos de concepto laboral.'
     );
     npPfReportZero(
