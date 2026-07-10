@@ -779,25 +779,38 @@ class NominaController extends Controller {
 
         $salida = fopen('php://output', 'w');
         fwrite($salida, "\xEF\xBB\xBF");
-        fputcsv($salida, ['Periodo', $periodo['etiqueta'], $periodo['fecha_inicio'], $periodo['fecha_fin'], 'estado', $periodo['estado'], 'motor', $periodo['motor'] ?? 'v1']);
+        fputcsv($salida, ['Periodo', $this->csvValor($periodo['etiqueta']), $periodo['fecha_inicio'], $periodo['fecha_fin'], 'estado', $periodo['estado'], 'motor', $periodo['motor'] ?? 'v1']);
         fputcsv($salida, ['Empleado', 'Identificacion', 'Puesto', 'Concepto', 'Tipo', 'Clasificacion', 'Origen', 'Cantidad', 'Base', 'Monto', 'Referencia']);
         foreach ($filas as $f) {
             fputcsv($salida, [
-                $f['trabajador_nombre'],
-                $f['trabajador_identificacion'],
-                $f['trabajador_rol'],
-                $f['concepto_nombre'],
+                $this->csvValor($f['trabajador_nombre']),
+                $this->csvValor($f['trabajador_identificacion']),
+                $this->csvValor($f['trabajador_rol']),
+                $this->csvValor($f['concepto_nombre']),
                 $f['tipo'],
                 $f['clasificacion'],
                 $f['origen'],
                 $f['cantidad'] !== null ? number_format((float) $f['cantidad'], 2, '.', '') : '',
                 $f['base'] !== null ? number_format((float) $f['base'], 2, '.', '') : '',
                 $f['monto'] !== null ? number_format((float) $f['monto'], 2, '.', '') : '',
-                $f['referencia'],
+                $this->csvValor($f['referencia']),
             ]);
         }
         fclose($salida);
         exit;
+    }
+
+    /**
+     * Neutraliza celdas que Excel/Sheets interpretarian como formula
+     * (CSV injection): nombres, conceptos y referencias son texto capturado
+     * por usuarios del hotel.
+     */
+    private function csvValor($value): string {
+        $texto = trim(str_replace(["\r\n", "\r", "\n"], ' ', (string) ($value ?? '')));
+        if ($texto !== '' && strpos("=+-@\t", $texto[0]) !== false && !is_numeric($texto)) {
+            $texto = "'" . $texto;
+        }
+        return $texto;
     }
 
     /* ------------------------------------------------------------------ */

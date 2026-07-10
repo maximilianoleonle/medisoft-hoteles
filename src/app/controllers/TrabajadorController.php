@@ -1864,7 +1864,16 @@ class TrabajadorController extends Controller
             return '';
         }
 
-        return trim(str_replace(["\r\n", "\r", "\n"], ' ', (string)$value));
+        $texto = trim(str_replace(["\r\n", "\r", "\n"], ' ', (string)$value));
+
+        // Una celda que empieza con = + - @ o tab se ejecuta como formula al
+        // abrir el CSV en Excel/Sheets (CSV injection): se neutraliza con
+        // apostrofe, salvo valores numericos legitimos (p.ej. -100.50).
+        if ($texto !== '' && strpos("=+-@\t", $texto[0]) !== false && !is_numeric($texto)) {
+            $texto = "'" . $texto;
+        }
+
+        return $texto;
     }
 
     private function csvReportePagosCajaUsuario(array $registro, string $prefijo): string

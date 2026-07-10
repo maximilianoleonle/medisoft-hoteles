@@ -96,7 +96,20 @@ class NominaCalculoService {
             $bloqueado = true;
         }
 
-        // Trabajadores activos del grupo.
+        // Trabajadores activos del grupo. El motor procesa maximo 300: si el
+        // grupo excede el tope se BLOQUEA el cierre (truncar en silencio
+        // pagaria la nomina de los primeros 300 y dejaria al resto fuera).
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total FROM trabajadores
+             WHERE hotel_id = ? AND grupo_nomina_id = ? AND estado = 'activo'"
+        );
+        $st->execute([$hotelId, $grupoId]);
+        $totalActivos = (int) ($st->fetch()['total'] ?? 0);
+        if ($totalActivos > 300) {
+            $alertas[] = 'El grupo tiene ' . $totalActivos . ' trabajadores activos y el motor procesa maximo 300 por cierre: divide el grupo en grupos de pago mas chicos antes de cerrar.';
+            $bloqueado = true;
+        }
+
         $st = $this->pdo->prepare(
             "SELECT id, nombre_completo, identificacion, rol_laboral, estado
              FROM trabajadores
