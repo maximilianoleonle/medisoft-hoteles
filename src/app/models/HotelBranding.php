@@ -18,8 +18,20 @@ class HotelBranding extends Model {
         'color_accent',
         'sidebar_style',
         'login_style',
+        'tema',
         'activo'
     ];
+
+    /**
+     * Temas visuales disponibles (slug => nombre comercial).
+     * El slug se refleja en data-tema del <html> y en css/temas/<slug>.css.
+     */
+    const TEMAS = [
+        'deleite' => 'Deleite Sereno',
+        'cupertino' => 'Cupertino',
+    ];
+
+    const TEMA_DEFAULT = 'deleite';
 
     private $fallback = [
         'nombre_visual' => 'Medisoft Hoteles',
@@ -33,8 +45,17 @@ class HotelBranding extends Model {
         'color_accent' => '#D4AF37',
         'sidebar_style' => 'default',
         'login_style' => 'default',
+        'tema' => self::TEMA_DEFAULT,
         'activo' => 1
     ];
+
+    public static function temasDisponibles() {
+        return self::TEMAS;
+    }
+
+    public static function temaSlugs() {
+        return array_keys(self::TEMAS);
+    }
 
     public function obtenerPorHotel($hotelId) {
         try {
@@ -95,8 +116,8 @@ class HotelBranding extends Model {
                     (hotel_id, nombre_visual, logo_url, favicon_url, login_background_url,
                      pwa_icon_192_url, pwa_icon_512_url,
                      color_primary, color_secondary, color_accent, sidebar_style, login_style,
-                     activo, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                     tema, activo, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'deleite'), ?, NOW(), NOW())
                  ON DUPLICATE KEY UPDATE
                     nombre_visual = VALUES(nombre_visual),
                     logo_url = VALUES(logo_url),
@@ -109,6 +130,7 @@ class HotelBranding extends Model {
                     color_accent = VALUES(color_accent),
                     sidebar_style = VALUES(sidebar_style),
                     login_style = VALUES(login_style),
+                    tema = COALESCE(?, tema),
                     activo = VALUES(activo),
                     updated_at = NOW()",
                 [
@@ -124,7 +146,9 @@ class HotelBranding extends Model {
                     $normalizado['color_accent'],
                     $normalizado['sidebar_style'],
                     $normalizado['login_style'],
-                    $normalizado['activo']
+                    $normalizado['tema'],
+                    $normalizado['activo'],
+                    $normalizado['tema']
                 ]
             );
 
@@ -185,6 +209,11 @@ class HotelBranding extends Model {
             $errores[] = 'El estilo de login seleccionado no es valido.';
         }
 
+        $tema = trim((string) ($data['tema'] ?? ''));
+        if ($tema !== '' && !in_array($tema, self::temaSlugs(), true)) {
+            $errores[] = 'El tema de diseno seleccionado no es valido.';
+        }
+
         return $errores;
     }
 
@@ -201,8 +230,22 @@ class HotelBranding extends Model {
             'color_accent' => $this->normalizarHex($data['color_accent'] ?? null),
             'sidebar_style' => $this->normalizarOpcion($data['sidebar_style'] ?? 'default', ['default', 'solid', 'dark'], 'default'),
             'login_style' => $this->normalizarOpcion($data['login_style'] ?? 'default', ['default', 'soft', 'image'], 'default'),
+            'tema' => $this->normalizarTema($data['tema'] ?? null),
             'activo' => !empty($data['activo']) ? 1 : 0
         ];
+    }
+
+    /**
+     * NULL significa "no especificado": guardarParaHotel lo preserva via COALESCE,
+     * asi los formularios que aun no envian tema no resetean la eleccion del hotel.
+     */
+    private function normalizarTema($tema) {
+        $tema = trim((string) $tema);
+        if ($tema === '') {
+            return null;
+        }
+
+        return in_array($tema, self::temaSlugs(), true) ? $tema : self::TEMA_DEFAULT;
     }
 
     private function fallbackParaHotel(array $hotel = null) {

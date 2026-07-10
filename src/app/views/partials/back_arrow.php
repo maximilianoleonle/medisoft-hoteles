@@ -83,3 +83,42 @@ unset($back_arrow_href, $back_arrow_label, $back_arrow_class);
     }
 }
 </style>
+<script>
+/* Etiqueta el hero/header que contiene la flecha con data-ms-hero para que
+   los temas (css/temas/*.css) puedan vestir el encabezado completo de la
+   vista sin enumerar las clases de cada módulo. Se toma el ancestro MÁS
+   EXTERNO con pinta de encabezado (hero/topbar/page-header). Los reportes
+   quedan intactos por contrato, y los heros oscuros (.ms-back--glass)
+   conservan su fondo. */
+(function() {
+    if (window.__msBackHeroTag) { return; }
+    window.__msBackHeroTag = true;
+
+    var marcar = function() {
+        if (/reporte/i.test(window.location.pathname)) { return; }
+
+        document.querySelectorAll('.ms-back:not(.ms-back--glass)').forEach(function(back) {
+            var nodo = back.parentElement;
+            var candidato = null;
+
+            while (nodo && nodo !== document.body && !nodo.classList.contains('main-content')) {
+                var cls = typeof nodo.className === 'string' ? nodo.className : '';
+                if (/(^|\s)[\w-]*(hero|topbar|page-header)[\w-]*(\s|$)/.test(cls)) {
+                    candidato = nodo;
+                }
+                nodo = nodo.parentElement;
+            }
+
+            if (candidato) {
+                candidato.setAttribute('data-ms-hero', '');
+            }
+        });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', marcar);
+    } else {
+        marcar();
+    }
+})();
+</script>

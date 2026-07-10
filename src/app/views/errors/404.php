@@ -15,9 +15,18 @@ $errorLogoUrl = function_exists('hotel_branding_asset_url')
 $errorThemeColor = function_exists('hotel_branding_hex')
     ? hotel_branding_hex($errorBranding['color_primary'] ?? null, '#1B2746')
     : '#1B2746';
+/* Tema visual del negocio (multi-diseño): mismo contrato que header.php. */
+$errorTema = 'deleite';
+if (!empty($errorBranding['tema']) && preg_match('/^[a-z0-9-]{1,30}$/', (string) $errorBranding['tema'])) {
+    $errorTema = (string) $errorBranding['tema'];
+}
+$errorTemaCssHref = null;
+if ($errorTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . '/css/temas/' . $errorTema . '.css')) {
+    $errorTemaCssHref = 'css/temas/' . $errorTema . '.css';
+}
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"<?= $errorTema !== 'deleite' ? ' data-tema="' . htmlspecialchars($errorTema, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -109,8 +118,11 @@ $errorThemeColor = function_exists('hotel_branding_hex')
             }, { passive: false });
         })();
     </script>
+    <?php if ($errorTemaCssHref): ?>
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version($errorTemaCssHref) : asset($errorTemaCssHref) ?>">
+    <?php endif; ?>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 font-inter">
+<body class="min-h-screen flex items-center justify-center p-4 font-inter" data-ms-error>
     <div class="w-full max-w-md text-center">
         <?php if ($errorLogoUrl): ?>
         <img src="<?= htmlspecialchars($errorLogoUrl, ENT_QUOTES, 'UTF-8') ?>"

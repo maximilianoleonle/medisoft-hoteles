@@ -526,6 +526,7 @@ class ConfiguracionController extends Controller {
             'color_accent' => trim((string) ($payload['color_accent'] ?? '')),
             'sidebar_style' => trim((string) ($payload['sidebar_style'] ?? 'default')),
             'login_style' => trim((string) ($payload['login_style'] ?? 'default')),
+            'tema' => trim((string) ($payload['tema'] ?? '')),
             'activo' => 1,
         ];
     }
