@@ -1,0 +1,1264 @@
+/* ═══════════════════════════════════════════════════════════════════
+   TEMA "CUPERTINO" — estilo Apple (multi-diseño SaaS)
+   Contrato: este archivo solo se carga cuando hotel_branding.tema =
+   'cupertino' (header.php / login.php emiten data-tema en <html> y
+   enlazan css/temas/<slug>.css al final del <head>).
+   Palanca principal: voltear los NEUTRALES --brand-* / --hotel-* / --sr-*
+   a la paleta Apple (gris perla + blanco + tinta), igual que hace
+   dark-theme.css con el modo oscuro. La identidad del hotel
+   (--brand-primary/-accent y --brand-action-*) se conserva: los botones
+   y acentos se tiñen del color de cada negocio.
+   Los literales cálidos con gradiente/textura del Deleite Sereno se
+   aplanan aquí con la misma especificidad + !important que usa la base.
+   Claro por defecto; el bloque final ajusta modo oscuro (Apple dark).
+   Revertir: cambiar el tema del hotel a 'deleite' (no borra nada).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Neutrales de marca: paleta Apple claro ─────────────────────── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) {
+    --brand-surface: #FFFFFF;
+    --brand-surface-soft: #F5F5F7;
+    --brand-soft: color-mix(in srgb, var(--brand-primary, #0071E3) 8%, #F5F5F7);
+    --brand-text: #1D1D1F;
+    --brand-muted: #6E6E73;
+    --brand-border: #E8E8ED;
+    --brand-line: #D2D2D7;
+    --brand-focus: color-mix(in srgb, var(--brand-primary, #0071E3) 30%, #FFFFFF);
+}
+
+/* ── 2. Tipografía del sistema: SF en Apple, Inter/Segoe en el resto ── */
+html[data-tema="cupertino"] body.hotel-layout-scope {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope h1,
+html[data-tema="cupertino"] .hotel-layout-scope h2,
+html[data-tema="cupertino"] .hotel-layout-scope h3,
+html[data-tema="cupertino"] .hotel-layout-scope .font-playfair {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    letter-spacing: -0.015em;
+}
+
+/* ── 3. Lienzo: gris perla plano, sin textura ni destello dorado ───── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) body.hotel-layout-scope {
+    --hotel-bg: #F5F5F7;
+    --hotel-panel: #FFFFFF;
+    --hotel-text: #1D1D1F;
+    --hotel-muted: #6E6E73;
+    --hotel-border: #E8E8ED;
+    --hotel-line: #D2D2D7;
+    --hotel-brand-soft: color-mix(in srgb, var(--hotel-brand) 9%, #F5F5F7);
+    --hotel-ink: #1D1D1F;
+    --hotel-ink-soft: #48484A;
+    --hotel-state-blue: #0071E3;
+    --hotel-state-green: #34C759;
+    --hotel-state-amber: #FF9500;
+    --hotel-state-red: #FF3B30;
+    --hotel-state-violet: #AF52DE;
+    background: var(--hotel-bg) !important;
+}
+
+@media (min-width: 1025px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) body.hotel-layout-scope {
+        background: var(--hotel-bg) !important;
+    }
+}
+
+/* ── 4. Header escritorio: vidrio esmerilado ───────────────────────── */
+@media (min-width: 1025px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) body.hotel-layout-scope .hotel-header {
+        background: rgba(255, 255, 255, .72) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom: 1px solid rgba(0, 0, 0, .08) !important;
+        box-shadow: none !important;
+    }
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-header-status,
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-header-user {
+    border-radius: 999px;
+    color: var(--hotel-ink-soft);
+    font-weight: 600;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-header-kicker {
+    font-weight: 600;
+    letter-spacing: .04em;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-header-name,
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-header-page h1 {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+/* ── 5. Sidebar: superficie plana, marca sans, sin ornamento oro ───── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .hotel-sidebar,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar {
+    background: #FFFFFF !important;
+    border-right: 1px solid var(--hotel-border, #E8E8ED) !important;
+    box-shadow: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header::after {
+    background: var(--hotel-border, #E8E8ED);
+    height: 1px;
+    opacity: 1;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-mark {
+    border-radius: 14px;
+    border-color: var(--hotel-border, #E8E8ED);
+    background: #F5F5F7;
+    box-shadow: none;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-boutique-name {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    color: var(--hotel-text) !important;
+}
+
+/* La regla ornamental oro→navy es lenguaje Deleite: aquí desaparece. */
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-boutique-rule {
+    display: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box {
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    background: #EDEDF0 !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box:focus-within {
+    border-color: color-mix(in srgb, var(--hotel-brand) 45%, transparent) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hotel-brand) 16%, transparent) !important;
+}
+
+/* ── 6. Rail + flyout: tokens --sr-* en neutrales Apple ────────────── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rail-fly {
+    --sr-ivory: #F5F5F7;
+    --sr-ivory-2: #F5F5F7;
+    --sr-surface: #FFFFFF;
+    --sr-surface-warm: #F5F5F7;
+    --sr-line: #E8E8ED;
+    --sr-line-soft: #EDEDF0;
+    --sr-ink: #1D1D1F;
+    --sr-muted: #6E6E73;
+    --sr-gold-bg: color-mix(in srgb, var(--sr-primary) 10%, #F5F5F7);
+    --sr-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --sr-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
+    --sr-shadow-lg: 0 2px 6px rgba(0, 0, 0, .05), 0 20px 44px rgba(0, 0, 0, .12);
+}
+
+@media (min-width: 1025px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g {
+        border-radius: 10px;
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    /* Apple no desliza: los estados viven en el fondo, no en la posición. */
+    html[data-tema="cupertino"] .ms-rail-g:hover,
+    html[data-tema="cupertino"] .ms-rail-g.ms-open,
+    html[data-tema="cupertino"] .ms-rail-fi:hover {
+        transform: none;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g:hover,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-open {
+        background: #EDEDF0;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-on {
+        background: color-mix(in srgb, var(--sr-primary) 11%, #FFFFFF);
+        border-color: transparent;
+        color: var(--sr-primary);
+        font-weight: 600;
+        box-shadow: none;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-on::before {
+        background: var(--sr-primary);
+        opacity: 1;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ic,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi i {
+        color: #86868B;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ch {
+        color: #AEAEB2;
+        opacity: .8;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-badge {
+        background: var(--sr-primary);
+        box-shadow: none;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fly {
+        border-radius: 14px;
+        background: rgba(255, 255, 255, .86);
+        -webkit-backdrop-filter: saturate(180%) blur(22px);
+        backdrop-filter: saturate(180%) blur(22px);
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ft {
+        font-size: .92rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ft::after {
+        background: var(--sr-line);
+        height: 1px;
+        opacity: 1;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi {
+        border-radius: 9px;
+        font-weight: 500;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi:hover {
+        background: #EDEDF0;
+        border-color: transparent;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi.ms-on {
+        background: color-mix(in srgb, var(--sr-primary) 11%, #FFFFFF);
+        border-color: transparent;
+        font-weight: 600;
+    }
+}
+
+/* ── 7. Navegación clásica (móvil / fallback): selección plana ─────── */
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-item {
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-item:hover {
+    background: #EDEDF0 !important;
+    transform: none !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-item.active {
+    background: var(--hotel-brand) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    font-weight: 600 !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-item.active::after {
+    display: none !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-icon {
+    border-radius: 8px !important;
+    background: #F5F5F7 !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon {
+    background: rgba(255, 255, 255, .2) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-section {
+    border-radius: 14px !important;
+    background: #F5F5F7 !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .hotel-sidebar .user-avatar {
+    border-radius: 999px !important;
+    background: var(--hotel-brand) !important;
+    color: #FFFFFF !important;
+}
+
+/* ── 8. Header móvil: vidrio claro, tinta oscura ───────────────────── */
+@media (max-width: 1024px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-modern {
+        background: rgba(255, 255, 255, .8) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom: 1px solid rgba(0, 0, 0, .08);
+        box-shadow: none;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-menu-toggle,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-actions button {
+        border: 0;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, .05);
+        color: #1D1D1F;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-name {
+        color: #1D1D1F;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope #pwa-sync-indicator {
+        background: rgba(0, 0, 0, .05);
+        color: #6E6E73;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .scroll-progress {
+        background: var(--hotel-brand, #0071E3);
+    }
+}
+
+/* ── 9. Acción primaria: relleno plano y píldora ───────────────────── */
+html[data-tema="cupertino"] .hotel-layout-scope .hotel-btn-primary,
+html[data-tema="cupertino"] .hotel-layout-scope .guest-filter-btn.hotel-btn-primary,
+html[data-tema="cupertino"] .hotel-layout-scope .facturacion-view .filter-actions button[type="submit"],
+html[data-tema="cupertino"] .hotel-layout-scope .inv-page .btn-inv.primary {
+    background: var(--hotel-brand) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+}
+
+/* ── 10. Utilidades Tailwind cálidas → neutrales Apple ─────────────── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .bg-hotel-cream,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .bg-hotel-beige {
+    background-color: #F5F5F7;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .bg-gray-100 {
+    background-color: #F5F5F7;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .bg-white {
+    background-color: #FFFFFF;
+}
+
+/* ── 11. Barras de desplazamiento discretas (WebKit) ───────────────── */
+html[data-tema="cupertino"] .hotel-layout-scope ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .18);
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ── 12. Modo oscuro Cupertino: Apple dark (negro + grafito) ───────── */
+html[data-theme="dark"][data-tema="cupertino"] {
+    --brand-surface: #1C1C1E;
+    --brand-surface-soft: #000000;
+    --brand-soft: color-mix(in srgb, var(--brand-primary, #0A84FF) 24%, #1C1C1E);
+    --brand-text: #F5F5F7;
+    --brand-muted: #98989D;
+    --brand-border: #38383A;
+    --brand-line: #48484A;
+    --brand-focus: color-mix(in srgb, var(--brand-primary, #0A84FF) 40%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope {
+    --hotel-bg: #000000;
+    --hotel-panel: #1C1C1E;
+    --hotel-text: #F5F5F7;
+    --hotel-muted: #98989D;
+    --hotel-border: #38383A;
+    --hotel-line: #48484A;
+    --hotel-ink: #F5F5F7;
+    --hotel-ink-soft: #C7C7CC;
+    --hotel-brand-soft: color-mix(in srgb, var(--hotel-brand) 24%, #1C1C1E);
+    --hotel-state-blue: #0A84FF;
+    --hotel-state-green: #30D158;
+    --hotel-state-amber: #FF9F0A;
+    --hotel-state-red: #FF453A;
+    --hotel-state-violet: #BF5AF2;
+    background: var(--hotel-bg) !important;
+}
+
+@media (min-width: 1025px) {
+    html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope {
+        background: var(--hotel-bg) !important;
+    }
+
+    html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope .hotel-header {
+        background: rgba(22, 22, 23, .72) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, .1) !important;
+        box-shadow: none !important;
+    }
+}
+
+html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope .hotel-sidebar,
+html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope .sidebar-main,
+html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope #sidebar.hotel-sidebar {
+    background: #161617 !important;
+    border-right: 1px solid rgba(255, 255, 255, .1) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-on {
+    background: color-mix(in srgb, var(--brand-primary, #0A84FF) 26%, #161617);
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-on::before {
+    background: var(--brand-primary, #0A84FF);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fly {
+    background: rgba(28, 28, 30, .86);
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    backdrop-filter: saturate(180%) blur(22px);
+    border-color: rgba(255, 255, 255, .12);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-ft::after {
+    background: rgba(255, 255, 255, .14);
+    height: 1px;
+}
+
+@media (max-width: 1024px) {
+    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-modern {
+        background: rgba(22, 22, 23, .8) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, .1);
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-menu-toggle,
+    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-actions button {
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .1);
+        color: #F5F5F7;
+    }
+}
+
+/* ═══ 13. LOGIN (pase 1) ════════════════════════════════════════════
+   El login vive fuera de .hotel-layout-scope y siempre es claro.
+   Se aplana el panel héroe, se apagan las formas decorativas y el
+   formulario adopta campos rellenos + botón píldora del color del
+   negocio. */
+html[data-tema="cupertino"] .login-wrapper .shape-bg,
+html[data-tema="cupertino"] .login-wrapper .geometric-pattern,
+html[data-tema="cupertino"] .login-wrapper .corner-decoration {
+    display: none;
+}
+
+html[data-tema="cupertino"] .login-wrapper .left-panel {
+    background: #F5F5F7;
+}
+
+html[data-tema="cupertino"] .login-wrapper .logo-wrapper {
+    background: #FFFFFF;
+    border: 1px solid #E8E8ED;
+    border-radius: 22px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
+}
+
+html[data-tema="cupertino"] .login-wrapper .brand-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1D1D1F;
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    -webkit-text-fill-color: #1D1D1F;
+    text-shadow: none;
+}
+
+html[data-tema="cupertino"] .login-wrapper .brand-subtitle {
+    color: #6E6E73;
+}
+
+html[data-tema="cupertino"] .login-wrapper .decorative-line {
+    width: 44px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--brand-primary, #0071E3);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+html[data-tema="cupertino"] .login-wrapper .right-panel {
+    background: #FFFFFF;
+}
+
+html[data-tema="cupertino"] .login-wrapper .form-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1D1D1F;
+}
+
+html[data-tema="cupertino"] .login-wrapper .form-subtitle {
+    color: #6E6E73;
+}
+
+html[data-tema="cupertino"] .login-wrapper .form-label {
+    color: #6E6E73;
+    font-weight: 600;
+}
+
+html[data-tema="cupertino"] .login-wrapper .form-control {
+    border-color: transparent;
+    border-radius: 12px;
+    background: #F5F5F7;
+    color: #1D1D1F;
+}
+
+html[data-tema="cupertino"] .login-wrapper .form-control:focus {
+    border-color: var(--brand-primary, #0071E3);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #0071E3) 16%, transparent);
+}
+
+html[data-tema="cupertino"] .login-wrapper .input-icon {
+    color: #86868B;
+}
+
+html[data-tema="cupertino"] .login-wrapper .submit-btn {
+    border-radius: 999px;
+    background: var(--brand-primary, #0071E3);
+    box-shadow: none;
+}
+
+html[data-tema="cupertino"] .login-wrapper .submit-btn:hover {
+    background: color-mix(in srgb, var(--brand-primary, #0071E3) 88%, #000000);
+    box-shadow: none;
+}
+
+html[data-tema="cupertino"] .login-wrapper .forgot-password {
+    color: var(--brand-primary, #0071E3);
+}
+
+html[data-tema="cupertino"] .login-wrapper .remember-me input[type="checkbox"] {
+    accent-color: var(--brand-primary, #0071E3);
+}
+
+html[data-tema="cupertino"] .login-wrapper .alert-message {
+    border-radius: 12px;
+}
+
+/* ═══ 14. DASHBOARD (pase 1): tokens --dash-* a neutrales Apple ═════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) {
+    --dash-ivory: #F5F5F7;
+    --dash-ivory-2: #FAFAFC;
+    --dash-surface: #FFFFFF;
+    --dash-surface-warm: #F5F5F7;
+    --dash-line: #E8E8ED;
+    --dash-line-soft: #EDEDF0;
+    --dash-gold: var(--dash-primary);
+    --dash-gold-mid: color-mix(in srgb, var(--dash-primary) 70%, #FFFFFF);
+    --dash-gold-soft: color-mix(in srgb, var(--dash-primary) 45%, #FFFFFF);
+    --dash-gold-bg: color-mix(in srgb, var(--dash-primary) 10%, #F5F5F7);
+    --dash-gold-line: #E8E8ED;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] {
+    --dash-ivory: #000000;
+    --dash-ivory-2: #0A0A0B;
+    --dash-surface: #1C1C1E;
+    --dash-surface-warm: #161617;
+    --dash-line: #38383A;
+    --dash-line-soft: #2C2C2E;
+    --dash-gold: var(--dash-primary);
+    --dash-gold-mid: color-mix(in srgb, var(--dash-primary) 60%, #1C1C1E);
+    --dash-gold-soft: color-mix(in srgb, var(--dash-primary) 40%, #1C1C1E);
+    --dash-gold-bg: color-mix(in srgb, var(--dash-primary) 22%, #1C1C1E);
+    --dash-gold-line: #38383A;
+}
+
+/* ═══ 15. RESERVACIONES (pase 1): tokens --res-* + lienzo plano ═════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings {
+    --res-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --res-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --res-bg: #F5F5F7;
+    --res-card: #FFFFFF;
+    --res-line: #E8E8ED;
+    --res-soft: #F7F7F9;
+    --res-heading: #1D1D1F;
+    --res-text: #1D1D1F;
+    --res-muted: #6E6E73;
+    --res-radius: 16px;
+    background: var(--res-bg);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings {
+    --res-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --res-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --res-bg: #000000;
+    --res-card: #1C1C1E;
+    --res-line: #38383A;
+    --res-soft: #161617;
+    --res-heading: #F5F5F7;
+    --res-text: #F5F5F7;
+    --res-muted: #98989D;
+    --res-radius: 16px;
+    background: var(--res-bg);
+}
+
+/* Botonera de reservaciones: píldoras planas; la primaria toma el color
+   de acción del negocio (contraste garantizado por branding.php). */
+html[data-tema="cupertino"] .res-bookings .res-btn {
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+html[data-tema="cupertino"] .res-bookings .res-btn:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+html[data-tema="cupertino"] .res-bookings .res-btn-primary {
+    background: var(--brand-action-bg, var(--res-brand));
+    box-shadow: none;
+}
+
+html[data-tema="cupertino"] .res-bookings .res-btn-primary:hover {
+    background: var(--brand-action-bg-hover, var(--res-brand-2));
+}
+
+/* ═══ 16. HEROS CON FLECHA DE REGRESO (todas las vistas, no reportes) ═══
+   partials/back_arrow.php etiqueta el encabezado contenedor con
+   data-ms-hero (excluye rutas de reportes y heros oscuros --glass).
+   Aquí ese encabezado se aplana a tarjeta Apple: blanco, hairline,
+   16px, sin ornamentos ::before/::after del lenguaje boutique. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] {
+    background: #FFFFFF !important;
+    border: 1px solid #E8E8ED !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::before,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::after {
+    display: none !important;
+}
+
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h2 {
+    color: var(--hotel-text, #1D1D1F) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] {
+    background: #1C1C1E !important;
+    border: 1px solid #38383A !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+}
+
+/* La flecha de regreso, versión Apple: círculo de vidrio con tinta. */
+@media (max-width: 768px) {
+    html[data-tema="cupertino"] .ms-back {
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, .06);
+        background: rgba(255, 255, 255, .85);
+        -webkit-backdrop-filter: saturate(180%) blur(14px);
+        backdrop-filter: saturate(180%) blur(14px);
+        color: #1D1D1F;
+        box-shadow: none;
+    }
+
+    html[data-tema="cupertino"] .ms-back:active {
+        background: #EDEDF0;
+        color: #1D1D1F;
+    }
+
+    html[data-tema="cupertino"] .ms-back:focus-visible {
+        outline: 2px solid var(--brand-primary, #0071E3);
+        outline-offset: 2px;
+    }
+
+    html[data-tema="cupertino"] .ms-back--glass {
+        border-color: rgba(255, 255, 255, .28);
+        background: rgba(255, 255, 255, .16);
+        color: #FFFFFF;
+    }
+
+    html[data-tema="cupertino"] .ms-back--glass:active {
+        background: rgba(255, 255, 255, .3);
+        color: #FFFFFF;
+    }
+
+    html[data-theme="dark"][data-tema="cupertino"] .ms-back {
+        border-color: rgba(255, 255, 255, .12);
+        background: rgba(28, 28, 30, .85);
+        color: #F5F5F7;
+    }
+
+    html[data-theme="dark"][data-tema="cupertino"] .ms-back:active {
+        background: #2C2C2E;
+        color: #F5F5F7;
+    }
+}
+
+/* ═══ 17. PÁGINA 404 (standalone, marcada con data-ms-error) ═══════ */
+html[data-tema="cupertino"] body[data-ms-error] {
+    background: #F5F5F7;
+}
+
+html[data-tema="cupertino"] body[data-ms-error] .e404-code {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    -webkit-text-fill-color: #1D1D1F;
+    color: #1D1D1F;
+}
+
+html[data-tema="cupertino"] body[data-ms-error] .e404-mark {
+    background: #FFFFFF;
+    border: 1px solid #E8E8ED;
+}
+
+html[data-tema="cupertino"] body[data-ms-error] a {
+    border-radius: 999px !important;
+}
+
+/* ═══ 18. HABITACIONES (index) ══════════════════════════════════════
+   La vista trae su propia capa boutique (--hb-*, --serif, --bg-* de
+   estados). Cupertino voltea esos tokens: lienzo gris perla plano,
+   serif → sans (mata de un tiro números, stats y títulos de piso),
+   tarjetas blancas donde el estado lo cuentan la cinta y el badge. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view {
+    --hb-ivory: #F5F5F7;
+    --hb-ivory-2: #FAFAFC;
+    --hb-surface: #FFFFFF;
+    --hb-surface-warm: #F5F5F7;
+    --hb-line: #E8E8ED;
+    --hb-line-soft: #EDEDF0;
+    --hb-slate-700: #48484A;
+    --hb-slate-500: #6E6E73;
+    --hb-slate-400: #86868B;
+    --bg-available: color-mix(in srgb, var(--c-available) 8%, #FFFFFF);
+    --bg-occupied: color-mix(in srgb, var(--c-occupied) 8%, #FFFFFF);
+    --bg-arriving: color-mix(in srgb, var(--c-arriving) 8%, #FFFFFF);
+    --bg-cleaning: color-mix(in srgb, var(--c-cleaning) 8%, #FFFFFF);
+    --bg-maint: color-mix(in srgb, var(--c-maint) 8%, #FFFFFF);
+    --bg-critical: color-mix(in srgb, var(--c-critical) 8%, #FFFFFF);
+    --serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --hb-shadow-xs: 0 1px 2px rgba(0, 0, 0, .04);
+    --hb-shadow-sm: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 8px rgba(0, 0, 0, .04);
+    --hb-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 26px rgba(0, 0, 0, .06);
+    --surface: #F5F5F7;
+    --surface-card: #FFFFFF;
+    --surface-hover: #EDEDF0;
+    --border: #E8E8ED;
+    --border-light: #EDEDF0;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, .06);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, .08);
+    --shadow-xl: 0 16px 44px rgba(0, 0, 0, .1);
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view::before {
+    display: none !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view .rc-num {
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view .floor-t {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] {
+    background: #FFFFFF !important;
+    border: 1px solid #E8E8ED !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view .rc-badge {
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .rc-room-fact {
+    background: #F5F5F7 !important;
+    border-color: #E8E8ED !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view .flip-card,
+html[data-tema="cupertino"] .habitaciones-view .room-card-compact {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 6px 18px rgba(0, 0, 0, .05) !important;
+}
+
+html[data-tema="cupertino"] .habitaciones-view .room-card-compact:hover,
+html[data-tema="cupertino"] .habitaciones-view .room-card-compact.flipped:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .06), 0 14px 34px rgba(0, 0, 0, .1) !important;
+}
+
+/* Modo oscuro Apple para habitaciones */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view {
+    --hb-ivory: #000000;
+    --hb-ivory-2: #0A0A0B;
+    --hb-surface: #1C1C1E;
+    --hb-surface-warm: #161617;
+    --hb-line: #38383A;
+    --hb-line-soft: #2C2C2E;
+    --hb-heading: #F5F5F7;
+    --hb-slate-700: #D1D1D6;
+    --hb-slate-500: #98989D;
+    --hb-slate-400: #7C7C80;
+    --bg-available: color-mix(in srgb, var(--c-available) 20%, #1C1C1E);
+    --bg-occupied: color-mix(in srgb, var(--c-occupied) 20%, #1C1C1E);
+    --bg-arriving: color-mix(in srgb, var(--c-arriving) 20%, #1C1C1E);
+    --bg-cleaning: color-mix(in srgb, var(--c-cleaning) 20%, #1C1C1E);
+    --bg-maint: color-mix(in srgb, var(--c-maint) 20%, #1C1C1E);
+    --bg-critical: color-mix(in srgb, var(--c-critical) 20%, #1C1C1E);
+    --serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --surface: #000000;
+    --surface-card: #1C1C1E;
+    --surface-hover: #2C2C2E;
+    --border: #38383A;
+    --border-light: #2C2C2E;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .flip-card-front[class*="estado-"] {
+    background: #1C1C1E !important;
+    border: 1px solid #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .rc-room-fact {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+    color: #F5F5F7 !important;
+}
+
+/* El wrapper .flip-card es blanco de origen (padding 3px): en oscuro se
+   funde con la cara grafito para no dejar anillo claro. */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .flip-card {
+    background: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view #mainHeader {
+    background: rgba(22, 22, 23, .72) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view #mainHeader h1 {
+    color: #F5F5F7 !important;
+}
+
+/* ═══ 19. CAJA (index) ══════════════════════════════════════════════
+   Tokens --cj-* en :root; el héroe navy/oro pasa a tarjeta blanca con
+   tinta, chips neutros y acciones semánticas en píldora. El serif de
+   los montos muere con el token --cj-serif. Bonus: caja no tenía modo
+   oscuro; bajo Cupertino estrena Apple dark. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) {
+    --cj-ivory: #F5F5F7;
+    --cj-line: #E8E8ED;
+    --cj-muted: #6E6E73;
+    --cj-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cj-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --cj-shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+    --cj-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 20px rgba(0, 0, 0, .05);
+    --cj-shadow-lg: 0 2px 6px rgba(0, 0, 0, .05), 0 18px 40px rgba(0, 0, 0, .08);
+}
+
+html[data-tema="cupertino"] .cj-page {
+    background: var(--cj-ivory, #F5F5F7);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh {
+    background: #FFFFFF;
+    border: 1px solid #E8E8ED;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-name {
+    color: #1D1D1F;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-hotel {
+    color: #6E6E73;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-meta span {
+    background: #F5F5F7;
+    border-color: #E8E8ED;
+    color: #48484A;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-state {
+    background: rgba(52, 199, 89, .12);
+    border-color: rgba(52, 199, 89, .25);
+    color: #248A3D;
+}
+
+html[data-tema="cupertino"] .cj-back,
+html[data-tema="cupertino"] .cj-act-btn {
+    border-radius: 999px;
+}
+
+html[data-tema="cupertino"] .cj-act-btn:hover {
+    transform: none;
+    filter: brightness(1.06);
+}
+
+/* Modo oscuro Apple para caja */
+html[data-theme="dark"][data-tema="cupertino"] {
+    --cj-ivory: #161617;
+    --cj-surface: #1C1C1E;
+    --cj-line: #38383A;
+    --cj-text: #F5F5F7;
+    --cj-muted: #98989D;
+    --cj-on-dark: #F5F5F7;
+    --cj-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cj-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --cj-shadow-sm: none;
+    --cj-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    --cj-shadow-lg: 0 8px 30px rgba(0, 0, 0, .45);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-page {
+    background: #000000;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-topbar {
+    background: rgba(22, 22, 23, .72);
+    border-bottom-color: #38383A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-resh {
+    background: #1C1C1E;
+    border: 1px solid #38383A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-resh-name {
+    color: #F5F5F7;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-resh-hotel {
+    color: #98989D;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-resh-meta span {
+    background: #2C2C2E;
+    border-color: #38383A;
+    color: #D1D1D6;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-resh-state {
+    background: rgba(48, 209, 88, .18);
+    border-color: rgba(48, 209, 88, .3);
+    color: #30D158;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cj-cut-chip {
+    background: #2C2C2E;
+    border-color: #38383A;
+    color: #D1D1D6;
+}
+
+/* Corte de caja (.ccx-*): montos sans y campos de arqueo rellenos Apple */
+html[data-tema="cupertino"] .ccx-page .ccx-title,
+html[data-tema="cupertino"] .ccx-page .ccx-stat strong,
+html[data-tema="cupertino"] .ccx-page .ccx-total-row.is-main output {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    letter-spacing: -0.02em !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page {
+    --ccx-line: #E8E8ED;
+    --ccx-muted: #6E6E73;
+    --ccx-surface: #FFFFFF;
+    --ccx-focus: color-mix(in srgb, var(--ccx-primary) 18%, transparent);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page .ccx-input,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page .ccx-textarea {
+    background: #F5F5F7 !important;
+    border-color: transparent !important;
+    border-radius: 10px !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page .ccx-input:focus,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page .ccx-textarea:focus {
+    background: #FFFFFF !important;
+    border-color: var(--brand-primary, #0071E3) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary, #0071E3) 16%, transparent) !important;
+}
+
+/* ═══ 20. RESERVACIONES: detalle modo oscuro ════════════════════════
+   El pase 1 volteó los tokens --res-*; aquí caen los literales claros
+   que quedaban (tabla, pills de filtro, fecha, agenda). La pill activa
+   se invierte al estilo iOS oscuro: blanca con tinta. */
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-filterbar {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-tab {
+    background: #2C2C2E;
+    border-color: #38383A;
+    color: #D1D1D6;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-tab.is-active {
+    background: #F5F5F7;
+    border-color: #F5F5F7;
+    color: #1D1D1F;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-date-tools input {
+    background: #1C1C1E;
+    border-color: #38383A;
+    color: #F5F5F7;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-date-chip {
+    background: #1C1C1E;
+    border-color: #38383A;
+    color: #D1D1D6;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-btn {
+    background: #1C1C1E;
+    border-color: #38383A;
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-table-shell {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-table thead th {
+    background: #161617;
+    color: #98989D;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-table tbody tr:hover {
+    background: #2C2C2E;
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--res-accent, #BD9441) 55%, transparent);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-folio {
+    color: #98989D;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-date-sub {
+    color: #98989D;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-empty,
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-filter-empty {
+    background: #161617;
+    border-color: #38383A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming {
+    background: #1C1C1E;
+    border-color: #38383A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming h2,
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-head h2,
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-head strong {
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-card {
+    background: #2C2C2E;
+    border-color: #38383A;
+}
+
+/* ═══ 21. NUEVA RESERVACIÓN (wizard .vista-reservacion) ═════════════
+   Tokens --rc-* propios + literales sage/crema. Cupertino: lienzo
+   plano, serif fuera, y el wizard estrena modo oscuro (no tenía). Los
+   acentos siguen saliendo del color primario del negocio. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .vista-reservacion {
+    --rc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --rc-ivory: #F5F5F7;
+    --rc-ivory-2: #FAFAFC;
+    --rc-surface: #FFFFFF;
+    --rc-surface-warm: #F5F5F7;
+    --rc-line: #E8E8ED;
+    --rc-line-soft: #EDEDF0;
+    --rc-accent-soft: #F5F5F7;
+    --rc-accent-line: #E8E8ED;
+    --rc-accent-dark: #48484A;
+    --lc-cream: #F5F5F7;
+    --lc-cream-mid: #EDEDF0;
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"] .vista-reservacion > div:first-of-type h1 {
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* Wizard en oscuro: primera vez que existe */
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion {
+    --rc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --rc-ivory: #0A0A0B;
+    --rc-ivory-2: #161617;
+    --rc-surface: #1C1C1E;
+    --rc-surface-warm: #161617;
+    --rc-line: #38383A;
+    --rc-line-soft: #2C2C2E;
+    --rc-muted: #98989D;
+    --rc-text: #F5F5F7;
+    --rc-accent-soft: #2C2C2E;
+    --rc-accent-line: #38383A;
+    --rc-accent-dark: #D1D1D6;
+    --rc-success-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --rc-warning-soft: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --rc-danger-soft: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --lc-cream: #161617;
+    --lc-cream-mid: #2C2C2E;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .bg-white {
+    background-color: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion > div:first-of-type h1,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion h2,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion h3,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-800,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-900 {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion label,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-700,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-600 {
+    color: #D1D1D6 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-500,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .text-gray-400 {
+    color: #98989D !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion select,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion textarea {
+    background-color: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .border-gray-200,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .border-gray-300 {
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .panel-hd-guest,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .panel-hd-dates,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .panel-hd-rooms,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .panel-hd-notes,
+html[data-theme="dark"][data-tema="cupertino"] .vista-reservacion .panel-hd-summary {
+    background: #161617 !important;
+    border-bottom-color: #38383A !important;
+}
+
+/* ═══ 22. TAREAS (index .tk-page) ═══════════════════════════════════
+   Tokens --tk-* bien hechos: el volteo es casi puro token. Serif de
+   KPIs fuera; el módulo estrena modo oscuro (no tenía). */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tk-page {
+    --tk-ivory: #F5F5F7;
+    --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF;
+    --tk-surface-warm: #F5F5F7;
+    --tk-border: #E8E8ED;
+    --tk-gold-line: #E8E8ED;
+    --tk-muted: #6E6E73;
+    --tk-text: #48484A;
+    --tk-heading: #1D1D1F;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-page {
+    --tk-ivory: #000000;
+    --tk-ivory-2: #161617;
+    --tk-surface: #1C1C1E;
+    --tk-surface-warm: #161617;
+    --tk-border: #38383A;
+    --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 20%, #1C1C1E);
+    --tk-gold-line: #48484A;
+    --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 60%, #F5F5F7);
+    --tk-view-soft: color-mix(in srgb, var(--tk-gold) 12%, #1C1C1E);
+    --tk-muted: #98989D;
+    --tk-text: #D1D1D6;
+    --tk-heading: #F5F5F7;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --tk-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --tk-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --tk-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    --tk-proc-bg: color-mix(in srgb, #64D2FF 16%, #1C1C1E);
+    --tk-success: #30D158;
+    --tk-warning: #FF9F0A;
+    --tk-danger: #FF6961;
+    --tk-info: #6CB4FF;
+    --tk-proc: #64D2FF;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-control {
+    background: #1C1C1E !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-page input,
+html[data-theme="dark"][data-tema="cupertino"] .tk-page select {
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-summary-item,
+html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-panel {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-row:hover {
+    background: #2C2C2E;
+    box-shadow: none;
+}

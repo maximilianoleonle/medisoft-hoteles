@@ -1660,6 +1660,219 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     border-radius: 16px;
 }
 
+/* ── Diseño del sistema: tarjetas de tema (multi-diseño SaaS) ── */
+.hc-tema-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.hc-tema-fieldset legend {
+    padding: 0;
+    margin: 0 0 7px;
+    color: var(--hc-ink-faint);
+    font-size: .72rem;
+    line-height: 1.25;
+    font-weight: 820;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.hc-tema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+.hc-tema-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--hc-line);
+    background: var(--hc-paper, #FFFFFD);
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.hc-tema-card:hover {
+    border-color: color-mix(in srgb, var(--hc-ink) 26%, var(--hc-line));
+    transform: translateY(-1px);
+}
+
+.hc-tema-card input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hc-tema-card:has(input:checked) {
+    border-color: var(--hotel-brand, #1B2746);
+    box-shadow: 0 0 0 1px var(--hotel-brand, #1B2746);
+}
+
+.hc-tema-card:has(input:focus-visible) {
+    outline: 3px solid color-mix(in srgb, var(--hotel-brand, #1B2746) 38%, transparent);
+    outline-offset: 2px;
+}
+
+.hc-tema-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .62rem;
+    color: #FFFEFB;
+    background: var(--hotel-brand, #1B2746);
+    opacity: 0;
+    transform: scale(.7);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.hc-tema-card:has(input:checked) .hc-tema-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.hc-tema-meta strong {
+    display: block;
+    font-size: .95rem;
+    color: var(--hc-ink);
+}
+
+.hc-tema-meta span {
+    display: block;
+    margin-top: 2px;
+    font-size: .8rem;
+    color: var(--hc-ink-soft);
+    line-height: 1.45;
+}
+
+.hc-tema-thumb {
+    display: flex;
+    height: 84px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--hc-line);
+    background: var(--hc-surface-muted);
+}
+
+.hc-tema-thumb-rail {
+    width: 26%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 7px;
+    background: var(--hc-line);
+}
+
+.hc-tema-thumb-rail span {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .4);
+}
+
+.hc-tema-thumb-rail span:first-child {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.hc-tema-thumb-main {
+    flex: 1;
+    padding: 8px 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hc-tema-thumb-main .is-bar {
+    width: 52%;
+    height: 5px;
+    border-radius: 999px;
+}
+
+.hc-tema-thumb-main .is-card {
+    flex: 1;
+    border-radius: 8px;
+}
+
+.hc-tema-thumb-main .is-pill {
+    width: 44%;
+    height: 9px;
+    border-radius: 999px;
+}
+
+.hc-tema-thumb--deleite {
+    background: #F8F5ED;
+}
+
+.hc-tema-thumb--deleite .hc-tema-thumb-rail {
+    background: #1B2746;
+}
+
+.hc-tema-thumb--deleite .hc-tema-thumb-rail span {
+    background: rgba(255, 254, 251, .34);
+}
+
+.hc-tema-thumb--deleite .hc-tema-thumb-rail span:first-child {
+    background: #BD9441;
+}
+
+.hc-tema-thumb--deleite .is-bar {
+    background: #BD9441;
+}
+
+.hc-tema-thumb--deleite .is-card {
+    background: #FFFEFB;
+    border: 1px solid #E7DEC9;
+}
+
+.hc-tema-thumb--deleite .is-pill {
+    background: #1B2746;
+}
+
+.hc-tema-thumb--cupertino {
+    background: #F5F5F7;
+}
+
+.hc-tema-thumb--cupertino .hc-tema-thumb-rail {
+    background: #FFFFFF;
+    border-right: 1px solid #E8E8ED;
+}
+
+.hc-tema-thumb--cupertino .hc-tema-thumb-rail span {
+    background: #E2E2E7;
+}
+
+.hc-tema-thumb--cupertino .hc-tema-thumb-rail span:first-child {
+    background: #0071E3;
+}
+
+.hc-tema-thumb--cupertino .is-bar {
+    background: #D6D6DB;
+}
+
+.hc-tema-thumb--cupertino .is-card {
+    background: #FFFFFF;
+}
+
+.hc-tema-thumb--cupertino .is-pill {
+    background: #0071E3;
+}
+
 .hc-system-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5496,6 +5709,17 @@ html[data-theme="dark"] .hc-page {
                         $brandingAccent = function_exists('hotel_branding_hex')
                             ? hotel_branding_hex($configBranding['color_accent'] ?? null, '#BD9441')
                             : ($configBranding['color_accent'] ?? '#BD9441');
+                        $configTemaOpciones = class_exists('HotelBranding')
+                            ? HotelBranding::temasDisponibles()
+                            : ['deleite' => 'Deleite Sereno'];
+                        $configTemaDescripciones = [
+                            'deleite' => 'Boutique clásico: crema, tinta profunda y detalles dorados.',
+                            'cupertino' => 'Minimal premium: gris perla, tarjetas blancas y azul de acción.',
+                        ];
+                        $configTemaActual = trim((string) ($configBranding['tema'] ?? 'deleite'));
+                        if (!array_key_exists($configTemaActual, $configTemaOpciones)) {
+                            $configTemaActual = 'deleite';
+                        }
                         ?>
 
                         <input type="hidden" name="hotel_branding[logo_url]" value="<?= $configBrandingField('logo_url') ?>">
@@ -5504,6 +5728,11 @@ html[data-theme="dark"] .hc-page {
                         <input type="hidden" name="hotel_branding[pwa_icon_192_url]" value="<?= $configBrandingField('pwa_icon_192_url') ?>">
                         <input type="hidden" name="hotel_branding[pwa_icon_512_url]" value="<?= $configBrandingField('pwa_icon_512_url') ?>">
                         <input type="hidden" name="hotel_branding[activo]" value="1">
+                        <input type="hidden"
+                               name="hotel_branding[tema]"
+                               id="branding_tema_value"
+                               value="<?= htmlspecialchars($configTemaActual, ENT_QUOTES, 'UTF-8') ?>"
+                               data-brand-input="tema">
 
                         <div class="hc-brand-grid">
                             <aside class="hc-brand-preview"
@@ -5679,6 +5908,30 @@ html[data-theme="dark"] .hc-page {
                             </aside>
 
                             <div class="hc-field-grid">
+                                <fieldset class="hc-field is-wide hc-tema-fieldset">
+                                    <legend>Diseño del sistema</legend>
+                                    <div class="hc-tema-grid">
+                                        <?php foreach ($configTemaOpciones as $temaSlug => $temaNombre): ?>
+                                        <label class="hc-tema-card">
+                                            <input type="radio"
+                                                   name="branding_tema_choice"
+                                                   value="<?= htmlspecialchars((string) $temaSlug, ENT_QUOTES, 'UTF-8') ?>"
+                                                   <?= $configTemaActual === $temaSlug ? 'checked' : '' ?>>
+                                            <span class="hc-tema-thumb hc-tema-thumb--<?= htmlspecialchars((string) $temaSlug, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
+                                                <span class="hc-tema-thumb-rail"><span></span><span></span><span></span></span>
+                                                <span class="hc-tema-thumb-main"><span class="is-bar"></span><span class="is-card"></span><span class="is-pill"></span></span>
+                                            </span>
+                                            <span class="hc-tema-meta">
+                                                <strong><?= htmlspecialchars((string) $temaNombre, ENT_QUOTES, 'UTF-8') ?></strong>
+                                                <span><?= htmlspecialchars((string) ($configTemaDescripciones[$temaSlug] ?? 'Lenguaje visual alterno del sistema.'), ENT_QUOTES, 'UTF-8') ?></span>
+                                            </span>
+                                            <span class="hc-tema-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                                        </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <p class="hc-field-hint">Cambia el lenguaje visual completo del sistema para todo el equipo de este hotel. Tus colores y logo se aplican dentro del diseño elegido.</p>
+                                </fieldset>
+
                                 <div class="hc-field is-wide">
                                     <label for="branding_nombre_visual">Nombre visual</label>
                                      <input type="text"
@@ -6826,7 +7079,8 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         secondary: document.querySelector('[data-brand-input="secondary"]'),
         accent: document.querySelector('[data-brand-input="accent"]'),
         sidebar: document.querySelector('[data-brand-input="sidebar"]'),
-        login: document.querySelector('[data-brand-input="login"]')
+        login: document.querySelector('[data-brand-input="login"]'),
+        tema: document.querySelector('[data-brand-input="tema"]')
     };
     const trackedFields = Object.values(fields).filter(Boolean);
     const fileInputs = Array.from(document.querySelectorAll('[data-brand-file]'));
@@ -7124,6 +7378,32 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
     window.addEventListener('beforeunload', () => {
         objectUrls.forEach(url => URL.revokeObjectURL(url));
         objectUrls.clear();
+    });
+})();
+
+/* Tarjetas de tema: sincronizan el hidden trackeado (dirty/reset) con los radios visuales. */
+(function() {
+    const hidden = document.getElementById('branding_tema_value');
+    const radios = Array.from(document.querySelectorAll('input[name="branding_tema_choice"]'));
+
+    if (!hidden || !radios.length) {
+        return;
+    }
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (!radio.checked || hidden.value === radio.value) {
+                return;
+            }
+            hidden.value = radio.value;
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    hidden.addEventListener('change', () => {
+        radios.forEach(radio => {
+            radio.checked = radio.value === hidden.value;
+        });
     });
 })();
 

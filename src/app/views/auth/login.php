@@ -31,9 +31,18 @@ $loginThemeColor = function_exists('hotel_branding_hex')
     : '#9CA777';
 $loginAction = $login_action ?? url('login/authenticate');
 $loginDisabled = !empty($login_disabled);
+/* Tema visual del negocio (multi-diseño): mismo contrato que header.php. */
+$loginTema = 'deleite';
+if (!empty($loginBranding['tema']) && preg_match('/^[a-z0-9-]{1,30}$/', (string) $loginBranding['tema'])) {
+    $loginTema = (string) $loginBranding['tema'];
+}
+$loginTemaCssHref = null;
+if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . '/css/temas/' . $loginTema . '.css')) {
+    $loginTemaCssHref = 'css/temas/' . $loginTema . '.css';
+}
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"<?= $loginTema !== 'deleite' ? ' data-tema="' . htmlspecialchars($loginTema, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1199,6 +1208,9 @@ $loginDisabled = !empty($login_disabled);
             }
         }
     </style>
+    <?php if ($loginTemaCssHref): ?>
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version($loginTemaCssHref) : asset($loginTemaCssHref) ?>">
+    <?php endif; ?>
 </head>
 <body class="<?= $loginBackgroundUrl ? 'branding-login-bg' : '' ?>">
     <?php include APP_PATH . '/views/components/pwa-launch-splash.php'; ?>

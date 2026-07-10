@@ -9,6 +9,16 @@ $layoutOfflineHoteleroActivo = !$layoutEsPanelSaas
 $layoutBranding = (!$layoutEsPanelSaas && $layoutTieneContextoHotel && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
     : null;
+/* Tema visual del negocio (multi-diseño). 'deleite' es el diseño fundador y no
+   emite atributo ni CSS extra; cualquier otro tema agrega data-tema + su hoja. */
+$layoutTema = 'deleite';
+if ($layoutBranding && !empty($layoutBranding['tema']) && preg_match('/^[a-z0-9-]{1,30}$/', (string) $layoutBranding['tema'])) {
+    $layoutTema = (string) $layoutBranding['tema'];
+}
+$layoutTemaCssHref = null;
+if ($layoutTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . '/css/temas/' . $layoutTema . '.css')) {
+    $layoutTemaCssHref = 'css/temas/' . $layoutTema . '.css';
+}
 $layoutNombreVisual = $layoutBranding
     ? hotel_branding_public_name($layoutBranding, current_hotel_nombre() ?: 'Medisoft Hoteles')
     : 'Medisoft Hoteles';
@@ -59,7 +69,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     : '';
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"<?= $layoutTema !== 'deleite' ? ' data-tema="' . htmlspecialchars($layoutTema, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -897,6 +907,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <?php if (!$layoutEsPanelSaas): ?>
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dark-theme.css') : asset('css/dark-theme.css') ?>">
+    <?php if ($layoutTemaCssHref): ?>
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version($layoutTemaCssHref) : asset($layoutTemaCssHref) ?>">
+    <?php endif; ?>
     <?php endif; ?>
 </head>
 <body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?><?= htmlspecialchars($layoutPageClass, ENT_QUOTES, 'UTF-8') ?>">

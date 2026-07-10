@@ -5475,6 +5475,22 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .rc-owner i{ font-size:.68rem; color:var(--hb-accent); }
 .habitaciones-view .rc-owner span{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 
+/* ── Rediseño 2026-07-10: altura por contenido (adiós hueco muerto) ──
+   Antes ambas caras eran absolutas y la altura salía de capas legacy:
+   en habitaciones libres quedaba un vacío entre el número y los datos.
+   Ahora la cara frontal vive en flujo normal y dicta la altura; la
+   trasera sigue siendo overlay deslizante (top:100% → 3px). El bloque
+   medio fluye tras el encabezado y el pie se ancla abajo; el grid
+   iguala alturas por fila con stretch. */
+.habitaciones-view .flip-card{ height:auto!important; min-height:150px!important; }
+.habitaciones-view .flip-card-inner{ position:relative!important; height:100%!important; min-height:144px!important; display:flex!important; flex-direction:column!important; }
+.habitaciones-view .flip-card-front{ position:relative!important; top:0!important; left:0!important; right:auto!important; bottom:auto!important; width:100%!important; height:auto!important; flex:1 1 auto!important; display:flex!important; flex-direction:column!important; }
+.habitaciones-view .rc-face{ flex:1 1 auto!important; height:auto!important; }
+.habitaciones-view .rc-mid{ margin-top:10px!important; }
+.habitaciones-view .rc-foot{ margin-top:auto!important; padding-top:9px; }
+.habitaciones-view .flip-card.flipped{ height:186px!important; }
+.habitaciones-view .room-card-compact{ height:auto!important; }
+
 /* indicadores (esquina) — conservados, refinados */
 .habitaciones-view .checkout-today-indicator,
 .habitaciones-view .checkout-vencido-indicator,
@@ -6886,7 +6902,7 @@ body.hb-modal-open{ overflow:hidden; }
     white-space:nowrap;
     font-size:.55rem!important;
   }
-  .habitaciones-view .rc-mid{ margin-top:auto!important; }
+  .habitaciones-view .rc-mid{ margin-top:8px!important; }
   .habitaciones-view .rc-guest{ gap:5px!important; font-size:.68rem!important; line-height:1.15!important; }
   .habitaciones-view .rc-guest i{ font-size:.58rem!important; }
   .habitaciones-view .rc-meta{ display:none!important; }
@@ -8404,15 +8420,24 @@ body.hb-modal-open{ overflow:hidden; }
   }
 }
 
-/* Correccion anti-corte: las tarjetas crecen lo justo para mostrar huesped, incidencia, meta y pie. */
+/* Correccion anti-corte 2.0 (2026-07-10): la cara frontal ahora vive en
+   flujo normal (rediseño en el bloque hb), asi que la tarjeta crece con
+   su contenido y nada puede cortarse: sin huesped queda compacta, con
+   huesped/incidencias crece lo justo. El grid iguala alturas por fila.
+   Solo el estado volteado conserva altura fija (la cara trasera es
+   overlay absoluto). */
 .habitaciones-view .rgrid{
   align-items:stretch!important;
 }
 
-.habitaciones-view .flip-card,
+.habitaciones-view .flip-card{
+  min-height:150px!important;
+  height:auto!important;
+}
+
 .habitaciones-view .flip-card.flipped{
-  min-height:232px!important;
-  height:232px!important;
+  min-height:186px!important;
+  height:186px!important;
 }
 
 .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
@@ -8576,10 +8601,13 @@ body.hb-modal-open{ overflow:hidden; }
 }
 
 @media (max-width:768px){
-  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card{
+    min-height:150px!important;
+    height:auto!important;
+  }
   .habitaciones-view .flip-card.flipped{
-    min-height:232px!important;
-    height:232px!important;
+    min-height:192px!important;
+    height:192px!important;
   }
 }
 
@@ -8712,11 +8740,14 @@ body.hb-modal-open{ overflow:hidden; }
     gap:10px!important;
   }
 
-  /* 2. Card: altura fija que cancela los min-height del bloque anti-corte */
-  .habitaciones-view .flip-card,
+  /* 2. Card móvil: base por contenido; volteada y vencida con altura fija */
+  .habitaciones-view .flip-card{
+    min-height:156px!important;
+    height:auto!important;
+    border-radius:18px!important;
+  }
   .habitaciones-view .flip-card.flipped,
   .habitaciones-view .room-card-compact.flipped,
-  .habitaciones-view .room-card-compact.has-checkin-vencido,
   .habitaciones-view .room-card-compact.has-checkin-vencido.flipped,
   .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped{
     min-height:156px!important;
