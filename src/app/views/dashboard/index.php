@@ -1141,20 +1141,39 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: inline-flex;
 }
 
+/* ── Dropdown de notificaciones — boutique (Claude Design notificaciones-dropdown.html).
+   El panel se mueve a <body> al abrir: solo tokens de :root (--dash-*), nada del wrapper. ── */
 .notification-quick-panel {
     position: fixed;
     z-index: 1200;
-    width: min(320px, calc(100vw - 24px));
-    border: 1px solid rgba(23, 35, 62, .12);
-    border-radius: 16px;
-    background: rgba(255,255,255,.98);
+    width: min(372px, calc(100vw - 24px));
+    border: 1px solid var(--dash-line);
+    border-radius: 20px;
+    background: var(--dash-surface, #fff);
     color: var(--dash-ink);
-    box-shadow: 0 26px 70px -38px rgba(15, 23, 42, .58);
+    box-shadow: var(--dash-shadow-lg, 0 18px 48px rgba(27,39,70,.12));
     overflow: hidden;
+    animation: nqDrop .24s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes nqDrop {
+    from { opacity: 0; transform: translateY(-10px) scale(.98); }
+    to   { opacity: 1; transform: none; }
 }
 
 .notification-quick-panel[hidden] {
     display: none;
+}
+
+/* Cierre fluido al alejar el cursor (hover-intent). */
+.notification-quick-panel.nq-closing {
+    animation: nqLift .18s cubic-bezier(.4, 0, 1, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes nqLift {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateY(-8px) scale(.98); }
 }
 
 .notification-quick-head {
@@ -1162,66 +1181,119 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--dash-line);
-    background: color-mix(in srgb, var(--dash-gold) 7%, #fff);
+    padding: 16px 20px 13px;
 }
 
 .notification-quick-head span {
     display: block;
-    color: var(--dash-muted);
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: .08em;
+    color: #939BAD;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .14em;
     text-transform: uppercase;
 }
 
 .notification-quick-head strong {
     color: var(--dash-navy);
-    font-size: 15px;
-    font-weight: 900;
+    font-family: var(--dash-serif);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
 }
 
 .notification-quick-list {
-    display: grid;
-    max-height: min(300px, 58vh);
-    overflow: auto;
+    max-height: min(326px, 52vh);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.notification-quick-list::-webkit-scrollbar { width: 6px; }
+.notification-quick-list::-webkit-scrollbar-thumb { background: #E2D9C8; border-radius: 99px; }
+
+/* Fila deslizable: capa verde "Archivar" debajo de la fila */
+.nq-swipe {
+    position: relative;
+    border-top: 1px solid var(--dash-line-soft);
+    overflow: hidden;
+}
+
+.nq-swipe.gone {
+    transition: height .32s ease, opacity .2s ease;
+    opacity: 0;
+    border-top: 0;
+}
+
+.nq-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-right: 22px;
+    background: linear-gradient(90deg, #2BA76A, #1E9E63);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .notification-quick-row {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) 16px;
+    position: relative;
+    display: flex;
     align-items: center;
-    gap: 9px;
-    min-height: 60px;
-    padding: 10px 14px;
-    border-bottom: 1px solid color-mix(in srgb, var(--dash-line) 80%, transparent);
+    gap: 13px;
+    padding: 13px 20px;
+    background: var(--dash-surface, #fff);
     color: inherit;
     text-decoration: none;
+    transition: background .14s ease;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.notification-quick-row.dragging { transition: none; }
+
+.notification-quick-row.settle {
+    transition: transform .3s cubic-bezier(.22,1,.36,1);
 }
 
 .notification-quick-row:hover,
 .notification-quick-row:focus-visible {
-    background: color-mix(in srgb, var(--dash-gold) 8%, #fff);
+    background: var(--dash-surface-warm, #FEFCF7);
     outline: none;
 }
 
 .notification-quick-icon {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     display: grid;
     place-items: center;
-    border-radius: 10px;
-    color: var(--dash-navy);
-    background: color-mix(in srgb, var(--dash-gold) 13%, #fff);
+    border-radius: 11px;
+    flex: none;
+    color: #6C7689;
+    background: var(--dash-ivory-2, #FBF8F2);
+    font-size: 15px;
+    pointer-events: none;
+}
+
+/* Severidad semántica: crítica/alta rojo, media ámbar (no cambia con la marca) */
+.nq-crit .notification-quick-icon { background: #FBE9E7; color: #D64539; }
+.nq-warn .notification-quick-icon { background: #FAF0DC; color: #C2841C; }
+
+.notification-quick-body {
+    min-width: 0;
+    flex: 1;
+    pointer-events: none;
 }
 
 .notification-quick-title {
     display: block;
-    color: var(--dash-ink);
-    font-size: 13px;
-    font-weight: 900;
-    line-height: 1.25;
+    color: var(--dash-navy);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1229,10 +1301,10 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .notification-quick-meta {
     display: block;
-    margin-top: 4px;
-    color: var(--dash-muted);
-    font-size: 11px;
-    font-weight: 700;
+    margin-top: 3px;
+    color: #939BAD;
+    font-size: 11.5px;
+    font-weight: 600;
     line-height: 1.25;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1240,24 +1312,38 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .notification-quick-go {
-    color: var(--dash-muted);
-    font-size: 12px;
+    margin-left: auto;
+    color: #B7BDCB;
+    font-size: 13px;
+    flex: none;
+    pointer-events: none;
 }
 
 .notification-quick-empty {
-    padding: 22px 14px;
-    color: var(--dash-muted);
+    padding: 26px 20px;
+    color: #939BAD;
     font-size: 13px;
-    font-weight: 750;
+    font-weight: 600;
     text-align: center;
 }
 
+.notification-quick-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #939BAD;
+    padding: 8px;
+    background: var(--dash-surface-warm, #FEFCF7);
+    border-top: 1px solid var(--dash-line-soft);
+}
+
 .notification-quick-push {
-    display: grid;
-    gap: 9px;
-    padding: 12px 14px;
+    padding: 15px 20px 16px;
     border-top: 1px solid var(--dash-line);
-    background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--dash-gold) 5%, #fff));
+    background: var(--dash-surface-warm, #FEFCF7);
 }
 
 .notification-quick-push-title {
@@ -1265,44 +1351,86 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     align-items: center;
     gap: 8px;
     color: var(--dash-navy);
-    font-size: 12px;
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.notification-quick-push-title i {
+    color: var(--dash-gold, var(--dash-accent));
+    font-size: 14px;
+}
+
+.notification-quick-push-status-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 5px 0 12px;
+}
+
+.notification-quick-push-check {
+    display: none;
+    color: #1E9E63;
+    font-size: 13px;
+    margin-top: 1px;
 }
 
 .notification-quick-push-status {
     margin: 0;
-    color: var(--dash-muted);
-    font-size: 11px;
-    line-height: 1.35;
-    font-weight: 700;
+    color: #6C7689;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.5;
 }
 
+/* Activo: se esconde el título y queda la línea sutil con check verde (diseño) */
+.notification-quick-push[data-push-state="enabled"] .notification-quick-push-title { display: none; }
+.notification-quick-push[data-push-state="enabled"] .notification-quick-push-check { display: inline-block; }
+.notification-quick-push[data-push-state="enabled"] .notification-quick-push-status-row { margin-top: 0; }
+.notification-quick-push[data-push-state="enabled"] { padding-top: 12px; }
+
 .notification-quick-push-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
+    display: flex;
+    gap: 9px;
 }
 
 .notification-quick-push-btn {
-    min-height: 34px;
+    flex: 1;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    border: 1px solid color-mix(in srgb, var(--dash-gold) 34%, var(--dash-line));
-    border-radius: 10px;
+    gap: 8px;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px;
     background: var(--dash-navy);
     color: var(--dash-on-brand);
-    font-size: 11px;
-    font-weight: 900;
+    font-size: 13.5px;
+    font-weight: 700;
     cursor: pointer;
+    transition: filter .14s ease;
+}
+
+.notification-quick-push-btn:hover:not(:disabled) { filter: brightness(1.06); }
+
+.notification-quick-push-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--dash-navy) 30%, transparent);
+    outline-offset: 2px;
 }
 
 .notification-quick-push-btn.secondary {
-    width: 36px;
+    flex: none;
+    width: 46px;
     padding: 0;
-    background: #fff;
+    background: var(--dash-surface, #fff);
+    color: #6C7689;
+    border: 1px solid var(--dash-line);
+}
+
+.notification-quick-push-btn.secondary:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--dash-gold, var(--dash-accent)) 45%, var(--dash-line));
     color: var(--dash-navy);
+    filter: none;
 }
 
 .notification-quick-push-btn:disabled {
@@ -1310,30 +1438,38 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     opacity: .62;
 }
 
+/* Desactivar = rojo semántico (diseño .nd-actbtn.deactivate) */
 .notification-quick-push[data-push-state="enabled"] .notification-quick-push-btn:not(.secondary) {
-    background: color-mix(in srgb, var(--dash-critical) 82%, #111827);
-    border-color: color-mix(in srgb, var(--dash-critical) 58%, var(--dash-line));
+    background: #A33B32;
+    color: #fff;
 }
 
 .notification-quick-all {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 42px;
-    padding: 0 14px;
+    gap: 7px;
+    min-height: 46px;
+    padding: 0 20px;
     border-top: 1px solid var(--dash-line);
     color: var(--dash-navy);
-    font-size: 12px;
-    font-weight: 900;
+    font-size: 13.5px;
+    font-weight: 700;
     text-decoration: none;
-    background: #fff;
+    background: var(--dash-surface, #fff);
 }
 
 .notification-quick-all:hover,
 .notification-quick-all:focus-visible {
-    background: color-mix(in srgb, var(--dash-gold) 7%, #fff);
+    color: var(--dash-gold, var(--dash-accent));
     outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-quick-panel,
+    .notification-quick-panel.nq-closing { animation: none; }
+    .notification-quick-row.settle,
+    .nq-swipe.gone { transition: none; }
 }
 
 .hero-title {
@@ -4078,14 +4214,14 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                              hidden>
                             <div class="notification-quick-head">
                                 <span>Pendientes</span>
-                                <strong><?= (int)$notificaciones_pendientes ?></strong>
+                                <strong data-notification-count><?= (int)$notificaciones_pendientes ?></strong>
                             </div>
 
-                            <div class="notification-quick-list">
+                            <div class="notification-quick-list" data-notification-list>
                                 <?php if (empty($notificaciones_recientes)): ?>
                                     <div class="notification-quick-empty">Sin pendientes operativos por ahora.</div>
                                 <?php else: ?>
-                                    <?php foreach (array_slice($notificaciones_recientes, 0, 4) as $notificacionQuick): ?>
+                                    <?php foreach (array_slice($notificaciones_recientes, 0, 8) as $notificacionQuick): ?>
                                         <?php
                                         $quickModulo = (string)($notificacionQuick['modulo'] ?? 'sistema');
                                         $quickId = (int)($notificacionQuick['id'] ?? 0);
@@ -4094,53 +4230,43 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                             ? url('notificaciones/' . $quickId . '/abrir')
                                             : url('notificaciones');
                                         $quickAutomatica = strpos((string)($notificacionQuick['tipo'] ?? ''), 'regla_') === 0;
+                                        $quickSeveridad = strtolower((string)($notificacionQuick['severidad'] ?? ''));
+                                        $quickSevClass = in_array($quickSeveridad, ['critica', 'alta'], true)
+                                            ? ' nq-crit'
+                                            : ($quickSeveridad === 'media' ? ' nq-warn' : '');
                                         ?>
-                                        <a class="notification-quick-row" href="<?= htmlspecialchars($quickHref, ENT_QUOTES, 'UTF-8') ?>">
-                                            <span class="notification-quick-icon">
-                                                <i class="fas <?= dashboard_safe(dashboard_notif_icon($quickModulo), 'fa-bell') ?>" aria-hidden="true"></i>
-                                            </span>
-                                            <span>
-                                                <span class="notification-quick-title"><?= dashboard_safe($notificacionQuick['titulo'] ?? 'Notificacion') ?></span>
-                                                <span class="notification-quick-meta">
-                                                    <?= dashboard_safe(dashboard_notif_label($quickModulo)) ?> · <?= dashboard_safe(dashboard_format_date($notificacionQuick['created_at'] ?? null, 'd/m H:i')) ?>
-                                                    <?= $quickAutomatica ? ' · Automatica' : '' ?>
+                                        <div class="nq-swipe" data-nq-swipe>
+                                            <div class="nq-swipe-bg" aria-hidden="true">
+                                                <i class="fas fa-check" aria-hidden="true"></i> Archivar
+                                            </div>
+                                            <a class="notification-quick-row<?= $quickSevClass ?>"
+                                               href="<?= htmlspecialchars($quickHref, ENT_QUOTES, 'UTF-8') ?>"
+                                               <?= $quickId > 0 ? 'data-archive-url="' . htmlspecialchars(url('notificaciones/' . $quickId . '/descartar'), ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+                                                <span class="notification-quick-icon">
+                                                    <i class="fas <?= dashboard_safe(dashboard_notif_icon($quickModulo), 'fa-bell') ?>" aria-hidden="true"></i>
                                                 </span>
-                                            </span>
-                                            <span class="notification-quick-go">
-                                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                                            </span>
-                                        </a>
+                                                <span class="notification-quick-body">
+                                                    <span class="notification-quick-title"><?= dashboard_safe($notificacionQuick['titulo'] ?? 'Notificacion') ?></span>
+                                                    <span class="notification-quick-meta">
+                                                        <?= dashboard_safe(dashboard_notif_label($quickModulo)) ?> · <?= dashboard_safe(dashboard_format_date($notificacionQuick['created_at'] ?? null, 'd/m H:i')) ?>
+                                                        <?= $quickAutomatica ? ' · Automática' : ' · Manual' ?>
+                                                    </span>
+                                                </span>
+                                                <span class="notification-quick-go">
+                                                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                                                </span>
+                                            </a>
+                                        </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="notification-quick-push"
-                                 data-pwa-push-panel
-                                 data-public-key-url="<?= url('api/pwa-push/public-key') ?>"
-                                 data-subscribe-url="<?= url('api/pwa-push/subscribe') ?>"
-                                 data-unsubscribe-url="<?= url('api/pwa-push/unsubscribe') ?>"
-                                 data-test-url="<?= url('api/pwa-push/test') ?>">
-                                <div class="notification-quick-push-title">
-                                    <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
-                                    Avisos del dispositivo
-                                </div>
-                                <p class="notification-quick-push-status" data-pwa-push-status>
-                                    Revisando compatibilidad...
-                                </p>
-                                <div class="notification-quick-push-actions">
-                                    <button type="button" class="notification-quick-push-btn" data-pwa-push-toggle>
-                                        <i class="fas fa-bell" aria-hidden="true"></i>
-                                        <span data-pwa-push-label>Activar en este dispositivo</span>
-                                    </button>
-                                    <button type="button"
-                                            class="notification-quick-push-btn secondary"
-                                            data-pwa-push-test
-                                            title="Enviar prueba"
-                                            hidden>
-                                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
-                                    </button>
-                                </div>
+                            <?php if (!empty($notificaciones_recientes)): ?>
+                            <div class="notification-quick-hint" data-notification-hint>
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                                Desliza una notificación a la izquierda para archivar
                             </div>
+                            <?php endif; ?>
 
                             <a class="notification-quick-all" href="<?= htmlspecialchars(url('notificaciones'), ENT_QUOTES, 'UTF-8') ?>">
                                 Ver todas
@@ -4835,7 +4961,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
     function placePanel() {
         const rect = button.getBoundingClientRect();
-        const width = Math.min(320, Math.max(280, window.innerWidth - 24));
+        const width = Math.min(372, Math.max(280, window.innerWidth - 24));
         const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
         const top = Math.min(window.innerHeight - 12, Math.max(12, rect.bottom + 10));
 
@@ -4844,26 +4970,60 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         panel.style.top = top + 'px';
     }
 
+    let hoverTimer = null;   // retardo de gracia para intención de hover
+    let animTimer = null;    // limpieza tras la animación de cierre
+
+    function clearHoverTimer() {
+        if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    }
+
     function openPanel() {
+        clearHoverTimer();
+        if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+        panel.classList.remove('nq-closing');
         panel.hidden = false;
         button.setAttribute('aria-expanded', 'true');
         placePanel();
     }
 
     function closePanel() {
-        panel.hidden = true;
+        clearHoverTimer();
+        if (panel.hidden || panel.classList.contains('nq-closing')) {
+            return;
+        }
+        // Deja correr la animación de salida antes de ocultar de verdad.
+        panel.classList.add('nq-closing');
         button.setAttribute('aria-expanded', 'false');
+        animTimer = setTimeout(function () {
+            panel.hidden = true;
+            panel.classList.remove('nq-closing');
+            animTimer = null;
+        }, 180);
     }
 
     button.addEventListener('click', function (event) {
         event.stopPropagation();
-        if (panel.hidden) {
+        if (panel.hidden || panel.classList.contains('nq-closing')) {
             openPanel();
             return;
         }
 
         closePanel();
     });
+
+    // ── Apertura/cierre por hover (solo con puntero fino: mouse/trackpad) ──
+    // Al entrar al timbre o al panel se abre; al salir se cierra con un
+    // pequeño retardo para poder cruzar el hueco entre botón y panel.
+    if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        var scheduleClose = function () {
+            clearHoverTimer();
+            hoverTimer = setTimeout(closePanel, 220);
+        };
+        [root, panel].forEach(function (el) {
+            el.addEventListener('mouseenter', openPanel);
+            el.addEventListener('mouseleave', scheduleClose);
+        });
+    }
 
     document.addEventListener('click', function (event) {
         if (!(event.target instanceof Element)) {
@@ -4893,5 +5053,128 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             placePanel();
         }
     }, true);
+
+    // ── Swipe-para-archivar (iOS style) ─────────────────────────────
+    // Deslizar una fila a la izquierda archiva la notificación con un
+    // POST real a /notificaciones/{id}/descartar (mismo estado que "archivar"
+    // en el centro de notificaciones). El click normal sigue navegando.
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    const headCount = panel.querySelector('[data-notification-count]');
+    const list = panel.querySelector('[data-notification-list]');
+    const THRESHOLD = 96;
+    let pendientes = headCount ? (parseInt(headCount.textContent, 10) || 0) : 0;
+
+    function renderCounts() {
+        if (headCount) {
+            headCount.textContent = pendientes;
+        }
+        const badge = button.querySelector('.notification-count');
+        const dot = button.querySelector('.notification-dot');
+        if (pendientes <= 0) {
+            if (badge) badge.remove();
+            if (dot) dot.remove();
+            button.classList.remove('has-notifications');
+        } else if (badge) {
+            badge.textContent = pendientes > 99 ? '99+' : String(pendientes);
+        }
+    }
+
+    function onArchived(sw) {
+        sw.classList.add('gone');
+        sw.style.height = '0px';
+        pendientes = Math.max(0, pendientes - 1);
+        renderCounts();
+        setTimeout(function () {
+            sw.remove();
+            if (list && !list.querySelector('[data-nq-swipe]')) {
+                list.innerHTML = '<div class="notification-quick-empty">Sin pendientes operativos por ahora.</div>';
+                const hint = panel.querySelector('[data-notification-hint]');
+                if (hint) hint.remove();
+            }
+        }, 340);
+    }
+
+    function archiveRow(sw, row) {
+        row.classList.add('settle');
+        row.style.transform = 'translateX(-110%)';
+        sw.style.height = sw.offsetHeight + 'px';
+
+        const body = new URLSearchParams();
+        body.set('csrf_token', csrfToken);
+
+        fetch(row.dataset.archiveUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: body
+        }).then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            onArchived(sw);
+        }).catch(function () {
+            sw.style.height = '';
+            row.style.transform = 'translateX(0)';
+            if (typeof window.msToast === 'function') {
+                window.msToast('No se pudo archivar la notificación.', 'error');
+            }
+        });
+    }
+
+    if (list) {
+        list.querySelectorAll('[data-nq-swipe]').forEach(function (sw) {
+            const row = sw.querySelector('.notification-quick-row');
+            if (!row || !row.dataset.archiveUrl) return;
+
+            let startX = 0, startY = 0, dx = 0;
+            let active = false, decided = false, horiz = false;
+
+            row.addEventListener('pointerdown', function (e) {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                startX = e.clientX; startY = e.clientY;
+                dx = 0; active = true; decided = false; horiz = false;
+                row.classList.remove('settle');
+            });
+
+            row.addEventListener('pointermove', function (e) {
+                if (!active) return;
+                const mx = e.clientX - startX;
+                const my = e.clientY - startY;
+                if (!decided && (Math.abs(mx) > 6 || Math.abs(my) > 6)) {
+                    decided = true;
+                    horiz = Math.abs(mx) > Math.abs(my);
+                    if (horiz) {
+                        row.classList.add('dragging');
+                        try { row.setPointerCapture(e.pointerId); } catch (err) {}
+                    }
+                }
+                if (!horiz) return;
+                if (e.cancelable) e.preventDefault();
+                dx = Math.min(0, mx); // solo hacia la izquierda
+                row.style.transform = 'translateX(' + dx + 'px)';
+            });
+
+            function finishDrag() {
+                if (!active) return;
+                active = false;
+                row.classList.remove('dragging');
+                if (horiz) {
+                    // Suprime la navegación del click que sigue al arrastre
+                    row.dataset.dragged = '1';
+                    setTimeout(function () { delete row.dataset.dragged; }, 0);
+                    if (dx < -THRESHOLD) {
+                        archiveRow(sw, row);
+                    } else {
+                        row.classList.add('settle');
+                        row.style.transform = 'translateX(0)';
+                    }
+                }
+            }
+
+            row.addEventListener('pointerup', finishDrag);
+            row.addEventListener('pointercancel', finishDrag);
+            row.addEventListener('click', function (e) {
+                if (row.dataset.dragged === '1') e.preventDefault();
+            });
+        });
+    }
 })();
 </script>

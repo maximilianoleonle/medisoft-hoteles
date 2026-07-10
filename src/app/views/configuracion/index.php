@@ -3913,6 +3913,359 @@ html {
         min-width: 0;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Capa boutique (Claude Design configuracion.html · Deleite Sereno).
+   Solo re-tematiza vía tokens --hc-*: el re-mapeo dark de dark-theme.css
+   (html[data-theme="dark"] .hc-page) tiene mayor especificidad y gana.
+   ═══════════════════════════════════════════════════════════════════ */
+.hc-page {
+    --hc-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --hc-brand-strong: var(--brand-action-bg-hover, color-mix(in srgb, var(--hc-brand) 84%, #0B1220));
+    --hc-on-brand: var(--brand-action-text, #FFFEFB);
+    --hc-accent: var(--brand-accent, #B0883F);
+    --hc-gold-bg: color-mix(in srgb, var(--hc-accent) 16%, var(--hc-paper, #FFFDF6));
+    --hc-gold-line: color-mix(in srgb, var(--hc-accent) 34%, var(--hc-line));
+    --hc-gold-soft: color-mix(in srgb, var(--hc-accent) 55%, var(--hc-on-brand));
+    --hc-bg: #F6F2EA;
+    --hc-bg-deep: #F1EBDF;
+    --hc-surface: var(--hc-paper, #FFFFFF);
+    --hc-surface-muted: color-mix(in srgb, var(--hc-accent) 4%, var(--hc-paper, #FEFCF7));
+    --hc-ink: var(--hc-ink-mix, #1B2746);
+    --hc-ink-soft: #3E4A66;
+    --hc-ink-faint: #6C7689;
+    --hc-line: #ECE5D8;
+    --hc-line-strong: #E0D7C6;
+    --hc-success: #1E9E63;
+    --hc-success-bg: #E7F4EC;
+    --hc-shadow: 0 2px 8px rgba(27,39,70,.045), 0 12px 28px rgba(27,39,70,.055);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hc-bg) 40%, var(--hc-paper, #FBF8F2)), var(--hc-bg) 60%);
+}
+
+html[data-theme="dark"] .hc-page {
+    background: linear-gradient(180deg, var(--hc-bg), var(--hc-bg-deep));
+}
+
+/* ── Cabecera: tile navy con ícono dorado + serif ── */
+.hc-page .hc-hero-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(150deg, var(--hc-brand), var(--hc-brand-strong));
+    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--hc-brand) 72%, #111827);
+    border: 0;
+}
+
+.hc-page .hc-hero-icon i {
+    color: var(--hc-gold-soft);
+    font-size: 1.35rem;
+}
+
+.hc-page .hc-title {
+    font-family: var(--hc-serif);
+    font-size: clamp(1.85rem, 3vw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--hc-ink);
+    line-height: 1;
+}
+
+.hc-page .hc-subtitle { color: var(--hc-ink-faint); font-weight: 500; }
+.hc-page .hc-eyebrow { color: var(--hc-ink-faint); }
+
+.hc-page .hc-chip {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    border-radius: 999px;
+    color: var(--hc-ink-soft);
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(27,39,70,.05);
+}
+
+.hc-page .hc-chip i { color: var(--hc-accent); }
+
+/* El diseño concentra la identidad en el chip del hotel: sin aside duplicado */
+.hc-page .hc-identity { display: none; }
+.hc-page .hc-top { grid-template-columns: minmax(0, 1fr); }
+
+/* ── Riel de pestañas ── */
+.hc-page .hc-nav-card {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.05);
+}
+
+.hc-page .hc-nav-head { display: none; }
+
+.hc-page .hc-nav .hc-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    color: var(--hc-ink-soft);
+    border: 1px solid transparent;
+}
+
+.hc-page .hc-nav .hc-nav-link i {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--hc-surface-muted);
+    color: var(--hc-ink-faint);
+    display: grid;
+    place-items: center;
+    font-size: .82rem;
+    flex: none;
+    transition: background .14s ease, color .14s ease;
+}
+
+.hc-page .hc-nav .hc-nav-link strong { font-weight: 600; color: inherit; }
+
+.hc-page .hc-nav .hc-nav-link strong span {
+    display: block;
+    font-size: .69rem;
+    font-weight: 500;
+    color: var(--hc-ink-faint);
+    margin-top: 1px;
+}
+
+.hc-page .hc-nav .hc-nav-link:hover { background: var(--hc-surface-muted); color: var(--hc-ink); }
+
+.hc-page .hc-nav .hc-nav-link.is-active {
+    background: var(--hc-brand);
+    color: var(--hc-on-brand);
+    box-shadow: 0 10px 20px -16px color-mix(in srgb, var(--hc-brand) 80%, #111827);
+}
+
+.hc-page .hc-nav .hc-nav-link.is-active i {
+    background: color-mix(in srgb, var(--hc-on-brand) 16%, transparent);
+    color: var(--hc-gold-soft);
+}
+
+.hc-page .hc-nav .hc-nav-link.is-active strong span {
+    color: color-mix(in srgb, var(--hc-on-brand) 62%, transparent);
+}
+
+.hc-page .hc-nav-foot { color: var(--hc-ink-faint); }
+
+/* ── Encabezados de panel: serif + chip dorado ── */
+.hc-page .hc-panel.is-active { animation: hcPin .24s ease; }
+
+@keyframes hcPin {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.hc-page .hc-panel-title {
+    font-family: var(--hc-serif);
+    font-weight: 600;
+    color: var(--hc-ink);
+}
+
+.hc-page .hc-section-mark {
+    background: var(--hc-gold-bg);
+    color: var(--hc-accent);
+    border: 0;
+    border-radius: 11px;
+}
+
+.hc-page .hc-section-kicker { color: var(--hc-ink-faint); }
+.hc-page .hc-panel-copy { color: var(--hc-ink-faint); }
+
+.hc-page .hc-badge {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    color: var(--hc-ink-soft);
+    border-radius: 999px;
+}
+
+/* ── Cajas de contenido = card2 del diseño ── */
+.hc-page .hc-notification-block,
+.hc-page .hc-policy-box,
+.hc-page .hc-catalog-box,
+.hc-page .hc-system-block,
+.hc-page .hc-owner-flow-card,
+.hc-page .hc-theme-card {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.05);
+}
+
+.hc-page .hc-group-title {
+    font-family: var(--hc-serif);
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--hc-ink);
+}
+
+.hc-page .hc-group-title i { color: var(--hc-accent); }
+.hc-page .hc-group-hint { color: var(--hc-ink-faint); }
+
+/* ── Resumen solo lectura (rstat) ── */
+.hc-page .hc-stat {
+    border: 1px solid var(--hc-line);
+    border-radius: 14px;
+    background: var(--hc-surface-muted);
+    box-shadow: none;
+}
+
+.hc-page .hc-stat.is-featured {
+    background: linear-gradient(135deg, var(--hc-gold-bg), color-mix(in srgb, var(--hc-accent) 24%, var(--hc-paper, #FBF3E1)));
+    border-color: var(--hc-gold-line);
+}
+
+.hc-page .hc-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    color: var(--hc-accent);
+}
+
+.hc-page .hc-stat-label {
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--hc-ink-faint);
+}
+
+.hc-page .hc-stat-value { font-weight: 700; color: var(--hc-ink); }
+.hc-page .hc-stat-detail { color: var(--hc-ink-faint); }
+
+/* ── Switch rows (swrow): verde semántico al activar ── */
+.hc-page .hc-switch {
+    border: 1px solid var(--hc-line);
+    border-radius: 13px;
+    background: var(--hc-surface-muted);
+    transition: border-color .14s ease, background .14s ease;
+}
+
+.hc-page .hc-switch:hover { border-color: var(--hc-gold-line); }
+
+.hc-page .hc-switch:has(input:checked) {
+    background: color-mix(in srgb, var(--hc-success) 7%, var(--hc-surface));
+    border-color: color-mix(in srgb, var(--hc-success) 35%, var(--hc-line));
+    box-shadow: none;
+}
+
+.hc-page .hc-switch .hc-switch-ui {
+    width: 46px;
+    height: 27px;
+    border-radius: 99px;
+    background: var(--hc-line-strong);
+    position: relative;
+    flex: none;
+    transition: background .2s ease;
+}
+
+.hc-page .hc-switch .hc-switch-ui::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: var(--hc-paper, #fff);
+    box-shadow: 0 1px 2px rgba(27,39,70,.18);
+    transition: transform .2s ease;
+}
+
+.hc-page .hc-switch:has(input:checked) .hc-switch-ui { background: var(--hc-success); }
+.hc-page .hc-switch:has(input:checked) .hc-switch-ui::after { transform: translateX(19px); }
+
+.hc-page .hc-switch-text strong { font-weight: 700; color: var(--hc-ink); }
+.hc-page .hc-switch-text small { color: var(--hc-ink-faint); }
+
+/* ── Filas de catálogo ── */
+.hc-page .hc-catalog-row {
+    border: 1px solid var(--hc-line);
+    border-radius: 12px;
+    background: var(--hc-surface-muted);
+}
+
+/* ── Dispositivos ── */
+.hc-page .hc-device-row {
+    border: 1px solid var(--hc-line);
+    border-radius: 14px;
+    background: var(--hc-surface-muted);
+}
+
+.hc-page .hc-device-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    color: var(--hc-ink);
+}
+
+/* ── Save dock y botones ── */
+.hc-page .hc-save-dock {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-line);
+    border-radius: 16px;
+    box-shadow: var(--hc-shadow);
+}
+
+.hc-page .hc-save-copy i { color: var(--hc-accent); }
+
+.hc-page .hc-btn-primary {
+    background: var(--hc-brand);
+    color: var(--hc-on-brand);
+    border: 0;
+    border-radius: 12px;
+    font-weight: 700;
+    box-shadow: 0 10px 20px -14px color-mix(in srgb, var(--hc-brand) 75%, #111827);
+}
+
+.hc-page .hc-btn-primary:hover {
+    background: var(--hc-brand-strong);
+    transform: translateY(-1px);
+}
+
+.hc-page .hc-link-btn {
+    background: var(--hc-surface);
+    color: var(--hc-ink-soft);
+    border: 1px solid var(--hc-line);
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.hc-page .hc-link-btn:hover {
+    border-color: var(--hc-gold-line);
+    color: var(--hc-ink);
+}
+
+/* ── Campos: superficie cálida + foco dorado ── */
+.hc-page .hc-field input:not([type="checkbox"]):not([type="radio"]),
+.hc-page .hc-field select,
+.hc-page .hc-field textarea {
+    background: var(--hc-surface-muted);
+    border: 1px solid var(--hc-line);
+    border-radius: 11px;
+    color: var(--hc-ink);
+}
+
+.hc-page .hc-field input:not([type="checkbox"]):not([type="radio"]):focus,
+.hc-page .hc-field select:focus,
+.hc-page .hc-field textarea:focus {
+    border-color: color-mix(in srgb, var(--hc-accent) 55%, var(--hc-line));
+    box-shadow: 0 0 0 3px var(--hc-gold-bg);
+    background: var(--hc-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hc-page .hc-panel.is-active { animation: none; }
+    .hc-page .hc-switch .hc-switch-ui,
+    .hc-page .hc-switch .hc-switch-ui::after { transition: none; }
+}
 </style>
 
 <div class="hc-page" data-active-section="hc-readonly">

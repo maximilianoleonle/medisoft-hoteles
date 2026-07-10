@@ -189,12 +189,25 @@ class NotificacionController extends Controller {
         $hotelId = $this->hotelIdActual();
 
         if ($id <= 0 || !$this->notificacionModel->buscarPorIdHotel($id, $hotelId)) {
+            if ($this->isAjax()) {
+                View::renderJSON(['success' => false, 'message' => 'Notificacion no encontrada.'], 404);
+                return;
+            }
             set_mensaje('Notificacion no encontrada.', 'error');
             $this->redirect('notificaciones');
             return;
         }
 
         $ok = $this->notificacionModel->cambiarEstado($id, $hotelId, $estado);
+
+        if ($this->isAjax()) {
+            View::renderJSON([
+                'success' => $ok,
+                'message' => $ok ? $mensajeExito : 'No se pudo actualizar la notificacion.',
+            ], $ok ? 200 : 500);
+            return;
+        }
+
         set_mensaje($ok ? $mensajeExito : 'No se pudo actualizar la notificacion.', $ok ? 'success' : 'error');
         $this->redirect($_SERVER['HTTP_REFERER'] ?? 'notificaciones');
     }

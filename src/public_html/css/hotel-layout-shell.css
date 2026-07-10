@@ -489,6 +489,25 @@ body.hotel-layout-scope {
     text-align: center;
 }
 
+.hotel-layout-scope .hotel-boutique-home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 13px;
+    transition: opacity .15s ease, transform .15s ease;
+}
+
+.hotel-layout-scope .hotel-boutique-home:hover {
+    opacity: .82;
+}
+
+.hotel-layout-scope .hotel-boutique-home:active {
+    transform: scale(.98);
+}
+
 .hotel-layout-scope .hotel-boutique-mark {
     width: 46px;
     height: 46px;

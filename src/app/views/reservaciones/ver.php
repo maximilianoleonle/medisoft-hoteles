@@ -4029,7 +4029,14 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         .rda-head-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: #E7F5EC; color: #15835A; font-size: 1rem; }
                         .rda-head-txt { flex: 1 1 auto; min-width: 0; }
                         .rda-sub { margin: 2px 0 0; font-size: .78rem; font-weight: 600; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .rda-backdrop { position: fixed; inset: 0; z-index: 10060; background: rgba(15,23,42,.5); opacity: 0; transition: opacity .25s ease; }
+                        .rda-backdrop.is-open { opacity: 1; }
+                        .rda-sheet[hidden], .rda-backdrop[hidden] { display: none !important; }
+                        .rda-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10061; max-height: 92dvh; display: flex; flex-direction: column; background: #FBF9F5; border-radius: 20px 20px 0 0; box-shadow: 0 -18px 48px -20px rgba(15,23,42,.4); transform: translateY(100%); transition: transform .3s cubic-bezier(.22,1,.36,1); padding-bottom: env(safe-area-inset-bottom, 0px); }
+                        .rda-sheet.is-open { transform: translateY(0); }
                         /* ── En escritorio el mismo wizard es un modal CENTRADO ── */
+                        /* Debe ir DESPUÉS de las reglas base móviles: misma especificidad,
+                           gana por orden de fuente y sobrescribe el bottom-sheet. */
                         @media (min-width: 781px) {
                             .rda-backdrop { background: rgba(15,23,42,.45); }
                             .rda-sheet {
@@ -4044,11 +4051,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             }
                             .rda-sheet.is-open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
                         }
-                        .rda-backdrop { position: fixed; inset: 0; z-index: 10060; background: rgba(15,23,42,.5); opacity: 0; transition: opacity .25s ease; }
-                        .rda-backdrop.is-open { opacity: 1; }
-                        .rda-sheet[hidden], .rda-backdrop[hidden] { display: none !important; }
-                        .rda-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10061; max-height: 92dvh; display: flex; flex-direction: column; background: #FBF9F5; border-radius: 20px 20px 0 0; box-shadow: 0 -18px 48px -20px rgba(15,23,42,.4); transform: translateY(100%); transition: transform .3s cubic-bezier(.22,1,.36,1); padding-bottom: env(safe-area-inset-bottom, 0px); }
-                        .rda-sheet.is-open { transform: translateY(0); }
                         .rda-form { display: flex; flex-direction: column; min-height: 0; }
                         .rda-head { display: flex; align-items: center; gap: 12px; padding: 20px 26px 14px !important; }
                         .rda-head h3 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.28rem; color: #1E293B; font-weight: 600; }
@@ -6430,7 +6432,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
 </div>
 
 <div id="modalCotizacion" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 420px; border-radius: 16px; overflow: hidden;">
+    <div class="modal-content" style="width: 480px; border-radius: 16px; overflow: hidden;">
         <!-- Header -->
         <div class="modal-header" style="padding: 1.25rem; border-bottom: 2px solid #F3F4F6; background: linear-gradient(135deg, #78350F 0%, #92400E 50%, #A16207 100%); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0; color: white; display: flex; align-items: center; gap: 0.5rem;">
@@ -6471,51 +6473,38 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                 </div>
             </div>
 
-            <!-- Campo de anticipo -->
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 6px;">
-                    <i class="fas fa-hand-holding-usd" style="color: #059669; margin-right: 6px;"></i>
-                    Anticipo del cliente (opcional)
-                </label>
-                <p style="font-size: 0.7rem; color: #6B7280; margin-bottom: 8px;">
-                    Este monto es solo para la cotización, no se registrará en el sistema.
-                </p>
-                <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; font-weight: 700; color: #059669;">$</span>
-                    <input type="number"
-                           id="inputAnticipoCotizacion"
-                           data-money-format="true"
-                           min="0"
-                           max="<?= $reservacion['precio_total'] ?>"
-                           step="1"
-                           value="0"
-                           placeholder="0"
-                           oninput="actualizarSaldoCotizacion()"
-                           style="width: 100%; padding: 12px 12px 12px 28px; border: 2px solid #D1D5DB; border-radius: 10px; font-size: 1.1rem; font-weight: 700; color: #374151; transition: border-color 0.2s, box-shadow 0.2s; background: #F9FAFB;"
-                           onfocus="this.style.borderColor='#059669'; this.style.boxShadow='0 0 0 3px rgba(5,150,105,0.15)';"
-                           onblur="this.style.borderColor='#D1D5DB'; this.style.boxShadow='none';">
-                </div>
-            </div>
-
-            <!-- Resumen de saldo -->
-            <div id="resumenSaldoCotizacion" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 10px; padding: 12px; margin-bottom: 16px; display: none;">
+            <?php
+                // El anticipo de la cotización se toma de los pagos ya registrados
+                // (abonos/anticipos). El backend usa ese mismo valor real, así que
+                // aquí solo lo mostramos; ya no se captura a mano.
+                $cotTotal       = (float)($reservacion['precio_total'] ?? 0);
+                $cotAnticipo    = (float)($rpResumen['pagado'] ?? 0);
+                $cotSaldo       = (float)($rpResumen['saldo'] ?? max(0, $cotTotal - $cotAnticipo));
+                $cotConAnticipo = $cotAnticipo > 0.004;
+            ?>
+            <!-- Resumen de saldo (anticipo real ya registrado; no editable) -->
+            <div style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 10px; padding: 12px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                     <span style="font-size: 0.8rem; color: #065F46;">Total estancia:</span>
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #065F46;">
-                        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-                    </span>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #065F46;"><?= format_money($cotTotal) ?></span>
                 </div>
+                <?php if ($cotConAnticipo): ?>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.8rem; color: #059669;">Anticipo:</span>
-                    <span id="txtAnticipoCotizacion" style="font-size: 0.8rem; font-weight: 600; color: #059669;">-$0</span>
+                    <span style="font-size: 0.8rem; color: #059669;"><i class="fas fa-hand-holding-usd" style="margin-right: 5px;"></i>Anticipo registrado:</span>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #059669;">-<?= format_money($cotAnticipo) ?></span>
                 </div>
+                <?php endif; ?>
                 <div style="border-top: 1px dashed #BBF7D0; padding-top: 6px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.875rem; font-weight: 700; color: #065F46;">Saldo pendiente:</span>
-                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 600; color: #065F46;">
-                        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-                    </span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: #065F46;"><?= format_money($cotConAnticipo ? $cotSaldo : $cotTotal) ?></span>
                 </div>
             </div>
+            <?php if (!$cotConAnticipo): ?>
+            <p style="font-size: 0.72rem; color: #6B7280; margin: -6px 0 16px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-circle-info" style="color: #9CA3AF;"></i>
+                El anticipo se toma de los pagos registrados. Esta reservación aún no tiene anticipos.
+            </p>
+            <?php endif; ?>
 
             <!-- Botones -->
             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -6542,7 +6531,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
 <form id="formCotizacionReservacion" method="POST" action="<?= url('reservaciones/cotizacion-reservacion-pdf') ?>" target="_blank" style="display:none;">
     <?= csrf_field() ?>
     <input type="hidden" name="reservacion_id" value="<?= $reservacion['id'] ?>">
-    <input type="hidden" name="anticipo" id="hiddenAnticipoCotizacion" value="0">
+    <input type="hidden" name="anticipo" id="hiddenAnticipoCotizacion" value="<?= (float)($cotAnticipo ?? 0) ?>">
 </form>
 <!-- Formularios ocultos para acciones rápidas -->
 
@@ -6563,163 +6552,15 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
 
 
 
-<!-- ─────────────────────────────────────────────────────────────
-
-
-<!-- Modal Cotización con Anticipo -->
-<div id="modalCotizacion" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 420px; border-radius: 16px; overflow: hidden;">
-        <!-- Header -->
-        <div class="modal-header" style="padding: 1.25rem; border-bottom: 2px solid #F3F4F6; background: linear-gradient(135deg, #78350F 0%, #92400E 50%, #A16207 100%); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0; color: white; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-file-pdf" style="color: #FDE68A;"></i>
-                Generar Cotización PDF
-            </h3>
-            <button onclick="cerrarModalCotizacion()" style="background: rgba(255,255,255,0.15); border: none; cursor: pointer; color: white; font-size: 1rem; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <!-- Body -->
-        <div style="padding: 1.25rem;">
-            <!-- Resumen de la reservación -->
-            <div style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 2px solid #F59E0B; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 0.75rem; font-weight: 600; color: #92400E; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-calendar-check" style="margin-right: 4px;"></i>
-                        Reservación #<?= $reservacion['id'] ?>
-                    </span>
-                    <span style="font-size: 0.75rem; color: #92400E;">
-                        <?= $noches ?> noche<?= $noches > 1 ? 's' : '' ?>
-                    </span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                    <div>
-                        <p style="font-size: 0.8rem; color: #78350F; font-weight: 600;">
-                            <?= htmlspecialchars($huesped['nombre_completo']) ?>
-                        </p>
-                        <p style="font-size: 0.7rem; color: #92400E; margin-top: 2px;">
-                            <?= count($habitaciones) ?> habitación<?= count($habitaciones) > 1 ? 'es' : '' ?>
-                            · <?= date('d/m/Y', strtotime($reservacion['fecha_entrada'])) ?> al <?= date('d/m/Y', strtotime($reservacion['fecha_salida'])) ?>
-                        </p>
-                    </div>
-                    <p style="font-weight: 600; font-size: 1.25rem; color: #78350F;">
-                        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Campo de anticipo -->
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 6px;">
-                    <i class="fas fa-hand-holding-usd" style="color: #059669; margin-right: 6px;"></i>
-                    Anticipo del cliente (opcional)
-                </label>
-                <p style="font-size: 0.7rem; color: #6B7280; margin-bottom: 8px;">
-                    Este monto es solo para la cotización, no se registrará en el sistema.
-                </p>
-                <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; font-weight: 700; color: #059669;">$</span>
-                    <input type="number"
-                           id="inputAnticipoCotizacion"
-                           data-money-format="true"
-                           min="0"
-                           max="<?= $reservacion['precio_total'] ?>"
-                           step="1"
-                           value="0"
-                           placeholder="0"
-                           oninput="actualizarSaldoCotizacion()"
-                           style="width: 100%; padding: 12px 12px 12px 28px; border: 2px solid #D1D5DB; border-radius: 10px; font-size: 1.1rem; font-weight: 700; color: #374151; transition: border-color 0.2s, box-shadow 0.2s; background: #F9FAFB;"
-                           onfocus="this.style.borderColor='#059669'; this.style.boxShadow='0 0 0 3px rgba(5,150,105,0.15)';"
-                           onblur="this.style.borderColor='#D1D5DB'; this.style.boxShadow='none';">
-                </div>
-            </div>
-
-            <!-- Resumen de saldo -->
-            <div id="resumenSaldoCotizacion" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 10px; padding: 12px; margin-bottom: 16px; display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.8rem; color: #065F46;">Total estancia:</span>
-                    <span style="font-size: 0.8rem; font-weight: 600; color: #065F46;">
-                        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-                    </span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.8rem; color: #059669;">Anticipo:</span>
-                    <span id="txtAnticipoCotizacion" style="font-size: 0.8rem; font-weight: 600; color: #059669;">-$0</span>
-                </div>
-                <div style="border-top: 1px dashed #BBF7D0; padding-top: 6px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.875rem; font-weight: 700; color: #065F46;">Saldo pendiente:</span>
-                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 600; color: #065F46;">
-                        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-                    </span>
-                </div>
-            </div>
-
-            <!-- Botones -->
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button onclick="generarCotizacionPdf()"
-                        style="width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: white; background: linear-gradient(135deg, #D97706, #B45309); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(217,119,6,0.3); transition: transform 0.2s, box-shadow 0.2s;"
-                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(217,119,6,0.4)';"
-                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(217,119,6,0.3)';">
-                    <i class="fas fa-file-pdf"></i>
-                    Generar Cotización PDF
-                </button>
-                <button onclick="cerrarModalCotizacion()"
-                        style="width: 100%; padding: 9px; border-radius: 9px; border: 1.5px solid #E5E7EB; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #6B7280; background: white; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s;"
-                        onmouseover="this.style.background='#F9FAFB';"
-                        onmouseout="this.style.background='white';">
-                    <i class="fas fa-times" style="font-size: 0.75rem;"></i>
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Form oculto para enviar cotización -->
-<form id="formCotizacionReservacion" method="POST" action="<?= url('reservaciones/cotizacion-reservacion-pdf') ?>" target="_blank" style="display:none;">
-    <?= csrf_field() ?>
-    <input type="hidden" name="reservacion_id" value="<?= $reservacion['id'] ?>">
-    <input type="hidden" name="anticipo" id="hiddenAnticipoCotizacion" value="0">
-</form>
 
 
 
 <script>
 // =============================================
-// COTIZACIÓN PDF CON ANTICIPO
+// COTIZACIÓN PDF (anticipo tomado de los pagos ya registrados)
 // =============================================
-const TOTAL_RESERVACION_COTIZACION = <?= floatval($reservacion['precio_total']) ?>;
-
-function cotizacionMoneyValue(inputOrValue) {
-    if (window.MedisoftMoneyInput) {
-        return window.MedisoftMoneyInput.read(inputOrValue);
-    }
-
-    const value = inputOrValue && typeof inputOrValue === 'object' && 'value' in inputOrValue
-        ? inputOrValue.value
-        : inputOrValue;
-
-    return parseFloat(String(value || '').replace(/,/g, '')) || 0;
-}
-
-function setCotizacionMoneyValue(input, value) {
-    if (!input) {
-        return;
-    }
-
-    if (window.MedisoftMoneyInput) {
-        window.MedisoftMoneyInput.set(input, value, { fixed: false });
-    } else {
-        input.value = value;
-    }
-}
-
 function abrirModalCotizacion() {
-    setCotizacionMoneyValue(document.getElementById('inputAnticipoCotizacion'), 0);
-    const resumenSaldo = document.getElementById('resumenSaldoCotizacion');
     const modalCotizacion = document.getElementById('modalCotizacion');
-    if (resumenSaldo) resumenSaldo.style.display = 'none';
     if (modalCotizacion) modalCotizacion.style.display = 'flex';
 }
 
@@ -6730,34 +6571,9 @@ function cerrarModalCotizacion() {
 window.abrirModalCotizacion = abrirModalCotizacion;
 window.cerrarModalCotizacion = cerrarModalCotizacion;
 
-function actualizarSaldoCotizacion() {
-    const input = document.getElementById('inputAnticipoCotizacion');
-    let anticipo = cotizacionMoneyValue(input);
-
-    // Validar que no exceda el total
-    if (anticipo > TOTAL_RESERVACION_COTIZACION) {
-        anticipo = TOTAL_RESERVACION_COTIZACION;
-        setCotizacionMoneyValue(input, anticipo);
-    }
-    if (anticipo < 0) {
-        anticipo = 0;
-        setCotizacionMoneyValue(input, 0);
-    }
-
-    const resumenDiv = document.getElementById('resumenSaldoCotizacion');
-    if (anticipo > 0) {
-        resumenDiv.style.display = 'block';
-        document.getElementById('txtAnticipoCotizacion').textContent = '-$' + anticipo.toLocaleString('es-MX');
-        const saldo = TOTAL_RESERVACION_COTIZACION - anticipo;
-        document.getElementById('txtSaldoCotizacion').textContent = '$' + saldo.toLocaleString('es-MX');
-    } else {
-        resumenDiv.style.display = 'none';
-    }
-}
-
 function generarCotizacionPdf() {
-    const anticipo = cotizacionMoneyValue(document.getElementById('inputAnticipoCotizacion'));
-    document.getElementById('hiddenAnticipoCotizacion').value = anticipo;
+    // El anticipo real ya viaja en el form oculto (server-side) y el backend
+    // lo recalcula desde los pagos registrados. Aquí solo enviamos.
     if (window.MedisoftMobileFiles && window.MedisoftMobileFiles.isMobile()) {
         window.MedisoftMobileFiles.showHint('cotizacion PDF', false);
     }

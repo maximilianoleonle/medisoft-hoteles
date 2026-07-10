@@ -1,5 +1,3 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
-
 <!-- CSS crítico inline para prevenir FOUC -->
 <style>
 :root {
@@ -331,5 +329,3 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.salida-view').classList.add('loaded');
 });
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>

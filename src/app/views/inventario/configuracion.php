@@ -1,4 +1,3 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
 <?php
 $productos_automaticos = $productos_automaticos ?? [];
 $configuracion = $configuracion ?? [];
@@ -1403,5 +1402,3 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarTotales();
 });
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>

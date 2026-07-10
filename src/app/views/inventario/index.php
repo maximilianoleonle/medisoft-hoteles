@@ -1,5 +1,3 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
-
 <style>
 /* ══════════════════════════════════════════
    Control de Inventario
@@ -2163,5 +2161,3 @@ function eliminarProducto(id) {
     form.submit();
 }
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>

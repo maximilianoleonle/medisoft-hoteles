@@ -256,10 +256,12 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         </div>
         <?php else: ?>
         <div class="hotel-boutique-brand" aria-label="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
-            <div class="hotel-boutique-mark">
-                <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
-            </div>
-            <div class="hotel-boutique-name"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></div>
+            <a href="<?= url('dashboard') ?>" class="hotel-boutique-home" aria-label="Ir al dashboard">
+                <div class="hotel-boutique-mark">
+                    <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+                <div class="hotel-boutique-name"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></div>
+            </a>
             <div class="hotel-boutique-rule">
                 <span></span>
                 <strong>OPERACIÓN HOTELERA</strong>
@@ -1099,6 +1101,12 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 <?php endif; ?>
 
 <script src="<?= asset('js/sidebar-scripts.js') ?>"></script>
+
+<?php if (!$sidebarEsPanelSaas): ?>
+<!-- Sidebar PC de dos niveles (rail + flyout). Revertir: quitar estas 2 líneas y borrar ambos assets. -->
+<link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-rail.css') : asset('css/sidebar-rail.css') ?>">
+<script src="<?= function_exists('asset_version') ? asset_version('js/sidebar-rail.js') : asset('js/sidebar-rail.js') ?>"></script>
+<?php endif; ?>
 
 <script>
 (() => {

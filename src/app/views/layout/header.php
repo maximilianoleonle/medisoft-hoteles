@@ -813,6 +813,53 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
                 justify-content: center;
                 cursor: pointer;
             }
+
+            /* Campana de notificaciones del header */
+            .mobile-header-bell {
+                position: relative;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                color: #fff;
+                font-size: 1.05rem;
+                text-decoration: none;
+                -webkit-tap-highlight-color: transparent;
+                transition: background 0.2s ease, transform 0.15s ease;
+            }
+
+            .mobile-header-bell:active {
+                transform: scale(0.94);
+            }
+
+            .mobile-header-bell:focus-visible {
+                outline: 2px solid rgba(255, 255, 255, 0.95);
+                outline-offset: 2px;
+            }
+
+            /* Mismo rojo semántico que la burbuja de notificaciones del sidebar */
+            .mobile-header-bell-badge {
+                position: absolute;
+                top: -3px;
+                right: -3px;
+                min-width: 17px;
+                height: 17px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 4px;
+                border-radius: 999px;
+                background: #dc2626;
+                color: #FFFEFB;
+                font-size: 0.62rem;
+                font-weight: 700;
+                line-height: 1;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+            }
             
             /* Barra de progreso */
             .scroll-progress {
@@ -910,8 +957,30 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             <?php endif; ?>
         </a>
         
-        <!-- Acciones: sync + install -->
+        <!-- Acciones: notificaciones + sync + install -->
         <div class="mobile-header-actions" style="display:flex;align-items:center;gap:6px;">
+            <?php
+            // Campana de notificaciones: mismo gating por módulo que la sidebar
+            // y misma fuente del conteo (sidebar_novedades, cacheado en sesión).
+            $headerBellVisible = $layoutOfflineHoteleroActivo
+                && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones'));
+            $headerBellCount = 0;
+            if ($headerBellVisible && $layoutPathSegment !== 'notificaciones') {
+                require_once APP_PATH . '/helpers/sidebar_novedades.php';
+                $headerBellCount = (int) (sidebar_novedades()['notificaciones']['count'] ?? 0);
+            }
+            ?>
+            <?php if ($headerBellVisible): ?>
+            <a href="<?= url('notificaciones') ?>"
+               class="mobile-header-bell"
+               aria-label="<?= $headerBellCount > 0 ? 'Notificaciones: ' . $headerBellCount . ' sin leer' : 'Notificaciones' ?>"
+               title="Notificaciones">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <?php if ($headerBellCount > 0): ?>
+                <span class="mobile-header-bell-badge"><?= $headerBellCount > 99 ? '99+' : $headerBellCount ?></span>
+                <?php endif; ?>
+            </a>
+            <?php endif; ?>
             <!-- Indicador de sincronización (toca para ver operaciones offline) -->
             <div id="pwa-sync-indicator" title="Operaciones offline"
                  style="cursor:pointer;"

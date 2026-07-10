@@ -19,6 +19,22 @@ $fcFecha = static function ($iso) {
     return $ts ? date('d/m', $ts) : (string) $iso;
 };
 
+if (!function_exists('fc_ocup_class')) {
+    function fc_ocup_class($ocup)
+    {
+        if ($ocup === null) {
+            return 'is-soft';
+        }
+        if ($ocup >= 66) {
+            return 'is-success';
+        }
+        if ($ocup >= 33) {
+            return 'is-warning';
+        }
+        return 'is-danger';
+    }
+}
+
 $reservas7 = (int) ($pickup['reservas_7'] ?? 0);
 $reservasPrev = (int) ($pickup['reservas_prev'] ?? 0);
 $deltaPickup = $reservas7 - $reservasPrev;
@@ -31,160 +47,278 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 ?>
 
 <style>
-.fc { max-width: 1080px; margin: 0 auto; padding: 18px 16px 40px; font-size: .92rem; }
-.fc h1 { margin: 0 0 4px; font-size: 1.35rem; color: var(--brand-primary, #1B2746); }
-.fc .sub { margin: 0 0 16px; color: #6B7486; }
-.fc-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.fc-kpi { background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E6E2D8); border-radius: 12px; padding: 14px 16px; }
-.fc-kpi .valor { font-size: 1.5rem; font-weight: 800; color: var(--brand-primary, #1B2746); }
-.fc-kpi .valor small { font-size: .82rem; font-weight: 600; color: #8A93A6; }
-.fc-kpi .nombre { font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: #8A93A6; margin-top: 2px; }
-.fc-card { background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E6E2D8); border-radius: 14px; margin-bottom: 16px; overflow: hidden; }
-.fc-card h2 { margin: 0; padding: 14px 16px 0; font-size: 1rem; color: var(--brand-primary, #1B2746); }
-.fc-card .nota { padding: 0 16px; margin: 4px 0 0; font-size: .78rem; color: #8A93A6; }
-.fc-barras { display: flex; align-items: flex-end; gap: 3px; height: 130px; padding: 14px 16px 6px; }
-.fc-barra { flex: 1; min-width: 4px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 78%, #fff); border-radius: 3px 3px 0 0; position: relative; }
-.fc-barra.finde { background: color-mix(in srgb, var(--brand-accent, #BD9441) 85%, #fff); }
-.fc-barra:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1B2746; color: #fff; font-size: .7rem; padding: 3px 8px; border-radius: 6px; white-space: nowrap; z-index: 5; }
-.fc-ejes { display: flex; justify-content: space-between; padding: 0 16px 12px; font-size: .72rem; color: #8A93A6; }
-.fc table { width: 100%; border-collapse: collapse; }
-.fc th { padding: 10px 12px; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #8A93A6; border-bottom: 1px solid #EDE9DF; white-space: nowrap; }
-.fc td { padding: 10px 12px; border-bottom: 1px solid #F2EFE7; }
-.fc-delta-pos { color: #15803D; font-weight: 700; }
-.fc-delta-neg { color: #B91C1C; font-weight: 700; }
-.fc-ocup-pill { display: inline-block; min-width: 58px; text-align: center; padding: 3px 8px; border-radius: 999px; font-weight: 700; font-size: .8rem; }
+@import url('<?= asset('vendor/fonts/marca.css') ?>');
 
-/* Copiloto IA */
-.fcia-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800; letter-spacing: .03em; background: rgba(189,148,65,.14); color: #8A6A24; vertical-align: 2px; }
-.fcia-controles { padding: 12px 16px 14px; }
-.fcia-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; cursor: pointer; background: var(--brand-primary, #1B2746); color: #fff; font-size: .82rem; font-weight: 700; }
-.fcia-btn.sec { background: #fff; color: var(--brand-primary, #1B2746); border: 1px solid #D8D4C9; }
-.fcia-panel { padding: 12px 16px 16px; border-top: 1px dashed #E3DFD3; background: #FBFAF5; }
-.fcia-texto { font-size: .88rem; color: #333C4E; line-height: 1.55; background: #fff; border: 1px solid #E9E5DA; border-radius: 10px; padding: 12px 14px; }
-.fcia-meta { font-size: .74rem; color: #8A93A6; margin-top: 6px; }
-.fcia-botones { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.fcia-upsell { font-size: .85rem; background: rgba(189,148,65,.1); border: 1px solid rgba(189,148,65,.35); color: #7A5E23; border-radius: 10px; padding: 12px 14px; line-height: 1.5; }
-.fcia-error { font-size: .85rem; background: rgba(220,38,38,.07); border: 1px solid rgba(220,38,38,.2); color: #B91C1C; border-radius: 10px; padding: 10px 12px; }
+.fc {
+    --fc-brand: var(--brand-primary, #1B2746);
+    --fc-brand-2: var(--brand-secondary, #0F172A);
+    --fc-gold: var(--brand-accent, #BD9441);
+    --fc-gold-soft: color-mix(in srgb, var(--fc-gold) 15%, #FFFFFF);
+    --fc-gold-line: color-mix(in srgb, var(--fc-gold) 42%, #E4D4B0);
+    --fc-gold-ink: color-mix(in srgb, var(--fc-gold) 58%, var(--fc-brand));
+    --fc-ivory: #F6F2EA;
+    --fc-ivory-2: #FBF8F2;
+    --fc-surface: #FFFFFF;
+    --fc-surface-warm: #FCFAF5;
+    --fc-border: color-mix(in srgb, var(--fc-brand) 6%, #E9E1D6);
+    --fc-ring: color-mix(in srgb, var(--fc-gold) 32%, transparent);
+    --fc-text: color-mix(in srgb, var(--fc-brand) 46%, #707B8C);
+    --fc-muted: #8791A2;
+    --fc-heading: color-mix(in srgb, var(--fc-brand) 66%, #566172);
+    --fc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --fc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --fc-success: #1E9E63; --fc-success-bg: #E7F4EC;
+    --fc-warning: #C2841C; --fc-warning-bg: #FAF0DC;
+    --fc-danger: #B4392B; --fc-danger-bg: #F8EAE5;
+    --fc-info: #2F77E0; --fc-info-bg: #E6EFFC;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 18px 16px 44px;
+    color: var(--fc-text);
+    font-family: var(--fc-sans);
+    font-size: .92rem;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--fc-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--fc-ivory-2), var(--fc-ivory));
+}
+.fc * { box-sizing: border-box; }
+.fc-shell { display: grid; gap: 14px; width: 100%; max-width: 1120px; min-width: 0; margin: 0 auto; }
+
+.fc-hero-section { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 16px 28px; padding: 2px 0 6px; }
+.fc-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; max-width: min(100%, 760px); }
+.fc-title-lockup > div:last-child { min-width: 0; }
+.fc-hero-icon {
+    width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--fc-gold), var(--fc-brand) 54%, color-mix(in srgb, var(--fc-brand) 68%, var(--fc-gold)));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--fc-brand) 72%, transparent);
+}
+.fc-kicker { margin: 0 0 2px; color: var(--fc-muted); font-size: .72rem; font-weight: 650; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.fc-title { margin: 0; color: var(--fc-heading); font-family: var(--fc-serif); font-size: clamp(2.1rem, 4vw, 3rem); font-weight: 650; line-height: .98; overflow-wrap: anywhere; }
+.fc-subtitle { max-width: 48rem; margin: 9px 0 0; color: var(--fc-muted); font-size: .94rem; font-weight: 500; line-height: 1.5; }
+
+.fc-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.fc-summary-item { background: rgba(255,255,255,.82); border: 1px solid var(--fc-border); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 10px 22px -21px rgba(27,39,70,.18); }
+.fc-summary-label { color: var(--fc-muted); font-size: .68rem; font-weight: 650; letter-spacing: .045em; text-transform: uppercase; }
+.fc-summary-value { margin-top: 2px; color: var(--fc-heading); font-family: var(--fc-serif); font-size: 1.7rem; font-weight: 650; line-height: 1.1; }
+.fc-summary-delta { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-family: var(--fc-sans); font-size: .74rem; font-weight: 700; vertical-align: 2px; }
+.fc-summary-delta.is-up { color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); }
+.fc-summary-delta.is-down { color: color-mix(in srgb, var(--fc-danger) 72%, var(--fc-text)); }
+
+.fc-panel { background: rgba(255,255,255,.86); border: 1px solid var(--fc-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); overflow: hidden; }
+.fc-panel-head { padding: 14px 16px 0; }
+.fc-panel-title { margin: 0; color: var(--fc-heading); font-size: .9rem; font-weight: 650; }
+.fc-panel-sub { margin: 4px 0 0; color: var(--fc-muted); font-size: .78rem; font-weight: 500; line-height: 1.45; }
+.fc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; margin-left: 8px; border-radius: 999px; background: var(--fc-gold-soft); color: var(--fc-gold-ink); border: 1px solid var(--fc-gold-line); font-size: .68rem; font-weight: 700; letter-spacing: .02em; vertical-align: 2px; white-space: nowrap; }
+
+.fc-barras { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 16px 16px 6px; }
+.fc-barra { flex: 1; min-width: 4px; background: linear-gradient(180deg, var(--fc-brand), color-mix(in srgb, var(--fc-brand) 70%, #000)); border-radius: 4px 4px 0 0; position: relative; transition: transform .16s ease; }
+.fc-barra.finde { background: linear-gradient(180deg, var(--fc-gold), color-mix(in srgb, var(--fc-gold) 74%, var(--fc-brand))); }
+.fc-barra:hover { transform: scaleY(1.03); }
+.fc-barra:hover::after {
+    content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: 6px; background: var(--fc-brand); color: #fff; font-size: .7rem; font-weight: 650;
+    padding: 4px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: 0 8px 18px -10px rgba(27,39,70,.5);
+}
+.fc-ejes { display: flex; justify-content: space-between; padding: 0 16px 16px; font-size: .72rem; color: var(--fc-muted); font-weight: 650; }
+
+.fc-table-wrap { overflow-x: auto; padding: 0 0 4px; }
+.fc-table { width: 100%; min-width: 460px; border-collapse: collapse; font-size: .85rem; }
+.fc-table thead { background: var(--fc-surface-warm); border-bottom: 1px solid var(--fc-border); border-top: 1px solid var(--fc-border); }
+.fc-table th { padding: 11px 16px; color: var(--fc-muted); font-size: .68rem; font-weight: 650; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.fc-table td { padding: 12px 16px; border-bottom: 1px solid var(--fc-border); white-space: nowrap; }
+.fc-table tbody tr:last-child td { border-bottom: 0; }
+.fc-cell-strong { font-weight: 650; color: var(--fc-heading); }
+.fc-cell-muted { color: var(--fc-muted); }
+
+.fc-delta-pos, .fc-delta-neg { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
+.fc-delta-pos { color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); }
+.fc-delta-neg { color: color-mix(in srgb, var(--fc-danger) 72%, var(--fc-text)); }
+
+.fc-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; padding: 4px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; border: 1px solid transparent; }
+.fc-badge.is-success { color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); background: var(--fc-success-bg); border-color: color-mix(in srgb, var(--fc-success) 24%, #fff); }
+.fc-badge.is-warning { color: color-mix(in srgb, var(--fc-warning) 72%, var(--fc-text)); background: var(--fc-warning-bg); border-color: color-mix(in srgb, var(--fc-warning) 26%, #fff); }
+.fc-badge.is-danger { color: color-mix(in srgb, var(--fc-danger) 72%, var(--fc-text)); background: var(--fc-danger-bg); border-color: color-mix(in srgb, var(--fc-danger) 24%, #fff); }
+.fc-badge.is-soft { color: var(--fc-muted); background: var(--fc-surface-warm); border-color: var(--fc-border); }
+
+/* Copiloto IA — hooks fcia-* consumidos por el JS existente, solo se re-estilizan */
+.fcia-controles { padding: 14px 16px 16px; }
+.fc-btn, .fcia-btn {
+    position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 42px; padding: 0 16px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--fc-gold) 86%, #fff), color-mix(in srgb, var(--fc-gold) 72%, var(--fc-brand)));
+    color: #fff; cursor: pointer; font-family: inherit; font-size: .86rem; font-weight: 650; line-height: 1;
+    text-decoration: none; white-space: nowrap; box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--fc-gold) 42%, transparent);
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease;
+}
+.fc-btn:hover, .fcia-btn:hover { transform: translateY(-1px); }
+.fc-btn:active, .fcia-btn:active { transform: translateY(0) scale(.98); }
+.fc-btn.sec, .fcia-btn.sec { background: var(--fc-surface); color: var(--fc-gold-ink); border-color: var(--fc-gold-line); box-shadow: none; }
+.fcia-panel { padding: 0 16px 16px; }
+.fcia-texto { font-size: .9rem; color: var(--fc-text); line-height: 1.6; background: var(--fc-surface-warm); border: 1px solid var(--fc-border); border-radius: 12px; padding: 14px 16px; }
+.fcia-meta { font-size: .76rem; color: var(--fc-muted); margin-top: 8px; line-height: 1.4; }
+.fcia-botones { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.fcia-upsell { font-size: .87rem; background: var(--fc-gold-soft); border: 1px solid var(--fc-gold-line); color: var(--fc-gold-ink); border-radius: 12px; padding: 13px 15px; line-height: 1.5; }
+.fcia-error { font-size: .87rem; background: var(--fc-danger-bg); border: 1px solid color-mix(in srgb, var(--fc-danger) 24%, #fff); color: color-mix(in srgb, var(--fc-danger) 72%, var(--fc-text)); border-radius: 12px; padding: 11px 14px; }
+
+@media (min-width: 900px) {
+    .fc-hero-section { grid-template-columns: minmax(0, 1fr) auto; }
+}
+@media (max-width: 720px) {
+    .fc-summary { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+    .fc { padding: 14px 12px 34px; }
+    .fc-title-lockup { grid-template-columns: 42px minmax(0, 1fr); column-gap: 12px; }
+    .fc-hero-icon { width: 42px; height: 42px; border-radius: 14px; font-size: 1.05rem; }
+    .fc-title { font-size: 2rem; }
+    .fc-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .fc-barras { height: 110px; padding: 14px 12px 6px; }
+    .fc-ejes { padding: 0 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fc *, .fc *::before, .fc *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
 </style>
 
 <div class="fc">
-    <h1>Forecast de ocupación</h1>
-    <p class="sub">Cómo pinta tu ocupación hacia adelante y a qué ritmo estás vendiendo. Solo lectura: nada de esto modifica reservaciones.</p>
+    <div class="fc-shell">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
 
-    <div class="fc-kpis">
-        <div class="fc-kpi">
-            <div class="valor"><?= $fcPct($kpis['ocupacion_30']) ?></div>
-            <div class="nombre">Ocupación próx. 30 días</div>
-        </div>
-        <div class="fc-kpi">
-            <div class="valor"><?= $fcPct($kpis['ocupacion_60']) ?></div>
-            <div class="nombre">Próx. 60 días</div>
-        </div>
-        <div class="fc-kpi">
-            <div class="valor"><?= $fcPct($kpis['ocupacion_90']) ?></div>
-            <div class="nombre">Próx. 90 días</div>
-        </div>
-        <div class="fc-kpi">
-            <div class="valor">
-                <?= $reservas7 ?>
-                <small class="<?= $deltaPickup >= 0 ? 'fc-delta-pos' : 'fc-delta-neg' ?>">
-                    <?= $deltaPickup >= 0 ? '▲' : '▼' ?> <?= abs($deltaPickup) ?> vs sem. previa
-                </small>
+        <section class="fc-hero-section">
+            <div class="fc-title-lockup">
+                <div class="fc-hero-icon" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <p class="fc-kicker">Proyecci&oacute;n de ocupaci&oacute;n</p>
+                    <h1 class="fc-title">Forecast de ocupaci&oacute;n</h1>
+                    <p class="fc-subtitle">C&oacute;mo pinta tu ocupaci&oacute;n hacia adelante y a qu&eacute; ritmo est&aacute;s vendiendo. Solo lectura: nada de esto modifica reservaciones.</p>
+                </div>
             </div>
-            <div class="nombre">Reservas últimos 7 días</div>
-        </div>
-    </div>
+        </section>
 
-    <div class="fc-card">
-        <h2>Próximos 30 días, día por día</h2>
-        <p class="nota"><?= (int) $totalHabitaciones ?> habitaciones activas · barras doradas = fin de semana · pasa el cursor para el detalle</p>
-        <div class="fc-barras">
-            <?php foreach ($dias30 as $fecha => $ocupadas): ?>
-                <?php
-                $pct = $totalHabitaciones > 0 ? min(100, round($ocupadas * 100 / $totalHabitaciones)) : 0;
-                $altura = max(3, $pct);
-                $diaSemana = (int) date('N', strtotime($fecha . ' 12:00:00'));
-                ?>
-                <div class="fc-barra <?= $diaSemana >= 5 ? 'finde' : '' ?>"
-                     style="height: <?= $altura ?>%;"
-                     data-tip="<?= $fcSafe($fcFecha($fecha)) ?>: <?= (int) $ocupadas ?> hab · <?= $pct ?>%"></div>
-            <?php endforeach; ?>
-        </div>
-        <div class="fc-ejes">
-            <span><?= $fcSafe($fcFecha(array_key_first($dias30) ?? '')) ?></span>
-            <span><?= $fcSafe($fcFecha(array_key_last($dias30) ?? '')) ?></span>
-        </div>
-    </div>
+        <section class="fc-summary" aria-label="Indicadores de forecast">
+            <div class="fc-summary-item">
+                <div class="fc-summary-label">Ocupaci&oacute;n pr&oacute;x. 30 d&iacute;as</div>
+                <div class="fc-summary-value"><?= $fcPct($kpis['ocupacion_30']) ?></div>
+            </div>
+            <div class="fc-summary-item">
+                <div class="fc-summary-label">Pr&oacute;x. 60 d&iacute;as</div>
+                <div class="fc-summary-value"><?= $fcPct($kpis['ocupacion_60']) ?></div>
+            </div>
+            <div class="fc-summary-item">
+                <div class="fc-summary-label">Pr&oacute;x. 90 d&iacute;as</div>
+                <div class="fc-summary-value"><?= $fcPct($kpis['ocupacion_90']) ?></div>
+            </div>
+            <div class="fc-summary-item">
+                <div class="fc-summary-label">Reservas &uacute;ltimos 7 d&iacute;as</div>
+                <div class="fc-summary-value">
+                    <?= $reservas7 ?>
+                    <span class="fc-summary-delta <?= $deltaPickup >= 0 ? 'is-up' : 'is-down' ?>">
+                        <?= $deltaPickup >= 0 ? '▲' : '▼' ?> <?= abs($deltaPickup) ?>
+                    </span>
+                </div>
+            </div>
+        </section>
 
-    <div class="fc-card">
-        <h2>Ritmo de ventas (pickup)</h2>
-        <p class="nota">Reservas tomadas, sin importar para qué fechas son.</p>
-        <table>
-            <thead>
-                <tr><th></th><th>Reservas</th><th>Noches-habitación</th><th>Monto</th></tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="font-weight:600;">Últimos 7 días</td>
-                    <td><?= $reservas7 ?></td>
-                    <td><?= (int) ($pickup['noches_7'] ?? 0) ?></td>
-                    <td>$<?= number_format((float) ($pickup['monto_7'] ?? 0), 2) ?></td>
-                </tr>
-                <tr>
-                    <td style="font-weight:600;color:#8A93A6;">7 días anteriores</td>
-                    <td style="color:#8A93A6;"><?= $reservasPrev ?></td>
-                    <td style="color:#8A93A6;"><?= (int) ($pickup['noches_prev'] ?? 0) ?></td>
-                    <td style="color:#8A93A6;">$<?= number_format((float) ($pickup['monto_prev'] ?? 0), 2) ?></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <section class="fc-panel">
+            <div class="fc-panel-head">
+                <h2 class="fc-panel-title">Pr&oacute;ximos 30 d&iacute;as, d&iacute;a por d&iacute;a</h2>
+                <p class="fc-panel-sub"><?= (int) $totalHabitaciones ?> habitaciones activas &middot; barras doradas = fin de semana &middot; pasa el cursor para el detalle</p>
+            </div>
+            <div class="fc-barras">
+                <?php foreach ($dias30 as $fecha => $ocupadas): ?>
+                    <?php
+                    $pct = $totalHabitaciones > 0 ? min(100, round($ocupadas * 100 / $totalHabitaciones)) : 0;
+                    $altura = max(3, $pct);
+                    $diaSemana = (int) date('N', strtotime($fecha . ' 12:00:00'));
+                    ?>
+                    <div class="fc-barra <?= $diaSemana >= 5 ? 'finde' : '' ?>"
+                         style="height: <?= $altura ?>%;"
+                         data-tip="<?= $fcSafe($fcFecha($fecha)) ?>: <?= (int) $ocupadas ?> hab &middot; <?= $pct ?>%"></div>
+                <?php endforeach; ?>
+            </div>
+            <div class="fc-ejes">
+                <span><?= $fcSafe($fcFecha(array_key_first($dias30) ?? '')) ?></span>
+                <span><?= $fcSafe($fcFecha(array_key_last($dias30) ?? '')) ?></span>
+            </div>
+        </section>
 
-    <?php if ($fcIaOk): ?>
-    <div class="fc-card">
-        <h2>💡 Consejo de tarifa <span class="fcia-tag">✨ Copiloto IA</span></h2>
-        <p class="nota">Lee tu proyección, tu ritmo de ventas y la comparativa anual, y te sugiere si conviene subir, mantener o bajar tarifa. La decisión siempre es tuya.</p>
-        <div class="fcia-controles">
-            <button type="button" id="fcia-generar" class="fcia-btn">Ver el consejo de hoy</button>
-        </div>
-        <div id="fcia-consejo" class="fcia-panel" hidden></div>
-    </div>
-    <?php endif; ?>
+        <section class="fc-panel">
+            <div class="fc-panel-head">
+                <h2 class="fc-panel-title">Ritmo de ventas (pickup)</h2>
+                <p class="fc-panel-sub">Reservas tomadas, sin importar para qu&eacute; fechas son.</p>
+            </div>
+            <div class="fc-table-wrap">
+                <table class="fc-table">
+                    <thead>
+                        <tr><th></th><th>Reservas</th><th>Noches-habitaci&oacute;n</th><th>Monto</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fc-cell-strong">&Uacute;ltimos 7 d&iacute;as</td>
+                            <td><?= $reservas7 ?></td>
+                            <td><?= (int) ($pickup['noches_7'] ?? 0) ?></td>
+                            <td>$<?= number_format((float) ($pickup['monto_7'] ?? 0), 2) ?></td>
+                        </tr>
+                        <tr>
+                            <td class="fc-cell-muted">7 d&iacute;as anteriores</td>
+                            <td class="fc-cell-muted"><?= $reservasPrev ?></td>
+                            <td class="fc-cell-muted"><?= (int) ($pickup['noches_prev'] ?? 0) ?></td>
+                            <td class="fc-cell-muted">$<?= number_format((float) ($pickup['monto_prev'] ?? 0), 2) ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-    <div class="fc-card">
-        <h2>Próximas 12 semanas vs el año pasado</h2>
-        <p class="nota">La columna "hace 1 año" usa la ocupación real que tuviste en esas mismas fechas del año anterior.</p>
-        <table>
-            <thead>
-                <tr><th>Semana</th><th>Noches vendidas</th><th>Ocupación proyectada</th><th>Hace 1 año</th><th>Diferencia</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($semanas as $sem): ?>
-                <?php
-                $ocup = $sem['ocupacion'];
-                $pillBg = $ocup === null ? 'background:#F1F0EA;color:#8A93A6;'
-                    : ($ocup >= 66 ? 'background:rgba(22,163,74,.12);color:#15803D;'
-                    : ($ocup >= 33 ? 'background:rgba(245,158,11,.14);color:#92600A;'
-                    : 'background:rgba(220,38,38,.1);color:#B91C1C;'));
-                ?>
-                <tr>
-                    <td style="white-space:nowrap;font-weight:600;"><?= $fcSafe($fcFecha($sem['inicio'])) ?> – <?= $fcSafe($fcFecha($sem['fin'])) ?></td>
-                    <td><?= (int) $sem['noches'] ?></td>
-                    <td><span class="fc-ocup-pill" style="<?= $pillBg ?>"><?= $fcPct($ocup) ?></span></td>
-                    <td style="color:#8A93A6;"><?= $fcPct($sem['ocupacion_anterior']) ?></td>
-                    <td>
-                        <?php if ($sem['delta'] === null): ?>
-                            <span style="color:#94A3B8;">—</span>
-                        <?php else: ?>
-                            <span class="<?= $sem['delta'] >= 0 ? 'fc-delta-pos' : 'fc-delta-neg' ?>">
-                                <?= $sem['delta'] >= 0 ? '▲' : '▼' ?> <?= number_format(abs((float) $sem['delta']), 1) ?> pts
-                            </span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <?php if ($fcIaOk): ?>
+        <section class="fc-panel">
+            <div class="fc-panel-head">
+                <h2 class="fc-panel-title">Consejo de tarifa<span class="fc-chip"><i class="fa-solid fa-wand-magic-sparkles"></i>Copiloto IA</span></h2>
+                <p class="fc-panel-sub">Lee tu proyecci&oacute;n, tu ritmo de ventas y la comparativa anual, y te sugiere si conviene subir, mantener o bajar tarifa. La decisi&oacute;n siempre es tuya.</p>
+            </div>
+            <div class="fcia-controles">
+                <button type="button" id="fcia-generar" class="fc-btn">
+                    <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>Ver el consejo de hoy
+                </button>
+            </div>
+            <div id="fcia-consejo" class="fcia-panel" hidden></div>
+        </section>
+        <?php endif; ?>
+
+        <section class="fc-panel">
+            <div class="fc-panel-head">
+                <h2 class="fc-panel-title">Pr&oacute;ximas 12 semanas vs el a&ntilde;o pasado</h2>
+                <p class="fc-panel-sub">La columna "hace 1 a&ntilde;o" usa la ocupaci&oacute;n real que tuviste en esas mismas fechas del a&ntilde;o anterior.</p>
+            </div>
+            <div class="fc-table-wrap">
+                <table class="fc-table">
+                    <thead>
+                        <tr><th>Semana</th><th>Noches vendidas</th><th>Ocupaci&oacute;n proyectada</th><th>Hace 1 a&ntilde;o</th><th>Diferencia</th></tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($semanas as $sem): ?>
+                        <?php $ocup = $sem['ocupacion']; ?>
+                        <tr>
+                            <td class="fc-cell-strong"><?= $fcSafe($fcFecha($sem['inicio'])) ?> &ndash; <?= $fcSafe($fcFecha($sem['fin'])) ?></td>
+                            <td><?= (int) $sem['noches'] ?></td>
+                            <td><span class="fc-badge <?= fc_ocup_class($ocup) ?>"><?= $fcPct($ocup) ?></span></td>
+                            <td class="fc-cell-muted"><?= $fcPct($sem['ocupacion_anterior']) ?></td>
+                            <td>
+                                <?php if ($sem['delta'] === null): ?>
+                                    <span class="fc-cell-muted">—</span>
+                                <?php else: ?>
+                                    <span class="<?= $sem['delta'] >= 0 ? 'fc-delta-pos' : 'fc-delta-neg' ?>">
+                                        <?= $sem['delta'] >= 0 ? '▲' : '▼' ?> <?= number_format(abs((float) $sem['delta']), 1) ?> pts
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
 

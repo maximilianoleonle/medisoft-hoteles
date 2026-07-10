@@ -493,7 +493,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                     'estado' => 'nueva',
                     'rol_usuario' => $rolUsuario,
                     'usuario_id' => $usuarioId,
-                ], 5)
+                ], 8)
             ];
         } catch (Throwable $e) {
             error_log('Error obteniendo notificaciones del dashboard: ' . $e->getMessage());

@@ -1,0 +1,453 @@
+/* ── Sidebar PC "Deleite Sereno" — dos niveles (rail + flyout) ─────────────
+   Piel editorial que hermana la sidebar con el dashboard boutique:
+   tokens --sr-* espejo de los --dash-* del dashboard (marfil cálido, serif
+   de despliegue, sombras frías navy, firma oro→navy). White-label real:
+   todo deriva de --brand-*; sin hex de marca hardcodeado.
+   Solo escritorio ≥1025px y solo shell hotelero. La piel clara se scopea a
+   html:not([data-theme="dark"]); el modo oscuro conserva su sidebar navy
+   (dark-theme.css) y aquí solo se visten rail y flyout para ese fondo.
+   Revertir: borrar este archivo + js/sidebar-rail.js + las 2 líneas en
+   views/layout/sidebar.php que los cargan. */
+
+/* Tokens compartidos (el flyout vive en <body>, no dentro del aside) */
+.hotel-layout-scope #sidebar.hotel-sidebar,
+.hotel-layout-scope .ms-rail-fly {
+    --sr-primary: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --sr-secondary: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
+    --sr-gold: var(--brand-accent, #BD9441);
+    --sr-ivory: color-mix(in srgb, var(--sr-gold) 9%, #F8F5ED);
+    --sr-ivory-2: color-mix(in srgb, var(--sr-gold) 6%, #FBF9F4);
+    --sr-surface: color-mix(in srgb, var(--sr-gold) 2%, #FFFFFF);
+    --sr-surface-warm: color-mix(in srgb, var(--sr-gold) 5%, #FFFFFF);
+    --sr-line: color-mix(in srgb, var(--sr-gold) 22%, #E7DEC9);
+    --sr-line-soft: color-mix(in srgb, var(--sr-gold) 12%, #F0ECE2);
+    --sr-ink: var(--brand-text, #1F2937);
+    --sr-muted: var(--brand-muted, #667085);
+    --sr-gold-bg: color-mix(in srgb, var(--sr-gold) 16%, #FFFFFF);
+    --sr-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    --sr-shadow: 0 2px 8px color-mix(in srgb, var(--sr-secondary) 6%, transparent), 0 12px 28px color-mix(in srgb, var(--sr-secondary) 7%, transparent);
+    --sr-shadow-lg: 0 18px 48px color-mix(in srgb, var(--sr-secondary) 16%, transparent);
+    --sr-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+@media (min-width: 1025px) {
+
+    /* Con el rail construido, las secciones clásicas se ocultan (fallback sin JS). */
+    .hotel-layout-scope #sidebar.hotel-sidebar.ms-rail-on .hotel-sidebar-nav > .nav-section {
+        display: none !important;
+    }
+
+    /* ── Lienzo: marfil cálido con destello dorado, como el dashboard ── */
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar {
+        background:
+            radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--sr-gold) 14%, transparent), transparent 15rem),
+            linear-gradient(180deg, var(--sr-surface) 0%, var(--sr-ivory-2) 100%) !important;
+        border-right: 1px solid var(--sr-line) !important;
+        box-shadow: 14px 0 34px color-mix(in srgb, var(--sr-secondary) 6%, transparent) !important;
+    }
+
+    /* ── Cabecera de marca: aire, serif navy y firma oro→navy ── */
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header {
+        position: relative;
+        padding: 20px 16px 16px !important;
+        background: transparent !important;
+        border-bottom: 0 !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header::after {
+        content: "";
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        bottom: 0;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, var(--sr-gold), var(--sr-primary), transparent);
+        opacity: .55;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-mark {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+        border-color: var(--sr-line);
+        background: linear-gradient(150deg, var(--sr-gold-bg), var(--sr-surface));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 12px 26px color-mix(in srgb, var(--sr-secondary) 10%, transparent);
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-name {
+        color: var(--sr-primary);
+        font-family: var(--sr-serif);
+        font-size: clamp(18px, 1.5vw, 21px);
+        font-weight: 650;
+        line-height: 1.06;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule { color: var(--sr-gold); }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule strong {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: .18em;
+        color: color-mix(in srgb, var(--sr-gold) 72%, var(--sr-ink));
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule span {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--sr-line));
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule span:last-child {
+        background: linear-gradient(270deg, transparent, var(--sr-line));
+    }
+
+    /* ── Buscador: superficie cálida, foco dorado sereno ── */
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box {
+        height: 41px !important;
+        border: 1px solid var(--sr-line) !important;
+        border-radius: 12px !important;
+        background: var(--sr-surface-warm) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7) !important;
+        transition: border-color .18s var(--sr-ease), box-shadow .18s var(--sr-ease);
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box:focus-within {
+        border-color: color-mix(in srgb, var(--sr-gold) 48%, var(--sr-line)) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--sr-gold) 18%, transparent), inset 0 1px 0 rgba(255, 255, 255, .7) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-input {
+        color: var(--sr-ink) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-input::placeholder {
+        color: color-mix(in srgb, var(--sr-muted) 78%, var(--sr-gold));
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-trigger,
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-icon {
+        color: color-mix(in srgb, var(--sr-muted) 70%, var(--sr-gold)) !important;
+    }
+
+    /* Scrollbar cálida (espejo del dashboard) */
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-nav {
+        scrollbar-width: thin;
+        scrollbar-color: #E2D9C8 transparent !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-nav::-webkit-scrollbar-thumb {
+        background: #E2D9C8 !important;
+        border-radius: 99px;
+    }
+
+    /* ── Nivel 1: el rail ── */
+    .hotel-layout-scope #sidebar.hotel-sidebar .ms-rail {
+        display: block;
+        padding: 10px 0 14px;
+    }
+
+    .ms-rail-g {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: calc(100% - 24px);
+        min-height: 43px;
+        margin: 3px 12px;
+        padding: 10px 12px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: none;
+        cursor: pointer;
+        text-align: left;
+        text-decoration: none;
+        color: color-mix(in srgb, var(--sr-ink) 86%, var(--sr-muted));
+        font-family: inherit;
+        font-size: .9rem;
+        font-weight: 600;
+        letter-spacing: .005em;
+        transition: background .18s var(--sr-ease), border-color .18s var(--sr-ease), color .18s var(--sr-ease), transform .18s var(--sr-ease), box-shadow .18s var(--sr-ease);
+    }
+
+    .ms-rail-g:hover,
+    .ms-rail-g.ms-open {
+        background: var(--sr-surface-warm);
+        border-color: var(--sr-line-soft);
+        color: var(--sr-primary);
+        transform: translateX(2px);
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--sr-secondary) 7%, transparent);
+    }
+
+    .ms-rail-g.ms-on {
+        background: linear-gradient(180deg, var(--sr-surface), var(--sr-ivory-2));
+        border-color: var(--sr-line);
+        color: var(--sr-primary);
+        font-weight: 700;
+        box-shadow: 0 12px 26px color-mix(in srgb, var(--sr-secondary) 9%, transparent);
+    }
+
+    /* Firma editorial: marcador vertical oro→navy en la sección activa */
+    .ms-rail-g.ms-on::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 10px;
+        width: 3px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--sr-gold), var(--sr-primary));
+        opacity: .85;
+    }
+
+    .ms-rail-ic {
+        position: relative;
+        width: 27px;
+        height: 27px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        color: color-mix(in srgb, var(--sr-muted) 76%, var(--sr-gold));
+        transition: color .18s var(--sr-ease);
+    }
+
+    .ms-rail-ic i { font-size: .98rem; }
+
+    .ms-rail-g:hover .ms-rail-ic,
+    .ms-rail-g.ms-open .ms-rail-ic,
+    .ms-rail-g.ms-on .ms-rail-ic { color: var(--sr-primary); }
+
+    .ms-rail-lb {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ms-rail-badge {
+        min-width: 19px;
+        height: 19px;
+        border-radius: 999px;
+        background: var(--sr-gold, #B45309);
+        color: #FFFEFB;
+        font-size: .66rem;
+        font-weight: 700;
+        line-height: 19px;
+        text-align: center;
+        padding: 0 6px;
+        flex: none;
+        box-shadow: 0 6px 14px color-mix(in srgb, var(--sr-gold) 34%, transparent);
+    }
+
+    .ms-rail-dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+    .ms-rail-dot.ms-green { background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .14); }
+    .ms-rail-dot.ms-nov { background: var(--sr-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sr-gold) 16%, transparent); }
+
+    .ms-rail-ch {
+        flex: none;
+        font-size: .58rem;
+        color: var(--sr-gold);
+        opacity: .38;
+        transition: opacity .18s var(--sr-ease), transform .18s var(--sr-ease);
+    }
+
+    .ms-rail-g:hover .ms-rail-ch,
+    .ms-rail-g.ms-open .ms-rail-ch { opacity: .9; transform: translateX(2px); }
+
+    /* ── Nivel 2: flyout editorial ── */
+    .ms-rail-fly {
+        position: fixed;
+        z-index: 940;
+        width: 236px;
+        padding: 10px;
+        border: 1px solid var(--sr-line);
+        border-radius: 16px;
+        background:
+            radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--sr-gold) 12%, transparent), transparent 11rem),
+            linear-gradient(180deg, var(--sr-surface) 0%, var(--sr-surface-warm) 100%);
+        box-shadow: var(--sr-shadow-lg);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-6px) scale(.98);
+        transform-origin: left center;
+        transition: opacity .2s var(--sr-ease), transform .2s var(--sr-ease);
+    }
+
+    .ms-rail-fly.ms-open { opacity: 1; pointer-events: auto; transform: translateX(0) scale(1); }
+
+    /* Título del área en serif de despliegue, con su regla oro→navy */
+    .ms-rail-ft {
+        position: relative;
+        padding: 7px 10px 12px;
+        color: var(--sr-primary);
+        font-family: var(--sr-serif);
+        font-size: 1.06rem;
+        font-weight: 650;
+        letter-spacing: .01em;
+        line-height: 1;
+        text-transform: none;
+    }
+
+    .ms-rail-ft::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        bottom: 5px;
+        width: 46px;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--sr-gold), var(--sr-primary));
+        opacity: .6;
+    }
+
+    .ms-rail-fi {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        color: color-mix(in srgb, var(--sr-ink) 86%, var(--sr-muted));
+        font-size: .84rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background .16s var(--sr-ease), color .16s var(--sr-ease), border-color .16s var(--sr-ease), transform .16s var(--sr-ease);
+    }
+
+    .ms-rail-fi i {
+        width: 19px;
+        text-align: center;
+        font-size: .85rem;
+        color: color-mix(in srgb, var(--sr-muted) 72%, var(--sr-gold));
+        flex: none;
+        transition: color .16s var(--sr-ease);
+    }
+
+    .ms-rail-fi:hover {
+        background: var(--sr-ivory-2);
+        border-color: var(--sr-line-soft);
+        color: var(--sr-primary);
+        transform: translateX(2px);
+    }
+
+    .ms-rail-fi.ms-on {
+        background: var(--sr-gold-bg);
+        border-color: color-mix(in srgb, var(--sr-gold) 30%, var(--sr-line));
+        color: var(--sr-primary);
+        font-weight: 700;
+    }
+
+    .ms-rail-fi:hover i,
+    .ms-rail-fi.ms-on i { color: var(--sr-primary); }
+
+    .ms-rail-fi .ms-rail-badge,
+    .ms-rail-fi .ms-rail-dot { margin-left: auto; }
+
+    /* ── Pie: estado y usuario sobre el mismo lienzo ── */
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-footer {
+        padding: 12px 12px 14px !important;
+        background: transparent !important;
+        border-top: 1px solid var(--sr-line-soft) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-sidebar-status,
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-section {
+        border: 1px solid var(--sr-line) !important;
+        border-radius: 13px !important;
+        background: var(--sr-surface-warm) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-avatar {
+        background: var(--sr-gold-bg) !important;
+        color: var(--sr-primary) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-name {
+        color: var(--sr-ink) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-role {
+        color: var(--sr-muted) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-menu-btn {
+        background: var(--sr-ivory-2) !important;
+        color: var(--sr-muted) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .user-menu-btn:hover {
+        background: var(--sr-gold-bg) !important;
+        color: var(--sr-primary) !important;
+    }
+
+    /* ── Modo oscuro: rail y flyout sobre la sidebar navy existente ── */
+    html[data-theme="dark"] .ms-rail-g {
+        color: #CBD5E1;
+    }
+
+    html[data-theme="dark"] .ms-rail-g:hover,
+    html[data-theme="dark"] .ms-rail-g.ms-open {
+        background: rgba(148, 163, 184, .10);
+        border-color: rgba(148, 163, 184, .16);
+        color: #F1F5F9;
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"] .ms-rail-g.ms-on {
+        background: rgba(148, 163, 184, .12);
+        border-color: rgba(148, 163, 184, .2);
+        color: #F8FAFC;
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"] .ms-rail-g.ms-on::before {
+        background: linear-gradient(180deg, #38BDF8, #2563EB);
+    }
+
+    html[data-theme="dark"] .ms-rail-ic,
+    html[data-theme="dark"] .ms-rail-fi i { color: #94A3B8; }
+
+    html[data-theme="dark"] .ms-rail-g:hover .ms-rail-ic,
+    html[data-theme="dark"] .ms-rail-g.ms-open .ms-rail-ic,
+    html[data-theme="dark"] .ms-rail-g.ms-on .ms-rail-ic { color: #E2E8F0; }
+
+    html[data-theme="dark"] .ms-rail-ch { color: #64748B; }
+
+    html[data-theme="dark"] .ms-rail-fly {
+        background: #0F1728;
+        border-color: rgba(148, 163, 184, .18);
+        box-shadow: 0 18px 48px rgba(2, 6, 23, .55);
+    }
+
+    html[data-theme="dark"] .ms-rail-ft { color: #F1F5F9; }
+
+    html[data-theme="dark"] .ms-rail-ft::after {
+        background: linear-gradient(90deg, #38BDF8, #2563EB);
+    }
+
+    html[data-theme="dark"] .ms-rail-fi { color: #CBD5E1; }
+
+    html[data-theme="dark"] .ms-rail-fi:hover,
+    html[data-theme="dark"] .ms-rail-fi.ms-on {
+        background: rgba(148, 163, 184, .12);
+        border-color: rgba(148, 163, 184, .18);
+        color: #F8FAFC;
+    }
+
+    html[data-theme="dark"] .ms-rail-fi:hover i,
+    html[data-theme="dark"] .ms-rail-fi.ms-on i { color: #E2E8F0; }
+}
+
+@media (max-width: 1024px) {
+    .ms-rail,
+    .ms-rail-fly { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ms-rail-g,
+    .ms-rail-ic,
+    .ms-rail-ch,
+    .ms-rail-fi,
+    .ms-rail-fly { transition: none !important; transform: none !important; }
+}

@@ -1,4 +1,3 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
 <?php
 $movimientos = $movimientos ?? [];
 $productos = $productos ?? [];
@@ -1263,5 +1262,3 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>

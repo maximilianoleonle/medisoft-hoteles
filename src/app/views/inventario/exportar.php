@@ -1,8 +1,6 @@
 <?php
 $fecha_hoy = $fecha_hoy ?? date('Y-m-d');
 $fecha_inicio_mes = $fecha_inicio_mes ?? date('Y-m-01');
-
-require_once APP_PATH . '/views/layout/header.php';
 ?>
 
 <style>
@@ -567,5 +565,3 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.exportar-view').classList.add('loaded');
 });
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>

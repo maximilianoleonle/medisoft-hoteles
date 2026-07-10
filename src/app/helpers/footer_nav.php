@@ -138,14 +138,8 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'modules_any' => ['reportes'],
                 'descripcion' => 'Indicadores e informes del hotel.',
             ],
-            'notificaciones' => [
-                'label' => 'Notificaciones',
-                'short' => 'Avisos',
-                'icon' => 'fa-bell',
-                'path' => 'notificaciones',
-                'modules_any' => [],
-                'descripcion' => 'Centro de avisos del sistema.',
-            ],
+            // 'notificaciones' ya no se ofrece aquí: la campana vive fija en el
+            // header móvil, así el hotel no gasta un atajo del footer en avisos.
         ];
     }
 }

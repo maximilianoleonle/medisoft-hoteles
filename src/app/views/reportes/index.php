@@ -1,810 +1,421 @@
-<?php ?>
+<?php
+// Centro de Reportes — rediseño boutique (Claude Design reportes.html, lenguaje Deleite Sereno).
+$repTieneDistribucion = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('reportes_distribucion');
+$repTieneTablero = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('tablero_ejecutivo');
+$repAreas = 4 + ($repTieneDistribucion ? 1 : 0) + ($repTieneTablero ? 2 : 0);
+$repRol = function_exists('user_role') ? trim((string) user_role()) : '';
+if ($repRol !== '') {
+    $repRol = function_exists('mb_convert_case') ? mb_convert_case($repRol, MB_CASE_TITLE, 'UTF-8') : ucfirst($repRol);
+} else {
+    $repRol = 'Gerencia';
+}
+?>
 
 <style>
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
-/* Reports overview: hotel brand-aware visual layer. */
+/* ── Tokens (white-label: cromado derivado de --brand-*) ── */
 .reportes-view {
-    --report-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
-    --report-brand-dark: var(--brand-action-bg-hover, color-mix(in srgb, var(--report-brand) 84%, #020617 16%));
-    --report-on-brand: var(--brand-action-text, #FFFEFB);
-    --report-brand-mid: color-mix(in srgb, var(--report-brand) 18%, #FCFAF5);
-    --report-accent: var(--brand-accent, #BD9441);
-    --report-accent-dark: color-mix(in srgb, var(--report-accent) 72%, #3F2E12);
-    --report-accent-soft: color-mix(in srgb, var(--report-accent) 15%, #FFFFFF);
-    --report-accent-line: color-mix(in srgb, var(--report-accent) 36%, #E9DDC8);
-    --report-border: color-mix(in srgb, var(--report-brand) 11%, #E7E1D4);
-    --report-soft: color-mix(in srgb, var(--report-brand) 6%, #FCFAF5);
-    --report-ivory: #F6F2EA;
-    --report-ivory-2: #FBF8F2;
-    --report-surface: rgba(255,255,255,.96);
-    --report-surface-warm: #FCFAF5;
-    --report-muted: #6C7689;
-    --report-text: #1B2746;
-    --report-success: #1E9E63;
-    --report-success-soft: #E8F4ED;
-    --report-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-    --report-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    color: var(--report-text);
-    font-family: var(--report-sans);
-    opacity:0;
+    --rp-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --rp-brand-2: var(--brand-action-bg-hover, color-mix(in srgb, var(--rp-brand) 86%, #0B1220));
+    --rp-on-brand: var(--brand-action-text, #FFFFFF);
+    --rp-gold: var(--brand-accent, #B0883F);
+    --rp-gold-soft: color-mix(in srgb, var(--rp-gold) 55%, var(--rp-on-brand));
+    --rp-gold-line: color-mix(in srgb, var(--rp-gold) 32%, #F0E7D6);
+    --rp-gold-bg: color-mix(in srgb, var(--rp-gold) 14%, #FFFDF7);
+    /* Superficies serenas */
+    --rp-ivory: #F6F2EA;
+    --rp-ivory-2: #FBF8F2;
+    --rp-surface: #FFFFFF;
+    --rp-line: #ECE5D8;
+    /* Tinta */
+    --rp-heading: var(--brand-text, #1B2746);
+    --rp-ink: var(--brand-text, #1B2746);
+    --rp-ink-2: #3E4A66;
+    --rp-muted: #6C7689;
+    /* Ritmo */
+    --rp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --rp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --rp-ease: cubic-bezier(.22,1,.36,1);
+    --rp-shadow-xs: 0 1px 2px rgba(27,39,70,.05);
+    --rp-shadow: 0 2px 8px rgba(27,39,70,.045), 0 12px 28px rgba(27,39,70,.055);
+    color: var(--rp-ink);
+    font-family: var(--rp-sans);
+    opacity: 0;
     transition: opacity .35s ease;
 }
-.reportes-view.loaded { opacity:1; }
+.reportes-view.loaded { opacity: 1; }
 
-/* Background */
-.rep-bg {
-    background:
-        linear-gradient(135deg, rgba(255,255,255,.32) 0 25%, transparent 25% 50%) 0 0 / 22px 22px,
-        linear-gradient(180deg, var(--report-ivory-2), var(--report-ivory) 100%);
-    min-height:100vh;
+.reportes-view.rep-bg {
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--rp-ivory-2), var(--rp-ivory) 62%);
 }
 
-/* ── Hero header ─────────────────────────── */
-.rep-hero {
-    background: transparent;
-    position: relative; overflow: visible;
-    border-bottom: 1px solid var(--report-border);
-}
-.rep-hero::before {
-    content:none;
-}
-.rep-hero::after {
-    content:none;
-}
-.rep-hero-icon {
-    background:linear-gradient(150deg, var(--report-brand), var(--report-brand-dark));
-    color: var(--report-on-brand);
-    width:46px; height:46px; border-radius:13px;
-    display:flex; align-items:center; justify-content:center;
-    border:0;
-    box-shadow:0 12px 24px -10px color-mix(in srgb, var(--report-brand) 58%, transparent);
-}
-.reportes-view .rep-hero-icon i {
-    color: var(--report-on-brand) !important;
-}
-.reportes-view .rep-hero h1 {
-    color:var(--report-brand) !important;
-    font-family:var(--report-serif);
-    font-size:clamp(2rem, 3vw, 2.6rem);
-    font-weight:700;
-    line-height:1;
-    letter-spacing:0;
-}
-.reportes-view .rep-hero p {
-    color:var(--report-muted) !important;
-    font-weight:500;
-}
-.report-chip {
-    display:inline-flex; align-items:center; gap:5px;
-    background:var(--report-accent-soft); border:1px solid var(--report-accent-line);
-    color:var(--report-accent-dark); border-radius:999px;
-    padding:6px 11px; font-size:.72rem; font-weight:800; letter-spacing:.03em;
-}
+.rp-hic svg, .rp-tag svg, .rp-ic svg, .rp-list svg, .rp-btn svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ── Stat widgets ────────────────────────── */
-.rep-stat {
-    background:#fff; border-radius:14px; border:1px solid var(--report-border);
-    padding:20px; overflow:hidden; position:relative;
-    transition: transform .25s, box-shadow .25s;
-    animation: slideUp .5s ease both;
+/* ── Cabecera ── */
+.rp-head { display: flex; align-items: flex-start; gap: 16px; }
+.rp-hic {
+    width: 56px; height: 56px; border-radius: 16px; flex: none; position: relative;
+    display: grid; place-items: center;
+    background: linear-gradient(150deg, var(--rp-brand), var(--rp-brand-2));
+    color: var(--rp-gold-soft);
+    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--rp-brand) 72%, #111827);
 }
-.rep-stat:hover { transform:translateY(-3px); box-shadow:0 10px 28px color-mix(in srgb, var(--report-brand) 14%, transparent); }
-.rep-stat-icon {
-    width:44px; height:44px; border-radius:12px;
-    display:flex; align-items:center; justify-content:center; font-size:18px;
+.rp-hic svg { width: 28px; height: 28px; }
+.rp-spark {
+    position: absolute; top: -4px; right: -4px; width: 13px; height: 13px;
+    background: linear-gradient(135deg, #FFFDF5, var(--rp-gold));
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+    animation: rpTwinkle 2.6s ease-in-out infinite;
 }
-.rep-stat::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
-    opacity:0; transition:opacity .25s;
-    background: var(--accent, var(--report-brand));
+@keyframes rpTwinkle {
+    0%, 100% { transform: scale(.7) rotate(0); opacity: .55; }
+    50% { transform: scale(1) rotate(90deg); opacity: 1; }
 }
-.rep-stat:hover::after { opacity:1; }
+.reportes-view .rp-head h1 {
+    font-family: var(--rp-serif);
+    font-size: clamp(1.7rem, 3vw, 2.375rem);
+    font-weight: 600; line-height: 1; margin: 0;
+    color: var(--rp-heading);
+    letter-spacing: -.01em;
+}
+.reportes-view .rp-sub { color: var(--rp-muted); font-size: .875rem; font-weight: 500; margin-top: 8px; }
+.rp-tags { margin-left: auto; display: flex; gap: 10px; align-items: center; flex: none; flex-wrap: wrap; }
+.rp-tag {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: .78rem; font-weight: 700; padding: 9px 14px; border-radius: 999px;
+    background: var(--rp-surface); border: 1px solid var(--rp-line);
+    color: var(--rp-ink-2); box-shadow: var(--rp-shadow-xs); white-space: nowrap;
+}
+.rp-tag svg { width: 15px; height: 15px; color: var(--rp-gold); }
 
-@keyframes slideUp {
-    from { opacity:0; transform:translateY(18px); }
-    to   { opacity:1; transform:translateY(0); }
+/* ── Título de sección con hairline dorada ── */
+.rp-sect { margin: 30px 0 0; }
+.reportes-view .rp-sect h2 {
+    font-family: var(--rp-serif); font-size: 1.5rem; font-weight: 600;
+    color: var(--rp-heading); margin: 0;
+    display: flex; align-items: center; gap: 12px;
 }
-.rep-stat:nth-child(1) { animation-delay:.05s; }
-.rep-stat:nth-child(2) { animation-delay:.12s; }
-.rep-stat:nth-child(3) { animation-delay:.19s; }
-.rep-stat:nth-child(4) { animation-delay:.26s; }
+.rp-sect h2::after { content: ''; flex: 1; height: 1px; background: var(--rp-gold-line); }
+.reportes-view .rp-sect p { color: var(--rp-muted); font-size: .845rem; font-weight: 500; margin-top: 6px; }
 
-/* ── Report cards ────────────────────────── */
-.rep-card {
-    background:var(--report-surface); border-radius:16px;
-    border:1px solid var(--report-border);
-    padding:0; overflow:hidden; position:relative;
-    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-    animation: slideUp .5s ease both;
-    display:flex; flex-direction:column;
-    box-shadow:0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28);
-}
-.rep-card:hover {
-    transform:translateY(-3px);
-    border-color:color-mix(in srgb, var(--report-color, var(--report-brand)) 30%, var(--report-border));
-    box-shadow:0 16px 34px -24px color-mix(in srgb, var(--report-color, var(--report-brand)) 58%, #172033);
-}
+/* ── Grid de tarjetas ── */
+.rp-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-top: 20px; }
+@media (max-width: 1279px) { .rp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1023px) { .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* Shimmer on hover */
-.rep-card::before {
-    content:none;
+.rp-card {
+    display: flex; flex-direction: column; position: relative;
+    background: var(--rp-surface); border: 1px solid var(--rp-line);
+    border-radius: 20px; box-shadow: var(--rp-shadow-xs); padding: 22px;
+    transition: transform .18s var(--rp-ease), box-shadow .18s ease, border-color .18s ease;
+    animation: rpUp .5s var(--rp-ease) both;
 }
-.rep-card:hover::before { left:auto; }
+.rp-card:hover { transform: translateY(-4px); box-shadow: var(--rp-shadow); border-color: var(--rp-gold-line); }
+@keyframes rpUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.rp-card:nth-child(1) { animation-delay: .05s; }
+.rp-card:nth-child(2) { animation-delay: .11s; }
+.rp-card:nth-child(3) { animation-delay: .17s; }
+.rp-card:nth-child(4) { animation-delay: .23s; }
+.rp-card:nth-child(5) { animation-delay: .29s; }
+.rp-card:nth-child(6) { animation-delay: .35s; }
+.rp-card:nth-child(7) { animation-delay: .41s; }
 
-.rep-card:nth-child(1) { animation-delay:.3s; }
-.rep-card:nth-child(2) { animation-delay:.38s; }
-.rep-card:nth-child(3) { animation-delay:.46s; }
-.rep-card:nth-child(4) { animation-delay:.54s; }
+.rp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.rp-ic {
+    width: 52px; height: 52px; border-radius: 15px; flex: none;
+    display: grid; place-items: center;
+    background: var(--cb); color: var(--cc);
+    transition: transform .18s var(--rp-ease);
+}
+.rp-ic svg { width: 25px; height: 25px; }
+.rp-card:hover .rp-ic { transform: translateY(-2px); }
+.rp-cat {
+    font-size: .625rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+    background: var(--cb); color: var(--cc);
+}
+.reportes-view .rp-card h3 {
+    font-family: var(--rp-serif); font-size: 1.25rem; font-weight: 600;
+    color: var(--rp-heading); margin: 18px 0 0; line-height: 1.15;
+}
+.reportes-view .rp-desc { font-size: .8125rem; color: var(--rp-muted); line-height: 1.55; margin-top: 8px; }
+.rp-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.rp-list li { display: flex; align-items: center; gap: 10px; font-size: .8125rem; font-weight: 600; color: var(--rp-ink-2); }
+.rp-list li svg { width: 16px; height: 16px; color: var(--cc); flex: none; }
 
-/* Card accent bar */
-.card-accent {
-    height:1px; width:100%;
-    background:color-mix(in srgb, var(--report-color, var(--report-brand)) 42%, var(--report-border));
+/* ── Acciones ── */
+.rp-acts { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 9px; }
+.rp-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    font-family: var(--rp-sans); font-size: .845rem; font-weight: 700;
+    padding: 12px 16px; border-radius: 12px; min-height: 44px;
+    border: 1px solid transparent; text-decoration: none; cursor: pointer;
+    transition: transform .14s var(--rp-ease), box-shadow .14s ease, background .14s ease, border-color .14s ease, color .14s ease;
+    position: relative; overflow: hidden;
 }
+.rp-btn svg { width: 16px; height: 16px; stroke-width: 2; }
+.rp-btn.primary { background: var(--rp-brand); color: var(--rp-on-brand); box-shadow: 0 10px 20px -14px color-mix(in srgb, var(--rp-brand) 75%, #111827); }
+.rp-btn.primary:hover { background: var(--rp-brand-2); transform: translateY(-1px); }
+.rp-btn.ghost { background: var(--rp-surface); color: var(--rp-ink-2); border-color: var(--rp-line); }
+.rp-btn.ghost:hover { border-color: var(--rp-gold-line); color: var(--rp-heading); }
+.rp-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--rp-brand) 30%, transparent); outline-offset: 2px; }
+.rp-btn__shine {
+    position: absolute; inset: 0 auto 0 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent);
+    transform: translateX(-160%) skewX(-18deg);
+}
+.rp-btn.primary:hover .rp-btn__shine { transition: transform .65s ease; transform: translateX(320%) skewX(-18deg); }
 
-.card-body { padding:22px; flex:1; display:flex; flex-direction:column; }
-
-/* Icon wrapper with animation */
-.rep-icon-wrap {
-    width:56px; height:56px; border-radius:14px;
-    display:flex; align-items:center; justify-content:center; font-size:22px;
-    transition: transform .22s ease, box-shadow .22s ease; margin-bottom:14px;
-    background:var(--report-color-soft, var(--report-soft));
-    color:var(--report-color, var(--report-brand));
-    box-shadow:0 10px 22px -16px color-mix(in srgb, var(--report-color, var(--report-brand)) 68%, transparent);
-}
-.rep-icon-wrap i {
-    color:var(--report-color, var(--report-brand)) !important;
-}
-.rep-card:hover .rep-icon-wrap {
-    transform: translateY(-2px);
-    box-shadow:0 14px 26px -16px color-mix(in srgb, var(--report-color, var(--report-brand)) 72%, transparent);
-}
-
-/* Feature list */
-.feat-list { list-style:none; padding:0; margin:0 0 16px; flex:1; }
-.feat-list li {
-    display:flex; align-items:center; gap:7px;
-    font-size:.75rem; color:var(--report-muted); padding:3px 0;
-}
-.feat-list li i { color:var(--report-color, var(--report-brand)); font-size:.65rem; flex-shrink:0; }
-
-/* CTA buttons */
-.rep-cta {
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    width:100%; padding:11px 16px; border-radius:11px;
-    font-size:.82rem; font-weight:800; text-decoration:none;
-    transition: box-shadow .18s ease, transform .18s ease, background .18s ease; border:none;
-    position:relative; z-index:2;
-    background:linear-gradient(135deg, var(--report-brand), var(--report-brand-dark));
-    color:#fff;
-    box-shadow:0 12px 24px -12px color-mix(in srgb, var(--report-brand) 64%, transparent);
-}
-.rep-cta:hover { transform:translateY(-1px); box-shadow:0 16px 30px -14px color-mix(in srgb, var(--report-brand) 70%, transparent); }
-.rep-cta:focus-visible { outline:3px solid color-mix(in srgb, var(--report-accent) 36%, transparent); outline-offset:3px; }
-
-/* Category badge */
-.cat-badge {
-    font-size:.65rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
-    padding:4px 9px; border-radius:999px; white-space:nowrap;
-    background:var(--report-color-soft, var(--report-soft));
-    color:var(--report-color-strong, var(--report-brand-dark));
-    border:1px solid color-mix(in srgb, var(--report-color, var(--report-brand)) 24%, var(--report-border));
-}
-.section-kicker {
-    display:flex; align-items:flex-start; gap:12px; margin-bottom:20px;
-}
-.section-kicker-bar {
-    width:34px; height:1px; flex-shrink:0; margin-top:12px;
-    background:var(--report-accent-line);
-    border-radius:999px;
-}
-.section-kicker h2 {
-    color:var(--report-brand);
-    font-family:var(--report-serif);
-    font-size:1.45rem;
-    font-weight:700;
-    line-height:1;
-}
-.section-kicker p { color:var(--report-muted) !important; }
-
-.reportes-view .report-grid .rep-card:nth-child(1) {
-    --report-color: var(--report-brand) !important;
-    --report-color-strong: var(--report-brand-dark) !important;
-    --report-color-soft: var(--report-soft) !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(2) {
-    --report-color: var(--report-success) !important;
-    --report-color-strong: color-mix(in srgb, var(--report-success) 72%, #123322) !important;
-    --report-color-soft: var(--report-success-soft) !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(3) {
-    --report-color: var(--report-accent) !important;
-    --report-color-strong: var(--report-accent-dark) !important;
-    --report-color-soft: var(--report-accent-soft) !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(4) {
-    --report-color: #607084 !important;
-    --report-color-strong: #334155 !important;
-    --report-color-soft: #EEF1F4 !important;
-}
-.reportes-view .rep-card h3 {
-    color:var(--report-brand) !important;
-    font-weight:800;
-}
-.reportes-view .rep-card p {
-    color:var(--report-muted) !important;
-}
-
-/* Color balance: keep report categories distinct, use hotel color as an accent. */
-.reportes-view {
-    --report-heading: var(--brand-text, #111827);
-    --report-text: var(--brand-text, #1F2937);
-    --report-muted: var(--brand-muted, #667085);
-    --report-border: color-mix(in srgb, var(--report-brand) 6%, #E6E0D4);
-    --report-soft: color-mix(in srgb, var(--report-brand) 3%, #FAF8F2);
-    --report-surface: #FFFFFF;
-    --report-surface-warm: color-mix(in srgb, var(--report-accent) 3%, #FFFFFF);
-    --report-shadow: 0 1px 2px rgba(17,24,39,.035), 0 14px 30px -24px rgba(17,24,39,.34);
-    color: var(--report-text);
-}
-
-.rep-bg {
-    background:
-        radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--report-accent) 6%, transparent) 0, transparent 26%),
-        radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--report-brand) 4%, transparent) 0, transparent 24%),
-        linear-gradient(180deg, #FBFAF6, #FFFFFF 48%, #F8F5ED) !important;
-}
-
-.reportes-view .rep-hero {
-    border-bottom-color: var(--report-border);
-}
-
-.reportes-view .rep-hero-icon {
-    background: linear-gradient(150deg, var(--report-brand), var(--report-brand-dark)) !important;
-    color: var(--report-on-brand) !important;
-    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--report-brand) 72%, #111827) !important;
-}
-
-.reportes-view .rep-hero h1,
-.reportes-view .section-kicker h2,
-.reportes-view .rep-card h3 {
-    color: var(--report-heading) !important;
-}
-
-.reportes-view .report-chip {
-    background: var(--report-surface) !important;
-    border-color: var(--report-border) !important;
-    color: var(--report-heading) !important;
-    box-shadow: 0 10px 22px -20px rgba(17,24,39,.45);
-}
-
-.reportes-view .section-kicker-bar {
-    background: color-mix(in srgb, var(--report-accent) 38%, var(--report-border)) !important;
-}
-
-.reportes-view .report-grid .rep-card:nth-child(1) {
-    --report-color: #3B6EA8 !important;
-    --report-color-strong: #234C78 !important;
-    --report-color-soft: #EAF1F8 !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(2) {
-    --report-color: #2F855A !important;
-    --report-color-strong: #276749 !important;
-    --report-color-soft: #E8F4ED !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(3) {
-    --report-color: #A16207 !important;
-    --report-color-strong: #7C4A03 !important;
-    --report-color-soft: #F8F0DC !important;
-}
-.reportes-view .report-grid .rep-card:nth-child(4) {
-    --report-color: #64748B !important;
-    --report-color-strong: #334155 !important;
-    --report-color-soft: #EEF1F4 !important;
-}
-
-.reportes-view .rep-card {
-    background: var(--report-surface) !important;
-    border-color: var(--report-border) !important;
-    box-shadow: var(--report-shadow) !important;
-}
-
-.reportes-view .rep-card:hover {
-    border-color: color-mix(in srgb, var(--report-color) 20%, var(--report-border)) !important;
-    box-shadow: 0 16px 34px -26px color-mix(in srgb, var(--report-color) 42%, #111827) !important;
-}
-
-.reportes-view .card-accent {
-    height: 2px;
-    background: color-mix(in srgb, var(--report-color) 28%, var(--report-border)) !important;
-}
-
-.reportes-view .rep-icon-wrap {
-    background: color-mix(in srgb, var(--report-color) 9%, #FFFFFF) !important;
-    color: var(--report-color-strong) !important;
-    border: 1px solid color-mix(in srgb, var(--report-color) 18%, var(--report-border));
-    box-shadow: none !important;
-}
-
-.reportes-view .rep-icon-wrap i,
-.reportes-view .feat-list li i {
-    color: var(--report-color-strong) !important;
-}
-
-.reportes-view .cat-badge {
-    background: color-mix(in srgb, var(--report-color) 8%, #FFFFFF) !important;
-    color: var(--report-color-strong) !important;
-    border-color: color-mix(in srgb, var(--report-color) 18%, var(--report-border)) !important;
-}
-
-.reportes-view .rep-cta {
-    background: linear-gradient(
-        135deg,
-        var(--report-brand),
-        var(--report-brand-dark)
-    ) !important;
-    color: var(--report-on-brand) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--report-brand) 72%, #111827) !important;
-}
-
-.reportes-view .rep-cta:hover {
-    background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--report-brand) 92%, #FFFEFB),
-        var(--report-brand-dark)
-    ) !important;
-    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--report-brand) 78%, #111827) !important;
-}
-
-.reportes-view .rep-cta:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--report-brand) 28%, transparent) !important;
-    outline-offset: 3px;
-}
-
-.reportes-view .report-scroll::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--report-brand) 48%, #667085) !important;
-}
-
-@media (min-width: 1280px) {
-    .reportes-view .report-grid {
-        grid-template-columns:repeat(4, minmax(0, 1fr));
-    }
-}
-
-/* Mobile report cards */
+/* ── Móvil compacto (patrón de la casa, ≤680px) ── */
 @media (max-width: 680px) {
-    .reportes-view.rep-bg {
-        padding: 0 !important;
-    }
+    .rp-head { gap: .6rem; flex-wrap: wrap; }
+    .rp-hic { width: 40px; height: 40px; border-radius: 12px; }
+    .rp-hic svg { width: 20px; height: 20px; }
+    .rp-spark { width: 10px; height: 10px; top: -3px; right: -3px; }
+    .reportes-view .rp-head h1 { font-size: 1.4rem; }
+    .reportes-view .rp-sub { font-size: .72rem; margin-top: 4px; line-height: 1.3; }
+    .rp-tags { margin-left: 0; width: 100%; gap: .4rem; }
+    .rp-tag { font-size: .62rem; padding: 6px 10px; gap: 5px; }
+    .rp-tag svg { width: 12px; height: 12px; }
 
-    .reportes-view .section-kicker {
-        margin-bottom: 0.72rem;
-        gap: 0.55rem;
-    }
+    .rp-sect { margin-top: 1.1rem; }
+    .reportes-view .rp-sect h2 { font-size: 1.08rem; gap: .55rem; }
+    .reportes-view .rp-sect p { font-size: .72rem; line-height: 1.25; }
 
-    .reportes-view .section-kicker-bar {
-        width: 1.45rem;
-        margin-top: 0.62rem;
+    .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .55rem; margin-top: .8rem; }
+    .rp-card { padding: .66rem; border-radius: .9rem; }
+    .rp-top { gap: .4rem; }
+    .rp-ic { width: 2rem; height: 2rem; border-radius: .58rem; }
+    .rp-ic svg { width: 1rem; height: 1rem; }
+    .rp-cat { max-width: 5.4rem; padding: .16rem .45rem; font-size: .5rem; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; }
+    .reportes-view .rp-card h3 {
+        margin-top: .5rem; font-size: .95rem; line-height: 1.12;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-
-    .reportes-view .section-kicker h2 {
-        font-size: 0.98rem !important;
-        line-height: 1.05;
+    .reportes-view .rp-desc {
+        margin-top: .28rem; font-size: .62rem; line-height: 1.24;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-
-    .reportes-view .section-kicker p {
-        font-size: 0.72rem !important;
-        line-height: 1.25;
-    }
-
-    .reportes-view .report-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 0.54rem !important;
-    }
-
-    .reportes-view .rep-card {
-        min-height: 0;
-        border-radius: 0.84rem !important;
-        box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 10px 22px -20px rgba(17,24,39,.42) !important;
-    }
-
-    .reportes-view .card-accent {
-        height: 2px;
-    }
-
-    .reportes-view .card-body {
-        padding: 0.62rem !important;
-    }
-
-    .reportes-view .card-body > .flex {
-        margin-bottom: 0.46rem !important;
-        gap: 0.42rem;
-        align-items: flex-start !important;
-    }
-
-    .reportes-view .rep-icon-wrap {
-        width: 2rem;
-        height: 2rem;
-        min-width: 2rem;
-        margin-bottom: 0 !important;
-        border-radius: 0.58rem !important;
-        font-size: 0.86rem;
-        box-shadow: none !important;
-    }
-
-    .reportes-view .rep-icon-wrap i {
-        font-size: 0.84rem !important;
-    }
-
-    .reportes-view .cat-badge {
-        max-width: 5.25rem;
-        padding: 0.16rem 0.42rem;
-        font-size: 0.5rem;
-        letter-spacing: 0.045em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .reportes-view .rep-card h3 {
-        margin-bottom: 0.3rem !important;
-        font-size: 0.76rem !important;
-        line-height: 1.13 !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .reportes-view .rep-card p {
-        margin-bottom: 0.48rem !important;
-        font-size: 0.62rem !important;
-        line-height: 1.22 !important;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .reportes-view .feat-list {
-        display: none;
-    }
-
-    .reportes-view .rep-cta {
-        min-height: 2.12rem;
-        padding: 0.45rem 0.5rem;
-        gap: 0.34rem;
-        border-radius: 0.62rem;
-        font-size: 0.62rem;
-        line-height: 1;
-        white-space: nowrap;
-        box-shadow: 0 8px 18px -16px color-mix(in srgb, var(--report-brand) 70%, #111827) !important;
-    }
-
-    .reportes-view .rep-cta i {
-        font-size: 0.68rem !important;
-    }
-
-    .reportes-view .rep-cta + .rep-cta {
-        margin-top: 0.34rem !important;
-    }
+    .rp-list { display: none; }
+    .rp-acts { padding-top: .55rem; gap: .34rem; }
+    .rp-btn { min-height: 2.15rem; padding: .45rem .5rem; gap: .34rem; border-radius: .62rem; font-size: .62rem; white-space: nowrap; }
+    .rp-btn svg { width: .72rem; height: .72rem; }
 }
 
 @media (max-width: 380px) {
-    .reportes-view .report-grid {
-        gap: 0.45rem !important;
-    }
-
-    .reportes-view .card-body {
-        padding: 0.54rem !important;
-    }
-
-    .reportes-view .cat-badge {
-        max-width: 4.55rem;
-        font-size: 0.48rem;
-    }
-
-    .reportes-view .rep-card h3 {
-        font-size: 0.7rem !important;
-    }
-
-    .reportes-view .rep-card p {
-        display: none;
-    }
-
-    .reportes-view .rep-cta {
-        min-height: 2rem;
-        padding-inline: 0.42rem;
-        font-size: 0.58rem;
-    }
+    .rp-grid { gap: .45rem; }
+    .rp-card { padding: .56rem; }
+    .rp-cat { max-width: 4.6rem; font-size: .48rem; }
+    .reportes-view .rp-card h3 { font-size: .88rem; }
+    .reportes-view .rp-desc { display: none; }
+    .rp-btn { min-height: 2rem; padding-inline: .42rem; font-size: .58rem; }
 }
 
-/* ── Scrollbar ───────────────────────────── */
-.report-scroll::-webkit-scrollbar { width:4px; }
-.report-scroll::-webkit-scrollbar-track { background:#E5E7EB; }
-.report-scroll::-webkit-scrollbar-thumb { background:var(--report-brand); border-radius:4px; }
+/* ── Movimiento reducido ── */
+@media (prefers-reduced-motion: reduce) {
+    .reportes-view .rp-spark { animation: none !important; display: none; }
+    .reportes-view .rp-btn__shine { display: none; }
+    .reportes-view .rp-card { animation: none !important; }
+    .reportes-view, .reportes-view * { transition-duration: .01ms !important; }
+    .reportes-view { opacity: 1; }
+}
 </style>
 
-<!-- ════════════════════════════════ REPORTES PAGE ════════ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="rp-i-trend" viewBox="0 0 24 24"><path d="M3 17l5-5 3.5 3.5L20 7"/><path d="M15 7h5v5"/></symbol>
+  <symbol id="rp-i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="rp-i-box" viewBox="0 0 24 24"><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9"/></symbol>
+  <symbol id="rp-i-check" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm-1.2 12.5L7 11.7l1.1-1.1 2.7 2.7 4.9-4.9 1.1 1.1z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="rp-i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M12 6l-6 2 3 5a3 3 0 0 1-6 0l3-5M12 6l6 2-3 5a3 3 0 0 0 6 0l-3-5M6 8l12-4"/></symbol>
+  <symbol id="rp-i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></symbol>
+  <symbol id="rp-i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0V4zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 20h6M12 14v6"/></symbol>
+  <symbol id="rp-i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8 6.2 21l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-2.3z"/></symbol>
+  <symbol id="rp-i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></symbol>
+  <symbol id="rp-i-broom" viewBox="0 0 24 24"><path d="M19 5 14 10M9.5 14.5 4 20m0 0h4l1-4 5-2 4-4-3-3-4 4-2 5z"/></symbol>
+  <symbol id="rp-i-share" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4M14 9l7-7M15 2h6v6"/></symbol>
+  <symbol id="rp-i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="rp-i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 6 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-6-3.5-9s1-6.5 3.5-9z"/></symbol>
+  <symbol id="rp-i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></symbol>
+  <symbol id="rp-i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0M12 14l4-4"/><circle cx="12" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="rp-i-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M8 12h8M8 15h8M8 18h5"/></symbol>
+  <symbol id="rp-i-dash2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M9 21V9"/></symbol>
+</svg>
+
 <div class="reportes-view rep-bg">
+    <div class="container mx-auto px-5 sm:px-7 pt-7 pb-12 max-w-7xl">
+        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
 
-    <!-- Hero Header -->
-    <div class="rep-hero">
-        <div class="container mx-auto px-5 sm:px-7 py-6 relative z-10">
-            <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                <div class="flex items-start gap-3">
-                    <div class="rep-hero-icon flex-shrink-0">
-                        <i class="fas fa-chart-line text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-white">
-                            Centro de Reportes y Análisis
-                        </h1>
-                        <p class="text-sm text-white/75 mt-1 max-w-2xl">Consulta los reportes activos del hotel con filtros propios en cada módulo.</p>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <span class="report-chip"><i class="fas fa-user-shield text-xs"></i> Gerencia</span>
-                    <span class="report-chip"><i class="fas fa-folder-open text-xs"></i> 6 areas activas</span>
-                </div>
+        <!-- Cabecera -->
+        <div class="rp-head">
+            <div class="rp-hic">
+                <svg><use href="#rp-i-trend"/></svg>
+                <span class="rp-spark" aria-hidden="true"></span>
             </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-5 sm:px-7 py-6 max-w-7xl">
-
-        <!-- Section title -->
-        <div class="section-kicker">
-            <div class="section-kicker-bar"></div>
             <div>
-                <h2 class="text-base font-bold">Reportes disponibles</h2>
-                <p class="text-sm text-slate-500">Elige el área a revisar; cada reporte conserva sus filtros, tablas y exportaciones existentes.</p>
+                <h1>Centro de Reportes y Análisis</h1>
+                <p class="rp-sub">Consulta los reportes activos del hotel con filtros propios en cada módulo.</p>
+            </div>
+            <div class="rp-tags">
+                <span class="rp-tag"><svg><use href="#rp-i-user"/></svg> <?= htmlspecialchars($repRol) ?></span>
+                <span class="rp-tag"><svg><use href="#rp-i-box"/></svg> <?= (int) $repAreas ?> áreas activas</span>
             </div>
         </div>
 
-        <!-- Report Cards Grid -->
-        <div class="report-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Sección -->
+        <div class="rp-sect">
+            <h2>Reportes disponibles</h2>
+            <p>Elige el área a revisar; cada reporte conserva sus filtros, tablas y exportaciones existentes.</p>
+        </div>
 
-            <!-- 1: Ingresos vs Gastos -->
-            <div class="rep-card" style="--report-color:#2563EB;--report-color-strong:#1D4ED8;--report-color-soft:#DBEAFE;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-balance-scale text-white"></i>
-                        </div>
-                        <span class="cat-badge">Financiero</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Análisis de Ingresos vs Gastos</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Compara movimientos del hotel por período para revisar balance y utilidad.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Ingresos y gastos por categoría</li>
-                        <li><i class="fas fa-check-circle"></i>Evolución diaria</li>
-                        <li><i class="fas fa-check-circle"></i>Utilidad del período</li>
-                    </ul>
-                    <a href="<?= url('reportes/ingresos-gastos') ?>" class="rep-cta">
-                        <i class="fas fa-chart-bar text-sm"></i> Abrir reporte
-                    </a>
+        <!-- Tarjetas -->
+        <div class="rp-grid">
+
+            <!-- Financiero: limpieza azul semántico -->
+            <div class="rp-card" style="--cc:#2F77E0;--cb:#E6EFFC;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-scale"/></svg></div>
+                    <span class="rp-cat">Financiero</span>
+                </div>
+                <h3>Análisis de Ingresos vs Gastos</h3>
+                <p class="rp-desc">Compara movimientos del hotel por período para revisar balance y utilidad.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Ingresos y gastos por categoría</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Evolución diaria</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Utilidad del período</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/ingresos-gastos') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-report"/></svg> Abrir reporte</a>
                 </div>
             </div>
 
-            <!-- 2: Procedencia Geográfica -->
-            <div class="rep-card" style="--report-color:#059669;--report-color-strong:#047857;--report-color-soft:#D1FAE5;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-map-marked-alt text-white"></i>
-                        </div>
-                        <span class="cat-badge">Geográfico</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Procedencia de Huéspedes</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Revisa de dónde llegan los huéspedes y cómo se distribuye su actividad.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Distribución por estados</li>
-                        <li><i class="fas fa-check-circle"></i>Top geográfico</li>
-                        <li><i class="fas fa-check-circle"></i>Evolución por origen</li>
-                    </ul>
-                    <a href="<?= url('reportes/procedencia') ?>" class="rep-cta">
-                        <i class="fas fa-globe-americas text-sm"></i> Abrir reporte
-                    </a>
+            <!-- Geográfico: verde disponible/éxito -->
+            <div class="rp-card" style="--cc:#1E9E63;--cb:#E7F4EC;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-map"/></svg></div>
+                    <span class="rp-cat">Geográfico</span>
+                </div>
+                <h3>Procedencia de Huéspedes</h3>
+                <p class="rp-desc">Revisa de dónde llegan los huéspedes y cómo se distribuye su actividad.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Distribución por estados</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Top geográfico</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Evolución por origen</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/procedencia') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-globe"/></svg> Abrir reporte</a>
                 </div>
             </div>
 
-            <!-- 3: Habitaciones Rentables -->
-            <div class="rep-card" style="--report-color:#7C3AED;--report-color-strong:#5B21B6;--report-color-soft:#EDE9FE;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-trophy text-white"></i>
-                        </div>
-                        <span class="cat-badge">Performance</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Habitaciones más Rentables</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Identifica rendimiento por habitación, tipo y ocupación del período.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Ranking por ingresos</li>
-                        <li><i class="fas fa-check-circle"></i>Ocupación y precio promedio</li>
-                        <li><i class="fas fa-check-circle"></i>Análisis por tipo</li>
-                    </ul>
-                    <a href="<?= url('reportes/habitaciones-rentables') ?>" class="rep-cta">
-                        <i class="fas fa-medal text-sm"></i> Abrir reporte
-                    </a>
+            <!-- Performance: ámbar mantenimiento -->
+            <div class="rp-card" style="--cc:#C2841C;--cb:#FAF0DC;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-trophy"/></svg></div>
+                    <span class="rp-cat">Performance</span>
+                </div>
+                <h3>Habitaciones más Rentables</h3>
+                <p class="rp-desc">Identifica rendimiento por habitación, tipo y ocupación del período.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Ranking por ingresos</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Ocupación y precio promedio</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Análisis por tipo</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/habitaciones-rentables') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-trophy"/></svg> Abrir reporte</a>
                 </div>
             </div>
 
-            <!-- 4: Mantenimiento -->
-            <div class="rep-card" style="--report-color:#D97706;--report-color-strong:#92400E;--report-color-soft:#FEF3C7;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-tools text-white"></i>
-                        </div>
-                        <span class="cat-badge">Operativo</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Mantenimiento de Habitaciones</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Consulta trabajos, costos y prioridades sin mezclarlo con el flujo de caja.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Tipos y prioridades</li>
-                        <li><i class="fas fa-check-circle"></i>Costos y duración</li>
-                        <li><i class="fas fa-check-circle"></i>Responsables y registro</li>
-                    </ul>
-                    <a href="<?= url('reportes/mantenimiento') ?>" class="rep-cta">
-                        <i class="fas fa-wrench text-sm"></i> Abrir reporte
-                    </a>
-                    <a href="<?= url('reportes/mantenimiento-programado') ?>" class="rep-cta" style="margin-top:8px;background:#fff;color:var(--report-color);border:1px solid color-mix(in srgb, var(--report-color) 32%, var(--report-border));">
-                        <i class="fas fa-calendar-check text-sm"></i> Ver programados
-                    </a>
-                    <a href="<?= url('reportes/limpieza') ?>" class="rep-cta" style="margin-top:8px;background:#fff;color:var(--report-color);border:1px solid color-mix(in srgb, var(--report-color) 32%, var(--report-border));">
-                        <i class="fas fa-broom text-sm"></i> Ver limpieza
-                    </a>
+            <!-- Operativo: slate ocupada -->
+            <div class="rp-card" style="--cc:#5B6B86;--cb:#ECEFF4;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-wrench"/></svg></div>
+                    <span class="rp-cat">Operativo</span>
+                </div>
+                <h3>Mantenimiento de Habitaciones</h3>
+                <p class="rp-desc">Consulta trabajos, costos y prioridades sin mezclarlo con el flujo de caja.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Tipos y prioridades</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Costos y duración</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Responsables y registro</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/mantenimiento') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-wrench"/></svg> Abrir reporte</a>
+                    <a href="<?= url('reportes/mantenimiento-programado') ?>" class="rp-btn ghost"><svg><use href="#rp-i-cal"/></svg> Ver programados</a>
+                    <a href="<?= url('reportes/limpieza') ?>" class="rp-btn ghost"><svg><use href="#rp-i-broom"/></svg> Ver limpieza</a>
                 </div>
             </div>
 
-            <!-- 5: Exportaciones y links seguros -->
-            <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('reportes_distribucion')): ?>
-            <div class="rep-card" style="--report-color:#0F766E;--report-color-strong:#115E59;--report-color-soft:#CCFBF1;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-file-export text-white"></i>
-                        </div>
-                        <span class="cat-badge">Seguridad</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Exportaciones y Links Seguros</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Administra PDFs y reportes ya generados para compartirlos con expiracion y revocacion.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Exportaciones guardadas</li>
-                        <li><i class="fas fa-check-circle"></i>Vencimiento de links</li>
-                        <li><i class="fas fa-check-circle"></i>Control de accesos</li>
-                    </ul>
-                    <a href="<?= url('reportes/links') ?>" class="rep-cta">
-                        <i class="fas fa-shield-alt text-sm"></i> Ver exportaciones
-                    </a>
+            <?php if ($repTieneDistribucion): ?>
+            <!-- Seguridad: cian información -->
+            <div class="rp-card" style="--cc:#0E96B8;--cb:#E2F2F6;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-share"/></svg></div>
+                    <span class="rp-cat">Seguridad</span>
+                </div>
+                <h3>Exportaciones y Links Seguros</h3>
+                <p class="rp-desc">Administra PDFs y reportes ya generados para compartirlos con expiración y revocación.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Exportaciones guardadas</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Vencimiento de links</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Control de accesos</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/links') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-shield"/></svg> Ver exportaciones</a>
                 </div>
             </div>
             <?php endif; ?>
 
-            <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('tablero_ejecutivo')): ?>
-            <!-- 6: Reporte gerencial diario -->
-            <div class="rep-card" style="--report-color:#1F2937;--report-color-strong:#111827;--report-color-soft:#EEF2F7;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-briefcase text-white"></i>
-                        </div>
-                        <span class="cat-badge">Gerencial</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Reporte Gerencial Diario</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Resume ingresos, ocupacion, agenda, caja y pendientes criticos del dia.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Vista ejecutiva diaria</li>
-                        <li><i class="fas fa-check-circle"></i>Pendientes accionables</li>
-                        <li><i class="fas fa-check-circle"></i>Notificacion automatica</li>
-                    </ul>
-                    <a href="<?= url('reportes/gerencial-diario') ?>" class="rep-cta">
-                        <i class="fas fa-chart-pie text-sm"></i> Abrir reporte
-                    </a>
+            <?php if ($repTieneTablero): ?>
+            <!-- Gerencial: violeta por llegar -->
+            <div class="rp-card" style="--cc:#5A57D2;--cb:#ECEBFB;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-brief"/></svg></div>
+                    <span class="rp-cat">Gerencial</span>
+                </div>
+                <h3>Reporte Gerencial Diario</h3>
+                <p class="rp-desc">Resume ingresos, ocupación, agenda, caja y pendientes críticos del día.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Vista ejecutiva diaria</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Pendientes accionables</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Notificación automática</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/gerencial-diario') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-globe"/></svg> Abrir reporte</a>
                 </div>
             </div>
 
-            <!-- 7: Tablero ejecutivo read-only -->
-            <div class="rep-card" style="--report-color:#164E63;--report-color-strong:#083344;--report-color-soft:#CFFAFE;">
-                <div class="card-accent"></div>
-                <div class="card-body">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="rep-icon-wrap">
-                            <i class="fas fa-tachometer-alt text-white"></i>
-                        </div>
-                        <span class="cat-badge">Ejecutivo</span>
-                    </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Tablero Ejecutivo</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Consolida KPIs operativos, financieros, inventario, tareas y documentos.</p>
-                    <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Solo lectura</li>
-                        <li><i class="fas fa-check-circle"></i>Filtros por periodo</li>
-                        <li><i class="fas fa-check-circle"></i>Alertas por area</li>
-                    </ul>
-                    <a href="<?= url('reportes/ejecutivo') ?>" class="rep-cta">
-                        <i class="fas fa-columns text-sm"></i> Abrir tablero
-                    </a>
+            <!-- Ejecutivo: oro de marca -->
+            <div class="rp-card" style="--cc:var(--rp-gold);--cb:var(--rp-gold-bg);">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-gauge"/></svg></div>
+                    <span class="rp-cat">Ejecutivo</span>
+                </div>
+                <h3>Tablero Ejecutivo</h3>
+                <p class="rp-desc">Consolida KPIs operativos, financieros, inventario, tareas y documentos.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Solo lectura</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Filtros por período</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Alertas por área</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/ejecutivo') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-dash2"/></svg> Abrir tablero</a>
                 </div>
             </div>
             <?php endif; ?>
 
-        </div><!-- end report-grid -->
-
-        <!-- Bottom spacer -->
-        <div class="h-8"></div>
-
-    </div><!-- end container -->
-</div><!-- end reportes-view -->
+        </div><!-- /rp-grid -->
+    </div>
+</div><!-- /reportes-view -->
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const view = document.querySelector('.reportes-view');
-    if (view) setTimeout(() => view.classList.add('loaded'), 80);
+document.addEventListener('DOMContentLoaded', function () {
+    var view = document.querySelector('.reportes-view');
+    if (view) setTimeout(function () { view.classList.add('loaded'); }, 60);
 });
-
-function reportBrandColor() {
-    const styles = getComputedStyle(document.documentElement);
-    return (styles.getPropertyValue('--brand-primary') || '#2563EB').trim();
-}
-
-function exportarTodos() {
-    Swal.fire({
-        title: 'Exportar Reportes',
-        text: '¿En qué formato desea exportar?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: reportBrandColor(),
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: '<i class="fas fa-file-pdf mr-2"></i>PDF',
-        cancelButtonText: '<i class="fas fa-file-excel mr-2"></i>Excel',
-        reverseButtons: true
-    }).then(result => {
-        if (result.isConfirmed || result.isDismissed) {
-            Swal.fire({ icon:'info', title:'En desarrollo', text:'Esta función estará disponible próximamente', confirmButtonColor:reportBrandColor() });
-        }
-    });
-}
-
-function programarReporte() {
-    Swal.fire({
-        title: 'Programar Reporte',
-        html: `<div class="text-left space-y-3">
-            <div><label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Reporte</label>
-            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option>Reporte de Ocupación</option><option>Análisis de Ingresos</option><option>Todos los reportes</option>
-            </select></div>
-            <div><label class="block text-xs font-semibold text-gray-600 mb-1">Frecuencia</label>
-            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option>Diario</option><option>Semanal</option><option>Mensual</option>
-            </select></div>
-            <div><label class="block text-xs font-semibold text-gray-600 mb-1">Hora de envío</label>
-            <input type="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" value="08:00"></div>
-        </div>`,
-        showCancelButton: true,
-        confirmButtonColor: reportBrandColor(),
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: '<i class="fas fa-save mr-2"></i>Programar',
-        cancelButtonText: 'Cancelar'
-    }).then(result => {
-        if (result.isConfirmed) Swal.fire({ icon:'success', title:'¡Programado!', text:'El reporte se enviará según lo configurado', confirmButtonColor:reportBrandColor() });
-    });
-}
-
-function crearReportePersonalizado() {
-    Swal.fire({ title:'Reporte Personalizado', text:'Próximamente podrá diseñar sus propios reportes con métricas específicas', icon:'info', confirmButtonColor:reportBrandColor(), confirmButtonText:'Entendido' });
-}
 </script>
 
-<script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
 <?php include __DIR__ . '/../layout/footer.php'; ?>

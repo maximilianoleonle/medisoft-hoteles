@@ -1,4 +1,3 @@
-<?php require_once APP_PATH . '/views/layout/header.php'; ?>
 <?php
 $unidadesMedida = is_array($unidadesMedida ?? null) && !empty($unidadesMedida)
     ? $unidadesMedida
@@ -675,5 +674,3 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.nuevo-producto-view').classList.add('loaded');
 });
 </script>
-
-<?php require_once APP_PATH . '/views/layout/footer.php'; ?>
