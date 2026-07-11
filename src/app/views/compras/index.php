@@ -557,7 +557,7 @@ $visibles = count($compras);
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
-                <a class="cp-btn cp-btn-gold" href="<?= url('compras/crear') ?>" title="Crear nueva compra">
+                <a class="cp-btn cp-btn-gold ms-glass-btn" href="<?= url('compras/crear') ?>" title="Crear nueva compra">
                     <i class="fas fa-plus"></i>
                     Nueva compra
                 </a>

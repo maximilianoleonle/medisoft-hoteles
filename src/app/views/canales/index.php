@@ -449,19 +449,19 @@ foreach ($feeds as $feed) {
     <div class="cnl-shell">
         <section class="cnl-hero-section">
             <div class="cnl-title-lockup">
-                <div class="cnl-hero-icon" aria-hidden="true">
+                <div class="cnl-hero-icon ms-glass-icon" aria-hidden="true">
                     <i class="fa-solid fa-calendar-days"></i>
                 </div>
                 <div>
                     <p class="cnl-kicker">Canales conectados</p>
-                    <h1 class="cnl-title">Canales iCal</h1>
+                    <h1 class="cnl-title ms-glass-title">Canales iCal</h1>
                     <p class="cnl-subtitle">Sincroniza tu calendario con Airbnb y Booking para no vender dos veces la misma habitaci&oacute;n.</p>
                 </div>
             </div>
             <div class="cnl-hero-actions">
                 <form method="POST" action="<?= url('canales/sincronizar') ?>" class="cnl-sync-form">
                     <?= csrf_field() ?>
-                    <button type="submit" class="cnl-btn">
+                    <button type="submit" class="cnl-btn ms-glass-btn">
                         <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
                         Sincronizar ahora
                     </button>

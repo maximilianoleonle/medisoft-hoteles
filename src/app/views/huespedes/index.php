@@ -989,17 +989,17 @@ select.guest-control {
         <section class="guest-hero hotel-page-header">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="guest-title-lockup">
-                    <div class="guest-hero-icon">
+                    <div class="guest-hero-icon ms-glass-icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="guest-title-copy">
                         <p class="hotel-page-kicker">Operaci&oacute;n hotelera</p>
-                        <h1 class="hotel-page-title">Hu&eacute;spedes</h1>
+                        <h1 class="hotel-page-title ms-glass-title">Hu&eacute;spedes</h1>
                         <p class="hotel-page-subtitle">Directorio operativo de hu&eacute;spedes.</p>
                     </div>
                 </div>
 
-                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn hotel-btn-primary" title="Registrar nuevo huesped">
+                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn hotel-btn-primary ms-glass-btn" title="Registrar nuevo huesped">
                     <i class="fas fa-user-plus"></i>
                     Nuevo huésped
                 </a>

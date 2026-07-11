@@ -557,7 +557,7 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
             <div class="wav-hero-actions">
                 <form method="POST" action="<?= url('whatsapp/probar') ?>" class="wav-test-form">
                     <?= csrf_field() ?>
-                    <button type="submit" class="wav-btn sec" <?= $conectado ? '' : 'disabled title="Primero guarda la conexion."' ?>>
+                    <button type="submit" class="wav-btn sec ms-glass-btn" <?= $conectado ? '' : 'disabled title="Primero guarda la conexion."' ?>>
                         <span class="wav-btn-label"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i>Enviar prueba</span>
                     </button>
                 </form>

@@ -655,16 +655,16 @@ $visibles = count($tareas);
             </div>
             <div class="tk-hero-actions">
                 <?php if ($puedeCrear): ?>
-                    <a class="tk-btn tk-btn-gold" href="<?= url('tareas/crear') ?>">
+                    <a class="tk-btn tk-btn-gold ms-glass-btn" href="<?= url('tareas/crear') ?>">
                         <i class="fas fa-plus"></i>
                         Nueva tarea
                     </a>
                 <?php endif; ?>
-                <a class="tk-btn tk-btn-muted tk-btn-agenda" href="<?= url('tareas/agenda') ?>">
+                <a class="tk-btn tk-btn-muted tk-btn-agenda ms-glass-btn" href="<?= url('tareas/agenda') ?>">
                     <i class="fas fa-calendar-day"></i>
                     Agenda
                 </a>
-                <a class="tk-btn tk-btn-muted tk-btn-report" href="<?= url('tareas/reporte') ?>">
+                <a class="tk-btn tk-btn-muted tk-btn-report ms-glass-btn" href="<?= url('tareas/reporte') ?>">
                     <i class="fas fa-chart-pie"></i>
                     Reporte
                 </a>

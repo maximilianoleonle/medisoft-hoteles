@@ -337,7 +337,7 @@ $visibles = count($trabajadores);
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
-                <a class="wk-btn wk-btn-gold" href="<?= url('trabajadores/crear') ?>"><i class="fas fa-plus"></i> Nuevo trabajador</a>
+                <a class="wk-btn wk-btn-gold ms-glass-btn" href="<?= url('trabajadores/crear') ?>"><i class="fas fa-plus"></i> Nuevo trabajador</a>
             <?php endif; ?>
         </section>
 

@@ -795,22 +795,17 @@ html[data-tema="cupertino"] .res-bookings .res-btn-primary:hover {
 
 /* ═══ 16. HEROS CON FLECHA DE REGRESO (todas las vistas, no reportes) ═══
    partials/back_arrow.php etiqueta el encabezado contenedor con
-   data-ms-hero (excluye rutas de reportes y heros oscuros --glass).
-   Decision de diseno (owner): en Cupertino CADA vista conserva SU propio
-   color de seccion (su banda de marca nativa) con su texto blanco — NO se
-   aplana a banda blanca uniforme. Aqui solo aplicamos el acabado Apple:
-   redondeo 16px y sin los ornamentos boutique (::before/::after). El fondo y
-   el color del titulo los pone la propia vista (cada seccion su color). */
+   data-ms-hero (excluye rutas de reportes y heros oscuros --glass; el
+   dashboard no lleva flecha, así que nunca se etiqueta).
+   Decisión de diseño (owner, 2026-07-10 — REEMPLAZA la banda de color
+   anterior): fila Apple SILENCIOSA. Nada de banda: los elementos (flecha,
+   migas, título, chips) viven directo sobre el lienzo, con título en tinta.
+   Mismo lenguaje que la topbar de Caja que aprobó el owner. */
 html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] {
-    border-radius: 20px !important;
-    background:
-        radial-gradient(circle at 76% 24%, color-mix(in srgb, var(--brand-accent, #C7C7C7) 34%, transparent), transparent 60%),
-        linear-gradient(100deg,
-            var(--brand-primary, #1D1D1F) 0%,
-            var(--brand-primary, #1D1D1F) 42%,
-            color-mix(in srgb, var(--brand-primary, #1D1D1F) 60%, var(--brand-secondary, #6E6E73)) 100%) !important;
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1D1D1F) 42%, transparent) !important;
-    box-shadow: 0 18px 42px -24px color-mix(in srgb, var(--brand-primary, #1D1D1F) 62%, #000) !important;
+    background: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::before,
@@ -818,16 +813,36 @@ html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::after {
     display: none !important;
 }
 
-/* Texto del hero legible sobre la banda de color (como en el dashboard) */
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h2,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1 *,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] > p,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] .subtitle,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="subtitle"],
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="sub"] {
-    color: #FFFFFF !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, .18) !important;
+/* Títulos y subtítulos en tinta sobre el lienzo (claro) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] h1,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] h2,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] h1 * {
+    color: #1D1D1F !important;
+    text-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] > p,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] .subtitle,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] [class*="subtitle"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] [class*="sub"] {
+    color: #6E6E73 !important;
+    text-shadow: none !important;
+}
+
+/* Y en tinta clara sobre el lienzo oscuro (Apple dark) */
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h2,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1 * {
+    color: #F5F5F7 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] > p,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] .subtitle,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="subtitle"],
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="sub"] {
+    color: #98989D !important;
+    text-shadow: none !important;
 }
 
 /* La flecha de regreso, versión Apple: círculo de vidrio con tinta. */
@@ -1560,6 +1575,139 @@ html[data-theme="dark"][data-tema="cupertino"] #modalCheckInTardio {
     --rv-checkin-line: #38383A;
     --rv-checkin-soft: #2C2C2E;
     --rv-checkin-muted: #98989D;
+}
+
+/* ── §24b. Héroe y "Total pagado" de ver.php en acabado Liquid Glass ──
+   El pase base (§24) neutralizó el lienzo pero dejó intactos el héroe
+   (banda verde plana) y la tarjeta "TOTAL PAGADO" (verde plano). El owner
+   pidió (2026-07-11) el MISMO lenguaje "candy glass" del header de caja:
+   losa de CRISTAL CLARO de la marca (verde muy tenue casi blanco) con tinta
+   oscura y píldoras lechosas — NO banda de color sólida. La tarjeta de pago
+   conserva su VERDE SEMÁNTICO (dinero, hardcodeado, white-label-safe).
+   Modo oscuro: losa grafito (como caja dark). */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-hero {
+    border-radius: 22px !important;
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .82), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--rdv3-primary) 14%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rdv3-primary) 28%, #FFFFFF) 100%) !important;
+    border: 1px solid color-mix(in srgb, var(--rdv3-primary) 24%, rgba(255, 255, 255, .9)) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .95),
+        inset 0 -2px 5px color-mix(in srgb, var(--rdv3-primary) 12%, transparent),
+        0 3px 7px color-mix(in srgb, var(--rdv3-primary) 10%, rgba(27, 39, 70, .05)),
+        0 24px 44px -20px color-mix(in srgb, var(--rdv3-primary) 42%, rgba(27, 39, 70, .22)) !important;
+}
+
+/* Título y meta: tinta oscura teñida de marca (antes blancos sobre banda) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-titleline h1,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-titleline h1 .rdv3-title-prefix {
+    color: color-mix(in srgb, var(--rdv3-primary) 32%, #111827) !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .4) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-meta {
+    color: color-mix(in srgb, var(--rdv3-primary) 30%, #5B6470) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-meta i {
+    color: color-mix(in srgb, var(--rdv3-primary) 62%, #111827) !important;
+    opacity: 1 !important;
+}
+
+/* Píldora de estado: cristal lechoso con tinta e identidad por variante */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status {
+    background: rgba(255, 255, 255, .7) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 2px 6px rgba(17, 24, 39, .06) !important;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--ok {
+    color: #4F46C7 !important;
+    border: 1px solid color-mix(in srgb, #6F6ADE 34%, rgba(255, 255, 255, .9)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--ok::before {
+    background: #6F6ADE !important;
+    box-shadow: 0 0 0 3px rgba(111, 106, 222, .16) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--wait {
+    color: #B45309 !important;
+    border: 1px solid color-mix(in srgb, #F5B540 40%, rgba(255, 255, 255, .9)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--wait::before {
+    background: #F5B540 !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--danger {
+    color: #B91C1C !important;
+    border: 1px solid color-mix(in srgb, #EF4444 38%, rgba(255, 255, 255, .9)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-status--danger::before {
+    background: #EF4444 !important;
+    box-shadow: none !important;
+}
+
+/* Modo oscuro: losa grafito de cristal (como caja dark), texto blanco base */
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-hero {
+    border-radius: 22px !important;
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
+    border: 1px solid #38383A !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .06),
+        0 24px 44px -24px rgba(0, 0, 0, .7) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-payment-total {
+    border-radius: 16px !important;
+    border: 1px solid color-mix(in srgb, #34C759 30%, transparent) !important;
+    background:
+        radial-gradient(130% 120% at 50% -25%, rgba(255, 255, 255, .55), transparent 55%),
+        linear-gradient(180deg,
+            color-mix(in srgb, #34C759 15%, #FFFFFF),
+            color-mix(in srgb, #34C759 8%, #FFFFFF)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .75),
+        0 10px 24px -16px color-mix(in srgb, #34C759 55%, #000) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-payment-total small {
+    color: #1E8E44 !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-payment-total b {
+    color: #1D7A3A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-payment-total {
+    border-radius: 16px !important;
+    border: 1px solid color-mix(in srgb, #30D158 28%, transparent) !important;
+    background:
+        radial-gradient(130% 120% at 50% -25%, rgba(255, 255, 255, .07), transparent 55%),
+        linear-gradient(180deg,
+            color-mix(in srgb, #30D158 20%, #1C1C1E),
+            color-mix(in srgb, #30D158 11%, #1C1C1E)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .08),
+        0 12px 28px -18px rgba(0, 0, 0, .7) !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-payment-total small {
+    color: #30D158 !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-payment-total b {
+    color: #4ADE80 !important;
 }
 
 /* ═══ 38. CUATRO MÓDULOS ESTÁNDAR: documentos (.docs-page --dc-*),
@@ -2828,4 +2976,432 @@ html[data-theme="dark"][data-tema="cupertino"] .guests-page {
     --g-info: #6CB4FF;
     --g-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
     background: #000000 !important;
+}
+
+/* ═══ §41. LIQUID GLASS reutilizable para vistas simples (sin header block) ══
+   Vistas tipo /huespedes: bajo Cupertino el header queda plano (§16 silencia
+   la banda). El owner (2026-07-11) pidió vestir SOLO 3 piezas con el cristal
+   de la casa, sin crear bloque: título, icono al lado del título y botón(es)
+   de acción de esa fila. Dos mecanismos:
+   1) Clases opt-in (para casos sueltos o markup atípico):
+     .ms-glass-icon   → tesela frosted de marca (icono al lado del título)
+     .ms-glass-title  → título en tinta de marca con realce
+     .ms-glass-btn    → botón de acción en cristal de marca (anillo por inset,
+                        NO border, para no alterar la altura del botón)
+   2) COBERTURA CENTRAL por patrón (owner 2026-07-11, "hazlo bien"): las ~50
+      vistas del pase "header limpio" comparten la convención
+      {prefijo}-title-lockup > {prefijo}-hero-icon + <h1>. El icono y el
+      título se visten aquí centralmente vía :is(); los botones de la fila
+      siguen siendo opt-in por vista (semánticos quedan sólidos: PDF rojo,
+      Excel verde, entrada/salida de inventario, res-btn-primary contrato §15).
+      Contenedores admitidos — verificados de fondo CLARO (2026-07-11):
+        [class*="title-lockup"]  (convención general)
+        .worker-hero-main / .exec-hero-main / .gc-hero-main (variantes claras)
+        .billing-title-row       (facturación)
+      NO agregar [class*="hero-main"] ni [class*="title-row"] genéricos: los
+      sub-reportes (profit/rent/mant/geo/disc-hero-main) son bandas OSCURAS y
+      caja/ver_corte + habitaciones usan *-title-row con tratamiento propio.
+   SOLO tema Cupertino; la base y otros temas quedan intactos. */
+
+/* ── Icono: tesela FROSTED clara de la marca (mismo candy glass del header),
+   glifo en tinta verde profunda. NO saturada: así se distingue de la tesela
+   sólida anterior y habla el mismo idioma liquid claro. ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-icon,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) [class*="hero-icon"] {
+    background:
+        radial-gradient(115% 120% at 28% 8%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 52%),
+        linear-gradient(160deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 50%, #FFFFFF)) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 30%, rgba(255, 255, 255, .85)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 58%, #08301C) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .95),
+        inset 0 -5px 10px color-mix(in srgb, var(--brand-primary, #1B2746) 14%, transparent),
+        0 9px 20px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 48%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-icon > i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-icon i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) [class*="hero-icon"] i {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, #08301C) !important;
+    -webkit-text-fill-color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, #08301C);
+}
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-icon,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) [class*="hero-icon"] {
+    background:
+        radial-gradient(115% 120% at 28% 8%, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 52%),
+        linear-gradient(160deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 46%, #1C1C1E),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #1C1C1E)) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 40%, rgba(255, 255, 255, .14)) !important;
+    color: #EAF6EE !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .14),
+        0 9px 20px -12px rgba(0, 0, 0, .6) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-icon > i,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-icon i,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) [class*="hero-icon"] i {
+    color: #EAF6EE !important;
+    -webkit-text-fill-color: #EAF6EE;
+}
+
+/* ── Título: tinta de marca con realce especular (claro) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] .ms-glass-title,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-glass-title,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) h1 {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #0C1E15) !important;
+    -webkit-text-fill-color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #0C1E15);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .55) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] .ms-glass-title,
+html[data-theme="dark"][data-tema="cupertino"] .ms-glass-title,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope :is([class*="title-lockup"], .worker-hero-main, .exec-hero-main, .gc-hero-main, .billing-title-row) h1 {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 26%, #F5F5F7) !important;
+    -webkit-text-fill-color: color-mix(in srgb, var(--brand-primary, #1B2746) 26%, #F5F5F7);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .35) !important;
+}
+
+/* ── Botón: cristal de marca frosted. El anillo es inset box-shadow, así que
+   forzamos el border a transparente para no duplicar contorno en botones que
+   ya traían borde (p.ej. .cx-btn-muted). ── */
+html[data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn {
+    border-color: transparent !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-btn {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 48%, #FFFFFF)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 48%, #0C2C1A) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 32%, rgba(255, 255, 255, .85)),
+        inset 0 1px 0 rgba(255, 255, 255, .85),
+        0 8px 18px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 50%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-btn:hover {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 38%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 56%, #FFFFFF)) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 38%, rgba(255, 255, 255, .85)),
+        inset 0 1px 0 rgba(255, 255, 255, .9),
+        0 11px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 55%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-btn > i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-glass-btn i {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 52%, #0C2C1A) !important;
+}
+
+/* ── Botón: cristal de marca (oscuro) ── */
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 42%, #1C1C1E),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #1C1C1E)) !important;
+    color: #F5F5F7 !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 40%, rgba(255, 255, 255, .12)),
+        inset 0 1px 0 rgba(255, 255, 255, .12),
+        0 10px 22px -12px rgba(0, 0, 0, .6) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn:hover {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 50%, #1C1C1E),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 34%, #1C1C1E)) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn > i,
+html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn i {
+    color: #F5F5F7 !important;
+}
+
+/* ═══ §42. BLOQUES DE COLOR (heros oscuros de sub-reportes) → CANDY GLASS ══
+   El owner (2026-07-11, captura de /reportes/ingresos-gastos) pidió que los
+   heros de BLOQUE OSCURO pasen al mismo candy glass claro de caja/rdv3.
+   Familia uniforme verificada: profit/rent/mant/geo/disc-hero-main (receta
+   copiada: banda oscura + kicker pill blanca + h1 blanco + botones is-soft
+   fantasma / is-accent blanco) + .report-link-title (links seguros).
+   AMPLIACIÓN (owner, "agarra las mayores vistas posibles"): se suman
+   1) las BANDAS MÓVILES ≤767px de tareas/compras/documentos/proveedores/
+      motor_reservas/inventario (receta "94%,#000" del pase banda 2e7d2d7e;
+      en desktop esos headers ya son claros) — esto además corrige que §41
+      ponía título en tinta sobre banda oscura en móvil;
+   2) los 6 heros oscuros de nómina (audit/exp/snap/nom-det/period/receipt,
+      receta "92%,#111827");
+   3) el lockup oscuro de tareas/reporte (.tk-report--insights).
+   En claro: losa de cristal de la marca con tinta; is-soft → píldora lechosa;
+   is-accent (CTA) → SÓLIDO de marca con brillo (en losa clara el CTA debe
+   destacar, precedente caja). En oscuro: losa grafito, el texto blanco de
+   base ya funciona. Los formularios de inventario (toolbar Tailwind delgada)
+   NO son de esta familia y quedan fuera. SOLO tema Cupertino. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .82), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 14%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #FFFFFF) 100%) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 24%, rgba(255, 255, 255, .9)) !important;
+    /* Tinta por herencia: cualquier texto suelto de la banda deja de ser blanco */
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 36%, #1F2937) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .95),
+        inset 0 -2px 5px color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent),
+        0 3px 7px color-mix(in srgb, var(--brand-primary, #1B2746) 10%, rgba(27, 39, 70, .05)),
+        0 24px 44px -20px color-mix(in srgb, var(--brand-primary, #1B2746) 42%, rgba(27, 39, 70, .22)) !important;
+}
+
+/* Bloom decorativo del acento: se suaviza sobre el cristal claro */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
+    background: radial-gradient(circle, color-mix(in srgb, var(--brand-accent, #BD9441) 22%, transparent), transparent 68%) !important;
+}
+
+/* Título y párrafo: tinta de marca sobre el cristal */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) h1 {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #0C1E15) !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .55) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) > p,
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) p {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 32%, #4B5563) !important;
+    text-shadow: none !important;
+}
+
+/* Kicker: píldora lechosa con tinta (incluye el div Tailwind de links) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*="text-white"] {
+    background: rgba(255, 255, 255, .68) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, rgba(255, 255, 255, .9)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #101828) !important;
+    text-shadow: none !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+    /* Forma de píldora también para kickers de texto plano (bandas móviles) */
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    padding: 7px 11px;
+    border-radius: 999px;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"] i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*="text-white"] i {
+    color: color-mix(in srgb, var(--brand-accent, #BD9441) 62%, #4A3A12) !important;
+}
+
+/* Tesela del icono dentro de los bloques: frosted clara (misma receta §41);
+   cubre los heros de nómina (period-lockup no es title-lockup) y las teselas
+   translúcidas de las bandas móviles. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] {
+    background:
+        radial-gradient(115% 120% at 28% 8%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 52%),
+        linear-gradient(160deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 50%, #FFFFFF)) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 30%, rgba(255, 255, 255, .85)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 58%, #08301C) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .95),
+        inset 0 -5px 10px color-mix(in srgb, var(--brand-primary, #1B2746) 14%, transparent),
+        0 9px 20px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 48%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] i {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, #08301C) !important;
+}
+
+/* Badges/sellos del bloque (p.ej. period-badge, nom-det-badge): lechosos */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="badge"] {
+    background: rgba(255, 255, 255, .68) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, rgba(255, 255, 255, .9)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #101828) !important;
+    text-shadow: none !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+}
+
+/* Botones fantasma (is-soft): cristal lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-soft {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 48%, #FFFFFF)) !important;
+    border-color: transparent !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 48%, #0C2C1A) !important;
+    text-shadow: none !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 32%, rgba(255, 255, 255, .85)),
+        inset 0 1px 0 rgba(255, 255, 255, .85),
+        0 8px 18px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 50%, transparent) !important;
+}
+
+/* CTA (is-accent): sólido de marca con brillo de vidrio, destaca en la losa */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%), var(--brand-primary, #1B2746) !important;
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, transparent) !important;
+    color: #FFFFFF !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .3),
+        0 10px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 62%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent i {
+    color: rgba(255, 255, 255, .85) !important;
+}
+
+/* Flecha --glass: sobre cristal claro pasa a círculo lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-hero) .ms-back--glass {
+    border-color: rgba(0, 0, 0, .06);
+    background: rgba(255, 255, 255, .85);
+    color: #1D1D1F;
+}
+
+/* Modo oscuro Apple: losa grafito; el texto blanco de base ya funciona */
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
+    border: 1px solid #38383A !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .06),
+        0 24px 44px -24px rgba(0, 0, 0, .7) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
+    background: radial-gradient(circle, color-mix(in srgb, var(--brand-accent, #BD9441) 20%, transparent), transparent 68%) !important;
+}
+
+/* §42b. Geometría del bloque para los heros de TAREAS y COMPRAS en ≥768px:
+   la sección base de esas vistas es transparente y sin padding (2px 0 6px,
+   sin radius), así que al recibir la losa el contenido quedaba pegado a los
+   bordes (icono en la esquina, botones al ras). Solo Cupertino, claro y
+   oscuro; el móvil ≤767px ya trae su propia banda con geometría. */
+@media (min-width: 768px) {
+    html[data-tema="cupertino"] :is(.tk-page .tk-hero-section, .purchases-page .cp-hero-section) {
+        border-radius: 22px;
+        padding: 22px 24px 20px;
+    }
+    html[data-tema="cupertino"] :is(.tk-page .tk-hero-section, .purchases-page .cp-hero-section) [class*="kicker"] {
+        margin-bottom: 9px;
+    }
+    html[data-tema="cupertino"] :is(.tk-page .tk-hero-section .tk-subtitle, .purchases-page .cp-hero-section .cp-subtitle) {
+        margin-top: 10px;
+    }
+    html[data-tema="cupertino"] .tk-page .tk-hero-section .tk-view-chip {
+        margin-top: 12px;
+    }
+}
+@media (min-width: 1024px) {
+    html[data-tema="cupertino"] :is(.tk-page .tk-hero-section, .purchases-page .cp-hero-section) {
+        padding: 24px 28px 22px;
+    }
+    html[data-tema="cupertino"] .tk-page .tk-hero-actions {
+        align-self: center;
+    }
+}
+
+/* ═══ §43. PANEL DE PERIODO / FILTROS de la familia sub-reporte → GLASS ═══
+   Segunda captura del owner (2026-07-11): el panel "PERIODO CONSULTADO"
+   (fechas Desde/Hasta + "Actualizar reporte" + chips de periodos rápidos)
+   también va en liquid glass. Contenedores por vista: profit/geo-period-panel,
+   rent/mant-filter-panel, disc-side-panel. Receta: losa de cristal SUAVE
+   (más tenue que el héroe para que respire el formulario), etiquetas y valor
+   del periodo en tinta, inputs lechosos con foco de marca, CTA sólido de
+   marca con brillo, chips lechosos. Oscuro: panel grafito. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) {
+    background:
+        radial-gradient(60% 120% at 92% 4%, rgba(255, 255, 255, .85), rgba(255, 255, 255, 0) 62%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 18%, #FFFFFF) 100%) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 20%, rgba(255, 255, 255, .9)) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .95),
+        0 3px 7px color-mix(in srgb, var(--brand-primary, #1B2746) 8%, rgba(27, 39, 70, .04)),
+        0 20px 38px -22px color-mix(in srgb, var(--brand-primary, #1B2746) 34%, rgba(27, 39, 70, .18)) !important;
+}
+
+/* Etiquetas y valor del periodo: tinta de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) label,
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="label"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="side-title"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="filter-top"] {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 46%, #101828) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="period-value"] {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 62%, #0C1E15) !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="note"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) p {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #4B5563) !important;
+}
+
+/* Inputs y selects: lechosos con foco de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) :is(input, select, textarea) {
+    background: rgba(255, 255, 255, .82) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 22%, rgba(255, 255, 255, .9)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 52%, #101828) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) :is(input, select, textarea):focus {
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #FFFFFF) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary, #1B2746) 16%, transparent) !important;
+}
+
+/* CTA del panel (Actualizar/Filtrar): sólido de marca con brillo */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .profit-period-panel .profit-btn,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .geo-period-panel .geo-btn,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rent-filter-panel .rent-btn,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .mant-filter-panel .mant-btn,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .disc-side-panel .disc-btn {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%), var(--brand-primary, #1B2746) !important;
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, transparent) !important;
+    color: #FFFFFF !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .3),
+        0 10px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 62%, transparent) !important;
+}
+
+/* Chips de periodos rápidos (7/30/90/Mes/Año): lechosos — van DESPUÉS del
+   CTA por si alguna vista combina clases */
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="period-btn"] {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, .2) 60%),
+        rgba(255, 255, 255, .55) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 22%, rgba(255, 255, 255, .9)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 50%, #101828) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="period-btn"]:hover {
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 40%, rgba(255, 255, 255, .9)) !important;
+}
+
+/* Oscuro: panel grafito con campos hundidos */
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) {
+    background:
+        radial-gradient(60% 120% at 92% 4%, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 62%),
+        linear-gradient(165deg, #1F1F21 0%, #161618 100%) !important;
+    border: 1px solid #38383A !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 20px 38px -24px rgba(0, 0, 0, .7) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) label,
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="label"] {
+    color: #C7C7CC !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="period-value"] {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #F5F5F7) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) :is(input, select, textarea) {
+    background: #2C2C2E !important;
+    border: 1px solid #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-period-panel, .geo-period-panel, .rent-filter-panel, .mant-filter-panel, .disc-side-panel) [class*="period-btn"] {
+    background: #2C2C2E !important;
+    border: 1px solid #38383A !important;
+    color: #D1D1D6 !important;
 }

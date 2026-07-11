@@ -489,11 +489,11 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
             </div>
             <?php if ($tablaDisponible): ?>
                 <div class="flex flex-wrap gap-2">
-                    <a class="cx-btn cx-btn-brand" href="<?= url('cuentas-por-pagar/generacion-preview') ?>" title="Generar cuentas desde compras recibidas">
+                    <a class="cx-btn cx-btn-brand ms-glass-btn" href="<?= url('cuentas-por-pagar/generacion-preview') ?>" title="Generar cuentas desde compras recibidas">
                         <i class="fas fa-file-circle-plus"></i>
                         Generar desde compras
                     </a>
-                    <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-pagar/simulador-caja') ?>" title="Simular pagos con Caja">
+                    <a class="cx-btn cx-btn-muted ms-glass-btn" href="<?= url('cuentas-por-pagar/simulador-caja') ?>" title="Simular pagos con Caja">
                         <i class="fas fa-cash-register"></i>
                         Simulador de pagos
                     </a>

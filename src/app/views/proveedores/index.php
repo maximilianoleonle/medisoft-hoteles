@@ -880,7 +880,7 @@ $visibles = count($proveedores);
                     <p class="pv-subtitle">Tu lista de proveedores del hotel: a qui&eacute;n le compras, c&oacute;mo contactarlo y si sigue activo. Aqu&iacute; los preparas; las compras y los pagos se registran despu&eacute;s.</p>
                 </div>
             </div>
-            <a class="pv-btn pv-btn-gold" href="<?= url('proveedores/crear') ?>" title="Registrar nuevo proveedor">
+            <a class="pv-btn pv-btn-gold ms-glass-btn" href="<?= url('proveedores/crear') ?>" title="Registrar nuevo proveedor">
                 <i class="fas fa-plus"></i>
                 Nuevo proveedor
             </a>

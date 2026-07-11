@@ -1598,11 +1598,11 @@ input.toggle-activo:checked ~ div {
 
                 <!-- Actions -->
                 <div class="tarifa-index-actions">
-                    <button onclick="previsualizarPrecios()" class="btn-tar calc flex-1 sm:flex-none">
+                    <button onclick="previsualizarPrecios()" class="btn-tar calc flex-1 sm:flex-none ms-glass-btn">
                         <i class="fas fa-calculator text-xs"></i>
                         <span>Calcular</span><span class="hidden sm:inline"> Precios</span>
                     </button>
-                    <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new flex-1 sm:flex-none">
+                    <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new flex-1 sm:flex-none ms-glass-btn">
                         <i class="fas fa-plus text-xs"></i>
                         <span>Nuevo</span><span class="hidden sm:inline"> Incremento</span>
                     </a>

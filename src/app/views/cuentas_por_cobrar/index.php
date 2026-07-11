@@ -228,15 +228,15 @@ $visibles = count($cuentas);
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="cx-title-lockup">
-                <div class="cx-hero-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+                <div class="cx-hero-icon ms-glass-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                 <div>
                     <p class="cx-kicker">Cobros a hu&eacute;spedes</p>
-                    <h1 class="cx-title">Cuentas por cobrar</h1>
+                    <h1 class="cx-title ms-glass-title">Cuentas por cobrar</h1>
                     <p class="cx-subtitle">Lo que te deben tus hu&eacute;spedes, seg&uacute;n sus reservaciones, pagos y facturas. Aqu&iacute; generas la cuenta cuando queda saldo pendiente.</p>
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
-                <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-table-list"></i> Cuentas operativas</a>
+                <a class="cx-btn cx-btn-muted ms-glass-btn" href="<?= url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-table-list"></i> Cuentas operativas</a>
             <?php endif; ?>
         </section>
 

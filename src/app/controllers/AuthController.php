@@ -264,7 +264,18 @@ class AuthController extends Controller {
             $this->redirect('dashboard');
         }
 
-        $this->validateCSRF();
+        // El logout es idempotente y "fail-safe": NO usamos validateCSRF() aquí
+        // porque, ante un token invalido, redirige al referer (el dashboard) y
+        // deja la sesion viva -> el usuario "no puede salir, lo regresa". Ese
+        // token puede estar caducado/rotado por causas legitimas: una pestana
+        // abierta muchas horas (el token CSRF rota a las 4h) o una sesion que
+        // expiro por inactividad y fue reconstruida en silencio por "recordarme"
+        // (que regenera la sesion sin el token viejo). Cerrar sesion ante un
+        // logout no verificado es inofensivo: es justo lo que pide el boton.
+        // Verificamos el token solo como best-effort para la auditoria.
+        $csrfOk = function_exists('verify_csrf_token')
+            && verify_csrf_token(csrf_token_from_request());
+
         $loginPath = 'login';
 
         // Verificar que esté autenticado
@@ -282,18 +293,21 @@ class AuthController extends Controller {
             if ($hotel_slug) {
                 $loginPath = 'h/' . $hotel_slug . '/login';
             }
-            
-            // Cerrar sesión
+
+            // Cerrar sesión (borra sesion + token "recordarme")
             logout();
-            
-            // Registrar en log
-            $this->logLogout($user_id);
-            $this->auditLogout((int) $user_id, $hotel_id ? (int) $hotel_id : null);
-            
+
+            // Registrar en log / auditoria solo cuando el CSRF valido (evita
+            // ruido de peticiones forjadas), pero la sesion ya se cerro igual.
+            if ($csrfOk) {
+                $this->logLogout($user_id);
+                $this->auditLogout((int) $user_id, $hotel_id ? (int) $hotel_id : null);
+            }
+
             // Mensaje
             set_mensaje('Sesión cerrada correctamente', 'info');
         }
-        
+
         // Redirigir al login
         $this->redirect($loginPath);
     }

@@ -633,12 +633,12 @@ $visibles = count($documentos);
             <?php if ($tablaDisponible): ?>
                 <div class="dc-hero-actions">
                     <?php if ($esEntidad): ?>
-                        <a class="dc-btn dc-btn-muted" href="<?= url('documentos') ?>">
+                        <a class="dc-btn dc-btn-muted ms-glass-btn" href="<?= url('documentos') ?>">
                             <i class="fas fa-arrow-left"></i>
                             <span>Todos los documentos</span>
                         </a>
                     <?php endif; ?>
-                    <a class="dc-btn dc-btn-gold" href="<?= doc_safe($uploadUrl, '') ?>">
+                    <a class="dc-btn dc-btn-gold ms-glass-btn" href="<?= doc_safe($uploadUrl, '') ?>">
                         <i class="fas fa-upload"></i>
                         <span>Subir documento</span>
                     </a>

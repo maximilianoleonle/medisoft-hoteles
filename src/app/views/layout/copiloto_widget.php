@@ -298,6 +298,69 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     #cop-panel.abierto { transform: translate(-50%, -50%) scale(1); }
     body.cop-abierto #cop-fab { display: none; }
 }
+
+/* ═══ Copiloto en tema Cupertino: candy glass de la marca (2026-07-11) ═══
+   El owner pidió el mismo lenguaje de caja/reservaciones. SOLO Cupertino;
+   la base conserva la banda oscura. Header y botón Enviar pasan de banda
+   sólida a cristal claro de la marca con tinta. El logo se queda en tesela
+   de marca (el glifo "día" es claro y necesita fondo oscuro para leerse).
+   Modo oscuro: header en losa grafito (alinea con rdv3 dark). Gana a la base
+   por especificidad + orden. Revertir: borrar este bloque. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-head {
+    background:
+        radial-gradient(62% 185% at 95% 58%, rgba(255,255,255,.58), rgba(255,255,255,0) 70%),
+        linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 48%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 32%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 52%, #FFFFFF) 100%) !important;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.85) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-head::after {
+    background: color-mix(in srgb, var(--brand-primary, #1B2746) 16%, rgba(0,0,0,.05)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-head strong {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 34%, #111827) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-head .cop-sub {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 34%, #6E6E73) !important;
+    opacity: 1 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-logo-mark {
+    background: linear-gradient(160deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 82%, #000)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 3px 8px -3px color-mix(in srgb, var(--brand-primary, #1B2746) 50%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-close {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 42%, #1F2937) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-close:hover {
+    background: color-mix(in srgb, var(--brand-primary, #1B2746) 12%, rgba(0,0,0,.05)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-foot button {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 30%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 46%, #FFFFFF)) !important;
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 46%, #0C2C1A) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 32%, rgba(255,255,255,.85)),
+        inset 0 1px 0 rgba(255,255,255,.85),
+        0 6px 15px -9px color-mix(in srgb, var(--brand-primary, #1B2746) 50%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-foot button:hover {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0) 60%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 38%, #FFFFFF),
+            color-mix(in srgb, var(--brand-primary, #1B2746) 54%, #FFFFFF)) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--brand-primary, #1B2746) 38%, rgba(255,255,255,.85)),
+        inset 0 1px 0 rgba(255,255,255,.9),
+        0 9px 20px -9px color-mix(in srgb, var(--brand-primary, #1B2746) 55%, transparent) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .cop-head {
+    background: linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
+}
 </style>
 
 <button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir asesor inteligente">
