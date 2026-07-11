@@ -273,7 +273,7 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
 }
 /* ── Copiloto: fondo difuminado suave + panel centrado SOLO en móvil ──
    (En escritorio se queda como widget de esquina y la sidebar permanece visible;
-    el ocultador global lo ignora por el atributo data-ms-keep-sidebar del panel.) */
+    el detector global de modales ignora el panel por su data-ms-no-modal.) */
 #cop-backdrop { display: none; }
 @media (max-width: 640px) {
     #cop-backdrop {
@@ -297,6 +297,21 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     }
     #cop-panel.abierto { transform: translate(-50%, -50%) scale(1); }
     body.cop-abierto #cop-fab { display: none; }
+}
+/* ── Con un modal abierto, el copiloto se retira en móvil ──
+   La clase ms-modal-abierto la pone/quita modal-sidebar-fix.js al detectar
+   cualquier modal visible (el panel del propio copiloto queda excluido por su
+   data-ms-no-modal, así que abrirlo no lo oculta a sí mismo). Al cerrarse
+   el modal, el widget —y el panel, si estaba abierto— reaparecen solos. */
+@media (max-width: 1024px) {
+    body.ms-modal-abierto #cop-fab,
+    body.ms-modal-abierto #cop-backdrop,
+    body.ms-modal-abierto #cop-panel {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .2s ease, visibility 0s linear .2s;
+    }
 }
 
 /* ═══ Copiloto en tema Cupertino: candy glass de la marca (2026-07-11) ═══
@@ -371,7 +386,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     <span class="cop-fab-label" aria-hidden="true">Asesor inteligente</span>
 </button>
 <div id="cop-backdrop" aria-hidden="true"></div>
-<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft" data-ms-keep-sidebar>
+<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft" data-ms-keep-sidebar data-ms-no-modal>
     <div class="cop-head">
         <span class="cop-logo-mark" aria-hidden="true">
             <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">

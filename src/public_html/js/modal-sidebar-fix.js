@@ -17,6 +17,16 @@
  * Es global y agnostico al patron de modal que use cada vista: detecta la apertura
  * observando el DOM en lugar de depender de que cada boton llame a una funcion.
  *
+ * Ademas de la clase para la sidebar, publica en <body> la clase generica
+ * `ms-modal-abierto` mientras haya un modal visible, para que otros flotantes
+ * (p.ej. el widget del Copiloto en movil) puedan retirarse con solo CSS.
+ *
+ * Opt-outs por atributo (en el nodo del modal o un ancestro):
+ *   - data-ms-no-modal: NO es un modal (widgets flotantes como el panel del
+ *     Copiloto); no activa ninguna de las dos clases.
+ *   - data-ms-keep-sidebar: es un modal pero gestiona su sidebar por su cuenta
+ *     (p.ej. #modalLimpieza); activa ms-modal-abierto pero no la de sidebar.
+ *
  * Patrones de modal soportados en el proyecto:
  *   - Estandar ARIA: <div role="dialog" aria-modal="true"> (p.ej. Caja: "fixed inset-0 hidden")
  *   - <div class="modal-overlay" style="display:none|flex|block"> ... </div>
@@ -36,6 +46,8 @@
     window.__msModalSidebarFixReady = true;
 
     var BODY_CLASS = 'ms-modal-hide-sidebar';
+    // Marcador generico "hay un modal visible": lo consumen otros flotantes via CSS.
+    var BODY_CLASS_GLOBAL = 'ms-modal-abierto';
 
     // Selectores de "contenedor" de modal. Se evalua su visibilidad real; que un
     // elemento exista en el DOM no implica que este abierto.
@@ -63,30 +75,45 @@
         return rect.width > 0 && rect.height > 0;
     }
 
-    function hayModalAbierto() {
+    function estadoModales() {
         var nodos = document.querySelectorAll(MODAL_SELECTORS);
+        var abierto = false;
+        var bajarSidebar = false;
         for (var i = 0; i < nodos.length; i++) {
-            // Opt-out: los nodos marcados con data-ms-keep-sidebar (p.ej. el panel del
-            // Copiloto, que es un widget flotante no bloqueante) NO ocultan la sidebar.
-            if (nodos[i].closest('[data-ms-keep-sidebar]')) {
+            // data-ms-no-modal: flotantes no bloqueantes (p.ej. el panel del
+            // Copiloto) que casan con los selectores pero NO son un modal; no
+            // cuentan para ningun efecto.
+            if (nodos[i].closest('[data-ms-no-modal]')) {
                 continue;
             }
-            if (esVisible(nodos[i])) {
-                return true;
+            if (!esVisible(nodos[i])) {
+                continue;
+            }
+            abierto = true;
+            // data-ms-keep-sidebar: el modal gestiona la sidebar por su cuenta
+            // (p.ej. #modalLimpieza agrega su clase propia al abrirse), asi que
+            // no activa el ocultador global de sidebar; aun asi cuenta como
+            // "modal abierto" para el resto de flotantes (ms-modal-abierto).
+            if (!nodos[i].closest('[data-ms-keep-sidebar]')) {
+                bajarSidebar = true;
+                break; // ambos estados ya son true: no hay mas que buscar
             }
         }
-        return false;
+        return { abierto: abierto, bajarSidebar: bajarSidebar };
     }
 
     var estadoAplicado = null;
 
     function aplicar() {
-        var abierto = hayModalAbierto();
-        if (abierto === estadoAplicado) {
+        var estado = estadoModales();
+        if (estadoAplicado
+            && estado.abierto === estadoAplicado.abierto
+            && estado.bajarSidebar === estadoAplicado.bajarSidebar) {
             return;
         }
-        estadoAplicado = abierto;
-        document.body.classList.toggle(BODY_CLASS, abierto);
+        estadoAplicado = estado;
+        document.body.classList.toggle(BODY_CLASS, estado.bajarSidebar);
+        document.body.classList.toggle(BODY_CLASS_GLOBAL, estado.abierto);
     }
 
     // Coalescer multiples mutaciones en un solo recalculo por frame.
@@ -143,6 +170,17 @@
             attributes: true,
             attributeFilter: ['style', 'class', 'open']
         });
+
+        // Los modales del sistema abren/cierran con fade (opacity 0 <-> 1). En el
+        // frame de la mutacion de clase la opacity computada aun es 0, asi que
+        // esVisible() los descarta, y la transicion en si no genera mutaciones que
+        // re-disparen el observer: el estado quedaba congelado en "sin modal".
+        // Los eventos de transicion/animacion burbujean hasta document y cubren
+        // ese hueco: al progresar o terminar el fade se recalcula y converge.
+        ['transitionrun', 'transitionend', 'transitioncancel', 'animationstart', 'animationend']
+            .forEach(function (tipo) {
+                document.addEventListener(tipo, programar, true);
+            });
     }
 
     if (document.readyState === 'loading') {
