@@ -1562,5 +1562,10 @@ html[data-theme="dark"] .psk-fieldset{ border-color:#38352C; }
             }
         }, 2000);
     </script>
+
+    <!-- ── Barra de navegación global (flecha + migas + hotel): se pinta antes
+         del contenido de cada vista; excluye Dashboard, Reportes y vistas con
+         barra propia (ver partials/view_topbar.php) ── -->
+    <?php include APP_PATH . '/views/partials/view_topbar.php'; ?>
 </body>
 </html>

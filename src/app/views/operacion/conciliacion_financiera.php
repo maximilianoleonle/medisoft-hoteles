@@ -781,7 +781,7 @@ $severidadLabels = [
         <div class="cfin-actions">
             <span class="cfin-badge"><i class="fas fa-lock"></i> Solo lectura</span>
             <?php $back_arrow_href = back_url('operacion/diaria'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-            <a class="cfin-btn ms-back-legacy" href="<?= back_url('operacion/diaria') ?>"><i class="fas fa-arrow-left"></i> Operacion diaria</a>
+            <a class="cfin-btn ms-back-legacy ms-glass-btn" href="<?= back_url('operacion/diaria') ?>"><i class="fas fa-arrow-left"></i> Operacion diaria</a>
         </div>
     </div>
 

@@ -1142,17 +1142,17 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-1.5">
-                        <div style="background:rgba(255,255,255,.12);width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;">
+                        <div class="ms-glass-icon" style="background:rgba(255,255,255,.12);width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-users text-white text-lg"></i>
                         </div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-white"><?= $esGestionHotel ? 'Trabajadores del Hotel' : 'Gestión de Usuarios' ?></h1>
+                        <h1 class="text-xl sm:text-2xl font-bold text-white ms-glass-title"><?= $esGestionHotel ? 'Trabajadores del Hotel' : 'Gestión de Usuarios' ?></h1>
                     </div>
                     <p class="text-white/55 text-sm ml-14">Control de accesos y roles de trabajadores · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 ml-14 lg:ml-0">
                     <span class="gold-badge"><i class="fas fa-shield-alt text-xs"></i> Administración</span>
                     <?php if ($puedeCrearUsuarios): ?>
-                    <a href="<?= url('usuarios/create') ?>" class="btn-nuevo">
+                    <a href="<?= url('usuarios/create') ?>" class="btn-nuevo ms-glass-btn">
                         <i class="fas fa-plus text-xs"></i> <?= $esGestionHotel ? 'Nuevo Trabajador' : 'Nuevo Usuario' ?>
                     </a>
                     <?php endif; ?>

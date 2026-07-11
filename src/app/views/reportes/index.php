@@ -252,12 +252,12 @@ if ($repRol !== '') {
 
         <!-- Cabecera -->
         <div class="rp-head">
-            <div class="rp-hic">
+            <div class="rp-hic ms-glass-icon">
                 <svg><use href="#rp-i-trend"/></svg>
                 <span class="rp-spark" aria-hidden="true"></span>
             </div>
             <div>
-                <h1>Centro de Reportes y Análisis</h1>
+                <h1 class="ms-glass-title">Centro de Reportes y Análisis</h1>
                 <p class="rp-sub">Consulta los reportes activos del hotel con filtros propios en cada módulo.</p>
             </div>
             <div class="rp-tags">

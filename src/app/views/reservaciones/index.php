@@ -4275,7 +4275,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <i class="fas fa-search"></i>
                     <input type="text" id="buscarReservacion" class="search-input" value="<?= htmlspecialchars($buscar) ?>" placeholder="Buscar folio, huesped o habitacion" autocomplete="off">
                 </label>
-                <a href="<?= url('reservaciones/calendario') ?>" class="res-btn" title="Abrir calendario de reservaciones">
+                <a href="<?= url('reservaciones/calendario') ?>" class="res-btn ms-glass-btn" title="Abrir calendario de reservaciones">
                     <i class="fas fa-calendar-alt"></i>
                     Calendario
                 </a>

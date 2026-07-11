@@ -642,7 +642,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 }
 
 .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 {
-    display: inline-flex !important;
+    display: none !important; /* breadcrumb local sustituido por la barra global (view_topbar) */
     align-items: center !important;
     gap: 9px !important;
     color: var(--rc-muted) !important;
@@ -2926,8 +2926,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
         <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(200,169,106,.07);pointer-events:none;"></div>
 
         <div class="px-5 sm:px-7 py-4 relative z-10">
-            <!-- Breadcrumb -->
-            <div class="flex items-center text-xs mb-3" style="color:rgba(255,255,255,.6);">
+            <!-- Breadcrumb (sustituido por la barra global view_topbar; ms-vtb-legacy lo oculta) -->
+            <div class="ms-vtb-legacy flex items-center text-xs mb-3" style="color:rgba(255,255,255,.6);">
                 <a href="<?= url('reservaciones') ?>" style="color:rgba(255,255,255,.7);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s;"
                    onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.7)'">
                     <i class="fas fa-calendar-alt" style="font-size:.65rem;"></i>

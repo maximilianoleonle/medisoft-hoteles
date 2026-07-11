@@ -2978,3 +2978,117 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+<style id="gd-candy-glass-cupertino">
+/* ═══ Expediente de huésped: candy glass — SOLO TEMA CUPERTINO, claro ═══════
+   Mismo lenguaje que caja/habitaciones/dashboard: lienzo gris perla, héroe
+   como losa pastel de la marca con bloom y tinta, chips lechosos, y la
+   tarjeta "Perfil de actividad" (antes banda oscura con texto blanco) como
+   losa fuerte de marca con tinta. El avatar y el CTA "Nueva reservación"
+   conservan su sólido de marca (anclas). Deleite y modo oscuro intactos.
+   Revertir: borrar este bloque. */
+
+/* Tokens del expediente → neutrales Apple (el lienzo crema pasa a gris perla) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view{
+    --gd-bg:#F5F5F7;
+    --gd-surface:rgba(255,255,255,.92);
+    --gd-surface-solid:#FFFFFF;
+    --gd-line:#E8E8ED;
+    --gd-line-soft:#EDEDF0;
+}
+
+/* Héroe: losa de cristal de la marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-identity-card{
+    border:1px solid color-mix(in srgb, var(--gd-primary) 22%, rgba(255,255,255,.9));
+    border-radius:22px;
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255,255,255,.82), rgba(255,255,255,0) 72%),
+        linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--gd-primary) 12%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--gd-primary) 26%, #FFFFFF) 100%);
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.95),
+        inset 0 -2px 5px color-mix(in srgb, var(--gd-primary) 12%, transparent),
+        0 3px 7px color-mix(in srgb, var(--gd-primary) 10%, rgba(27,39,70,.05)),
+        0 24px 44px -20px color-mix(in srgb, var(--gd-primary) 42%, rgba(27,39,70,.22));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-kicker{
+    color:color-mix(in srgb, var(--gd-primary) 62%, #111827);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-identity-card h1{
+    color:color-mix(in srgb, var(--gd-primary) 30%, #111827);
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+
+/* Chips del héroe: lechosos */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-chip{
+    border:1px solid rgba(255,255,255,.88);
+    background:rgba(255,255,255,.62);
+    color:#1F2937;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+    font-weight:700;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-chip i{
+    color:color-mix(in srgb, var(--gd-primary) 70%, #111827);
+}
+
+/* Rail de acciones: panel Apple limpio; el CTA conserva su sólido de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action-rail{
+    border-color:#E8E8ED;
+    background:#FFFFFF;
+    box-shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action:not(.primary){
+    border-color:#E8E8ED;
+    background:#F5F5F7;
+    color:#1F2937;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action:not(.primary):hover{
+    background:#EDEDF0;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action.primary{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 8px 16px -10px color-mix(in srgb, var(--gd-primary) 60%, transparent);
+}
+
+/* Perfil de actividad: de banda oscura a losa fuerte de marca con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-card{
+    border:1px solid color-mix(in srgb, var(--gd-primary) 28%, rgba(255,255,255,.9));
+    background:
+        radial-gradient(46% 160% at 96% 66%, rgba(255,255,255,.82), rgba(255,255,255,0) 72%),
+        linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--gd-primary) 16%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--gd-primary) 32%, #FFFFFF) 100%);
+    color:#1F2937;
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.95),
+        inset 0 -2px 5px color-mix(in srgb, var(--gd-primary) 13%, transparent),
+        0 18px 34px -18px color-mix(in srgb, var(--gd-primary) 45%, rgba(27,39,70,.22));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-card h2{
+    color:color-mix(in srgb, var(--gd-primary) 62%, #111827);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-number{
+    color:color-mix(in srgb, var(--gd-primary) 30%, #111827);
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-card p{
+    color:#48484A;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-list div{
+    border-color:color-mix(in srgb, var(--gd-primary) 16%, rgba(17,24,39,.06)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-list span{
+    color:#48484A;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-list strong{
+    color:#111827;
+}
+</style>

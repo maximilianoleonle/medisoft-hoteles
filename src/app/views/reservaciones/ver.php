@@ -2143,6 +2143,16 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-btn-calendar:hover {
     background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-accent) 38%, #fff), color-mix(in srgb, var(--rdv3-accent) 22%, #fff));
 }
+.rdv3-btn-rooms {
+    background: linear-gradient(135deg, color-mix(in srgb, #6252d8 16%, #fff), color-mix(in srgb, #6252d8 9%, #fff));
+    color: color-mix(in srgb, var(--rdv3-primary) 88%, #111827);
+    border: 1px solid color-mix(in srgb, #6252d8 26%, rgba(255, 255, 255, .5));
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .12), inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+.rdv3-btn-rooms i { color: #6252d8; }
+.rdv3-btn-rooms:hover {
+    background: linear-gradient(135deg, color-mix(in srgb, #6252d8 24%, #fff), color-mix(in srgb, #6252d8 14%, #fff));
+}
 .rdv3-btn-danger {
     background: linear-gradient(135deg, #B91C1C, #DC2626);
     color: #fff;
@@ -2224,6 +2234,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
 .rdv3-header-badges { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .rdv3-badge--count { color: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 12%, #fff); }
+a.rdv3-badge--edit { color: #6252d8; background: #eeebff; text-decoration: none; cursor: pointer; transition: background .14s; }
+a.rdv3-badge--edit:hover { background: #e3defc; }
 .rdv3-card--rooms .rdv3-card-header { padding-bottom: 14px; }
 .rdv3-card--rooms .rdv3-card-body { padding-top: 10px; padding-bottom: 30px; }
 .rdv3-rooms {
@@ -3748,6 +3760,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         <?php elseif ($rdEstadoKey === 'checked_in' && !$rdHasCheckoutDebt): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                         <?php endif; ?>
+                        <?php if ($rdEstadoKey === 'confirmada'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-rooms" onclick="window.location.href='<?= url('reservaciones/editar-habitaciones/' . $reservacion['id']) ?>'"><i class="fas fa-bed"></i>Modificar habitaciones</button>
+                        <?php endif; ?>
                         <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-calendar" onclick="window.location.href='<?= url('reservaciones/editar-estancia/' . $reservacion['id']) ?>'"><i class="far fa-calendar"></i>Modificar estancia</button>
                             <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-ban"></i>Cancelar reservacion</button>
@@ -4313,6 +4328,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <?php if ($rdCortesias > 0): ?>
                                         <span class="rdv3-badge"><i class="fas fa-gift"></i><?= $rdCortesias ?> cortesia<?= $rdCortesias === 1 ? '' : 's' ?></span>
                                     <?php endif; ?>
+                                    <?php if ($rdEstadoKey === 'confirmada'): ?>
+                                        <a class="rdv3-badge rdv3-badge--edit" href="<?= url('reservaciones/editar-habitaciones/' . $reservacion['id']) ?>" title="Modificar habitaciones de la reservacion"><i class="fas fa-pen"></i>Modificar</a>
+                                    <?php endif; ?>
                                 </div>
                             </header>
                             <div class="rdv3-card-body">
@@ -4594,6 +4612,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
                                 <button type="button" class="rdv3-action" onclick="abrirModalCotizacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-blue"><i class="fas fa-clipboard-list"></i></span>Generar cotizacion</span><i class="fas fa-chevron-right"></i></button>
+                                <?php if ($rdEstadoKey === 'confirmada'): ?>
+                                    <button type="button" class="rdv3-action" onclick="window.location.href='<?= url('reservaciones/editar-habitaciones/' . $reservacion['id']) ?>'"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="fas fa-bed"></i></span>Modificar habitaciones</span><i class="fas fa-chevron-right"></i></button>
+                                <?php endif; ?>
                                 <button type="button" class="rdv3-action" onclick="window.location.href='<?= url('reservaciones/editar-estancia/' . $reservacion['id']) ?>'"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar estancia</span><i class="fas fa-chevron-right"></i></button>
                                 <?php if (!empty($reservacion['metodo_pago'])): ?>
                                     <button type="button" class="rdv3-action ms-print-hide-mobile" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>

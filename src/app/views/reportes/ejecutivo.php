@@ -323,8 +323,8 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
         <div class="exec-actions">
             <span class="exec-badge"><i class="fas fa-lock"></i> Solo lectura</span>
             <?php $back_arrow_href = back_url('reportes'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-            <a class="exec-btn ms-back-legacy" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
-            <a class="exec-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-balance-scale"></i> Conciliacion</a>
+            <a class="exec-btn ms-back-legacy ms-glass-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <a class="exec-btn ms-glass-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-balance-scale"></i> Conciliacion</a>
         </div>
     </div>
 
