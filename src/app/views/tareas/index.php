@@ -128,8 +128,10 @@ $visibles = count($tareas);
 .tk-page.tk-page--board .tk-hero-icon {
     background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, var(--tk-gold)));
 }
-.tk-page .tk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; justify-self: start; min-width: 0; max-width: min(100%, 760px); text-align: left; }
-.tk-page .tk-title-lockup > div:last-child { min-width: 0; }
+.tk-page .tk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; column-gap: 14px; justify-self: start; min-width: 0; max-width: min(100%, 760px); text-align: left; }
+.tk-page .tk-title-lockup > .tk-hero-icon { grid-column: 1; grid-row: 1; }
+.tk-page .tk-title-lockup > .tk-title-head { grid-column: 2; grid-row: 1; min-width: 0; }
+.tk-page .tk-title-lockup > .tk-title-rest { grid-column: 2; grid-row: 2; min-width: 0; }
 .tk-page .tk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
     background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--tk-brand) 72%, transparent); }
@@ -642,9 +644,11 @@ $visibles = count($tareas);
         <section class="tk-hero-section">
             <div class="tk-title-lockup">
                 <div class="tk-hero-icon"><i class="fas fa-list-check"></i></div>
-                <div>
+                <div class="tk-title-head">
                     <p class="tk-kicker">Operaci&oacute;n del hotel</p>
                     <h1 class="tk-title">Tareas</h1>
+                </div>
+                <div class="tk-title-rest">
                     <p class="tk-subtitle">Pendientes de limpieza, mantenimiento y cosas por hacer en el hotel. Cr&eacute;alas, as&iacute;gnalas y dales seguimiento.</p>
                     <div class="tk-view-chip"><i class="fas fa-table-list"></i> Tablero de seguimiento</div>
                 </div>

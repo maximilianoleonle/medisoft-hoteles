@@ -136,6 +136,8 @@
 
             fly.innerHTML = '';
             fly.setAttribute('aria-label', grupo.titulo);
+            /* Clave de la sección → color propio del flyout (tema Cupertino). */
+            fly.setAttribute('data-clave', grupo.clave || '');
             var ft = document.createElement('div');
             ft.className = 'ms-rail-ft';
             ft.textContent = grupo.titulo;
@@ -194,6 +196,8 @@
             var esDirecto = grupo.items.length === 1;
             var fila = document.createElement(esDirecto ? 'a' : 'button');
             fila.className = 'ms-rail-g' + (activo ? ' ms-on' : '');
+            /* Clave de la sección → color propio también en el botón del rail. */
+            fila.setAttribute('data-clave', grupo.clave || '');
 
             var icono = (esDirecto ? grupo.items[0].icono : ICONOS[grupo.clave]) || grupo.items[0].icono;
             fila.appendChild(crearIcono(icono));

@@ -3649,7 +3649,8 @@ if ($tiene_doble_movimiento) {
                                 <span class="rc-stripe" style="background: <?= htmlspecialchars($accentColor) ?>;"></span>
                                 <div class="rc-top">
                                     <div class="rc-id">
-                                        <div class="rc-num" title="<?= htmlspecialchars($habitacion['numero']) ?>"><?= htmlspecialchars($habitacion['numero']) ?></div>
+                                        <?php $rcNumLen = mb_strlen(trim((string) $habitacion['numero'])); ?>
+                                        <div class="rc-num<?= $rcNumLen > 8 ? ' rc-num--xl' : ($rcNumLen > 4 ? ' rc-num--long' : '') ?>" title="<?= htmlspecialchars($habitacion['numero']) ?>"><?= htmlspecialchars($habitacion['numero']) ?></div>
                                         <div class="rc-type"><?= $pisoAbrev ?> · <?= htmlspecialchars($habitacionTipoLabel) ?></div>
                                     </div>
                                     <span class="rc-badge" title="Estado: <?= htmlspecialchars($estadoInfoPrincipal['label']) ?>" aria-label="Estado: <?= htmlspecialchars($estadoInfoPrincipal['label']) ?>"><i class="fas fa-<?= $estadoInfoPrincipal['icon'] ?>" aria-hidden="true"></i><span><?= $estadoInfoPrincipal['label'] ?></span></span>
@@ -13341,6 +13342,404 @@ body.hb-modal-open{ overflow:hidden; }
 }
 </style>
 
+<style id="hb-room-card-glass-redesign">
+/* ═══ Tarjetas de habitación: cristal líquido — SOLO TEMA CUPERTINO ═══════
+   (decisión del owner 2026-07-10: Deleite conserva sus tarjetas tal cual).
+   Pase final SOLO escritorio (≥769px) y SOLO modo claro: el pase móvil
+   compacto (≤768px) y el modo oscuro conservan su diseño tal cual.
+   Gana a la sección 18 de cupertino.css (tarjeta blanca plana) por orden
+   de documento: mismo peso y especificidad, pero este bloque vive en el
+   <body> y la hoja del tema en el <head>.
+   Menos señales compitiendo, una jerarquía clara: fuera el pastel de
+   cuerpo entero, el borde izquierdo grueso y los chips con marco; el
+   estado vive en UNA bruma de cristal + la pastilla tintada. Sin
+   backdrop-filter: el lienzo es plano (nada que desenfocar) y con
+   ~50 tarjetas sería puro costo. El stripe de color de la habitación
+   (identidad, no estado) se conserva.
+   Nombres largos: el PHP emite rc-num--long / rc-num--xl por longitud
+   (el modificador queda en el markup para todos los temas; solo estila aquí).
+   Revertir: borrar este bloque + el modificador en el markup (rc-num). */
+
+/* Antitruncado de nombres (ambos anchos y modos de Cupertino) */
+html[data-tema="cupertino"] .habitaciones-view .rc-num.rc-num--long{
+  font-size:1.3rem!important;
+  line-height:1.05!important;
+  letter-spacing:.005em!important;
+  padding-top:4px;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+html[data-tema="cupertino"] .habitaciones-view .rc-num.rc-num--xl{
+  font-size:1.02rem!important;
+  line-height:1.1!important;
+  padding-top:6px;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+html[data-tema="cupertino"] .habitaciones-view .rc-id{ min-width:0; }
+
+@media (min-width: 769px){
+  /* Color de estado de cada tarjeta (custom prop que hereda toda la cara) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-disponible,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-disponible_fecha{ --rc-state: var(--c-available); }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-ocupada,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-ocupada_fecha{ --rc-state: var(--c-occupied); }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-por_llegar,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-doble{ --rc-state: var(--c-arriving); }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-limpieza,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-limpieza-por-llegar{ --rc-state: var(--c-cleaning); }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .estado-mantenimiento{ --rc-state: var(--c-maint); }
+
+  /* Superficie: losa de cristal pastel del estado (tinte a toda la tarjeta),
+     bloom de luz a la derecha y cantos de vidrio grueso — ref. candy glass. */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"]{
+    background:
+      radial-gradient(58% 74% at 96% 80%, rgba(255,255,255,.85), rgba(255,255,255,0) 72%),
+      linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+      linear-gradient(165deg,
+        color-mix(in srgb, var(--rc-state, var(--hb-primary)) 14%, #FFFFFF) 0%,
+        color-mix(in srgb, var(--rc-state, var(--hb-primary)) 30%, #FFFFFF) 100%)!important;
+    border:1px solid color-mix(in srgb, var(--rc-state, var(--hb-primary)) 24%, rgba(255,255,255,.9))!important;
+    border-left-width:1px!important;
+    border-radius:20px!important;
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.95),
+      inset 0 -2px 5px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 13%, transparent),
+      0 3px 7px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 12%, rgba(27,39,70,.05)),
+      0 20px 38px -18px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 46%, rgba(27,39,70,.25))!important;
+  }
+
+  /* Radio de losa también en contenedor y hoja de acciones (coherencia al girar) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .room-card-compact,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back{
+    border-radius:20px!important;
+  }
+
+  /* Elevación al pasar el cursor: el cristal flota y su halo se intensifica */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .room-card-compact{
+    transition:transform .22s cubic-bezier(.22,1,.36,1);
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .room-card-compact:not(.flipped):hover{
+    transform:translateY(-2px);
+    box-shadow:none!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .room-card-compact:not(.flipped):hover .flip-card-front[class*="estado-"]{
+    border-color:color-mix(in srgb, var(--rc-state, var(--hb-primary)) 40%, rgba(255,255,255,.9))!important;
+    filter:brightness(1.02) saturate(1.05);
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.95),
+      inset 0 -2px 5px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 13%, transparent),
+      0 5px 12px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 16%, rgba(27,39,70,.06)),
+      0 26px 48px -18px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 58%, rgba(27,39,70,.3))!important;
+  }
+
+  /* Pastilla de estado: chip lechoso sobre la losa pastel (como la ref.) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] .rc-badge{
+    background:rgba(255,255,255,.66)!important;
+    color:color-mix(in srgb, var(--rc-state, var(--hb-primary)) 78%, #111827)!important;
+    border:1px solid rgba(255,255,255,.85);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--rc-state, var(--hb-primary)) 18%, transparent)!important;
+  }
+
+  /* Identidad de la habitación: piso y tipo sin gritar (fuera uppercase) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .rc-type{
+    text-transform:none!important;
+    font-size:.67rem!important;
+    font-weight:600!important;
+    letter-spacing:.01em!important;
+    color:var(--hb-slate-500, #667085)!important;
+  }
+
+  /* Línea contextual: huésped con icono del color del estado */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .rc-guest{ font-size:.84rem!important; }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] .rc-guest i{
+    color:color-mix(in srgb, var(--rc-state, var(--hb-primary)) 68%, #111827)!important;
+  }
+
+  /* Capacidad y camas: texto silencioso, sin marco de pastilla */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .rc-room-facts{ gap:12px!important; margin-top:7px!important; }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] .rc-room-fact{
+    min-height:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    font-size:.64rem!important;
+    font-weight:650!important;
+    color:var(--hb-slate-500, #667085)!important;
+    overflow:visible!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] .rc-room-fact i{
+    font-size:.6rem!important;
+    color:color-mix(in srgb, var(--rc-state, var(--hb-primary)) 50%, var(--hb-slate-400, #94A3B8))!important;
+  }
+
+  /* Pie: hilo de luz arriba, precio protagonista */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-front[class*="estado-"] .rc-foot{
+    border-top:1px solid color-mix(in srgb, var(--rc-state, var(--hb-primary)) 12%, rgba(17,24,39,.06));
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .rc-price{ font-size:.92rem!important; }
+
+  /* ── Hoja de acciones (card volteada): la misma losa candy glass ──
+     El gradiente oscuro del estado se vuelve losa pastel con tinta oscura;
+     chips lechosos, botón primario en el color sólido del estado. */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back{
+    background:
+      radial-gradient(58% 74% at 96% 82%, rgba(255,255,255,.85), rgba(255,255,255,0) 72%),
+      linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+      linear-gradient(165deg,
+        color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 18%, #FFFFFF) 0%,
+        color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 36%, #FFFFFF) 100%)!important;
+    color:#1D1D1F!important;
+    border:1px solid color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 26%, rgba(255,255,255,.9))!important;
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.95),
+      inset 0 -2px 5px color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 13%, transparent),
+      0 -8px 22px -10px color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 34%, rgba(27,39,70,.14))!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back h4{
+    color:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 72%, #111827)!important;
+    border-bottom-color:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 24%, rgba(17,24,39,.08))!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .info-item,
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .hb-tareas-chip{
+    background:rgba(255,255,255,.6)!important;
+    border-color:rgba(255,255,255,.88)!important;
+    color:#1F2937!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .info-item i{
+    background:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 15%, #FFFFFF)!important;
+    color:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 75%, #111827)!important;
+  }
+
+  /* Chip de tareas vencidas: la alarma se re-dibuja para lienzo claro */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .hb-tareas-chip .hb-tareas-venc{ color:#B91C1C!important; }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .hb-tareas-chip.is-vencida{
+    background:#FEE2E2!important;
+    border-color:rgba(220,38,38,.45)!important;
+    color:#991B1B!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back > .room-card-scroll-info::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 35%, rgba(17,24,39,.16))!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .action-buttons{
+    border-top-color:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 22%, rgba(17,24,39,.08))!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .btn-action{
+    background:rgba(255,255,255,.62)!important;
+    border:1px solid rgba(255,255,255,.88)!important;
+    color:color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 70%, #111827)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 16%, transparent)!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .btn-action:hover{
+    background:rgba(255,255,255,.82)!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .btn-primary{
+    background:linear-gradient(180deg, color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 86%, #FFFFFF), var(--sheet-c, var(--hb-primary)))!important;
+    color:#FFFFFF!important;
+    border:1px solid color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 78%, #FFFFFF)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px -3px color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 55%, transparent)!important;
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .flip-card-back .btn-primary:hover{
+    filter:brightness(1.05);
+  }
+}
+
+/* ── Header hero + paneles Check-ins/outs en candy glass (≥768px, como el
+   hero original). Gana al pase hb-header-hero (posterior en documento) por
+   especificidad del prefijo de tema. Limpieza (.hb-cleaning-btn) intacto. ── */
+@media (min-width: 768px){
+  /* Header: BARRA DE CRISTAL TRASLÚCIDO REAL (propuesta 2). Es sticky: al
+     hacer scroll, las tarjetas candy pasan POR DEBAJO y el backdrop-filter
+     las desenfoca a través del vidrio teñido de la marca — liquid glass con
+     propósito, no solo pintura. Un solo elemento con blur = barato. */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header{
+    background:
+      radial-gradient(40% 150% at 96% 60%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%),
+      linear-gradient(165deg,
+        color-mix(in srgb, var(--hb-primary) 10%, rgba(255,255,255,.6)) 0%,
+        color-mix(in srgb, var(--hb-primary) 17%, rgba(255,255,255,.42)) 100%)!important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.7);
+    backdrop-filter: blur(28px) saturate(1.7);
+    border:1px solid color-mix(in srgb, var(--hb-primary) 18%, rgba(255,255,255,.75))!important;
+    box-shadow:
+      inset 0 1px 1px rgba(255,255,255,.85),
+      inset 0 -1px 2px rgba(255,255,255,.3),
+      0 12px 30px -14px color-mix(in srgb, var(--hb-primary) 35%, rgba(27,39,70,.18))!important;
+  }
+
+  /* Filo de luz superior sutil sobre el vidrio */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header::before{
+    background:
+      radial-gradient(60% 100% at 12% -30%, rgba(255,255,255,.45), transparent 58%),
+      linear-gradient(180deg, rgba(255,255,255,.3), transparent 42%);
+  }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header h1{
+    color:#1D1D1F!important;
+    text-shadow:none!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .hb-title-prefix{
+    color:color-mix(in srgb, var(--hb-primary) 50%, #6E6E73)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header p{
+    color:#6E6E73!important;
+    text-shadow:none!important;
+  }
+
+  /* Emblema: teja lechosa con el icono en tinta de marca (adiós vidrio oscuro) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .p-2.rounded-lg{
+    background:rgba(255,255,255,.6)!important;
+    border:1px solid rgba(255,255,255,.9)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 6px 14px -8px color-mix(in srgb, var(--hb-primary) 40%, transparent)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .p-2.rounded-lg i{
+    color:color-mix(in srgb, var(--hb-primary) 80%, #111827)!important;
+  }
+
+  /* Botones secundarios: chips lechosos con tinta (Vista Rápida, Nueva Habitación) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand){
+    background:rgba(255,255,255,.62)!important;
+    border:1px solid rgba(255,255,255,.88)!important;
+    color:#1F2937!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--hb-primary) 14%, transparent)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand) i{
+    color:color-mix(in srgb, var(--hb-primary) 70%, #111827)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand):hover{
+    background:rgba(255,255,255,.85)!important;
+    border-color:#FFFFFF!important;
+  }
+
+  /* CTA Nueva Reserva: sólido de marca — el que jala el ojo sobre el pastel */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern.btn-brand{
+    background:linear-gradient(180deg, color-mix(in srgb, var(--hb-primary) 86%, #FFFFFF), var(--hb-primary))!important;
+    color:#FFFFFF!important;
+    border:1px solid color-mix(in srgb, var(--hb-primary) 78%, #FFFFFF)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 10px 20px -10px color-mix(in srgb, var(--hb-primary) 60%, transparent)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern.btn-brand i{ color:#FFFFFF!important; }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header .btn-modern.btn-brand:hover{
+    background:var(--hb-primary)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 14px 26px -10px color-mix(in srgb, var(--hb-primary) 68%, transparent)!important;
+  }
+
+  /* ── Check-ins / Check-outs: candy glass SOLO en la cabecera (decisión del
+     owner): el cuerpo del panel conserva su lavado original de antes. ── */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-card--in{ --mv-c: var(--c-arriving, #7C3AED); }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-card--out{ --mv-c: var(--c-maint, #D97706); }
+
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-head{
+    background:
+      radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
+      linear-gradient(165deg,
+        color-mix(in srgb, var(--mv-c, var(--hb-primary)) 14%, #FFFFFF) 0%,
+        color-mix(in srgb, var(--mv-c, var(--hb-primary)) 28%, #FFFFFF) 100%)!important;
+    border-bottom:1px solid color-mix(in srgb, var(--mv-c, var(--hb-primary)) 22%, rgba(17,24,39,.06))!important;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.9);
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-title strong{
+    color:color-mix(in srgb, var(--mv-c, var(--hb-primary)) 70%, #111827)!important;
+  }
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-title small{ color:#6E6E73!important; }
+
+  /* Contador: chip lechoso con tinta del color (antes sólido) */
+  html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-move-head h3 > span:last-child{
+    background:rgba(255,255,255,.7)!important;
+    color:color-mix(in srgb, var(--mv-c, var(--hb-primary)) 75%, #111827)!important;
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--mv-c, var(--hb-primary)) 18%, transparent);
+  }
+}
+
+/* ── Modo oscuro Cupertino: correcciones de esta franja (bugs preexistentes:
+   la banda de filtros, el botón Hoy, la stat activa y los paneles
+   Check-ins/outs quedaban con literales claros). Paleta Apple dark de
+   cupertino.css: #1C1C1E paneles, #38383A líneas, #98989D muted. ── */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view div.bg-white:has(> .hb-filterbar){
+  background:#1C1C1E!important;
+  border:1px solid #38383A;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .filter-btn-today,
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .btn-brand-soft{
+  background:#2C2C2E!important;
+  border-color:#38383A!important;
+  color:#F5F5F7!important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .btn-brand-soft:hover,
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .filter-btn-today:hover{
+  background:#3A3A3C!important;
+  border-color:#48484A!important;
+  color:#F5F5F7!important;
+}
+
+/* Stat con filtro activo: gradiente blanco → panel grafito con tinte del estado */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-stat.is-filter-active{
+  background:linear-gradient(180deg, #1C1C1E, color-mix(in srgb, var(--sc, #0A84FF) 16%, #1C1C1E))!important;
+  border-color:color-mix(in srgb, var(--sc, #0A84FF) 42%, #38383A)!important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-stat.is-filter-active .hb-stat-n{
+  color:#F5F5F7!important;
+}
+
+/* Paneles Check-ins/outs: panel grafito + cabecera teñida del color (candy dark) */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-card--in{ --mv-c: var(--c-arriving, #7C3AED); }
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-card--out{ --mv-c: var(--c-maint, #D97706); }
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-card{
+  background:#1C1C1E!important;
+  border-color:#38383A!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-head{
+  background:
+    radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.08), rgba(255,255,255,0) 70%),
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--mv-c, #0A84FF) 26%, #1C1C1E) 0%,
+      color-mix(in srgb, var(--mv-c, #0A84FF) 14%, #1C1C1E) 100%)!important;
+  border-bottom:1px solid color-mix(in srgb, var(--mv-c, #0A84FF) 32%, #38383A)!important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-title strong{
+  color:color-mix(in srgb, var(--mv-c, #0A84FF) 45%, #F5F5F7)!important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-title small{ color:#98989D!important; }
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-head h3 > span:last-child{
+  background:color-mix(in srgb, var(--mv-c, #0A84FF) 32%, #1C1C1E)!important;
+  color:color-mix(in srgb, var(--mv-c, #0A84FF) 35%, #FFFFFF)!important;
+  border:1px solid color-mix(in srgb, var(--mv-c, #0A84FF) 42%, transparent);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-body{ background:transparent!important; }
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-empty{ color:#98989D!important; }
+
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item{ background:transparent!important; }
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item:hover{ background:#2C2C2E!important; }
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item p:first-child{ color:#F5F5F7!important; }
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item p:last-child{ color:#98989D!important; }
+</style>
+
 <style id="lm-caja-motion">
 /* ══ Entrada coreografiada estilo Caja (registrar ingreso/gasto) + skeleton de carga ══
    Reemplaza el keyframe lmPop por una transición gobernada por .is-open (reflow síncrono),
@@ -13609,19 +14008,6 @@ function hbSetEstado(btn){
   hbSyncEstadoUrl(window.__hbF.estado);
   hbMarcarEstadoActivo();
   hbApplyFilters();
-  var grid = document.getElementById('habitaciones-grid');
-  if(grid){
-    var scroller = document.querySelector('.main-content');
-    if (scroller && scroller.scrollTo) {
-      var sr = scroller.getBoundingClientRect();
-      var gr = grid.getBoundingClientRect();
-      var y = gr.top - sr.top + scroller.scrollTop - 12;
-      scroller.scrollTo({ top: Math.max(0, y), behavior:'smooth' });
-    } else {
-      var wy = grid.getBoundingClientRect().top + window.pageYOffset - 88;
-      window.scrollTo({ top: Math.max(0, wy), behavior:'smooth' });
-    }
-  }
 }
 function hbClearFilters(){
   window.__hbF = { estado:'', tipo:'', piso:'', q:'' };

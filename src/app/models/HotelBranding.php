@@ -31,7 +31,10 @@ class HotelBranding extends Model {
         'cupertino' => 'Cupertino',
     ];
 
-    const TEMA_DEFAULT = 'deleite';
+    // Default del producto: los hoteles NUEVOS/no configurados nacen en Cupertino
+    // (diseno Apple). Los hoteles existentes conservan el tema que ya tengan
+    // guardado (no se toca su fila); este default solo aplica a altas nuevas.
+    const TEMA_DEFAULT = 'cupertino';
 
     private $fallback = [
         'nombre_visual' => 'Medisoft Hoteles',
@@ -117,7 +120,7 @@ class HotelBranding extends Model {
                      pwa_icon_192_url, pwa_icon_512_url,
                      color_primary, color_secondary, color_accent, sidebar_style, login_style,
                      tema, activo, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'deleite'), ?, NOW(), NOW())
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'cupertino'), ?, NOW(), NOW())
                  ON DUPLICATE KEY UPDATE
                     nombre_visual = VALUES(nombre_visual),
                     logo_url = VALUES(logo_url),
