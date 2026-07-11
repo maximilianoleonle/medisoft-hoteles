@@ -75,4 +75,30 @@ BORRADOS_DB=$(find "$DIR_DB" -name '*.sql.gz' -mtime +30 -print -delete | wc -l)
 BORRADOS_UP=$(find "$DIR_UPLOADS" -name '*.tar.gz' -mtime +7 -print -delete | wc -l)
 echo "[OK]   $(date '+%F %T') Retencion aplicada (borrados: BD=$BORRADOS_DB, uploads=$BORRADOS_UP)."
 
+# ── 4) Offsite (rclone) ──────────────────────────────────────────────────
+# Un backup en el mismo VPS no sobrevive al VPS. Configurar una vez:
+#   1. rclone config          (crear remote, ej. Backblaze B2 / Cloudflare R2 / S3)
+#   2. En .env:  BACKUP_RCLONE_REMOTE=miremoto:medisoft-backups
+# Si la variable no esta definida, este paso se omite con aviso (no rompe el
+# backup local, pero queda registrado que NO hay copia externa).
+RCLONE_REMOTE="$(env_val BACKUP_RCLONE_REMOTE)"
+if [ -n "$RCLONE_REMOTE" ]; then
+    if ! command -v rclone >/dev/null 2>&1; then
+        echo "[ERROR] $(date '+%F %T') BACKUP_RCLONE_REMOTE definido pero rclone no esta instalado."
+        exit 1
+    fi
+    if rclone copy "$ARCHIVO_DB" "$RCLONE_REMOTE/db/" --no-traverse \
+        && { [ ! -f "$ARCHIVO_UP" ] || rclone copy "$ARCHIVO_UP" "$RCLONE_REMOTE/uploads/" --no-traverse; }; then
+        echo "[OK]   $(date '+%F %T') Copia offsite subida a $RCLONE_REMOTE."
+        # Retencion remota alineada a la local (30 dias BD, 7 uploads).
+        rclone delete "$RCLONE_REMOTE/db/" --min-age 30d 2>/dev/null || true
+        rclone delete "$RCLONE_REMOTE/uploads/" --min-age 7d 2>/dev/null || true
+    else
+        echo "[ERROR] $(date '+%F %T') Fallo la subida offsite a $RCLONE_REMOTE."
+        exit 1
+    fi
+else
+    echo "[WARN] $(date '+%F %T') Sin BACKUP_RCLONE_REMOTE en .env: NO hay copia fuera del VPS."
+fi
+
 echo "[OK]   $(date '+%F %T') Backup completo."
