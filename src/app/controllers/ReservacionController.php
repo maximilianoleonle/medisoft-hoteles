@@ -3177,6 +3177,13 @@ public function entregarLlaveAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega
     if ($controlLlave->entregarLlave($habitacion_id, $reservacion_id, $entregada_por_id, $entregada_por_manual)) {
         set_mensaje('Llave entregada al huésped exitosamente', 'success');
@@ -3221,6 +3228,13 @@ public function recibirLlaveAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción
     if ($controlLlave->recibirLlave($habitacion_id, $reservacion_id, $recibida_por_id, $recibida_por_manual, $notas)) {
         set_mensaje('Llave recibida del huésped exitosamente', 'success');
@@ -3280,6 +3294,13 @@ public function entregarRemotoAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega con nombre del propietario - MODIFICADO
     if ($controlRemoto->entregarRemoto($habitacion_id, $reservacion_id, $entregada_por_id, $entregada_por_manual, $tipo_identificacion, $nombre_propietario_ine)) {
         set_mensaje('Control remoto entregado exitosamente a ' . htmlspecialchars($nombre_propietario_ine) . ' con ' . get_tipo_identificacion_label($tipo_identificacion), 'success');
@@ -3350,6 +3371,13 @@ public function entregarRemotosMultiplesAction() {
         }
     }
     
+    // Aislamiento multi-tenant: todas las habitaciones deben ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel($habitaciones_ids)) {
+        set_mensaje('Una o más habitaciones no son válidas para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega múltiple
     $resultado = $controlRemoto->entregarRemotosMultiples(
         $habitaciones_ids, 
@@ -3418,6 +3446,13 @@ public function recibirRemotosMultiplesAction() {
         }
     }
     
+    // Aislamiento multi-tenant: todas las habitaciones deben ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel($habitaciones_ids)) {
+        set_mensaje('Una o más habitaciones no son válidas para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción múltiple
     $resultado = $controlRemoto->recibirRemotosMultiples(
         $habitaciones_ids, 
@@ -3474,6 +3509,13 @@ public function recibirRemotoAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción
     if ($controlRemoto->recibirRemoto($habitacion_id, $reservacion_id, $recibida_por_id, $recibida_por_manual, $notas)) {
         set_mensaje('Control remoto recibido del huésped exitosamente', 'success');
@@ -3482,6 +3524,26 @@ public function recibirRemotoAction() {
     }
     
     $this->redirect('reservaciones/ver/' . $reservacion_id);
+}
+
+/**
+ * Verifica que TODAS las habitaciones indicadas pertenezcan al hotel activo.
+ * Habitacion::find() confina por hotel_id, asi que un id de otro hotel devuelve
+ * false. Cierra el IDOR de escritura en control de llaves/remotos: esas tablas
+ * (control_llaves, control_remotos, historial_*) no tienen columna hotel_id, y
+ * antes el habitacion_id del POST llegaba al UPDATE sin validar pertenencia.
+ */
+private function habitacionesPertenecenAlHotel(array $habitacionIds): bool {
+    if (empty($habitacionIds)) {
+        return false;
+    }
+    foreach ($habitacionIds as $hid) {
+        $hid = (int) $hid;
+        if ($hid <= 0 || !$this->habitacionModel->find($hid)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 private function erroresCamposReservacionCrear(string $mensaje): array {
@@ -5879,10 +5941,10 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             // 4. Actualizar movimientos_caja - SOLO si pertenecen al corte actual (abierto)
             //    Si pertenecen a un corte cerrado, NO se tocan para no descuadrar cortes anteriores.
             
-            // Obtener categoría de hospedaje
-            $sql_cat = "SELECT id FROM categorias_movimientos WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 LIMIT 1";
+            // Obtener categoría de hospedaje (del hotel actual)
+            $sql_cat = "SELECT id FROM categorias_movimientos WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 AND hotel_id = ? LIMIT 1";
             $stmt_cat = $this->db->prepare($sql_cat);
-            $stmt_cat->execute();
+            $stmt_cat->execute([$hotel_id]);
             $categoria = $stmt_cat->fetch(PDO::FETCH_ASSOC);
             $categoria_id = $categoria ? $categoria['id'] : null;
             
@@ -6395,20 +6457,23 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                         error_log("Reduccion de dias sin devolucion: pagado $" . $pagado_antes . ", nuevo total $" . $precio_nuevo . " - Reservacion #" . $reservacion_id);
                     } else {
 
-                        // Obtener o crear categoría de Devoluciones
+                        // Obtener o crear categoría de Devoluciones (del hotel actual)
                         $stmt_cat = $db->query(
                             "SELECT id FROM categorias_movimientos
                              WHERE nombre = 'Devoluciones' AND tipo = 'egreso' AND activa = 1
-                             LIMIT 1"
+                               AND hotel_id = ?
+                             LIMIT 1",
+                            [$hotel_id]
                         );
                         $cat = $stmt_cat->fetch();
 
                         if (!$cat) {
                             $db->query(
                                 "INSERT INTO categorias_movimientos
-                                 (nombre, tipo, descripcion, icono, color, activa, created_at)
-                                 VALUES ('Devoluciones', 'egreso', 'Devoluciones por ajustes',
-                                         'fas fa-undo', '#EF4444', 1, NOW())"
+                                 (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
+                                 VALUES (?, 'Devoluciones', 'egreso', 'Devoluciones por ajustes',
+                                         'fas fa-undo', '#EF4444', 1, NOW())",
+                                [$hotel_id]
                             );
                             $categoria_id = $db->lastInsertId();
                         } else {

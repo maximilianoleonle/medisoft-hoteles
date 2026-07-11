@@ -7,6 +7,7 @@
 class CategoriaMovimiento extends Model {
     protected $table = 'categorias_movimientos';
     protected $fillable = [
+        'hotel_id',
         'nombre',
         'tipo',
         'descripcion',
@@ -15,21 +16,31 @@ class CategoriaMovimiento extends Model {
         'activa',
         'orden'
     ];
-    
+
+    /**
+     * Hotel activo. El catalogo de categorias es por hotel (aislamiento
+     * multi-tenant): cada consulta se confina con AND hotel_id = ?.
+     */
+    protected function hotelIdActual() {
+        return function_exists('obtenerHotelIdActualCompat')
+            ? obtenerHotelIdActualCompat()
+            : (function_exists('current_hotel_id') ? current_hotel_id() : null);
+    }
+
     /**
      * Obtener categorías activas por tipo
      */
     public function obtenerPorTipo($tipo = null) {
-        $sql = "SELECT * FROM {$this->table} WHERE activa = 1";
-        $params = [];
-        
+        $sql = "SELECT * FROM {$this->table} WHERE hotel_id = ? AND activa = 1";
+        $params = [$this->hotelIdActual()];
+
         if ($tipo && in_array($tipo, ['ingreso', 'gasto', 'ambos'])) {
             $sql .= " AND (tipo = ? OR tipo = 'ambos')";
             $params[] = $tipo;
         }
-        
+
         $sql .= " ORDER BY orden ASC, nombre ASC";
-        
+
         $stmt = $this->db->query($sql, $params);
         return $stmt->fetchAll();
     }
@@ -63,13 +74,15 @@ class CategoriaMovimiento extends Model {
             return ['success' => false, 'errores' => $errores];
         }
         
-        // Obtener el último orden
-        $sql = "SELECT MAX(orden) as max_orden FROM {$this->table}";
-        $stmt = $this->db->query($sql);
+        // Obtener el último orden (dentro del hotel actual)
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT MAX(orden) as max_orden FROM {$this->table} WHERE hotel_id = ?";
+        $stmt = $this->db->query($sql, [$hotelId]);
         $result = $stmt->fetch();
-        
+
         $data['orden'] = ($result['max_orden'] ?? 0) + 1;
-        
+        $data['hotel_id'] = $hotelId; // la categoría nace en el hotel actual
+
         // Crear categoría
         $categoria = $this->create($data);
         
@@ -83,7 +96,60 @@ class CategoriaMovimiento extends Model {
         
         return ['success' => false, 'message' => 'Error al crear la categoría'];
     }
-    
+
+    /**
+     * Actualizar una categoría del HOTEL ACTUAL. El update() base va por id sin
+     * scope (seria un IDOR de escritura entre hoteles): aqui confinamos por
+     * hotel_id y revalidamos unicidad de nombre dentro del hotel.
+     */
+    public function actualizarCategoria($id, $data) {
+        $hotelId = $this->hotelIdActual();
+
+        $stmt = $this->db->query(
+            "SELECT id FROM {$this->table} WHERE id = ? AND hotel_id = ? LIMIT 1",
+            [$id, $hotelId]
+        );
+        if (!$stmt || !$stmt->fetch()) {
+            return ['success' => false, 'message' => 'Categoría no encontrada'];
+        }
+
+        $errores = $this->validarCategoria($data, $id);
+        if (!empty($errores)) {
+            return ['success' => false, 'errores' => $errores, 'message' => implode(' ', $errores)];
+        }
+
+        $this->db->query(
+            "UPDATE {$this->table}
+             SET nombre = ?, tipo = ?, descripcion = ?, icono = ?, color = ?
+             WHERE id = ? AND hotel_id = ?",
+            [
+                $data['nombre'],
+                $data['tipo'],
+                $data['descripcion'] ?? null,
+                $data['icono'] ?? 'fas fa-tag',
+                $data['color'] ?? '#6B7280',
+                $id,
+                $hotelId,
+            ]
+        );
+
+        return ['success' => true, 'message' => 'Categoría actualizada'];
+    }
+
+    /**
+     * Todas las categorías del hotel actual (activas e inactivas), para la vista
+     * de configuración. Scoped por hotel_id.
+     */
+    public function listarTodasDelHotel() {
+        $stmt = $this->db->query(
+            "SELECT * FROM {$this->table}
+             WHERE hotel_id = ?
+             ORDER BY tipo ASC, orden ASC, nombre ASC",
+            [$this->hotelIdActual()]
+        );
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
     /**
      * Validar datos de categoría
      */
@@ -96,10 +162,10 @@ class CategoriaMovimiento extends Model {
         } elseif (strlen($data['nombre']) < 3) {
             $errores[] = 'El nombre debe tener al menos 3 caracteres';
         } else {
-            // Verificar que no exista otra con el mismo nombre
-            $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE nombre = ?";
-            $params = [$data['nombre']];
-            
+            // Verificar que no exista otra con el mismo nombre EN ESTE HOTEL
+            $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE hotel_id = ? AND nombre = ?";
+            $params = [$this->hotelIdActual(), $data['nombre']];
+
             if ($id) {
                 $sql .= " AND id != ?";
                 $params[] = $id;
@@ -128,13 +194,15 @@ class CategoriaMovimiento extends Model {
         $db = Database::getInstance();
         
         try {
+            $hotelId = $this->hotelIdActual();
             $db->beginTransaction();
-            
+
+            // El WHERE incluye hotel_id: no se puede reordenar categorías de otro hotel.
             foreach ($ordenamiento as $orden => $categoria_id) {
-                $sql = "UPDATE {$this->table} SET orden = ? WHERE id = ?";
-                $db->query($sql, [$orden, $categoria_id]);
+                $sql = "UPDATE {$this->table} SET orden = ? WHERE id = ? AND hotel_id = ?";
+                $db->query($sql, [$orden, $categoria_id, $hotelId]);
             }
-            
+
             $db->commit();
             return ['success' => true];
             
@@ -150,7 +218,8 @@ class CategoriaMovimiento extends Model {
     public function obtenerEstadisticasUso($mes = null, $año = null) {
         $db = Database::getInstance();
         
-        $sql = "SELECT 
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT
                 cm.id,
                 cm.nombre,
                 cm.tipo,
@@ -159,20 +228,21 @@ class CategoriaMovimiento extends Model {
                 COUNT(mc.id) as total_movimientos,
                 SUM(mc.monto) as monto_total
                 FROM {$this->table} cm
-                LEFT JOIN movimientos_caja mc ON cm.id = mc.categoria_id";
-        
+                LEFT JOIN movimientos_caja mc ON cm.id = mc.categoria_id AND mc.hotel_id = cm.hotel_id";
+
         $params = [];
-        
+
         if ($mes && $año) {
             $sql .= " AND MONTH(mc.created_at) = ? AND YEAR(mc.created_at) = ?";
             $params[] = $mes;
             $params[] = $año;
         }
-        
-        $sql .= " WHERE cm.activa = 1
+
+        $sql .= " WHERE cm.hotel_id = ? AND cm.activa = 1
                   GROUP BY cm.id
                   ORDER BY total_movimientos DESC";
-        
+        $params[] = $hotelId;
+
         $stmt = $db->query($sql, $params);
         return $stmt->fetchAll();
     }
@@ -181,23 +251,29 @@ class CategoriaMovimiento extends Model {
      * Desactivar categoría
      */
     public function desactivar($id) {
-        // Verificar que no sea una categoría del sistema
-        $categoria = $this->find($id);
-        
+        // Confinar al hotel actual: el find() base no filtra por hotel, así que
+        // resolvemos con scope para no tocar categorías de otro hotel.
+        $hotelId = $this->hotelIdActual();
+        $stmt = $this->db->query(
+            "SELECT * FROM {$this->table} WHERE id = ? AND hotel_id = ? LIMIT 1",
+            [$id, $hotelId]
+        );
+        $categoria = $stmt ? $stmt->fetch() : null;
+
         if (!$categoria) {
             return ['success' => false, 'message' => 'Categoría no encontrada'];
         }
-        
+
         // Categorías del sistema que no se pueden desactivar
         $categoriasProtegidas = ['Hospedaje', 'Anticipo'];
-        
+
         if (in_array($categoria['nombre'], $categoriasProtegidas)) {
             return ['success' => false, 'message' => 'Esta categoría del sistema no se puede desactivar'];
         }
-        
-        // Verificar si tiene movimientos
-        $sql = "SELECT COUNT(*) as total FROM movimientos_caja WHERE categoria_id = ?";
-        $stmt = $this->db->query($sql, [$id]);
+
+        // Verificar si tiene movimientos (de este hotel)
+        $sql = "SELECT COUNT(*) as total FROM movimientos_caja WHERE categoria_id = ? AND hotel_id = ?";
+        $stmt = $this->db->query($sql, [$id, $hotelId]);
         $result = $stmt->fetch();
         
         if ($result['total'] > 0) {

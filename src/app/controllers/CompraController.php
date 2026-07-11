@@ -28,6 +28,11 @@ class CompraController extends Controller
             require_hotel_module('compras');
         }
 
+        // Ademas del modulo contratado, exigir permiso del usuario: 'recibir' una
+        // compra ejecuta entradas de inventario y habilita la CxP, no debe quedar
+        // abierto a cualquier autenticado (p. ej. recepcionista).
+        require_permission('compras.view');
+
         return true;
     }
 
@@ -235,6 +240,7 @@ class CompraController extends Controller
 
     public function recibirAction(): void
     {
+        require_permission('compras.all');
         if (!$this->isPost()) {
             $this->redirect('compras');
             return;

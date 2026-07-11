@@ -811,44 +811,13 @@ public function debugMovimientosDateAction() {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('inventario');
+        // El aislamiento cross-tenant ya lo cubre el modelo (AND hotel_id = ?),
+        // pero faltaba el permiso fino: sin esto cualquier autenticado podia
+        // crear/editar/eliminar productos y registrar entradas/salidas/ajustes.
+        require_permission('inventarios.view');
         return true;
     }
-    public function eliminar($id) {
-    try {
-        // Verificar permisos si es necesario
-        if (!$this->checkPermission('inventario.eliminar')) {
-            $this->redirect('/inventario')->with('error', 'No tiene permisos para eliminar productos');
-        }
 
-        // Obtener el producto
-        $producto = $this->productoModel->find($id);
-
-        if (!$producto) {
-            $this->redirect('/inventario')->with('error', 'Producto no encontrado');
-        }
-
-        // Verificar si tiene movimientos recientes (opcional)
-        $movimientos_recientes = $this->movimientoInventarioModel->where('producto_id', $id)
-                                                                 ->where('created_at', '>=', date('Y-m-d', strtotime('-30 days')))
-                                                                 ->count();
-
-        if ($movimientos_recientes > 0) {
-            $this->redirect('/inventario')->with('warning', 'No se puede eliminar un producto con movimientos recientes');
-        }
-
-        // Eliminar el producto (soft delete o hard delete según tu preferencia)
-        $this->productoModel->delete($id);
-
-        // O si prefieres soft delete:
-        // $this->productoModel->update($id, ['activo' => 0]);
-
-        $this->redirect('/inventario')->with('success', 'Producto eliminado correctamente');
-
-    } catch (Exception $e) {
-        error_log("Error al eliminar producto: " . $e->getMessage());
-        $this->redirect('/inventario')->with('error', 'Error al eliminar el producto');
-    }
-}
     /**
      * Vista principal - Dashboard de inventario
      */
@@ -1424,6 +1393,7 @@ public function debugMovimientosDateAction() {
      * Procesar entrada - MÉTODO CORREGIDO
      */
     public function procesarEntradaAction() {
+        require_permission('inventarios.all');
         if (!$this->isPost()) {
             $this->redirect('inventario');
             return;
@@ -1507,6 +1477,7 @@ public function debugMovimientosDateAction() {
      * Procesar salida - MÉTODO CORREGIDO
      */
     public function procesarSalidaAction() {
+        require_permission('inventarios.all');
         if (!$this->isPost()) {
             $this->redirect('inventario');
             return;
@@ -1780,6 +1751,7 @@ public function debugMovimientosDateAction() {
      * Procesar ajuste de inventario
      */
     public function procesarAjusteAction() {
+        require_permission('inventarios.all');
         $producto_id = (int)($this->route_params['id'] ?? 0);
         $redirectUrl = $producto_id > 0 ? 'inventario/ajuste/' . $producto_id : 'inventario';
 

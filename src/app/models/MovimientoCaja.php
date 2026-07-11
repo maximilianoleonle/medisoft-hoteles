@@ -120,10 +120,10 @@ public function registrarMovimiento($data) {
             $data['usuario_id'] = user_id(); // Usar la función helper
         }
         
-        // Validar categoría si se proporciona
+        // Validar categoría si se proporciona (debe pertenecer a este hotel)
         if (!empty($data['categoria_id'])) {
-            $sql = "SELECT nombre FROM categorias_movimientos WHERE id = ? AND activa = 1";
-            $stmt = $db->query($sql, [$data['categoria_id']]);
+            $sql = "SELECT nombre FROM categorias_movimientos WHERE id = ? AND hotel_id = ? AND activa = 1";
+            $stmt = $db->query($sql, [$data['categoria_id'], $hotel_id]);
             $categoria = $stmt->fetch();
             
             if ($categoria) {

@@ -463,8 +463,8 @@ public function arqueoMetodosAction() {
         
         $totales['balance'] = $totales['ingresos'] - $totales['gastos'];
         
-        // Obtener categorías para filtros
-        $categorias = $this->categoriaModel->where(['activa' => 1]);
+        // Obtener categorías para filtros (solo las del hotel actual)
+        $categorias = $this->categoriaModel->obtenerPorTipo();
         
         View::renderTemplate('caja/movimientos', [
             'title' => 'Movimientos de Caja - ' . current_hotel_display_name(),
@@ -746,7 +746,11 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
             return;
         }
-        
+
+        // Edita el MONTO de un movimiento: exigir CSRF como sus acciones hermanas
+        // (crear/actualizar categoría). requireAjax ya obliga X-Requested-With.
+        $this->validateCSRF();
+
         $id = intval($this->getPost('id'));
         $data = [
             'descripcion' => trim($this->getPost('descripcion')),
@@ -1053,7 +1057,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
             require_permission('caja.ajustes');
         }
         
-        $categorias = $this->categoriaModel->orderBy('tipo', 'ASC');
+        $categorias = $this->categoriaModel->listarTodasDelHotel();
         $estadisticas = $this->categoriaModel->obtenerEstadisticasUso();
         
         View::renderTemplate('caja/categorias', [
@@ -1128,12 +1132,12 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
             'color' => $this->getPost('color')
         ];
         
-        $categoria = $this->categoriaModel->update($id, $data);
-        
-        if ($categoria) {
-            $this->jsonResponse(['success' => true, 'message' => 'Categoría actualizada']);
+        $resultado = $this->categoriaModel->actualizarCategoria($id, $data);
+
+        if (!empty($resultado['success'])) {
+            $this->jsonResponse(['success' => true, 'message' => $resultado['message'] ?? 'Categoría actualizada']);
         } else {
-            $this->jsonResponse(['success' => false, 'message' => 'Error al actualizar']);
+            $this->jsonResponse(['success' => false, 'message' => $resultado['message'] ?? 'Error al actualizar']);
         }
     }
     
