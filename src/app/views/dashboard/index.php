@@ -5185,55 +5185,170 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 </script>
 
 <style id="dash-candy-glass-cupertino">
-/* ═══ Dashboard: candy glass — SOLO TEMA CUPERTINO, modo claro (2026-07-10) ══
-   Mismo lenguaje que el pase de habitaciones (hb-room-card-glass-redesign):
-   losas pastel de la marca con bloom, tinta oscura y chips lechosos.
-   Piezas: hero editorial (vidrio esmerilado REAL sobre la foto: aquí sí hay
-   backdrop-filter porque hay imagen que desenfocar), filas de dinero del día,
-   chip Esperado + botón Registrar movimiento, y el arco del anillo de
-   estacionamiento (era un manchón casi negro con la marca navy).
-   El dashboard móvil (dm-*) y el modo oscuro quedan tal cual.
+/* ═══ Dashboard: candy glass — SOLO TEMA CUPERTINO (2026-07-10) ══
+   Hero editorial rediseñado a Liquid Glass oscuro iOS (2026-07-11): la foto
+   respira a plena luz y el contenido flota en vidrio ahumado translúcido
+   (blur + saturación reales) con borde especular fino. Aplica en claro y
+   oscuro —el vidrio vive sobre la foto, no sobre el lienzo— y también al
+   hero móvil (dm-*). Las losas pastel de dinero/CTA/anillo siguen siendo
+   solo de modo claro.
    Revertir: borrar este bloque. */
 
-/* ── Hero: cristal esmerilado TEÑIDO DE LA MARCA a la izquierda (texto) que
-   se disuelve hacia la foto. El tinte sale de --dash-primary → cada hotel ve
-   su vidrio del color de su casa (navy → azul hielo, terracota → rosé, etc.) ── */
-html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .editorial-hero{
+/* ── Tokens del vidrio ahumado (Liquid Glass) ── */
+html[data-tema="cupertino"] .dashboard-boutique{
+    --lg-tinte: rgba(18,22,30,.36);
+    --lg-tinte-hover: rgba(34,40,54,.46);
+    --lg-borde: rgba(255,255,255,.30);
+    --lg-brillo: inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(255,255,255,.06);
+    --lg-blur: blur(20px) saturate(1.7);
+}
+html[data-theme="dark"][data-tema="cupertino"] .dashboard-boutique{
+    --lg-tinte: rgba(8,10,16,.46);
+    --lg-tinte-hover: rgba(20,24,34,.56);
+    --lg-borde: rgba(255,255,255,.22);
+}
+/* Sin backdrop-filter (navegadores viejos / ahorro de energía): vidrio denso
+   para que el texto nunca pierda contraste sobre la foto. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+    html[data-tema="cupertino"] .dashboard-boutique{
+        --lg-tinte: rgba(14,18,26,.8);
+        --lg-tinte-hover: rgba(24,29,40,.86);
+    }
+}
+
+/* ── Hero: la foto es la protagonista. Nada de niebla de marca: solo un velo
+   cinematográfico mínimo arriba (fecha) y abajo (ancla del panel). ── */
+html[data-tema="cupertino"] .dashboard-boutique .editorial-hero{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    background: url("<?= htmlspecialchars($hero_image_url, ENT_QUOTES, 'UTF-8') ?>") center/cover;
+    border:1px solid rgba(255,255,255,.16);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .editorial-hero::before{
     background:
-        linear-gradient(90deg, color-mix(in srgb, var(--dash-primary) 14%, rgba(255,255,255,.28)), rgba(255,255,255,0) 58%),
-        url("<?= htmlspecialchars($hero_image_url, ENT_QUOTES, 'UTF-8') ?>") center/cover;
-    border:1px solid color-mix(in srgb, var(--dash-primary) 16%, rgba(255,255,255,.65));
+        linear-gradient(180deg, rgba(9,12,18,.34), rgba(9,12,18,0) 32%),
+        linear-gradient(0deg, rgba(9,12,18,.4), rgba(9,12,18,0) 55%);
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    -webkit-mask:none;
+    mask:none;
+    box-shadow:none;
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .editorial-hero::before{
+/* Fuera el manchón de luz animado: compite con la foto. */
+html[data-tema="cupertino"] .dashboard-boutique .editorial-hero::after{
+    content:none;
+}
+
+/* ── Panel de vidrio del saludo: la pieza Liquid Glass. El blur desenfoca
+   la foto real detrás; el borde y el brillo superior hacen el "specular". ── */
+html[data-tema="cupertino"] .dashboard-boutique .hero-title{
+    align-self:flex-start;
+    width:fit-content;
+    max-width:min(640px, calc(100% - 56px));
+    margin:18px 28px 24px;
+    padding:14px 22px 17px;
+    border-radius:22px;
+    border:1px solid var(--lg-borde);
     background:
-        radial-gradient(64% 130% at 0% 108%, color-mix(in srgb, var(--dash-primary) 28%, transparent), transparent 62%),
-        radial-gradient(46% 110% at 30% -30%, rgba(255,255,255,.5), transparent 68%),
-        linear-gradient(90deg,
-            color-mix(in srgb, var(--dash-primary) 20%, rgba(255,255,255,.72)) 0%,
-            color-mix(in srgb, var(--dash-primary) 12%, rgba(255,255,255,.56)) 42%,
-            rgba(255,255,255,.18) 72%,
-            rgba(255,255,255,0) 100%);
-    -webkit-backdrop-filter: blur(24px) saturate(1.6);
-    backdrop-filter: blur(24px) saturate(1.6);
-    -webkit-mask: linear-gradient(90deg, #000 0%, #000 52%, rgba(0,0,0,.35) 74%, transparent 96%);
-    mask: linear-gradient(90deg, #000 0%, #000 52%, rgba(0,0,0,.35) 74%, transparent 96%);
-    box-shadow:inset 1px 1px 0 rgba(255,255,255,.55);
+        linear-gradient(150deg, rgba(255,255,255,.14), rgba(255,255,255,0) 46%),
+        var(--lg-tinte);
+    box-shadow: var(--lg-brillo), 0 18px 44px -20px rgba(6,10,18,.6);
+    -webkit-backdrop-filter: var(--lg-blur);
+    backdrop-filter: var(--lg-blur);
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-title h1{
-    color:color-mix(in srgb, var(--dash-primary) 32%, #1D1D1F);
-    text-shadow:0 1px 0 rgba(255,255,255,.4);
+html[data-tema="cupertino"] .dashboard-boutique .hero-title h1{
+    color:#FFFFFF;
+    text-shadow:0 1px 2px rgba(0,0,0,.28);
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-title p{
-    color:color-mix(in srgb, var(--dash-primary) 30%, #3A3A3C);
-    text-shadow:0 1px 0 rgba(255,255,255,.3);
+html[data-tema="cupertino"] .dashboard-boutique .hero-title p{
+    color:rgba(255,255,255,.85);
+    text-shadow:0 1px 1px rgba(0,0,0,.22);
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-date{
-    color:color-mix(in srgb, var(--dash-primary) 45%, #48484A);
-    text-shadow:0 1px 0 rgba(255,255,255,.3);
+html[data-tema="cupertino"] .dashboard-boutique .hero-date{
+    color:rgba(255,255,255,.9);
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+}
+
+/* ── Píldoras superiores (hotel, campana): mismo vidrio, forma iOS ── */
+html[data-tema="cupertino"] .dashboard-boutique :is(.hotel-switch, .glass-button){
+    border-radius:999px;
+    border:1px solid var(--lg-borde);
+    background:
+        linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,0) 52%),
+        var(--lg-tinte);
+    color:#FFFFFF;
+    box-shadow: var(--lg-brillo), 0 10px 26px -16px rgba(6,10,18,.55);
+    -webkit-backdrop-filter: var(--lg-blur);
+    backdrop-filter: var(--lg-blur);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .glass-button{
+    transition:transform .18s ease, border-color .18s ease, background-color .18s ease;
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .glass-button.has-notifications,
+html[data-tema="cupertino"] .dashboard-boutique .glass-button:hover{
+    border-color:rgba(255,255,255,.46);
+    background:
+        linear-gradient(160deg, rgba(255,255,255,.22), rgba(255,255,255,.03) 52%),
+        var(--lg-tinte-hover);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .glass-button:active{
+    transform:scale(.94);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .glass-button:focus-visible{
+    outline:2px solid rgba(255,255,255,.9);
+    outline-offset:2px;
+}
+
+/* Avatar: anillo luminoso para sentarse con la familia de vidrio. */
+html[data-tema="cupertino"] .dashboard-boutique .hero-actions .avatar{
+    border:1px solid rgba(255,255,255,.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 26px -16px rgba(6,10,18,.55);
+}
+
+/* ── Hero móvil (dm-*): misma gramática de vidrio ahumado ── */
+html[data-tema="cupertino"] .dashboard-boutique .dm-hero-scrim{
+    background:linear-gradient(180deg, rgba(9,12,18,.3) 0%, rgba(9,12,18,0) 30%, rgba(9,12,18,0) 52%, rgba(9,12,18,.44) 100%);
+    animation:none;
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .dm-hero-txt{
+    width:fit-content;
+    max-width:calc(100% - 24px);
+    margin:0 12px 12px;
+    padding:12px 16px 14px;
+    border-radius:18px;
+    border:1px solid var(--lg-borde);
+    background:
+        linear-gradient(150deg, rgba(255,255,255,.14), rgba(255,255,255,0) 46%),
+        var(--lg-tinte);
+    box-shadow: var(--lg-brillo), 0 14px 34px -18px rgba(6,10,18,.6);
+    -webkit-backdrop-filter: var(--lg-blur);
+    backdrop-filter: var(--lg-blur);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .dm-eyebrow{
+    color:rgba(255,255,255,.82);
+    text-shadow:none;
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .dm-hotel{
+    color:#FFFFFF;
+    text-shadow:0 1px 2px rgba(0,0,0,.26);
+}
+
+html[data-tema="cupertino"] .dashboard-boutique .dm-greet{
+    color:rgba(255,255,255,.86);
+    text-shadow:none;
 }
 
 /* ── Filas de dinero del día: losas pastel de marca (antes gradiente oscuro) ── */

@@ -411,6 +411,14 @@
     .ms-rail-fi:hover i,
     .ms-rail-fi.ms-on i { color: var(--sr-primary); }
 
+    /* Algunas vistas cargan CSS de vendor que subraya <a> en hover/focus
+       (Bootstrap en tarifas). Los enlaces del rail y del flyout nunca se
+       subrayan, en ningún tema ni modo. */
+    .ms-rail-g:hover, .ms-rail-g:focus, .ms-rail-g:active,
+    .ms-rail-fi:hover, .ms-rail-fi:focus, .ms-rail-fi:active {
+        text-decoration: none;
+    }
+
     .ms-rail-fi .ms-rail-badge,
     .ms-rail-fi .ms-rail-dot { margin-left: auto; }
 
