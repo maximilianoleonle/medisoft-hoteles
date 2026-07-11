@@ -93,7 +93,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-title{
     margin:4px 0 4px;
     color:#111827;
-    font-family:'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size:clamp(2.2rem,3.2vw,3.15rem);
     line-height:.98;
     font-weight:700;
@@ -166,7 +166,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
     display:block;
     margin-top:14px;
     color:#111827;
-    font-family:'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size:2.65rem;
     font-weight:750;
     line-height:.82;

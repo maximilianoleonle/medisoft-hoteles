@@ -29,7 +29,7 @@ if (!function_exists('hotel_footer_nav_catalog')) {
             'dashboard' => [
                 'label' => 'Dashboard',
                 'short' => 'Inicio',
-                'icon' => 'fa-th-large',
+                'icon' => 'fa-compass',
                 'path' => 'dashboard',
                 'modules_any' => ['dashboard'],
                 'descripcion' => 'Resumen general del hotel.',
@@ -109,7 +109,7 @@ if (!function_exists('hotel_footer_nav_catalog')) {
             'inventario' => [
                 'label' => 'Inventarios',
                 'short' => 'Inventario',
-                'icon' => 'fa-box',
+                'icon' => 'fa-boxes-stacked',
                 'path' => 'inventario',
                 'modules_any' => ['inventario'],
                 'descripcion' => 'Existencias y movimientos de almacén.',

@@ -94,7 +94,7 @@ $visibles = count($tareas);
     --tk-text: color-mix(in srgb, var(--tk-brand) 46%, #707B8C);
     --tk-muted: #8791A2;
     --tk-heading: color-mix(in srgb, var(--tk-brand) 66%, #566172);
-    --tk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-success: #1E9E63; --tk-success-bg: #E7F4EC;
     --tk-warning: #C2841C; --tk-warning-bg: #FAF0DC;

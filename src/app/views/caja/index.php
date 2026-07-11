@@ -143,6 +143,19 @@ if (!function_exists('cj_finance_sentence')) {
     font-family:var(--cj-sans);
     color:var(--cj-text);
     -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+}
+
+/* ── Tipografía unificada con el dashboard: Manrope + Cormorant en TODA la vista,
+   incluidos los controles de formulario y los modales que cuelgan fuera de .cj-page
+   (por defecto input/select/textarea/button NO heredan la familia del contenedor). ── */
+.cj-page input, .cj-page select, .cj-page textarea, .cj-page button,
+#modalIngreso, #modalGasto,
+#modalIngreso input, #modalIngreso select, #modalIngreso textarea, #modalIngreso button,
+#modalGasto input, #modalGasto select, #modalGasto textarea, #modalGasto button {
+    font-family:var(--cj-sans);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
 }
 
 /* ── Topbar ── */
@@ -336,15 +349,16 @@ if (!function_exists('cj_finance_sentence')) {
 }
 .cj-card-head h2 {
     margin:0;
-    font-family:var(--cj-serif);
-    font-size:1.12rem; font-weight:600;
-    color:var(--cj-text); line-height:1.2;
+    font-family:var(--cj-sans);
+    font-size:1.02rem; font-weight:700;
+    letter-spacing:-.01em;
+    color:var(--cj-navy); line-height:1.2;
     flex:1; min-width:0;
 }
 /* En PC los títulos de bloque ganan un poco más de presencia */
 @media (min-width:769px) {
     .cj-card-head h2 {
-        font-size:1.26rem; font-weight:700;
+        font-size:1.12rem; font-weight:700;
         color:var(--cj-navy);
     }
 }
@@ -374,9 +388,10 @@ if (!function_exists('cj_finance_sentence')) {
 }
 .cj-kpi-label { font-size:.68rem; font-weight:700; color:var(--cj-muted); text-transform:uppercase; letter-spacing:.06em; }
 .cj-kpi-value {
-    font-family:var(--cj-serif);
-    font-size:1.48rem; font-weight:600;
-    color:var(--cj-text); line-height:1;
+    font-family:var(--cj-sans);
+    font-size:1.5rem; font-weight:700;
+    letter-spacing:-.02em;
+    color:var(--cj-navy); line-height:1;
     font-variant-numeric:tabular-nums;
 }
 .cj-kpi-value.is-income { color:var(--cj-green); }
@@ -412,9 +427,10 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-method-pct { font-size:.7rem; font-weight:700; color:var(--cj-muted); margin-top:3px; }
 .cj-method-amount {
     text-align:right;
-    font-family:var(--cj-serif);
-    font-size:1.06rem; font-weight:600;
-    color:var(--cj-text); white-space:nowrap;
+    font-family:var(--cj-sans);
+    font-size:1.04rem; font-weight:700;
+    letter-spacing:-.01em;
+    color:var(--cj-navy); white-space:nowrap;
     font-variant-numeric:tabular-nums;
 }
 
@@ -557,8 +573,9 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-badge.income  { background:color-mix(in srgb, var(--cj-green) 12%, transparent); color:var(--cj-green); }
 .cj-badge.expense { background:color-mix(in srgb, var(--cj-red)   10%, transparent); color:var(--cj-red); }
 .cj-mov-amount {
-    font-family:var(--cj-serif);
-    font-size:1rem; font-weight:600;
+    font-family:var(--cj-sans);
+    font-size:1rem; font-weight:700;
+    letter-spacing:-.01em;
     font-variant-numeric:tabular-nums; white-space:nowrap;
     padding-top:3px;
 }
@@ -656,11 +673,12 @@ if (!function_exists('cj_finance_sentence')) {
 }
 #modalIngreso .cash-modal-kicker, #modalGasto .cash-modal-kicker {
     margin:0 0 3px; color:var(--cash-modal-muted);
-    font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
 }
 #modalIngreso .cash-modal-title, #modalGasto .cash-modal-title {
     margin:0; color:var(--cash-modal-text) !important;
-    font-size:18px; line-height:1.2; font-weight:850;
+    font-family:var(--cj-sans);
+    font-size:18px; line-height:1.2; font-weight:700; letter-spacing:-.01em;
 }
 #modalIngreso .cash-modal-close, #modalGasto .cash-modal-close {
     width:38px; height:38px; flex:0 0 38px;
@@ -687,7 +705,7 @@ if (!function_exists('cj_finance_sentence')) {
 #modalIngreso .cash-field.hidden, #modalGasto .cash-field.hidden { display:none !important; }
 #modalIngreso .modal-label, #modalGasto .modal-label, #modalGasto .modal-label-red {
     margin:0; color:var(--cash-modal-text) !important;
-    font-size:12px; font-weight:800; line-height:1.2;
+    font-size:12px; font-weight:700; line-height:1.2;
 }
 #modalIngreso .modal-label span, #modalGasto .modal-label span { color:var(--cash-modal-expense) !important; }
 #modalIngreso .modal-input, #modalGasto .modal-input, #modalGasto .modal-input-red {
@@ -716,7 +734,7 @@ if (!function_exists('cj_finance_sentence')) {
     display:block;
     color:#B4392B;
     font-size:12px;
-    font-weight:800;
+    font-weight:700;
     line-height:1.35;
 }
 #modalIngreso .cash-error-summary, #modalGasto .cash-error-summary {
@@ -726,16 +744,16 @@ if (!function_exists('cj_finance_sentence')) {
     background:#FFF7F6;
     color:#9E2A1D;
     font-size:13px;
-    font-weight:800;
+    font-weight:700;
     line-height:1.35;
 }
 #modalIngreso .cash-money-field, #modalGasto .cash-money-field { position:relative; }
 #modalIngreso .cash-money-prefix, #modalGasto .cash-money-prefix {
     position:absolute; left:13px; top:50%; transform:translateY(-50%);
-    color:var(--cash-modal-muted); font-size:14px; font-weight:850; pointer-events:none;
+    color:var(--cash-modal-muted); font-size:14px; font-weight:700; pointer-events:none;
 }
 #modalIngreso .cash-money-field .modal-input, #modalGasto .cash-money-field .modal-input {
-    padding-left:30px !important; font-size:16px; font-weight:850; font-variant-numeric:tabular-nums;
+    padding-left:30px !important; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
 }
 #modalIngreso .cash-modal-actions, #modalGasto .cash-modal-actions {
     position:sticky; bottom:0;
@@ -748,7 +766,7 @@ if (!function_exists('cj_finance_sentence')) {
     min-height:42px;
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
     padding:0 16px; border-radius:11px;
-    font-size:13px; font-weight:850; line-height:1;
+    font-size:13px; font-weight:700; line-height:1;
     transition:transform .18s, background .18s, border-color .18s;
 }
 #modalIngreso .cash-modal-btn.secondary, #modalGasto .cash-modal-btn.secondary {
@@ -960,6 +978,7 @@ if (!function_exists('cj_finance_sentence')) {
         animation:none !important;
     }
 }
+
 </style>
 
 <?php
@@ -989,6 +1008,13 @@ $cash_hora_apertura_label  = !empty($corte['fecha_apertura'])
     ? date('H:i', strtotime($corte['fecha_apertura']))
     : '--:--';
 $cash_caja_nombre   = $caja['nombre'] ?? 'Caja';
+// Título del header: capitaliza solo la primera letra (p.ej. "caja" → "Caja"),
+// respetando el resto del nombre. Guarda mb_* como el resto del proyecto.
+if ($cash_caja_nombre !== '') {
+    $cash_caja_nombre = function_exists('mb_strtoupper')
+        ? mb_strtoupper(mb_substr($cash_caja_nombre, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($cash_caja_nombre, 1, null, 'UTF-8')
+        : ucfirst($cash_caja_nombre);
+}
 $cash_responsable   = $corte['usuario_apertura'] ?? 'Responsable no asignado';
 $cash_hotel_nombre  = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Hotel';
 $cash_methods = [

@@ -56,7 +56,7 @@ if (!function_exists('trab_report_estado_meta')) {
     --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
-    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;

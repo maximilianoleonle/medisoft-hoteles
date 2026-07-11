@@ -69,7 +69,7 @@ $tlmCategoriaLabels = [
     --tkc-surface: #FFFFFF; --tkc-surface-warm: #FCFAF5;
     --tkc-border: color-mix(in srgb, var(--tkc-brand) 7%, #E7E1D4);
     --tkc-text: #171717; --tkc-muted: #667085; --tkc-heading: #111827;
-    --tkc-serif: 'Cormorant Garamond', Georgia, serif;
+    --tkc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tkc-success: #1E9E63; --tkc-success-bg: #E7F4EC;
     --tkc-warning: #C2841C; --tkc-warning-bg: #FAF0DC;
     --tkc-info: #2F77E0; --tkc-info-bg: #E6EFFC;

@@ -4701,7 +4701,7 @@ if ($tiene_doble_movimiento) {
   --lm-line:#E7E1D4; --lm-line-cool:#D5E3F6;
   --lm-ink:#20293A; --lm-ink-soft:#5C6675; --lm-ink-faint:#8B94A3;
   --lm-radius:24px; --lm-radius-md:15px; --lm-radius-sm:11px;
-  --lm-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --lm-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --lm-shadow:0 34px 80px -30px rgba(16,32,64,.6), 0 10px 30px -18px rgba(16,32,64,.35);
   background:rgba(14,26,46,.55)!important;
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
@@ -5292,7 +5292,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   --c-cleaning:#2F77E0;  --bg-cleaning:#E6EFFC;
   --c-maint:#C2841C;     --bg-maint:#FAF0DC;
   --c-critical:#D64539;  --bg-critical:#FBE9E7;
-  --serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --hb-radius:16px; --hb-radius-lg:20px;
   --hb-shadow-xs:0 1px 2px rgba(27,39,70,.05);
   --hb-shadow-sm:0 1px 2px rgba(27,39,70,.05),0 2px 6px rgba(27,39,70,.05);
@@ -13286,7 +13286,7 @@ body.hb-modal-open{ overflow:hidden; }
 #modalLimpieza.lm-overlay > .lm-dialog > .lm-header h3.lm-title {
     margin: 0 !important;
     color: #fff !important;
-    font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     font-size: 1.58rem !important;
     font-weight: 600 !important;
     line-height: 1.1 !important;
@@ -16347,3 +16347,160 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
+
+<!-- =====================================================================
+     Header vibrante — banda de marca luminosa y glossy, al estilo del modal
+     de limpieza (marca -> marca mas clara + brillo blanco + destello dorado).
+     Solo desktop (>=768px); en movil manda .hb-page-header (esta oculto).
+     Todo el cromado se deriva de --brand-* (white-label).
+     IMPORTANTE: el boton de Limpieza (.hb-cleaning-btn) se deja INTACTO a
+     peticion del usuario -> excluido de los estilos de boton de esta banda.
+     Va al final del archivo para ganar por orden de cascada.
+     ===================================================================== -->
+<style id="hb-header-hero">
+@media (min-width:768px){
+  /* Tarjeta FLOTANTE (no un rectangulo a todo el ancho): esquinas redondeadas
+     + margenes + sombra/glow de marca, misma forma que el modal. Gradiente de
+     marca luminoso (marca -> marca aclarada) + brillo blanco = energia "wow". */
+  .habitaciones-view .modern-header{
+    position:sticky; top:12px; overflow:hidden;
+    margin:16px clamp(14px,3vw,40px) 8px!important;
+    border-radius:22px!important;
+    --hb-hero-lift: color-mix(in srgb, var(--hb-primary) 66%, #ffffff);
+    background:linear-gradient(116deg,
+        var(--hb-primary) 0%,
+        var(--hb-primary) 30%,
+        var(--hb-hero-lift) 72%,
+        color-mix(in srgb, var(--hb-primary) 82%, #ffffff) 100%)!important;
+    border:1px solid color-mix(in srgb, var(--hb-primary) 20%, transparent)!important;
+    box-shadow:
+      0 34px 64px -34px color-mix(in srgb, var(--hb-primary) 82%, #000),
+      0 14px 34px -24px color-mix(in srgb, var(--hb-primary) 58%, #000),
+      inset 0 1px 0 rgba(255,255,255,.24)!important;
+    padding:1.05rem 0!important;
+  }
+  /* Capa glossy blanca (specular + segundo brillo + sheen superior) */
+  .habitaciones-view .modern-header::before{
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(100% 90% at 8% -42%, rgba(255,255,255,.40), transparent 56%),
+      radial-gradient(55% 120% at 76% -24%, rgba(255,255,255,.20), transparent 55%),
+      linear-gradient(180deg, rgba(255,255,255,.16), transparent 44%);
+  }
+  .habitaciones-view .modern-header .container{ position:relative; z-index:1; }
+
+  /* Titulo y subtitulo sobre la banda */
+  .habitaciones-view .modern-header h1{
+    color:#fff!important; text-shadow:0 1px 2px rgba(0,0,0,.18);
+  }
+  .habitaciones-view .modern-header .hb-title-prefix{
+    color:rgba(255,255,255,.62)!important; font-weight:500!important;
+  }
+  .habitaciones-view .modern-header p{
+    color:rgba(255,255,255,.82)!important;
+    display:flex!important; align-items:center; gap:8px; font-weight:500!important;
+    text-shadow:0 1px 2px rgba(0,0,0,.16);
+  }
+  /* Punto "en vivo" que late -> refuerza "Control en tiempo real" */
+  .habitaciones-view .modern-header p::before{
+    content:''; width:7px; height:7px; border-radius:50%; flex:0 0 auto;
+    background:#42D392; box-shadow:0 0 0 0 rgba(66,211,146,.55);
+    animation:hbLivePulse 2.2s ease-out infinite;
+  }
+  @keyframes hbLivePulse{ 0%{box-shadow:0 0 0 0 rgba(66,211,146,.5)} 70%{box-shadow:0 0 0 7px rgba(66,211,146,0)} 100%{box-shadow:0 0 0 0 rgba(66,211,146,0)} }
+
+  /* Emblema de vidrio con destello dorado (misma primitiva que el modal) */
+  .habitaciones-view .modern-header .p-2.rounded-lg{
+    position:relative; width:48px!important; height:48px!important;
+    display:grid!important; place-items:center;
+    background:rgba(255,255,255,.16)!important;
+    border:1px solid rgba(255,255,255,.38)!important;
+    border-radius:14px!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 12px 24px -14px rgba(0,0,0,.5)!important;
+    -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  }
+  .habitaciones-view .modern-header .p-2.rounded-lg i{ font-size:1.18rem!important; color:#fff!important; }
+  .habitaciones-view .modern-header .p-2.rounded-lg::after{
+    content:''; position:absolute; top:-5px; right:-5px; width:15px; height:15px;
+    background:linear-gradient(135deg,#fff,var(--hb-accent));
+    clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);
+    filter:drop-shadow(0 0 5px rgba(255,255,255,.85));
+    animation:hbEmblemTwinkle 2.6s ease-in-out infinite;
+  }
+  @keyframes hbEmblemTwinkle{ 0%,100%{transform:scale(.7) rotate(0);opacity:.6} 50%{transform:scale(1) rotate(90deg);opacity:1} }
+
+  /* Botones secundarios (Vista Rapida, Nueva Habitacion) -> vidrio.
+     Se EXCLUYE .hb-cleaning-btn (Limpieza intacto) y .btn-brand (CTA aparte). */
+  .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand){
+    background:rgba(255,255,255,.14)!important;
+    border:1px solid rgba(255,255,255,.30)!important;
+    color:#fff!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  }
+  .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand) i{ color:#fff!important; }
+  .habitaciones-view .modern-header .btn-modern:not(.hb-cleaning-btn):not(.btn-brand):hover{
+    background:rgba(255,255,255,.24)!important;
+    border-color:rgba(255,255,255,.5)!important;
+    transform:translateY(-2px)!important;
+  }
+  /* CTA primario -> chip claro que resalta + brillo que barre al hover */
+  .habitaciones-view .modern-header .btn-modern.btn-brand{
+    position:relative; overflow:hidden;
+    background:linear-gradient(135deg,#FFFFFF,color-mix(in srgb,var(--hb-accent) 16%,#FFFFFF))!important;
+    color:var(--hb-primary)!important;
+    border:1px solid color-mix(in srgb,var(--hb-accent) 36%,#fff)!important;
+    box-shadow:0 14px 28px -14px rgba(0,0,0,.5), inset 0 1px 0 #fff!important;
+    font-weight:700!important;
+  }
+  .habitaciones-view .modern-header .btn-modern.btn-brand i{ color:var(--hb-primary)!important; }
+  .habitaciones-view .modern-header .btn-modern.btn-brand:hover{
+    background:#fff!important; transform:translateY(-2px)!important;
+    box-shadow:0 18px 32px -14px rgba(0,0,0,.55)!important;
+  }
+  .habitaciones-view .modern-header .btn-modern.btn-brand::after{
+    content:''; position:absolute; top:0; bottom:0; left:0; width:42%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);
+    transform:translateX(-170%) skewX(-18deg); pointer-events:none;
+  }
+  .habitaciones-view .modern-header .btn-modern.btn-brand:hover::after{
+    transition:transform .7s ease; transform:translateX(320%) skewX(-18deg);
+  }
+}
+/* Respeto por reduced-motion: se apagan destello, latido y brillo */
+@media (min-width:768px) and (prefers-reduced-motion: reduce){
+  .habitaciones-view .modern-header .p-2.rounded-lg::after,
+  .habitaciones-view .modern-header p::before{ animation:none!important; }
+  .habitaciones-view .modern-header .btn-modern.btn-brand::after{ display:none!important; }
+}
+</style>
+
+<!-- =====================================================================
+     Fluidez de la vista de habitaciones (rendimiento de animaciones).
+     1) El reverso de la card se deslizaba animando 'top' (con top+bottom
+        fijos -> mueve Y redimensiona su contenido con scroll cada frame =
+        trabado). Se cambia a TRANSFORM: translateY, que corre en el
+        compositor (GPU) sin reflow -> deslizamiento fluido.
+     2) La cara de la card y los botones del reverso tienen fondo OPACO;
+        su backdrop-filter:blur no se ve pero encarece scroll/animacion en
+        toda la grilla. Se elimina (cero cambio visual, mas fluido).
+     Va al final para ganar por orden de cascada. No cambia logica ni JS.
+     ===================================================================== -->
+<style id="hb-fluidity">
+/* (1) Reverso: 'top' -> translateY (compositor puro, sin reflow) */
+.habitaciones-view .flip-card-back{
+  top:3px!important;
+  bottom:3px!important;
+  transform:translateY(calc(100% + 12px));
+  transition:transform .42s cubic-bezier(.22,1,.36,1)!important;
+}
+.habitaciones-view .flip-card.flipped .flip-card-back{
+  transform:translateY(0);
+  transition:transform .42s cubic-bezier(.22,1,.36,1)!important;
+  will-change:transform;
+}
+
+/* (2) Fondos opacos: el blur no aporta y encarece cada frame de scroll/flip */
+.habitaciones-view .flip-card-front{ -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+.habitaciones-view .flip-card-back .btn-action{ -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+</style>

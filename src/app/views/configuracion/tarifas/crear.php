@@ -346,7 +346,7 @@ input:checked + .toggle-slider:before {
     --tar-plum: #7C4F86;
     --tar-coral: #C66A5A;
     --tar-amber: #D0963A;
-    --tar-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tar-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--tar-text);
     background:
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 60%),

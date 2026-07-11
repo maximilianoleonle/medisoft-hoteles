@@ -33,7 +33,7 @@ $esSistema = $rol ? !empty($rol['es_sistema']) : false;
     --rf-surface: #FFFFFF;
     --rf-bg: #F7F4EE;
     --rf-border: color-mix(in srgb, var(--rf-brand) 9%, #E7E1D4);
-    --rf-serif: 'Cormorant Garamond', Georgia, serif;
+    --rf-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rf-sans: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
     font-family: var(--rf-sans);
     color: var(--rf-text);

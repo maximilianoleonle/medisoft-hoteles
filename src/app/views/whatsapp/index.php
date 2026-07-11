@@ -32,7 +32,7 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
     --wav-text: color-mix(in srgb, var(--wav-brand) 46%, #707B8C);
     --wav-muted: #8791A2;
     --wav-heading: color-mix(in srgb, var(--wav-brand) 66%, #566172);
-    --wav-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wav-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wav-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wav-success: #1E9E63;
     --wav-success-bg: #E7F4EC;

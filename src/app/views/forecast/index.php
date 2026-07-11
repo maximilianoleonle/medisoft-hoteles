@@ -65,7 +65,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     --fc-text: color-mix(in srgb, var(--fc-brand) 46%, #707B8C);
     --fc-muted: #8791A2;
     --fc-heading: color-mix(in srgb, var(--fc-brand) 66%, #566172);
-    --fc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --fc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --fc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --fc-success: #1E9E63; --fc-success-bg: #E7F4EC;
     --fc-warning: #C2841C; --fc-warning-bg: #FAF0DC;

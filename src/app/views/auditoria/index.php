@@ -61,7 +61,7 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
     --au-text: color-mix(in srgb, var(--au-brand) 46%, #707B8C);
     --au-muted: #8791A2;
     --au-heading: color-mix(in srgb, var(--au-brand) 66%, #566172);
-    --au-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --au-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --au-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --au-danger: #B4392B;
     --au-danger-bg: #F8EAE5;

@@ -237,7 +237,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     --gc-info-bg: #E6EFFC;
     --gc-danger: #D64539;
     --gc-danger-bg: #FBE9E7;
-    --gc-serif: 'Cormorant Garamond', Georgia, serif;
+    --gc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --gc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     background:

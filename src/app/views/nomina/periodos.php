@@ -29,9 +29,9 @@ include APP_PATH . '/views/partials/back_arrow.php';
     color: var(--nom-text); max-width: 1120px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-per-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-per-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
+.nomina-per-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
 .nomina-per-page .per-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
-.nomina-per-page .per-card h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
+.nomina-per-page .per-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
 .nomina-per-page .per-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .nomina-per-page .per-field { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1 1 170px; }
 .nomina-per-page .per-field label { font-size: 11.5px; font-weight: 700; color: var(--nom-muted); }

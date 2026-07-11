@@ -44,7 +44,7 @@ $descuentoTexto = rtrim(rtrim(number_format((float) $config['descuento_pct'], 2)
     --lea-text: color-mix(in srgb, var(--lea-brand) 46%, #707B8C);
     --lea-muted: #8791A2;
     --lea-heading: color-mix(in srgb, var(--lea-brand) 66%, #566172);
-    --lea-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --lea-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --lea-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --lea-success: #1E9E63; --lea-success-bg: #E7F4EC;
     --lea-warning: #C2841C; --lea-warning-bg: #FAF0DC;

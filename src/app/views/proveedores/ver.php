@@ -47,7 +47,7 @@ $activo = (int)($proveedor['activo'] ?? 0) === 1;
     --pv-text: #171717;
     --pv-muted: #667085;
     --pv-heading: #111827;
-    --pv-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --pv-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --pv-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --pv-success: #1E9E63;
     --pv-success-bg: #E7F4EC;

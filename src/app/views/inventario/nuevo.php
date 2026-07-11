@@ -84,7 +84,7 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
 
 .nuevo-producto-view h1 {
     color: var(--inv-brand-2);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.75rem, 3vw, 2.35rem);
     font-weight: 650;
     line-height: .96;

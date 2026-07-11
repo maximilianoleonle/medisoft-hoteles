@@ -172,7 +172,7 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
     --user-danger-soft: #FDECEC;
     --user-info: #2F77E0;
     --user-info-soft: #E8F0FC;
-    --user-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --user-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --user-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--user-text);
     font-family: var(--user-sans);

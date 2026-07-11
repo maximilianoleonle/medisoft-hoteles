@@ -33,7 +33,7 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
   --c-cleaning:#2F77E0;  --bg-cleaning:#E6EFFC;
   --c-maint:#C2841C;     --bg-maint:#FAF0DC;
   --c-critical:#D64539;  --bg-critical:#FBE9E7;
-  --serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --hb-radius:16px; --hb-radius-lg:20px;
   --hb-shadow-xs:0 1px 2px rgba(27,39,70,.05);
 }

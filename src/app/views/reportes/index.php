@@ -34,7 +34,7 @@ if ($repRol !== '') {
     --rp-ink-2: #3E4A66;
     --rp-muted: #6C7689;
     /* Ritmo */
-    --rp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --rp-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rp-ease: cubic-bezier(.22,1,.36,1);
     --rp-shadow-xs: 0 1px 2px rgba(27,39,70,.05);

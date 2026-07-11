@@ -44,7 +44,7 @@ foreach ($feeds as $feed) {
     --cnl-text: color-mix(in srgb, var(--cnl-brand) 46%, #707B8C);
     --cnl-muted: #8791A2;
     --cnl-heading: color-mix(in srgb, var(--cnl-brand) 66%, #566172);
-    --cnl-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cnl-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cnl-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cnl-success: #1E9E63;
     --cnl-success-bg: #E7F4EC;

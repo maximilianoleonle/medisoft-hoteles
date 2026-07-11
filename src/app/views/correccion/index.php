@@ -27,7 +27,7 @@
             --co-success: #1E9E63; --co-success-bg: #E7F4EC;
             --co-warning: #C2841C; --co-warning-bg: #FAF0DC;
             --co-danger: #B4392B; --co-danger-bg: #F8EAE5;
-            --co-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+            --co-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --co-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }

@@ -35,7 +35,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
     color: var(--nom-text); max-width: 1120px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-pd-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-pd-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 26px; margin: 2px 0 4px; font-weight: 600; }
+.nomina-pd-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 26px; margin: 2px 0 4px; font-weight: 600; }
 .nomina-pd-page .pd-badge { display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 11px; vertical-align: middle; }
 .nomina-pd-page .pd-badge.ok { background: rgba(46,125,50,.12); color: #2e7d32; }
 .nomina-pd-page .pd-badge.warn { background: rgba(191,144,0,.14); color: #9a7400; }
@@ -45,7 +45,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
 @media (max-width: 900px) { .nomina-pd-page .pd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .nomina-pd-page .pd-kpi { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 14px; padding: 14px 16px; }
 .nomina-pd-page .pd-kpi-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--nom-muted); font-weight: 700; }
-.nomina-pd-page .pd-kpi-value { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 24px; font-weight: 600; margin-top: 4px; }
+.nomina-pd-page .pd-kpi-value { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 24px; font-weight: 600; margin-top: 4px; }
 .nomina-pd-page .pd-acciones { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 .nomina-pd-page .pd-btn {
     display: inline-flex; align-items: center; gap: 8px; border-radius: 11px; padding: 9px 16px;
@@ -56,7 +56,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-pd-page .pd-btn-danger { border-color: rgba(198,40,40,.4); color: #c62828; }
 .nomina-pd-page .pd-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
 .nomina-pd-page .pd-emp { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.nomina-pd-page .pd-emp .pd-neto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 600; }
+.nomina-pd-page .pd-emp .pd-neto { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 22px; font-weight: 600; }
 .nomina-pd-page .pd-mini { font-size: 12px; color: var(--nom-muted); }
 .nomina-pd-page details.pd-lineas summary { cursor: pointer; font-size: 12px; color: var(--nom-gold); font-weight: 700; margin-top: 6px; }
 .nomina-pd-page table.pd-tabla { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }

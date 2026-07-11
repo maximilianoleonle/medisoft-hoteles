@@ -237,7 +237,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     max-width: 12ch;
     margin: 14px 0 14px;
     color: var(--rent-on-action);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(2.4rem, 5vw, 5.15rem);
     font-weight: 700;
     line-height: .9;
@@ -331,7 +331,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 .rent-period-value {
     margin-top: 7px;
     color: var(--rent-primary);
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: clamp(1.5rem, 3vw, 2.35rem);
     font-weight: 700;
     line-height: 1;

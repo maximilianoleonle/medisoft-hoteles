@@ -529,7 +529,7 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     --hc-brand: var(--brand-primary, #223b36);
     --hc-brand-strong: var(--brand-secondary, #17241f);
     --hc-accent: var(--brand-accent, #b9873f);
-    --hc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --hc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --hc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --hc-accent-soft: color-mix(in srgb, var(--hc-accent) 14%, #fffffb);
     --hc-bg: #f4f1ea;
@@ -5772,7 +5772,7 @@ html[data-theme="dark"] .hc-page {
                                         </div>
 
                                         <div class="hc-preview-nav">
-                                            <span class="hc-preview-nav-item is-active"><i class="fas fa-th-large"></i><span>Dashboard</span></span>
+                                            <span class="hc-preview-nav-item is-active"><i class="fas fa-compass"></i><span>Dashboard</span></span>
                                             <span class="hc-preview-nav-item"><i class="fas fa-bed"></i><span>Habitaciones</span></span>
                                             <span class="hc-preview-nav-item"><i class="fas fa-wallet"></i><span>Caja</span></span>
                                         </div>

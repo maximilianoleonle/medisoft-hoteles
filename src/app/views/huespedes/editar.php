@@ -252,7 +252,7 @@ $geRenderVehicleInlineFields = function () use ($geVehicleVisibleFields, $geGues
     --ge-success: #157A52;
     --ge-danger: #B9463D;
     --ge-info: #2E6EA8;
-    --ge-serif: 'Cormorant Garamond', Georgia, serif;
+    --ge-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --ge-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     background:

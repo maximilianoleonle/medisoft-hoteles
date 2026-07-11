@@ -817,7 +817,7 @@ select.guest-control {
     --guest-border: color-mix(in srgb, var(--guest-brand) 7%, #E7E1D4);
     --guest-ring: color-mix(in srgb, var(--guest-gold) 32%, transparent);
     --guest-text: #171717; --guest-muted: #667085; --guest-heading: #111827;
-    --guest-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --guest-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --guest-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     /* Semánticos */
     --g-success:#1E9E63; --g-success-bg:#E7F4EC;

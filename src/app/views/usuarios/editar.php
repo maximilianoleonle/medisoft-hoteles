@@ -609,7 +609,7 @@ if (!function_exists('usuario_form_error_attrs')) {
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
     --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
     --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2; --wk-heading: #111827;
-    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     min-height: 100%;
     background:

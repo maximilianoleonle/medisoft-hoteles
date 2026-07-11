@@ -294,7 +294,7 @@ input.toggle-activo:checked ~ div {
     --tar-danger-soft: #FDECEC;
     --tar-info: #2F77E0;
     --tar-info-soft: #E8F0FC;
-    --tar-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tar-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tar-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     color: var(--tar-text);

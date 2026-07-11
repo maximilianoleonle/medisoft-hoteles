@@ -52,7 +52,7 @@ $camTodoAlDia = ($porLimpiar === 0);
    (progreso del turno, brillo del CTA, lift de tarjeta, destello).
    White-label: cromado desde --brand-*; estados = colores semánticos.
    ════════════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 .cam{
   --dx-brand: var(--brand-primary, #1B2746);
@@ -65,7 +65,7 @@ $camTodoAlDia = ($porLimpiar === 0);
   --dx-surface:#FFFFFF; --dx-surface-warm:#FCFAF5; --dx-ivory:#F6F2EA;
   --dx-line:#E7E1D4; --dx-line-cool:#D5E3F6; --dx-ink:#20293A; --dx-ink-soft:#5C6675; --dx-ink-faint:#8B94A3;
   --dx-radius:20px; --dx-radius-md:15px; --dx-radius-sm:11px;
-  --dx-serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --dx-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --dx-ease:cubic-bezier(.22,1,.36,1);
   width: 100%; min-height: 100vh;
   font-family: 'DM Sans','Outfit',system-ui,-apple-system,sans-serif; color: var(--dx-ink);
@@ -393,7 +393,11 @@ $camTodoAlDia = ($porLimpiar === 0);
                                 <i class="fas fa-user-plus" aria-hidden="true"></i><?= $asignadosNombres !== '' ? 'Cambiar personal' : 'Asignar personal' ?>
                             </button>
                         <?php else: ?>
-                            <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
+                            <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>"
+                                  data-ms-confirm data-ms-type="success" data-ms-icon="check"
+                                  data-ms-title="¿Ya quedó limpia?"
+                                  data-ms-msg="Confirma que la Hab <?= $camSafe($hab['numero']) ?> quedó lista para recibir huéspedes."
+                                  data-ms-ok="Sí, quedó limpia">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="estado" value="disponible">
                                 <button type="submit" class="cam-btn done">
@@ -414,7 +418,11 @@ $camTodoAlDia = ($porLimpiar === 0);
                     </div>
                 <?php elseif ($estado === 'disponible'): ?>
                     <div class="cam-foot">
-                        <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>">
+                        <form method="POST" action="<?= url('camarista/marcar/' . $id) ?>"
+                              data-ms-confirm data-ms-type="info" data-ms-icon="info"
+                              data-ms-title="¿Marcar por limpiar?"
+                              data-ms-msg="La Hab <?= $camSafe($hab['numero']) ?> pasará a la lista de habitaciones por limpiar."
+                              data-ms-ok="Sí, marcar">
                             <?= csrf_field() ?>
                             <input type="hidden" name="estado" value="limpieza">
                             <button type="submit" class="cam-btn pend">

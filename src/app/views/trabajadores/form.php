@@ -76,7 +76,7 @@ $valoresFormulario = [
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
     --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
-    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans);
     background:

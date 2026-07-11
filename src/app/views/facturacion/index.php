@@ -159,7 +159,7 @@ if ($total_paginas > 1) {
     --billing-ivory: #fffdf8;
     --billing-surface: #f8f5ee;
     --billing-shadow: 0 18px 46px rgba(31, 41, 55, 0.08);
-    --billing-serif: 'Cormorant Garamond', Georgia, serif;
+    --billing-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--billing-ink);
 }
 

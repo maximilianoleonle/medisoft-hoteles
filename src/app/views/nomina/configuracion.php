@@ -47,13 +47,13 @@ include APP_PATH . '/views/partials/back_arrow.php';
     padding: 4px 4px 40px;
 }
 .nomina-config-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-config-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 2px 0 4px; font-weight: 600; }
+.nomina-config-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 4px; font-weight: 600; }
 .nomina-config-page .nom-subtitle { color: var(--nom-muted); font-size: 13.5px; margin: 0 0 20px; }
 .nomina-config-page .nom-section {
     background: var(--nom-card); border: 1px solid var(--nom-border);
     border-radius: 16px; padding: 18px 20px; margin-bottom: 16px;
 }
-.nomina-config-page .nom-section h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+.nomina-config-page .nom-section h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
 .nomina-config-page .nom-section .nom-hint { font-size: 12.5px; color: var(--nom-muted); margin: 0 0 14px; }
 .nomina-config-page .nom-modos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 768px) { .nomina-config-page .nom-modos { grid-template-columns: 1fr; } }

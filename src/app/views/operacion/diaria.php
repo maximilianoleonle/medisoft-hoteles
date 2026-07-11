@@ -188,7 +188,7 @@ $estadoReservacionLabels = [
         max-width:260px;
         margin:6px 0 0;
         color:#fff;
-        font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size:1.62rem;
         font-weight:700;
         line-height:1;
@@ -482,7 +482,7 @@ $estadoReservacionLabels = [
     --op-text: color-mix(in srgb, var(--op-brand) 46%, #707B8C);
     --op-muted: #8791A2;
     --op-heading: color-mix(in srgb, var(--op-brand) 66%, #566172);
-    --op-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --op-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --op-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --op-good: #1E9E63;
     --op-good-soft: #E7F4EC;

@@ -46,14 +46,14 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
     color: var(--nom-text); max-width: 980px; margin: 0 auto; padding: 4px 4px 40px;
 }
 .nomina-ficha-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
-.nomina-ficha-page .nom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; margin: 2px 0 2px; font-weight: 600; }
+.nomina-ficha-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 2px; font-weight: 600; }
 .nomina-ficha-page .fi-sub { color: var(--nom-muted); font-size: 13.5px; margin: 0 0 18px; }
 .nomina-ficha-page .fi-badge { display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
 .nomina-ficha-page .fi-badge.activo { background: rgba(46,125,50,.12); color: #2e7d32; }
 .nomina-ficha-page .fi-badge.inactivo { background: rgba(191,144,0,.14); color: #9a7400; }
 .nomina-ficha-page .fi-badge.baja { background: rgba(198,40,40,.10); color: #c62828; }
 .nomina-ficha-page .fi-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
-.nomina-ficha-page .fi-card h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+.nomina-ficha-page .fi-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
 .nomina-ficha-page .fi-hint { font-size: 12.5px; color: var(--nom-muted); margin: 0 0 14px; }
 .nomina-ficha-page .fi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .nomina-ficha-page .fi-grid { grid-template-columns: 1fr; } }
@@ -69,7 +69,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
     background: var(--nom-brand); color: #fff;
 }
 .nomina-ficha-page .fi-salario-actual { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-.nomina-ficha-page .fi-salario-monto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 30px; font-weight: 600; }
+.nomina-ficha-page .fi-salario-monto { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 30px; font-weight: 600; }
 .nomina-ficha-page table.fi-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
 .nomina-ficha-page table.fi-tabla th { text-align: left; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--nom-muted); padding: 8px; border-bottom: 1px solid var(--nom-border); }
 .nomina-ficha-page table.fi-tabla td { padding: 8px; border-bottom: 1px dashed var(--nom-border); }

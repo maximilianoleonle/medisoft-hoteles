@@ -81,7 +81,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
     --cp-text: #171717;
     --cp-muted: #667085;
     --cp-heading: #111827;
-    --cp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cp-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cp-warning: #C2841C;
     --cp-warning-bg: #FAF0DC;

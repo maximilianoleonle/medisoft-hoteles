@@ -115,7 +115,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
     --dc-text-soft: color-mix(in srgb, var(--dc-brand) 30%, #6C7788);
     --dc-muted: #828B99;
     --dc-heading: color-mix(in srgb, var(--dc-brand) 62%, #667284);
-    --dc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --dc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-success: #1E9E63; --dc-success-bg: #E7F4EC;
     --dc-warning: #C2841C; --dc-warning-bg: #FAF0DC;

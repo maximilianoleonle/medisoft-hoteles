@@ -152,6 +152,13 @@
       .slice(0, 5);
   }
 
+  // Permite iconos con prefijo de estilo (p.ej. "fab fa-whatsapp"); si viene
+  // suelto ("fa-user") se asume solido. Asi el buscador respeta iconos de marca.
+  function _iconClass(ic) {
+    ic = String(ic || '').trim();
+    return ic.indexOf(' ') !== -1 ? ic : ('fas ' + ic);
+  }
+
   function _htmlPantallas(pantallas, q) {
     if (!pantallas.length) return '';
     let html = `<div style="padding:6px 14px 2px;font-size:.68rem;font-weight:700;color:#9CA3AF;letter-spacing:.07em;text-transform:uppercase;">Pantallas</div>`;
@@ -165,7 +172,7 @@
            onmouseout="this.style.background='transparent'">
           <span style="width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;
                        align-items:center;justify-content:center;background:#6366F118;">
-            <i class="fas ${_esc(p.icono)}" style="font-size:.75rem;color:#6366F1;"></i>
+            <i class="${_iconClass(_esc(p.icono))}" style="font-size:.75rem;color:#6366F1;"></i>
           </span>
           <span style="min-width:0;overflow:hidden;">
             <span style="display:block;font-size:.83rem;font-weight:600;color:#1F2937;

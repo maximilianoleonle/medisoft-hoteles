@@ -219,7 +219,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
     --tk-text-soft: color-mix(in srgb, var(--tk-brand) 30%, #6C7788);
     --tk-muted: #828B99;
     --tk-heading: color-mix(in srgb, var(--tk-brand) 62%, #667284);
-    --tk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-success: #1E9E63; --tk-success-bg: #E7F4EC;
     --tk-warning: #C2841C; --tk-warning-bg: #FAF0DC;

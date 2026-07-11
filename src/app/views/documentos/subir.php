@@ -82,7 +82,7 @@ $docUploadMaxBytes = 10485760;
     --dc-text: #171717;
     --dc-muted: #667085;
     --dc-heading: #111827;
-    --dc-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --dc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --dc-danger: #B4392B;
     min-height: 100%;

@@ -74,7 +74,7 @@ $totalCheckouts = count($filas);
     --rep-text: color-mix(in srgb, var(--rep-brand) 46%, #707B8C);
     --rep-muted: #8791A2;
     --rep-heading: color-mix(in srgb, var(--rep-brand) 66%, #566172);
-    --rep-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --rep-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rep-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rep-success: #1E9E63;
     --rep-success-bg: #E7F4EC;

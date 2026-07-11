@@ -258,7 +258,7 @@ $prioridades = [
     --tk-border: color-mix(in srgb, var(--tk-brand) 7%, #E7E1D4);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: #171717; --tk-muted: #667085; --tk-heading: #111827;
-    --tk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
     background:
