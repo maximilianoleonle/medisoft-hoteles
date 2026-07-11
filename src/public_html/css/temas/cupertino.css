@@ -1755,6 +1755,172 @@ html[data-theme="dark"][data-tema="cupertino"] .rdv3-payment-total b {
     color: #4ADE80 !important;
 }
 
+/* ── §24c. Cards de habitaciones reservadas de ver.php (owner 2026-07-11):
+   la card crema Deleite pasa a losa candy suave de la marca con bloom;
+   teja del nombre y cajitas de precio (PRECIO/NOCHE · NOCHES · SUBTOTAL)
+   lechosas con tinta. Misma receta que §24b, intensidad más baja porque
+   van apiladas. Modo oscuro: losa grafito. ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room {
+    border: 1px solid color-mix(in srgb, var(--rdv3-primary) 20%, rgba(255, 255, 255, .9)) !important;
+    border-radius: 18px !important;
+    background:
+        radial-gradient(46% 160% at 96% 76%, rgba(255, 255, 255, .8), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--rdv3-primary) 9%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rdv3-primary) 20%, #FFFFFF) 100%) !important;
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, .92),
+        0 2px 5px color-mix(in srgb, var(--rdv3-primary) 8%, rgba(27, 39, 70, .04)),
+        0 16px 30px -18px color-mix(in srgb, var(--rdv3-primary) 38%, rgba(27, 39, 70, .18)) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room::before {
+    background: color-mix(in srgb, var(--rdv3-primary) 55%, #FFFFFF) !important;
+}
+
+/* Teja del nombre/número: chip lechoso con tinta de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-number {
+    border: 1px solid rgba(255, 255, 255, .9) !important;
+    background: rgba(255, 255, 255, .68) !important;
+    color: color-mix(in srgb, var(--rdv3-primary) 62%, #111827) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 1px 3px color-mix(in srgb, var(--rdv3-primary) 14%, transparent) !important;
+}
+
+/* Chips Piso/personas dentro de la card */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room .rdv3-tag {
+    border: 1px solid rgba(255, 255, 255, .88) !important;
+    background: rgba(255, 255, 255, .6) !important;
+    color: #1F2937 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room .rdv3-tag i {
+    color: color-mix(in srgb, var(--rdv3-primary) 68%, #111827) !important;
+}
+
+/* Cajitas de precio: lechosas con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-metric {
+    border: 1px solid rgba(255, 255, 255, .88) !important;
+    background: rgba(255, 255, 255, .6) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-metric small {
+    color: #6E6E73 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-metric b {
+    color: #1D1D1F !important;
+}
+
+/* Subtotal derecho: separador en hilo de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-price {
+    border-left: 1px solid color-mix(in srgb, var(--rdv3-primary) 18%, rgba(17, 24, 39, .06)) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room + .rdv3-room {
+    border-top: 1px solid color-mix(in srgb, var(--rdv3-primary) 20%, rgba(255, 255, 255, .9)) !important;
+}
+
+/* Modo oscuro: losa grafito, tejas y cajitas #2C2C2E */
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room {
+    border: 1px solid #38383A !important;
+    border-radius: 18px !important;
+    background:
+        radial-gradient(46% 160% at 96% 76%, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 72%),
+        linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 16px 30px -20px rgba(0, 0, 0, .6) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room::before {
+    background: color-mix(in srgb, var(--rdv3-primary, #0A84FF) 60%, #1C1C1E) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room-number {
+    border: 1px solid #48484A !important;
+    background: #2C2C2E !important;
+    color: #F5F5F7 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room .rdv3-tag {
+    border: 1px solid #38383A !important;
+    background: #2C2C2E !important;
+    color: #D1D1D6 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room-metric small { color: #98989D !important; }
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room-metric b { color: #F5F5F7 !important; }
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room-price {
+    border-left: 1px solid #38383A !important;
+}
+
+/* ── §24d. Panel "Datos del huésped" de ver.php (owner 2026-07-11):
+   botones de contacto (Llamar lechoso con tinta de marca; WhatsApp en
+   cristal verde SEMÁNTICO), "Vista documental del huésped" y los vacíos
+   punteados (documento / vehículos) en lechoso con hilo de marca. El
+   avatar violeta se queda (ancla de identidad de la sección huésped). ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-contact-action {
+    border: 1px solid rgba(255, 255, 255, .88) !important;
+    background: rgba(255, 255, 255, .62) !important;
+    color: #1F2937 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 1px 3px color-mix(in srgb, var(--rdv3-primary) 12%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-contact-action i {
+    color: color-mix(in srgb, var(--rdv3-primary) 66%, #111827) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-contact-action:not(.is-disabled):hover {
+    background: rgba(255, 255, 255, .85) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-contact-action.is-whatsapp {
+    border: 1px solid color-mix(in srgb, #34C759 30%, rgba(255, 255, 255, .9)) !important;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, #34C759 13%, #FFFFFF),
+        color-mix(in srgb, #34C759 7%, #FFFFFF)) !important;
+    color: #1D7A3A !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-contact-action.is-whatsapp i {
+    color: #1E8E44 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-guest-docs-title,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-guest-docs-title i {
+    color: color-mix(in srgb, var(--rdv3-primary) 62%, #111827) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-guest-doc-empty,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-empty {
+    border: 1px dashed color-mix(in srgb, var(--rdv3-primary) 28%, rgba(17, 24, 39, .1)) !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, .55) !important;
+    color: #6E6E73 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-guest-doc-empty i {
+    color: color-mix(in srgb, var(--rdv3-primary) 45%, #94A3B8) !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-guest-sub {
+    color: #6E6E73 !important;
+}
+
+/* Modo oscuro: chips grafito, WhatsApp verde apagado, vacíos punteados oscuros */
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-contact-action {
+    border: 1px solid #38383A !important;
+    background: #2C2C2E !important;
+    color: #D1D1D6 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-contact-action.is-whatsapp {
+    border: 1px solid color-mix(in srgb, #30D158 30%, transparent) !important;
+    background: color-mix(in srgb, #30D158 14%, #1C1C1E) !important;
+    color: #30D158 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-guest-doc-empty,
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-empty {
+    border: 1px dashed #48484A !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, .03) !important;
+    color: #98989D !important;
+    box-shadow: none !important;
+}
+
 /* ═══ 38. CUATRO MÓDULOS ESTÁNDAR: documentos (.docs-page --dc-*),
    notificaciones (.ntx-page --ntx-*), CxC (.cxc-page --cx-*) e
    inventario (.inv-page --inv-*) ════════════════════════════════════ */
@@ -4097,6 +4263,11 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero
     }
     html[data-tema="cupertino"] .tk-page .tk-hero-section .tk-view-chip {
         margin-top: 12px;
+    }
+    /* El motor no tiene shell con gap: sus stats van pegadas al hero
+       (.mrv-grid margin-top 4px), así que la losa necesita margen propio */
+    html[data-tema="cupertino"] .mrv-hero-section {
+        margin-bottom: 14px;
     }
 }
 @media (min-width: 1024px) {

@@ -3014,6 +3014,11 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-i
         0 24px 44px -20px color-mix(in srgb, var(--gd-primary) 42%, rgba(27,39,70,.22));
 }
 
+/* Fuera la regla ornamental oro→navy del pie del héroe (lenguaje Deleite) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-identity-card::after{
+    display:none;
+}
+
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-kicker{
     color:color-mix(in srgb, var(--gd-primary) 62%, #111827);
 }
@@ -3035,19 +3040,68 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-c
     color:color-mix(in srgb, var(--gd-primary) 70%, #111827);
 }
 
-/* Rail de acciones: panel Apple limpio; el CTA conserva su sólido de marca */
+/* Rail de acciones: losa candy suave; el CTA conserva su sólido de marca */
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action-rail{
-    border-color:#E8E8ED;
-    background:#FFFFFF;
-    box-shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+    border:1px solid color-mix(in srgb, var(--gd-primary) 18%, rgba(255,255,255,.9));
+    background:
+        radial-gradient(46% 160% at 96% 80%, rgba(255,255,255,.8), rgba(255,255,255,0) 72%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--gd-primary) 8%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--gd-primary) 17%, #FFFFFF) 100%);
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.92),
+        0 2px 5px color-mix(in srgb, var(--gd-primary) 8%, rgba(27,39,70,.04)),
+        0 16px 30px -18px color-mix(in srgb, var(--gd-primary) 36%, rgba(27,39,70,.18));
 }
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action:not(.primary){
-    border-color:#E8E8ED;
-    background:#F5F5F7;
+    border:1px solid rgba(255,255,255,.88);
+    background:rgba(255,255,255,.62);
     color:#1F2937;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
 }
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action:not(.primary):hover{
-    background:#EDEDF0;
+    background:rgba(255,255,255,.85);
+}
+
+/* Historial de reservaciones: cada renglón como losa candy suave; el hilo
+   de estado (inset izquierdo) y el chip conservan su color SEMÁNTICO */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-reservation-card{
+    border:1px solid color-mix(in srgb, var(--gd-primary) 16%, rgba(255,255,255,.9));
+    background:
+        radial-gradient(46% 160% at 96% 80%, rgba(255,255,255,.8), rgba(255,255,255,0) 72%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--gd-primary) 7%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--gd-primary) 15%, #FFFFFF) 100%);
+    box-shadow:
+        inset 4px 0 0 var(--status-color),
+        inset 0 1px 1px rgba(255,255,255,.9),
+        0 12px 24px -16px color-mix(in srgb, var(--gd-primary) 32%, rgba(27,39,70,.16));
+}
+
+/* Vista documental y vacíos punteados: lechosos con hilo de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-docs-title,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-docs-title i{
+    color:color-mix(in srgb, var(--gd-primary) 62%, #111827);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-doc-action{
+    border:1px solid rgba(255,255,255,.88);
+    background:rgba(255,255,255,.62);
+    color:#1F2937;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-doc-action:hover{
+    background:rgba(255,255,255,.85);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-doc-empty,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-empty{
+    border:1px dashed color-mix(in srgb, var(--gd-primary) 28%, rgba(17,24,39,.1));
+    background:rgba(255,255,255,.55);
+    color:#6E6E73;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-doc-empty i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-empty > i{
+    color:color-mix(in srgb, var(--gd-primary) 45%, #94A3B8);
 }
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-action.primary{
     box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 8px 16px -10px color-mix(in srgb, var(--gd-primary) 60%, transparent);
