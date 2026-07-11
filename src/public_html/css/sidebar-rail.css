@@ -59,76 +59,116 @@
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .sidebar-header::after {
         content: "";
         position: absolute;
-        left: 22px;
-        right: 22px;
+        left: 20px;
+        right: 20px;
         bottom: 0;
-        height: 2px;
+        height: 1px;
         border-radius: 999px;
-        background: linear-gradient(90deg, transparent, var(--sr-gold), var(--sr-primary), transparent);
-        opacity: .55;
+        background: linear-gradient(90deg, transparent, var(--sr-line), transparent);
+        opacity: .8;
     }
 
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-home:hover {
+        opacity: 1;
+    }
+
+    /* Marca = ícono de app iOS: teseela clara, sombra ambiental suave, pulsación */
     html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-mark {
-        width: 50px;
-        height: 50px;
-        border-radius: 15px;
-        border-color: var(--sr-line);
-        background: linear-gradient(150deg, var(--sr-gold-bg), var(--sr-surface));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 12px 26px color-mix(in srgb, var(--sr-secondary) 10%, transparent);
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--sr-line) 65%, transparent);
+        background: linear-gradient(180deg, #FFFFFF, var(--sr-surface-warm));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .9),
+            0 1px 2px color-mix(in srgb, var(--sr-secondary) 14%, transparent),
+            0 10px 22px color-mix(in srgb, var(--sr-secondary) 12%, transparent);
+        transition: transform .22s var(--sr-ease), box-shadow .22s var(--sr-ease);
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-mark img {
+        padding: 8px;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-home:hover .hotel-boutique-mark {
+        transform: translateY(-1px) scale(1.03);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .9),
+            0 2px 5px color-mix(in srgb, var(--sr-secondary) 16%, transparent),
+            0 16px 30px color-mix(in srgb, var(--sr-secondary) 16%, transparent);
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-home:active .hotel-boutique-mark {
+        transform: translateY(0) scale(.99);
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-name {
+        margin-top: 2px;
         color: var(--sr-primary);
         font-family: var(--sr-serif);
-        font-size: clamp(18px, 1.5vw, 21px);
-        font-weight: 650;
-        line-height: 1.06;
+        font-size: clamp(19px, 1.5vw, 21px);
+        font-weight: 600;
+        letter-spacing: .006em;
+        line-height: 1.05;
     }
 
-    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule { color: var(--sr-gold); }
-
-    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule strong {
-        font-size: 9.5px;
-        font-weight: 700;
-        letter-spacing: .18em;
-        color: color-mix(in srgb, var(--sr-gold) 72%, var(--sr-ink));
+    /* Firma tipo caption de iOS: sin líneas laterales, gris tenue y sereno */
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule {
+        grid-template-columns: auto;
+        margin-top: 1px;
+        color: var(--sr-muted);
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule span {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--sr-line));
+        display: none;
     }
 
-    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule span:last-child {
-        background: linear-gradient(270deg, transparent, var(--sr-line));
+    html:not([data-theme="dark"]) .hotel-layout-scope .hotel-boutique-rule strong {
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: .17em;
+        color: color-mix(in srgb, var(--sr-muted) 80%, var(--sr-gold));
     }
 
-    /* ── Buscador: superficie cálida, foco dorado sereno ── */
+    /* ── Buscador estilo iOS: relleno gris suave, ícono en línea, foco sereno ── */
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box {
-        height: 41px !important;
-        border: 1px solid var(--sr-line) !important;
+        height: 40px !important;
+        border: 1px solid transparent !important;
         border-radius: 12px !important;
-        background: var(--sr-surface-warm) !important;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7) !important;
-        transition: border-color .18s var(--sr-ease), box-shadow .18s var(--sr-ease);
+        background: color-mix(in srgb, var(--sr-ink) 6%, var(--sr-surface)) !important;
+        box-shadow: none !important;
+        transition: background .18s var(--sr-ease), border-color .18s var(--sr-ease), box-shadow .18s var(--sr-ease);
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-box:focus-within {
-        border-color: color-mix(in srgb, var(--sr-gold) 48%, var(--sr-line)) !important;
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--sr-gold) 18%, transparent), inset 0 1px 0 rgba(255, 255, 255, .7) !important;
+        border-color: color-mix(in srgb, var(--sr-gold) 42%, transparent) !important;
+        background: var(--sr-surface) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--sr-gold) 15%, transparent) !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-trigger {
+        flex: 0 0 34px !important;
+        width: 34px !important;
+        background: transparent !important;
+        color: color-mix(in srgb, var(--sr-muted) 72%, var(--sr-gold)) !important;
+        transform: none !important;
+    }
+
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-trigger:hover,
+    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-trigger:focus-visible {
+        background: transparent !important;
+        color: var(--sr-primary) !important;
+        transform: none !important;
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-input {
         color: var(--sr-ink) !important;
+        font-weight: 500 !important;
+        font-size: 13.5px !important;
     }
 
     html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-input::placeholder {
-        color: color-mix(in srgb, var(--sr-muted) 78%, var(--sr-gold));
-    }
-
-    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-trigger,
-    html:not([data-theme="dark"]) .hotel-layout-scope #sidebar.hotel-sidebar .search-icon {
-        color: color-mix(in srgb, var(--sr-muted) 70%, var(--sr-gold)) !important;
+        color: color-mix(in srgb, var(--sr-muted) 88%, transparent);
     }
 
     /* Scroll sin barra visible (se conserva el desplazamiento) */

@@ -5183,3 +5183,125 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     }
 })();
 </script>
+
+<style id="dash-candy-glass-cupertino">
+/* ═══ Dashboard: candy glass — SOLO TEMA CUPERTINO, modo claro (2026-07-10) ══
+   Mismo lenguaje que el pase de habitaciones (hb-room-card-glass-redesign):
+   losas pastel de la marca con bloom, tinta oscura y chips lechosos.
+   Piezas: hero editorial (vidrio esmerilado REAL sobre la foto: aquí sí hay
+   backdrop-filter porque hay imagen que desenfocar), filas de dinero del día,
+   chip Esperado + botón Registrar movimiento, y el arco del anillo de
+   estacionamiento (era un manchón casi negro con la marca navy).
+   El dashboard móvil (dm-*) y el modo oscuro quedan tal cual.
+   Revertir: borrar este bloque. */
+
+/* ── Hero: cristal esmerilado TEÑIDO DE LA MARCA a la izquierda (texto) que
+   se disuelve hacia la foto. El tinte sale de --dash-primary → cada hotel ve
+   su vidrio del color de su casa (navy → azul hielo, terracota → rosé, etc.) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .editorial-hero{
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--dash-primary) 14%, rgba(255,255,255,.28)), rgba(255,255,255,0) 58%),
+        url("<?= htmlspecialchars($hero_image_url, ENT_QUOTES, 'UTF-8') ?>") center/cover;
+    border:1px solid color-mix(in srgb, var(--dash-primary) 16%, rgba(255,255,255,.65));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .editorial-hero::before{
+    background:
+        radial-gradient(64% 130% at 0% 108%, color-mix(in srgb, var(--dash-primary) 28%, transparent), transparent 62%),
+        radial-gradient(46% 110% at 30% -30%, rgba(255,255,255,.5), transparent 68%),
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--dash-primary) 20%, rgba(255,255,255,.72)) 0%,
+            color-mix(in srgb, var(--dash-primary) 12%, rgba(255,255,255,.56)) 42%,
+            rgba(255,255,255,.18) 72%,
+            rgba(255,255,255,0) 100%);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-mask: linear-gradient(90deg, #000 0%, #000 52%, rgba(0,0,0,.35) 74%, transparent 96%);
+    mask: linear-gradient(90deg, #000 0%, #000 52%, rgba(0,0,0,.35) 74%, transparent 96%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.55);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-title h1{
+    color:color-mix(in srgb, var(--dash-primary) 32%, #1D1D1F);
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-title p{
+    color:color-mix(in srgb, var(--dash-primary) 30%, #3A3A3C);
+    text-shadow:0 1px 0 rgba(255,255,255,.3);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .hero-date{
+    color:color-mix(in srgb, var(--dash-primary) 45%, #48484A);
+    text-shadow:0 1px 0 rgba(255,255,255,.3);
+}
+
+/* ── Filas de dinero del día: losas pastel de marca (antes gradiente oscuro) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-day-balance{
+    background:
+        radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--dash-primary) 12%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--dash-primary) 24%, #FFFFFF) 100%);
+    border:1px solid color-mix(in srgb, var(--dash-primary) 22%, rgba(255,255,255,.9));
+    color:#1D1D1F;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.9), 0 10px 22px -14px color-mix(in srgb, var(--dash-primary) 45%, rgba(27,39,70,.2));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-day-balance span{
+    color:color-mix(in srgb, var(--dash-primary) 55%, #6E6E73);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-day-balance strong{
+    color:#1D1D1F;
+}
+
+/* ── Chip Esperado: losa fuerte de marca con tinta (antes bloque oscuro) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-box.dark{
+    background:
+        radial-gradient(46% 160% at 96% 60%, rgba(255,255,255,.82), rgba(255,255,255,0) 72%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--dash-primary) 16%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--dash-primary) 32%, #FFFFFF) 100%);
+    border-color:color-mix(in srgb, var(--dash-primary) 32%, rgba(255,255,255,.9));
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.9), 0 10px 22px -14px color-mix(in srgb, var(--dash-primary) 50%, rgba(27,39,70,.22));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-box.dark:hover{
+    background:
+        radial-gradient(46% 160% at 96% 60%, rgba(255,255,255,.86), rgba(255,255,255,0) 72%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--dash-primary) 18%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--dash-primary) 36%, #FFFFFF) 100%);
+    border-color:color-mix(in srgb, var(--dash-primary) 40%, rgba(255,255,255,.9));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-box.dark .label{
+    color:color-mix(in srgb, var(--dash-primary) 62%, #111827);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .cash-box.dark .amount{
+    color:#1D1D1F;
+}
+
+/* ── Registrar movimiento: losa de marca más cargada (CTA en cristal) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .dash-btn.primary{
+    background:
+        radial-gradient(40% 170% at 96% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--dash-primary) 20%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--dash-primary) 34%, #FFFFFF) 100%);
+    color:color-mix(in srgb, var(--dash-primary) 74%, #111827);
+    border:1px solid color-mix(in srgb, var(--dash-primary) 34%, rgba(255,255,255,.9));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85), 0 6px 14px -8px color-mix(in srgb, var(--dash-primary) 45%, transparent);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .dash-btn.primary:hover{
+    filter:brightness(1.03) saturate(1.05);
+}
+
+/* ── Anillo de estacionamiento: arco en tono de marca suave (no manchón negro) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .dashboard-boutique .ring-box svg circle[stroke-dasharray]{
+    stroke:color-mix(in srgb, var(--dash-primary) 55%, #FFFFFF);
+}
+</style>

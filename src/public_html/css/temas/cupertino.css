@@ -158,6 +158,26 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rai
     --sr-shadow-lg: 0 2px 6px rgba(0, 0, 0, .05), 0 20px 44px rgba(0, 0, 0, .12);
 }
 
+/* Color propio por sección para el flyout Liquid Glass (Apple). El JS
+   (sidebar-rail.js) pone data-clave al abrir; ambos modos heredan --fly-accent.
+   Tintes sutiles del sistema Apple = señalética por área, no cromado de marca. */
+html[data-tema="cupertino"] .ms-rail-fly,
+html[data-tema="cupertino"] .ms-rail-g                                    { --fly-accent: #0A84FF; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="dashboard"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="dashboard"]           { --fly-accent: #0A84FF; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="gestion"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="gestion"]             { --fly-accent: #5E5CE6; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="finanzas"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="finanzas"]            { --fly-accent: #34C759; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="operacion-interna"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="operacion-interna"]   { --fly-accent: #FF9500; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="ventas"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="ventas"]              { --fly-accent: #FF2D55; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="admin"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="admin"]               { --fly-accent: #AF52DE; }
+html[data-tema="cupertino"] .ms-rail-fly[data-clave="config"],
+html[data-tema="cupertino"] .ms-rail-g[data-clave="config"]              { --fly-accent: #8E8E93; }
+
 @media (min-width: 1025px) {
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g {
         border-radius: 10px;
@@ -168,28 +188,52 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rai
     /* Apple no desliza: los estados viven en el fondo, no en la posición. */
     html[data-tema="cupertino"] .ms-rail-g:hover,
     html[data-tema="cupertino"] .ms-rail-g.ms-open,
+    html[data-tema="cupertino"] .ms-rail-g.ms-pinned,
     html[data-tema="cupertino"] .ms-rail-fi:hover {
         transform: none;
     }
 
+    /* Botones del rail: mismo cristal esmerilado, teñido por su sección.
+       Viven sobre la sidebar blanca sólida, así que el glass se lee como
+       pastilla frosted con color propio (no como transparencia real). */
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g:hover,
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-open {
-        background: #EDEDF0;
-        border-color: transparent;
-        box-shadow: none;
+        background:
+            radial-gradient(130% 120% at 0% 50%, color-mix(in srgb, var(--fly-accent) 14%, transparent), transparent 72%),
+            color-mix(in srgb, var(--fly-accent) 7%, rgba(255, 255, 255, .55));
+        border-color: color-mix(in srgb, var(--fly-accent) 22%, transparent);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-on {
-        background: color-mix(in srgb, var(--sr-primary) 11%, #FFFFFF);
-        border-color: transparent;
+        background:
+            radial-gradient(130% 120% at 0% 50%, color-mix(in srgb, var(--fly-accent) 22%, transparent), transparent 74%),
+            color-mix(in srgb, var(--fly-accent) 12%, rgba(255, 255, 255, .65));
+        border-color: color-mix(in srgb, var(--fly-accent) 30%, transparent);
         color: var(--sr-primary);
         font-weight: 600;
-        box-shadow: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 4px 12px color-mix(in srgb, var(--fly-accent) 16%, transparent);
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-on::before {
-        background: var(--sr-primary);
+        background: linear-gradient(180deg, var(--fly-accent), color-mix(in srgb, var(--fly-accent) 55%, var(--sr-primary)));
         opacity: 1;
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-pinned {
+        background:
+            radial-gradient(130% 120% at 0% 50%, color-mix(in srgb, var(--fly-accent) 18%, transparent), transparent 74%),
+            color-mix(in srgb, var(--fly-accent) 10%, rgba(255, 255, 255, .6));
+        border-color: color-mix(in srgb, var(--fly-accent) 40%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--fly-accent) 16%, transparent), inset 0 1px 0 rgba(255, 255, 255, .8);
+    }
+
+    /* Ícono del rail toma el color de su sección en hover/activo/fijado */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g:hover .ms-rail-ic,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-open .ms-rail-ic,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-on .ms-rail-ic,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-g.ms-pinned .ms-rail-ic {
+        color: var(--fly-accent);
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ic,
@@ -207,11 +251,45 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rai
         box-shadow: none;
     }
 
+    /* ── Liquid Glass (Apple) — flyout de Cupertino ────────────────────
+       Cristal marcado: desenfoque alto + saturación, rim especular y un halo
+       del color de la sección (--fly-accent, según data-clave). Revertir a lo
+       anterior: background rgba(255,255,255,.86) + blur(22px) y quitar ::before. */
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fly {
-        border-radius: 14px;
-        background: rgba(255, 255, 255, .86);
-        -webkit-backdrop-filter: saturate(180%) blur(22px);
-        backdrop-filter: saturate(180%) blur(22px);
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, .4);
+        /* Cristal esmerilado: blanco muy translúcido + doble bruma de color de
+           la sección; el fondo se ve difuso a través (blur alto + brillo). */
+        background:
+            radial-gradient(135% 100% at 50% -12%, color-mix(in srgb, var(--fly-accent) 20%, transparent), transparent 68%),
+            radial-gradient(120% 92% at 85% 118%, color-mix(in srgb, var(--fly-accent) 13%, transparent), transparent 60%),
+            linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+        -webkit-backdrop-filter: saturate(150%) brightness(1.08) blur(44px);
+        backdrop-filter: saturate(150%) brightness(1.08) blur(44px);
+        box-shadow:
+            inset 0 1px 1px rgba(255, 255, 255, .8),
+            inset 0 -26px 44px rgba(255, 255, 255, .1),
+            0 8px 24px rgba(0, 0, 0, .07),
+            0 26px 60px color-mix(in srgb, var(--fly-accent) 18%, transparent);
+    }
+
+    /* Filo suave teñido por la sección (sin rim duro: borde esmerilado) */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fly::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, .7) 0%,
+            rgba(255, 255, 255, .08) 30%,
+            transparent 58%,
+            color-mix(in srgb, var(--fly-accent) 30%, transparent) 100%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ft {
@@ -221,9 +299,9 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rai
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-ft::after {
-        background: var(--sr-line);
-        height: 1px;
-        opacity: 1;
+        background: linear-gradient(90deg, var(--fly-accent), transparent);
+        height: 2px;
+        opacity: .6;
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi {
@@ -232,14 +310,25 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .ms-rai
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi:hover {
-        background: #EDEDF0;
-        border-color: transparent;
+        background: color-mix(in srgb, var(--fly-accent) 14%, rgba(255, 255, 255, .06));
+        border-color: color-mix(in srgb, var(--fly-accent) 16%, transparent);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45);
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi:hover i {
+        color: var(--fly-accent);
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi.ms-on {
-        background: color-mix(in srgb, var(--sr-primary) 11%, #FFFFFF);
-        border-color: transparent;
+        background: color-mix(in srgb, var(--fly-accent) 20%, rgba(255, 255, 255, .1));
+        border-color: color-mix(in srgb, var(--fly-accent) 28%, transparent);
+        color: var(--sr-ink);
         font-weight: 600;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55);
+    }
+
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-rail-fi.ms-on i {
+        color: var(--fly-accent);
     }
 }
 
@@ -415,25 +504,89 @@ html[data-theme="dark"][data-tema="cupertino"] body.hotel-layout-scope #sidebar.
     box-shadow: none !important;
 }
 
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g:hover,
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-open {
+    background: color-mix(in srgb, var(--fly-accent) 16%, rgba(255, 255, 255, .04));
+    border-color: color-mix(in srgb, var(--fly-accent) 24%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
 html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-on {
-    background: color-mix(in srgb, var(--brand-primary, #0A84FF) 26%, #161617);
+    background: color-mix(in srgb, var(--fly-accent) 24%, rgba(255, 255, 255, .05));
+    border-color: color-mix(in srgb, var(--fly-accent) 34%, transparent);
     color: #F5F5F7;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 4px 12px color-mix(in srgb, var(--fly-accent) 22%, transparent);
 }
 
 html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-on::before {
-    background: var(--brand-primary, #0A84FF);
+    background: linear-gradient(180deg, var(--fly-accent), color-mix(in srgb, var(--fly-accent) 60%, #FFFFFF));
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-pinned {
+    background: color-mix(in srgb, var(--fly-accent) 18%, rgba(255, 255, 255, .05));
+    border-color: color-mix(in srgb, var(--fly-accent) 40%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fly-accent) 20%, transparent), inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g:hover .ms-rail-ic,
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-open .ms-rail-ic,
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-on .ms-rail-ic,
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-g.ms-pinned .ms-rail-ic {
+    color: color-mix(in srgb, var(--fly-accent) 70%, #FFFFFF);
 }
 
 html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fly {
-    background: rgba(28, 28, 30, .86);
-    -webkit-backdrop-filter: saturate(180%) blur(22px);
-    backdrop-filter: saturate(180%) blur(22px);
-    border-color: rgba(255, 255, 255, .12);
+    border-radius: 22px;
+    background:
+        radial-gradient(135% 100% at 50% -12%, color-mix(in srgb, var(--fly-accent) 30%, transparent), transparent 66%),
+        radial-gradient(120% 92% at 85% 118%, color-mix(in srgb, var(--fly-accent) 18%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(72, 72, 76, .08), rgba(28, 28, 30, .14));
+    -webkit-backdrop-filter: saturate(180%) brightness(1.05) blur(44px);
+    backdrop-filter: saturate(180%) brightness(1.05) blur(44px);
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .16),
+        0 10px 30px rgba(0, 0, 0, .4),
+        0 26px 60px color-mix(in srgb, var(--fly-accent) 26%, transparent);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fly::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, .5) 0%,
+        rgba(255, 255, 255, .06) 30%,
+        transparent 55%,
+        color-mix(in srgb, var(--fly-accent) 52%, transparent) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
 }
 
 html[data-theme="dark"][data-tema="cupertino"] .ms-rail-ft::after {
-    background: rgba(255, 255, 255, .14);
-    height: 1px;
+    background: linear-gradient(90deg, var(--fly-accent), transparent);
+    height: 2px;
+    opacity: .7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi:hover {
+    background: color-mix(in srgb, var(--fly-accent) 18%, rgba(255, 255, 255, .06));
+    border-color: color-mix(in srgb, var(--fly-accent) 26%, transparent);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi.ms-on {
+    background: color-mix(in srgb, var(--fly-accent) 26%, rgba(255, 255, 255, .06));
+    border-color: color-mix(in srgb, var(--fly-accent) 36%, transparent);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi:hover i,
+html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi.ms-on i {
+    color: color-mix(in srgb, var(--fly-accent) 68%, #FFFFFF);
 }
 
 @media (max-width: 1024px) {
@@ -643,13 +796,21 @@ html[data-tema="cupertino"] .res-bookings .res-btn-primary:hover {
 /* ═══ 16. HEROS CON FLECHA DE REGRESO (todas las vistas, no reportes) ═══
    partials/back_arrow.php etiqueta el encabezado contenedor con
    data-ms-hero (excluye rutas de reportes y heros oscuros --glass).
-   Aquí ese encabezado se aplana a tarjeta Apple: blanco, hairline,
-   16px, sin ornamentos ::before/::after del lenguaje boutique. */
-html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope [data-ms-hero] {
-    background: #FFFFFF !important;
-    border: 1px solid #E8E8ED !important;
-    border-radius: 16px !important;
-    box-shadow: none !important;
+   Decision de diseno (owner): en Cupertino CADA vista conserva SU propio
+   color de seccion (su banda de marca nativa) con su texto blanco — NO se
+   aplana a banda blanca uniforme. Aqui solo aplicamos el acabado Apple:
+   redondeo 16px y sin los ornamentos boutique (::before/::after). El fondo y
+   el color del titulo los pone la propia vista (cada seccion su color). */
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] {
+    border-radius: 20px !important;
+    background:
+        radial-gradient(circle at 76% 24%, color-mix(in srgb, var(--brand-accent, #C7C7C7) 34%, transparent), transparent 60%),
+        linear-gradient(100deg,
+            var(--brand-primary, #1D1D1F) 0%,
+            var(--brand-primary, #1D1D1F) 42%,
+            color-mix(in srgb, var(--brand-primary, #1D1D1F) 60%, var(--brand-secondary, #6E6E73)) 100%) !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1D1D1F) 42%, transparent) !important;
+    box-shadow: 0 18px 42px -24px color-mix(in srgb, var(--brand-primary, #1D1D1F) 62%, #000) !important;
 }
 
 html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::before,
@@ -657,17 +818,16 @@ html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero]::after {
     display: none !important;
 }
 
+/* Texto del hero legible sobre la banda de color (como en el dashboard) */
 html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1,
-html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h2 {
-    color: var(--hotel-text, #1D1D1F) !important;
-    text-shadow: none !important;
-}
-
-html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] {
-    background: #1C1C1E !important;
-    border: 1px solid #38383A !important;
-    border-radius: 16px !important;
-    box-shadow: none !important;
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h2,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] h1 *,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] > p,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] .subtitle,
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="subtitle"],
+html[data-tema="cupertino"] .hotel-layout-scope [data-ms-hero] [class*="sub"] {
+    color: #FFFFFF !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .18) !important;
 }
 
 /* La flecha de regreso, versión Apple: círculo de vidrio con tinta. */
@@ -875,6 +1035,13 @@ html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view #mainHeader h1
     color: #F5F5F7 !important;
 }
 
+/* En Cupertino el header no persigue el scroll: se queda arriba, en el
+   flujo normal, y se va con el contenido (decisión del owner). */
+html[data-tema="cupertino"] .habitaciones-view #mainHeader {
+    position: static !important;
+    top: auto !important;
+}
+
 /* ═══ 19. CAJA (index) ══════════════════════════════════════════════
    Tokens --cj-* en :root; el héroe navy/oro pasa a tarjeta blanca con
    tinta, chips neutros y acciones semánticas en píldora. El serif de
@@ -895,31 +1062,15 @@ html[data-tema="cupertino"] .cj-page {
     background: var(--cj-ivory, #F5F5F7);
 }
 
+/* Header de Caja: en Cupertino se conserva el sello de marca del hotel —
+   fondo en el color PRIMARIO + texto blanco. No se blanquea el header ni se
+   oscurece el texto: los hijos (nombre, hotel, meta, estado) heredan el
+   estilo base pensado para banda oscura (nombre blanco, pill verde claro). */
 html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh {
-    background: #FFFFFF;
-    border: 1px solid #E8E8ED;
-}
-
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-name {
-    color: #1D1D1F;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-hotel {
-    color: #6E6E73;
-}
-
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-meta span {
-    background: #F5F5F7;
-    border-color: #E8E8ED;
-    color: #48484A;
-}
-
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-state {
-    background: rgba(52, 199, 89, .12);
-    border-color: rgba(52, 199, 89, .25);
-    color: #248A3D;
+    background:
+        radial-gradient(ellipse 60% 70% at 90% -5%, color-mix(in srgb, var(--cj-gold, #B0883F) 20%, transparent), transparent 55%),
+        var(--brand-primary, #1D1D1F);
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1D1D1F) 45%, transparent);
 }
 
 html[data-tema="cupertino"] .cj-back,

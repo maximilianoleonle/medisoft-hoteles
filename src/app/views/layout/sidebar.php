@@ -286,7 +286,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             </button>
             <input type="text"
                    id="buscador-global-input"
-                   placeholder="Buscar pantalla, huésped o reserva"
+                   placeholder="Buscar"
                    class="search-input"
                    autocomplete="off"
                    style="padding-right:28px;position:relative;z-index:2;pointer-events:auto;cursor:text;user-select:text;">

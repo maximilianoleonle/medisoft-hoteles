@@ -256,10 +256,59 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     color: var(--res-text);
     font-family: var(--res-sans);
 }
+
+/* ── Animaciones "vivas" — mismo lenguaje que el dashboard, dosificado ──
+   Entrada escalonada de la zona superior, flotación del icono hero,
+   lift al interactuar y un brillo lento en la métrica principal.
+   Todo se apaga con prefers-reduced-motion. */
+@keyframes resRise {
+    from { opacity: 0; transform: translateY(14px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes resIconFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+}
+@keyframes resSheen {
+    0%        { background-position: -140% 0; }
+    55%, 100% { background-position: 140% 0; }
+}
+
+.res-bookings .res-topbar    { animation: resRise .5s cubic-bezier(.2,.78,.22,1) both; }
+.res-metric                  { animation: resRise .52s cubic-bezier(.2,.78,.22,1) both; }
+.res-metric:nth-child(1)     { animation-delay: .06s; }
+.res-metric:nth-child(2)     { animation-delay: .11s; }
+.res-metric:nth-child(3)     { animation-delay: .16s; }
+.res-metric:nth-child(4)     { animation-delay: .21s; }
+.res-metric:nth-child(5)     { animation-delay: .26s; }
+.res-bookings .res-filterbar { animation: resRise .5s cubic-bezier(.2,.78,.22,1) both .2s; }
+
+/* La tarjeta reacciona con un lift sutil, como en el dashboard */
+.res-metric { transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease; }
+.res-metric:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 42px rgba(15,23,42,.10);
+    border-color: color-mix(in srgb, var(--res-accent) 26%, var(--res-line));
+}
+
+/* Icono hero con flotación muy suave (una sola pieza) */
+.res-hero-icon { animation: resIconFloat 3.4s ease-in-out infinite; will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+    .res-bookings .res-topbar,
+    .res-metric,
+    .res-bookings .res-filterbar,
+    .res-hero-icon,
+    .res-metric.is-primary::after {
+        animation: none !important;
+    }
+    .res-metric:hover { transform: none; }
+}
+
 .res-shell { max-width: 1680px; margin: 0 auto; padding: 28px 22px 38px; }
 .res-topbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-.res-title-lockup { flex: 1 1 420px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; column-gap: 14px; min-width: min(100%, 360px); max-width: min(960px, 100%); }
-.res-title-copy { min-width: 0; padding-top: 1px; }
+.res-title-lockup { flex: 1 1 420px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: min(100%, 360px); max-width: min(960px, 100%); }
+.res-title-copy { min-width: 0; }
 .res-hero-icon { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 48px; border-radius: 15px; color: #fff; background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--res-accent), var(--res-brand) 54%, color-mix(in srgb, var(--res-brand) 68%, var(--brand-accent, #BD9441))); box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--res-brand) 72%, transparent); }
 .res-kicker { display: block; margin: 0 0 2px; color: var(--res-muted); font-size: .72rem; font-weight: 900; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .res-title { margin: 0; color: var(--res-heading); font-size: clamp(2.35rem, 4vw, 3.35rem); font-family: var(--res-serif); font-weight: 700; letter-spacing: 0; line-height: .98; text-wrap: balance; }
@@ -290,7 +339,14 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     padding: 18px; box-shadow: 0 14px 34px rgba(15,23,42,.06); position: relative; overflow: hidden;
 }
 .res-metric::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
-.res-metric.is-primary::after { background: linear-gradient(90deg, var(--res-accent), color-mix(in srgb, var(--res-heading) 18%, #D8C6A3)); }
+.res-metric.is-primary::after {
+    background: linear-gradient(90deg,
+        var(--res-accent),
+        color-mix(in srgb, #FFFFFF 62%, var(--res-accent)),
+        color-mix(in srgb, var(--res-heading) 18%, #D8C6A3));
+    background-size: 220% 100%;
+    animation: resSheen 5.5s ease-in-out infinite;
+}
 .res-metric-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 14px; }
 .metric-arrivals { background: #EEF2FF; color: #635BFF; }
 .metric-departures { background: #FEF3E7; color: #C65E38; }

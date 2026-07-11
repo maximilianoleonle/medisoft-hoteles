@@ -1953,3 +1953,159 @@ setInterval(function() {
 </script>
 
 <?php clear_old_input(); ?>
+
+<style id="cj-candy-glass-cupertino">
+/* ═══ Caja: candy glass — SOLO TEMA CUPERTINO, modo claro (2026-07-10) ═════
+   Mismo lenguaje que dashboard/habitaciones: losa pastel de la marca con
+   bloom y tinta oscura (el header verde sólido con texto blanco se vuelve
+   cristal del color del hotel). Los botones de dinero conservan su color
+   semántico sólido (ingreso verde / gasto rojo / corte azul) — solo ganan
+   brillo de vidrio; son acciones de dinero y deben seguir siendo inconfundibles.
+   El separador de corte (Corte #N) toma tira de cristal verde si es el
+   actual y de marca si es anterior. Modo oscuro y móvil quedan tal cual.
+   Gana a cupertino.css §19 por orden de documento (body > head, mismo peso).
+   Revertir: borrar este bloque. */
+
+/* ── Header: losa de cristal de la marca (antes banda sólida con texto blanco) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh{
+    background:
+        radial-gradient(46% 160% at 96% 72%, rgba(255,255,255,.82), rgba(255,255,255,0) 72%),
+        linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 14%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #FFFFFF) 100%);
+    border:1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 24%, rgba(255,255,255,.9));
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.95),
+        inset 0 -2px 5px color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent),
+        0 3px 7px color-mix(in srgb, var(--brand-primary, #1B2746) 10%, rgba(27,39,70,.05)),
+        0 24px 44px -20px color-mix(in srgb, var(--brand-primary, #1B2746) 42%, rgba(27,39,70,.22));
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-name{
+    color:color-mix(in srgb, var(--brand-primary, #1B2746) 32%, #111827);
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-hotel{
+    color:color-mix(in srgb, var(--brand-primary, #1B2746) 35%, #6E6E73);
+}
+
+/* Chips de meta (quién abrió, hora, fecha): lechosos con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-meta span{
+    background:rgba(255,255,255,.6);
+    border:1px solid rgba(255,255,255,.88);
+    color:#1F2937;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-meta i{
+    color:color-mix(in srgb, var(--brand-primary, #1B2746) 70%, #111827);
+    opacity:1;
+}
+
+/* CAJA ABIERTA: chip lechoso con tinta verde (antes verde claro sobre oscuro) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-resh-state{
+    background:rgba(255,255,255,.68);
+    border:1px solid color-mix(in srgb, var(--cj-green, #1E9E63) 34%, rgba(255,255,255,.9));
+    color:#15803D;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--cj-green, #1E9E63) 18%, transparent);
+}
+
+/* Botones de dinero: mismo color sólido semántico + brillo de vidrio */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-act-btn{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.32), 0 8px 16px -10px rgba(17,24,39,.4);
+}
+
+/* ── Separador de corte: tira de cristal (verde = actual, marca = anterior) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider{
+    background:
+        radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--cj-navy, #1B2746) 8%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--cj-navy, #1B2746) 15%, #FFFFFF) 100%);
+    border-top:1px solid color-mix(in srgb, var(--cj-navy, #1B2746) 24%, rgba(255,255,255,.9));
+    border-bottom:1px solid color-mix(in srgb, var(--cj-navy, #1B2746) 12%, rgba(17,24,39,.05));
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.85);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider.is-current{
+    background:
+        radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--cj-green, #1E9E63) 12%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--cj-green, #1E9E63) 24%, #FFFFFF) 100%);
+    border-top-color:color-mix(in srgb, var(--cj-green, #1E9E63) 38%, rgba(255,255,255,.9));
+    border-bottom-color:color-mix(in srgb, var(--cj-green, #1E9E63) 16%, rgba(17,24,39,.05));
+}
+
+/* Chip del corte (Activo / Corte anterior): lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-chip{
+    background:rgba(255,255,255,.7);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px rgba(17,24,39,.08);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider.is-current .cj-cut-chip{
+    background:rgba(255,255,255,.72);
+    border-color:color-mix(in srgb, var(--cj-green, #1E9E63) 30%, rgba(255,255,255,.9));
+    color:#15803D;
+}
+
+/* ── Topbar: fila de migas estilo Apple — quieta, sin banda, alineada ──
+   El partial back_arrow le puso data-ms-hero y el pase global de heros la
+   pintaba como banda de marca verde sticky (chocaba con el candy glass y
+   las migas quedaban ilegibles). Aquí: nada de banda — solo la fila de
+   elementos sobre el lienzo, estática (ya no persigue el scroll) y con el
+   mismo margen horizontal que .cj-inner (32px). */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar[data-ms-hero]{
+    position:static!important;
+    background:none!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    padding:16px 32px 0!important;
+    margin:0!important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-crumbs li{
+    color:#6E6E73!important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-crumbs li:last-child{
+    color:#1D1D1F!important;
+    font-weight:700;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-crumbs a{
+    color:inherit!important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-crumbs a:hover{
+    color:#1D1D1F!important;
+}
+
+/* Botón regresar: círculo lechoso Apple */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-back{
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.9)!important;
+    background:rgba(255,255,255,.75)!important;
+    color:#48484A!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px rgba(17,24,39,.08)!important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-back:hover{
+    background:#FFFFFF!important;
+    color:#1D1D1F!important;
+}
+
+/* Conceptos: chip lechoso */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-btn-ghost{
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.9)!important;
+    background:rgba(255,255,255,.72)!important;
+    color:#1F2937!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px rgba(17,24,39,.08)!important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-topbar .cj-btn-ghost:hover{
+    background:#FFFFFF!important;
+}
+</style>
