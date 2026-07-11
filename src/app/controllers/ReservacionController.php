@@ -3177,6 +3177,13 @@ public function entregarLlaveAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega
     if ($controlLlave->entregarLlave($habitacion_id, $reservacion_id, $entregada_por_id, $entregada_por_manual)) {
         set_mensaje('Llave entregada al huésped exitosamente', 'success');
@@ -3221,6 +3228,13 @@ public function recibirLlaveAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción
     if ($controlLlave->recibirLlave($habitacion_id, $reservacion_id, $recibida_por_id, $recibida_por_manual, $notas)) {
         set_mensaje('Llave recibida del huésped exitosamente', 'success');
@@ -3280,6 +3294,13 @@ public function entregarRemotoAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega con nombre del propietario - MODIFICADO
     if ($controlRemoto->entregarRemoto($habitacion_id, $reservacion_id, $entregada_por_id, $entregada_por_manual, $tipo_identificacion, $nombre_propietario_ine)) {
         set_mensaje('Control remoto entregado exitosamente a ' . htmlspecialchars($nombre_propietario_ine) . ' con ' . get_tipo_identificacion_label($tipo_identificacion), 'success');
@@ -3350,6 +3371,13 @@ public function entregarRemotosMultiplesAction() {
         }
     }
     
+    // Aislamiento multi-tenant: todas las habitaciones deben ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel($habitaciones_ids)) {
+        set_mensaje('Una o más habitaciones no son válidas para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar entrega múltiple
     $resultado = $controlRemoto->entregarRemotosMultiples(
         $habitaciones_ids, 
@@ -3418,6 +3446,13 @@ public function recibirRemotosMultiplesAction() {
         }
     }
     
+    // Aislamiento multi-tenant: todas las habitaciones deben ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel($habitaciones_ids)) {
+        set_mensaje('Una o más habitaciones no son válidas para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción múltiple
     $resultado = $controlRemoto->recibirRemotosMultiples(
         $habitaciones_ids, 
@@ -3474,6 +3509,13 @@ public function recibirRemotoAction() {
         }
     }
     
+    // Aislamiento multi-tenant: la habitación debe ser de este hotel.
+    if (!$this->habitacionesPertenecenAlHotel([$habitacion_id])) {
+        set_mensaje('Habitación no válida para este hotel', 'error');
+        $this->redirect('reservaciones/ver/' . $reservacion_id);
+        return;
+    }
+
     // Procesar recepción
     if ($controlRemoto->recibirRemoto($habitacion_id, $reservacion_id, $recibida_por_id, $recibida_por_manual, $notas)) {
         set_mensaje('Control remoto recibido del huésped exitosamente', 'success');
@@ -3482,6 +3524,26 @@ public function recibirRemotoAction() {
     }
     
     $this->redirect('reservaciones/ver/' . $reservacion_id);
+}
+
+/**
+ * Verifica que TODAS las habitaciones indicadas pertenezcan al hotel activo.
+ * Habitacion::find() confina por hotel_id, asi que un id de otro hotel devuelve
+ * false. Cierra el IDOR de escritura en control de llaves/remotos: esas tablas
+ * (control_llaves, control_remotos, historial_*) no tienen columna hotel_id, y
+ * antes el habitacion_id del POST llegaba al UPDATE sin validar pertenencia.
+ */
+private function habitacionesPertenecenAlHotel(array $habitacionIds): bool {
+    if (empty($habitacionIds)) {
+        return false;
+    }
+    foreach ($habitacionIds as $hid) {
+        $hid = (int) $hid;
+        if ($hid <= 0 || !$this->habitacionModel->find($hid)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 private function erroresCamposReservacionCrear(string $mensaje): array {

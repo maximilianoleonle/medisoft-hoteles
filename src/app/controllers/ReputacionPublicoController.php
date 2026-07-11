@@ -130,7 +130,10 @@ class ReputacionPublicoController extends Controller {
 
             return (int) ($row['intentos'] ?? 0) <= 15;
         } catch (Throwable $e) {
-            return true;
+            // Fail-CLOSED: si no se puede evaluar el throttle de este POST público
+            // (encuesta), rechazar en vez de permitir abuso ilimitado.
+            error_log('encuesta_publica permitirSolicitud fail-closed: ' . $e->getMessage());
+            return false;
         }
     }
 

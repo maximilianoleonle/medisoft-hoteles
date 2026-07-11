@@ -811,6 +811,10 @@ public function debugMovimientosDateAction() {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('inventario');
+        // El aislamiento cross-tenant ya lo cubre el modelo (AND hotel_id = ?),
+        // pero faltaba el permiso fino: sin esto cualquier autenticado podia
+        // crear/editar/eliminar productos y registrar entradas/salidas/ajustes.
+        require_permission('inventarios.view');
         return true;
     }
     public function eliminar($id) {
@@ -1424,6 +1428,7 @@ public function debugMovimientosDateAction() {
      * Procesar entrada - MÉTODO CORREGIDO
      */
     public function procesarEntradaAction() {
+        require_permission('inventarios.all');
         if (!$this->isPost()) {
             $this->redirect('inventario');
             return;
@@ -1507,6 +1512,7 @@ public function debugMovimientosDateAction() {
      * Procesar salida - MÉTODO CORREGIDO
      */
     public function procesarSalidaAction() {
+        require_permission('inventarios.all');
         if (!$this->isPost()) {
             $this->redirect('inventario');
             return;
@@ -1780,6 +1786,7 @@ public function debugMovimientosDateAction() {
      * Procesar ajuste de inventario
      */
     public function procesarAjusteAction() {
+        require_permission('inventarios.all');
         $producto_id = (int)($this->route_params['id'] ?? 0);
         $redirectUrl = $producto_id > 0 ? 'inventario/ajuste/' . $producto_id : 'inventario';
 

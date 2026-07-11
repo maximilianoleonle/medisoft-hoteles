@@ -31,6 +31,10 @@ class FacturacionController extends Controller {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('facturacion');
+        // El module gate solo valida que el hotel CONTRATO el modulo, no el
+        // permiso del usuario. Sin esto, cualquier autenticado (p. ej. un
+        // recepcionista) podia completar/cancelar facturas y editar datos fiscales.
+        require_permission('facturacion.view');
         return true;
     }
 
@@ -362,6 +366,7 @@ class FacturacionController extends Controller {
      * Marcar solicitud como facturada (completada)
      */
     public function completarAction() {
+        require_permission('facturacion.all');
         if (!$this->isPost()) {
             $this->redirect('facturacion');
             return;
@@ -432,6 +437,7 @@ class FacturacionController extends Controller {
      * Cancelar una solicitud de factura
      */
     public function cancelarAction() {
+        require_permission('facturacion.all');
         if (!$this->isPost()) {
             $this->redirect('facturacion');
             return;

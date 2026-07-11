@@ -213,7 +213,10 @@ class UsuarioController extends Controller {
             'nombre_completo' => $this->getPost('nombre_completo'),
             'email' => $this->getPost('email'),
             'telefono' => $this->getPost('telefono'),
-            'rol' => $asignacion ? $asignacion['rol'] : $rolLegacyPost,
+            // Con roles configurables el rol SIEMPRE se deriva de role_id (via
+            // $asignacion). Nunca se confia en el 'rol' crudo del POST: era el
+            // bypass que permitia escribir usuarios.rol='gerente' omitiendo role_id.
+            'rol' => $asignacion ? $asignacion['rol'] : ($usaRolesConfigurables ? null : $rolLegacyPost),
             'role_id' => $asignacion['role_id'] ?? null
         ];
 
@@ -226,8 +229,9 @@ class UsuarioController extends Controller {
         // Validaciones
         $errores = $this->validarDatosUsuario($data, false);
 
-        // Si se esperaba un rol configurable y no se resolvió, exigirlo.
-        if ($usaRolesConfigurables && $rolLegacyPost === null && !$asignacion) {
+        // Con roles configurables, exigir SIEMPRE una asignación válida por
+        // role_id (ya no se acepta el 'rol' crudo del POST como sustituto).
+        if ($usaRolesConfigurables && !$asignacion) {
             $errores[] = 'Selecciona un rol válido para el trabajador.';
         }
 
@@ -379,6 +383,10 @@ class UsuarioController extends Controller {
         $rolesValidos = ['superadmin', 'propietario', 'gerente', 'administrador', 'recepcionista'];
         if (empty($data['rol']) || !in_array($data['rol'], $rolesValidos)) {
             $errores[] = 'El rol seleccionado no es válido';
+        } elseif (in_array($data['rol'], ['propietario', 'superadmin'], true) && !$this->actorTienePoderTotal()) {
+            // Anti-escalada en el camino legacy (hotel sin roles configurables):
+            // el ENUM crudo propietario/superadmin solo lo asigna quien ya tiene poder total.
+            $errores[] = 'No tiene permisos para asignar un rol de máximo privilegio';
         }
 
         return $errores;
@@ -475,10 +483,70 @@ class UsuarioController extends Controller {
             return null;
         }
 
+        // Anti-escalada de privilegios: nadie puede OTORGAR un rol de maximo
+        // privilegio (comodin '*' / propietario / superadmin) si el propio actor
+        // no lo posee. Sin esto, un 'administrador' del hotel podia asignarse el
+        // rol Propietario y obtener control total del tenant.
+        if ($this->rolConcedePoderTotal($rol) && !$this->actorTienePoderTotal()) {
+            error_log(sprintf(
+                'UsuarioController: bloqueado intento de asignar rol de maximo privilegio (rol_id=%d, hotel=%d) por usuario %s sin poder total',
+                (int) $rol['id'],
+                (int) $hotelId,
+                (string) ($_SESSION['user_id'] ?? '?')
+            ));
+            return null;
+        }
+
         $enumValidos = ['superadmin', 'propietario', 'gerente', 'administrador', 'recepcionista'];
         $enum = in_array($rol['clave'], $enumValidos, true) ? $rol['clave'] : 'recepcionista';
 
         return ['role_id' => (int) $rol['id'], 'rol' => $enum];
+    }
+
+    /**
+     * ¿El actor posee poder total en el hotel actual (comodin '*')? Solo entonces
+     * puede otorgar roles de maximo privilegio. Se cumple para los roles de
+     * sistema propietario/superadmin y para cualquier rol configurable cuyo
+     * permisos_json incluya '*'.
+     */
+    private function actorTienePoderTotal(): bool {
+        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+        if (in_array($rolHotel, ['propietario', 'superadmin'], true)) {
+            return true;
+        }
+
+        if (function_exists('current_hotel_role_id') && function_exists('hotel_role_permissions')) {
+            $roleId = current_hotel_role_id();
+            if ($roleId) {
+                $permisos = hotel_role_permissions($roleId);
+                if (is_array($permisos) && in_array('*', $permisos, true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * ¿El rol destino concede poder total? True para las claves de sistema
+     * propietario/superadmin o para cualquier rol cuyos permisos incluyan '*'.
+     */
+    private function rolConcedePoderTotal(array $rol): bool {
+        if (in_array($rol['clave'] ?? null, ['propietario', 'superadmin'], true)) {
+            return true;
+        }
+
+        $permisos = null;
+        if (!empty($rol['id']) && function_exists('hotel_role_permissions')) {
+            $permisos = hotel_role_permissions((int) $rol['id']);
+        }
+        if (!is_array($permisos) && isset($rol['permisos_json'])) {
+            $decoded = json_decode((string) $rol['permisos_json'], true);
+            $permisos = is_array($decoded) ? $decoded : null;
+        }
+
+        return is_array($permisos) && in_array('*', $permisos, true);
     }
 
     /**

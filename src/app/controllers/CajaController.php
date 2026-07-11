@@ -746,7 +746,11 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
             $this->jsonResponse(['success' => false, 'message' => 'Método no permitido']);
             return;
         }
-        
+
+        // Edita el MONTO de un movimiento: exigir CSRF como sus acciones hermanas
+        // (crear/actualizar categoría). requireAjax ya obliga X-Requested-With.
+        $this->validateCSRF();
+
         $id = intval($this->getPost('id'));
         $data = [
             'descripcion' => trim($this->getPost('descripcion')),

@@ -124,7 +124,12 @@ class CheckinDigitalPublicoController extends Controller {
 
             return (int) ($row['intentos'] ?? 0) <= 15;
         } catch (Throwable $e) {
-            return true;
+            // Fail-CLOSED: en un endpoint público sin sesión, si el throttle no se
+            // puede evaluar preferimos rechazar antes que abrir la puerta a abuso
+            // ilimitado (mismo criterio que la ruta de pagos del motor). El propio
+            // flujo de check-in necesita BD igualmente, así que no se pierde nada.
+            error_log('checkin_publico permitirSolicitud fail-closed: ' . $e->getMessage());
+            return false;
         }
     }
 

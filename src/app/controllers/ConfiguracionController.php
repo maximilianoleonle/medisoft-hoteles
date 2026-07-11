@@ -319,6 +319,13 @@ class ConfiguracionController extends Controller {
      * Mostrar página de backup
      */
     public function backupAction() {
+        // Los respaldos vuelcan la BASE COMPLETA (mysqldump --databases), que en
+        // este SaaS es multi-tenant: contiene TODOS los hoteles, hashes de
+        // credenciales, tokens y PII de huespedes/pagos. Por eso es una operacion
+        // del operador Medisoft (SaaS admin), NUNCA de un hotel inquilino. El
+        // before() ya exigio ser gestor del hotel; aqui elevamos a SaaS admin.
+        requireSaasAdmin();
+
         $backup_dir = STORAGE_PATH . '/backups';
         $backups = [];
         
@@ -350,10 +357,13 @@ class ConfiguracionController extends Controller {
      * Crear backup manual
      */
     public function crearBackupAction() {
+        // Respaldo = dump de la BD multi-tenant completa: solo el operador SaaS.
+        requireSaasAdmin();
+
         if (!$this->isPost()) {
             $this->redirect('configuracion/backup');
         }
-        
+
         $this->validateCSRF();
         
         try {
@@ -415,6 +425,9 @@ class ConfiguracionController extends Controller {
      * Descargar backup
      */
     public function descargarBackupAction() {
+        // El .sql descargable contiene la BD multi-tenant entera: solo SaaS admin.
+        requireSaasAdmin();
+
         $archivo = $this->getQuery('archivo');
         
         if (empty($archivo)) {

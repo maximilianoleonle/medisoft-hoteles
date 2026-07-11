@@ -532,6 +532,7 @@ function can_legacy($permission) {
             'configuracion.view', 'configuracion.edit',
             'reportes.all', 'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte', 'caja.ajustes',
             'habitaciones.all', 'huespedes.all', 'inventarios.all',
+            'facturacion.all', 'compras.all',
             'personal.view', 'personal.gestionar', 'personal.pagar',
             'cuentas_por_cobrar.all', 'cuentas_por_pagar.all'
         ],
@@ -540,6 +541,7 @@ function can_legacy($permission) {
             'reportes.view', 'reportes.export',
             'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte',
             'habitaciones.all', 'huespedes.all', 'inventarios.all',
+            'facturacion.all', 'compras.all',
             'personal.view', 'personal.gestionar', 'personal.pagar',
             'cuentas_por_cobrar.view', 'cuentas_por_cobrar.cobrar',
             'cuentas_por_pagar.view', 'cuentas_por_pagar.pagar'
