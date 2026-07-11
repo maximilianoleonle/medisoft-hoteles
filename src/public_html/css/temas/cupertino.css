@@ -2678,3 +2678,764 @@ html[data-theme="dark"][data-tema="cupertino"] .guests-page {
     --g-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
     background: #000000 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   §39 TRABAJADORES + USUARIOS FORM + INFORMES
+   Familias --wk- (7 vistas: index, form, ver, simulador caja, preview
+   nómina, reporte, reporte pagos caja), --worker- (usuarios crear/editar)
+   y --inf- (trabajadores/informes). Los banners de reportes usan
+   literales navy propios: quedan intactos por contrato.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .workers-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .worker-form-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .worker-detail-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .worker-cash-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .payroll-preview,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .workers-report,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .labor-cash-report {
+    --wk-ivory: #F5F5F7; --wk-ivory-2: #FAFAFC;
+    --wk-surface: #FFFFFF; --wk-surface-warm: #F5F5F7;
+    --wk-border: #E8E8ED;
+    --wk-text: #48484A; --wk-muted: #6E6E73; --wk-heading: #1D1D1F;
+    --wk-avatar-bg: #F5F5F7; --wk-avatar-border: #E8E8ED; --wk-avatar-fg: #48484A;
+    --wk-mobile-ink: #1D1D1F; --wk-mobile-text: #48484A; --wk-mobile-muted: #6E6E73; --wk-mobile-faint: #8E8E93;
+    --wk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .workers-page,
+html[data-theme="dark"][data-tema="cupertino"] .worker-form-page,
+html[data-theme="dark"][data-tema="cupertino"] .worker-detail-page,
+html[data-theme="dark"][data-tema="cupertino"] .worker-cash-page,
+html[data-theme="dark"][data-tema="cupertino"] .payroll-preview,
+html[data-theme="dark"][data-tema="cupertino"] .workers-report,
+html[data-theme="dark"][data-tema="cupertino"] .labor-cash-report {
+    --wk-ivory: #000000; --wk-ivory-2: #161617;
+    --wk-surface: #1C1C1E; --wk-surface-warm: #161617;
+    --wk-border: #38383A;
+    --wk-text: #D1D1D6; --wk-muted: #98989D; --wk-heading: #F5F5F7;
+    --wk-avatar-bg: #2C2C2E; --wk-avatar-border: #48484A; --wk-avatar-fg: #F5F5F7;
+    --wk-mobile-ink: #F5F5F7; --wk-mobile-text: #D1D1D6; --wk-mobile-muted: #98989D; --wk-mobile-faint: #8E8E93;
+    --wk-gold: #E0A64C;
+    --wk-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E);
+    --wk-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E);
+    --wk-gold-ink: #E8C083;
+    --wk-success: #30D158; --wk-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --wk-warning: #FF9F0A; --wk-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --wk-danger: #FF6961; --wk-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --wk-info: #6CB4FF; --wk-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
+}
+
+/* Usuarios crear/editar (.worker-page, tokens --worker-) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .worker-page {
+    --worker-border: #E8E8ED; --worker-text: #48484A; --worker-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .worker-page {
+    --worker-border: #38383A; --worker-text: #D1D1D6; --worker-muted: #98989D;
+    background: #000000 !important;
+}
+
+/* Informes de trabajadores (.informes-page, tokens --inf-) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .informes-page {
+    --inf-surface: #F5F5F7; --inf-card: #FFFFFF; --inf-border: #E8E8ED;
+    --inf-text: #48484A; --inf-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .informes-page {
+    --inf-surface: #000000; --inf-card: #1C1C1E; --inf-border: #38383A;
+    --inf-text: #D1D1D6; --inf-muted: #98989D; --inf-gold: #E0A64C;
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §40 NÓMINA (10 vistas --nom- + reportes de nómina de trabajadores/)
+   --nom-surface es el lienzo y --nom-card el panel (mix sobre blanco
+   en Deleite): aquí van directos a canvas/panel Apple.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-cat-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-config-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-ficha-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-emp-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-inc-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-pv-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-pd-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-per-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-detalle {
+    --nom-surface: #F5F5F7; --nom-card: #FFFFFF; --nom-border: #E8E8ED;
+    --nom-text: #48484A; --nom-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .nomina-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-cat-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-config-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-ficha-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-emp-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-inc-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-pv-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-pd-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-per-page,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-detalle {
+    --nom-surface: #000000; --nom-card: #1C1C1E; --nom-border: #38383A;
+    --nom-text: #D1D1D6; --nom-muted: #98989D; --nom-gold: #E0A64C;
+    background: #000000 !important;
+}
+
+/* Reportes/consolidados de nómina (contenido; banners intactos) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-periodos,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-audit,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nomina-exp,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .snapshot-pay-report,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .payroll-snapshot-report {
+    --period-surface: #FFFFFF; --period-bg: #F5F5F7; --period-border: #E8E8ED;
+    --period-text: #48484A; --period-muted: #6E6E73; --period-heading: #1D1D1F;
+    --audit-surface: #FFFFFF; --audit-bg: #F5F5F7; --audit-border: #E8E8ED;
+    --audit-text: #48484A; --audit-muted: #6E6E73; --audit-heading: #1D1D1F;
+    --exp-surface: #FFFFFF; --exp-bg: #F5F5F7; --exp-border: #E8E8ED;
+    --exp-text: #48484A; --exp-muted: #6E6E73; --exp-heading: #1D1D1F;
+    --snap-surface: #FFFFFF; --snap-bg: #F5F5F7; --snap-border: #E8E8ED;
+    --snap-text: #48484A; --snap-muted: #6E6E73; --snap-heading: #1D1D1F;
+    --pr-surface: #FFFFFF; --pr-bg: #F5F5F7; --pr-border: #E8E8ED; --pr-line: #E8E8ED;
+    --pr-text: #48484A; --pr-muted: #6E6E73; --pr-heading: #1D1D1F;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .nomina-periodos,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-audit,
+html[data-theme="dark"][data-tema="cupertino"] .nomina-exp,
+html[data-theme="dark"][data-tema="cupertino"] .snapshot-pay-report,
+html[data-theme="dark"][data-tema="cupertino"] .payroll-snapshot-report {
+    --period-surface: #1C1C1E; --period-bg: #000000; --period-border: #38383A;
+    --period-text: #D1D1D6; --period-muted: #98989D; --period-heading: #F5F5F7;
+    --audit-surface: #1C1C1E; --audit-bg: #000000; --audit-border: #38383A;
+    --audit-text: #D1D1D6; --audit-muted: #98989D; --audit-heading: #F5F5F7;
+    --exp-surface: #1C1C1E; --exp-bg: #000000; --exp-border: #38383A;
+    --exp-text: #D1D1D6; --exp-muted: #98989D; --exp-heading: #F5F5F7;
+    --snap-surface: #1C1C1E; --snap-bg: #000000; --snap-border: #38383A;
+    --snap-text: #D1D1D6; --snap-muted: #98989D; --snap-heading: #F5F5F7;
+    --pr-surface: #1C1C1E; --pr-bg: #000000; --pr-border: #38383A; --pr-line: #38383A;
+    --pr-text: #D1D1D6; --pr-muted: #98989D; --pr-heading: #F5F5F7;
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §41 COMPRAS + PROVEEDORES + CxC/CxP
+   --cp- y --pv- (generador estándar); --cx- extiende los valores de
+   §38 a las vistas hermanas de cuentas por cobrar/pagar.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .purchases-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .purchase-form-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .purchase-report-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .purchase-detail-page {
+    --cp-ivory: #F5F5F7; --cp-ivory-2: #FAFAFC;
+    --cp-surface: #FFFFFF; --cp-surface-warm: #F5F5F7; --cp-border: #E8E8ED;
+    --cp-text: #48484A; --cp-muted: #6E6E73; --cp-heading: #1D1D1F;
+    --cp-mobile-ink: #1D1D1F; --cp-mobile-text: #48484A; --cp-mobile-muted: #6E6E73;
+    --cp-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .purchases-page,
+html[data-theme="dark"][data-tema="cupertino"] .purchase-form-page,
+html[data-theme="dark"][data-tema="cupertino"] .purchase-report-page,
+html[data-theme="dark"][data-tema="cupertino"] .purchase-detail-page {
+    --cp-ivory: #000000; --cp-ivory-2: #161617;
+    --cp-surface: #1C1C1E; --cp-surface-warm: #161617; --cp-border: #38383A;
+    --cp-text: #D1D1D6; --cp-muted: #98989D; --cp-heading: #F5F5F7;
+    --cp-mobile-ink: #F5F5F7; --cp-mobile-text: #D1D1D6; --cp-mobile-muted: #98989D;
+    --cp-gold: #E0A64C;
+    --cp-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E);
+    --cp-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E);
+    --cp-gold-ink: #E8C083;
+    --cp-success: #30D158; --cp-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --cp-warning: #FF9F0A; --cp-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --cp-danger: #FF6961; --cp-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --cp-info: #6CB4FF; --cp-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .providers-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .provider-form-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .provider-detail-page {
+    --pv-ivory: #F5F5F7; --pv-ivory-2: #FAFAFC;
+    --pv-surface: #FFFFFF; --pv-surface-warm: #F5F5F7; --pv-border: #E8E8ED;
+    --pv-text: #48484A; --pv-muted: #6E6E73; --pv-heading: #1D1D1F;
+    --pv-avatar-bg: #F5F5F7; --pv-avatar-border: #E8E8ED; --pv-avatar-fg: #48484A;
+    --pv-mobile-ink: #1D1D1F; --pv-mobile-text: #48484A; --pv-mobile-muted: #6E6E73;
+    --pv-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .providers-page,
+html[data-theme="dark"][data-tema="cupertino"] .provider-form-page,
+html[data-theme="dark"][data-tema="cupertino"] .provider-detail-page {
+    --pv-ivory: #000000; --pv-ivory-2: #161617;
+    --pv-surface: #1C1C1E; --pv-surface-warm: #161617; --pv-border: #38383A;
+    --pv-text: #D1D1D6; --pv-muted: #98989D; --pv-heading: #F5F5F7;
+    --pv-avatar-bg: #2C2C2E; --pv-avatar-border: #48484A; --pv-avatar-fg: #F5F5F7;
+    --pv-mobile-ink: #F5F5F7; --pv-mobile-text: #D1D1D6; --pv-mobile-muted: #98989D;
+    --pv-gold: #E0A64C;
+    --pv-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E);
+    --pv-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E);
+    --pv-gold-ink: #E8C083;
+    --pv-success: #30D158; --pv-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --pv-danger: #FF6961; --pv-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --pv-info: #6CB4FF; --pv-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
+}
+
+/* CxC hermanas + CxP completo (mismos tokens --cx- que §38) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxc-op-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxc-cash-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxc-op-detail,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxp-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxp-detail-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxp-cash-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxp-preview-page {
+    --cx-ivory: #F5F5F7; --cx-ivory-2: #FAFAFC;
+    --cx-surface: #FFFFFF; --cx-surface-warm: #F5F5F7; --cx-border: #E8E8ED;
+    --cx-text: #48484A; --cx-muted: #6E6E73; --cx-heading: #1D1D1F;
+    --cx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .cxc-op-page,
+html[data-theme="dark"][data-tema="cupertino"] .cxc-cash-page,
+html[data-theme="dark"][data-tema="cupertino"] .cxc-op-detail,
+html[data-theme="dark"][data-tema="cupertino"] .cxp-page,
+html[data-theme="dark"][data-tema="cupertino"] .cxp-detail-page,
+html[data-theme="dark"][data-tema="cupertino"] .cxp-cash-page,
+html[data-theme="dark"][data-tema="cupertino"] .cxp-preview-page {
+    --cx-ivory: #000000; --cx-ivory-2: #161617;
+    --cx-surface: #1C1C1E; --cx-surface-warm: #161617; --cx-border: #38383A;
+    --cx-text: #D1D1D6; --cx-muted: #98989D; --cx-heading: #F5F5F7;
+    --cx-gold: #E0A64C;
+    --cx-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E);
+    --cx-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E);
+    --cx-gold-ink: #E8C083;
+    --cx-success: #30D158; --cx-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --cx-warning: #FF9F0A; --cx-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --cx-danger: #FF6961; --cx-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --cx-info: #6CB4FF; --cx-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §42 COMERCIALES + OPERACIÓN
+   canales (.cnl), lealtad (.lea), reputación (.rep), forecast (.fc),
+   whatsapp (.wav), motor admin (.mrv), IA resumen (.iav) y vigilancia
+   (.vgf), auditoría (.audit-page) — generador estándar. Camarista
+   (.cam) conserva sus tonos de estado de limpieza (clean/occ).
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cnl,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .lea,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rep,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .fc,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .wav,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .mrv,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .iav,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .vgf,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .audit-page {
+    --cnl-ivory: #F5F5F7; --cnl-ivory-2: #FAFAFC; --cnl-surface: #FFFFFF; --cnl-surface-warm: #F5F5F7; --cnl-border: #E8E8ED; --cnl-text: #48484A; --cnl-muted: #6E6E73; --cnl-heading: #1D1D1F;
+    --lea-ivory: #F5F5F7; --lea-ivory-2: #FAFAFC; --lea-surface: #FFFFFF; --lea-surface-warm: #F5F5F7; --lea-border: #E8E8ED; --lea-text: #48484A; --lea-muted: #6E6E73; --lea-heading: #1D1D1F;
+    --rep-ivory: #F5F5F7; --rep-ivory-2: #FAFAFC; --rep-surface: #FFFFFF; --rep-surface-warm: #F5F5F7; --rep-border: #E8E8ED; --rep-text: #48484A; --rep-muted: #6E6E73; --rep-heading: #1D1D1F;
+    --fc-ivory: #F5F5F7; --fc-ivory-2: #FAFAFC; --fc-surface: #FFFFFF; --fc-surface-warm: #F5F5F7; --fc-border: #E8E8ED; --fc-text: #48484A; --fc-muted: #6E6E73; --fc-heading: #1D1D1F;
+    --wav-ivory: #F5F5F7; --wav-ivory-2: #FAFAFC; --wav-surface: #FFFFFF; --wav-surface-warm: #F5F5F7; --wav-border: #E8E8ED; --wav-text: #48484A; --wav-muted: #6E6E73; --wav-heading: #1D1D1F;
+    --mrv-ivory: #F5F5F7; --mrv-ivory-2: #FAFAFC; --mrv-surface: #FFFFFF; --mrv-surface-warm: #F5F5F7; --mrv-line: #E8E8ED; --mrv-text: #48484A; --mrv-muted: #6E6E73; --mrv-heading: #1D1D1F; --mrv-mobile-ink: #1D1D1F;
+    --iav-ivory: #F5F5F7; --iav-ivory-2: #FAFAFC; --iav-surface: #FFFFFF; --iav-surface-warm: #F5F5F7; --iav-border: #E8E8ED; --iav-text: #48484A; --iav-muted: #6E6E73; --iav-heading: #1D1D1F;
+    --vgf-ivory: #F5F5F7; --vgf-ivory-2: #FAFAFC; --vgf-surface: #FFFFFF; --vgf-surface-warm: #F5F5F7; --vgf-border: #E8E8ED; --vgf-text: #48484A; --vgf-muted: #6E6E73; --vgf-heading: #1D1D1F;
+    --au-ivory: #F5F5F7; --au-ivory-2: #FAFAFC; --au-surface: #FFFFFF; --au-surface-warm: #F5F5F7; --au-border: #E8E8ED; --au-text: #48484A; --au-muted: #6E6E73; --au-heading: #1D1D1F;
+    --cnl-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --lea-serif: var(--cnl-serif); --rep-serif: var(--cnl-serif); --fc-serif: var(--cnl-serif);
+    --wav-serif: var(--cnl-serif); --mrv-serif: var(--cnl-serif); --iav-serif: var(--cnl-serif);
+    --vgf-serif: var(--cnl-serif); --au-serif: var(--cnl-serif);
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .cnl,
+html[data-theme="dark"][data-tema="cupertino"] .lea,
+html[data-theme="dark"][data-tema="cupertino"] .rep,
+html[data-theme="dark"][data-tema="cupertino"] .fc,
+html[data-theme="dark"][data-tema="cupertino"] .wav,
+html[data-theme="dark"][data-tema="cupertino"] .mrv,
+html[data-theme="dark"][data-tema="cupertino"] .iav,
+html[data-theme="dark"][data-tema="cupertino"] .vgf,
+html[data-theme="dark"][data-tema="cupertino"] .audit-page {
+    --cnl-ivory: #000000; --cnl-ivory-2: #161617; --cnl-surface: #1C1C1E; --cnl-surface-warm: #161617; --cnl-border: #38383A; --cnl-text: #D1D1D6; --cnl-muted: #98989D; --cnl-heading: #F5F5F7;
+    --lea-ivory: #000000; --lea-ivory-2: #161617; --lea-surface: #1C1C1E; --lea-surface-warm: #161617; --lea-border: #38383A; --lea-text: #D1D1D6; --lea-muted: #98989D; --lea-heading: #F5F5F7;
+    --rep-ivory: #000000; --rep-ivory-2: #161617; --rep-surface: #1C1C1E; --rep-surface-warm: #161617; --rep-border: #38383A; --rep-text: #D1D1D6; --rep-muted: #98989D; --rep-heading: #F5F5F7;
+    --fc-ivory: #000000; --fc-ivory-2: #161617; --fc-surface: #1C1C1E; --fc-surface-warm: #161617; --fc-border: #38383A; --fc-text: #D1D1D6; --fc-muted: #98989D; --fc-heading: #F5F5F7;
+    --wav-ivory: #000000; --wav-ivory-2: #161617; --wav-surface: #1C1C1E; --wav-surface-warm: #161617; --wav-border: #38383A; --wav-text: #D1D1D6; --wav-muted: #98989D; --wav-heading: #F5F5F7;
+    --mrv-ivory: #000000; --mrv-ivory-2: #161617; --mrv-surface: #1C1C1E; --mrv-surface-warm: #161617; --mrv-line: #38383A; --mrv-text: #D1D1D6; --mrv-muted: #98989D; --mrv-heading: #F5F5F7; --mrv-mobile-ink: #F5F5F7;
+    --iav-ivory: #000000; --iav-ivory-2: #161617; --iav-surface: #1C1C1E; --iav-surface-warm: #161617; --iav-border: #38383A; --iav-text: #D1D1D6; --iav-muted: #98989D; --iav-heading: #F5F5F7;
+    --vgf-ivory: #000000; --vgf-ivory-2: #161617; --vgf-surface: #1C1C1E; --vgf-surface-warm: #161617; --vgf-border: #38383A; --vgf-text: #D1D1D6; --vgf-muted: #98989D; --vgf-heading: #F5F5F7;
+    --au-ivory: #000000; --au-ivory-2: #161617; --au-surface: #1C1C1E; --au-surface-warm: #161617; --au-border: #38383A; --au-text: #D1D1D6; --au-muted: #98989D; --au-heading: #F5F5F7;
+    --cnl-gold: #E0A64C; --cnl-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --cnl-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E); --cnl-gold-ink: #E8C083;
+    --lea-gold: #E0A64C; --lea-gold-soft: var(--cnl-gold-soft); --lea-gold-line: var(--cnl-gold-line); --lea-gold-ink: #E8C083;
+    --rep-gold: #E0A64C; --rep-gold-soft: var(--cnl-gold-soft); --rep-gold-line: var(--cnl-gold-line); --rep-gold-ink: #E8C083;
+    --fc-gold: #E0A64C; --fc-gold-soft: var(--cnl-gold-soft); --fc-gold-line: var(--cnl-gold-line); --fc-gold-ink: #E8C083;
+    --wav-gold: #E0A64C; --wav-gold-soft: var(--cnl-gold-soft); --wav-gold-line: var(--cnl-gold-line); --wav-gold-ink: #E8C083;
+    --mrv-gold: #E0A64C; --mrv-gold-soft: var(--cnl-gold-soft); --mrv-gold-line: var(--cnl-gold-line); --mrv-gold-ink: #E8C083;
+    --iav-gold: #E0A64C; --iav-gold-soft: var(--cnl-gold-soft); --iav-gold-line: var(--cnl-gold-line); --iav-gold-ink: #E8C083;
+    --vgf-gold: #E0A64C; --vgf-gold-soft: var(--cnl-gold-soft); --vgf-gold-line: var(--cnl-gold-line); --vgf-gold-ink: #E8C083;
+    --au-gold: #E0A64C; --au-gold-soft: var(--cnl-gold-soft); --au-gold-line: var(--cnl-gold-line); --au-gold-ink: #E8C083;
+    --cnl-success: #30D158; --cnl-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E); --cnl-warning: #FF9F0A; --cnl-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E); --cnl-danger: #FF6961; --cnl-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E); --cnl-info: #6CB4FF; --cnl-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    --lea-success: #30D158; --lea-success-bg: var(--cnl-success-bg); --lea-warning: #FF9F0A; --lea-warning-bg: var(--cnl-warning-bg); --lea-danger: #FF6961; --lea-danger-bg: var(--cnl-danger-bg); --lea-info: #6CB4FF; --lea-info-bg: var(--cnl-info-bg);
+    --rep-success: #30D158; --rep-success-bg: var(--cnl-success-bg); --rep-warning: #FF9F0A; --rep-warning-bg: var(--cnl-warning-bg); --rep-danger: #FF6961; --rep-danger-bg: var(--cnl-danger-bg); --rep-info: #6CB4FF; --rep-info-bg: var(--cnl-info-bg);
+    --fc-success: #30D158; --fc-success-bg: var(--cnl-success-bg); --fc-warning: #FF9F0A; --fc-warning-bg: var(--cnl-warning-bg); --fc-danger: #FF6961; --fc-danger-bg: var(--cnl-danger-bg); --fc-info: #6CB4FF; --fc-info-bg: var(--cnl-info-bg);
+    --wav-success: #30D158; --wav-success-bg: var(--cnl-success-bg); --wav-warning: #FF9F0A; --wav-warning-bg: var(--cnl-warning-bg); --wav-danger: #FF6961; --wav-danger-bg: var(--cnl-danger-bg);
+    --mrv-success: #30D158; --mrv-success-bg: var(--cnl-success-bg); --mrv-warning: #FF9F0A; --mrv-warning-bg: var(--cnl-warning-bg); --mrv-danger: #FF6961; --mrv-danger-bg: var(--cnl-danger-bg); --mrv-info: #6CB4FF; --mrv-info-bg: var(--cnl-info-bg);
+    --iav-success: #30D158; --iav-success-bg: var(--cnl-success-bg); --iav-warning: #FF9F0A; --iav-warning-bg: var(--cnl-warning-bg); --iav-danger: #FF6961; --iav-danger-bg: var(--cnl-danger-bg); --iav-info: #6CB4FF; --iav-info-bg: var(--cnl-info-bg);
+    --vgf-success: #30D158; --vgf-success-bg: var(--cnl-success-bg); --vgf-warning: #FF9F0A; --vgf-warning-bg: var(--cnl-warning-bg); --vgf-danger: #FF6961; --vgf-danger-bg: var(--cnl-danger-bg); --vgf-info: #6CB4FF; --vgf-info-bg: var(--cnl-info-bg);
+    --au-danger: #FF6961; --au-danger-bg: var(--cnl-danger-bg); --au-info: #6CB4FF; --au-info-bg: var(--cnl-info-bg);
+    background: #000000 !important;
+}
+
+/* Camarista: lienzo y tinta Apple; tonos de estado (clean/occ) intactos */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cam {
+    --dx-ivory: #F5F5F7; --dx-surface: #FFFFFF; --dx-surface-warm: #F5F5F7;
+    --dx-line: #E8E8ED; --dx-line-cool: #EDEDF0;
+    --dx-ink: #1D1D1F; --dx-ink-soft: #48484A; --dx-ink-faint: #6E6E73;
+    --dx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .cam {
+    --dx-ivory: #000000; --dx-surface: #1C1C1E; --dx-surface-warm: #161617;
+    --dx-line: #38383A; --dx-line-cool: #2C2C2E;
+    --dx-ink: #F5F5F7; --dx-ink-soft: #D1D1D6; --dx-ink-faint: #98989D;
+    --dx-success: #30D158; --dx-success-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §43 CONFIGURACIÓN / ADMINISTRACIÓN
+   Tarifas (--tar-), roles (--rv-/--rf-), corrección (--co-, tokens en
+   :root → se flippean a nivel html: el prefijo es exclusivo del módulo),
+   descuentos inventario (--disc-), editar estancia (--ee-) y editar
+   habitaciones (--er-), corte detalle (--cut-), documentos hermanas
+   (--dc-), arqueo (--am-). Tonos data-viz (amber/plum/teal…) intactos.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tar-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tarifa-create-page {
+    --tar-bg: #F5F5F7; --tar-bg-2: #FAFAFC; --tar-ivory: #F5F5F7; --tar-ivory-2: #FAFAFC;
+    --tar-surface: #FFFFFF; --tar-surface-warm: #F5F5F7; --tar-border: #E8E8ED;
+    --tar-summary-line: #EDEDF0;
+    --tar-text: #48484A; --tar-muted: #6E6E73; --tar-heading: #1D1D1F;
+    --tar-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page,
+html[data-theme="dark"][data-tema="cupertino"] .tarifa-create-page {
+    --tar-bg: #000000; --tar-bg-2: #161617; --tar-ivory: #000000; --tar-ivory-2: #161617;
+    --tar-surface: #1C1C1E; --tar-surface-warm: #161617; --tar-border: #38383A;
+    --tar-summary-line: #38383A;
+    --tar-text: #D1D1D6; --tar-muted: #98989D; --tar-heading: #F5F5F7;
+    --tar-gold: #E0A64C; --tar-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --tar-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E); --tar-gold-ink: #E8C083;
+    --tar-success: #30D158; --tar-success-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --tar-danger: #FF6961; --tar-danger-soft: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --tar-info: #6CB4FF; --tar-info-soft: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .roles-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rolf-view {
+    --rv-bg: #F5F5F7; --rv-surface: #FFFFFF; --rv-border: #E8E8ED; --rv-text: #48484A; --rv-muted: #6E6E73;
+    --rf-bg: #F5F5F7; --rf-surface: #FFFFFF; --rf-border: #E8E8ED; --rf-text: #48484A; --rf-muted: #6E6E73;
+    --rv-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --rf-serif: var(--rv-serif);
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .roles-view,
+html[data-theme="dark"][data-tema="cupertino"] .rolf-view {
+    --rv-bg: #000000; --rv-surface: #1C1C1E; --rv-border: #38383A; --rv-text: #D1D1D6; --rv-muted: #98989D;
+    --rf-bg: #000000; --rf-surface: #1C1C1E; --rf-border: #38383A; --rf-text: #D1D1D6; --rf-muted: #98989D;
+    background: #000000 !important;
+}
+
+/* Corrección de movimientos: tokens --co- definidos en :root del módulo */
+html[data-tema="cupertino"]:not([data-theme="dark"]) {
+    --co-ivory: #F5F5F7; --co-ivory-2: #FAFAFC; --co-surface: #FFFFFF; --co-surface-warm: #F5F5F7;
+    --co-border: #E8E8ED; --co-text: #48484A; --co-muted: #6E6E73; --co-heading: #1D1D1F;
+    --co-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+html[data-theme="dark"][data-tema="cupertino"] {
+    --co-ivory: #000000; --co-ivory-2: #161617; --co-surface: #1C1C1E; --co-surface-warm: #161617;
+    --co-border: #38383A; --co-text: #D1D1D6; --co-muted: #98989D; --co-heading: #F5F5F7;
+    --co-gold: #E0A64C; --co-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --co-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E); --co-gold-ink: #E8C083;
+    --co-success: #30D158; --co-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --co-warning: #FF9F0A; --co-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --co-danger: #FF6961; --co-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .discount-config-view {
+    --disc-surface: #FFFFFF; --disc-soft: #F5F5F7; --disc-text: #48484A;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .discount-config-view {
+    --disc-surface: #1C1C1E; --disc-soft: #2C2C2E; --disc-text: #D1D1D6;
+    --disc-warn: #FF9F0A;
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ee-page {
+    --ee-surface: #FFFFFF; --ee-line: #E8E8ED; --ee-ink: #1D1D1F; --ee-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .ee-page {
+    --ee-surface: #1C1C1E; --ee-line: #38383A; --ee-ink: #F5F5F7; --ee-muted: #98989D;
+    --ee-success: #30D158; --ee-success-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --ee-warning: #FF9F0A; --ee-warning-soft: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --ee-danger: #FF6961; --ee-danger-soft: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --ee-accent-soft: #2C2C2E;
+    background: #000000 !important;
+}
+
+/* Editar habitaciones de reserva: solo tokens (wrapper .page-container es genérico) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .page-container {
+    --er-surface: #FAFAFC; --er-surface-strong: #FFFFFF;
+}
+html[data-theme="dark"][data-tema="cupertino"] .page-container {
+    --er-surface: #161617; --er-surface-strong: #1C1C1E;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cut-detail-page {
+    --cut-bg: #F5F5F7; --cut-paper: #FFFFFF; --cut-line: #E8E8ED; --cut-line-soft: #EDEDF0;
+    --cut-text: #1D1D1F; --cut-muted: #6E6E73; --cut-soft: #F5F5F7;
+    --cut-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .cut-detail-page {
+    --cut-bg: #000000; --cut-paper: #1C1C1E; --cut-line: #38383A; --cut-line-soft: #2C2C2E;
+    --cut-text: #F5F5F7; --cut-muted: #98989D; --cut-soft: #2C2C2E;
+    --cut-blue: #6CB4FF; --cut-blue-soft: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    --cut-green: #30D158; --cut-green-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --cut-red: #FF6961; --cut-red-soft: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --cut-violet: #BF5AF2; --cut-violet-soft: color-mix(in srgb, #BF5AF2 18%, #1C1C1E);
+    --cut-accent: #E0A64C;
+    background: #000000 !important;
+}
+
+/* Documentos hermanas: mismos tokens --dc- que §38 */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .doc-edit-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .doc-upload-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .doc-detail-page {
+    --dc-ivory: #F5F5F7; --dc-ivory-2: #FAFAFC; --dc-surface: #FFFFFF; --dc-surface-warm: #F5F5F7;
+    --dc-border: #E8E8ED; --dc-text: #48484A; --dc-text-soft: #6E6E73; --dc-muted: #6E6E73; --dc-heading: #1D1D1F;
+    --dc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .doc-edit-page,
+html[data-theme="dark"][data-tema="cupertino"] .doc-upload-page,
+html[data-theme="dark"][data-tema="cupertino"] .doc-detail-page {
+    --dc-ivory: #000000; --dc-ivory-2: #161617; --dc-surface: #1C1C1E; --dc-surface-warm: #161617;
+    --dc-border: #38383A; --dc-text: #D1D1D6; --dc-text-soft: #98989D; --dc-muted: #98989D; --dc-heading: #F5F5F7;
+    --dc-gold: #E0A64C; --dc-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --dc-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E); --dc-gold-ink: #E8C083;
+    --dc-success: #30D158; --dc-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --dc-warning: #FF9F0A; --dc-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --dc-danger: #FF6961; --dc-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .arqueo-page {
+    --am-border: #E8E8ED; --am-text: #48484A; --am-muted: #6E6E73; --am-soft: #F5F5F7;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .arqueo-page {
+    --am-border: #38383A; --am-text: #D1D1D6; --am-muted: #98989D; --am-soft: #2C2C2E;
+    --am-ok: #30D158; --am-error: #FF6961; --am-warning: #FF9F0A;
+    --am-accent-soft: #2C2C2E;
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §44 REPORTES — solo contenido (lienzo, paneles, tinta). Los banners
+   hero de cada reporte usan literales propios y quedan intactos por
+   contrato ("los headers de reportes no se tocan").
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .exec-page {
+    --exec-ivory: #F5F5F7; --exec-surface: #FFFFFF; --exec-surface-warm: #F5F5F7; --exec-section: #FFFFFF;
+    --exec-line: #E8E8ED; --exec-line-soft: #EDEDF0; --exec-soft: #F5F5F7;
+    --exec-text: #48484A; --exec-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .exec-page {
+    --exec-ivory: #000000; --exec-surface: #1C1C1E; --exec-surface-warm: #161617; --exec-section: #1C1C1E;
+    --exec-line: #38383A; --exec-line-soft: #2C2C2E; --exec-soft: #2C2C2E;
+    --exec-text: #D1D1D6; --exec-muted: #98989D;
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .reportes-view {
+    --rp-ivory: #F5F5F7; --rp-ivory-2: #FAFAFC; --rp-surface: #FFFFFF; --rp-line: #E8E8ED;
+    --rp-ink: #1D1D1F; --rp-ink-2: #48484A; --rp-muted: #6E6E73; --rp-heading: #1D1D1F;
+    --rp-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .reportes-view {
+    --rp-ivory: #000000; --rp-ivory-2: #161617; --rp-surface: #1C1C1E; --rp-line: #38383A;
+    --rp-ink: #F5F5F7; --rp-ink-2: #D1D1D6; --rp-muted: #98989D; --rp-heading: #F5F5F7;
+    --rp-gold: #E0A64C; --rp-gold-bg: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --rp-gold-soft: color-mix(in srgb, #E0A64C 14%, #1C1C1E); --rp-gold-line: color-mix(in srgb, #E0A64C 32%, #1C1C1E);
+    background: #000000 !important;
+}
+
+/* Reportes con familias chicas: lienzo/tinta; acentos y data-viz intactos */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .gd-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rentables-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .mant-report-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .mant-prog,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .profit-report-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .occ-report-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .geo-report-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rank-report-view,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .stay-report-view {
+    --gd-bg: #F5F5F7; --gd-line: #E8E8ED; --gd-text: #48484A; --gd-muted: #6E6E73;
+    --rent-bg: #F5F5F7; --rent-surface: #FFFFFF; --rent-line: #E8E8ED; --rent-text: #48484A; --rent-muted: #6E6E73; --rent-soft: #F5F5F7;
+    --rl-bg: #F5F5F7; --rl-surface: #FFFFFF; --rl-line: #E8E8ED; --rl-text: #48484A; --rl-muted: #6E6E73;
+    --mant-bg: #F5F5F7; --mant-surface: #FFFFFF; --mant-line: #E8E8ED; --mant-line-soft: #EDEDF0; --mant-text: #48484A; --mant-muted: #6E6E73; --mant-soft: #F5F5F7;
+    --pr-bg: #F5F5F7; --pr-surface: #FFFFFF; --pr-line: #E8E8ED; --pr-text: #48484A; --pr-muted: #6E6E73;
+    --occ-bg: #F5F5F7; --occ-line: #E8E8ED; --occ-muted: #6E6E73;
+    --geo-bg: #F5F5F7; --geo-line: #E8E8ED; --geo-line-soft: #EDEDF0;
+    --rank-line: #E8E8ED; --rank-muted: #6E6E73;
+    --stay-line: #E8E8ED; --stay-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .gd-view,
+html[data-theme="dark"][data-tema="cupertino"] .rentables-view,
+html[data-theme="dark"][data-tema="cupertino"] .report-link-view,
+html[data-theme="dark"][data-tema="cupertino"] .mant-report-view,
+html[data-theme="dark"][data-tema="cupertino"] .mant-prog,
+html[data-theme="dark"][data-tema="cupertino"] .profit-report-view,
+html[data-theme="dark"][data-tema="cupertino"] .occ-report-view,
+html[data-theme="dark"][data-tema="cupertino"] .geo-report-view,
+html[data-theme="dark"][data-tema="cupertino"] .rank-report-view,
+html[data-theme="dark"][data-tema="cupertino"] .stay-report-view {
+    --gd-bg: #000000; --gd-line: #38383A; --gd-text: #D1D1D6; --gd-muted: #98989D;
+    --rent-bg: #000000; --rent-surface: #1C1C1E; --rent-line: #38383A; --rent-text: #D1D1D6; --rent-muted: #98989D; --rent-soft: #2C2C2E;
+    --rl-bg: #000000; --rl-surface: #1C1C1E; --rl-line: #38383A; --rl-text: #D1D1D6; --rl-muted: #98989D;
+    --mant-bg: #000000; --mant-surface: #1C1C1E; --mant-line: #38383A; --mant-line-soft: #2C2C2E; --mant-text: #D1D1D6; --mant-muted: #98989D; --mant-soft: #2C2C2E;
+    --mant-good: #30D158; --mant-bad: #FF6961; --mant-warn: #FF9F0A;
+    --pr-bg: #000000; --pr-surface: #1C1C1E; --pr-line: #38383A; --pr-text: #D1D1D6; --pr-muted: #98989D;
+    --occ-bg: #000000; --occ-line: #38383A; --occ-muted: #98989D;
+    --geo-bg: #000000; --geo-line: #38383A; --geo-line-soft: #2C2C2E;
+    --rank-line: #38383A; --rank-muted: #98989D;
+    --stay-line: #38383A; --stay-muted: #98989D;
+    background: #000000 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §45 SUELTAS: factura detalle, historial de habitación, nuevo producto
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .invoice-desk {
+    --invoice-page: #F5F5F7; --invoice-paper: #FFFFFF; --invoice-subtle: #FAFAFC;
+    --invoice-line: #E8E8ED; --invoice-ink: #1D1D1F; --invoice-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .invoice-desk {
+    --invoice-page: #000000; --invoice-paper: #1C1C1E; --invoice-subtle: #161617;
+    --invoice-line: #38383A; --invoice-ink: #F5F5F7; --invoice-muted: #98989D;
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .vista-historial {
+    --history-paper: #FFFFFF; --history-line: #E8E8ED; --history-ink: #1D1D1F; --history-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .vista-historial {
+    --history-paper: #1C1C1E; --history-line: #38383A; --history-ink: #F5F5F7; --history-muted: #98989D;
+    --history-gold: #E0A64C;
+    background: #000000 !important;
+}
+
+/* Inventario: alta de producto (misma familia --inv- que §38) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .nuevo-producto-view {
+    --inv-ivory: #F5F5F7; --inv-ivory-2: #FAFAFC; --inv-surface: #FFFFFF; --inv-surface-warm: #F5F5F7;
+    --inv-border: #E8E8ED; --inv-line: #E8E8ED; --inv-text: #48484A; --inv-muted: #6E6E73; --inv-heading: #1D1D1F;
+    --inv-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .nuevo-producto-view {
+    --inv-ivory: #000000; --inv-ivory-2: #161617; --inv-surface: #1C1C1E; --inv-surface-warm: #161617;
+    --inv-border: #38383A; --inv-line: #38383A; --inv-text: #D1D1D6; --inv-muted: #98989D; --inv-heading: #F5F5F7;
+    background: #000000 !important;
+}
+
+/* §39b — Componentes glass de la familia wk (literales blancos del
+   generador Deleite): grafito en modo oscuro. Aplica a las 7 vistas. */
+html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-page, .worker-detail-page, .worker-cash-page, .payroll-preview, .workers-report, .labor-cash-report) :is(.wk-summary-item, .wk-panel, .wk-pay-card, .wk-ledger-card, .wk-form-pad) {
+    background: #1C1C1E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-page, .worker-detail-page, .worker-cash-page, .payroll-preview, .workers-report, .labor-cash-report) :is(.wk-panel-head, .wk-balance) {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-page, .worker-detail-page, .worker-cash-page, .payroll-preview, .workers-report, .labor-cash-report) :is(.wk-btn, .wk-btn-muted) {
+    background: #2C2C2E !important;
+    color: #D1D1D6 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-page, .worker-detail-page, .worker-cash-page, .payroll-preview, .workers-report, .labor-cash-report) .wk-tab:hover {
+    background: #2C2C2E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-page, .worker-detail-page, .worker-cash-page, .payroll-preview, .workers-report, .labor-cash-report) :is(input, select, textarea) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* §41b — Glass blanco del generador Deleite → grafito en oscuro.
+   El mismo pase de pulido (rgba(255,255,255,.8x)) se repite en compras,
+   proveedores, CxC/CxP, whatsapp, canales, lealtad, forecast, reputación,
+   auditoría, motor y tarifas: se corrige por componente, no por vista. */
+html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-report-page, .purchase-detail-page, .providers-page, .provider-form-page, .provider-detail-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxc-op-detail, .cxp-page, .cxp-detail-page, .cxp-cash-page, .cxp-preview-page, .wav, .cnl, .lea, .fc, .rep, .mrv, .audit-page, .tar-page, .tarifa-create-page) :is(.cp-summary-item, .cp-panel, .cp-mobile-card, .pv-summary-item, .pv-panel, .pv-mobile-card, .cx-summary-item, .cx-panel, .cx-mobile-card, .cx-stat, .cx-pay-card, .cx-resolution, .wav-summary-item, .wav-panel, .cnl-summary-item, .cnl-panel, .cnl-alert, .lea-summary-item, .lea-panel, .fc-summary-item, .fc-panel, .rep-card, .rep-kpi, .au-summary-item, .au-panel, .mrv-shortcut, .tar-filters, .tar-panel-body) {
+    background: #1C1C1E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-report-page, .purchase-detail-page, .providers-page, .provider-form-page, .provider-detail-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxc-op-detail, .cxp-page, .cxp-detail-page, .cxp-cash-page, .cxp-preview-page, .mrv) :is(.cp-btn-muted, .pv-btn-muted, .cx-btn-muted, .mrv-btn) {
+    background: #2C2C2E !important;
+    color: #D1D1D6 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.cxc-op-page, .cxc-cash-page, .cxc-op-detail) .cx-shell {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.cxp-detail-page, .cxc-op-detail) .cx-soft-note {
+    background: #2C2C2E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.tar-page, .tarifa-create-page) .modal-content {
+    background: #1C1C1E !important;
+    color: #D1D1D6;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.tar-page, .tarifa-create-page) .modal-header {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-detail-page, .providers-page, .provider-form-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxp-page, .cxp-cash-page, .wav, .cnl, .lea, .fc, .rep, .mrv, .audit-page, .tar-page, .tarifa-create-page, .roles-view, .rolf-view, .nomina-page, .nomina-cat-page, .nomina-config-page, .nomina-ficha-page, .nomina-emp-page, .nomina-inc-page, .nomina-pv-page, .nomina-pd-page, .nomina-per-page, .informes-page, .worker-page, .arqueo-page, .ee-page) :is(input, select, textarea) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* §41c — Literales crema del generador (rgba(251,248,242,.8x) y afines):
+   cabeceras de tabla, hover de fila, vacíos y tiras de tabs en oscuro. */
+html[data-theme="dark"][data-tema="cupertino"] :is(.cp-table, .pv-table, .cx-table, .cnl-table, .rep-table, .au-table, .wk-table, .lea-table, .fc-table, .wav-table, .tar-table) thead {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.cp-row, .pv-row, .cx-row, .wk-row, .lea-row) {
+    background: transparent !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.cp-row, .pv-row, .cx-row, .wk-row, .lea-row):hover {
+    background: #2C2C2E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.cp-empty, .pv-empty, .cx-empty, .wk-empty, .lea-empty, .cnl-empty, .rep-empty, .au-empty) {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.wk-tabs, .cp-tabs, .pv-tabs, .cx-tabs) {
+    background: #161617 !important;
+    border-color: #38383A !important;
+}
+
+/* §43b — Tarifas dinámicas: tarjetas métricas y cabeceras metálicas */
+html[data-theme="dark"][data-tema="cupertino"] .tar-page .tar-metric-card {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page .empty-state {
+    background: #161617 !important;
+    color: #98989D;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page :is(.tar-filters, .tar-panel-body) {
+    background: #1C1C1E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page :is(.tarifa-section-header, .tar-filters-hd) {
+    background: #161617 !important;
+    color: #F5F5F7;
+}
+html[data-theme="dark"][data-tema="cupertino"] .roles-view :is(.rv-btn, .rv-action, button.is-ghost),
+html[data-theme="dark"][data-tema="cupertino"] .rolf-view :is(.rf-btn, .rf-action) {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+/* §43c — Tarifas: cabecera metálica de paneles */
+html[data-theme="dark"][data-tema="cupertino"] .tar-page .tar-panel-hd {
+    background: #161617 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page .tar-filters-hd {
+    background: #161617 !important;
+    border-bottom-color: #38383A !important;
+}
+
+/* §43d — Tarifas: cuerpos Tailwind con velo blanco dentro de paneles */
+html[data-theme="dark"][data-tema="cupertino"] .tar-page :is(.tar-filters, .tar-panel) :is(.p-4, .p-3, .p-5) {
+    background: #1C1C1E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .tar-page .btn-reset {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   §46 NIGHT AUDIT (.na) — vista Tailwind sin familia de tokens propia
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .na {
+    background: #F5F5F7;
+}
+html[data-theme="dark"][data-tema="cupertino"] .na {
+    background: #000000;
+}
+html[data-theme="dark"][data-tema="cupertino"] .na .na-card {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6;
+}
+html[data-theme="dark"][data-tema="cupertino"] .na :is(h1, h2, h3, strong) { color: #F5F5F7; }
+html[data-theme="dark"][data-tema="cupertino"] .na th { color: #98989D; }
+html[data-theme="dark"][data-tema="cupertino"] .na td { color: #D1D1D6; }
+html[data-theme="dark"][data-tema="cupertino"] .na :is(input, select) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* §42b — IA (resumen diario y vigilancia financiera): panel e informe */
+html[data-theme="dark"][data-tema="cupertino"] :is(.vgf, .iav) :is(.vgf-summary-item, .vgf-panel, .iav-summary-item, .iav-panel, .iav-field) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.vgf, .iav) :is(.vgf-reading, .iav-reading) {
+    background: #161617 !important;
+    border-color: #38383A !important;
+    color: #D1D1D6;
+}
+html[data-theme="dark"][data-tema="cupertino"] :is(.vgf, .iav) :is(.vgf-reading, .iav-reading) :is(h1, h2, h3, h4, strong, b) {
+    color: #F5F5F7;
+}
+
+/* §44b — Tablero ejecutivo: componentes con blanco literal, en oscuro */
+html[data-theme="dark"][data-tema="cupertino"] .exec-page :is(.exec-metric, .exec-stat, .exec-panel, .exec-filter, .exec-field, .exec-table) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .exec-page :is(.exec-layout, .exec-metrics, .exec-stat-grid, .exec-filter-grid, .exec-stack, .exec-actions, .exec-hero, .exec-hero-main, .exec-row) {
+    background: transparent !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .exec-page :is(.exec-btn, .exec-badge, .exec-status, .exec-panel-body .ok, .exec-panel-body .warning, .exec-panel-body .error, .exec-panel-body .primary) {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .exec-page :is(.exec-title, h1, h2, h3, strong) { color: #F5F5F7 !important; }
+html[data-theme="dark"][data-tema="cupertino"] .exec-page .exec-subtitle { color: #98989D !important; }
+html[data-theme="dark"][data-tema="cupertino"] .exec-page th { color: #98989D !important; }
+html[data-theme="dark"][data-tema="cupertino"] .exec-page td { color: #D1D1D6 !important; }
+html[data-theme="dark"][data-tema="cupertino"] :is(.exec-page, .nuevo-producto-view, .na) :is(input, select, textarea) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* §44c — Ejecutivo: cabecera de panel */
+html[data-theme="dark"][data-tema="cupertino"] .exec-page .exec-panel-head {
+    background: #161617 !important;
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .exec-page .exec-panel-title { color: #F5F5F7 !important; }
+html[data-theme="dark"][data-tema="cupertino"] .exec-page .exec-panel-subtitle { color: #98989D !important; }
