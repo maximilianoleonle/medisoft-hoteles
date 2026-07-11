@@ -1093,6 +1093,11 @@ html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming {
     border-color: #38383A;
 }
 
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-head {
+    background: #1C1C1E;
+    border-bottom-color: #38383A;
+}
+
 html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming h2,
 html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-head h2,
 html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-upcoming-head strong {
@@ -1261,4 +1266,1415 @@ html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-panel {
 html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-row:hover {
     background: #2C2C2E;
     box-shadow: none;
+}
+
+/* ═══ 23. HUÉSPEDES (index .guests-page) ════════════════════════════
+   Capa boutique con tokens --guest-* y fondo !important: volteo por
+   token + lienzo plano; el ícono del héroe pierde el gradiente oro. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guests-page {
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 6%, #F5F5F7);
+    --guest-brand-softer: #FAFAFC;
+    --guest-gold-soft: color-mix(in srgb, var(--guest-gold) 12%, #FFFFFF);
+    --guest-gold-line: #E8E8ED;
+    --guest-ivory: #F5F5F7;
+    --guest-ivory-2: #FAFAFC;
+    --guest-surface: #FFFFFF;
+    --guest-surface-warm: #F5F5F7;
+    --guest-border: #E8E8ED;
+    --guest-muted: #6E6E73;
+    --guest-heading: #1D1D1F;
+    --guest-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --guest-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"] .guests-page .hotel-page-title {
+    letter-spacing: -0.02em !important;
+}
+
+html[data-tema="cupertino"] .guests-page .guest-hero-icon {
+    background: var(--guest-brand) !important;
+    box-shadow: none !important;
+}
+
+/* ═══ 24. DETALLE DE RESERVACIÓN (ver.php: .reservation-detail-v2 +
+   .rdv3 + modales de check-in) ═════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .reservation-detail-v2 {
+    --rd-accent-soft: #F5F5F7;
+    --rd-ivory: #F5F5F7;
+    --rd-ivory-2: #FAFAFC;
+    --rd-surface: #FFFFFF;
+    --rd-surface-warm: #F5F5F7;
+    --rd-line: #E8E8ED;
+    --rd-line-soft: #EDEDF0;
+    --rd-muted: #6E6E73;
+    --rd-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --rd-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3 {
+    --rdv3-bg: #F5F5F7;
+    --rdv3-card: #FFFFFF;
+    --rdv3-line: #E8E8ED;
+    --rdv3-ink: #1D1D1F;
+    --rdv3-muted: #6E6E73;
+    --rdv3-muted-2: #48484A;
+}
+
+html[data-tema="cupertino"] .rdv3-titleline h1,
+html[data-tema="cupertino"] .rdv3-card-title,
+html[data-tema="cupertino"] .rdv3-date strong,
+html[data-tema="cupertino"] .rdv3-total .rdv3-amount,
+html[data-tema="cupertino"] .rdv3-guest-name,
+html[data-tema="cupertino"] .rdv3-payment-total b,
+html[data-tema="cupertino"] .rp-stat strong,
+html[data-tema="cupertino"] .rp-stat b {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    letter-spacing: -0.015em !important;
+}
+
+html[data-tema="cupertino"] .rdv3-titleline h1,
+html[data-tema="cupertino"] .rdv3-card-title {
+    font-weight: 700 !important;
+}
+
+/* Literales cálidos de la capa rdv3/rp: a neutrales por modo */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-stay {
+    background: #FFFFFF !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-nights,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-room-metric,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rdv3-res-note,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .rp-stat {
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-stay {
+    background: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-nights,
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-room-metric,
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-res-note,
+html[data-theme="dark"][data-tema="cupertino"] .rp-stat {
+    background: #2C2C2E !important;
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-total,
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-info {
+    background: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rp-stat strong,
+html[data-theme="dark"][data-tema="cupertino"] .rp-stat b,
+html[data-theme="dark"][data-tema="cupertino"] .rdv3-total .rdv3-amount {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .reservation-detail-v2 {
+    --rd-accent-dark: color-mix(in srgb, var(--rd-accent) 60%, #F5F5F7);
+    --rd-accent-soft: #2C2C2E;
+    --rd-ivory: #000000;
+    --rd-ivory-2: #0A0A0B;
+    --rd-surface: #1C1C1E;
+    --rd-surface-warm: #161617;
+    --rd-line: #38383A;
+    --rd-line-soft: #2C2C2E;
+    --rd-text: #F5F5F7;
+    --rd-muted: #98989D;
+    --rd-success: #30D158;
+    --rd-warning: #FF9F0A;
+    --rd-danger: #FF6961;
+    --rd-info: #6CB4FF;
+    --rd-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --rd-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .rdv3 {
+    --rdv3-bg: #000000;
+    --rdv3-card: #1C1C1E;
+    --rdv3-line: rgba(255, 255, 255, .09);
+    --rdv3-ink: #F5F5F7;
+    --rdv3-muted: #98989D;
+    --rdv3-muted-2: #C7C7CC;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckInTardio {
+    --rv-checkin-ink: #F5F5F7;
+    --rv-checkin-line: #38383A;
+    --rv-checkin-soft: #2C2C2E;
+    --rv-checkin-muted: #98989D;
+}
+
+/* ═══ 38. CUATRO MÓDULOS ESTÁNDAR: documentos (.docs-page --dc-*),
+   notificaciones (.ntx-page --ntx-*), CxC (.cxc-page --cx-*) e
+   inventario (.inv-page --inv-*) ════════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .docs-page {
+    --dc-ivory: #F5F5F7;
+    --dc-ivory-2: #FAFAFC;
+    --dc-surface: #FFFFFF;
+    --dc-surface-warm: #F5F5F7;
+    --dc-border: #E8E8ED;
+    --dc-text: #48484A;
+    --dc-muted: #6E6E73;
+    --dc-heading: #1D1D1F;
+    --dc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .docs-page {
+    --dc-ivory: #000000;
+    --dc-ivory-2: #161617;
+    --dc-surface: #1C1C1E;
+    --dc-surface-warm: #161617;
+    --dc-border: #38383A;
+    --dc-text: #D1D1D6;
+    --dc-muted: #98989D;
+    --dc-heading: #F5F5F7;
+    --dc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ntx-page {
+    --ntx-ink: #1D1D1F;
+    --ntx-text: #48484A;
+    --ntx-muted: #6E6E73;
+    --ntx-line: #E8E8ED;
+    --ntx-surface: #FFFFFF;
+    --ntx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page {
+    --ntx-ink: #F5F5F7;
+    --ntx-text: #D1D1D6;
+    --ntx-muted: #98989D;
+    --ntx-line: #38383A;
+    --ntx-surface: #1C1C1E;
+    --ntx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page [class*="ntx-panel"] {
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-panel-accent, #98989D) 12%, #1C1C1E);
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cxc-page {
+    --cx-ivory: #F5F5F7;
+    --cx-ivory-2: #FAFAFC;
+    --cx-surface: #FFFFFF;
+    --cx-surface-warm: #F5F5F7;
+    --cx-border: #E8E8ED;
+    --cx-text: #48484A;
+    --cx-text-soft: #6E6E73;
+    --cx-muted: #6E6E73;
+    --cx-heading: #1D1D1F;
+    --cx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cxc-page {
+    --cx-ivory: #000000;
+    --cx-ivory-2: #161617;
+    --cx-surface: #1C1C1E;
+    --cx-surface-warm: #161617;
+    --cx-border: #38383A;
+    --cx-text: #D1D1D6;
+    --cx-text-soft: #C7C7CC;
+    --cx-muted: #98989D;
+    --cx-heading: #F5F5F7;
+    --cx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .inv-page {
+    --inv-ivory: #F5F5F7;
+    --inv-surface: #FFFFFF;
+    --inv-surface-warm: #F5F5F7;
+    --inv-line: #E8E8ED;
+    --inv-line-soft: #EDEDF0;
+    --inv-muted: #6E6E73;
+    --inv-heading: #1D1D1F;
+    --inv-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page {
+    --inv-ivory: #000000;
+    --inv-surface: #1C1C1E;
+    --inv-surface-warm: #161617;
+    --inv-line: #38383A;
+    --inv-line-soft: #2C2C2E;
+    --inv-muted: #98989D;
+    --inv-heading: #F5F5F7;
+    --inv-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --inv-success: #30D158;
+    --inv-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --inv-warning: #FF9F0A;
+    --inv-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --inv-danger: #FF6961;
+    --inv-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+}
+
+/* §38b: literales de inventario, documentos y notificaciones */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .inv-page {
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page {
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .inv-topbar,
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .stat-widget,
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .inv-panel {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .inv-pill {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .stat-widget strong,
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .stat-widget b,
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .stat-widget [class*="num"] {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .inv-page .bar-track {
+    background: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-summary-item,
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-panel {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-row:hover {
+    background: #2C2C2E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-row a,
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-row strong {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .docs-page .dc-count-pill {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+html[data-tema="cupertino"] .docs-page .dc-hero-section::after {
+    display: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page [class*="ntx-stat"],
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page .ntx-btn,
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page .ntx-module-chip,
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page .ntx-count,
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page .ntx-push-icon {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page .ntx-panel-head::before {
+    display: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page [class*="ntx-stat"] strong,
+html[data-theme="dark"][data-tema="cupertino"] .ntx-page [class*="ntx-stat"] b {
+    color: #F5F5F7 !important;
+}
+
+/* ═══ 37. HUÉSPEDES: detalle (.guest-detail-view, --gd-*) y
+   edición (.guest-edit-page, --ge-*) ════════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view {
+    --gd-bg: #F5F5F7;
+    --gd-surface: #FFFFFF;
+    --gd-surface-solid: #FFFFFF;
+    --gd-line: #E8E8ED;
+    --gd-line-soft: #EDEDF0;
+    --gd-heading: #1D1D1F;
+    --gd-text: #1D1D1F;
+    --gd-text-soft: #48484A;
+    --gd-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view {
+    --gd-bg: #000000;
+    --gd-surface: #1C1C1E;
+    --gd-surface-solid: #1C1C1E;
+    --gd-line: #38383A;
+    --gd-line-soft: #2C2C2E;
+    --gd-heading: #F5F5F7;
+    --gd-text: #D1D1D6;
+    --gd-text-soft: #C7C7CC;
+    --gd-muted: #98989D;
+    --gd-accent-readable: color-mix(in srgb, var(--gd-accent) 60%, #F5F5F7);
+    --gd-success: #30D158;
+    --gd-danger: #FF6961;
+    background: #000000 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-edit-page {
+    --ge-bg: #F5F5F7;
+    --ge-bg-soft: #FAFAFC;
+    --ge-panel: #FFFFFF;
+    --ge-panel-warm: #F5F5F7;
+    --ge-line: #E8E8ED;
+    --ge-line-strong: #D2D2D7;
+    --ge-muted: #6E6E73;
+    --ge-heading: #1D1D1F;
+    --ge-text: #1D1D1F;
+    --ge-text-soft: #48484A;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-edit-page {
+    --ge-bg: #000000;
+    --ge-bg-soft: #161617;
+    --ge-panel: #1C1C1E;
+    --ge-panel-warm: #161617;
+    --ge-line: #38383A;
+    --ge-line-strong: #48484A;
+    --ge-muted: #98989D;
+    --ge-heading: #F5F5F7;
+    --ge-text: #D1D1D6;
+    --ge-text-soft: #C7C7CC;
+    --ge-accent-readable: color-mix(in srgb, var(--ge-accent) 60%, #F5F5F7);
+    --ge-success: #30D158;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-edit-page input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"][data-tema="cupertino"] .guest-edit-page select,
+html[data-theme="dark"][data-tema="cupertino"] .guest-edit-page textarea {
+    background-color: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* Detalle de huésped: serif Georgia literal → sans; superficies con
+   literales de la familia .guest-* por modo */
+html[data-tema="cupertino"] .guest-detail-view .guest-identity-card h1,
+html[data-tema="cupertino"] .guest-detail-view [style*="Georgia"],
+html[data-tema="cupertino"] .guest-detail-view .guest-avatar-mark {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    letter-spacing: -0.02em;
+}
+
+html[data-tema="cupertino"] .guest-detail-view .guest-metric,
+html[data-tema="cupertino"] .guest-detail-view .guest-metric * {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-metric,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-info-card,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-docs,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-action-rail,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-identity-card {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-panel-head,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-note,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-chip,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-action,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-doc-action {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-identity-card::after {
+    display: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-operational-card {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-operational-card strong {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-operational-card span,
+html[data-theme="dark"][data-tema="cupertino"] .guest-detail-view .guest-operational-card small {
+    color: #98989D !important;
+}
+
+/* ═══ 35. USUARIOS / TRABAJADORES (.usuarios-view, paleta sage) ═════ */
+html[data-tema="cupertino"] .usuarios-view {
+    --user-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .usr-bg {
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .usuarios-view .usr-widget,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .usuarios-view .usr-panel {
+    background: #FFFFFF !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .usuarios-view .usr-tr:hover {
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usr-bg {
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-widget,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-panel {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-panel-hd {
+    background: #161617 !important;
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-tr:hover {
+    background: #2C2C2E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-panel td,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-widget {
+    color: #D1D1D6;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-panel td strong,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-panel .font-semibold,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-widget strong,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view h1,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view h2 {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .act-edit,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .act-deact,
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .act-act {
+    background: #2C2C2E;
+    border-color: #38383A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-tr {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .usuarios-view .usr-tr:hover {
+    background: #2C2C2E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-agenda.tk-agenda--calendar {
+    --tk-view-soft: color-mix(in srgb, var(--tk-info, #6CB4FF) 14%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-agenda.tk-agenda--calendar .tk-title-lockup {
+    background: #1C1C1E;
+    border-color: #38383A;
+}
+
+/* ═══ 36. TAREAS: agenda, form y detalle (selectores gemelos que
+   redefinen --tk-*: mismo flip que §22) ═════════════════════════════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tk-agenda,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tk-form-page,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tk-detail {
+    --tk-gold-line: #E8E8ED;
+    --tk-ivory: #F5F5F7;
+    --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF;
+    --tk-surface-warm: #F5F5F7;
+    --tk-border: #E8E8ED;
+    --tk-text: #48484A;
+    --tk-muted: #6E6E73;
+    --tk-heading: #1D1D1F;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-agenda,
+html[data-theme="dark"][data-tema="cupertino"] .tk-form-page,
+html[data-theme="dark"][data-tema="cupertino"] .tk-detail {
+    --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 20%, #1C1C1E);
+    --tk-gold-line: #48484A;
+    --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 60%, #F5F5F7);
+    --tk-ivory: #000000;
+    --tk-ivory-2: #161617;
+    --tk-surface: #1C1C1E;
+    --tk-surface-warm: #161617;
+    --tk-border: #38383A;
+    --tk-text: #D1D1D6;
+    --tk-muted: #98989D;
+    --tk-heading: #F5F5F7;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-success: #30D158;
+    --tk-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --tk-warning: #FF9F0A;
+    --tk-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --tk-danger: #FF6961;
+    --tk-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --tk-info: #6CB4FF;
+    --tk-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-agenda input,
+html[data-theme="dark"][data-tema="cupertino"] .tk-agenda select,
+html[data-theme="dark"][data-tema="cupertino"] .tk-form-page input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"][data-tema="cupertino"] .tk-form-page select,
+html[data-theme="dark"][data-tema="cupertino"] .tk-form-page textarea,
+html[data-theme="dark"][data-tema="cupertino"] .tk-detail input,
+html[data-theme="dark"][data-tema="cupertino"] .tk-detail select {
+    background-color: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* ═══ 33. CAJA: CORTE dark (--ccx con !important propios) y
+   APERTURA (.caja-open, --cj-* redefinidos) ═════════════════════════ */
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page {
+    --ccx-ink: #F5F5F7 !important;
+    --ccx-text: #D1D1D6 !important;
+    --ccx-muted: #98989D !important;
+    --ccx-line: #38383A !important;
+    --ccx-surface: #1C1C1E !important;
+    --ccx-focus: color-mix(in srgb, var(--ccx-accent) 26%, transparent) !important;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-input,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-textarea {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .caja-open {
+    --cj-gold-line: #E8E8ED;
+    --cj-ivory: #F5F5F7;
+    --cj-ivory-2: #FAFAFC;
+    --cj-surface: #FFFFFF;
+    --cj-surface-warm: #F5F5F7;
+    --cj-border: #E8E8ED;
+    --cj-text: #48484A;
+    --cj-muted: #6E6E73;
+    --cj-heading: #1D1D1F;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .caja-open {
+    --cj-gold-soft: color-mix(in srgb, var(--cj-gold) 20%, #1C1C1E);
+    --cj-gold-line: #48484A;
+    --cj-gold-ink: color-mix(in srgb, var(--cj-gold) 60%, #F5F5F7);
+    --cj-ivory: #000000;
+    --cj-ivory-2: #161617;
+    --cj-surface: #1C1C1E;
+    --cj-surface-warm: #161617;
+    --cj-border: #38383A;
+    --cj-text: #D1D1D6;
+    --cj-muted: #98989D;
+    --cj-heading: #F5F5F7;
+    --cj-warning: #FF9F0A;
+    --cj-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .caja-open .cj-input {
+    background: #1C1C1E;
+    border-color: #38383A;
+    color: #F5F5F7;
+    color-scheme: dark;
+}
+
+html[data-tema="cupertino"] .caja-open .cj-btn-gold {
+    background: var(--brand-action-bg, var(--cj-gold)) !important;
+    box-shadow: none !important;
+    border-radius: 999px;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-panel,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-stat {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-table tfoot td,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-list-row,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-count,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-kicker,
+html[data-theme="dark"][data-tema="cupertino"] .ccx-page .ccx-back {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+/* ═══ 34. CALENDARIO DE RESERVACIONES (.hcal) ═══════════════════════
+   En claro ya es Apple de fábrica (paleta fría, cards blancas):
+   solo estrena modo oscuro. */
+html[data-theme="dark"][data-tema="cupertino"] .hcal {
+    --green: #A9B2BA;
+    --green-dark: #C7CDD3;
+    --green-soft: #2C2C2E;
+    --blue: #6FA8D4;
+    --blue-dark: #8FBCE0;
+    --blue-soft: color-mix(in srgb, #0A84FF 20%, #1C1C1E);
+    --indigo: #9B97D4;
+    --indigo-soft: color-mix(in srgb, #5E5CE6 20%, #1C1C1E);
+    --red: #E07B75;
+    --red-soft: color-mix(in srgb, #FF453A 18%, #1C1C1E);
+    --amber: #E0A64C;
+    --amber-soft: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --yellow: #E8C04C;
+    --yellow-soft: color-mix(in srgb, #FFD60A 14%, #1C1C1E);
+    --surface: #000000;
+    --card: #1C1C1E;
+    --border: rgba(255, 255, 255, .1);
+    --border-mid: rgba(255, 255, 255, .16);
+    --border-strong: rgba(255, 255, 255, .26);
+    --text: #F5F5F7;
+    --muted: #98989D;
+    --subtle: #6E6E73;
+    --shadow: none;
+    --shadow-md: none;
+}
+
+/* ═══ 32. CONFIGURACIÓN (.hc-page, --hc-*) ══════════════════════════
+   La pantalla donde vive el selector de temas. Dos bloques de tokens
+   encimados; el flip pisa ambos. En oscuro releva al dark cálido de
+   dark-theme.css D0 con el negro/grafito Apple. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hc-page {
+    --hc-bg: #F5F5F7;
+    --hc-bg-deep: #F5F5F7;
+    --hc-paper: #FFFFFF;
+    --hc-ink: #1D1D1F;
+    --hc-ink-soft: #48484A;
+    --hc-ink-faint: #6E6E73;
+    --hc-line: #E8E8ED;
+    --hc-line-strong: #D2D2D7;
+    --hc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --hc-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --hc-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 26px rgba(0, 0, 0, .05);
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .hc-page {
+    --hc-bg: #000000;
+    --hc-bg-deep: #000000;
+    --hc-paper: #1C1C1E;
+    --hc-surface: #1C1C1E;
+    --hc-surface-muted: #161617;
+    --hc-brand-wash: color-mix(in srgb, var(--hc-brand) 18%, #1C1C1E);
+    --hc-accent-wash: color-mix(in srgb, var(--hc-accent) 14%, #1C1C1E);
+    --hc-blush-wash: #161617;
+    --hc-section-wash: color-mix(in srgb, var(--hc-section-accent) 12%, #1C1C1E);
+    --hc-accent-soft: color-mix(in srgb, var(--hc-accent) 16%, #1C1C1E);
+    --hc-ink: #F5F5F7;
+    --hc-ink-soft: #C7C7CC;
+    --hc-ink-faint: #98989D;
+    --hc-line: #38383A;
+    --hc-line-strong: #48484A;
+    --hc-danger: #FF6961;
+    --hc-success: #30D158;
+    --hc-tone-blue: #6FA8C4;
+    --hc-tone-sage: #4FC08A;
+    --hc-tone-amber: #E0A64C;
+    --hc-tone-coral: #E07B75;
+    --hc-tone-indigo: #9B97D4;
+    --hc-tone-olive: #A9C46C;
+    --hc-tone-slate: #8FA8C4;
+    --hc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --hc-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --hc-shadow: none;
+    --hc-focus: color-mix(in srgb, var(--hc-accent) 30%, transparent);
+    background: #000000 !important;
+}
+
+/* ═══ 31. CAJA: MOVIMIENTOS (.cash-movements-view, --cash-*) ════════
+   Tres capas de rediseño encimadas; el flip pisa a la última. Multi-
+   radial warm → plano. Tonos de sección aclarados en oscuro. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cash-movements-view {
+    --cash-bg: #F5F5F7;
+    --cash-surface: #FFFFFF;
+    --cash-panel: #FFFFFF;
+    --cash-panel-strong: #FFFFFF;
+    --cash-soft: #F5F5F7;
+    --cash-line: #E8E8ED;
+    --cash-text: #48484A;
+    --cash-ink: #1D1D1F;
+    --cash-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view {
+    --cash-bg: #000000;
+    --cash-surface: #1C1C1E;
+    --cash-panel: #1C1C1E;
+    --cash-panel-strong: #1C1C1E;
+    --cash-soft: #161617;
+    --cash-line: #38383A;
+    --cash-text: #D1D1D6;
+    --cash-ink: #F5F5F7;
+    --cash-muted: #98989D;
+    --cash-income: #30D158;
+    --cash-expense: #FF6961;
+    --cash-tone-blue: #6FA8C4;
+    --cash-tone-sage: #4FC08A;
+    --cash-tone-amber: #E0A64C;
+    --cash-tone-coral: #E07B75;
+    --cash-tone-indigo: #9B97D4;
+    --cash-glow: color-mix(in srgb, var(--cash-accent) 20%, transparent);
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-stat {
+    --stat-soft: color-mix(in srgb, var(--stat-color, #98989D) 16%, #1C1C1E);
+}
+
+/* Movimientos: superficies con rgba blanco literal → grafito en dark */
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-stat,
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-ledger-panel,
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-sidebar-panel {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-filter-dock,
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-ledger-head {
+    background: #161617 !important;
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-flow-bar {
+    background: #2C2C2E !important;
+    border-color: transparent !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-input {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* ═══ 31b. CAJA: REPORTE DE MÉTODOS (.cash-methods-view, --cm-*) ════
+   Es reporte: su banner hero queda intacto; solo contenido. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cash-methods-view {
+    --cm-bg: #F5F5F7;
+    --cm-surface: #FFFFFF;
+    --cm-line: #E8E8ED;
+    --cm-line-soft: #EDEDF0;
+    --cm-text: #48484A;
+    --cm-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view {
+    --cm-bg: #000000;
+    --cm-surface: #1C1C1E;
+    --cm-line: #38383A;
+    --cm-line-soft: #2C2C2E;
+    --cm-text: #D1D1D6;
+    --cm-muted: #98989D;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view .cash-methods-card,
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view .cash-methods-panel-head,
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view .cash-methods-button {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view .cash-methods-input {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* ═══ 31c. CAJA: HISTORIAL DE CORTES (.cash-history-view, --ch-*) ═══ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cash-history-view {
+    --ch-bg: #F5F5F7;
+    --ch-surface: #FFFFFF;
+    --ch-surface-strong: #FFFFFF;
+    --ch-line: #E8E8ED;
+    --ch-line-soft: #EDEDF0;
+    --ch-text: #1D1D1F;
+    --ch-muted: #6E6E73;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view {
+    --ch-bg: #000000;
+    --ch-surface: #1C1C1E;
+    --ch-surface-strong: #1C1C1E;
+    --ch-line: #38383A;
+    --ch-line-soft: #2C2C2E;
+    --ch-text: #F5F5F7;
+    --ch-muted: #98989D;
+    --ch-income: #30D158;
+    --ch-expense: #FF6961;
+    --ch-warning: #FF9F0A;
+    --ch-info: #6CB4FF;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-history-form select,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-history-form input {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-quick-states,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-activity-strip,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-day-rank,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-history-note,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-history-link {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+    color: #D1D1D6 !important;
+}
+
+/* Franjas/brillos con gradiente blanco literal → planos en dark */
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-filter-title {
+    background: #161617 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-movements-view .cash-audit-item {
+    background: #2C2C2E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-methods-view .cash-methods-mini {
+    background: #2C2C2E !important;
+    border-color: #38383A !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-history-title,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-balance-card,
+html[data-theme="dark"][data-tema="cupertino"] .cash-history-view .cash-section-head {
+    background: #1C1C1E !important;
+}
+
+/* ═══ 30. CREAR HABITACIÓN (.create-room-page, --room-*) ════════════
+   Lienzo multi-radial con cuadrícula fija → plano; campos rellenos
+   Apple; el submit gradiente marrón pasa a plano de marca. Estrena
+   modo oscuro. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-page {
+    --room-ink: #1D1D1F;
+    --room-muted: #6E6E73;
+    --room-line: #E8E8ED;
+    --room-paper: #FFFFFF;
+    --room-soft: #F5F5F7;
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"] .create-room-page::before {
+    display: none !important;
+}
+
+html[data-tema="cupertino"] .create-room-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
+html[data-tema="cupertino"] .create-room-page select,
+html[data-tema="cupertino"] .create-room-page textarea {
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-page select,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-page textarea {
+    background: #F5F5F7 !important;
+    border-color: transparent !important;
+}
+
+html[data-tema="cupertino"] .create-room-submit {
+    background: var(--brand-action-bg, #0071E3) !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-breadcrumb a {
+    background: #FFFFFF;
+    border-color: #E8E8ED;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-page {
+    --room-ink: #F5F5F7;
+    --room-muted: #98989D;
+    --room-line: rgba(255, 255, 255, .1);
+    --room-paper: #1C1C1E;
+    --room-soft: #161617;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
+html[data-theme="dark"][data-tema="cupertino"] .create-room-page select,
+html[data-theme="dark"][data-tema="cupertino"] .create-room-page textarea {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-breadcrumb a {
+    background: #1C1C1E;
+    border-color: #38383A;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-actions {
+    background: rgba(22, 22, 23, .8);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-cancel {
+    background: #2C2C2E !important;
+    color: #F5F5F7 !important;
+}
+
+/* Tarjetas de crear-habitación: gradientes crema literales por modo
+   (la barra de acento por sección se conserva) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-hero-card::before {
+    background: #FFFFFF !important;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .create-room-card > div:first-child {
+    background: #FAFAFC !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-hero-card::before {
+    background: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-card,
+html[data-theme="dark"][data-tema="cupertino"] .create-room-active-card {
+    background: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .create-room-card > div:first-child {
+    background: #161617 !important;
+}
+
+/* ═══ 29. REPORTE DE TAREAS (.tk-report) ════════════════════════════
+   El banner hero del reporte se queda intacto (regla del negocio:
+   headers de reportes no se tocan); aquí solo el contenido. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .tk-report {
+    --tk-gold-line: #E8E8ED;
+    --tk-ivory: #F5F5F7;
+    --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF;
+    --tk-surface-warm: #F5F5F7;
+    --tk-border: #E8E8ED;
+    --tk-text: #48484A;
+    --tk-muted: #6E6E73;
+    --tk-heading: #1D1D1F;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-report {
+    --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 20%, #1C1C1E);
+    --tk-gold-line: #48484A;
+    --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 60%, #F5F5F7);
+    --tk-ivory: #000000;
+    --tk-ivory-2: #161617;
+    --tk-surface: #1C1C1E;
+    --tk-surface-warm: #161617;
+    --tk-border: #38383A;
+    --tk-text: #D1D1D6;
+    --tk-muted: #98989D;
+    --tk-heading: #F5F5F7;
+    --tk-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --tk-success: #30D158;
+    --tk-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --tk-warning: #FF9F0A;
+    --tk-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --tk-danger: #FF6961;
+    --tk-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --tk-info: #6CB4FF;
+    --tk-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .tk-report.tk-report--insights {
+    --tk-view-soft: color-mix(in srgb, var(--tk-proc, #64D2FF) 14%, #1C1C1E);
+}
+
+/* ═══ 28. OPERACIÓN: tablero diario (.op-daily) y conciliación
+   financiera (.cfin-page) — familias gemelas del patrón estándar ════ */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .op-daily {
+    --op-accent-soft: #F5F5F7;
+    --op-accent-line: #E8E8ED;
+    --op-ivory: #F5F5F7;
+    --op-ivory-2: #FAFAFC;
+    --op-surface: #FFFFFF;
+    --op-surface-warm: #F5F5F7;
+    --op-border: #E8E8ED;
+    --op-text: #48484A;
+    --op-muted: #6E6E73;
+    --op-heading: #1D1D1F;
+    --op-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --op-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-tema="cupertino"] .op-daily-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif !important;
+    letter-spacing: -0.015em;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .op-daily {
+    --op-accent-soft: #2C2C2E;
+    --op-accent-line: #48484A;
+    --op-accent-ink: color-mix(in srgb, var(--op-accent) 60%, #F5F5F7);
+    --op-ivory: #000000;
+    --op-ivory-2: #161617;
+    --op-surface: #1C1C1E;
+    --op-surface-warm: #161617;
+    --op-border: #38383A;
+    --op-text: #D1D1D6;
+    --op-muted: #98989D;
+    --op-heading: #F5F5F7;
+    --op-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --op-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --op-good: #30D158;
+    --op-good-soft: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --op-warn: #FF9F0A;
+    --op-warn-soft: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --op-risk: #FF6961;
+    --op-risk-soft: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .op-daily-metric,
+html[data-theme="dark"][data-tema="cupertino"] .op-daily-panel {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .op-daily-btn {
+    background: #1C1C1E;
+    border-color: #38383A;
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .op-daily [class*="op-ag"] {
+    background-color: #1C1C1E;
+    border-color: #38383A;
+    color: #D1D1D6;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cfin-page {
+    --cfin-accent-soft: #F5F5F7;
+    --cfin-accent-line: #E8E8ED;
+    --cfin-ivory: #F5F5F7;
+    --cfin-ivory-2: #FAFAFC;
+    --cfin-surface: #FFFFFF;
+    --cfin-surface-warm: #F5F5F7;
+    --cfin-border: #E8E8ED;
+    --cfin-soft: #F5F5F7;
+    --cfin-text: #48484A;
+    --cfin-muted: #6E6E73;
+    --cfin-heading: #1D1D1F;
+    --cfin-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cfin-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cfin-page {
+    --cfin-accent-soft: #2C2C2E;
+    --cfin-accent-line: #48484A;
+    --cfin-accent-ink: color-mix(in srgb, var(--cfin-accent) 60%, #F5F5F7);
+    --cfin-ivory: #000000;
+    --cfin-ivory-2: #161617;
+    --cfin-surface: #1C1C1E;
+    --cfin-surface-warm: #161617;
+    --cfin-border: #38383A;
+    --cfin-soft: #161617;
+    --cfin-text: #D1D1D6;
+    --cfin-muted: #98989D;
+    --cfin-heading: #F5F5F7;
+    --cfin-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cfin-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --cfin-success: #30D158;
+    --cfin-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --cfin-warning: #FF9F0A;
+    --cfin-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --cfin-danger: #FF6961;
+    --cfin-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cfin-card,
+html[data-theme="dark"][data-tema="cupertino"] .cfin-filter,
+html[data-theme="dark"][data-tema="cupertino"] .cfin-panel,
+html[data-theme="dark"][data-tema="cupertino"] .cfin-table th,
+html[data-theme="dark"][data-tema="cupertino"] .cfin-btn {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cfin-btn {
+    color: #F5F5F7;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cfin-field input,
+html[data-theme="dark"][data-tema="cupertino"] .cfin-field select {
+    background: #1C1C1E;
+    color: #F5F5F7;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .cfin-status.warning {
+    background: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    color: #FF9F0A;
+}
+
+/* ═══ 27. FACTURACIÓN (index .billing-page, --billing-*) ════════════
+   Tarjetas KPI con barra de tono inferior (se queda: es la señal) y
+   blob decorativo de esquina (se va: ruido). Serif de montos por
+   token. Estrena modo oscuro. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .billing-page {
+    --billing-accent-soft: color-mix(in srgb, var(--billing-accent) 10%, #FFFFFF);
+    --billing-ink: #1D1D1F;
+    --billing-muted: #6E6E73;
+    --billing-line: #E8E8ED;
+    --billing-line-strong: #D2D2D7;
+    --billing-paper: #FFFFFF;
+    --billing-ivory: #FAFAFC;
+    --billing-surface: #F5F5F7;
+    --billing-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 26px rgba(0, 0, 0, .06);
+    --billing-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-tema="cupertino"]:not([data-theme="dark"]) .billing-summary-card {
+    background: #FFFFFF;
+}
+
+html[data-tema="cupertino"] .billing-summary-card::after {
+    display: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-page {
+    --billing-accent-soft: color-mix(in srgb, var(--billing-accent) 16%, #1C1C1E);
+    --billing-ink: #F5F5F7;
+    --billing-muted: #98989D;
+    --billing-line: rgba(255, 255, 255, .1);
+    --billing-line-strong: rgba(255, 255, 255, .18);
+    --billing-paper: #1C1C1E;
+    --billing-ivory: #161617;
+    --billing-surface: #000000;
+    --billing-shadow: none;
+    --billing-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-summary-card {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-panel {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-row {
+    background: #2C2C2E;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-page input,
+html[data-theme="dark"][data-tema="cupertino"] .billing-page select {
+    background-color: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-filter-form {
+    background: #161617;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-rfc {
+    color: #D1D1D6;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-pendiente {
+    --chip-color: #E0A64C;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-en_proceso,
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-procesando {
+    --chip-color: #7FB6D9;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-facturada,
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-completada {
+    --chip-color: #4FC08A;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-cancelada,
+html[data-theme="dark"][data-tema="cupertino"] .billing-chip-status-rechazada {
+    --chip-color: #E07B75;
+}
+
+/* ═══ 26. CHECK-IN DIGITAL (interno .checkin-digital-page, --cdi-*) ═
+   Patrón gemelo de Tareas: volteo por token + estreno de modo oscuro
+   con los mismos tres literales rgba blancos (tiles, panel). */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .checkin-digital-page {
+    --cdi-gold-line: #E8E8ED;
+    --cdi-ivory: #F5F5F7;
+    --cdi-ivory-2: #FAFAFC;
+    --cdi-surface: #FFFFFF;
+    --cdi-surface-warm: #F5F5F7;
+    --cdi-border: #E8E8ED;
+    --cdi-text: #48484A;
+    --cdi-muted: #6E6E73;
+    --cdi-heading: #1D1D1F;
+    --cdi-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cdi-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .checkin-digital-page {
+    --cdi-gold-soft: color-mix(in srgb, var(--cdi-gold) 20%, #1C1C1E);
+    --cdi-gold-line: #48484A;
+    --cdi-gold-ink: color-mix(in srgb, var(--cdi-gold) 60%, #F5F5F7);
+    --cdi-ivory: #000000;
+    --cdi-ivory-2: #161617;
+    --cdi-surface: #1C1C1E;
+    --cdi-surface-warm: #161617;
+    --cdi-border: #38383A;
+    --cdi-text: #D1D1D6;
+    --cdi-muted: #98989D;
+    --cdi-heading: #F5F5F7;
+    --cdi-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --cdi-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --cdi-success: #30D158;
+    --cdi-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --cdi-warning: #FF9F0A;
+    --cdi-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --cdi-info: #6CB4FF;
+    --cdi-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .checkin-digital-page .cdi-summary-item,
+html[data-theme="dark"][data-tema="cupertino"] .checkin-digital-page .cdi-panel {
+    background: #1C1C1E;
+    box-shadow: none;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .checkin-digital-page .cdi-top-pill,
+html[data-theme="dark"][data-tema="cupertino"] .checkin-digital-page .cdi-count-pill {
+    background: color-mix(in srgb, var(--cdi-gold) 16%, #1C1C1E);
+    border-color: #48484A;
+}
+
+/* ═══ 25. CREAR HUÉSPED (.guest-create-page, tokens --gc-*) ═════════
+   Capa única y disciplinada: volteo casi 100% por token. Estrena
+   modo oscuro (la vista era claro-fijo). Carga Tailwind 2 estático,
+   de ahí los refuerzos en inputs. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-create-page {
+    --gc-accent-soft: #F5F5F7;
+    --gc-accent-line: #E8E8ED;
+    --gc-ivory: #F5F5F7;
+    --gc-ivory-2: #FAFAFC;
+    --gc-surface: #FFFFFF;
+    --gc-surface-warm: #F5F5F7;
+    --gc-line: #E8E8ED;
+    --gc-line-soft: #EDEDF0;
+    --gc-muted: #6E6E73;
+    --gc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --gc-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page {
+    --gc-accent-dark: color-mix(in srgb, var(--gc-accent) 60%, #F5F5F7);
+    --gc-accent-soft: #2C2C2E;
+    --gc-accent-line: #48484A;
+    --gc-ivory: #000000;
+    --gc-ivory-2: #0A0A0B;
+    --gc-surface: #1C1C1E;
+    --gc-surface-warm: #161617;
+    --gc-line: #38383A;
+    --gc-line-soft: #2C2C2E;
+    --gc-muted: #98989D;
+    --gc-text: #F5F5F7;
+    --gc-success: #30D158;
+    --gc-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --gc-info: #6CB4FF;
+    --gc-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    --gc-danger: #FF6961;
+    --gc-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E);
+    --gc-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --gc-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    background: #000000 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page .bg-white {
+    background-color: #1C1C1E !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page select,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page textarea {
+    background-color: #1C1C1E !important;
+    border-color: #38383A !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+
+/* Títulos de crear-huésped usan el color de marca (oscuro): en dark, tinta clara */
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page h1,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page h1 span,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page h2,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page h3,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page h4,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page strong,
+html[data-theme="dark"][data-tema="cupertino"] .guest-create-page .gc-mini-text {
+    color: #F5F5F7 !important;
+}
+
+html[data-theme="dark"][data-tema="cupertino"] .guests-page {
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 22%, #1C1C1E);
+    --guest-brand-softer: #161617;
+    --guest-gold-soft: color-mix(in srgb, var(--guest-gold) 18%, #1C1C1E);
+    --guest-gold-line: #48484A;
+    --guest-gold-ink: color-mix(in srgb, var(--guest-gold) 60%, #F5F5F7);
+    --guest-ivory: #000000;
+    --guest-ivory-2: #0A0A0B;
+    --guest-surface: #1C1C1E;
+    --guest-surface-warm: #161617;
+    --guest-border: #38383A;
+    --guest-text: #D1D1D6;
+    --guest-muted: #98989D;
+    --guest-heading: #F5F5F7;
+    --guest-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+    --guest-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+    --g-success: #30D158;
+    --g-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E);
+    --g-warning: #FF9F0A;
+    --g-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E);
+    --g-info: #6CB4FF;
+    --g-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
+    background: #000000 !important;
 }
