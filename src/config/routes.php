@@ -730,9 +730,7 @@ $router->get('/offline/pendientes', ['controller' => 'Pwa', 'action' => 'pendien
 
 
 
-// Rutas legacy de correccion deshabilitadas en produccion.
-// $router->get('/correccion', ['controller' => 'Correccion', 'action' => 'index']);
-// $router->post('/correccion/aplicar', ['controller' => 'Correccion', 'action' => 'aplicar']);
+// Rutas legacy de correccion eliminadas junto con su controlador (código muerto).
 
 // Health check para monitoreo (publica en Router.php, protegida por HEALTH_TOKEN)
 $router->get('/health', ['controller' => 'Health', 'action' => 'index']);

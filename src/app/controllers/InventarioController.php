@@ -817,42 +817,7 @@ public function debugMovimientosDateAction() {
         require_permission('inventarios.view');
         return true;
     }
-    public function eliminar($id) {
-    try {
-        // Verificar permisos si es necesario
-        if (!$this->checkPermission('inventario.eliminar')) {
-            $this->redirect('/inventario')->with('error', 'No tiene permisos para eliminar productos');
-        }
 
-        // Obtener el producto
-        $producto = $this->productoModel->find($id);
-
-        if (!$producto) {
-            $this->redirect('/inventario')->with('error', 'Producto no encontrado');
-        }
-
-        // Verificar si tiene movimientos recientes (opcional)
-        $movimientos_recientes = $this->movimientoInventarioModel->where('producto_id', $id)
-                                                                 ->where('created_at', '>=', date('Y-m-d', strtotime('-30 days')))
-                                                                 ->count();
-
-        if ($movimientos_recientes > 0) {
-            $this->redirect('/inventario')->with('warning', 'No se puede eliminar un producto con movimientos recientes');
-        }
-
-        // Eliminar el producto (soft delete o hard delete según tu preferencia)
-        $this->productoModel->delete($id);
-
-        // O si prefieres soft delete:
-        // $this->productoModel->update($id, ['activo' => 0]);
-
-        $this->redirect('/inventario')->with('success', 'Producto eliminado correctamente');
-
-    } catch (Exception $e) {
-        error_log("Error al eliminar producto: " . $e->getMessage());
-        $this->redirect('/inventario')->with('error', 'Error al eliminar el producto');
-    }
-}
     /**
      * Vista principal - Dashboard de inventario
      */

@@ -1174,7 +1174,8 @@ public function vehiculosHuespedAction() {
             }
 
             $stmt = $db->query(
-                "SELECT id, nombre, tipo FROM categorias_movimientos WHERE activa = 1 ORDER BY tipo, nombre"
+                "SELECT id, nombre, tipo FROM categorias_movimientos WHERE hotel_id = ? AND activa = 1 ORDER BY tipo, nombre",
+                [current_hotel_id()]
             );
             $categorias = $stmt ? $stmt->fetchAll() : [];
 

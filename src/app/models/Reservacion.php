@@ -1183,22 +1183,23 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         
         error_log("✅ Check-in: {$stmt->rowCount()} habitaciones marcadas como ocupadas");
         
-        // 3. Obtener categoría de hospedaje para movimientos de caja
-        $sql_cat = "SELECT id FROM categorias_movimientos 
-                    WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 
+        // 3. Obtener categoría de hospedaje para movimientos de caja (del hotel actual)
+        $sql_cat = "SELECT id FROM categorias_movimientos
+                    WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1
+                      AND hotel_id = ?
                     LIMIT 1";
-        $stmt_cat = $db->query($sql_cat);
+        $stmt_cat = $db->query($sql_cat, [$hotel_id]);
         $categoria = $stmt_cat->fetch();
-        
+
         if (!$categoria) {
-            // Si no existe, crear la categoría
-            $sql_crear = "INSERT INTO categorias_movimientos 
-                         (nombre, tipo, descripcion, icono, color, activa, created_at) 
-                         VALUES ('Hospedaje', 'ingreso', 'Ingresos por hospedaje', 
+            // Si no existe para este hotel, crearla en el hotel actual
+            $sql_crear = "INSERT INTO categorias_movimientos
+                         (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
+                         VALUES (?, 'Hospedaje', 'ingreso', 'Ingresos por hospedaje',
                                  'fas fa-bed', '#10B981', 1, NOW())";
-            $db->query($sql_crear);
+            $db->query($sql_crear, [$hotel_id]);
             $categoria_id = $db->lastInsertId();
-            error_log("Categoría Hospedaje creada con ID: $categoria_id");
+            error_log("Categoría Hospedaje creada para hotel $hotel_id con ID: $categoria_id");
         } else {
             $categoria_id = $categoria['id'];
         }
@@ -2671,34 +2672,35 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 }
             }
             
-            // Obtener o crear categoría de devolución
-            $sql = "SELECT id FROM categorias_movimientos 
-                    WHERE nombre = 'Devoluciones' 
-                    AND tipo = 'egreso' 
-                    AND activa = 1 
+            // Obtener o crear categoría de devolución (del hotel actual)
+            $sql = "SELECT id FROM categorias_movimientos
+                    WHERE nombre = 'Devoluciones'
+                    AND tipo = 'egreso'
+                    AND activa = 1
+                    AND hotel_id = ?
                     LIMIT 1";
-            $stmt = $db->query($sql);
+            $stmt = $db->query($sql, [$hotel_id]);
             $categoria = $stmt->fetch();
-            
+
             if (!$categoria) {
-                // Si no existe, intentar crearla
+                // Si no existe, intentar crearla en el hotel actual
                 try {
-                    $sql = "INSERT INTO categorias_movimientos 
-                            (nombre, tipo, descripcion, icono, color, activa, created_at) 
-                            VALUES ('Devoluciones', 'egreso', 'Devoluciones por cancelaciones', 
+                    $sql = "INSERT INTO categorias_movimientos
+                            (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
+                            VALUES (?, 'Devoluciones', 'egreso', 'Devoluciones por cancelaciones',
                                     'fas fa-undo', '#EF4444', 1, NOW())";
-                    $db->query($sql);
+                    $db->query($sql, [$hotel_id]);
                     $categoria_id = $db->lastInsertId();
-                    error_log("Categoría Devoluciones creada con ID: $categoria_id");
+                    error_log("Categoría Devoluciones creada para hotel $hotel_id con ID: $categoria_id");
                 } catch (Exception $e) {
-                    // Si falla, usar la primera categoría de egreso disponible
-                    $sql = "SELECT id FROM categorias_movimientos 
-                            WHERE tipo = 'egreso' AND activa = 1 
+                    // Si falla, usar la primera categoría de egreso disponible DEL HOTEL
+                    $sql = "SELECT id FROM categorias_movimientos
+                            WHERE tipo = 'egreso' AND activa = 1 AND hotel_id = ?
                             ORDER BY id LIMIT 1";
-                    $stmt = $db->query($sql);
+                    $stmt = $db->query($sql, [$hotel_id]);
                     $cat_temp = $stmt->fetch();
-                    $categoria_id = $cat_temp ? $cat_temp['id'] : 1;
-                    error_log("Usando categoría de egreso alternativa: $categoria_id");
+                    $categoria_id = $cat_temp ? $cat_temp['id'] : null;
+                    error_log("Usando categoría de egreso alternativa: " . ($categoria_id ?? 'ninguna'));
                 }
             } else {
                 $categoria_id = $categoria['id'];
@@ -2923,40 +2925,42 @@ public function checkOut($reservacion_id, $hora_salida = null) {
  */
 private function obtenerCategoriaDevolucion() {
     $db = Database::getInstance();
-    
-    // Buscar categoría de devoluciones
-    $sql = "SELECT id FROM categorias_movimientos 
-            WHERE nombre = 'Devoluciones' 
-            AND tipo = 'egreso' 
-            AND activa = 1 
+    $hotelId = $this->hotelIdActual();
+
+    // Buscar categoría de devoluciones (del hotel actual)
+    $sql = "SELECT id FROM categorias_movimientos
+            WHERE nombre = 'Devoluciones'
+            AND tipo = 'egreso'
+            AND activa = 1
+            AND hotel_id = ?
             LIMIT 1";
-    
-    $stmt = $db->query($sql);
+
+    $stmt = $db->query($sql, [$hotelId]);
     $categoria = $stmt->fetch();
-    
+
     if ($categoria) {
         return $categoria['id'];
     }
-    
-    // Si no existe, intentar crearla
-    $sql = "INSERT INTO categorias_movimientos 
-            (nombre, tipo, activa, created_at) 
-            VALUES ('Devoluciones', 'egreso', 1, NOW())";
-    
+
+    // Si no existe, intentar crearla en el hotel actual
+    $sql = "INSERT INTO categorias_movimientos
+            (hotel_id, nombre, tipo, activa, created_at)
+            VALUES (?, 'Devoluciones', 'egreso', 1, NOW())";
+
     try {
-        $db->query($sql);
+        $db->query($sql, [$hotelId]);
         return $db->lastInsertId();
     } catch (Exception $e) {
-        // Si falla la creación, usar una categoría genérica
-        // Buscar cualquier categoría de egreso activa
-        $sql = "SELECT id FROM categorias_movimientos 
-                WHERE tipo = 'egreso' 
-                AND activa = 1 
+        // Si falla la creación, usar cualquier categoría de egreso activa DEL HOTEL
+        $sql = "SELECT id FROM categorias_movimientos
+                WHERE tipo = 'egreso'
+                AND activa = 1
+                AND hotel_id = ?
                 LIMIT 1";
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotelId]);
         $categoria = $stmt->fetch();
-        
-        return $categoria['id'] ?? 1; // Default si no hay ninguna
+
+        return $categoria['id'] ?? null; // Sin categoría: el movimiento guarda el nombre en texto
     }
 }
     

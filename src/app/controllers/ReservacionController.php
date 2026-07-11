@@ -5941,10 +5941,10 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             // 4. Actualizar movimientos_caja - SOLO si pertenecen al corte actual (abierto)
             //    Si pertenecen a un corte cerrado, NO se tocan para no descuadrar cortes anteriores.
             
-            // Obtener categoría de hospedaje
-            $sql_cat = "SELECT id FROM categorias_movimientos WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 LIMIT 1";
+            // Obtener categoría de hospedaje (del hotel actual)
+            $sql_cat = "SELECT id FROM categorias_movimientos WHERE nombre = 'Hospedaje' AND tipo = 'ingreso' AND activa = 1 AND hotel_id = ? LIMIT 1";
             $stmt_cat = $this->db->prepare($sql_cat);
-            $stmt_cat->execute();
+            $stmt_cat->execute([$hotel_id]);
             $categoria = $stmt_cat->fetch(PDO::FETCH_ASSOC);
             $categoria_id = $categoria ? $categoria['id'] : null;
             
@@ -6457,20 +6457,23 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                         error_log("Reduccion de dias sin devolucion: pagado $" . $pagado_antes . ", nuevo total $" . $precio_nuevo . " - Reservacion #" . $reservacion_id);
                     } else {
 
-                        // Obtener o crear categoría de Devoluciones
+                        // Obtener o crear categoría de Devoluciones (del hotel actual)
                         $stmt_cat = $db->query(
                             "SELECT id FROM categorias_movimientos
                              WHERE nombre = 'Devoluciones' AND tipo = 'egreso' AND activa = 1
-                             LIMIT 1"
+                               AND hotel_id = ?
+                             LIMIT 1",
+                            [$hotel_id]
                         );
                         $cat = $stmt_cat->fetch();
 
                         if (!$cat) {
                             $db->query(
                                 "INSERT INTO categorias_movimientos
-                                 (nombre, tipo, descripcion, icono, color, activa, created_at)
-                                 VALUES ('Devoluciones', 'egreso', 'Devoluciones por ajustes',
-                                         'fas fa-undo', '#EF4444', 1, NOW())"
+                                 (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
+                                 VALUES (?, 'Devoluciones', 'egreso', 'Devoluciones por ajustes',
+                                         'fas fa-undo', '#EF4444', 1, NOW())",
+                                [$hotel_id]
                             );
                             $categoria_id = $db->lastInsertId();
                         } else {

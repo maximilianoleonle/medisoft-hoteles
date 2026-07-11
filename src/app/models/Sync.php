@@ -567,8 +567,8 @@ class Sync
 
         if ($categoria_id) {
             $stmt = $this->db->query(
-                "SELECT nombre FROM categorias_movimientos WHERE id = ? AND activa = 1 LIMIT 1",
-                [$categoria_id]
+                "SELECT nombre FROM categorias_movimientos WHERE id = ? AND hotel_id = ? AND activa = 1 LIMIT 1",
+                [$categoria_id, $this->hotelId]
             );
             $cat = $stmt ? $stmt->fetch() : null;
             if ($cat) {
