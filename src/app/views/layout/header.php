@@ -224,7 +224,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     
     <!-- CSRF Token -->
     <meta name="csrf-token" content="<?= csrf_token() ?>">
-    
+    <!-- Escudo CSRF: parcha XHR/fetch/forms ANTES de cualquier otro JS (sin defer) -->
+    <script src="<?= function_exists('asset_version') ? asset_version('js/csrf-shield.js') : asset('js/csrf-shield.js') ?>"></script>
+
     <!-- Manifest PWA -->
     <link rel="manifest" href="<?= htmlspecialchars($layoutManifestHref, ENT_QUOTES, 'UTF-8') ?>">
     

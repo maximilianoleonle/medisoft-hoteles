@@ -82,6 +82,21 @@ session_set_cookie_params([
 ]);
 
 session_start();
+
+// ── Headers de seguridad globales ────────────────────────────────────────
+// Se emiten desde PHP (no solo el proxy) para que apliquen igual en dev,
+// staging y producción. CSP completa (script-src) queda pendiente: las vistas
+// aún dependen de JS inline; frame-ancestors sí es seguro de activar ya.
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: frame-ancestors 'self'");
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), microphone=()');
+if ($secureCookie) {
+    // 180 días, sin includeSubDomains: cada subdominio de hotel decide el suyo.
+    header('Strict-Transport-Security: max-age=15552000');
+}
+
 // Agregar estas rutas en tu archivo public/index.php después de las rutas existentes
 
 // API Routes
