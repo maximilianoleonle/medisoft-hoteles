@@ -71,3 +71,6 @@ src/storage/checkin_ids/
 
 # Excepcion: schema sin datos (fuente de la BD de prueba y del CI)
 !src/database/schema.sql
+
+# Snapshots one-shot para sesiones de diseno externas (historico, no fuente)
+exports/
