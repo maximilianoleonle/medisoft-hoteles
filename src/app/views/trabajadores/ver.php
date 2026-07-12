@@ -12,6 +12,9 @@ $pagoCaja = is_array($pagoCaja ?? null) ? $pagoCaja : [];
 $pagoCajaToken = $pagoCajaToken ?? null;
 $reversionesPagoCaja = is_array($reversionesPagoCaja ?? null) ? $reversionesPagoCaja : [];
 $reversionPagoCajaTokens = is_array($reversionPagoCajaTokens ?? null) ? $reversionPagoCajaTokens : [];
+$avisoNominaPendiente = in_array($avisoNominaPendiente ?? null, ['sin_grupo', 'sin_salario'], true)
+    ? $avisoNominaPendiente
+    : null;
 
 if (!function_exists('trab_view_safe')) {
     function trab_view_safe($value, $fallback = '-')
@@ -405,6 +408,17 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     .worker-detail-page .wk-panel-pad > .wk-details .wk-form-pad > .grid { grid-template-columns: 1fr !important; }
     .worker-detail-page .wk-toolbar { justify-content: flex-start; }
 }
+.worker-detail-page .wk-aviso-nomina {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    padding: 12px 16px; border-radius: 14px;
+    background: rgba(191, 144, 0, .10);
+    border: 1px solid rgba(191, 144, 0, .30);
+    color: #7a5c00; font-size: 14px; line-height: 1.45;
+}
+.worker-detail-page .wk-aviso-nomina > i { font-size: 18px; color: #9a7400; }
+.worker-detail-page .wk-aviso-nomina > div { flex: 1 1 260px; min-width: 0; }
+.worker-detail-page .wk-aviso-nomina-btn { white-space: nowrap; }
+.worker-detail-page .wk-aviso-nomina-hint { font-size: 13px; font-style: italic; }
 @media (prefers-reduced-motion: reduce) {
     .worker-detail-page .wk-btn-gold::after { display: none; }
     .worker-detail-page .wk-balance-value,
@@ -452,6 +466,27 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
         </section>
 
         <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
+        <?php if ($avisoNominaPendiente !== null): ?>
+        <!-- Aviso: configuracion de nomina incompleta -->
+        <section class="wk-aviso-nomina" role="status">
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            <div>
+                <?php if ($avisoNominaPendiente === 'sin_grupo'): ?>
+                    <strong>Le falta su grupo de pago en N&oacute;mina.</strong>
+                    Hasta que se lo asignes, no entrar&aacute; a los periodos de n&oacute;mina (no aparecer&aacute; al calcularla).
+                <?php else: ?>
+                    <strong>Le falta registrar su salario en N&oacute;mina.</strong>
+                    Ya tiene grupo de pago, pero sin salario registrado la n&oacute;mina le calcular&aacute; sueldo de $0.
+                <?php endif; ?>
+            </div>
+            <?php if (function_exists('can') && can('nomina.view')): ?>
+                <a class="wk-btn wk-aviso-nomina-btn" href="<?= url('nomina/empleados/' . $trabajadorId) ?>"><i class="fas fa-user-gear"></i> <?= $avisoNominaPendiente === 'sin_grupo' ? 'Asignar grupo de pago' : 'Registrar salario' ?></a>
+            <?php else: ?>
+                <span class="wk-aviso-nomina-hint">P&iacute;dele a un administrador completarlo en N&oacute;mina &rarr; Empleados.</span>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
 
         <!-- Resumen de cuenta -->
         <section class="wk-summary">

@@ -41,12 +41,42 @@ class UsuarioController extends Controller {
             ? $this->usuarioModel->listarTrabajadoresHotel($hotelId)
             : $this->usuarioModel->orderBy('rol', 'ASC');
 
+        // Con roles configurables activos, un usuario sin role_id cae en
+        // silencio a los permisos antiguos (distintos a los del panel de
+        // roles). Se marca en el listado para que se le asigne rol.
+        $rolesAsignados = [];
+        $usaRolesConfigurables = false;
+        if ($hotelId) {
+            try {
+                $usaRolesConfigurables = !empty($this->rolesDelHotel($hotelId));
+                if ($usaRolesConfigurables) {
+                    $st = Database::getInstance()->query(
+                        "SELECT hu.usuario_id, r.nombre
+                         FROM hotel_usuarios hu
+                         LEFT JOIN roles r ON r.id = hu.role_id
+                         WHERE hu.hotel_id = ?",
+                        [(int) $hotelId]
+                    );
+                    foreach (($st ? $st->fetchAll() : []) as $fila) {
+                        $rolesAsignados[(int) $fila['usuario_id']] = $fila['nombre'] !== null
+                            ? (string) $fila['nombre']
+                            : null;
+                    }
+                }
+            } catch (Throwable $e) {
+                $usaRolesConfigurables = false;
+                $rolesAsignados = [];
+            }
+        }
+
         View::renderTemplate('usuarios/index', [
             'title' => 'Gestión de Usuarios',
             'usuarios' => $usuarios,
             'esGestionHotel' => (bool) $hotelId,
             'puedeCrearUsuarios' => $this->puedeGestionarUsuariosHotel(),
-            'puedeEditarUsuarios' => $this->puedeGestionarUsuariosHotel()
+            'puedeEditarUsuarios' => $this->puedeGestionarUsuariosHotel(),
+            'usaRolesConfigurables' => $usaRolesConfigurables,
+            'rolesAsignados' => $rolesAsignados
         ]);
     }
 

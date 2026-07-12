@@ -55,6 +55,13 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
 .nomina-ficha-page .fi-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
 .nomina-ficha-page .fi-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
 .nomina-ficha-page .fi-hint { font-size: 12.5px; color: var(--nom-muted); margin: 0 0 14px; }
+.nomina-ficha-page .fi-warn {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 14px;
+    padding: 9px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4;
+    background: rgba(191,144,0,.10); border: 1px solid rgba(191,144,0,.30); color: #7a5c00;
+}
+.nomina-ficha-page .fi-warn i { color: #9a7400; }
+.nomina-ficha-page .fi-warn a { color: inherit; font-weight: 700; text-decoration: underline; }
 .nomina-ficha-page .fi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .nomina-ficha-page .fi-grid { grid-template-columns: 1fr; } }
 .nomina-ficha-page .fi-field { display: flex; flex-direction: column; gap: 4px; }
@@ -94,6 +101,12 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
     <div class="fi-card">
         <h2>Asignaciones de nómina</h2>
         <p class="fi-hint">Puesto, departamento, contrato y grupo de pago. El grupo define con qué periodicidad entra a los periodos de nómina.</p>
+        <?php if ($fiGrupos === []): ?>
+        <p class="fi-warn"><i class="fas fa-triangle-exclamation"></i>
+            <span>Aún no hay grupos de pago creados: sin grupo, nadie entra a los periodos de nómina.
+            Créalos primero en <a href="<?= url('nomina/catalogos') ?>">Ajustes &rarr; Catálogos</a>.</span>
+        </p>
+        <?php endif; ?>
         <?php if ($fiPuedeEmpleados): ?>
         <form method="POST" action="<?= url('nomina/empleados/' . (int) ($fiTrab['id'] ?? 0) . '/asignaciones') ?>">
             <?= csrf_field() ?>

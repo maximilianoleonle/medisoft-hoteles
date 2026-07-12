@@ -256,7 +256,9 @@ class NominaController extends Controller {
             $db = Database::getInstance();
             $sql = "SELECT t.id, t.nombre_completo, t.rol_laboral, t.estado, t.periodicidad_pago,
                            p.nombre AS puesto, d.nombre AS departamento,
-                           g.nombre AS grupo_nomina, c.nombre AS tipo_contrato
+                           g.nombre AS grupo_nomina, c.nombre AS tipo_contrato,
+                           EXISTS(SELECT 1 FROM trabajador_salarios s
+                                  WHERE s.hotel_id = t.hotel_id AND s.trabajador_id = t.id) AS tiene_salario
                     FROM trabajadores t
                     LEFT JOIN nomina_puestos p ON p.id = t.puesto_id
                     LEFT JOIN nomina_departamentos d ON d.id = t.departamento_id

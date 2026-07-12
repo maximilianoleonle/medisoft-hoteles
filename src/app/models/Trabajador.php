@@ -438,6 +438,52 @@ class Trabajador extends Model
         return $row ?: null;
     }
 
+    /**
+     * Diagnostico de configuracion de nomina del trabajador activo:
+     *   'sin_grupo'   -> sin grupo de pago (no entra a ningun periodo de nomina)
+     *   'sin_salario' -> tiene grupo pero ningun salario registrado en nomina
+     *                    (entraria a los periodos con sueldo $0)
+     *   null          -> configuracion completa o no aplica.
+     * Las columnas/tablas las agrega la migracion de nomina avanzada; si no
+     * existen (hotel sin ese modulo/migracion) se responde null sin romper.
+     */
+    public function pendienteConfiguracionNomina(int $id, int $hotelId): ?string
+    {
+        if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT grupo_nomina_id FROM trabajadores
+                 WHERE id = ? AND hotel_id = ? AND estado = 'activo'
+                 LIMIT 1",
+                [$id, $hotelId]
+            );
+            $row = $stmt ? $stmt->fetch() : null;
+            if (!is_array($row)) {
+                return null;
+            }
+            if (empty($row['grupo_nomina_id'])) {
+                return 'sin_grupo';
+            }
+
+            $stmt = $this->db->query(
+                "SELECT COUNT(*) AS total FROM trabajador_salarios
+                 WHERE hotel_id = ? AND trabajador_id = ?",
+                [$hotelId, $id]
+            );
+            $salarios = $stmt ? $stmt->fetch() : null;
+            if (is_array($salarios) && (int) ($salarios['total'] ?? 0) === 0) {
+                return 'sin_salario';
+            }
+
+            return null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
     public function simuladorPagoCajaPorHotel(int $hotelId, array $filtros = [], int $limite = 200): array
     {
         $filtros = $this->normalizarFiltrosSimuladorPagoCaja($filtros);

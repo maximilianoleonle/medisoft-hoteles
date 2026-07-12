@@ -38,6 +38,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-emp-page .emp-badge.activo { background: rgba(46,125,50,.12); color: #2e7d32; }
 .nomina-emp-page .emp-badge.inactivo { background: rgba(191,144,0,.14); color: #9a7400; }
 .nomina-emp-page .emp-badge.baja { background: rgba(198,40,40,.10); color: #c62828; }
+.nomina-emp-page .emp-badge.sin-grupo { background: rgba(191,144,0,.14); color: #9a7400; }
+.nomina-emp-page .emp-badge.sin-grupo i { margin-right: 4px; }
 .nomina-emp-page .emp-sin-dato { color: var(--nom-muted); font-style: italic; }
 .nomina-emp-page .emp-vacio { text-align: center; padding: 34px 16px; color: var(--nom-muted); }
 .nomina-emp-page .emp-vacio i { font-size: 26px; color: var(--nom-gold); display: block; margin-bottom: 10px; }
@@ -93,7 +95,18 @@ include APP_PATH . '/views/partials/back_arrow.php';
                     <td><strong><?= htmlspecialchars($e['nombre_completo']) ?></strong></td>
                     <td><?= $e['puesto'] !== null ? htmlspecialchars($e['puesto']) : '<span class="emp-sin-dato">' . htmlspecialchars((string) ($e['rol_laboral'] ?? 'sin puesto')) . '</span>' ?></td>
                     <td><?= $e['departamento'] !== null ? htmlspecialchars($e['departamento']) : '<span class="emp-sin-dato">—</span>' ?></td>
-                    <td><?= $e['grupo_nomina'] !== null ? htmlspecialchars($e['grupo_nomina']) : '<span class="emp-sin-dato">' . htmlspecialchars(ucfirst((string) ($e['periodicidad_pago'] ?? '—'))) . '</span>' ?></td>
+                    <td>
+                        <?php if ($e['grupo_nomina'] !== null): ?>
+                            <?= htmlspecialchars($e['grupo_nomina']) ?>
+                            <?php if ((string) $e['estado'] === 'activo' && empty($e['tiene_salario'])): ?>
+                                <span class="emp-badge sin-grupo" title="Sin salario registrado en nómina: entraría a los periodos con sueldo $0. Regístralo en su ficha."><i class="fas fa-triangle-exclamation"></i>Sin salario</span>
+                            <?php endif; ?>
+                        <?php elseif ((string) $e['estado'] === 'activo'): ?>
+                            <span class="emp-badge sin-grupo" title="Sin grupo de pago no entra a los periodos de nómina. Asígnaselo en su ficha."><i class="fas fa-triangle-exclamation"></i>Sin grupo de pago</span>
+                        <?php else: ?>
+                            <span class="emp-sin-dato"><?= htmlspecialchars(ucfirst((string) ($e['periodicidad_pago'] ?? '—'))) ?></span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= $e['tipo_contrato'] !== null ? htmlspecialchars($e['tipo_contrato']) : '<span class="emp-sin-dato">—</span>' ?></td>
                     <td><span class="emp-badge <?= htmlspecialchars((string) $e['estado']) ?>"><?= htmlspecialchars(ucfirst((string) $e['estado'])) ?></span></td>
                 </tr>
