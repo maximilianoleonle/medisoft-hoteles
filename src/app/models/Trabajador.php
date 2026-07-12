@@ -484,6 +484,30 @@ class Trabajador extends Model
         }
     }
 
+    /**
+     * True si el trabajador ya tiene salario registrado en nomina
+     * (trabajador_salarios): a partir de ahi, el salario y la periodicidad
+     * de Personal son espejos que se actualizan desde Nomina.
+     */
+    public function salarioAdministradoEnNomina(int $id, int $hotelId): bool
+    {
+        if ($id <= 0 || $hotelId <= 0) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT COUNT(*) AS total FROM trabajador_salarios
+                 WHERE hotel_id = ? AND trabajador_id = ?",
+                [$hotelId, $id]
+            );
+            $row = $stmt ? $stmt->fetch() : null;
+            return is_array($row) && (int) ($row['total'] ?? 0) > 0;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
     public function simuladorPagoCajaPorHotel(int $hotelId, array $filtros = [], int $limite = 200): array
     {
         $filtros = $this->normalizarFiltrosSimuladorPagoCaja($filtros);

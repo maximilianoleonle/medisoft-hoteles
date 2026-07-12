@@ -62,6 +62,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
 }
 .nomina-ficha-page .fi-warn i { color: #9a7400; }
 .nomina-ficha-page .fi-warn a { color: inherit; font-weight: 700; text-decoration: underline; }
+.nomina-ficha-page .fi-field-hint { display: block; margin-top: 4px; font-size: 11.5px; color: var(--nom-muted); line-height: 1.35; }
 .nomina-ficha-page .fi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .nomina-ficha-page .fi-grid { grid-template-columns: 1fr; } }
 .nomina-ficha-page .fi-field { display: flex; flex-direction: column; gap: 4px; }
@@ -114,7 +115,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
                 <div class="fi-field"><label>Puesto</label><?php $fiSelect('puesto_id', $fiPuestos, $fiTrab['puesto_id'] ?? 0); ?></div>
                 <div class="fi-field"><label>Departamento</label><?php $fiSelect('departamento_id', $fiDeptos, $fiTrab['departamento_id'] ?? 0); ?></div>
                 <div class="fi-field"><label>Tipo de contrato</label><?php $fiSelect('tipo_contrato_id', $fiContratos, $fiTrab['tipo_contrato_id'] ?? 0); ?></div>
-                <div class="fi-field"><label>Grupo de pago</label><?php $fiSelect('grupo_nomina_id', $fiGrupos, $fiTrab['grupo_nomina_id'] ?? 0); ?></div>
+                <div class="fi-field"><label>Grupo de pago</label><?php $fiSelect('grupo_nomina_id', $fiGrupos, $fiTrab['grupo_nomina_id'] ?? 0); ?><small class="fi-field-hint">El calendario en el que cobra (define sus periodos de n&oacute;mina).</small></div>
             </div>
             <div class="fi-actions">
                 <button type="submit" class="fi-btn ms-pressable"><i class="fas fa-check"></i> Guardar asignaciones</button>
@@ -157,6 +158,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
                         <option value="<?= $ek ?>" <?= ($fiVigente['esquema'] ?? $fiTrab['periodicidad_pago'] ?? 'quincenal') === $ek ? 'selected' : '' ?>><?= $el ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <small class="fi-field-hint">C&oacute;mo est&aacute; expresado el monto (p. ej. $5,000 <em>por semana</em>). Puede cobrar en un calendario distinto: se prorratea por d&iacute;a.</small>
                 </div>
                 <div class="fi-field">
                     <label>Vigente desde *</label>

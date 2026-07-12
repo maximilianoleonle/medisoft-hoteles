@@ -61,6 +61,12 @@ $valoresFormulario = [
     'salario_base' => old('salario_base', trab_form_safe($trabajador['salario_base'] ?? '')),
     'notas' => old('notas', trab_form_safe($trabajador['notas'] ?? '')),
 ];
+
+// Con nomina activa, el salario/periodicidad de Personal son ESPEJO del
+// salario registrado en Nomina: se muestran bloqueados para que quede claro
+// quien manda (una sola verdad).
+$nominaActivaForm = function_exists('current_hotel_has_module') && current_hotel_has_module('nomina_avanzada');
+$salarioEnNomina = !empty($salarioEnNomina) && $nominaActivaForm;
 ?>
 
 <style>
@@ -104,7 +110,9 @@ $valoresFormulario = [
 .worker-form-page textarea.wk-textarea { min-height: 96px; resize: vertical; }
 .worker-form-page select.wk-input { cursor: pointer; }
 .worker-form-page .wk-input:focus, .worker-form-page .wk-textarea:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; background: #fff; }
-.worker-form-page .wk-hint { margin-top: 6px; font-size: .74rem; color: var(--wk-muted); font-weight: 600; }
+.worker-form-page .wk-hint { margin-top: 6px; font-size: .74rem; color: var(--wk-muted); font-weight: 600; display: block; }
+.worker-form-page .wk-hint a { color: var(--wk-gold-ink); font-weight: 700; }
+.worker-form-page .wk-input[readonly], .worker-form-page select.wk-input:disabled { background: #F1EDE4; color: var(--wk-muted); cursor: not-allowed; }
 .worker-form-page .wk-field-error { border-color: #B4392B; background: #FFF7F6; }
 .worker-form-page .wk-form-error { display: block; margin-top: 7px; color: #B4392B; font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .worker-form-page .wk-error-summary { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #F0B8AE; border-radius: 12px; background: #FFF7F6; color: #9E2A1D; font-size: .86rem; font-weight: 700; }
@@ -191,6 +199,9 @@ $valoresFormulario = [
                 <div>
                     <label for="rol_laboral">Rol o puesto</label>
                     <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'rol_laboral') ?>" id="rol_laboral" name="rol_laboral" type="text" maxlength="80" placeholder="Ej. Recepci&oacute;n, Limpieza" value="<?= $valoresFormulario['rol_laboral'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'rol_laboral', 'ms-form-error-trab_rol_laboral') ?>>
+                    <?php if ($nominaActivaForm): ?>
+                        <span class="wk-hint">Si en N&oacute;mina le asignas un puesto del cat&aacute;logo, este texto se actualiza solo.</span>
+                    <?php endif; ?>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'rol_laboral') !== ''): ?>
                         <span id="ms-form-error-trab_rol_laboral" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'rol_laboral') ?></span>
                     <?php endif; ?>
@@ -225,13 +236,17 @@ $valoresFormulario = [
 
                 <div>
                     <label for="periodicidad_pago">Cada cu&aacute;ndo se le paga</label>
-                    <select class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'periodicidad_pago') ?>" id="periodicidad_pago" name="periodicidad_pago"<?= trab_form_error_attrs($trabajadorFieldErrors, 'periodicidad_pago', 'ms-form-error-trab_periodicidad_pago') ?>>
+                    <select class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'periodicidad_pago') ?>" id="periodicidad_pago" name="periodicidad_pago"<?= $salarioEnNomina ? ' disabled' : '' ?><?= trab_form_error_attrs($trabajadorFieldErrors, 'periodicidad_pago', 'ms-form-error-trab_periodicidad_pago') ?>>
                         <option value="">Sin definir</option>
                         <option value="semanal" <?= $periodicidad === 'semanal' ? 'selected' : '' ?>>Semanal</option>
                         <option value="quincenal" <?= $periodicidad === 'quincenal' ? 'selected' : '' ?>>Quincenal</option>
                         <option value="mensual" <?= $periodicidad === 'mensual' ? 'selected' : '' ?>>Mensual</option>
                         <option value="por_evento" <?= $periodicidad === 'por_evento' ? 'selected' : '' ?>>Por evento</option>
                     </select>
+                    <?php if ($salarioEnNomina): ?>
+                        <input type="hidden" name="periodicidad_pago" value="<?= trab_form_safe($periodicidad) ?>">
+                        <span class="wk-hint"><i class="fas fa-link"></i> Se administra desde N&oacute;mina (es el esquema de su salario); aqu&iacute; solo se refleja.</span>
+                    <?php endif; ?>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'periodicidad_pago') !== ''): ?>
                         <span id="ms-form-error-trab_periodicidad_pago" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'periodicidad_pago') ?></span>
                     <?php endif; ?>
@@ -239,7 +254,16 @@ $valoresFormulario = [
 
                 <div>
                     <label for="salario_base">Salario base de referencia</label>
-                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'salario_base') ?>" id="salario_base" name="salario_base" type="number" data-money-format="true" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'salario_base', 'ms-form-error-trab_salario_base') ?>>
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'salario_base') ?>" id="salario_base" name="salario_base" type="number" data-money-format="true" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>"<?= $salarioEnNomina ? ' readonly' : '' ?><?= trab_form_error_attrs($trabajadorFieldErrors, 'salario_base', 'ms-form-error-trab_salario_base') ?>>
+                    <?php if ($salarioEnNomina): ?>
+                        <span class="wk-hint"><i class="fas fa-link"></i> Se administra desde
+                            <?php if (function_exists('can') && can('nomina.view')): ?>
+                                <a href="<?= url('nomina/empleados/' . $trabajadorId) ?>">N&oacute;mina &rarr; Empleados</a>:
+                            <?php else: ?>
+                                N&oacute;mina &rarr; Empleados:
+                            <?php endif; ?>
+                            al registrar un cambio salarial all&aacute;, este valor se actualiza solo.</span>
+                    <?php endif; ?>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'salario_base') !== ''): ?>
                         <span id="ms-form-error-trab_salario_base" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'salario_base') ?></span>
                     <?php endif; ?>

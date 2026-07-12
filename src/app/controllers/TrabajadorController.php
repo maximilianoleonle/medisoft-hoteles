@@ -780,11 +780,16 @@ class TrabajadorController extends Controller
             return;
         }
 
+        $salarioEnNomina = function_exists('current_hotel_has_module')
+            && current_hotel_has_module('nomina_avanzada')
+            && $this->trabajadorModel->salarioAdministradoEnNomina((int) $trabajador['id'], $hotelId);
+
         View::renderTemplate('trabajadores/form', [
             'title' => 'Editar trabajador - ' . current_hotel_display_name(),
             'modo' => 'editar',
             'trabajador' => $trabajador,
             'usuariosVinculables' => $this->trabajadorModel->usuariosVinculablesPorHotel($hotelId),
+            'salarioEnNomina' => $salarioEnNomina,
         ]);
     }
 
