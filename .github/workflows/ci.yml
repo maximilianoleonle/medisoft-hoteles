@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [feature/saas-multihotel, main, master]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint PHP (sintaxis)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      # php -l sobre todo el codigo propio (se excluyen librerias de terceros
+      # empaquetadas: TCPDF, fdpdf y vendor del front).
+      - name: Lint de sintaxis
+        run: |
+          set -e
+          find src -name '*.php' \
+            -not -path 'src/app/helpers/tcpdf/*' \
+            -not -path 'src/app/libs/*' \
+            -not -path 'src/public_html/vendor/*' \
+            -not -path 'src/public_html/fdpdf/*' \
+            -print0 | xargs -0 -n 50 -P 4 php -l > /dev/null
+          echo "Sintaxis OK"
+
+  tenancy:
+    name: Linter multi-tenant (queries sin hotel_id)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Linter de tenancy
+        run: php src/tools/lint_tenancy.php
+
+  tests:
+    name: Tests de invariantes de dinero
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: medisoft_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -proot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Cargar schema en BD de prueba
+        run: mysql -h127.0.0.1 -uroot -proot medisoft_test < src/database/schema.sql
+
+      - name: Ejecutar tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASS: root
+        run: php src/tests/run.php
