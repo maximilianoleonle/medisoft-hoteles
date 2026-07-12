@@ -1,3 +1,7 @@
+ > ⚠️ **SUSTITUIDO (2026-07-12):** este documento fue absorbido y superado por
+> **`PLAYBOOK-SAAS-VERTICALES.md`** (mismo directorio), que es la versión
+> definitiva y la que se le da a las IAs. Este archivo queda como histórico.
+
 # Plan maestro: el siguiente giro de negocio
 
 **Fecha:** 2026-07-12 · **Origen:** examen final de Medisoft Hoteles (6.4/10 → Operación 10 ejecutada) · **Dueño:** Maximiliano
