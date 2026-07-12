@@ -112,11 +112,6 @@ include APP_PATH . '/views/partials/back_arrow.php';
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'ajustes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
-    <div style="display:flex; flex-wrap:wrap; gap:8px; margin:-6px 0 18px;">
-        <span class="nom-btn nom-btn-primary" aria-current="page"><i class="fas fa-sliders"></i> Configuración</span>
-        <a class="nom-btn ms-pressable" href="<?= url('nomina/catalogos') ?>"><i class="fas fa-layer-group"></i> Catálogos</a>
-    </div>
-
     <form method="POST" action="<?= url('nomina/configuracion') ?>">
         <?= csrf_field() ?>
 
