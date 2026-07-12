@@ -154,17 +154,126 @@ Para cada paso: qué archivo se crea/modifica, qué test lo protege, y qué
 comando verifica que quedó bien. Marca [MANUAL] lo que el humano deba hacer
 (crear cuentas, DNS, llaves) con instrucciones exactas.
 
+DISEÑO Y TEMAS (reglas permanentes):
+- Componentes usan SOLO tokens semánticos (--superficie, --tinta, --acento...);
+  un tema = un archivo que re-mapea tokens; jamás selectores por vista; el CI
+  rechaza hex directos fuera de /themes. El white-label (--brand-*) del tenant
+  convive por encima del tema. Modo oscuro = un re-mapeo más.
+- Tú NO diseñas pantallas de usuario final de cero: cuando toque una, generas
+  el paquete de encargo en design/encargos/<pantalla>/ (PROMPT.md listo para
+  Claude Design + referencias + datos-ejemplo.json + contrato.md con lo
+  intocable) y lo marcas [DISEÑO] para el humano. Sigues con backend mientras
+  tanto; al volver la entrega, la porteas a componentes y validas el contrato.
+
 MODO DE TRABAJO PERMANENTE:
 Al final de CADA respuesta: (a) qué quedó hecho y su prueba, (b) EL SIGUIENTE
-PASO (uno solo), (c) pendientes [MANUAL] si los hay. Tienes libertad total
-para ejecutar sin preguntar todo lo reversible; pregunta solo decisiones de
-negocio. Optimiza tokens: lecturas quirúrgicas, sesiones por módulo, verifica
-con tests en lugar de relecturas.
+PASO (uno solo), (c) pendientes [MANUAL] o [DISEÑO] si los hay. Tienes
+libertad total para ejecutar sin preguntar todo lo reversible; pregunta solo
+decisiones de negocio. Optimiza tokens: lecturas quirúrgicas, sesiones por
+módulo, verifica con tests en lugar de relecturas.
 ```
 
 ---
 
-## 7. Qué sigue (en orden)
+## 7. Catálogo completo de secciones (lo que YA existe y lo que se puede AUMENTAR)
+
+Este catálogo es el menú del nuevo sistema: si un giro necesita una sección "así o similar", aquí está la receta. **Regla:** nada de esto se construye por adelantado — se construye cuando un giro lo pide, pero ya sabiendo cómo.
+
+### 7a. Lo que YA existe en Medisoft (probado en producción, se PORTA no se inventa)
+
+| Sección | Qué hace hoy | Nota de porteo al nuevo giro |
+|---|---|---|
+| Auth + sesiones | Login por tenant (slug), remember-me ligado al tenant, rate limit persistente | Lo da Laravel casi gratis; portar solo el "login por slug" |
+| RBAC configurable | Roles por tenant editables desde panel SaaS, permisos finos, presets | Portar el modelo de permisos; policies de Laravel |
+| Panel SaaS admin | Alta de tenants, módulos activables con precio, cobro mensual (Stripe), branding | Filament lo acelera 10x |
+| White-label/branding | Logo, paleta `--brand-*`, favicon, manifest PWA por tenant | Se porta el concepto tal cual |
+| Agenda/Reservas | Calendario, disponibilidad, estados, wizard móvil, descuentos, anticipos | El corazón reusable: cita médica = reserva sin habitación |
+| Ficha del cliente | Huésped: datos, documentos, vehículos, historial, lealtad | = paciente/cliente/alumno según giro |
+| Caja + cortes | Cortes con candados de concurrencia, arqueo por método, categorías por tenant | Portar CON sus tests (ya escritos) |
+| Anticipos/abonos | Dinero real ligado a caja, saldo-aware, reversos únicos | Portar CON sus tests |
+| CxC / CxP | Cuentas por cobrar/pagar, simuladores de caja, reversiones | = colegiaturas, pólizas, proveedores |
+| Compras + proveedores | Órdenes, recepción, reporte | Genérico ya |
+| Inventario | Stock, movimientos, config por "ubicación" (habitación) | = productos de salón, refacciones, insumos clínica |
+| Personal + Nómina | Empleados, incidencias, periodos, recibos, **adaptador por giro ya existente** | = comisiones de estilistas, honorarios médicos |
+| Tareas operativas | Limpieza con personal obligatorio, programación | = esterilización, mantenimiento de equipos |
+| Notificaciones + push | Centro de avisos, PWA push con enrutamiento por rol | Genérico ya |
+| WhatsApp | Recordatorios/avisos por tenant (Green-API) | Recordatorio de cita = oro en clínicas/salones |
+| Reportes + links públicos | Gerencial diario, por email, links firmados que expiran | Genérico ya |
+| Motor público de venta | Página pública por tenant: disponibilidad, cupones, extras, pago Stripe, holds | = agenda pública de citas con apartado pagado |
+| Check-in digital | Formulario público pre-llegada con token efímero | = pre-registro de paciente |
+| Reputación | Encuesta post-servicio pública + score | Genérico ya |
+| Lealtad | Puntos/beneficios por cliente | Genérico ya |
+| Canales iCal | Sync con calendarios externos | Solo si el giro lo pide |
+| Copiloto IA | Asistente con datos del negocio (API Anthropic, se revende) | Diferenciador de venta: portar |
+| Night audit / cierre | Cierre diario automático | = corte de día genérico |
+| Auditoría + vigilancia | Log de acciones, alertas financieras | Genérico ya |
+| Health + backups + offsite | /health con token, dumps verificados, rclone | Infra: se porta la receta |
+
+### 7b. Lo que NO existe y se puede AUMENTAR (con su receta corta)
+
+| Sección nueva | Para qué giro brilla | Receta (cómo se haría) |
+|---|---|---|
+| **Expediente clínico** (notas SOAP, recetas, alergias) | Clínicas | Ficha del cliente + versionado de notas + PDF de receta (TCPDF ya dominado); cifrado at-rest de campos sensibles |
+| **Membresías/suscripciones del cliente final** | Gimnasios, spas | Cashier ya cobra recurrente al TENANT; replicar el patrón hacia el cliente del tenant |
+| **Control de acceso QR/asistencia** | Gimnasios, escuelas | QR firmado por cliente + scanner PWA (cámara) + log de accesos |
+| **Comisiones por empleado/servicio** | Salones | Ya hay motor de nómina con adaptador: nuevo adaptador "comisiones" (% por servicio cobrado en caja) |
+| **Órdenes de servicio con estados y evidencia** | Talleres | Reserva + checklist + fotos (uploads ya resuelto) + firma del cliente en pantalla |
+| **Facturación CFDI real (timbrado MX)** | Todos (México) | Integrar PAC (Facturama/SW Sapien API); el módulo Facturación actual ya guarda los datos fiscales |
+| **Portal del cliente final** | Todos | Motor público ya existe; ampliarlo a "mi cuenta": historial, pagos, próximas citas |
+| **Campañas WhatsApp/marketing** | Salones, gimnasios | Cola + plantillas + segmentos (clientes sin visita en 60 días); cuidar límites de Green-API |
+| **Multi-sucursal por tenant** | Cadenas | tenant_id + sucursal_id (2 niveles); diseñar la columna desde Fase 1 aunque no se use |
+| **API pública + webhooks salientes** | Integraciones | Laravel Sanctum + eventos; solo cuando un cliente grande lo pida |
+| **Importadores CSV** (clientes, inventario) | Onboarding | Vale ORO para migrar clientes desde Excel; hacerlo en Fase 2 |
+| **Constructor de reportes / BI ligero** | Dueños | Empezar con 5 reportes fijos bien hechos; el "constructor" casi nunca se usa — no construir de inicio |
+| **Multi-idioma / multi-moneda** | Futuro | Laravel lo trae (lang files); decidir en Fase 0 si los textos nacen en archivos de idioma (sí, cuesta poco) |
+
+---
+
+## 8. Diseño: sistema de temas + protocolo Claude Design
+
+### 8a. Temas listos para crecer (Maximiliano los crea; la arquitectura los hace fáciles)
+
+Lección de Medisoft: los temas se volvieron caros porque visten VISTA por VISTA (§24b, §41 de cupertino.css). En el nuevo sistema, **agregar un tema = crear UN archivo**:
+
+1. **Todo componente usa solo tokens semánticos** (`--superficie`, `--tinta`, `--acento`, `--radio`, `--sombra-1`…). Prohibido un hex directo en una vista — el linter de CI lo rechaza (grep de `#[0-9a-f]{3,6}` fuera de /themes).
+2. Un tema es un archivo que **solo re-mapea tokens** (`themes/cupertino.css`, `themes/deleite.css`). Nunca selectores por vista.
+3. `--brand-*` (white-label del tenant) vive POR ENCIMA del tema: el tenant elige tema Y paleta, y ambos conviven — igual que hoy, pero sin fragmentación.
+4. Registro de temas en BD (`themes` table: clave, nombre, archivo, preview) + selector en el panel del tenant → agregar tema no toca código, solo suma el archivo CSS y su fila.
+5. **Modo oscuro es un re-mapeo más**, no un tema aparte (lección del dark-theme.css actual).
+
+### 8b. Protocolo Claude Design (cuándo y cómo la IA te pide diseño)
+
+El flujo que ya usaste con habitaciones/reservaciones (exports → Claude Design → porteo) se vuelve el proceso oficial. **La IA constructora NO diseña pantallas de cero: te prepara el encargo y tú lo corres en Claude Design.**
+
+Cuándo la IA dispara el protocolo — al llegar a cualquier pantalla nueva "de cara al usuario" (no formularios internos triviales), te dice:
+
+> **[DISEÑO]** Toca diseñar la pantalla X. Te dejé el paquete en `design/encargos/X/`. Córrelo en Claude Design y regrésame el HTML/capturas a `design/entregas/X/`.
+
+Qué contiene el paquete que la IA te genera (auto, cada vez):
+1. `PROMPT.md` — el prompt listo para pegar en Claude Design: objetivo de la pantalla, datos que muestra, acciones del usuario, breakpoints (móvil primero), y las reglas de tokens (§8a) para que lo que devuelva ya use `--superficie/--acento` y sea porteable sin re-trabajo.
+2. `referencias/` — 1-2 vistas ya existentes del sistema (el lenguaje visual vigente) + captura del tema activo.
+3. `datos-ejemplo.json` — datos reales de muestra para que el diseño no sea lorem ipsum.
+4. `contrato.md` — qué NO puede cambiar: rutas, nombres de campos, permisos, componentes obligatorios (tabla, toast, confirm).
+
+Qué haces tú (el humano): pegar PROMPT.md en Claude Design, iterar el gusto visual (tu criterio), y soltar el resultado en `design/entregas/X/`. La IA constructora lo portea a componentes reales, verifica contra `contrato.md`, y pasa el linter de tokens. **Diseñar nunca bloquea la construcción:** la IA sigue con lógica/backend mientras el diseño está contigo.
+
+---
+
+## 9. Cómo trabajar para sacar sistemas así MÁS RÁPIDO (la parte realista)
+
+Medisoft tomó ~10 meses. El objetivo realista del siguiente: **demo vendible en 6-10 semanas, primer cliente pagando en el mes 3.** Qué tiene que cambiar en la forma de trabajo (no solo en el código):
+
+1. **El orden de construcción se invierte.** En hoteles se construyó producto 8 meses y calidad al final (Operación 10). Ahora: Fase 0 (tests+CI+staging) es LA PRIMERA sesión. Costo: 1 día. Ahorro: los meses de re-verificación manual que ya viviste.
+2. **Vender antes de construir.** El estudio de mercado (§1) no es trámite: si 10 dueños no dicen "yo pago por eso", no se escribe ni una línea. La demo de venta se hace con la Fase 2 (UN módulo estrella), no con el sistema completo. Primer cliente de diseño = primer cliente de verdad con descuento vitalicio a cambio de feedback semanal.
+3. **Sesiones de IA cortas y con un solo objetivo.** Las sesiones maratón queman tokens y acumulan errores de contexto. Ritmo bueno: 1 sesión = 1 módulo o 1 fase chica, con su test verde y su commit al cierre. Tu rol en cada sesión: dar el objetivo al inicio, decidir lo de negocio a la mitad, probar como usuario final al cierre — 20 min tuyos por sesión de la IA.
+4. **Tu tiempo va donde la IA es débil:** hablar con clientes, criterio visual (Claude Design), decidir precios/módulos, y probar flujos como usuario real en tu teléfono. Todo lo demás (código, tests, infra, docs) es delegable con los protocolos de este documento.
+5. **No paralelices giros.** Un vertical hasta que facture; el segundo sale del MISMO core (Fase 1 ya portable) en semanas, no meses. La tentación de "mientras tanto empiezo otro" es la trampa clásica.
+6. **Cadencia semanal fija:** lunes se elige el objetivo de la semana (1 fase o 2 módulos), viernes demo funcionando en staging aunque sea feo. Lo que no cupo, no se arrastra en silencio: se re-planea el lunes.
+7. **El multiplicador real es la plantilla.** Hoteles se construyó artesanal; el giro 2 se construye desde este documento; el giro 3 debe salir de un repo template (core SaaS listo + este protocolo). Para el tercer vertical, el objetivo honesto es demo en 2-3 semanas.
+
+---
+
+## 10. Qué sigue (en orden)
 
 1. **[MANUAL] Estudio de mercado** de los 2 giros recomendados (§1): 5 entrevistas por giro a dueños reales — ¿pagarían $X/mes? ¿qué 3 funciones les venden la demo? Con eso se llena el `[GIRO ELEGIDO]` del prompt.
 2. **[MANUAL] Crear el repo nuevo** (privado) + pegar el prompt maestro en Claude y Codex (protocolo §5).
