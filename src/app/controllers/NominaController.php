@@ -444,6 +444,17 @@ class NominaController extends Controller {
                 'descripcion' => $this->getPost('descripcion'),
             ], user_id());
             set_mensaje('Incidencia registrada.', 'success');
+
+            // Volver con el filtro abarcando la fecha capturada: sin esto, una
+            // incidencia futura (o de un mes previo) quedaria fuera del rango
+            // por defecto y pareceria que no se guardo.
+            $fecha = (string) $this->getPost('fecha');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                $desde = min(date('Y-m-01'), $fecha);
+                $hasta = max(date('Y-m-d'), $fecha);
+                $this->redirect('nomina/incidencias?desde=' . $desde . '&hasta=' . $hasta);
+                return;
+            }
         } catch (Throwable $e) {
             set_mensaje($e->getMessage(), 'error');
         }
