@@ -88,6 +88,27 @@ $nomEstadoPeriodoLabels = [
     border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; font-size: 13.5px;
 }
 .nomina-page .nom-notice i { color: var(--nom-gold); margin-top: 2px; }
+.nomina-page .nom-ahora {
+    border: 1px solid color-mix(in srgb, var(--nom-gold) 50%, var(--nom-border));
+    background: color-mix(in srgb, var(--nom-gold) 10%, #ffffff);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 18px;
+}
+.nomina-page .nom-ahora h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; font-weight: 700; margin: 0 0 10px; color: color-mix(in srgb, var(--nom-gold) 72%, #000); }
+.nomina-page .nom-ahora h2 i { margin-right: 6px; }
+.nomina-page .nom-ahora ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.nomina-page .nom-ahora li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13.5px; }
+.nomina-page .nom-ahora li > i { color: var(--nom-gold); width: 16px; text-align: center; }
+.nomina-page .nom-ahora li span { flex: 1 1 260px; min-width: 0; }
+.nomina-page .nom-ahora .nom-ahora-btn {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 13px;
+    background: var(--nom-brand); color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;
+}
+.nomina-page .nom-aldia {
+    display: flex; align-items: center; gap: 10px; border: 1px solid rgba(46,125,50,.25);
+    background: rgba(46,125,50,.07); color: #23531f; border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 18px; font-size: 13.5px;
+}
+.nomina-page .nom-aldia i { color: #2e7d32; }
 .nomina-page .nom-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 768px) { .nomina-page .nom-grid { grid-template-columns: 1fr; } }
 .nomina-page .nom-card {
@@ -123,6 +144,30 @@ $nomEstadoPeriodoLabels = [
     </p>
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'inicio'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
+    <?php $nomAhora = is_array($ahoraTeToca ?? null) ? $ahoraTeToca : []; ?>
+    <?php if ($nomAhora !== []): ?>
+    <!-- Centro de mando: lo que el ciclo de nomina espera de ti hoy -->
+    <div class="nom-ahora" role="status">
+        <h2><i class="fas fa-bell"></i> Ahora te toca</h2>
+        <ul>
+            <?php foreach ($nomAhora as $nomPend): ?>
+            <li>
+                <i class="fas <?= htmlspecialchars((string) $nomPend['icono']) ?>" aria-hidden="true"></i>
+                <span><?= htmlspecialchars((string) $nomPend['texto']) ?></span>
+                <a class="nom-ahora-btn ms-pressable" href="<?= $nomPend['url'] ?>">
+                    <?= htmlspecialchars((string) $nomPend['accion']) ?> <i class="fas fa-arrow-right"></i>
+                </a>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php elseif (($nomStats['periodos_registrados'] ?? 0) > 0): ?>
+    <div class="nom-aldia" role="status">
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <div><strong>Todo al día.</strong> No hay periodos por aprobar ni pagos pendientes. La siguiente nómina se calcula en la pestaña Periodos cuando termine el ciclo en curso.</div>
+    </div>
+    <?php endif; ?>
 
     <?php if (!$nomPuedeConfigurar): ?>
     <div class="nom-notice">
