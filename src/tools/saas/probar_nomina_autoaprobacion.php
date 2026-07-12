@@ -29,6 +29,7 @@ require_once CORE_PATH . '/Database.php';
 require_once APP_PATH . '/models/ConfiguracionHotelRegistry.php';
 require_once APP_PATH . '/services/NominaCalculoService.php';
 require_once APP_PATH . '/services/NominaCierreService.php';
+require_once APP_PATH . '/services/NominaIncidenciaService.php';
 
 $HOTEL = 2;
 $fallos = 0;
@@ -105,6 +106,47 @@ try {
         $reaprobarBloqueado = (strpos($e->getMessage(), 'cerrado') !== false);
     }
     check('aprobar() manual posterior RECHAZADO (no emite creditos dobles)', $reaprobarBloqueado);
+
+    // Incidencias v2 huerfanas: una incidencia cuya fecha cae dentro del
+    // periodo cerrado jamas se pagara (snapshot congelado + candado de
+    // solape). Registrarla o aprobarla debe RECHAZARSE; rechazarla no.
+    $incSvc = new NominaIncidenciaService($db);
+    $conceptoInc = $pdo->query(
+        "SELECT id FROM nomina_conceptos
+         WHERE hotel_id = {$HOTEL} AND activo = 1 AND tipo = 'percepcion'
+           AND clasificacion NOT IN ('horas_extra', 'sueldo')
+         ORDER BY id LIMIT 1"
+    )->fetch();
+    if (!$conceptoInc) { throw new Exception('No hay conceptos de percepcion en hotel ' . $HOTEL); }
+
+    $registroBloqueado = false;
+    try {
+        $incSvc->registrar($HOTEL, [
+            'trabajador_id' => $trabId,
+            'concepto_id' => (int) $conceptoInc['id'],
+            'fecha' => '2036-03-10',
+            'monto' => '100',
+            'descripcion' => '[TEST] no debe nacer huerfana',
+        ], null);
+    } catch (Throwable $e) {
+        $registroBloqueado = (strpos($e->getMessage(), 'cerrado') !== false);
+    }
+    check('incidencia con fecha dentro del periodo cerrado RECHAZADA (no nace huerfana)', $registroBloqueado);
+
+    $pdo->prepare(
+        "INSERT INTO nomina_incidencias (hotel_id, trabajador_id, concepto_id, fecha, monto, origen, estado, created_at)
+         VALUES (?, ?, ?, '2036-03-10', 50.00, 'adaptador', 'pendiente', NOW())"
+    )->execute([$HOTEL, $trabId, (int) $conceptoInc['id']]);
+    $incPendienteId = (int) $pdo->lastInsertId();
+
+    $aprobarIncBloqueado = false;
+    try {
+        $incSvc->cambiarEstado($HOTEL, $incPendienteId, 'aprobada', null);
+    } catch (Throwable $e) {
+        $aprobarIncBloqueado = (strpos($e->getMessage(), 'cerrado') !== false);
+    }
+    check('aprobar pendiente con fecha dentro del periodo cerrado RECHAZADO', $aprobarIncBloqueado);
+    check('rechazar la pendiente huerfana SIGUE permitido (limpieza)', $incSvc->cambiarEstado($HOTEL, $incPendienteId, 'rechazada', null) === true);
 
     throw new Exception('__ROLLBACK_OK__');
 } catch (Throwable $e) {
