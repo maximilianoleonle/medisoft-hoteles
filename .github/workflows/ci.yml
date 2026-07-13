@@ -80,3 +80,10 @@ jobs:
           DB_USER: root
           DB_PASS: root
         run: php src/tests/run.php
+
+      - name: Concurrencia de dinero (candados FOR UPDATE)
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASS: root
+        run: php src/tests/concurrencia/run_concurrencia.php
