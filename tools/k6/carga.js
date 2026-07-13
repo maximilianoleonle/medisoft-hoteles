@@ -103,12 +103,15 @@ function visita(url, trend, extraHeaders) {
 }
 
 export default function () {
-  // Cada VU se loguea una vez y conserva cookies el resto de la prueba.
-  if (__ITER === 0) {
-    if (!login()) {
-      sleep(5);
-      return;
-    }
+  // Jar limpio por iteración + login: cada ciclo simula una sesión nueva
+  // (evita que el estado de cookies entre iteraciones de k6 contamine la
+  // medición). El rate limiter solo cuenta FALLOS, así que re-loguear no penaliza.
+  const jar = http.cookieJar();
+  jar.clear(BASE);
+
+  if (!login()) {
+    sleep(3);
+    return;
   }
 
   const ajax = { 'X-Requested-With': 'XMLHttpRequest' };

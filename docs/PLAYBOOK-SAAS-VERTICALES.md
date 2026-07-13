@@ -97,6 +97,29 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
    dos reglas de trabajo que más errores evitaron en hoteles.
 10. **Docs cortos por tema + memoria de proyecto**: hechos no-derivables del
     código en archivos de <30 líneas, jamás manuales gigantes.
+11. **Navegación fluida DE SERIE (día 1, no retrofit).** En hoteles se
+    retro-instaló; en el siguiente giro nace puesto. La receta completa
+    (probada en Medisoft, jul 2026):
+    - **bfcache habilitado**: el HTML dinámico responde `Cache-Control:
+      private, no-cache, must-revalidate` — JAMÁS `no-store` ni `Pragma`/
+      `Expires: 0` (eso mata el "regresar instantáneo"). Ojo: el header del
+      SERVIDOR WEB (nginx/htaccess) pisa al de PHP; configurarlo ahí.
+    - **Speculation Rules** (Chromium): `prerender` con `eagerness: moderate`
+      para el menú (clic 0ms) + `prefetch` de respaldo; `<link rel=prefetch>`
+      en hover(80ms)/touch para filas clicables y otros navegadores, con
+      dedupe + tope por página.
+    - **Exclusiones canónicas del prerender**: pantallas de dinero/estado
+      vivo (caja), pantallas cuya visita apaga avisos (notificaciones),
+      logout. Recarga forzada en `pageshow persisted` para las de dinero.
+    - **Guardas de efectos secundarios**: TODO GET con efecto (marcar leído,
+      registrar visita, archivar) verifica `Sec-Purpose`/`Purpose` y responde
+      503 a peticiones especulativas (helper `is_speculative_request()`).
+      Regla dura: ningún GET nuevo con efecto sale sin esta guarda.
+    - **Guardia de sesión**: tras logout, restauración desde bfcache fuerza
+      reload (equipos compartidos de recepción/mostrador).
+    - **View Transitions MPA**: `@view-transition { navigation: auto }` +
+      duraciones .16/.2s, con guard `prefers-reduced-motion`. Cross-fade
+      entre pantallas gratis.
 
 ---
 
@@ -116,6 +139,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
 | P10 | Sesiones de IA maratónicas multi-tema | 1 sesión = 1 objetivo con test verde y commit al cierre |
 | P11 | Construir features antes de que alguien las pida/pague | La demo se vende con UN módulo estrella. Todo lo demás espera un cliente que lo pida |
 | P12 | Paralelizar giros antes de facturar | Un vertical hasta que pague; el template hace barato el siguiente |
+| P13 | CSS compilado en el navegador (Tailwind Play CDN) | Tailwind PRECOMPILADO en build (Vite lo da gratis en Laravel). El compilador en cliente cuesta cientos de ms por página en cada carga, peor en móvil, y obliga a `unsafe-eval` en la CSP |
 
 ---
 
@@ -321,9 +345,23 @@ cuando falta información que solo el humano tiene.
    plantilla de citas" cuesta 10x menos tokens que diseñar de cero.
 7. Los prompts largos viven en archivos del repo (como este), no se re-tipean.
 
----
+### 10d. Regla de retroalimentación al playbook (permanente)
+**Toda mejora o implementación que se haga en el sistema actual se vuelca a
+este playbook EN LA MISMA SESIÓN en que se termina y verifica.** Este documento
+es la memoria acumulada de la fábrica: el giro siguiente debe nacer con lo
+mejor de todo lo aprendido, no redescubrirlo.
 
-## §11. PLANTILLA DE CLAUDE.md (copiar al repo nuevo y llenar huecos)
+Formato del vuelco (elegir el que aplique):
+- Patrón ganador transferible → nueva entrada en §3 con la receta condensada
+  (qué, cómo, y los gotchas pagados).
+- Error pagado / trampa descubierta → nueva fila en §4 (prohibición + regla
+  de reemplazo).
+- Módulo nuevo portable → línea en §7a.
+- Ajuste de stack o tooling → §5.
+
+Criterio de entrada: se vuelca lo TRANSFERIBLE a cualquier giro (patrones,
+recetas, invariantes, trampas), no lo específico de hoteles. Si la sesión
+cierra una mejora y el playbook no se tocó, la sesión no está cerrada.
 
 ```markdown
 # [MARCA] — SaaS para [GIRO]
@@ -534,6 +572,22 @@ CI verde en main.
 Registrar por entrevista: dolor #1 · herramienta actual · gasto actual ·
 número que dijeron · objeción principal · GO/NO personal.
 
+## APÉNDICE B-bis. Prueba de carga (k6) — práctica estándar de la fábrica
+
+Antes del primer cliente de cada giro se corre una prueba de carga con k6
+(receta portada de Medisoft: `tools/k6/`). No requiere instalar nada — imagen
+`grafana/k6` en la red de docker-compose. Tres escenarios: humo (validar
+script), carga (20 VUs ≈ 100 usuarios reales, con think-time), estrés (rampa
+hasta el punto de quiebre). El mismo script se reusa contra staging con
+`-e BASE_URL=`. Regla de la fábrica: **se corre local para cazar cuellos de
+código, y se repite en el VPS para medir capacidad real de la máquina.**
+Métricas que importan: `http_req_failed` ~0%, `p(95)` <500ms en vistas y
+<150ms en APIs, y qué pantalla degrada primero (candidata a optimizar).
+Ejercitar SIEMPRE también un escenario de POSTs de dinero contra la BD de
+prueba (es donde los candados FOR UPDATE se tensan). Baseline de referencia
+de hoteles: `docs/prueba-carga-baseline.md` (aguantó ~100 usuarios reales con
+p95 162ms y 0% error).
+
 ## APÉNDICE B. Invariantes de dinero canónicos (tests obligatorios, portados de Medisoft)
 
 1. Solo puede existir UN corte abierto por caja (candado de fila + re-check).
@@ -565,7 +619,9 @@ número que dijeron · objeción principal · GO/NO personal.
 6. Staging: subdominio + deploy por Action (build → migrate → restart).
 7. CLAUDE.md (§11 llenado) + carpeta `design/{encargos,entregas}` + este
    playbook copiado a `docs/`.
-8. Commit `feat: fase 0 — cimientos` con CI verde. → Criterio de salida §8.
+8. Portar `tools/k6/` (prueba de carga) — se ejercita al cerrar Fase 3 (dinero)
+   y antes del primer cliente (Apéndice B-bis).
+9. Commit `feat: fase 0 — cimientos` con CI verde. → Criterio de salida §8.
 
 ---
 
