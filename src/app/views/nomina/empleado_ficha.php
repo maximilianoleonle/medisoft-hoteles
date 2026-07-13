@@ -55,6 +55,14 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
 .nomina-ficha-page .fi-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
 .nomina-ficha-page .fi-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 4px; font-weight: 600; }
 .nomina-ficha-page .fi-hint { font-size: 12.5px; color: var(--nom-muted); margin: 0 0 14px; }
+.nomina-ficha-page .fi-warn {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 14px;
+    padding: 9px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4;
+    background: rgba(191,144,0,.10); border: 1px solid rgba(191,144,0,.30); color: #7a5c00;
+}
+.nomina-ficha-page .fi-warn i { color: #9a7400; }
+.nomina-ficha-page .fi-warn a { color: inherit; font-weight: 700; text-decoration: underline; }
+.nomina-ficha-page .fi-field-hint { display: block; margin-top: 4px; font-size: 11.5px; color: var(--nom-muted); line-height: 1.35; }
 .nomina-ficha-page .fi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .nomina-ficha-page .fi-grid { grid-template-columns: 1fr; } }
 .nomina-ficha-page .fi-field { display: flex; flex-direction: column; gap: 4px; }
@@ -94,6 +102,12 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
     <div class="fi-card">
         <h2>Asignaciones de nómina</h2>
         <p class="fi-hint">Puesto, departamento, contrato y grupo de pago. El grupo define con qué periodicidad entra a los periodos de nómina.</p>
+        <?php if ($fiGrupos === []): ?>
+        <p class="fi-warn"><i class="fas fa-triangle-exclamation"></i>
+            <span>Aún no hay grupos de pago creados: sin grupo, nadie entra a los periodos de nómina.
+            Créalos primero en <a href="<?= url('nomina/catalogos') ?>">Ajustes &rarr; Catálogos</a>.</span>
+        </p>
+        <?php endif; ?>
         <?php if ($fiPuedeEmpleados): ?>
         <form method="POST" action="<?= url('nomina/empleados/' . (int) ($fiTrab['id'] ?? 0) . '/asignaciones') ?>">
             <?= csrf_field() ?>
@@ -101,7 +115,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
                 <div class="fi-field"><label>Puesto</label><?php $fiSelect('puesto_id', $fiPuestos, $fiTrab['puesto_id'] ?? 0); ?></div>
                 <div class="fi-field"><label>Departamento</label><?php $fiSelect('departamento_id', $fiDeptos, $fiTrab['departamento_id'] ?? 0); ?></div>
                 <div class="fi-field"><label>Tipo de contrato</label><?php $fiSelect('tipo_contrato_id', $fiContratos, $fiTrab['tipo_contrato_id'] ?? 0); ?></div>
-                <div class="fi-field"><label>Grupo de pago</label><?php $fiSelect('grupo_nomina_id', $fiGrupos, $fiTrab['grupo_nomina_id'] ?? 0); ?></div>
+                <div class="fi-field"><label>Grupo de pago</label><?php $fiSelect('grupo_nomina_id', $fiGrupos, $fiTrab['grupo_nomina_id'] ?? 0); ?><small class="fi-field-hint">El calendario en el que cobra (define sus periodos de n&oacute;mina).</small></div>
             </div>
             <div class="fi-actions">
                 <button type="submit" class="fi-btn ms-pressable"><i class="fas fa-check"></i> Guardar asignaciones</button>
@@ -144,6 +158,7 @@ $fiSelect = function (string $name, array $opciones, $seleccionado) {
                         <option value="<?= $ek ?>" <?= ($fiVigente['esquema'] ?? $fiTrab['periodicidad_pago'] ?? 'quincenal') === $ek ? 'selected' : '' ?>><?= $el ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <small class="fi-field-hint">C&oacute;mo est&aacute; expresado el monto (p. ej. $5,000 <em>por semana</em>). Puede cobrar en un calendario distinto: se prorratea por d&iacute;a.</small>
                 </div>
                 <div class="fi-field">
                     <label>Vigente desde *</label>

@@ -6,7 +6,7 @@
  * Uso (antes del include):
  *   $subnav_section = 'personal' | 'nomina';
  *   $subnav_active  = 'equipo'|'pagos'|'prenomina'|'informes'   (personal)
- *                     'inicio'|'incidencias'|'periodos'|'empleados'|'ajustes' (nomina)
+ *                     'inicio'|'incidencias'|'periodos'|'empleados'|'catalogos'|'ajustes' (nomina)
  *   include APP_PATH . '/views/partials/section_subnav.php';
  *
  * Solo navegación de sección: las acciones contextuales (exportar, filtros,
@@ -22,10 +22,11 @@ if ($subnavSection === 'nomina') {
         'incidencias' => ['url' => url('nomina/incidencias'), 'icono' => 'fa-clipboard-list', 'label' => 'Incidencias'],
         'periodos'    => ['url' => url('nomina/periodos'),    'icono' => 'fa-calendar-week',  'label' => 'Periodos'],
         'empleados'   => ['url' => url('nomina/empleados'),   'icono' => 'fa-address-book',   'label' => 'Empleados'],
-        'ajustes'     => $subnavPuedeConfigurar
-            ? ['url' => url('nomina/configuracion'), 'icono' => 'fa-sliders',     'label' => 'Ajustes']
-            : ['url' => url('nomina/catalogos'),     'icono' => 'fa-layer-group', 'label' => 'Catálogos'],
+        'catalogos'   => ['url' => url('nomina/catalogos'),   'icono' => 'fa-layer-group',    'label' => 'Catálogos'],
     ];
+    if ($subnavPuedeConfigurar) {
+        $subnavTabs['ajustes'] = ['url' => url('nomina/configuracion'), 'icono' => 'fa-sliders', 'label' => 'Ajustes'];
+    }
     $subnavAria = 'Secciones de Nómina';
 } else {
     $subnavTabs = [

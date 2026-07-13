@@ -125,6 +125,22 @@ class NominaCalculoService {
             $bloqueado = true;
         }
 
+        // Incidencias en estado 'pendiente' dentro del rango: el calculo solo
+        // toma aprobadas, asi que sin este aviso se quedarian fuera en silencio.
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total FROM nomina_incidencias i
+             INNER JOIN trabajadores t
+                ON t.id = i.trabajador_id AND t.hotel_id = i.hotel_id
+             WHERE i.hotel_id = ? AND i.estado = 'pendiente'
+               AND i.fecha BETWEEN ? AND ?
+               AND t.grupo_nomina_id = ? AND t.estado = 'activo'"
+        );
+        $st->execute([$hotelId, $fechaInicio, $fechaFin, $grupoId]);
+        $incidenciasPendientes = (int) ($st->fetch()['total'] ?? 0);
+        if ($incidenciasPendientes > 0) {
+            $alertas[] = 'Hay ' . $incidenciasPendientes . ' incidencia(s) pendiente(s) de aprobar en este rango: NO entran al calculo hasta aprobarlas en Nomina > Incidencias.';
+        }
+
         $filas = [];
         $totales = [
             'percepciones' => 0.0, 'deducciones_lineas' => 0.0, 'bruto' => 0.0,

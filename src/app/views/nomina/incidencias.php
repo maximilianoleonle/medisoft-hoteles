@@ -36,6 +36,12 @@ include APP_PATH . '/views/partials/back_arrow.php';
     border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
 }
 .nomina-inc-page .inc-alert a { color: inherit; font-weight: 700; text-decoration: underline; }
+.nomina-inc-page .inc-field-hint { font-size: 11px; color: var(--nom-muted); line-height: 1.3; }
+.nomina-inc-page .inc-guia {
+    margin: 12px 0 0; padding: 9px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45;
+    background: color-mix(in srgb, var(--nom-gold) 9%, #ffffff); border: 1px solid color-mix(in srgb, var(--nom-gold) 30%, #ffffff);
+    color: color-mix(in srgb, var(--nom-gold) 72%, #000);
+}
 .nomina-inc-page .inc-field input, .nomina-inc-page .inc-field select {
     border: 1px solid var(--nom-border); border-radius: 10px; padding: 9px 11px; font-size: 16px; background: #fff; color: var(--nom-text); width: 100%;
 }
@@ -102,7 +108,10 @@ include APP_PATH . '/views/partials/back_arrow.php';
                         onchange="this.setCustomValidity('')">
                     <option value=""><?= $inConceptos === [] ? 'Sin conceptos activos' : '-- Selecciona --' ?></option>
                     <?php foreach ($inConceptos as $c): ?>
-                    <option value="<?= (int) $c['id'] ?>">
+                    <option value="<?= (int) $c['id'] ?>"
+                            data-modo="<?= htmlspecialchars((string) ($c['modo_calculo'] ?? 'manual')) ?>"
+                            data-default="<?= $c['monto_default'] !== null ? htmlspecialchars((string) $c['monto_default']) : '' ?>"
+                            data-tipo="<?= htmlspecialchars((string) ($c['tipo'] ?? '')) ?>">
                         <?= htmlspecialchars($c['nombre']) ?> (<?= $c['tipo'] === 'percepcion' ? '+' : '−' ?>)
                     </option>
                     <?php endforeach; ?>
@@ -111,23 +120,69 @@ include APP_PATH . '/views/partials/back_arrow.php';
             <div class="inc-field">
                 <label>Fecha *</label>
                 <input type="date" name="fecha" required value="<?= date('Y-m-d') ?>">
+                <small class="inc-field-hint">Cuenta en el periodo que incluya este d&iacute;a.</small>
             </div>
             <div class="inc-field" style="flex:0 1 110px; min-width:100px;">
                 <label>Cantidad</label>
-                <input type="number" name="cantidad" min="0.01" step="0.01" placeholder="hrs/uds">
+                <input type="number" name="cantidad" id="inc-cantidad" min="0.01" step="0.01" placeholder="hrs/uds">
+                <small class="inc-field-hint">Solo horas o piezas.</small>
             </div>
             <div class="inc-field" style="flex:0 1 130px; min-width:110px;">
                 <label>Monto</label>
-                <input type="number" name="monto" min="0" step="0.01" placeholder="opcional">
+                <input type="number" name="monto" id="inc-monto" min="0" step="0.01" placeholder="$">
+                <small class="inc-field-hint" id="inc-monto-hint">En pesos.</small>
             </div>
             <div class="inc-field" style="flex:2 1 180px;">
                 <label>Descripción</label>
-                <input type="text" name="descripcion" maxlength="200">
+                <input type="text" name="descripcion" maxlength="200" placeholder="Ej. cubrió turno del sábado">
             </div>
             <div class="inc-field" style="flex:0 0 auto;">
                 <button type="submit" class="inc-btn ms-pressable" <?= $inPuedeRegistrar ? '' : 'disabled' ?>><i class="fas fa-check"></i> Registrar</button>
             </div>
         </form>
+        <p class="inc-guia" id="inc-guia" hidden></p>
+        <script>
+        (function () {
+            var sel = document.querySelector('.nomina-inc-page select[name="concepto_id"]');
+            var guia = document.getElementById('inc-guia');
+            var cantidad = document.getElementById('inc-cantidad');
+            var monto = document.getElementById('inc-monto');
+            if (!sel || !guia) { return; }
+
+            function pesos(v) {
+                var n = parseFloat(v);
+                return isNaN(n) ? '' : '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2 });
+            }
+
+            sel.addEventListener('change', function () {
+                var op = sel.options[sel.selectedIndex];
+                if (!op || !op.value) { guia.hidden = true; return; }
+                var modo = op.getAttribute('data-modo') || 'manual';
+                var def = op.getAttribute('data-default') || '';
+                var suma = (op.getAttribute('data-tipo') === 'percepcion');
+                var texto = '';
+
+                if (modo === 'por_cantidad') {
+                    texto = 'Este concepto se paga POR CANTIDAD: captura las horas o piezas en "Cantidad". ';
+                    texto += def !== ''
+                        ? 'El precio por unidad ya está en el catálogo (' + pesos(def) + '); deja "Monto" vacío o ponlo solo si esta vez vale distinto.'
+                        : 'En "Monto" pon cuánto vale cada hora o pieza.';
+                    cantidad.placeholder = 'hrs/uds';
+                    monto.placeholder = def !== '' ? pesos(def) + ' c/u' : '$ por unidad';
+                } else {
+                    texto = 'Este concepto es de MONTO DIRECTO: deja "Cantidad" vacío. ';
+                    texto += def !== ''
+                        ? 'Si dejas "Monto" vacío se usa el del catálogo (' + pesos(def) + ').'
+                        : 'Captura el monto total en "Monto".';
+                    cantidad.placeholder = 'no aplica';
+                    monto.placeholder = def !== '' ? pesos(def) : '$';
+                }
+                texto += suma ? ' Le SUMA al pago.' : ' Le DESCUENTA al pago.';
+                guia.textContent = texto;
+                guia.hidden = false;
+            });
+        })();
+        </script>
     </div>
     <?php endif; ?>
 
@@ -167,7 +222,11 @@ include APP_PATH . '/views/partials/back_arrow.php';
 
     <div class="inc-card">
         <?php if ($inLista === []): ?>
-        <div class="inc-vacio"><i class="fas fa-clipboard-list"></i> Sin incidencias en el rango seleccionado.</div>
+        <div class="inc-vacio"><i class="fas fa-clipboard-list"></i> Sin incidencias entre el
+            <strong><?= htmlspecialchars((string) ($inFiltros['desde'] ?? '')) ?></strong> y el
+            <strong><?= htmlspecialchars((string) ($inFiltros['hasta'] ?? '')) ?></strong>.<br>
+            <span style="font-size:12px;">Solo se muestran las que caen en ese rango: si registraste una con otra fecha, ajusta los filtros "Desde/Hasta" de arriba.</span>
+        </div>
         <?php else: ?>
         <table class="inc-tabla">
             <thead>

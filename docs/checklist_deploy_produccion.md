@@ -10,7 +10,10 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 
 ## 2. Base de datos
 - [ ] MySQL 8 con contraseñas fuertes (no las de desarrollo).
-- [ ] Importar esquema: correr TODAS las migraciones de `migrations/` en orden.
+- [ ] Importar esquema: `src/database/schema.sql` (estructura) y luego registrar línea base:
+      `docker exec medisoft_hoteles_app php /var/www/html/tools/migrate.php baseline`.
+- [ ] En adelante, tras cada deploy/merge: `... tools/migrate.php up` (runner con tabla
+      `schema_migrations`; `status` muestra pendientes). Ya NO se aplican migraciones a mano.
 - [ ] Verificar `sql_mode` incluye `only_full_group_by` (el código ya es compatible).
 - [ ] Usuario de BD con permisos solo sobre la BD de la app (no root).
 
@@ -22,6 +25,10 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 - [ ] `ANTHROPIC_API_KEY`: llave de producción (OJO: la de dev dio 401 el 2026-07-09 — generar una NUEVA en console.anthropic.com; sin ella los bloques IA que se venden no funcionan).
 - [ ] `MYSQL_BUFFER_POOL`: memoria de trabajo de MySQL segun RAM del VPS (~50-60% si comparte con PHP; ej. `2G` en VPS de 4 GB; default 1G).
 - [ ] Docker: recordar que el env se inyecta al CREAR el contenedor (`docker compose up -d`).
+- [ ] `DB_STRICT_ERRORS=true` (2026-07-11): las queries rotas truenan con request_id en vez de
+      disfrazarse de "sin datos". En dev ya cazó una migración sin aplicar.
+- [ ] `HEALTH_TOKEN`: generar (`openssl rand -hex 16`) — sin él `/health` responde 404.
+- [ ] `BACKUP_RCLONE_REMOTE`: destino offsite del backup (ver 6b).
 
 ## 4. Seguridad (estado y pendientes)
 - [x] SEC-001 rate-limit de logins — hecho (tabla login_intentos, sobrevive sesión nueva).
@@ -33,6 +40,11 @@ Actualizado: 2026-07-03. Orden pensado para la primera puesta en producción.
 - [ ] phpMyAdmin: NO exponer en producción (quitar del compose o proteger por IP/VPN).
 - [x] Puerto MySQL no expuesto públicamente (compose prod sin `ports` en db).
 - [x] Backups automáticos diarios de BD + uploads — ver sección 6b (falta solo el offsite).
+- [x] CSRF GLOBAL (2026-07-11): Router valida token en TODO POST/PUT/PATCH/DELETE autenticado
+      (públicas exentas: webhooks con firma + formularios con token en URL); `js/csrf-shield.js`
+      inyecta el token en XHR/fetch/forms automáticamente. Verificado: forjado → 403.
+- [x] Tests de invariantes de dinero + aislamiento multi-tenant en CI (2026-07-11):
+      `php src/tests/run.php` (38 asserts) + linter ratchet `src/tools/lint_tenancy.php`.
 - [x] Deudas MEDIAS de auditorías previas (cerradas 2026-07-10): rate-limit fail-closed en iniciar-pago + tope global 60/min por hotel (probado), `llave()` exige 32 bytes (probado), CSV injection neutralizado en todos los exports (server y client-side), TOCTOU de cierre/reabrir nómina ya corregido en commits previos (verificado).
 
 ## 5. Motor de reservas (por hotel que lo contrate)
@@ -65,8 +77,20 @@ Son CUATRO crons de la app + backup. Instalar el bloque completo (ajustar `/ruta
 ## 6b. Backups (hecho 2026-07-09 — mantener)
 - [x] `tools/backup_db.sh`: mysqldump --single-transaction (no bloquea la operacion) + uploads; retencion BD 30d, uploads 7d; verifica integridad del dump y falla ruidosamente.
 - [x] `tools/restore_db.sh --verificar`: restaura en BD temporal sin tocar la real (probado: 113 tablas). `--real` para desastre, con confirmacion tecleada.
-- [ ] OFFSITE: sincronizar `backups/` a un destino FUERA del VPS (rclone a S3/B2/Drive). Un backup en el mismo disco no sobrevive al VPS.
+- [x] OFFSITE en el script (2026-07-11): `backup_db.sh` sube BD+uploads vía rclone si
+      `BACKUP_RCLONE_REMOTE` está en `.env` (retención remota 30d/7d; sin la variable avisa
+      [WARN] y sigue). Falta en el servidor: `apt install rclone` + `rclone config` (B2/R2/S3)
+      + poner la variable.
 - [ ] Probar `--verificar` en el servidor tras el primer backup nocturno.
+
+## 6c. Monitoreo externo (para enterarse ANTES que el hotel)
+- [ ] Alta en UptimeRobot (gratis) u otro: monitor HTTPS a
+      `https://DOMINIO/health?token=HEALTH_TOKEN` cada 5 min, alerta a correo/Telegram.
+      El endpoint ya verifica BD + tablas + hoteles activos (HealthController).
+- [ ] Segundo monitor "keyword" al login público (`/h/SLUG/login` debe contener el nombre
+      del hotel) para detectar 500s que el health no cubre.
+- [ ] Simulacro de restauración TRIMESTRAL cronometrado: `restore_db.sh --verificar` +
+      anotar minutos en esta línea. Última vez: PENDIENTE en servidor (en dev: 2026-07-09).
 
 ## 7. Humo post-deploy (15 min)
 - [ ] Login por slug de un hotel + dashboard carga.

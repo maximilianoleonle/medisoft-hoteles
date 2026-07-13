@@ -65,6 +65,18 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-pd-page .pd-anular-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .nomina-pd-page .pd-anular-form input { border: 1px solid var(--nom-border); border-radius: 10px; padding: 8px 11px; font-size: 16px; min-width: 240px; }
 .nomina-pd-page .pd-aviso { border: 1px dashed var(--nom-border); border-radius: 12px; padding: 10px 13px; font-size: 12.5px; color: var(--nom-muted); margin-bottom: 14px; }
+.nomina-pd-page .pd-next {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    border-radius: 13px; padding: 12px 16px; margin-bottom: 14px;
+    font-size: 13.5px; line-height: 1.45; border: 1px solid;
+}
+.nomina-pd-page .pd-next > i { font-size: 17px; }
+.nomina-pd-page .pd-next > div { flex: 1 1 280px; min-width: 0; }
+.nomina-pd-page .pd-next.is-warn { background: rgba(191,144,0,.10); border-color: rgba(191,144,0,.30); color: #7a5c00; }
+.nomina-pd-page .pd-next.is-warn > i { color: #9a7400; }
+.nomina-pd-page .pd-next.is-ok { background: rgba(46,125,50,.09); border-color: rgba(46,125,50,.28); color: #23531f; }
+.nomina-pd-page .pd-next.is-ok > i { color: #2e7d32; }
+.nomina-pd-page .pd-next.is-muted { background: color-mix(in srgb, var(--nom-surface) 55%, #fff); border-color: var(--nom-border); color: var(--nom-muted); }
 </style>
 
 <div class="nomina-pd-page">
@@ -81,6 +93,56 @@ include APP_PATH . '/views/partials/back_arrow.php';
     </p>
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'periodos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+
+    <?php
+    // ¿Y ahora qué sigue? — calculado del estado REAL del periodo.
+    $pdEstadoRaw = (string) ($pd['estado'] ?? '');
+    $pdPendiente = (float) ($pd['pendiente_pago_total'] ?? 0);
+    $pdPagadoCompleto = $pdEstadoRaw === 'aprobado' && $pdPendiente <= 0.009;
+    ?>
+    <?php if ($pdEsV2 && $pdEstadoRaw !== 'anulado'): ?>
+        <?php
+        $nomina_pasos_actual = $pdEstadoRaw === 'cerrado' ? 3 : 4;
+        $nomina_pasos_completado = $pdPagadoCompleto;
+        include APP_PATH . '/views/partials/nomina_pasos.php';
+        ?>
+    <?php endif; ?>
+
+    <?php if ($pdEsV2 && $pdEstadoRaw === 'cerrado'): ?>
+    <div class="pd-next is-warn" role="status">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>
+            <strong>Los números ya quedaron congelados, pero todavía no se puede pagar.</strong>
+            Falta el paso 3: aprobar el periodo.
+            <?= $pdPuedeAprobar ? 'Revisa las cifras de abajo y, si cuadran, pica el botón verde.' : 'Pídele a alguien con permiso de aprobación que lo revise y apruebe.' ?>
+        </div>
+    </div>
+    <?php elseif ($pdEsV2 && $pdEstadoRaw === 'aprobado' && !$pdPagadoCompleto): ?>
+    <div class="pd-next is-warn" role="status">
+        <i class="fas fa-hand-holding-dollar" aria-hidden="true"></i>
+        <div>
+            <strong>Aprobado: hay $<?= number_format($pdPendiente, 2) ?> esperando pago.</strong>
+            Último paso: entrega el dinero con el botón <em>"Registrar pagos en Personal (Caja)"</em> de abajo
+            (necesitas un corte de Caja abierto).
+        </div>
+    </div>
+    <?php elseif ($pdPagadoCompleto): ?>
+    <div class="pd-next is-ok" role="status">
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <div>
+            <strong>Periodo pagado por completo.</strong>
+            La nómina de este periodo está terminada: no hay nada más que hacer aquí.
+        </div>
+    </div>
+    <?php elseif ($pdEstadoRaw === 'anulado'): ?>
+    <div class="pd-next is-muted" role="status">
+        <i class="fas fa-ban" aria-hidden="true"></i>
+        <div>
+            <strong>Este periodo está anulado:</strong> no cuenta para pagos. Si necesitas volver a pagarlo,
+            calcula de nuevo el periodo desde la pestaña Periodos.
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if (!$pdEsV2): ?>
     <div class="pd-aviso">
@@ -110,7 +172,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/aprobar') ?>"
               data-ms-confirm data-ms-type="info" data-ms-icon="wallet"
               data-ms-title="Aprobar periodo"
-              data-ms-msg="Al aprobar, los pagos por Caja desde este snapshot quedan habilitados. ¿Aprobar?"
+              data-ms-msg="Al aprobar se habilita el último paso: pagar desde Caja. Revisa las cifras antes — un periodo aprobado ya no se modifica. ¿Aprobar?"
               data-ms-ok="Aprobar">
             <?= csrf_field() ?>
             <button type="submit" class="pd-btn pd-btn-primary ms-pressable"><i class="fas fa-check-double"></i> Aprobar periodo</button>

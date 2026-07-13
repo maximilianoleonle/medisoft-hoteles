@@ -693,9 +693,15 @@ class TrabajadorController extends Controller
             }
         }
 
+        $avisoNominaPendiente = (function_exists('current_hotel_has_module')
+            && current_hotel_has_module('nomina_avanzada'))
+            ? $this->trabajadorModel->pendienteConfiguracionNomina($id, $hotelId)
+            : null;
+
         View::renderTemplate('trabajadores/ver', [
             'title' => 'Trabajador #' . $id . ' - ' . current_hotel_display_name(),
             'trabajador' => $trabajador,
+            'avisoNominaPendiente' => $avisoNominaPendiente,
             'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
             'conceptosLaborales' => $this->trabajadorModel->conceptosLaboralesPorTrabajador($id, $hotelId, 12),
             'pagosCajaLaborales' => $pagosCajaLaborales,
@@ -774,11 +780,16 @@ class TrabajadorController extends Controller
             return;
         }
 
+        $salarioEnNomina = function_exists('current_hotel_has_module')
+            && current_hotel_has_module('nomina_avanzada')
+            && $this->trabajadorModel->salarioAdministradoEnNomina((int) $trabajador['id'], $hotelId);
+
         View::renderTemplate('trabajadores/form', [
             'title' => 'Editar trabajador - ' . current_hotel_display_name(),
             'modo' => 'editar',
             'trabajador' => $trabajador,
             'usuariosVinculables' => $this->trabajadorModel->usuariosVinculablesPorHotel($hotelId),
+            'salarioEnNomina' => $salarioEnNomina,
         ]);
     }
 

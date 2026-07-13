@@ -131,6 +131,72 @@ class Router {
     }
     
     /**
+     * Middleware CSRF global para métodos mutantes.
+     *
+     * El token llega por campo de formulario o header (csrf_token_from_request);
+     * el escudo del navegador (js/csrf-shield.js) lo inyecta automáticamente en
+     * XHR, fetch y forms POST, así que un rechazo aquí significa petición forjada,
+     * sesión/token expirado o un cliente sin el escudo.
+     */
+    private function checkCsrf($url, $method) {
+        if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            return true;
+        }
+
+        // Rutas públicas: webhooks verificados por firma y formularios públicos
+        // con token efímero en la URL. No dependen de la sesión.
+        if ($this->isPublicRoute($url, $method)) {
+            return true;
+        }
+
+        if (!function_exists('verify_csrf_token')) {
+            return true; // Helpers no cargados (contexto CLI/pruebas): no bloquear.
+        }
+
+        $token = function_exists('csrf_token_from_request')
+            ? csrf_token_from_request()
+            : ($_POST['csrf_token'] ?? null);
+
+        if (verify_csrf_token($token)) {
+            return true;
+        }
+
+        if (function_exists('ms_log')) {
+            ms_log('warning', 'CSRF global: token ausente o inválido', [
+                'ruta' => $url,
+                'metodo' => $method,
+            ]);
+        }
+
+        $esAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $aceptaJson = strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+
+        if ($esAjax || $aceptaJson) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Tu sesión de seguridad expiró. Recarga la página e inténtalo de nuevo.',
+                'csrf' => true,
+            ]);
+            exit;
+        }
+
+        if (function_exists('set_mensaje')) {
+            set_mensaje('Tu sesión de seguridad expiró. Vuelve a intentarlo.', 'error');
+        }
+
+        $volverA = $_SERVER['HTTP_REFERER'] ?? null;
+        $destino = ($volverA && strpos($volverA, ($_SERVER['HTTP_HOST'] ?? '')) !== false)
+            ? $volverA
+            : (function_exists('url') ? url('dashboard') : '/');
+
+        header('Location: ' . $destino, true, 303);
+        exit;
+    }
+
+    /**
      * Obtener todas las rutas
      */
     public function getRoutes() {
@@ -235,6 +301,14 @@ class Router {
         $method = $_SERVER['REQUEST_METHOD'];
         if (!$this->checkAuthentication($url, $method)) {
             return; // Ya se manejó la redirección en checkAuthentication
+        }
+
+        // CSRF global: toda petición mutante autenticada debe traer token válido.
+        // Las rutas públicas quedan exentas (webhooks con firma propia y formularios
+        // públicos protegidos por token efímero en la URL). Los controladores que ya
+        // llaman validateCSRF() siguen funcionando igual: validar dos veces es inocuo.
+        if (!$this->checkCsrf($url, $method)) {
+            return; // Ya se respondió el rechazo en checkCsrf
         }
         
         if ($this->match($url)) {

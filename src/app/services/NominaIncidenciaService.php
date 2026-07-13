@@ -87,6 +87,7 @@ class NominaIncidenciaService {
         }
 
         $fecha = $this->normalizarFecha((string) ($datos['fecha'] ?? ''));
+        $this->assertFechaFueraDePeriodoCongelado($hotelId, $trabajadorId, $fecha);
 
         $cantidad = null;
         if (isset($datos['cantidad']) && $datos['cantidad'] !== '') {
@@ -187,6 +188,12 @@ class NominaIncidenciaService {
             throw new Exception('La incidencia ya forma parte de un periodo cerrado: anula el periodo antes de modificarla.');
         }
 
+        // Aprobar una pendiente cuya fecha ya quedo dentro de un periodo
+        // cerrado la dejaria huerfana (nunca entraria a ninguna nomina).
+        if ($estado === 'aprobada') {
+            $this->assertFechaFueraDePeriodoCongelado($hotelId, (int) $incidencia['trabajador_id'], (string) $incidencia['fecha']);
+        }
+
         $st = $this->db->query(
             "UPDATE nomina_incidencias
              SET estado = ?, aprobado_por = ?, aprobado_at = NOW(), updated_by = ?
@@ -208,6 +215,44 @@ class NominaIncidenciaService {
         ]);
 
         return true;
+    }
+
+    /**
+     * Una incidencia cuya fecha cae dentro de un periodo v2 NO anulado del
+     * trabajador quedaria HUERFANA: ese periodo ya congelo su snapshot y
+     * ningun periodo futuro puede solapar el rango, asi que jamas se pagaria.
+     * Mismo candado que el ledger v1 (Trabajador::assertFechaFueraDePeriodoNominaCongelado).
+     */
+    private function assertFechaFueraDePeriodoCongelado(int $hotelId, int $trabajadorId, string $fecha): void {
+        $st = $this->db->query(
+            "SELECT grupo_nomina_id FROM trabajadores WHERE id = ? AND hotel_id = ?",
+            [$trabajadorId, $hotelId]
+        );
+        $grupoId = $st !== false ? (int) (($st->fetch()['grupo_nomina_id'] ?? 0)) : 0;
+
+        $st = $this->db->query(
+            "SELECT p.etiqueta, p.fecha_inicio, p.fecha_fin
+             FROM trabajador_nomina_periodos p
+             WHERE p.hotel_id = ? AND p.motor = 'v2' AND p.estado != 'anulado'
+               AND ? BETWEEN p.fecha_inicio AND p.fecha_fin
+               AND (
+                    (p.grupo_nomina_id IS NOT NULL AND p.grupo_nomina_id = ?)
+                 OR EXISTS (
+                        SELECT 1 FROM trabajador_nomina_periodo_detalles d
+                        WHERE d.periodo_id = p.id AND d.trabajador_id = ?
+                    )
+               )
+             LIMIT 1",
+            [$hotelId, $fecha, $grupoId, $trabajadorId]
+        );
+        $periodo = $st !== false ? $st->fetch() : null;
+        if ($periodo) {
+            throw new Exception(
+                'La fecha cae dentro del periodo de nomina ya cerrado "' . (string) $periodo['etiqueta'] . '" ('
+                . (string) $periodo['fecha_inicio'] . ' a ' . (string) $periodo['fecha_fin']
+                . '): la incidencia no entraria a esa nomina ni a ninguna futura. Captura una fecha posterior al periodo o anula el periodo.'
+            );
+        }
     }
 
     private function normalizarFecha(string $valor): string {

@@ -68,6 +68,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'periodos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
+    <?php $nomina_pasos_actual = 2; include APP_PATH . '/views/partials/nomina_pasos.php'; ?>
+
     <?php foreach ($pvAlertas as $a): ?>
     <div class="pv-alerta <?= $pvBloqueado ? 'bloqueante' : '' ?>">
         <i class="fas fa-triangle-exclamation" style="color:<?= $pvBloqueado ? '#c62828' : '#9a7400' ?>; margin-top:2px;"></i>
@@ -126,7 +128,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <form method="POST" action="<?= url('nomina/periodos/cerrar') ?>"
               data-ms-confirm data-ms-type="warning" data-ms-icon="wallet"
               data-ms-title="Cerrar periodo de nómina"
-              data-ms-msg="Se congelará un snapshot inmutable con estos totales y se acreditará el neto de cada empleado. ¿Cerrar el periodo?"
+              data-ms-msg="Los totales quedarán congelados tal como los ves. OJO: cerrar NO paga todavía — después viene el paso 3 (aprobar) y al final el pago desde Caja. ¿Cerrar el periodo?"
               data-ms-ok="Cerrar periodo">
             <?= csrf_field() ?>
             <input type="hidden" name="grupo_id" value="<?= (int) ($pvGrupo['id'] ?? 0) ?>">

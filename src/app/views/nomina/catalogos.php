@@ -179,14 +179,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
     <p class="nom-kicker">Nómina</p>
     <h1 class="nom-title">Catálogos de nómina</h1>
 
-    <?php $subnav_section = 'nomina'; $subnav_active = 'ajustes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
-
-    <?php if ($catPuedeConfigurar): ?>
-    <div style="display:flex; flex-wrap:wrap; gap:8px; margin:-6px 0 14px;">
-        <a class="cat-btn ms-pressable" href="<?= url('nomina/configuracion') ?>"><i class="fas fa-sliders"></i> Configuración</a>
-        <span class="cat-btn cat-btn-primary" aria-current="page"><i class="fas fa-layer-group"></i> Catálogos</span>
-    </div>
-    <?php endif; ?>
+    <?php $subnav_section = 'nomina'; $subnav_active = 'catalogos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
     <div class="cat-tabs">
         <?php foreach ($catTabs as $tabKey => $tab): ?>

@@ -6,6 +6,20 @@
 $esGestionHotel = $esGestionHotel ?? false;
 $puedeCrearUsuarios = $puedeCrearUsuarios ?? can('usuarios.create');
 $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
+$usaRolesConfigurables = !empty($usaRolesConfigurables);
+$rolesAsignados = is_array($rolesAsignados ?? null) ? $rolesAsignados : [];
+
+if (!function_exists('usr_sin_rol_configurable')) {
+    /** True si el hotel usa roles configurables y este usuario no tiene rol asignado (cae a permisos antiguos). */
+    function usr_sin_rol_configurable($usuario, $usaRoles, array $mapa)
+    {
+        if (!$usaRoles) {
+            return false;
+        }
+        $id = (int) ($usuario['id'] ?? 0);
+        return array_key_exists($id, $mapa) && $mapa[$id] === null;
+    }
+}
 ?>
 
 <style>
@@ -118,6 +132,8 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 .rol-limpieza     { background:rgba(92,122,78,.1);                       color:#3D5234; border:1px solid rgba(92,122,78,.25); }
 .rol-mantenimiento{ background:linear-gradient(135deg,#FFFBEB,#FEF3C7); color:#D97706; border:1px solid #FDE047; }
 .rol-contador     { background:linear-gradient(135deg,#FEF2F2,#FEE2E2); color:#DC2626; border:1px solid #FCA5A5; }
+.rol-sin-asignar  { background:rgba(191,144,0,.14); color:#9a7400; border:1px solid rgba(191,144,0,.35); }
+.rol-sin-asignar i { margin-right:4px; }
 
 /* ── Status badges ───────────────────────── */
 .status-on  { background:rgba(16,185,129,.1); color:#065F46; border:1px solid rgba(16,185,129,.25); display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:.68rem; font-weight:700; }
@@ -1308,6 +1324,9 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
                                     <span class="rol-badge rol-<?= $usuario['rol'] ?>">
                                         <?= ucfirst($usuario['rol']) ?>
                                     </span>
+                                    <?php if (usr_sin_rol_configurable($usuario, $usaRolesConfigurables, $rolesAsignados)): ?>
+                                        <span class="rol-badge rol-sin-asignar" title="Este usuario no tiene rol del panel de Roles y permisos: está usando los permisos antiguos. Edítalo y asígnale un rol."><i class="fas fa-triangle-exclamation"></i>Sin rol asignado</span>
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Estado -->
@@ -1418,6 +1437,9 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
                                     <div class="usr-mlabel">Rol</div>
                                     <div class="usr-mvalue">
                                         <span class="rol-badge rol-<?= $rolUsuario ?>"><?= ucfirst($rolUsuario) ?></span>
+                                        <?php if (usr_sin_rol_configurable($usuario, $usaRolesConfigurables, $rolesAsignados)): ?>
+                                            <span class="rol-badge rol-sin-asignar" title="Sin rol del panel de Roles y permisos: usa los permisos antiguos. Edítalo y asígnale un rol."><i class="fas fa-triangle-exclamation"></i>Sin rol asignado</span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <div>

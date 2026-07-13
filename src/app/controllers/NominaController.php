@@ -54,7 +54,86 @@ class NominaController extends Controller {
             'personalActivo' => $personalActivo,
             'stats' => $stats,
             'puedeConfigurar' => can('nomina.configurar'),
+            'ahoraTeToca' => $this->ahoraTeToca($hotelId),
         ]);
+    }
+
+    /**
+     * "Ahora te toca": acciones pendientes REALES del ciclo de nomina para el
+     * centro de mando del inicio. Solo lectura y tolerante a errores.
+     */
+    private function ahoraTeToca($hotelId): array {
+        $pendientes = [];
+        try {
+            $db = Database::getInstance();
+
+            // Periodos cerrados esperando aprobacion (paso 3).
+            $st = $db->query(
+                "SELECT id, etiqueta FROM trabajador_nomina_periodos
+                 WHERE hotel_id = ? AND motor = 'v2' AND estado = 'cerrado'
+                 ORDER BY fecha_fin DESC LIMIT 5",
+                [$hotelId]
+            );
+            foreach (($st !== false ? $st->fetchAll() : []) as $p) {
+                $pendientes[] = [
+                    'icono' => 'fa-check-double',
+                    'texto' => 'El periodo "' . (string) $p['etiqueta'] . '" está cerrado y espera tu aprobación.',
+                    'accion' => 'Revisar y aprobar',
+                    'url' => url('nomina/periodos/' . (int) $p['id']),
+                ];
+            }
+
+            // Periodos aprobados con dinero sin pagar (paso 4). El pendiente
+            // del encabezado es del momento del cierre: el VIVO se concilia
+            // contra los pagos de Caja, igual que en la pantalla del periodo.
+            $st = $db->query(
+                "SELECT p.* FROM trabajador_nomina_periodos p
+                 WHERE p.hotel_id = ? AND p.motor = 'v2' AND p.estado = 'aprobado'
+                 ORDER BY p.fecha_fin DESC LIMIT 5",
+                [$hotelId]
+            );
+            $modeloTrabajador = new Trabajador();
+            foreach (($st !== false ? $st->fetchAll() : []) as $p) {
+                $std = $db->query(
+                    "SELECT * FROM trabajador_nomina_periodo_detalles WHERE periodo_id = ? AND hotel_id = ?",
+                    [(int) $p['id'], $hotelId]
+                );
+                $conciliado = $modeloTrabajador->conciliarNominaPeriodoSnapshotConPagosCaja(
+                    $p,
+                    $std !== false ? $std->fetchAll() : [],
+                    $hotelId
+                );
+                $pendienteVivo = (float) ($conciliado['periodo']['pendiente_pago_total'] ?? 0);
+                if ($pendienteVivo > 0.009) {
+                    $pendientes[] = [
+                        'icono' => 'fa-hand-holding-dollar',
+                        'texto' => 'Hay $' . number_format($pendienteVivo, 2) . ' aprobados sin pagar del periodo "' . (string) $p['etiqueta'] . '".',
+                        'accion' => 'Ir a pagar',
+                        'url' => url('nomina/periodos/' . (int) $p['id']),
+                    ];
+                }
+            }
+
+            // Incidencias propuestas esperando visto bueno.
+            $st = $db->query(
+                "SELECT COUNT(*) AS total, MIN(fecha) AS desde, MAX(fecha) AS hasta
+                 FROM nomina_incidencias WHERE hotel_id = ? AND estado = 'pendiente'",
+                [$hotelId]
+            );
+            $inc = $st !== false ? $st->fetch() : null;
+            if ($inc && (int) $inc['total'] > 0) {
+                $pendientes[] = [
+                    'icono' => 'fa-clipboard-check',
+                    'texto' => (int) $inc['total'] . ' incidencia(s) propuestas esperan tu visto bueno (no entran a la nómina hasta aprobarlas).',
+                    'accion' => 'Revisarlas',
+                    'url' => url('nomina/incidencias?desde=' . (string) $inc['desde'] . '&hasta=' . (string) $inc['hasta'] . '&estado=pendiente'),
+                ];
+            }
+        } catch (Throwable $e) {
+            return [];
+        }
+
+        return $pendientes;
     }
 
     public function configuracionAction() {
@@ -256,7 +335,9 @@ class NominaController extends Controller {
             $db = Database::getInstance();
             $sql = "SELECT t.id, t.nombre_completo, t.rol_laboral, t.estado, t.periodicidad_pago,
                            p.nombre AS puesto, d.nombre AS departamento,
-                           g.nombre AS grupo_nomina, c.nombre AS tipo_contrato
+                           g.nombre AS grupo_nomina, c.nombre AS tipo_contrato,
+                           EXISTS(SELECT 1 FROM trabajador_salarios s
+                                  WHERE s.hotel_id = t.hotel_id AND s.trabajador_id = t.id) AS tiene_salario
                     FROM trabajadores t
                     LEFT JOIN nomina_puestos p ON p.id = t.puesto_id
                     LEFT JOIN nomina_departamentos d ON d.id = t.departamento_id
@@ -441,7 +522,19 @@ class NominaController extends Controller {
                 'monto' => $this->getPost('monto'),
                 'descripcion' => $this->getPost('descripcion'),
             ], user_id());
-            set_mensaje('Incidencia registrada.', 'success');
+            $fechaLegible = date('d/m/Y', strtotime((string) $this->getPost('fecha'))) ?: (string) $this->getPost('fecha');
+            set_mensaje('Incidencia registrada. Entrará a la nómina cuando calcules el periodo que incluya el ' . $fechaLegible . ' (pestaña Periodos).', 'success');
+
+            // Volver con el filtro abarcando la fecha capturada: sin esto, una
+            // incidencia futura (o de un mes previo) quedaria fuera del rango
+            // por defecto y pareceria que no se guardo.
+            $fecha = (string) $this->getPost('fecha');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                $desde = min(date('Y-m-01'), $fecha);
+                $hasta = max(date('Y-m-d'), $fecha);
+                $this->redirect('nomina/incidencias?desde=' . $desde . '&hasta=' . $hasta);
+                return;
+            }
         } catch (Throwable $e) {
             set_mensaje($e->getMessage(), 'error');
         }

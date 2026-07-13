@@ -259,6 +259,7 @@ class NominaCatalogoService {
         ];
 
         $limpias = [];
+        $rolLaboralSync = null;
         foreach ($mapa as $columna => $tipoCatalogo) {
             if (!array_key_exists($columna, $asignaciones)) {
                 continue;
@@ -273,6 +274,13 @@ class NominaCatalogoService {
                 throw new Exception('La asignacion de ' . $this->etiquetaDe($tipoCatalogo) . ' no pertenece a este negocio.');
             }
             $limpias[$columna] = (int) $valor;
+
+            // Una sola verdad de puesto: el texto libre "rol o puesto" de
+            // Personal se alinea al puesto oficial del catalogo (mismo patron
+            // con el que NominaSalarioService sincroniza salario_base).
+            if ($columna === 'puesto_id' && !empty($registro['nombre'])) {
+                $rolLaboralSync = mb_substr((string) $registro['nombre'], 0, 80);
+            }
         }
 
         if ($limpias === []) {
@@ -284,6 +292,10 @@ class NominaCatalogoService {
         foreach ($limpias as $columna => $valor) {
             $sets[] = "{$columna} = ?";
             $valores[] = $valor;
+        }
+        if ($rolLaboralSync !== null) {
+            $sets[] = 'rol_laboral = ?';
+            $valores[] = $rolLaboralSync;
         }
         $sets[] = 'updated_by = ?';
         $valores[] = $usuarioId;
