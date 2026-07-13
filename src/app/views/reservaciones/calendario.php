@@ -986,12 +986,14 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
 .hcal-vt-btn.is-on { background: var(--green); color: #fff; box-shadow: var(--shadow); }
 
 .hcal-mv { padding: 6px 16px 18px; }
-.hcal-mv-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 8px; }
+/* minmax(0,1fr): sin piso min-content — nombres largos no ensanchan las
+   columnas (con 1fr el mes crecía a ~1870px y la card lo recortaba). */
+.hcal-mv-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin-bottom: 8px; }
 .hcal-mv-week span {
     text-align: center; font-size: .72rem; font-weight: 700;
     letter-spacing: .04em; text-transform: uppercase; color: var(--subtle); padding: 4px 0;
 }
-.hcal-mv-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.hcal-mv-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
 .hcal-mv-cell {
     min-height: 120px; border-radius: 12px;
     border: 1px solid var(--border); background: var(--card);
@@ -1132,14 +1134,14 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
         margin-bottom: 16px;
     }
     .hcal-m-week {
-        display: grid; grid-template-columns: repeat(7, 1fr);
+        display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
         margin-bottom: 6px;
     }
     .hcal-m-week span {
         text-align: center; font-size: .66rem; font-weight: 700;
         letter-spacing: .04em; text-transform: uppercase; color: var(--subtle);
     }
-    .hcal-m-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .hcal-m-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .hcal-m-blank { height: 50px; }
     .hcal-m-day {
         display: flex; flex-direction: column; align-items: center;
