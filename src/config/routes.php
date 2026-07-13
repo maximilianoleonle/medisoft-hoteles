@@ -242,6 +242,9 @@ $router->post('/nomina/catalogos/{tipo:[a-z_]+}/crear', ['controller' => 'Nomina
 $router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/actualizar', ['controller' => 'Nomina', 'action' => 'catalogoActualizar']);
 $router->post('/nomina/catalogos/{tipo:[a-z_]+}/{id:[0-9]+}/alternar', ['controller' => 'Nomina', 'action' => 'catalogoAlternar']);
 $router->get('/nomina/empleados', ['controller' => 'Nomina', 'action' => 'empleados']);
+// Alta de empleado desde Nomina (espejo de /trabajadores/crear; misma fuente de verdad).
+$router->get('/nomina/empleados/crear', ['controller' => 'Nomina', 'action' => 'empleadoCrear']);
+$router->post('/nomina/empleados', ['controller' => 'Nomina', 'action' => 'empleadoGuardar']);
 $router->get('/nomina/empleados/{id:[0-9]+}', ['controller' => 'Nomina', 'action' => 'empleadoFicha']);
 $router->post('/nomina/empleados/{id:[0-9]+}/asignaciones', ['controller' => 'Nomina', 'action' => 'empleadoAsignaciones']);
 $router->post('/nomina/empleados/{id:[0-9]+}/salario', ['controller' => 'Nomina', 'action' => 'empleadoSalario']);

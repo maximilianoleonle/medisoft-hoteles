@@ -12,6 +12,9 @@ $pdPuedeVerRecibos = !empty($puedeVerRecibos);
 $pdRecibos = is_array($recibosPorDetalle ?? null) ? $recibosPorDetalle : [];
 $pdPermiteReapertura = !empty($permitirReapertura);
 $pdEsV2 = ($pd['motor'] ?? 'v1') === 'v2';
+$pdPagos = is_array($pagosSnapshot ?? null) ? $pagosSnapshot : [];
+$pdPagoTokens = is_array($pagoSnapshotTokens ?? null) ? $pagoSnapshotTokens : [];
+$pdPuedePagar = !empty($puedePagar);
 
 $pdEstados = [
     'cerrado' => ['t' => 'Cerrado', 'c' => 'warn', 'desc' => 'Snapshot congelado; requiere aprobación para habilitar pagos.'],
@@ -77,6 +80,20 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-pd-page .pd-next.is-ok { background: rgba(46,125,50,.09); border-color: rgba(46,125,50,.28); color: #23531f; }
 .nomina-pd-page .pd-next.is-ok > i { color: #2e7d32; }
 .nomina-pd-page .pd-next.is-muted { background: color-mix(in srgb, var(--nom-surface) 55%, #fff); border-color: var(--nom-border); color: var(--nom-muted); }
+
+/* Pago por Caja inline (migrado desde la pantalla heredada de Personal) */
+.nomina-pd-page .pd-pay { margin-top: 12px; border-top: 1px dashed var(--nom-border); padding-top: 12px; }
+.nomina-pd-page .pd-payfacts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-bottom: 10px; }
+.nomina-pd-page .pd-payfacts.is-muted { opacity: .8; }
+.nomina-pd-page .pd-payfact { border: 1px solid var(--nom-border); border-radius: 10px; padding: 7px 9px; background: color-mix(in srgb, var(--nom-brand) 4%, #fff); }
+.nomina-pd-page .pd-payfact span { display: block; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--nom-muted); font-weight: 700; }
+.nomina-pd-page .pd-payfact strong { display: block; margin-top: 2px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nomina-pd-page .pd-payrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 560px) { .nomina-pd-page .pd-payrow { grid-template-columns: 1fr; } }
+.nomina-pd-page .pd-plabel { display: block; font-size: 11px; font-weight: 700; color: var(--nom-muted); margin-bottom: 3px; }
+.nomina-pd-page .pd-pinput { width: 100%; border: 1px solid var(--nom-border); border-radius: 10px; padding: 9px 11px; font-size: 16px; background: #fff; color: var(--nom-text); margin-bottom: 8px; }
+.nomina-pd-page .pd-payfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--nom-muted); flex-wrap: wrap; }
+.nomina-pd-page .pd-payblocked { font-size: 12.5px; }
 </style>
 
 <div class="nomina-pd-page">
@@ -122,8 +139,8 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <i class="fas fa-hand-holding-dollar" aria-hidden="true"></i>
         <div>
             <strong>Aprobado: hay $<?= number_format($pdPendiente, 2) ?> esperando pago.</strong>
-            Último paso: entrega el dinero con el botón <em>"Registrar pagos en Personal (Caja)"</em> de abajo
-            (necesitas un corte de Caja abierto).
+            Último paso: registra la entrega del dinero en la tarjeta de cada trabajador, más abajo
+            <?= $pdPuedePagar ? '(necesitas un corte de Caja abierto).' : '— requiere permiso de pago (personal.pagar).' ?>
         </div>
     </div>
     <?php elseif ($pdPagadoCompleto): ?>
@@ -190,9 +207,6 @@ include APP_PATH . '/views/partials/back_arrow.php';
         </form>
         <?php endif; ?>
         <?php if (($pd['estado'] ?? '') === 'aprobado'): ?>
-        <a class="pd-btn ms-pressable" href="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id']) ?>">
-            <i class="fas fa-hand-holding-dollar"></i> Registrar pagos en Personal (Caja)
-        </a>
         <?php if ($pdPuedeAprobar): ?>
         <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/recibos/emitir') ?>">
             <?= csrf_field() ?>
@@ -262,6 +276,57 @@ include APP_PATH . '/views/partials/back_arrow.php';
                 </tbody>
             </table>
         </details>
+        <?php endif; ?>
+
+        <?php if ($pdEsV2 && $pdEstadoRaw === 'aprobado' && $pdPuedePagar): ?>
+            <?php
+            $pdDid = (int) ($d['id'] ?? 0);
+            $pdEval = $pdPagos[$pdDid] ?? null;
+            $pdTok = $pdPagoTokens[$pdDid] ?? null;
+            $pdMax = number_format((float) ($pdEval['monto_maximo'] ?? 0), 2, '.', '');
+            $pdSnap = number_format((float) ($pdEval['snapshot_pendiente'] ?? ($d['pendiente_pago_sugerido'] ?? 0)), 2, '.', '');
+            $pdVivo = number_format((float) ($pdEval['saldo_vivo'] ?? 0), 2, '.', '');
+            $pdMetodos = is_array($pdEval['metodos_pago'] ?? null) ? $pdEval['metodos_pago'] : ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'];
+            ?>
+            <div class="pd-pay">
+                <?php if ($pdEval && !empty($pdEval['elegible']) && $pdTok): ?>
+                <form method="POST" action="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id'] . '/detalles/' . $pdDid . '/registrar-pago-caja') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="pago_token" value="<?= htmlspecialchars((string) $pdTok) ?>">
+                    <input type="hidden" name="origen" value="nomina">
+                    <div class="pd-payfacts">
+                        <div class="pd-payfact"><span title="Lo que quedó pendiente según la foto congelada al cerrar el periodo.">Snapshot</span><strong>$<?= $pdSnap ?></strong></div>
+                        <div class="pd-payfact"><span title="Lo que falta hoy de verdad, ya restando los pagos hechos después de cerrar.">Saldo vivo</span><strong>$<?= $pdVivo ?></strong></div>
+                        <div class="pd-payfact"><span title="Lo máximo que puedes pagar ahora: el menor entre el snapshot y el saldo vivo.">Máximo</span><strong>$<?= $pdMax ?></strong></div>
+                    </div>
+                    <div class="pd-payrow">
+                        <div>
+                            <label class="pd-plabel" for="pd_monto_<?= $pdDid ?>">Monto</label>
+                            <input class="pd-pinput" id="pd_monto_<?= $pdDid ?>" type="number" name="monto" min="0.01" max="<?= htmlspecialchars($pdMax) ?>" step="0.01" value="<?= htmlspecialchars($pdMax) ?>" required>
+                        </div>
+                        <div>
+                            <label class="pd-plabel" for="pd_metodo_<?= $pdDid ?>">Método</label>
+                            <select class="pd-pinput" id="pd_metodo_<?= $pdDid ?>" name="metodo_pago" required>
+                                <?php foreach ($pdMetodos as $mk => $ml): ?>
+                                <option value="<?= htmlspecialchars((string) $mk) ?>"><?= htmlspecialchars((string) $ml) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <input class="pd-pinput" type="text" name="referencia" maxlength="100" required placeholder="Referencia obligatoria">
+                    <input class="pd-pinput" type="text" name="notas" maxlength="700" placeholder="Notas opcionales">
+                    <div class="pd-payfoot">
+                        <span>Máximo $<?= $pdMax ?> · afecta el corte de Caja abierto</span>
+                        <button type="submit" class="pd-btn pd-btn-primary ms-pressable"><i class="fas fa-cash-register"></i> Registrar pago</button>
+                    </div>
+                </form>
+                <?php else: ?>
+                <div class="pd-payblocked">
+                    <span class="pd-badge danger"><i class="fas fa-ban"></i> Sin pago disponible</span>
+                    <div class="pd-mini" style="margin-top:6px;"><?= htmlspecialchars((string) ($pdEval['motivo_bloqueo'] ?? 'No elegible para pago con Caja en este momento.')) ?></div>
+                </div>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     </div>
     <?php endforeach; ?>

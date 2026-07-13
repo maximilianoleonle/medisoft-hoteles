@@ -5,7 +5,8 @@
  *
  * Uso (antes del include):
  *   $subnav_section = 'personal' | 'nomina';
- *   $subnav_active  = 'equipo'|'pagos'|'prenomina'|'informes'   (personal)
+ *   $subnav_active  = 'equipo'|'pagos'|'informes'   (personal)
+ *                     ('prenomina' se acepta pero ya no pinta pestana: superficie movida a Nomina)
  *                     'inicio'|'incidencias'|'periodos'|'empleados'|'catalogos'|'ajustes' (nomina)
  *   include APP_PATH . '/views/partials/section_subnav.php';
  *
@@ -29,10 +30,14 @@ if ($subnavSection === 'nomina') {
     }
     $subnavAria = 'Secciones de Nómina';
 } else {
+    // Nota: la pestaña "Pre-nómina" se retiró de aquí a proposito. El calculo y
+    // cierre de periodos vive ahora en el modulo Nomina (sidebar > Nomina). La
+    // superficie vieja (trabajadores/nomina/*) sigue existiendo como pantalla de
+    // pago a la que el modulo Nomina enlaza, pero ya no se anuncia como puerta
+    // duplicada en Personal. El key 'prenomina' se conserva tolerado abajo.
     $subnavTabs = [
         'equipo'    => ['url' => url('trabajadores'),                   'icono' => 'fa-users',          'label' => 'Equipo'],
         'pagos'     => ['url' => url('trabajadores/pagos-caja/reporte'),'icono' => 'fa-cash-register',  'label' => 'Pagos'],
-        'prenomina' => ['url' => url('trabajadores/nomina/periodos'),   'icono' => 'fa-calendar-check', 'label' => 'Pre-nómina'],
         'informes'  => ['url' => url('trabajadores/informes'),          'icono' => 'fa-chart-pie',      'label' => 'Informes'],
     ];
     $subnavAria = 'Secciones de Personal';

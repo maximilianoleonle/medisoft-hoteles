@@ -31,6 +31,18 @@ class TrabajadorController extends Controller
         $this->snapshotPagoService = new TrabajadorNominaSnapshotPagoService();
     }
 
+    /**
+     * Lista ligera (id, nombre, estado) para poblar los selectores de trabajador
+     * de las barras de filtro. Incluye inactivos/bajas para poder consultar su historial.
+     */
+    private function trabajadoresParaFiltro(int $hotelId): array
+    {
+        if (!$this->trabajadorModel->tablaDisponible()) {
+            return [];
+        }
+        return $this->trabajadorModel->listarPorHotel($hotelId, ['estado' => 'todos'], 300);
+    }
+
     protected function before()
     {
         $this->requireAuth();
@@ -237,6 +249,14 @@ class TrabajadorController extends Controller
             set_mensaje('No se pudo registrar el pago desde snapshot: ' . $e->getMessage(), 'error');
         }
 
+        // El pago se puede lanzar desde la pantalla heredada (Personal) o desde el
+        // modulo Nomina; volvemos a la superficie de origen. Sin 'origen' se
+        // conserva el comportamiento historico (Personal).
+        if ((string)$this->getPost('origen', '') === 'nomina') {
+            $this->redirect($periodoId > 0 ? 'nomina/periodos/' . $periodoId : 'nomina/periodos');
+            return;
+        }
+
         $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
     }
 
@@ -391,6 +411,7 @@ class TrabajadorController extends Controller
             'title' => 'Conciliacion pagos snapshot - ' . current_hotel_display_name(),
             'reporte' => $reporte,
             'tablaDisponible' => $tablaDisponible,
+            'trabajadoresFiltro' => $this->trabajadoresParaFiltro($hotelId),
         ]);
     }
 
@@ -425,6 +446,7 @@ class TrabajadorController extends Controller
             'title' => 'Auditoria nomina consolidada - ' . current_hotel_display_name(),
             'reporte' => $reporte,
             'tablaDisponible' => $tablaDisponible,
+            'trabajadoresFiltro' => $this->trabajadoresParaFiltro($hotelId),
         ]);
     }
 
@@ -459,6 +481,7 @@ class TrabajadorController extends Controller
             'title' => 'Expediente administrativo nomina - ' . current_hotel_display_name(),
             'expediente' => $expediente,
             'tablaDisponible' => $tablaDisponible,
+            'trabajadoresFiltro' => $this->trabajadoresParaFiltro($hotelId),
         ]);
     }
 
@@ -490,6 +513,7 @@ class TrabajadorController extends Controller
             'title' => 'Preview nomina laboral - ' . current_hotel_display_name(),
             'preview' => $preview,
             'tablaDisponible' => $tablaDisponible,
+            'trabajadoresFiltro' => $this->trabajadoresParaFiltro($hotelId),
         ]);
     }
 
@@ -579,6 +603,7 @@ class TrabajadorController extends Controller
             'title' => 'Reporte pagos laborales Caja - ' . current_hotel_display_name(),
             'reporte' => $reporte,
             'tablaDisponible' => $tablaDisponible,
+            'trabajadoresFiltro' => $this->trabajadoresParaFiltro($hotelId),
         ]);
     }
 

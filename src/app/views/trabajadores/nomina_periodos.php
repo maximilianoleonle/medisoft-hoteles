@@ -422,6 +422,14 @@ $previewNominaQuery = http_build_query([
 .nomina-periodos .period-table tbody tr:hover td { background: #FBF8F2 !important; }
 
 /* Toggle segmentado Periodos | Calcular pre-nómina */
+.nomina-periodos .period-tabs-block { display: grid; gap: 7px; justify-items: start; }
+.nomina-periodos .period-scope-label {
+    display: inline-flex; align-items: center; gap: 8px; padding-left: 4px;
+    font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--pd-muted);
+}
+.nomina-periodos .period-scope-label::before {
+    content: ""; flex: 0 0 auto; width: 14px; height: 2px; border-radius: 999px; background: var(--wk-gold, #BD9441);
+}
 .nomina-periodos .period-tabs {
     display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
     background: color-mix(in srgb, var(--period-brand) 5%, #FBF8F2);
@@ -448,6 +456,7 @@ $previewNominaQuery = http_build_query([
     background: linear-gradient(90deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 40%, #fff));
 }
 @media (max-width: 768px) {
+    .nomina-periodos .period-tabs-block { flex: 1 1 100%; justify-items: stretch; }
     .nomina-periodos .period-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .nomina-periodos .period-tabs::-webkit-scrollbar { display: none; }
     .nomina-periodos .period-tab { flex: 1 0 auto; justify-content: center; }
@@ -525,16 +534,19 @@ $previewNominaQuery = http_build_query([
                 <i class="fas fa-arrow-left"></i>
                 Personal
             </a>
-            <nav class="period-tabs" aria-label="Vistas de pre-n&oacute;mina">
-                <span class="period-tab is-active" aria-current="page">
-                    <i class="fas fa-calendar-check"></i>
-                    Periodos
-                </span>
-                <a class="period-tab" href="<?= url('trabajadores/nomina/preview') ?>">
-                    <i class="fas fa-clipboard-list"></i>
-                    Calcular pre-n&oacute;mina
-                </a>
-            </nav>
+            <div class="period-tabs-block">
+                <span class="period-scope-label">Dentro de Pre-n&oacute;mina</span>
+                <nav class="period-tabs" aria-label="Vistas de pre-n&oacute;mina">
+                    <span class="period-tab is-active" aria-current="page">
+                        <i class="fas fa-calendar-check"></i>
+                        Periodos
+                    </span>
+                    <a class="period-tab" href="<?= url('trabajadores/nomina/preview') ?>">
+                        <i class="fas fa-clipboard-list"></i>
+                        Calcular pre-n&oacute;mina
+                    </a>
+                </nav>
+            </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">

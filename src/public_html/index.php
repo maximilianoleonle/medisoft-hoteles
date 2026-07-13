@@ -81,6 +81,11 @@ session_set_cookie_params([
     'samesite' => 'Lax',
 ]);
 
+// bfcache: evita que la sesion de PHP emita "Cache-Control: no-store" (su
+// default), que impide al navegador restaurar la pantalla al instante con el
+// boton "atras". Emitimos nuestro propio header privado revalidable mas abajo.
+session_cache_limiter('');
+
 session_start();
 
 // ── Headers de seguridad globales ────────────────────────────────────────
@@ -92,6 +97,16 @@ header('X-Frame-Options: SAMEORIGIN');
 header("Content-Security-Policy: frame-ancestors 'self'");
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(), microphone=()');
+
+// Cache privado revalidable en vez de "no-store": habilita el back-forward
+// cache (regresar instantaneo) y permite reutilizar la precarga en la
+// navegacion, SIN exponer HTML en caches compartidos (private) y forzando
+// revalidacion contra el servidor (no-cache) — tras cerrar sesion, cualquier
+// navegacion normal revalida y termina en el login. Solo en GET; las descargas
+// (PDF) y las APIs con no-store propio emiten su header despues y lo reemplazan.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+    header('Cache-Control: private, no-cache, must-revalidate');
+}
 if ($secureCookie) {
     // 180 días, sin includeSubDomains: cada subdominio de hotel decide el suyo.
     header('Strict-Transport-Security: max-age=15552000');

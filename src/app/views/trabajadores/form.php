@@ -4,9 +4,21 @@ $trabajador = $trabajador ?? [];
 $usuariosVinculables = $usuariosVinculables ?? [];
 $esEditar = $modo === 'editar';
 $trabajadorId = (int)($trabajador['id'] ?? 0);
+
+// Este mismo formulario sirve al bloque Personal y, como seccion espejo, al alta
+// de empleados desde Nomina. Solo cambia el contexto de navegacion (subnav, back
+// y URL de guardado); la creacion sigue por la misma fuente de verdad.
+$contexto = $contexto ?? 'personal';
+$esNomina = $contexto === 'nomina';
+
 $action = $esEditar
     ? url('trabajadores/' . $trabajadorId . '/actualizar')
-    : url('trabajadores');
+    : ($esNomina ? url('nomina/empleados') : url('trabajadores'));
+
+// Destino de "volver" / "cancelar": la lista de origen segun el contexto.
+$volverHref = $esEditar
+    ? back_url('trabajadores/' . $trabajadorId)
+    : ($esNomina ? url('nomina/empleados') : back_url('trabajadores'));
 
 if (!function_exists('trab_form_safe')) {
     function trab_form_safe($value, $fallback = '')
@@ -139,19 +151,23 @@ $salarioEnNomina = !empty($salarioEnNomina) && $nominaActivaForm;
 
 <div class="worker-form-page p-4 sm:p-6">
     <div class="wk-shell">
-        <?php $back_arrow_href = back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <a class="wk-back ms-back-legacy" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+        <?php $back_arrow_href = $volverHref; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <a class="wk-back ms-back-legacy" href="<?= $volverHref ?>"><i class="fas fa-arrow-left"></i> Volver</a>
 
         <section class="wk-title-lockup">
             <div class="wk-hero-icon"><i class="fas fa-user-plus"></i></div>
             <div>
-                <p class="wk-kicker">Personal del hotel</p>
-                <h1 class="wk-title"><?= $esEditar ? 'Editar trabajador' : 'Nuevo trabajador' ?></h1>
+                <p class="wk-kicker"><?= $esNomina ? 'N&oacute;mina' : 'Personal del hotel' ?></p>
+                <h1 class="wk-title"><?= $esEditar ? 'Editar trabajador' : ($esNomina ? 'Nuevo empleado' : 'Nuevo trabajador') ?></h1>
                 <p class="wk-subtitle">Datos b&aacute;sicos de la persona. El salario y la periodicidad son de referencia; los pagos se registran despu&eacute;s desde su ficha.</p>
             </div>
         </section>
 
-        <?php $subnav_section = 'personal'; $subnav_active = 'equipo'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+        <?php
+        if ($esNomina) { $subnav_section = 'nomina'; $subnav_active = 'empleados'; }
+        else { $subnav_section = 'personal'; $subnav_active = 'equipo'; }
+        include APP_PATH . '/views/partials/section_subnav.php';
+        ?>
 
         <form method="POST" action="<?= $action ?>" class="wk-panel p-5">
             <?= csrf_field() ?>
@@ -279,8 +295,8 @@ $salarioEnNomina = !empty($salarioEnNomina) && $nominaActivaForm;
             </div>
 
             <div class="flex flex-wrap gap-3 mt-6">
-                <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-save"></i> <?= $esEditar ? 'Guardar cambios' : 'Guardar trabajador' ?></button>
-                <a class="wk-btn wk-btn-muted" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
+                <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-save"></i> <?= $esEditar ? 'Guardar cambios' : ($esNomina ? 'Guardar empleado' : 'Guardar trabajador') ?></button>
+                <a class="wk-btn wk-btn-muted" href="<?= $volverHref ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
             </div>
         </form>
     </div>

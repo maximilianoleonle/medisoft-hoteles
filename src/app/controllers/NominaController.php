@@ -413,6 +413,128 @@ class NominaController extends Controller {
         ]);
     }
 
+    /**
+     * Alta de empleado como seccion espejo de /trabajadores/crear, sin salir del
+     * flujo de Nomina. Crea el MISMO registro (tabla trabajadores) con la MISMA
+     * fuente de verdad (Trabajador::crearParaHotel): solo cambia el contexto de
+     * navegacion. Exige el modulo Personal y el permiso personal.gestionar porque
+     * el registro pertenece a ese bloque (misma autoridad que el alta original).
+     */
+    public function empleadoCrearAction() {
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('personal');
+        }
+        if (function_exists('require_permission')) {
+            require_permission('personal.gestionar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+
+        View::renderTemplate('trabajadores/form', [
+            'title' => 'Nuevo empleado - ' . current_hotel_display_name(),
+            'modo' => 'crear',
+            'contexto' => 'nomina',
+            'trabajador' => [],
+            'usuariosVinculables' => (new Trabajador())->usuariosVinculablesPorHotel($hotelId),
+        ]);
+    }
+
+    public function empleadoGuardarAction() {
+        if (!$this->isPost()) {
+            $this->redirect('nomina/empleados');
+            return;
+        }
+        $this->validateCSRF();
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('personal');
+        }
+        if (function_exists('require_permission')) {
+            require_permission('personal.gestionar');
+        }
+
+        $hotelId = $this->hotelIdActual();
+        $modelo = new Trabajador();
+
+        try {
+            $trabajadorId = $modelo->crearParaHotel($hotelId, $this->datosFormularioEmpleado(), user_id());
+
+            try {
+                AuditService::record('trabajadores.creado', [
+                    'hotel_id' => $hotelId,
+                    'usuario_id' => user_id(),
+                    'entidad_tipo' => 'trabajador',
+                    'entidad_id' => (string) $trabajadorId,
+                    'descripcion' => 'Alta de empleado desde Nomina',
+                    'datos_antes' => null,
+                    'datos_despues' => $modelo->buscarPorIdHotel($trabajadorId, $hotelId),
+                ]);
+            } catch (Throwable $e) {
+                error_log('No se pudo auditar alta de empleado desde nomina: ' . $e->getMessage());
+            }
+
+            clear_old_input();
+            set_mensaje('Empleado creado correctamente. Ahora asignale puesto, grupo y salario.', 'success');
+            $this->redirect('nomina/empleados/' . $trabajadorId);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo crear el empleado: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposEmpleado([$e->getMessage()]));
+            $this->redirect('nomina/empleados/crear');
+        }
+    }
+
+    /** Datos del formulario de alta de empleado (espejo de TrabajadorController). */
+    private function datosFormularioEmpleado(): array {
+        return [
+            'usuario_id' => $this->getPost('usuario_id', null),
+            'nombre_completo' => $this->getPost('nombre_completo', ''),
+            'identificacion' => $this->getPost('identificacion', ''),
+            'rol_laboral' => $this->getPost('rol_laboral', ''),
+            'telefono' => $this->getPost('telefono', ''),
+            'email' => $this->getPost('email', ''),
+            'fecha_alta' => $this->getPost('fecha_alta', ''),
+            'salario_base' => $this->getPost('salario_base', ''),
+            'periodicidad_pago' => $this->getPost('periodicidad_pago', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
+    /** Mapea el mensaje de validacion al campo para que el form lo resalte inline. */
+    private function erroresCamposEmpleado(array $errores): array {
+        $mapa = [
+            'nombre' => 'nombre_completo',
+            'correo' => 'email',
+            'email' => 'email',
+            'salario' => 'salario_base',
+            'usuario' => 'usuario_id',
+            'identificacion' => 'identificacion',
+            'telefono' => 'telefono',
+            'periodicidad' => 'periodicidad_pago',
+        ];
+
+        $fieldErrors = [];
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string) $mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+            $lower = strtr($lower, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ñ' => 'n']);
+
+            $campo = '_global';
+            foreach ($mapa as $needle => $target) {
+                if (strpos($lower, $needle) !== false) {
+                    $campo = $target;
+                    break;
+                }
+            }
+            $fieldErrors[$campo][] = $mensaje;
+        }
+
+        return $fieldErrors;
+    }
+
     public function empleadoAsignacionesAction($id) {
         if (!$this->isPost()) {
             $this->redirect('nomina/empleados');
@@ -450,6 +572,24 @@ class NominaController extends Controller {
 
         $hotelId = $this->hotelIdActual();
 
+        // Candado de flujo (espeja el bloqueo de la ficha): el salario se aplica
+        // sobre un calendario de pago; sin grupo de pago asignado (Paso 1) no hay
+        // a que aplicarlo. Se valida en servidor para que no se pueda registrar
+        // por POST directo saltandose las asignaciones.
+        $st = Database::getInstance()->query(
+            "SELECT grupo_nomina_id FROM trabajadores WHERE id = ? AND hotel_id = ?",
+            [(int) $id, $hotelId]
+        );
+        $trabActual = $st !== false ? $st->fetch() : null;
+        if (!$trabActual) {
+            set_mensaje('El empleado no existe en este negocio.', 'error');
+            $this->redirect('nomina/empleados');
+        }
+        if (empty($trabActual['grupo_nomina_id'])) {
+            set_mensaje('Primero asígnale un grupo de pago (Paso 1) para poder registrar su salario.', 'error');
+            $this->redirect('nomina/empleados/' . (int) $id);
+        }
+
         try {
             $resultado = (new NominaSalarioService())->registrarCambio($hotelId, (int) $id, [
                 'salario' => $this->getPost('salario'),
@@ -478,6 +618,7 @@ class NominaController extends Controller {
             'desde' => (string) $this->getQuery('desde', date('Y-m-01')),
             'hasta' => (string) $this->getQuery('hasta', date('Y-m-d')),
             'estado' => (string) $this->getQuery('estado', ''),
+            'trabajador_id' => (int) $this->getQuery('trabajador_id', 0),
         ];
 
         $trabajadores = [];
@@ -713,6 +854,41 @@ class NominaController extends Controller {
             $recibosPorDetalle = [];
         }
 
+        // Pago por Caja migrado al modulo Nomina: preparamos la evaluacion y los
+        // tokens por detalle igual que la pantalla heredada de Personal. El form
+        // de la vista postea al MISMO endpoint que ejecuta el pago
+        // (TrabajadorController::registrarPagoSnapshotNomina): no se duplica ni
+        // se reescribe nada de la logica de dinero.
+        $pagosSnapshot = [];
+        $pagoSnapshotTokens = [];
+        $puedePagar = function_exists('can') ? can('personal.pagar') : false;
+        if ((string) ($periodo['estado'] ?? '') === 'aprobado' && $puedePagar) {
+            require_once __DIR__ . '/../services/TrabajadorNominaSnapshotPagoService.php';
+            $snapshotPagoService = new TrabajadorNominaSnapshotPagoService();
+            foreach ($detalles as $detallePago) {
+                $detallePagoId = (int) ($detallePago['id'] ?? 0);
+                if ($detallePagoId <= 0) {
+                    continue;
+                }
+                try {
+                    $evaluacion = $snapshotPagoService->evaluarPagoDesdeSnapshot($hotelId, $periodoId, $detallePagoId);
+                } catch (Throwable $e) {
+                    $evaluacion = [
+                        'elegible' => false,
+                        'motivo_bloqueo' => $e->getMessage(),
+                        'monto_maximo' => '0.00',
+                        'snapshot_pendiente' => number_format((float) ($detallePago['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                        'saldo_vivo' => '0.00',
+                        'metodos_pago' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'],
+                    ];
+                }
+                $pagosSnapshot[$detallePagoId] = $evaluacion;
+                if (!empty($evaluacion['elegible'])) {
+                    $pagoSnapshotTokens[$detallePagoId] = $this->generarPagoSnapshotCajaToken($periodoId, $detallePagoId);
+                }
+            }
+        }
+
         View::renderTemplate('nomina/periodo_ver', [
             'title' => 'Periodo de nomina - ' . current_hotel_display_name(),
             'periodo' => $periodo,
@@ -723,7 +899,32 @@ class NominaController extends Controller {
             'puedeAnular' => can('nomina.reabrir'),
             'puedeVerRecibos' => can('nomina.salarios'),
             'permitirReapertura' => ConfiguracionHotelRegistry::getBool('nomina.permitir_reapertura', false, $hotelId),
+            'pagosSnapshot' => $pagosSnapshot,
+            'pagoSnapshotTokens' => $pagoSnapshotTokens,
+            'puedePagar' => $puedePagar,
         ]);
+    }
+
+    /**
+     * Token de un solo uso para pagar un detalle desde su snapshot. Escribe en la
+     * MISMA estructura de sesion que consume TrabajadorController al ejecutar el
+     * pago (accion 'pago_snapshot_caja', key "periodo:detalle"), para que el
+     * endpoint heredado lo valide sin cambios. Mantener en sincronia con
+     * TrabajadorController::generarNominaPeriodoToken / consumirNominaPeriodoToken.
+     */
+    private function generarPagoSnapshotCajaToken(int $periodoId, int $detalleId): string {
+        if (!isset($_SESSION['trabajador_nomina_periodo_tokens']) || !is_array($_SESSION['trabajador_nomina_periodo_tokens'])) {
+            $_SESSION['trabajador_nomina_periodo_tokens'] = [];
+        }
+        if (!isset($_SESSION['trabajador_nomina_periodo_tokens']['pago_snapshot_caja']) || !is_array($_SESSION['trabajador_nomina_periodo_tokens']['pago_snapshot_caja'])) {
+            $_SESSION['trabajador_nomina_periodo_tokens']['pago_snapshot_caja'] = [];
+        }
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['trabajador_nomina_periodo_tokens']['pago_snapshot_caja'][$periodoId . ':' . $detalleId] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+        return $token;
     }
 
     public function periodoAprobarAction($id) {

@@ -194,7 +194,7 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
 .ms-vtb-copy { min-width: 0; display: grid; gap: 3px; }
 .ms-vtb-crumbs {
     font-size: .78rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--brand-muted, #8A93A7);
     line-height: 1.2;
     overflow: hidden;
@@ -204,10 +204,10 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
 .ms-vtb-crumbs a { color: inherit; text-decoration: none; transition: color .15s; }
 .ms-vtb-crumbs a:hover { color: var(--brand-text, #1B2746); }
 .ms-vtb-sep { margin: 0 4px; opacity: .6; }
-.ms-vtb-crumbs strong { color: var(--brand-primary, #1B2746); font-weight: 800; }
+.ms-vtb-crumbs strong { color: var(--brand-primary, #1B2746); font-weight: 700; }
 .ms-vtb-hotel {
     font-size: .72rem;
-    font-weight: 800;
+    font-weight: 600;
     color: var(--brand-muted, #8A93A7);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -270,6 +270,16 @@ nav[aria-label="breadcrumb"],
         var bar = document.querySelector('.ms-vtb');
         if (!bar || bar.classList.contains('ms-vtb--nested')) { return; }
 
+        /* Tipografía blindada: la barra usa la fuente del body (tema activo),
+           nunca la del contenedor de la vista en el que se anide. Inline con
+           !important porque algunas vistas imponen su fuente con reglas
+           universales !important (p. ej. .habitaciones-view *). */
+        var fuente = getComputedStyle(document.body).fontFamily;
+        bar.style.setProperty('font-family', fuente, 'important');
+        bar.querySelectorAll('.ms-vtb-crumbs, .ms-vtb-crumbs *, .ms-vtb-hotel').forEach(function(el) {
+            el.style.setProperty('font-family', fuente, 'important');
+        });
+
         var omitir = { STYLE: 1, SCRIPT: 1, LINK: 1, TEMPLATE: 1, NOSCRIPT: 1 };
         var admitidos = { DIV: 1, SECTION: 1, MAIN: 1, ARTICLE: 1, FORM: 1 };
         var n = bar.nextElementSibling;
@@ -285,6 +295,11 @@ nav[aria-label="breadcrumb"],
         var esFlexColumna = display === 'flex' && cs.flexDirection.indexOf('column') === 0;
         if (!esBloque && !esFlexColumna) { return; }
         if (cs.position === 'fixed' || cs.position === 'absolute') { return; }
+
+        /* Contenedores centrados (max-width + margin auto): anidarse ahí
+           arrastraría la flecha hacia el centro en pantallas anchas. La barra
+           se queda a nivel del main, pegada a la izquierda como en Caja. */
+        if (n.getBoundingClientRect().left - bar.parentElement.getBoundingClientRect().left > 40) { return; }
 
         n.insertBefore(bar, n.firstChild);
         bar.classList.add('ms-vtb--nested');

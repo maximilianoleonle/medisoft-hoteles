@@ -190,11 +190,17 @@ RewriteRule ^(.*)$ index.php?$1 [L,QSA]
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>
     
-    # No cache para archivos dinámicos
+    # Cache privado revalidable para HTML dinámico. NO usamos "no-store" a
+    # propósito: eso desactiva el back-forward cache del navegador (regresar
+    # instantáneo) e impide reutilizar la precarga. "private" mantiene el HTML
+    # fuera de cachés compartidos y "no-cache, must-revalidate" obliga a
+    # revalidar contra el servidor antes de reutilizar (tras cerrar sesión, la
+    # navegación normal revalida y termina en el login). La frescura de dinero
+    # (Caja) y estados (Habitaciones) se refuerza en cliente vía instant-nav.js.
     <FilesMatch "\.(php|html?)$">
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
+        Header set Cache-Control "private, no-cache, must-revalidate"
+        Header unset Pragma
+        Header unset Expires
     </FilesMatch>
 </IfModule>
 

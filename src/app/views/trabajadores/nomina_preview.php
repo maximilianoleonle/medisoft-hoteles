@@ -2,6 +2,7 @@
 $preview = is_array($preview ?? null) ? $preview : [];
 $tablaDisponible = $tablaDisponible ?? false;
 $trabajadores = is_array($preview['trabajadores'] ?? null) ? $preview['trabajadores'] : [];
+$trabajadoresFiltro = is_array($trabajadoresFiltro ?? null) ? $trabajadoresFiltro : [];
 $resumen = is_array($preview['resumen'] ?? null) ? $preview['resumen'] : [];
 $filtros = is_array($preview['filtros_normalizados'] ?? null) ? $preview['filtros_normalizados'] : [];
 $bloqueos = is_array($preview['bloqueos'] ?? null) ? $preview['bloqueos'] : [];
@@ -129,6 +130,14 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
 .payroll-preview .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 650; }
 
 /* Toggle segmentado Periodos | Calcular pre-nómina */
+.payroll-preview .wk-tabs-block { display: grid; gap: 7px; justify-items: start; }
+.payroll-preview .wk-scope-label {
+    display: inline-flex; align-items: center; gap: 8px; padding-left: 4px;
+    font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--wk-muted);
+}
+.payroll-preview .wk-scope-label::before {
+    content: ""; flex: 0 0 auto; width: 14px; height: 2px; border-radius: 999px; background: var(--wk-gold);
+}
 .payroll-preview .wk-tabs {
     display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
     background: color-mix(in srgb, var(--wk-brand) 5%, var(--wk-ivory-2));
@@ -217,6 +226,7 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
 @media (min-width: 1100px) { .payroll-preview .wk-filter-form { grid-template-columns: 140px 140px 110px minmax(160px,1fr) 130px 130px auto auto auto; } }
 @media (max-width: 980px) { .payroll-preview .wk-stats, .payroll-preview .wk-stats-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 768px) {
+    .payroll-preview .wk-tabs-block { justify-items: stretch; }
     .payroll-preview .wk-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .payroll-preview .wk-tabs::-webkit-scrollbar { display: none; }
     .payroll-preview .wk-tab { flex: 1 0 auto; justify-content: center; }
@@ -250,10 +260,13 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
 
         <?php $subnav_section = 'personal'; $subnav_active = 'prenomina'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
-        <nav class="wk-tabs" aria-label="Vistas de pre-n&oacute;mina">
-            <a class="wk-tab" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Periodos</a>
-            <span class="wk-tab is-active" aria-current="page"><i class="fas fa-clipboard-list"></i> Calcular pre-n&oacute;mina</span>
-        </nav>
+        <div class="wk-tabs-block">
+            <span class="wk-scope-label">Dentro de Pre-n&oacute;mina</span>
+            <nav class="wk-tabs" aria-label="Vistas de pre-n&oacute;mina">
+                <a class="wk-tab" href="<?= url('trabajadores/nomina/periodos') ?>"><i class="fas fa-calendar-check"></i> Periodos</a>
+                <span class="wk-tab is-active" aria-current="page"><i class="fas fa-clipboard-list"></i> Calcular pre-n&oacute;mina</span>
+            </nav>
+        </div>
 
         <?php if (!$tablaDisponible): ?>
             <section class="wk-notice">
@@ -271,48 +284,51 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
                 <div class="wk-stat is-warn"><p class="wk-stat-label">Pendiente</p><p class="wk-stat-value"><?= trab_nomina_money($resumen['pendiente_pago_total'] ?? 0) ?></p></div>
             </section>
 
+            <?php include APP_PATH . '/views/partials/filtros.php'; ?>
             <section class="wk-panel p-3 md:p-4">
-                <form method="GET" action="<?= url('trabajadores/nomina/preview') ?>" class="wk-filter-form" data-auto-filter-form>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">Desde</span>
-                        <input class="wk-control" type="date" name="fecha_inicio" value="<?= trab_nomina_safe($fechaInicio, '') ?>">
+                <form method="GET" action="<?= url('trabajadores/nomina/preview') ?>" class="msf-bar is-plain" data-auto-filter-form>
+                    <label class="msf-field msf-field--grow">
+                        <span class="msf-label">Trabajador</span>
+                        <select class="msf-control" name="trabajador_id"><?= msf_worker_options($trabajadoresFiltro, $trabajadorId) ?></select>
                     </label>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">Hasta</span>
-                        <input class="wk-control" type="date" name="fecha_fin" value="<?= trab_nomina_safe($fechaFin, '') ?>">
+                    <label class="msf-field msf-field--sm">
+                        <span class="msf-label">Desde</span>
+                        <input class="msf-control" type="date" name="fecha_inicio" value="<?= trab_nomina_safe($fechaInicio, '') ?>">
                     </label>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">ID trabajador</span>
-                        <input class="wk-control" type="number" min="1" name="trabajador_id" value="<?= $trabajadorId > 0 ? (int)$trabajadorId : '' ?>" placeholder="Todos">
+                    <label class="msf-field msf-field--sm">
+                        <span class="msf-label">Hasta</span>
+                        <input class="msf-control" type="date" name="fecha_fin" value="<?= trab_nomina_safe($fechaFin, '') ?>">
                     </label>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">Buscar</span>
-                        <input class="wk-control" type="search" name="buscar" value="<?= trab_nomina_safe($buscar, '') ?>" placeholder="Nombre del trabajador">
+                    <label class="msf-field msf-field--sm">
+                        <span class="msf-label">Estado</span>
+                        <select class="msf-control" name="estado"><?= msf_options(['activos' => 'Activos', 'todos' => 'Todos', 'inactivos' => 'Inactivos', 'baja' => 'Baja'], $estado) ?></select>
                     </label>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">Rol</span>
-                        <input class="wk-control" type="search" name="rol_laboral" value="<?= trab_nomina_safe($rolLaboral, '') ?>" placeholder="Todos">
+                    <label class="msf-field msf-field--sm">
+                        <span class="msf-label">Rol</span>
+                        <input class="msf-control" type="search" name="rol_laboral" value="<?= trab_nomina_safe($rolLaboral, '') ?>" placeholder="Todos">
                     </label>
-                    <label class="wk-filter-field">
-                        <span class="wk-filter-label">Estado</span>
-                        <select class="wk-control" name="estado">
-                            <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
-                            <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
-                            <option value="inactivos" <?= $estado === 'inactivos' ? 'selected' : '' ?>>Inactivos</option>
-                            <option value="baja" <?= $estado === 'baja' ? 'selected' : '' ?>>Baja</option>
-                        </select>
+                    <label class="msf-field msf-field--sm">
+                        <span class="msf-label">Buscar</span>
+                        <input class="msf-control" type="search" name="buscar" value="<?= trab_nomina_safe($buscar, '') ?>" placeholder="Nombre del trabajador">
                     </label>
-                    <label class="wk-check">
+                    <label class="msf-check">
                         <input type="hidden" name="solo_con_saldo" value="0">
                         <input type="checkbox" name="solo_con_saldo" value="1" <?= $soloConSaldo ? 'checked' : '' ?>>
                         Con saldo
                     </label>
-                    <label class="wk-check">
+                    <label class="msf-check">
                         <input type="hidden" name="incluir_pagos_caja" value="0">
                         <input type="checkbox" name="incluir_pagos_caja" value="1" <?= $incluirPagosCaja ? 'checked' : '' ?>>
                         Pagos Caja
                     </label>
-                    <button class="wk-btn wk-btn-brand" type="submit"><i class="fas fa-filter"></i> Calcular</button>
+                    <div class="msf-ranges" data-msf-from="fecha_inicio" data-msf-to="fecha_fin">
+                        <span class="msf-ranges-label">Rango</span>
+                        <button type="button" class="msf-chip" data-msf-range="mes">Este mes</button>
+                        <button type="button" class="msf-chip" data-msf-range="mes-pasado">Mes pasado</button>
+                    </div>
+                    <div class="msf-actions">
+                        <button class="msf-btn msf-btn--primary" type="submit"><i class="fas fa-filter"></i> Calcular</button>
+                    </div>
                 </form>
             </section>
 

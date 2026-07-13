@@ -7,6 +7,9 @@ $empLista = is_array($empleados ?? null) ? $empleados : [];
 $empBuscar = (string) ($buscar ?? '');
 $empEstado = (string) ($estado ?? 'activo');
 $empPersonalActivo = !empty($personalActivo);
+// El alta de empleado es un registro del bloque Personal: solo se ofrece si el
+// modulo esta activo y el usuario tiene la misma autoridad que el alta original.
+$empPuedeCrear = $empPersonalActivo && function_exists('can') && can('personal.gestionar');
 
 $back_arrow_href = url('nomina');
 include APP_PATH . '/views/partials/back_arrow.php';
@@ -24,9 +27,22 @@ include APP_PATH . '/views/partials/back_arrow.php';
 }
 .nomina-emp-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
 .nomina-emp-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
-.nomina-emp-page .emp-filtros { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.nomina-emp-page .emp-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.nomina-emp-page .emp-filtros { display: flex; flex-wrap: wrap; gap: 10px; }
+.nomina-emp-page .emp-toolbar .emp-filtros { margin: 0; flex: 1 1 auto; }
 .nomina-emp-page .emp-filtros input, .nomina-emp-page .emp-filtros select {
     border: 1px solid var(--nom-border); border-radius: 10px; padding: 9px 12px; font-size: 16px; background: #fff; color: var(--nom-text);
+}
+.nomina-emp-page .emp-nuevo-btn {
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; text-decoration: none;
+    background: linear-gradient(135deg, var(--nom-gold), color-mix(in srgb, var(--nom-gold) 76%, #000)); color: #fff;
+    border: 1px solid transparent; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 700;
+    box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--nom-gold) 60%, transparent); transition: transform .15s ease;
+}
+.nomina-emp-page .emp-nuevo-btn:hover { transform: translateY(-1px); color: #fff; }
+@media (max-width: 560px) {
+    .nomina-emp-page .emp-toolbar { flex-direction: column; align-items: stretch; }
+    .nomina-emp-page .emp-nuevo-btn { justify-content: center; }
 }
 .nomina-emp-page .emp-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 6px 14px 14px; }
 .nomina-emp-page table.emp-tabla { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -55,15 +71,23 @@ include APP_PATH . '/views/partials/back_arrow.php';
     <h1 class="nom-title">Empleados</h1>
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'empleados'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
+    <?php include APP_PATH . '/views/partials/filtros.php'; ?>
 
-    <form method="GET" action="<?= url('nomina/empleados') ?>" class="emp-filtros" data-auto-filter-form>
-        <input type="text" name="buscar" placeholder="Buscar por nombre…" value="<?= htmlspecialchars($empBuscar) ?>">
-        <select name="estado">
-            <?php foreach (['activo' => 'Activos', 'inactivo' => 'Inactivos', 'baja' => 'Bajas', 'todos' => 'Todos'] as $ek => $el): ?>
-            <option value="<?= $ek ?>" <?= $empEstado === $ek ? 'selected' : '' ?>><?= $el ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
+    <div class="emp-toolbar">
+        <form method="GET" action="<?= url('nomina/empleados') ?>" class="msf-bar is-plain" data-auto-filter-form>
+            <label class="msf-field msf-field--grow">
+                <span class="msf-label">Buscar</span>
+                <input class="msf-control" type="search" name="buscar" placeholder="Buscar empleado por nombre…" value="<?= htmlspecialchars($empBuscar) ?>">
+            </label>
+            <label class="msf-field msf-field--sm">
+                <span class="msf-label">Estado</span>
+                <select class="msf-control" name="estado"><?= msf_options(['activo' => 'Activos', 'inactivo' => 'Inactivos', 'baja' => 'Bajas', 'todos' => 'Todos'], $empEstado) ?></select>
+            </label>
+        </form>
+        <?php if ($empPuedeCrear): ?>
+        <a href="<?= url('nomina/empleados/crear') ?>" class="emp-nuevo-btn ms-pressable"><i class="fas fa-user-plus"></i> Nuevo empleado</a>
+        <?php endif; ?>
+    </div>
 
     <div class="emp-card">
         <?php if ($empLista === []): ?>

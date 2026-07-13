@@ -120,14 +120,42 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
 }
 .nomina-cat-page .nom-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--nom-gold); font-weight: 700; margin: 0; }
 .nomina-cat-page .nom-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 28px; margin: 2px 0 14px; font-weight: 600; }
-.nomina-cat-page .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.nomina-cat-page .cat-tab {
-    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
-    border: 1px solid var(--nom-border); border-radius: 999px; padding: 8px 14px;
-    font-size: 13px; font-weight: 600; color: var(--nom-text); background: var(--nom-card);
+/* Tipos de catálogo: riel segmentado local, distinto de la subnav de sección */
+.nomina-cat-page .cat-tabs-block { display: grid; gap: 7px; justify-items: start; margin-bottom: 18px; }
+.nomina-cat-page .cat-scope-label {
+    display: inline-flex; align-items: center; gap: 8px; padding-left: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--nom-muted);
 }
-.nomina-cat-page .cat-tab.activa { background: var(--nom-brand); border-color: var(--nom-brand); color: #fff; }
+.nomina-cat-page .cat-scope-label::before {
+    content: ""; flex: 0 0 auto; width: 14px; height: 2px; border-radius: 999px; background: var(--nom-gold);
+}
+.nomina-cat-page .cat-tabs {
+    display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
+    background: color-mix(in srgb, var(--nom-brand) 5%, #ffffff);
+    border: 1px solid var(--nom-border); border-radius: 15px;
+}
+.nomina-cat-page .cat-tab {
+    position: relative; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+    border: 1px solid transparent; border-radius: 11px; padding: 0 14px 2px; min-height: 38px;
+    font-size: 13px; font-weight: 600; color: var(--nom-muted); background: transparent;
+    white-space: nowrap; transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.nomina-cat-page .cat-tab:hover { color: var(--nom-text); background: rgba(255,255,255,.65); }
+.nomina-cat-page .cat-tab.activa {
+    background: #ffffff; border-color: var(--nom-border); color: var(--nom-text);
+    box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 6px 14px -8px color-mix(in srgb, var(--nom-brand) 38%, transparent);
+}
+.nomina-cat-page .cat-tab.activa::after {
+    content: ""; position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--nom-gold), color-mix(in srgb, var(--nom-gold) 40%, #fff));
+}
 .nomina-cat-page .cat-tab .cat-count { font-size: 11px; opacity: .75; }
+@media (max-width: 768px) {
+    .nomina-cat-page .cat-tabs-block { justify-items: stretch; }
+    .nomina-cat-page .cat-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .nomina-cat-page .cat-tabs::-webkit-scrollbar { display: none; }
+    .nomina-cat-page .cat-tab { flex: 1 0 auto; justify-content: center; }
+}
 .nomina-cat-page .cat-card { background: var(--nom-card); border: 1px solid var(--nom-border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
 .nomina-cat-page .cat-card h2 { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 19px; margin: 0 0 12px; font-weight: 600; }
 .nomina-cat-page .cat-notice {
@@ -181,13 +209,16 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
 
     <?php $subnav_section = 'nomina'; $subnav_active = 'catalogos'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 
-    <div class="cat-tabs">
-        <?php foreach ($catTabs as $tabKey => $tab): ?>
-        <a class="cat-tab <?= $catTipo === $tabKey ? 'activa' : '' ?>" href="<?= url('nomina/catalogos?tipo=' . $tabKey) ?>">
-            <i class="fas <?= $tab['icono'] ?>"></i> <?= $tab['label'] ?>
-            <span class="cat-count">(<?= (int) ($catConteos[$tabKey]['activos'] ?? 0) ?>)</span>
-        </a>
-        <?php endforeach; ?>
+    <div class="cat-tabs-block">
+        <span class="cat-scope-label">Tipos de cat&aacute;logo</span>
+        <nav class="cat-tabs" aria-label="Tipos de catálogo">
+            <?php foreach ($catTabs as $tabKey => $tab): ?>
+            <a class="cat-tab <?= $catTipo === $tabKey ? 'activa' : '' ?>" <?= $catTipo === $tabKey ? 'aria-current="page"' : '' ?> href="<?= url('nomina/catalogos?tipo=' . $tabKey) ?>">
+                <i class="fas <?= $tab['icono'] ?>"></i> <?= $tab['label'] ?>
+                <span class="cat-count">(<?= (int) ($catConteos[$tabKey]['activos'] ?? 0) ?>)</span>
+            </a>
+            <?php endforeach; ?>
+        </nav>
     </div>
 
     <?php if (!$catPuedeConfigurar): ?>

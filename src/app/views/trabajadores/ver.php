@@ -209,6 +209,15 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .grid { min-height: 0; }
 
 /* Pestañas de la ficha: control segmentado (local), distinto de la subnav de sección */
+.worker-detail-page .wk-tabs-block { display: grid; gap: 7px; justify-items: start; }
+.worker-detail-page .wk-scope-label {
+    display: inline-flex; align-items: center; gap: 8px; padding-left: 4px;
+    font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--wk-muted); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.worker-detail-page .wk-scope-label::before {
+    content: ""; flex: 0 0 auto; width: 14px; height: 2px; border-radius: 999px; background: var(--wk-gold);
+}
 .worker-detail-page .wk-tabs {
     display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
     background: color-mix(in srgb, var(--wk-brand) 5%, var(--wk-ivory-2));
@@ -239,6 +248,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-tabpane { display: grid; gap: 20px; }
 @keyframes wkRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 @media (max-width: 768px) {
+    .worker-detail-page .wk-tabs-block { justify-items: stretch; }
     .worker-detail-page .wk-tabs { width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .worker-detail-page .wk-tabs::-webkit-scrollbar { display: none; }
     .worker-detail-page .wk-tab { flex: 1 0 auto; justify-content: center; }
@@ -295,6 +305,16 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-balance.is-positive .wk-balance-value { color: var(--wk-success); }
 .worker-detail-page .wk-balance.is-negative .wk-balance-value { color: var(--wk-warning); }
 .worker-detail-page .wk-balance-caption { margin-top: 10px; color: var(--wk-muted-2); font-size: .86rem; line-height: 1.55; }
+.worker-detail-page .wk-balance-cta {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    min-height: 40px; padding: 0 18px; border-radius: 11px; border: 1px solid transparent;
+    background: var(--wk-brand); color: #fff; font-weight: 650; font-size: .85rem; line-height: 1;
+    text-decoration: none; cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+.worker-detail-page .wk-balance-cta i { font-size: .8rem; color: rgba(255,255,255,.85); }
+.worker-detail-page .wk-balance-cta:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 10px 20px -12px color-mix(in srgb, var(--wk-brand) 65%, transparent); }
+.worker-detail-page .wk-balance-cta:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--wk-ring); }
 .worker-detail-page .wk-factors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
 .worker-detail-page .wk-factor { position: relative; border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px 13px 18px; background: var(--wk-surface); }
 .worker-detail-page .wk-factor::before { content: ""; position: absolute; left: 7px; top: 13px; bottom: 13px; width: 3px; border-radius: 999px; background: var(--wk-border); }
@@ -497,6 +517,9 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     Es lo que se le puede pagar hoy desde Caja, despu&eacute;s de restar lo que ya se le pag&oacute;.<br>
                     Bruto del trabajo: <strong><?= trab_view_money($pagoCajaSaldoBase) ?></strong> &middot; Ya pagado en Caja: <strong><?= trab_view_money($pagoCajaPagosAplicados) ?></strong>
                 </p>
+                <?php if ($pagoCajaSaldoDisponible > 0 && !empty($pagoCaja['elegible']) && !empty($pagoCajaToken)): ?>
+                    <a class="wk-balance-cta ms-pressable" href="#t=pagos" data-wk-goto-tab="pagos"><i class="fas fa-money-bill-wave"></i> Pagarle ahora</a>
+                <?php endif; ?>
             </div>
             <div class="wk-factors">
                 <div class="wk-factor is-plus"><small>Le suma (a favor)</small><strong><?= trab_view_money($ledgerConceptosFavor) ?></strong></div>
@@ -506,11 +529,14 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             </div>
         </section>
 
-        <div class="wk-tabs" role="tablist" aria-label="Secciones de la ficha">
-            <button type="button" class="wk-tab is-active" data-wk-tab="resumen" role="tab" aria-selected="true"><i class="fas fa-id-card"></i> Resumen</button>
-            <button type="button" class="wk-tab" data-wk-tab="pagos" role="tab" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Pagos</button>
-            <button type="button" class="wk-tab" data-wk-tab="cuenta" role="tab" aria-selected="false"><i class="fas fa-scale-balanced"></i> Cuenta</button>
-            <button type="button" class="wk-tab" data-wk-tab="actividad" role="tab" aria-selected="false"><i class="fas fa-calendar-check"></i> Actividad</button>
+        <div class="wk-tabs-block">
+            <span class="wk-scope-label">Ficha de <?= trab_view_safe($trabajador['nombre_completo'] ?? null, 'este trabajador') ?></span>
+            <div class="wk-tabs" role="tablist" aria-label="Secciones de la ficha">
+                <button type="button" class="wk-tab is-active" data-wk-tab="resumen" role="tab" aria-selected="true"><i class="fas fa-id-card"></i> Resumen</button>
+                <button type="button" class="wk-tab" data-wk-tab="pagos" role="tab" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Pagarle</button>
+                <button type="button" class="wk-tab" data-wk-tab="cuenta" role="tab" aria-selected="false"><i class="fas fa-scale-balanced"></i> Cuenta</button>
+                <button type="button" class="wk-tab" data-wk-tab="actividad" role="tab" aria-selected="false"><i class="fas fa-calendar-check"></i> Actividad</button>
+            </div>
         </div>
 
         <div class="wk-tabpane is-open" data-wk-pane="resumen">
@@ -1027,6 +1053,16 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     tabs.forEach(function (t) {
         t.addEventListener('click', function () {
             activar(t.getAttribute('data-wk-tab'), true);
+        });
+    });
+
+    /* CTA "Pagarle ahora" de la tarjeta de saldo: activa la pestaña y acerca la vista. */
+    page.querySelectorAll('[data-wk-goto-tab]').forEach(function (el) {
+        el.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            activar(el.getAttribute('data-wk-goto-tab'), true);
+            var bloque = page.querySelector('.wk-tabs-block');
+            if (bloque && bloque.scrollIntoView) bloque.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
 

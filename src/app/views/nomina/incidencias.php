@@ -200,23 +200,35 @@ include APP_PATH . '/views/partials/back_arrow.php';
     </form>
     <?php endif; ?>
 
-    <form method="GET" action="<?= url('nomina/incidencias') ?>" class="inc-form" data-auto-filter-form style="margin-bottom:14px;">
-        <div class="inc-field" style="flex:0 1 160px;">
-            <label>Desde</label>
-            <input type="date" name="desde" value="<?= htmlspecialchars((string) ($inFiltros['desde'] ?? '')) ?>">
-        </div>
-        <div class="inc-field" style="flex:0 1 160px;">
-            <label>Hasta</label>
-            <input type="date" name="hasta" value="<?= htmlspecialchars((string) ($inFiltros['hasta'] ?? '')) ?>">
-        </div>
-        <div class="inc-field" style="flex:0 1 160px;">
-            <label>Estado</label>
-            <select name="estado">
+    <?php include APP_PATH . '/views/partials/filtros.php'; ?>
+    <form method="GET" action="<?= url('nomina/incidencias') ?>" class="msf-bar" data-auto-filter-form>
+        <label class="msf-field msf-field--grow">
+            <span class="msf-label">Trabajador</span>
+            <select class="msf-control" name="trabajador_id"><?= msf_worker_options($inTrabajadores, (int) ($inFiltros['trabajador_id'] ?? 0)) ?></select>
+        </label>
+        <label class="msf-field msf-field--sm">
+            <span class="msf-label">Desde</span>
+            <input class="msf-control" type="date" name="desde" value="<?= htmlspecialchars((string) ($inFiltros['desde'] ?? '')) ?>">
+        </label>
+        <label class="msf-field msf-field--sm">
+            <span class="msf-label">Hasta</span>
+            <input class="msf-control" type="date" name="hasta" value="<?= htmlspecialchars((string) ($inFiltros['hasta'] ?? '')) ?>">
+        </label>
+        <label class="msf-field msf-field--sm">
+            <span class="msf-label">Estado</span>
+            <select class="msf-control" name="estado">
                 <option value="">Todos</option>
                 <?php foreach (['aprobada', 'pendiente', 'rechazada'] as $es): ?>
                 <option value="<?= $es ?>" <?= ($inFiltros['estado'] ?? '') === $es ? 'selected' : '' ?>><?= ucfirst($es) ?></option>
                 <?php endforeach; ?>
             </select>
+        </label>
+        <div class="msf-ranges" data-msf-from="desde" data-msf-to="hasta">
+            <span class="msf-ranges-label">Rango</span>
+            <button type="button" class="msf-chip" data-msf-range="hoy">Hoy</button>
+            <button type="button" class="msf-chip" data-msf-range="7d">7 días</button>
+            <button type="button" class="msf-chip" data-msf-range="mes">Este mes</button>
+            <button type="button" class="msf-chip" data-msf-range="mes-pasado">Mes pasado</button>
         </div>
     </form>
 
