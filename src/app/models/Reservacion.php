@@ -3157,15 +3157,16 @@ public function paraCalendario($mes = null, $año = null) {
                     DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
                 FROM {$this->table} r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                WHERE r.estado = 'confirmada'
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.estado = 'confirmada'
                 AND r.fecha_entrada < CURDATE()
                 GROUP BY r.id
                 ORDER BY r.fecha_entrada
                 LIMIT 10";
-        
-        $stmt = $this->db->query($sql);
+
+        $stmt = $this->db->query($sql, [$this->hotelIdActual()]);
         return $stmt->fetchAll();
     }
 
@@ -3186,15 +3187,16 @@ public function paraCalendario($mes = null, $año = null) {
                     DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
                 FROM {$this->table} r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                WHERE r.estado = 'checked_in'
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.estado = 'checked_in'
                 AND r.fecha_salida < CURDATE()
                 GROUP BY r.id
                 ORDER BY r.fecha_salida
                 LIMIT 10";
-        
-        $stmt = $this->db->query($sql);
+
+        $stmt = $this->db->query($sql, [$this->hotelIdActual()]);
         return $stmt->fetchAll();
     }
 

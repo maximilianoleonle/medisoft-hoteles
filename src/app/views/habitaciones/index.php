@@ -1,38 +1,5 @@
 <?php
 $hotel_id_actual = obtenerHotelIdActualCompat();
-if (false && (!isset($checkins_pendientes) || !isset($checkouts_vencidos))) {
-
-    // Cargar el modelo si no está cargado
-    if (!class_exists('Reservacion')) {
-        require_once __DIR__ . '/../../models/Reservacion.php';
-    }
-
-    try {
-        // Crear instancia del modelo
-        $reservacionTemp = new Reservacion();
-
-        // Obtener check-ins pendientes
-        $checkins_pendientes = $reservacionTemp->getCheckInsPendientes();
-
-        // Obtener check-outs vencidos
-        $checkouts_vencidos = $reservacionTemp->getCheckOutsPendientes();
-
-        // Placeholder para llegadas tardías (implementación futura)
-        $llegadas_tardias = [];
-
-        // Log para debug (opcional - puedes comentar estas líneas)
-        error_log("Reservaciones pendientes cargadas directamente en la vista");
-        error_log("Check-ins pendientes: " . count($checkins_pendientes));
-        error_log("Check-outs vencidos: " . count($checkouts_vencidos));
-
-    } catch (Exception $e) {
-        // Si hay error, inicializar como arrays vacíos
-        error_log("Error al cargar reservaciones pendientes: " . $e->getMessage());
-        $checkins_pendientes = [];
-        $checkouts_vencidos = [];
-        $llegadas_tardias = [];
-    }
-}
 
 // Mapeo de colores de habitación (Área Confortable)
 $checkins_pendientes = isset($checkins_pendientes) && is_array($checkins_pendientes) ? $checkins_pendientes : [];
