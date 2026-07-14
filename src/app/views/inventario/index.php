@@ -1758,10 +1758,17 @@
                         <span>Movimientos</span>
                     </a>
                     <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
-                    <a href="<?= url('inventario/exportar') ?>" class="btn-inv pdf">
-                        <i class="fas fa-file-pdf text-xs"></i>
-                        <span>Exportar PDF</span>
-                    </a>
+                    <!-- Descarga directa en la misma pestana (mes-a-hoy); sin pagina intermedia.
+                         El rango personalizado sigue en inventario/exportar. -->
+                    <form action="<?= url('inventario/generarPdfMovimientos') ?>" method="POST" style="display:contents">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="fecha_desde" value="<?= htmlspecialchars(date('Y-m-01'), ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="fecha_hasta" value="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="btn-inv pdf">
+                            <i class="fas fa-file-pdf text-xs"></i>
+                            <span>Exportar PDF</span>
+                        </button>
+                    </form>
                     <?php endif; ?>
                 </div>
             </div>

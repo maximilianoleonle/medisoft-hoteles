@@ -226,7 +226,7 @@ $visibles = count($cuentas);
 <div class="cxc-page p-4 sm:p-6">
     <div class="cx-shell">
         <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <section class="cx-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="cx-title-lockup">
                 <div class="cx-hero-icon ms-glass-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                 <div>

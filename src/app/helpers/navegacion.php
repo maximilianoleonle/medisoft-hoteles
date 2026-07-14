@@ -148,6 +148,30 @@ function nav_pantalla_por_ruta($ruta) {
 }
 
 /**
+ * ¿La peticion actual es especulativa (prefetch/prerender del navegador)?
+ * Chrome/Edge marcan las peticiones de Speculation Rules y <link rel=prefetch>
+ * con "Sec-Purpose: prefetch" (o "prefetch;prerender"); versiones previas y
+ * otros navegadores usan Purpose/X-Purpose/X-moz. El usuario AUN NO visito la
+ * pagina: no deben ejecutarse efectos secundarios (registrar visita, marcar
+ * notificaciones leidas, etc.). Ver instant-nav.js (quien origina la precarga).
+ */
+function is_speculative_request(): bool {
+    $marcas = strtolower(implode(' ', [
+        $_SERVER['HTTP_SEC_PURPOSE'] ?? '',
+        $_SERVER['HTTP_PURPOSE'] ?? '',
+        $_SERVER['HTTP_X_PURPOSE'] ?? '',
+        $_SERVER['HTTP_X_MOZ'] ?? '',
+    ]));
+
+    return strpos($marcas, 'prefetch') !== false || strpos($marcas, 'prerender') !== false;
+}
+
+/** ¿La peticion es especificamente un prerender (pagina completa anticipada)? */
+function is_prerender_request(): bool {
+    return strpos(strtolower($_SERVER['HTTP_SEC_PURPOSE'] ?? ''), 'prerender') !== false;
+}
+
+/**
  * Registrar la visita a la vista actual como 'reciente' (fire-and-forget).
  * Se invoca desde View::renderTemplate en cada pagina principal GET.
  * Un solo upsert por vista; nunca rompe la pagina.
@@ -155,6 +179,15 @@ function nav_pantalla_por_ruta($ruta) {
 function nav_registrar_visita() {
     try {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+            return;
+        }
+
+        // Prefetch (hover/touch): el usuario aun no visito la pantalla — no
+        // contaminar 'recientes' ni ultima_visita de las burbujas de novedad.
+        // El prerender SI se registra: nace de intencion fuerte y casi siempre
+        // termina en visita real; ademas, al activarse un prerender NO hay una
+        // segunda peticion al servidor, asi que saltarlo perderia la visita.
+        if (is_speculative_request() && !is_prerender_request()) {
             return;
         }
 

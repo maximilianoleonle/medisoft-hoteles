@@ -120,6 +120,28 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - **View Transitions MPA**: `@view-transition { navigation: auto }` +
       duraciones .16/.2s, con guard `prefers-reduced-motion`. Cross-fade
       entre pantallas gratis.
+12. **Tableros operativos AGRUPADOS por "qué necesita cada item", no un muro
+    plano de tarjetas iguales.** Un grid uniforme de N tarjetas obliga a leerlas
+    una por una; agrupar en secciones con ícono + conteo + pista corta lo vuelve
+    escaneable de un vistazo. Receta (probada en el tablero de limpieza de
+    Medisoft, jul 2026, transferible a colas de veterinaria/taller):
+    - Una sección por estado accionable, ordenadas por urgencia (pendiente →
+      en curso → resuelto → fuera de servicio); la sección vacía no se pinta.
+    - Lo YA-resuelto va en `<details>` colapsable (cero JS): plegado cuando hay
+      trabajo pendiente (enfoca), abierto cuando no lo hay (no deja pantalla
+      vacía) — `<?= $pendientes === 0 ? ' open' : '' ?>`.
+    - La acción "revertir" (marcar limpio→sucio, reabrir) es SECUNDARIA (botón
+      ghost/mini), nunca compite visualmente con el CTA primario de avanzar.
+    - El copy del encabezado describe el tablero, no da una orden que solo
+      aplica a un estado ("cada sección te dice qué hacer", no "toca cuando
+      termines" cuando no hay nada por terminar).
+    - **Cada tarjeta carga el dato de dominio que vuelve accionable la
+      decisión**, no solo el estado. En limpieza: qué día SALE cada cuarto
+      ocupado + quién lo ocupa (el controlador ya tiene el JOIN
+      reservacion_habitaciones→reservaciones→huespedes; se etiqueta relativo:
+      "Sale hoy/mañana/el dd/mm · N noches"). Transferible: en veterinaria la
+      tarjeta de "en consulta" carga la mascota + hora de cita; en taller, la
+      orden carga el vehículo + fecha prometida.
 
 ---
 

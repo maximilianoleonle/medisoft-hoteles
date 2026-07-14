@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v23';
+const SW_VERSION = 'v24'; // v24: Tailwind precompilado (css/tailwind.css) sustituye al Play CDN
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -22,6 +22,7 @@ const SHELL_ASSETS = [
   'offline.html',
   'manifest.json',
   'css/custom.css',
+  'css/tailwind.css',
   'css/sidebar-styles.css',
   'css/sidebar-size-override.css',
   'css/dashboard-layout-fix.css',
@@ -42,7 +43,7 @@ const SHELL_ASSETS = [
   'img/icons/icon-192x192.png',
   'img/icons/icon-512x512.png',
   // LibrerÃ­as self-hosted (fase 6): antes venÃ­an de CDNs externos
-  'vendor/tailwind/tailwindcdn.js',
+  // (tailwindcdn.js eliminado en v24: ahora es css/tailwind.css precompilado)
   'vendor/fontawesome/css/all.min.css',
   'vendor/fontawesome/webfonts/fa-solid-900.woff2',
   'vendor/fontawesome/webfonts/fa-regular-400.woff2',

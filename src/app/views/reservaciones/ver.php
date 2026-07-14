@@ -3222,6 +3222,13 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
         font-size: .68rem;
     }
     .rdv3-room.is-courtesy .rdv3-room-price small { display: none; }
+    /* El subtotal ya aparece en las metricas: se omite el bloque de precio duplicado en movil (se conserva la pildora de cortesia). */
+    .rdv3-room:not(.is-courtesy) {
+        grid-template-areas:
+            "identity"
+            "metrics";
+    }
+    .rdv3-room:not(.is-courtesy) .rdv3-room-price { display: none; }
     .rdv3-room-metrics {
         grid-area: metrics;
         display: grid;

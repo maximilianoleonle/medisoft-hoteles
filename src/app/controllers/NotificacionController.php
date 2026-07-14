@@ -81,6 +81,15 @@ class NotificacionController extends Controller {
             return;
         }
 
+        // Abrir tiene efectos (marcar leida / archivar): una precarga
+        // especulativa del navegador NUNCA debe dispararlos. 503 hace que el
+        // navegador descarte la especulacion y repita la peticion real al clic.
+        if (function_exists('is_speculative_request') && is_speculative_request()) {
+            http_response_code(503);
+            header('Cache-Control: no-store');
+            return;
+        }
+
         $id = (int)($this->route_params['id'] ?? 0);
         $hotelId = $this->hotelIdActual();
         $notificacion = $id > 0 ? $this->notificacionModel->buscarPorIdHotel($id, $hotelId) : null;

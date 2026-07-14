@@ -190,6 +190,7 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-crumbs a { color:inherit; text-decoration:none; transition:color .15s; }
 .cj-crumbs a:hover { color:var(--cj-text); }
 .cj-topbar-acts { display:flex; align-items:center; gap:8px; margin-left:auto; }
+.cj-topbar-acts .ms-vtb-bell-shell { margin-left:0; }
 .cj-btn-ghost {
     display:inline-flex; align-items:center; gap:6px;
     height:32px; padding:0 11px;
@@ -470,6 +471,11 @@ if (!function_exists('cj_finance_sentence')) {
     background:
         linear-gradient(90deg, color-mix(in srgb, var(--cj-navy) 9%, var(--cj-surface)), var(--cj-surface) 68%),
         var(--cj-surface);
+}
+/* El primer divisor abre el feed pegado al encabezado: sube el padding superior del cuerpo (mismo valor que su sangrado lateral) y cede la linea divisoria al header. */
+.cj-mov-list > .cj-cut-divider:first-child {
+    margin-top:-20px;
+    border-top:0;
 }
 .cj-cut-divider.is-current {
     border-top-color:color-mix(in srgb, var(--cj-green) 50%, var(--cj-line));
@@ -858,6 +864,7 @@ if (!function_exists('cj_finance_sentence')) {
         margin:16px -16px 10px;
         padding:12px 14px 12px 46px;
     }
+    .cj-mov-list > .cj-cut-divider:first-child { margin-top:-16px; }
     .cj-cut-mark { left:14px; width:22px; height:22px; font-size:.62rem; }
     .cj-cut-eyebrow { font-size:.58rem; letter-spacing:.1em; }
     .cj-cut-title { font-size:.82rem; }
@@ -1045,6 +1052,7 @@ $cash_methods = [
                 <i class="fas fa-tags"></i> Conceptos
             </a>
             <?php endif; ?>
+            <?php include APP_PATH . '/views/partials/notification_bell.php'; ?>
         </div>
     </nav>
 

@@ -418,4 +418,38 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<style id="rp-candy-glass-cupertino">
+/* ═══ Reportes: botones "Abrir reporte" en candy glass — SOLO CUPERTINO claro
+   (owner 2026-07-11, override explícito de una sola pieza; el resto del centro
+   de reportes queda intacto por contrato). El CTA verde sólido pasa a losa de
+   cristal de la marca con bloom + tinta, como el resto del sistema. Aplica a
+   TODOS los .rp-btn.primary (Abrir reporte / Ver exportaciones / Abrir tablero)
+   para no dejar CTAs desparejos. Deleite y modo oscuro intactos.
+   Revertir: borrar este bloque. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .reportes-view .rp-btn.primary {
+    background:
+        radial-gradient(50% 180% at 96% 50%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--rp-brand) 22%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rp-brand) 40%, #FFFFFF) 100%) !important;
+    color: color-mix(in srgb, var(--rp-brand) 72%, #111827) !important;
+    border: 1px solid color-mix(in srgb, var(--rp-brand) 34%, rgba(255,255,255,.9)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.85),
+        0 8px 16px -10px color-mix(in srgb, var(--rp-brand) 48%, transparent) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .reportes-view .rp-btn.primary svg {
+    color: color-mix(in srgb, var(--rp-brand) 72%, #111827) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .reportes-view .rp-btn.primary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03) saturate(1.04);
+    background:
+        radial-gradient(50% 180% at 96% 50%, rgba(255,255,255,.88), rgba(255,255,255,0) 70%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--rp-brand) 26%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rp-brand) 46%, #FFFFFF) 100%) !important;
+}
+</style>
+
 <?php include __DIR__ . '/../layout/footer.php'; ?>

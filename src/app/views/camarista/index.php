@@ -5,6 +5,7 @@
  */
 $habitaciones = $habitaciones ?? [];
 $salidasHoy = $salidasHoy ?? [];
+$ocupacion = $ocupacion ?? [];
 $personal = $personal ?? [];
 $tareasLimpieza = $tareasLimpieza ?? [];
 $camHayPersonal = !empty($personal);
@@ -133,6 +134,28 @@ $camTodoAlDia = ($porLimpiar === 0);
   background:var(--dx-success-soft); border:1px solid color-mix(in srgb, var(--dx-success) 25%, #fff); color:var(--dx-success-2); font-weight:700; font-size:.9rem; }
 .cam-done i{ font-size:1.15rem; animation:camPop .5s var(--dx-ease) both; }
 
+/* ── Secciones del tablero (agrupadas por lo que necesita cada cuarto) ── */
+.cam-section{ margin-bottom:22px; }
+.cam-section__head{ display:flex; align-items:center; gap:12px; margin:0 2px 12px; }
+summary.cam-section__head{ cursor:pointer; list-style:none; -webkit-tap-highlight-color:transparent; }
+summary.cam-section__head::-webkit-details-marker{ display:none; }
+details.cam-section:not([open]) > summary.cam-section__head{ margin-bottom:0; }
+.cam-section__ico{ flex:0 0 auto; width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-size:.98rem; }
+.cam-section__meta{ min-width:0; }
+.cam-section__t{ display:flex; align-items:center; gap:9px; font-family:var(--dx-serif); font-weight:700; font-size:1.08rem; line-height:1.15; color:var(--dx-ink); }
+.cam-section__count{ font-size:.74rem; font-weight:700; padding:2px 9px; border-radius:999px; }
+.cam-section__hint{ margin-top:2px; font-size:.76rem; color:var(--dx-ink-faint); }
+.cam-section__chev{ margin-left:auto; flex:0 0 auto; color:var(--dx-ink-faint); transition:transform .2s var(--dx-ease); }
+details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
+.cam-section--pend  .cam-section__ico  { background:var(--dx-clean-soft);   color:var(--dx-clean-deep); }
+.cam-section--pend  .cam-section__count{ background:var(--dx-clean-soft);   color:var(--dx-clean-deep); }
+.cam-section--occ   .cam-section__ico  { background:var(--dx-occ-soft);     color:var(--dx-occ); }
+.cam-section--occ   .cam-section__count{ background:var(--dx-occ-soft);     color:var(--dx-occ); }
+.cam-section--done  .cam-section__ico  { background:var(--dx-success-soft); color:var(--dx-success-2); }
+.cam-section--done  .cam-section__count{ background:var(--dx-success-soft); color:var(--dx-success-2); }
+.cam-section--maint .cam-section__ico  { background:var(--dx-slate-soft);   color:var(--dx-slate); }
+.cam-section--maint .cam-section__count{ background:var(--dx-slate-soft);   color:var(--dx-slate); }
+
 /* ── Grid de habitaciones ── */
 .cam-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(212px, 1fr)); gap:12px; }
 .cam-card{ position:relative; display:flex; flex-direction:column; gap:12px; padding:15px;
@@ -168,6 +191,17 @@ $camTodoAlDia = ($porLimpiar === 0);
 .cam-btn__shine{ position:absolute; inset:0 auto 0 0; width:42%; pointer-events:none;
   background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform:translateX(-160%) skewX(-18deg); }
 .cam-btn.done:hover .cam-btn__shine{ transition:transform .7s ease; transform:translateX(330%) skewX(-18deg); }
+
+/* ── Estancia en tarjeta ocupada: huésped + salida ── */
+.cam-stay{ display:flex; flex-direction:column; gap:6px; padding:9px 11px; border-radius:var(--dx-radius-sm);
+  background:var(--dx-surface-warm); border:1px solid var(--dx-line); }
+.cam-stay__row{ display:flex; align-items:center; gap:7px; min-width:0; font-size:.78rem; color:var(--dx-ink-soft); }
+.cam-stay__row > i{ width:14px; flex:0 0 auto; text-align:center; color:var(--dx-ink-faint); font-size:.74rem; }
+.cam-stay__row span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cam-stay__guest{ font-weight:600; color:var(--dx-ink); }
+.cam-stay__out{ font-weight:700; color:var(--dx-ink-soft); }
+.cam-stay__out--hoy{ color:var(--dx-occ); } .cam-stay__out--hoy > i{ color:var(--dx-occ); }
+.cam-stay__out--pronto{ color:#8A6A1F; } .cam-stay__out--pronto > i{ color:var(--dx-gold); }
 
 /* ── Meta de limpieza en tarjeta: personal asignado / fecha programada ── */
 .cam-meta{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -282,7 +316,7 @@ $camTodoAlDia = ($porLimpiar === 0);
         </span>
         <div class="cam-hero__t">
             <h1>Limpieza</h1>
-            <p class="sub">Toca el botón de cada habitación cuando termines. Arriba van las urgentes.</p>
+            <p class="sub">Cada sección te dice qué hacer. Empieza por las que están por limpiar.</p>
         </div>
     </div>
 
@@ -326,8 +360,36 @@ $camTodoAlDia = ($porLimpiar === 0);
         <?php endif; ?>
     </div>
 
-    <div class="cam-grid">
-        <?php foreach ($habitaciones as $hab): ?>
+    <?php
+    // Agrupamos los cuartos por lo que necesitan; el orden global (por prioridad
+    // y número) se conserva dentro de cada balde.
+    $camBuckets = ['limpieza' => [], 'ocupada' => [], 'disponible' => [], 'mantenimiento' => []];
+    foreach ($habitaciones as $__h) {
+        $__e = (string) $__h['estado'];
+        $camBuckets[isset($camBuckets[$__e]) ? $__e : 'mantenimiento'][] = $__h;
+    }
+    $camSecciones = [
+        ['key' => 'limpieza',      'mod' => 'pend',  'tag' => 'section', 'ico' => 'fa-broom',              't' => 'Por limpiar',      'hint' => 'Termina y toca “Ya quedó limpia”.'],
+        ['key' => 'ocupada',       'mod' => 'occ',   'tag' => 'section', 'ico' => 'fa-bed',                't' => 'Ocupadas',         'hint' => 'En uso. Programa su limpieza para cuando salga el huésped.'],
+        ['key' => 'disponible',    'mod' => 'done',  'tag' => 'details', 'ico' => 'fa-circle-check',       't' => 'Listas',           'hint' => 'Al día. Márcala por limpiar solo si se volvió a ensuciar.'],
+        ['key' => 'mantenimiento', 'mod' => 'maint', 'tag' => 'section', 'ico' => 'fa-screwdriver-wrench', 't' => 'En mantenimiento', 'hint' => 'Fuera de servicio por ahora.'],
+    ];
+    foreach ($camSecciones as $sec):
+        $lista = $camBuckets[$sec['key']];
+        if (empty($lista)) { continue; }
+        $esDetails = $sec['tag'] === 'details';
+    ?>
+    <<?= $esDetails ? 'details' : 'section' ?> class="cam-section cam-section--<?= $sec['mod'] ?>"<?= $esDetails && $porLimpiar === 0 ? ' open' : '' ?>>
+        <<?= $esDetails ? 'summary' : 'div' ?> class="cam-section__head">
+            <span class="cam-section__ico"><i class="fas <?= $sec['ico'] ?>" aria-hidden="true"></i></span>
+            <div class="cam-section__meta">
+                <div class="cam-section__t"><?= $camSafe($sec['t']) ?><span class="cam-section__count"><?= count($lista) ?></span></div>
+                <div class="cam-section__hint"><?= $camSafe($sec['hint']) ?></div>
+            </div>
+            <?php if ($esDetails): ?><i class="fas fa-chevron-down cam-section__chev" aria-hidden="true"></i><?php endif; ?>
+        </<?= $esDetails ? 'summary' : 'div' ?>>
+        <div class="cam-grid">
+        <?php foreach ($lista as $hab): ?>
             <?php
             $id = (int) $hab['id'];
             $estado = (string) $hab['estado'];
@@ -359,11 +421,45 @@ $camTodoAlDia = ($porLimpiar === 0);
                 <?php if ($estado === 'limpieza'): ?>
                     <span class="cam-badge b-pend"><i class="fas fa-broom" aria-hidden="true"></i>Por limpiar</span>
                 <?php elseif ($estado === 'ocupada'): ?>
-                    <span class="cam-badge b-occ"><i class="fas fa-bed" aria-hidden="true"></i>Ocupada<?= $esSalidaHoy ? ' · sale hoy' : '' ?></span>
+                    <span class="cam-badge b-occ"><i class="fas fa-bed" aria-hidden="true"></i>Ocupada</span>
                 <?php elseif ($estado === 'disponible'): ?>
                     <span class="cam-badge b-done"><i class="fas fa-check" aria-hidden="true"></i>Limpia</span>
                 <?php else: ?>
                     <span class="cam-badge b-maint"><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i>Mantenimiento</span>
+                <?php endif; ?>
+
+                <?php if ($estado === 'ocupada' && (isset($ocupacion[$id]) || $esSalidaHoy)): ?>
+                    <?php
+                    $occ = $ocupacion[$id] ?? null;
+                    $salidaLbl = '';
+                    $salidaTono = '';
+                    if ($occ && (string) $occ['fecha_salida'] !== '') {
+                        $sts = strtotime((string) $occ['fecha_salida']);
+                        $sdia = $sts ? date('Y-m-d', $sts) : '';
+                        if ($sdia === $camHoy) {
+                            $salidaLbl = 'Sale hoy'; $salidaTono = ' cam-stay__out--hoy';
+                        } elseif ($sdia === $camManana) {
+                            $salidaLbl = 'Sale mañana'; $salidaTono = ' cam-stay__out--pronto';
+                        } elseif ($sdia !== '') {
+                            $noches = (int) floor((strtotime($sdia) - strtotime($camHoy)) / 86400);
+                            $salidaLbl = 'Sale el ' . date('d/m', $sts) . ($noches > 0 ? ' · ' . $noches . ' noche' . ($noches === 1 ? '' : 's') : '');
+                        }
+                    } elseif ($esSalidaHoy) {
+                        $salidaLbl = 'Sale hoy'; $salidaTono = ' cam-stay__out--hoy';
+                    }
+                    ?>
+                    <div class="cam-stay">
+                        <?php if ($occ && trim((string) $occ['huesped']) !== ''): ?>
+                            <div class="cam-stay__row cam-stay__guest" title="<?= $camSafe($occ['huesped']) ?>">
+                                <i class="fas fa-user" aria-hidden="true"></i><span><?= $camSafe($occ['huesped']) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($salidaLbl !== ''): ?>
+                            <div class="cam-stay__row cam-stay__out<?= $salidaTono ?>">
+                                <i class="fas fa-right-from-bracket" aria-hidden="true"></i><span><?= $camSafe($salidaLbl) ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
 
                 <?php if ($asignadosNombres !== '' || $fechaProgLabel !== ''): ?>
@@ -425,7 +521,7 @@ $camTodoAlDia = ($porLimpiar === 0);
                               data-ms-ok="Sí, marcar">
                             <?= csrf_field() ?>
                             <input type="hidden" name="estado" value="limpieza">
-                            <button type="submit" class="cam-btn pend">
+                            <button type="submit" class="cam-btn mini">
                                 <i class="fas fa-broom" aria-hidden="true"></i>Marcar por limpiar
                             </button>
                         </form>
@@ -433,7 +529,9 @@ $camTodoAlDia = ($porLimpiar === 0);
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
-    </div>
+        </div>
+    </<?= $esDetails ? 'details' : 'section' ?>>
+    <?php endforeach; ?>
 
     <?php if (empty($habitaciones)): ?>
         <div class="cam-empty">

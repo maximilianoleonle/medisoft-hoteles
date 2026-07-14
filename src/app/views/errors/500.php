@@ -5,35 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>500 - Error del Servidor | Medisoft Hoteles</title>
     
-    <!-- Tailwind CSS -->
-    <script src="<?= asset('vendor/tailwind/tailwindcdn.js') ?>"></script>
-    
+    <!-- Tailwind CSS precompilado (config en tailwind.config.js de la raíz).
+         Nota: los alias hotel-* ahora se resuelven contra las variables de
+         marca --brand-* con sus fallbacks; esta página pierde sus hex legacy
+         y adopta la paleta de marca (deseable en white-label). -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/tailwind.css') : asset('css/tailwind.css') ?>">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'hotel-brown': '#5D3A1A',
-                        'hotel-brown-light': '#7B4F2F',
-                        'hotel-brown-dark': '#3E2612',
-                        'hotel-gold': '#D4AF37',
-                        'hotel-cream': '#FFF8E7',
-                        'hotel-beige': '#F5E6D3'
-                    },
-                    fontFamily: {
-                        'playfair': ['Playfair Display', 'serif'],
-                        'inter': ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         html {
             touch-action: pan-x pan-y;

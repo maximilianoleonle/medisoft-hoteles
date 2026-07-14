@@ -1481,7 +1481,8 @@ html[data-theme="dark"][data-tema="cupertino"] .tk-page .tk-row:hover {
 
 /* ═══ 23. HUÉSPEDES (index .guests-page) ════════════════════════════
    Capa boutique con tokens --guest-* y fondo !important: volteo por
-   token + lienzo plano; el ícono del héroe pierde el gradiente oro. */
+   token + lienzo plano. El héroe .guest-hero se suma a la familia de
+   losas glass (§48/§48c): slab, tinta, kicker-píldora e icono frosted. */
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guests-page {
     --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 6%, #F5F5F7);
     --guest-brand-softer: #FAFAFC;
@@ -1501,11 +1502,6 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .guests-page {
 
 html[data-tema="cupertino"] .guests-page .hotel-page-title {
     letter-spacing: -0.02em !important;
-}
-
-html[data-tema="cupertino"] .guests-page .guest-hero-icon {
-    background: var(--guest-brand) !important;
-    box-shadow: none !important;
 }
 
 /* ═══ 24. DETALLE DE RESERVACIÓN (ver.php: .reservation-detail-v2 +
@@ -1978,10 +1974,13 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .cxc-page {
     --cx-surface: #FFFFFF;
     --cx-surface-warm: #F5F5F7;
     --cx-border: #E8E8ED;
-    --cx-text: #48484A;
-    --cx-text-soft: #6E6E73;
+    /* Tinta calmada: la tabla de CxC es densa y el label Apple #1D1D1F/#48484A
+       se sentía "muy negro" repetido en cada nombre/saldo. Bajamos a charcoal
+       slate suave; sigue con contraste AA holgado (heading ~11:1, text ~6.5:1). */
+    --cx-text: #5C6470;
+    --cx-text-soft: #79818E;
     --cx-muted: #6E6E73;
-    --cx-heading: #1D1D1F;
+    --cx-heading: #3A3F47;
     --cx-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
 }
 
@@ -2966,7 +2965,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cfin-status.warning {
    token. Estrena modo oscuro. */
 html[data-tema="cupertino"]:not([data-theme="dark"]) .billing-page {
     --billing-accent-soft: color-mix(in srgb, var(--billing-accent) 10%, #FFFFFF);
-    --billing-ink: #1D1D1F;
+    /* Tinta calmada (mismo criterio que CxC): el label Apple #1D1D1F se sentía
+       "muy negro" en la bandeja; charcoal slate suave, contraste AA holgado. */
+    --billing-ink: #3A3F47;
     --billing-muted: #6E6E73;
     --billing-line: #E8E8ED;
     --billing-line-strong: #D2D2D7;
@@ -4111,7 +4112,7 @@ html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .ms-glass-btn
    destacar, precedente caja). En oscuro: losa grafito, el texto blanco de
    base ya funciona. Los formularios de inventario (toolbar Tailwind delgada)
    NO son de esta familia y quedan fuera. SOLO tema Cupertino. */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
     background:
         radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .82), rgba(255, 255, 255, 0) 72%),
         linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%),
@@ -4129,23 +4130,23 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .ren
 }
 
 /* Bloom decorativo del acento: se suaviza sobre el cristal claro */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
     background: radial-gradient(circle, color-mix(in srgb, var(--brand-accent, #BD9441) 22%, transparent), transparent 68%) !important;
 }
 
 /* Título y párrafo: tinta de marca sobre el cristal */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) h1 {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) h1 {
     color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #0C1E15) !important;
     text-shadow: 0 1px 0 rgba(255, 255, 255, .55) !important;
 }
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) > p,
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) p {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) > p,
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) p {
     color: color-mix(in srgb, var(--brand-primary, #1B2746) 32%, #4B5563) !important;
     text-shadow: none !important;
 }
 
 /* Kicker: píldora lechosa con tinta (incluye el div Tailwind de links) */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"],
 html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*="text-white"] {
     background: rgba(255, 255, 255, .68) !important;
     border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, rgba(255, 255, 255, .9)) !important;
@@ -4160,7 +4161,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*=
     padding: 7px 11px;
     border-radius: 999px;
 }
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"] i,
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="kicker"] i,
 html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*="text-white"] i {
     color: color-mix(in srgb, var(--brand-accent, #BD9441) 62%, #4A3A12) !important;
 }
@@ -4168,7 +4169,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .report-link-title [class*=
 /* Tesela del icono dentro de los bloques: frosted clara (misma receta §47);
    cubre los heros de nómina (period-lockup no es title-lockup) y las teselas
    translúcidas de las bandas móviles. */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] {
     background:
         radial-gradient(115% 120% at 28% 8%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 52%),
         linear-gradient(160deg,
@@ -4181,12 +4182,12 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .ren
         inset 0 -5px 10px color-mix(in srgb, var(--brand-primary, #1B2746) 14%, transparent),
         0 9px 20px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 48%, transparent) !important;
 }
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] i {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="hero-icon"] i {
     color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, #08301C) !important;
 }
 
 /* Badges/sellos del bloque (p.ej. period-badge, nom-det-badge): lechosos */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="badge"] {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) [class*="badge"] {
     background: rgba(255, 255, 255, .68) !important;
     border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, rgba(255, 255, 255, .9)) !important;
     color: color-mix(in srgb, var(--brand-primary, #1B2746) 44%, #101828) !important;
@@ -4195,7 +4196,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .ren
 }
 
 /* Botones fantasma (is-soft): cristal lechoso con tinta */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-soft {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-soft {
     background:
         linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 60%),
         linear-gradient(165deg,
@@ -4211,7 +4212,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .ren
 }
 
 /* CTA (is-accent): sólido de marca con brillo de vidrio, destaca en la losa */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent {
     background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%), var(--brand-primary, #1B2746) !important;
     border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 60%, transparent) !important;
     color: #FFFFFF !important;
@@ -4219,19 +4220,19 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .ren
         inset 0 1px 0 rgba(255, 255, 255, .3),
         0 10px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 62%, transparent) !important;
 }
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent i {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup) .is-accent i {
     color: rgba(255, 255, 255, .85) !important;
 }
 
 /* Flecha --glass: sobre cristal claro pasa a círculo lechoso con tinta */
-html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-hero) .ms-back--glass {
+html[data-tema="cupertino"]:not([data-theme="dark"]) :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-hero) .ms-back--glass {
     border-color: rgba(0, 0, 0, .06);
     background: rgba(255, 255, 255, .85);
     color: #1D1D1F;
 }
 
 /* Modo oscuro Apple: losa grafito; el texto blanco de base ya funciona */
-html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup, .report-link-title) {
     background:
         radial-gradient(46% 160% at 96% 72%, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 72%),
         linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
@@ -4240,7 +4241,7 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero
         inset 0 1px 0 rgba(255, 255, 255, .06),
         0 24px 44px -24px rgba(0, 0, 0, .7) !important;
 }
-html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
+html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero-main, .mant-hero-main, .geo-hero-main, .disc-hero-main, .tk-page .tk-hero-section, .purchases-page .cp-hero-section, .docs-page .dc-hero-section, .providers-page .pv-hero-section, .guests-page .guest-hero, .cxc-page .cx-hero-section, .billing-page .billing-hero, .mrv-hero-section, .inv-page .inv-topbar > div > .flex:first-child, .nomina-audit .audit-hero, .nomina-exp .exp-hero, .snapshot-pay-report .snap-hero, .nomina-detalle .nom-det-hero, .nomina-periodos .period-hero, .labor-receipt .receipt-hero, .tk-report--insights .tk-title-lockup)::after {
     background: radial-gradient(circle, color-mix(in srgb, var(--brand-accent, #BD9441) 20%, transparent), transparent 68%) !important;
 }
 
@@ -4276,6 +4277,72 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.profit-hero-main, .rent-hero
     }
     html[data-tema="cupertino"] .tk-page .tk-hero-actions {
         align-self: center;
+    }
+}
+
+/* §48c. Geometría del héroe de HUÉSPEDES dentro de la familia glass.
+   El slab, la tinta, el kicker-píldora y el icono frosted ya los hereda
+   .guest-hero al estar sumado a los :is() de §48 (todas esas reglas usan
+   !important). Aquí forzamos SOLO la geometría con !important porque la
+   capa boutique de huespedes (index.php #guest-boutique) fija
+   `padding:2px` y `border-radius:0` con !important, y §48b va sin él. */
+html[data-tema="cupertino"] .guests-page .guest-hero {
+    border-radius: 22px !important;
+    padding: 16px 16px 14px !important;
+    overflow: hidden !important;
+}
+html[data-tema="cupertino"] .guests-page .guest-hero .hotel-page-kicker {
+    margin-bottom: 9px !important;
+}
+@media (min-width: 768px) {
+    html[data-tema="cupertino"] .guests-page .guest-hero {
+        padding: 22px 24px 20px !important;
+    }
+}
+@media (min-width: 1024px) {
+    html[data-tema="cupertino"] .guests-page .guest-hero {
+        padding: 24px 28px 22px !important;
+    }
+}
+
+/* §48d. Geometría del héroe de CUENTAS POR COBRAR (.cx-hero-section) sumado a
+   la familia glass. Su <section> base es flex sin padding/radius, así que
+   basta geometría sin !important (nada compite). Incluye móvil (§48b solo
+   pone padding ≥768px; aquí damos base para que el contenido no quede al ras). */
+html[data-tema="cupertino"] .cxc-page .cx-hero-section {
+    border-radius: 22px;
+    padding: 16px 16px 14px;
+    overflow: hidden;
+}
+@media (min-width: 768px) {
+    html[data-tema="cupertino"] .cxc-page .cx-hero-section {
+        padding: 22px 24px 20px;
+    }
+}
+@media (min-width: 1024px) {
+    html[data-tema="cupertino"] .cxc-page .cx-hero-section {
+        padding: 24px 28px 22px;
+    }
+}
+
+/* §48e. Geometría del héroe de FACTURACIÓN (.billing-hero) sumado a la familia
+   glass. Ya estaba en la familia title-lockup (icono frosted + h1 tintado);
+   §48 le agrega la LOSA que le faltaba y aquí la geometría. .billing-hero es
+   display:block con padding 0.15rem (sin !important), así que basta sin él.
+   Móvil incluido (§48b solo pone padding ≥768px). */
+html[data-tema="cupertino"] .billing-page .billing-hero {
+    border-radius: 22px;
+    padding: 16px 16px 14px;
+    overflow: hidden;
+}
+@media (min-width: 768px) {
+    html[data-tema="cupertino"] .billing-page .billing-hero {
+        padding: 22px 24px 20px;
+    }
+}
+@media (min-width: 1024px) {
+    html[data-tema="cupertino"] .billing-page .billing-hero {
+        padding: 24px 28px 22px;
     }
 }
 

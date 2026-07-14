@@ -128,8 +128,14 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
     $vtbCrumbs = [['label' => $vtbActual]];
     $vtbBack = strpos($vtbRuta, '/') !== false ? back_url($vtbRoot) : back_url('dashboard');
 }
+
+// ── Campanita de notificaciones ──
+// Réplica del dropdown del dashboard dentro de la barra. Se muestra en TODAS
+// las vistas que pintan esta barra (el propio partial se auto-oculta si no hay
+// contexto de hotel o el módulo de notificaciones está apagado).
+$vtbShowBell = true;
 ?>
-<nav class="ms-vtb" aria-label="Ruta de navegación">
+<nav class="ms-vtb<?= $vtbShowBell ? ' ms-vtb--has-bell' : '' ?>" aria-label="Ruta de navegación">
     <a href="<?= htmlspecialchars($vtbBack, ENT_QUOTES, 'UTF-8') ?>" class="ms-vtb-back" aria-label="Regresar" title="Regresar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -148,14 +154,18 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
                 <?php endif; ?>
             <?php endforeach; ?>
         </div>
-        <div class="ms-vtb-hotel"><?= htmlspecialchars($vtbHotel, ENT_QUOTES, 'UTF-8') ?></div>
     </div>
+    <?php if ($vtbShowBell) { include APP_PATH . '/views/partials/notification_bell.php'; } ?>
 </nav>
 <style>
 /* ── Barra de navegación global (partials/view_topbar.php) ──
-   Transparente y SIN línea: se funde con el fondo de la vista. Un script
-   (abajo) la anida dentro del contenedor raíz de cada vista para que
-   herede su fondo exacto (decisión del owner: "parejo, sin separación"). */
+   Transparente y SIN línea EN REPOSO: se funde con el fondo de la vista. Un
+   script (abajo) la anida dentro del contenedor raíz de cada vista para que
+   herede su fondo exacto (decisión del owner: "parejo, sin separación").
+   Al hacer scroll se queda FIJA arriba (position:sticky) y solo entonces
+   toma el vidrio esmerilado + línea fina, igual que la topbar de Caja, para
+   que el contenido no se transparente por debajo (pedido del owner: "solo la
+   línea de la flechita se queda arriba con el scroll"). */
 .ms-vtb {
     display: flex;
     align-items: center;
@@ -164,11 +174,43 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
     padding: 0;
     background: transparent;
     border: 0;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    transition: background .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 /* Anidada en un contenedor con padding propio: sin doble sangría */
 .ms-vtb--nested { margin: 0 0 12px; }
 /* Anidada en un contenedor SIN padding: conserva su aire */
 .ms-vtb--nested.ms-vtb--pad { margin: 14px 24px 10px; }
+/* Fijada arriba: vidrio esmerilado + línea fina a ancho completo del
+   contenedor (el margen negativo lleva el vidrio al borde; el script pone
+   --vtb-mar-* / --vtb-pad-*). La sangría de la flechita no cambia: el padding
+   reañade exactamente el hueco de reposo. */
+.ms-vtb.is-stuck {
+    margin-top: 0;
+    margin-left: calc(var(--vtb-mar-l, 24px) * -1);
+    margin-right: calc(var(--vtb-mar-r, 24px) * -1);
+    /* Sin padding vertical: la barra conserva su alto exacto al fijarse → cero
+       salto. Solo el vidrio/borde delatan que se pegó. */
+    padding-left: var(--vtb-pad-l, 24px);
+    padding-right: var(--vtb-pad-r, 24px);
+    background: rgba(255, 255, 255, .82);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--brand-border, #E4DDCE);
+    box-shadow: 0 6px 18px rgba(27, 39, 70, .06);
+}
+html[data-theme="dark"] .ms-vtb.is-stuck {
+    background: rgba(22, 24, 30, .78);
+    border-bottom-color: rgba(255, 255, 255, .10);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+}
+/* Cupertino (solo claro): la barra de Caja usa este mismo lenguaje de vidrio.
+   En oscuro gana la regla de arriba (borde tinta clara). */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-vtb.is-stuck {
+    border-bottom-color: rgba(0, 0, 0, .08);
+}
 .ms-vtb-back {
     flex: 0 0 auto;
     width: 40px;
@@ -205,19 +247,15 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
 .ms-vtb-crumbs a:hover { color: var(--brand-text, #1B2746); }
 .ms-vtb-sep { margin: 0 4px; opacity: .6; }
 .ms-vtb-crumbs strong { color: var(--brand-primary, #1B2746); font-weight: 700; }
-.ms-vtb-hotel {
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--brand-muted, #8A93A7);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 @media (max-width: 768px) {
-    .ms-vtb { margin: 12px 14px 8px; }
-    .ms-vtb--nested { margin: 0 0 10px; }
-    .ms-vtb--nested.ms-vtb--pad { margin: 12px 14px 8px; }
+    .ms-vtb { margin: 8px 14px 6px; gap: 10px; }
+    .ms-vtb--nested { margin: 0 0 8px; }
+    .ms-vtb--nested.ms-vtb--pad { margin: 8px 14px 6px; }
+    /* Chips más compactos: la barra deja de sentirse "amontonada" */
+    .ms-vtb-back { width: 34px; height: 34px; border-radius: 11px; }
+    .ms-vtb-back svg { width: 15px; height: 15px; }
+    .ms-vtb-crumbs { font-size: .8rem; }
 }
 
 /* Modo oscuro: los tokens neutrales ya voltean; el énfasis usa tinta clara
@@ -260,14 +298,51 @@ nav[aria-label="breadcrumb"],
 <script>
 /* Anida la barra dentro del contenedor raíz de la vista para que herede su
    fondo exacto (lienzo, gradiente o color propio) y se vea "pareja" sin
-   franja ni línea. Corre en DOMContentLoaded (la vista ya está en el DOM,
-   el skeleton #psk sigue cubriendo hasta 'load', así que no hay salto).
-   Guardas: solo contenedores visibles de bloque o flex-columna (DIV/SECTION/
-   MAIN/ARTICLE/FORM); si no hay candidato seguro, la barra se queda donde
-   está (transparente sobre el lienzo). */
+   franja ni línea EN REPOSO. Corre en DOMContentLoaded (la vista ya está en el
+   DOM, el skeleton #psk sigue cubriendo hasta 'load', así que no hay salto).
+   Además deja la barra FIJA arriba (position:sticky) y activa el vidrio
+   esmerilado solo cuando se pega, vía la clase .is-stuck. */
 (function() {
+    var bar = null;
+
+    /* ¿Anidarse en `n` rompería el sticky? El elemento pegajoso se posiciona
+       respecto a su bloque contenedor; si un ancestro (hasta main-content)
+       recorta el overflow o crea un nuevo contexto (transform/filter/
+       perspective/contain/will-change) y NO es el que scrollea, el sticky se
+       cancela. En ese caso la barra se queda a nivel de main-content, donde el
+       sticky siempre funciona. */
+    var stickySeguro = function(nodo) {
+        var el = nodo;
+        while (el && el !== document.body && !el.classList.contains('main-content')) {
+            var s = getComputedStyle(el);
+            if (s.overflowX !== 'visible' || s.overflowY !== 'visible') { return false; }
+            if (s.transform !== 'none' || s.perspective !== 'none' || s.filter !== 'none') { return false; }
+            if (/transform|perspective|filter/.test(s.willChange || '')) { return false; }
+            if (/paint|layout|strict|content/.test(s.contain || '')) { return false; }
+            el = el.parentElement;
+        }
+        return true;
+    };
+
+    /* Sangría para que la línea de vidrio, al fijarse, llegue de borde a borde
+       del contenedor SIN mover la flecha. Dos piezas:
+         · margen negativo = padding del contenedor (lleva el vidrio al borde).
+         · padding = padding del contenedor + margen de reposo de la barra
+           (reañade exactamente el hueco que tenía la flecha).
+       Solo se mide en reposo: estando pegada, los márgenes de la barra ya
+       están sobrescritos y mentirían. */
+    var recalcularBleed = function() {
+        if (!bar || bar.classList.contains('is-stuck')) { return; }
+        var p = getComputedStyle(bar.parentElement);
+        var b = getComputedStyle(bar);
+        bar.style.setProperty('--vtb-mar-l', p.paddingLeft);
+        bar.style.setProperty('--vtb-mar-r', p.paddingRight);
+        bar.style.setProperty('--vtb-pad-l', 'calc(' + p.paddingLeft + ' + ' + b.marginLeft + ')');
+        bar.style.setProperty('--vtb-pad-r', 'calc(' + p.paddingRight + ' + ' + b.marginRight + ')');
+    };
+
     var anidar = function() {
-        var bar = document.querySelector('.ms-vtb');
+        bar = document.querySelector('.ms-vtb');
         if (!bar || bar.classList.contains('ms-vtb--nested')) { return; }
 
         /* Tipografía blindada: la barra usa la fuente del body (tema activo),
@@ -276,7 +351,7 @@ nav[aria-label="breadcrumb"],
            universales !important (p. ej. .habitaciones-view *). */
         var fuente = getComputedStyle(document.body).fontFamily;
         bar.style.setProperty('font-family', fuente, 'important');
-        bar.querySelectorAll('.ms-vtb-crumbs, .ms-vtb-crumbs *, .ms-vtb-hotel').forEach(function(el) {
+        bar.querySelectorAll('.ms-vtb-crumbs, .ms-vtb-crumbs *').forEach(function(el) {
             el.style.setProperty('font-family', fuente, 'important');
         });
 
@@ -287,26 +362,83 @@ nav[aria-label="breadcrumb"],
         while (n && (omitir[n.tagName] || n.id === 'psk' || getComputedStyle(n).display === 'none')) {
             n = n.nextElementSibling;
         }
-        if (!n || !admitidos[n.tagName]) { return; }
 
-        var cs = getComputedStyle(n);
-        var display = cs.display;
-        var esBloque = display === 'block' || display === 'flow-root';
-        var esFlexColumna = display === 'flex' && cs.flexDirection.indexOf('column') === 0;
-        if (!esBloque && !esFlexColumna) { return; }
-        if (cs.position === 'fixed' || cs.position === 'absolute') { return; }
+        var puedeAnidar = !!n && admitidos[n.tagName];
+        if (puedeAnidar) {
+            var cs = getComputedStyle(n);
+            var display = cs.display;
+            var esBloque = display === 'block' || display === 'flow-root';
+            var esFlexColumna = display === 'flex' && cs.flexDirection.indexOf('column') === 0;
+            if (!esBloque && !esFlexColumna) { puedeAnidar = false; }
+            else if (cs.position === 'fixed' || cs.position === 'absolute') { puedeAnidar = false; }
+            /* Contenedores centrados (max-width + margin auto): anidarse ahí
+               arrastraría la flecha al centro en pantallas anchas. */
+            else if (n.getBoundingClientRect().left - bar.parentElement.getBoundingClientRect().left > 40) { puedeAnidar = false; }
+            /* Contenedores que romperían el sticky: mejor a nivel de main. */
+            else if (!stickySeguro(n)) { puedeAnidar = false; }
 
-        /* Contenedores centrados (max-width + margin auto): anidarse ahí
-           arrastraría la flecha hacia el centro en pantallas anchas. La barra
-           se queda a nivel del main, pegada a la izquierda como en Caja. */
-        if (n.getBoundingClientRect().left - bar.parentElement.getBoundingClientRect().left > 40) { return; }
-
-        n.insertBefore(bar, n.firstChild);
-        bar.classList.add('ms-vtb--nested');
-        if (parseFloat(cs.paddingLeft) < 10) {
-            bar.classList.add('ms-vtb--pad');
+            if (puedeAnidar) {
+                n.insertBefore(bar, n.firstChild);
+                bar.classList.add('ms-vtb--nested');
+                if (parseFloat(cs.paddingLeft) < 10) {
+                    bar.classList.add('ms-vtb--pad');
+                }
+            }
         }
+
+        recalcularBleed();
+        montarDeteccion();
     };
+
+    /* ── Detector de "pegada arriba" ──
+       La barra es sticky top:0, así que se pega cuando el scroll supera su
+       posición natural de reposo (restOffset). Medimos ese offset una vez (y
+       en resize, solo si NO está pegada, porque estando pegada su rect miente).
+       Listener de scroll con rAF: determinista y sin depender de IO. */
+    var scroller = (function() {
+        var mc = document.querySelector('.main-content');
+        if (mc && /auto|scroll|overlay/i.test(getComputedStyle(mc).overflowY)) { return mc; }
+        return null; // scroll del documento
+    })();
+    var esDoc = !scroller;
+    var restOffset = 0;
+    var ticking = false;
+
+    var refTop = function() {
+        return esDoc ? 0 : scroller.getBoundingClientRect().top;
+    };
+    var scrollTop = function() {
+        return esDoc ? (window.pageYOffset || document.documentElement.scrollTop || 0) : scroller.scrollTop;
+    };
+    var medirRest = function() {
+        /* El rect solo es fiable con el scroll en el tope: position:sticky clava
+           la barra arriba aunque la clase is-stuck no esté puesta, así que medir
+           con scroll > 0 daría un offset falso. */
+        if (!bar || scrollTop() > 1) { return; }
+        restOffset = bar.getBoundingClientRect().top - refTop() + scrollTop();
+    };
+    var actualizar = function() {
+        ticking = false;
+        if (!bar) { return; }
+        bar.classList.toggle('is-stuck', scrollTop() > restOffset + 0.5);
+    };
+    var onScroll = function() {
+        if (!ticking) { ticking = true; window.requestAnimationFrame(actualizar); }
+    };
+
+    var montarDeteccion = function() {
+        if (!bar || bar.__vtbObs) { return; }
+        bar.__vtbObs = true;
+        medirRest();
+        (esDoc ? window : scroller).addEventListener('scroll', onScroll, { passive: true });
+        actualizar();
+    };
+
+    window.addEventListener('resize', function() {
+        recalcularBleed();
+        medirRest();
+        actualizar();
+    }, { passive: true });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', anidar);

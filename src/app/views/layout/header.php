@@ -88,6 +88,21 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <meta name="msapplication-TileImage" content="<?= htmlspecialchars($layoutPwaIcon192Url ?: asset('img/icons/icon-144x144.png'), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
     <meta name="format-detection" content="telephone=no">
+
+    <!-- Transiciones de vista entre páginas (MPA View Transitions): cross-fade
+         suave al navegar entre pantallas del mismo origen, en vez del corte a
+         blanco. Mejora progresiva: navegadores sin soporte navegan como siempre;
+         el bfcache restaura sin transición (instantáneo, como debe ser). -->
+    <style>
+        @view-transition { navigation: auto; }
+        ::view-transition-old(root) { animation-duration: .16s; }
+        ::view-transition-new(root) { animation-duration: .2s; }
+        @media (prefers-reduced-motion: reduce) {
+            ::view-transition-group(*),
+            ::view-transition-old(*),
+            ::view-transition-new(*) { animation: none !important; }
+        }
+    </style>
     <script>
         /* Tema de color (light | auto | dark). Corre antes de cargar CSS para evitar flash. */
         (function() {
@@ -250,8 +265,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="apple-touch-icon" sizes="512x512" href="<?= htmlspecialchars($layoutPwaIcon512Url ?: asset('img/icons/icon-512x512.png'), ENT_QUOTES, 'UTF-8') ?>">
     
     <!-- Librerías self-hosted (fase 6 offline): sin dependencia de CDNs externos -->
-    <!-- Tailwind CSS (runtime, self-hosted) -->
-    <script src="<?= asset('vendor/tailwind/tailwindcdn.js') ?>"></script>
+    <!-- Tailwind CSS PRECOMPILADO (npm run build:css). Antes era el Play CDN
+         compilando en el navegador en cada carga; la config inline de colores
+         vive ahora en tailwind.config.js (raíz del repo). -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/tailwind.css') : asset('css/tailwind.css') ?>">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
@@ -274,30 +291,8 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <!-- SweetAlert2 -->
     <script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
     
-    <!-- Custom Configuration -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'hotel-brown': 'var(--brand-secondary, #0F172A)',
-                        'hotel-brown-light': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #FFFFFF)',
-                        'hotel-brown-dark': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #000000)',
-                        'hotel-gold': 'var(--brand-accent, #BD9441)',
-                        'hotel-cream': 'color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #F8F5ED)',
-                        'hotel-beige': 'color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #F8F5ED)',
-                        'hotel-olive': 'var(--brand-primary, #1B2746)',
-                        'hotel-olive-light': 'color-mix(in srgb, var(--brand-primary, #1B2746) 76%, #FFFFFF)',
-                        'hotel-olive-dark': 'var(--brand-secondary, #0F172A)'
-                    },
-                    fontFamily: {
-                        'playfair': ['Playfair Display', 'serif'],
-                        'inter': ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- La config de colores/fuentes de Tailwind se compila en build
+         (tailwind.config.js); ya no hay config runtime aquí. -->
 
     <?php if ($layoutBranding && function_exists('hotel_branding_css_vars')): ?>
         <?= hotel_branding_css_vars($layoutBranding) ?>

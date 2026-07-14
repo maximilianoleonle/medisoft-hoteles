@@ -187,7 +187,7 @@ if ($total_paginas > 1) {
     background: rgba(255, 255, 255, 0.68);
     color: var(--billing-brand);
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 700;
     box-shadow: 0 10px 24px rgba(31, 41, 55, 0.04);
 }
 
@@ -283,7 +283,7 @@ if ($total_paginas > 1) {
     gap: 0.48rem;
     color: #748296;
     font-size: 0.72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
 }
@@ -339,7 +339,7 @@ if ($total_paginas > 1) {
     margin: 0;
     color: var(--billing-brand);
     font-size: 1.08rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .billing-panel-copy {
@@ -359,7 +359,7 @@ if ($total_paginas > 1) {
     background: rgba(255, 255, 255, 0.72);
     color: var(--billing-brand);
     font-size: 0.82rem;
-    font-weight: 800;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -380,7 +380,7 @@ if ($total_paginas > 1) {
     margin-bottom: 0.38rem;
     color: #2f4052;
     font-size: 0.7rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
 }
@@ -440,7 +440,7 @@ if ($total_paginas > 1) {
     border-radius: 0.78rem;
     padding: 0.72rem 0.96rem;
     font-size: 0.9rem;
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
@@ -480,7 +480,7 @@ if ($total_paginas > 1) {
     padding: 0 0.85rem 0.2rem;
     color: #748296;
     font-size: 0.68rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-align: left;
     text-transform: uppercase;
@@ -533,7 +533,7 @@ if ($total_paginas > 1) {
     border-radius: 0.82rem;
     background: var(--billing-accent-soft);
     color: var(--billing-brand);
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .billing-avatar {
@@ -552,7 +552,7 @@ if ($total_paginas > 1) {
     display: block;
     color: var(--billing-brand);
     font-size: 0.97rem;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.25;
     text-decoration: none;
 }
@@ -587,7 +587,7 @@ a.billing-name:hover {
     color: var(--chip-color, #536475);
     background: var(--chip-bg, #eef2f5);
     font-size: 0.72rem;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -617,7 +617,7 @@ a.billing-name:hover {
 .billing-rfc {
     color: #2f4052;
     font-size: 0.88rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .billing-muted {
@@ -638,7 +638,7 @@ a.billing-name:hover {
 .billing-date {
     color: #536475;
     font-size: 0.86rem;
-    font-weight: 800;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -654,7 +654,7 @@ a.billing-name:hover {
     color: var(--billing-brand);
     background: rgba(255, 255, 255, 0.82);
     font-size: 0.86rem;
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
     transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -751,7 +751,7 @@ a.billing-name:hover {
     margin: 0.85rem 0 0;
     color: var(--billing-brand);
     font-size: 1.12rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .billing-empty p {
@@ -793,7 +793,7 @@ a.billing-name:hover {
     justify-content: center;
     border-radius: 0.7rem;
     font-size: 0.84rem;
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -822,7 +822,7 @@ a.billing-name:hover {
     border-radius: 0.92rem;
     background: rgba(22, 155, 98, 0.08);
     color: #166b49;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 @media (max-width: 1280px) {

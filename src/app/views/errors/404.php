@@ -33,8 +33,8 @@ if ($errorTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
     <title>404 - Página no encontrada | <?= htmlspecialchars($errorHotelNombre, ENT_QUOTES, 'UTF-8') ?></title>
     <meta name="theme-color" content="<?= htmlspecialchars($errorThemeColor, ENT_QUOTES, 'UTF-8') ?>">
 
-    <!-- Tailwind CSS -->
-    <script src="<?= asset('vendor/tailwind/tailwindcdn.js') ?>"></script>
+    <!-- Tailwind CSS precompilado (config en tailwind.config.js de la raíz) -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/tailwind.css') : asset('css/tailwind.css') ?>">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?= asset('vendor/fontawesome/css/all.min.css') ?>">
@@ -45,30 +45,8 @@ if ($errorTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
     <!-- Paleta del hotel (white-label) -->
     <?= function_exists('hotel_branding_css_vars') ? hotel_branding_css_vars($errorBranding) : '' ?>
 
-    <script>
-        // Mismos alias de color que el layout del app: se resuelven contra las
-        // variables de marca inyectadas arriba (o sus fallbacks por defecto).
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'hotel-brown': 'var(--brand-secondary, #0F172A)',
-                        'hotel-brown-light': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #FFFFFF)',
-                        'hotel-brown-dark': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #000000)',
-                        'hotel-gold': 'var(--brand-accent, #BD9441)',
-                        'hotel-cream': 'color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #F8F5ED)',
-                        'hotel-beige': 'color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #F8F5ED)',
-                        'hotel-ink': 'var(--brand-text, #172033)',
-                        'hotel-muted': 'var(--brand-muted, #6B7280)'
-                    },
-                    fontFamily: {
-                        'playfair': ['Playfair Display', 'serif'],
-                        'inter': ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Los alias de color (hotel-*) se compilan en build; se siguen
+         resolviendo contra las variables de marca inyectadas arriba. -->
     <style>
         html {
             touch-action: pan-x pan-y;

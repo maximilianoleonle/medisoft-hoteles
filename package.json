@@ -1,0 +1,12 @@
+{
+  "name": "medisoft-hoteles-assets",
+  "private": true,
+  "description": "Build de assets: Tailwind PRECOMPILADO (reemplaza al Play CDN que compilaba CSS en el navegador en cada carga). Correr build:css tras tocar clases Tailwind en vistas/JS.",
+  "scripts": {
+    "build:css": "tailwindcss -i ./tailwind.input.css -o ./src/public_html/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./tailwind.input.css -o ./src/public_html/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

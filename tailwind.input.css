@@ -1,0 +1,5 @@
+/* Entrada del build de Tailwind (ver tailwind.config.js). Igual que el Play
+   CDN: preflight (base) + componentes + utilidades. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

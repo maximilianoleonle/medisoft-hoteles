@@ -4273,10 +4273,6 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             </div>
                             <?php endif; ?>
 
-                            <a class="notification-quick-all" href="<?= htmlspecialchars(url('notificaciones'), ENT_QUOTES, 'UTF-8') ?>">
-                                Ver todas
-                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                            </a>
                         </div>
                     </div>
                     <?php endif; ?>

@@ -887,7 +887,20 @@ public function debugMovimientosDateAction() {
             return false;
         }
 
-        $stmt = $this->db->query("SHOW COLUMNS FROM {$tabla} LIKE ?", [$columna]);
+        // SHOW COLUMNS ... LIKE ? no admite placeholder con prepared statements
+        // nativos (ATTR_EMULATE_PREPARES = false) y revienta con error 1064.
+        // information_schema si acepta parametros vinculados, igual que el resto
+        // del codebase (ver tools/saas/*ColumnExists).
+        $stmt = $this->db->query(
+            "SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+             LIMIT 1",
+            [$tabla, $columna]
+        );
+
         return $stmt && (bool) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 

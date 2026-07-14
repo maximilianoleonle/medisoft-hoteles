@@ -83,6 +83,9 @@
     if (!href || href.charAt(0) === '#') { return null; }
     if (/^(javascript:|mailto:|tel:|sms:|blob:|data:)/i.test(href)) { return null; }
     if (/logout/i.test(href)) { return null; }
+    // GET con efectos secundarios (marca leida/archiva y redirige): jamas
+    // precargar. El servidor tambien lo rechaza (503), doble cinturon.
+    if (/notificaciones\/abrir/i.test(href)) { return null; }
 
     var absoluta;
     try { absoluta = new URL(href, location.href); } catch (e) { return null; }
@@ -126,8 +129,34 @@
 
   if (supportsSpeculationRules) {
     // Chromium/Edge: reglas declarativas para los <a> del menú. eagerness
-    // "moderate" = precarga al pasar el cursor / apuntar (no en cada carga).
+    // "moderate" = especula al pasar el cursor / apuntar (no en cada carga).
+    //
+    // Dos niveles:
+    //  · PRERENDER (clic instantáneo de verdad: la página se construye entera
+    //    en segundo plano) para el menú, EXCEPTO pantallas donde anticipar es
+    //    peligroso o indeseable:
+    //      - caja / habitaciones: dinero y estados operativos; un prerender
+    //        podría quedar armado con datos de minutos atrás.
+    //      - notificaciones: entrar apaga la burbuja de novedad; un hover sin
+    //        clic no debe apagarla.
+    //    (logout ya queda fuera por href_matches.)
+    //  · PREFETCH (baja solo el HTML, sin ejecutarlo) para esas pantallas
+    //    excluidas: siguen ganando el viaje de red y el render es fresco.
     var rules = {
+      prerender: [{
+        source: 'document',
+        eagerness: 'moderate',
+        where: {
+          and: [
+            { selector_matches: NAV_SELECTOR },
+            { not: { href_matches: '*logout*' } },
+            { not: { href_matches: '*/caja*' } },
+            { not: { href_matches: '*/habitaciones*' } },
+            { not: { href_matches: '*/notificaciones*' } },
+            { not: { selector_matches: SKIP_SELECTOR } }
+          ]
+        }
+      }],
       prefetch: [{
         source: 'document',
         eagerness: 'moderate',
@@ -135,6 +164,7 @@
           and: [
             { selector_matches: NAV_SELECTOR },
             { not: { href_matches: '*logout*' } },
+            { not: { href_matches: '*notificaciones/abrir*' } },
             { not: { selector_matches: SKIP_SELECTOR } }
           ]
         }

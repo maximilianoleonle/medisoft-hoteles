@@ -36,7 +36,6 @@ $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracio
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
 $mostrarAuditoria = $menuModuloActivo('auditoria') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarNotificacionesMenu = $menuModuloActivo('notificaciones');
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 // Vigilancia financiera: gating temporal en ia_ejecutiva (al monetizar, usar su propio modulo).
@@ -53,7 +52,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad');
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarNotificacionesMenu || $mostrarAuditoria);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
@@ -95,7 +94,6 @@ $sidebarActiveReportes = $sidebarPathStarts('reportes');
 $sidebarActivePersonal = $sidebarPathStarts('trabajadores');
 $sidebarActiveNomina = $sidebarPathStarts('nomina');
 $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
-$sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveVigilanciaFinanciera = $sidebarPathStarts('ia/vigilancia-financiera');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia') && !$sidebarActiveVigilanciaFinanciera;
@@ -717,17 +715,6 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarNotificacionesMenu): ?>
-            <a href="<?= url('notificaciones') ?>"
-               class="nav-item <?= $sidebarActiveNotificaciones ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-bell"></i>
-                    <?= $sidebarBadge('notificaciones', $sidebarActiveNotificaciones) ?>
-                </div>
-                <span class="nav-text">Notificaciones</span>
             </a>
             <?php endif; ?>
 

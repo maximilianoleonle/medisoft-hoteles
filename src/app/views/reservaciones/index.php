@@ -310,7 +310,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-title-lockup { flex: 1 1 420px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: min(100%, 360px); max-width: min(960px, 100%); }
 .res-title-copy { min-width: 0; }
 .res-hero-icon { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 48px; border-radius: 15px; color: #fff; background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--res-accent), var(--res-brand) 54%, color-mix(in srgb, var(--res-brand) 68%, var(--brand-accent, #BD9441))); box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--res-brand) 72%, transparent); }
-.res-kicker { display: block; margin: 0 0 2px; color: var(--res-muted); font-size: .72rem; font-weight: 900; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.res-kicker { display: block; margin: 0 0 2px; color: var(--res-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .res-title { margin: 0; color: var(--res-heading); font-size: clamp(2.35rem, 4vw, 3.35rem); font-family: var(--res-serif); font-weight: 700; letter-spacing: 0; line-height: .98; text-wrap: balance; }
 .res-subtitle { max-width: 920px; margin-top: 9px; color: #718096; font-size: .94rem; font-weight: 600; line-height: 1.55; }
 .res-actions { flex: 1 1 680px; min-width: min(100%, 680px); display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
@@ -325,7 +325,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-btn {
     min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     border: 1px solid var(--res-line); border-radius: 11px; padding: 0 16px;
-    background: rgba(255,255,255,.9); color: var(--res-heading); font-weight: 800; font-size: .86rem;
+    background: rgba(255,255,255,.9); color: var(--res-heading); font-weight: 650; font-size: .86rem;
     text-decoration: none;
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
@@ -354,7 +354,47 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .metric-house { background: #E7F7EF; color: #169A5A; }
 .metric-cancelled { background: #FEECEC; color: #D94444; }
 .res-metric strong { display: block; color: var(--res-heading); font-size: 1.9rem; line-height: 1; margin-bottom: 7px; }
-.res-metric span { display: block; color: #69758D; font-size: .78rem; font-weight: 800; }
+.res-metric span { display: block; color: #69758D; font-size: .78rem; font-weight: 650; }
+
+/* ── Escritorio (≥781px): ficha horizontal compacta. El icono va a la
+   izquierda (centrado) y el número + etiqueta a su derecha; así se llena el
+   ancho, se reduce la altura muerta y las 5 tarjetas quedan balanceadas.
+   El móvil (≤780px) reconstruye estas tarjetas aparte y no se toca. ── */
+@media (min-width: 781px) {
+    .res-metric {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-items: center;
+        align-content: center;
+        column-gap: 15px;
+        row-gap: 1px;
+        min-height: 0;
+        padding: 16px 20px;
+    }
+    .res-metric-icon {
+        grid-row: 1 / 3;
+        grid-column: 1;
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        margin-bottom: 0;
+        font-size: 1.05rem;
+    }
+    .res-metric strong {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: end;
+        font-size: 2rem;
+        margin-bottom: 0;
+        letter-spacing: -.01em;
+    }
+    .res-metric span {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: start;
+    }
+}
 .res-filterbar {
     display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center;
     border: 1px solid var(--res-line); border-radius: var(--res-radius); background: rgba(255,255,255,.94);
@@ -363,13 +403,13 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .res-tab {
     border: 1px solid var(--res-line); background: rgba(255,255,255,.86); color: #40506A; border-radius: 999px;
-    padding: 9px 13px; font-weight: 850; font-size: .82rem; display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 13px; font-weight: 650; font-size: .82rem; display: inline-flex; align-items: center; gap: 7px;
 }
 .res-tab-dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
 .res-tab.is-active { background: var(--res-heading); border-color: var(--res-heading); color: #fff; box-shadow: 0 12px 26px color-mix(in srgb, var(--res-heading) 14%, transparent); }
 .res-date-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .res-date-tools input { height: 39px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 11px; color: var(--res-heading); background: #fff; font-weight: 700; }
-.res-date-chip { height: 39px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 12px; background: #fff; color: #40506A; font-weight: 800; font-size: .82rem; text-decoration: none; white-space: nowrap; }
+.res-date-chip { height: 39px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 12px; background: #fff; color: #40506A; font-weight: 650; font-size: .82rem; text-decoration: none; white-space: nowrap; }
 .res-date-chip.is-upcoming { border-color: color-mix(in srgb, var(--res-accent) 34%, var(--res-line)); color: var(--res-heading); background: color-mix(in srgb, var(--res-accent) 7%, #fff); }
 .res-tab,
 .res-date-chip,
@@ -417,7 +457,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-table tbody td { padding: 14px 18px; border-bottom: 1px solid color-mix(in srgb, var(--res-line) 74%, transparent); vertical-align: middle; }
 .res-table tbody tr { transition: background .18s ease, box-shadow .18s ease; }
 .res-table tbody tr:hover { background: color-mix(in srgb, var(--res-accent) 5%, #FFFFFF); box-shadow: inset 3px 0 0 color-mix(in srgb, var(--res-accent) 46%, transparent); }
-.res-folio { color: #758198; font-weight: 850; font-size: .87rem; white-space: nowrap; }
+.res-folio { color: #758198; font-weight: 650; font-size: .87rem; white-space: nowrap; }
 .res-detail-link {
     display: inline-flex;
     align-items: center;
@@ -454,7 +494,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     background: var(--res-avatar-bg, #EEF2FF) !important;
     color: var(--res-avatar-fg, #3730A3);
     border: 1px solid var(--res-avatar-border, #C7D2FE);
-    font-size: .78rem; font-weight: 900;
+    font-size: .78rem; font-weight: 700;
     box-shadow: 0 10px 20px -16px var(--res-avatar-shadow, rgba(55,48,163,.34));
 }
 .res-table tbody tr:nth-child(6n+1) .res-avatar,
@@ -499,11 +539,11 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     --res-avatar-border: #CBD5E1;
     --res-avatar-shadow: rgba(71,85,105,.25);
 }
-.res-guest-name { color: var(--res-heading); font-weight: 900; line-height: 1.15; }
+.res-guest-name { color: var(--res-heading); font-weight: 700; line-height: 1.15; }
 .res-guest-meta { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
 .res-room { display: flex; gap: 8px; align-items: flex-start; }
 .res-room-mark { width: 6px; min-width: 6px; height: 24px; border-radius: 10px; margin-top: 2px; }
-.res-room-main { font-weight: 900; color: var(--res-heading); }
+.res-room-main { font-weight: 700; color: var(--res-heading); }
 .res-room-type { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
 .res-room-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-width: 360px; }
 .res-room-chip {
@@ -515,19 +555,19 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     color: var(--res-heading);
     padding: 3px 7px;
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
 }
-.res-date-main { color: var(--res-heading); font-weight: 850; white-space: nowrap; }
+.res-date-main { color: var(--res-heading); font-weight: 650; white-space: nowrap; }
 .res-date-sub { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
-.res-nights { min-width: 28px; display: inline-flex; justify-content: center; border-radius: 8px; border: 1px solid var(--res-line); background: #FFFDF9; color: #6D778C; font-weight: 900; padding: 3px 8px; }
-.res-state { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 7px 11px; font-weight: 900; font-size: .78rem; white-space: nowrap; }
+.res-nights { min-width: 28px; display: inline-flex; justify-content: center; border-radius: 8px; border: 1px solid var(--res-line); background: #FFFDF9; color: #6D778C; font-weight: 700; padding: 3px 8px; }
+.res-state { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 7px 11px; font-weight: 700; font-size: .78rem; white-space: nowrap; }
 .state-confirmada { background: #E8F6EF; color: #148653; }
 .state-checked-in { background: #FDEDE4; color: #C25A36; }
 .state-checked-out { background: #EEF2F7; color: #61708A; }
 .state-cancelada { background: #FEECEC; color: #D94444; }
 .state-neutral { background: #F3F4F6; color: #475467; }
-.res-total { color: var(--res-heading); font-weight: 950; text-align: right; white-space: nowrap; }
+.res-total { color: var(--res-heading); font-weight: 700; text-align: right; white-space: nowrap; }
 .res-payment { font-size: .76rem; margin-top: 2px; text-align: right; }
 .res-payment.is-paid { color: #067647; }
 .res-payment.is-due { color: #D92D20; }
@@ -538,7 +578,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .res-icon-btn:hover { color: var(--res-heading); border-color: color-mix(in srgb, var(--res-accent) 42%, var(--res-line)); background: color-mix(in srgb, var(--res-accent) 8%, #fff); box-shadow: 0 10px 20px -16px color-mix(in srgb, var(--res-accent) 70%, transparent); transform: translateY(-1px); }
-.res-row-command { min-width: 88px; height: 34px; border-radius: 10px; border: 0; padding: 0 12px; color: #fff; font-weight: 900; font-size: .76rem; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.res-row-command { min-width: 88px; height: 34px; border-radius: 10px; border: 0; padding: 0 12px; color: #fff; font-weight: 700; font-size: .76rem; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
 .res-row-command i { flex: 0 0 auto; font-size: .82rem; }
 .res-row-command.is-checkin { background: #148653; }
 .res-row-command.is-checkout { background: #D97706; }
@@ -552,16 +592,16 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-mobile-card:hover { border-color: color-mix(in srgb, var(--res-accent) 36%, var(--res-line)); box-shadow: 0 18px 34px rgba(15,23,42,.09); transform: translateY(-1px); }
 .res-mobile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
 .res-mobile-guest { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.res-mobile-room { display: flex; align-items: flex-start; gap: 8px; color: var(--res-heading); font-weight: 900; margin: 10px 0; }
+.res-mobile-room { display: flex; align-items: flex-start; gap: 8px; color: var(--res-heading); font-weight: 700; margin: 10px 0; }
 .res-mobile-room-body { min-width: 0; display: grid; gap: 4px; }
 .res-mobile-room .res-room-list { max-width: 100%; margin-top: 2px; }
 .res-mobile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
 .res-mobile-info { border-radius: 12px; background: color-mix(in srgb, var(--res-accent) 4%, #FFFFFF); border: 1px solid color-mix(in srgb, var(--res-line) 70%, transparent); padding: 10px; }
-.res-mobile-info span { display: block; color: #7A8498; font-size: .7rem; font-weight: 850; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+.res-mobile-info span { display: block; color: #7A8498; font-size: .7rem; font-weight: 650; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
 .res-mobile-info strong { display: block; color: var(--res-heading); font-size: .9rem; }
 .res-mobile-actions { display: flex; gap: 8px; margin-top: 12px; }
 .res-mobile-actions > * { flex: 1; }
-.res-action-pill { min-height: 38px; border-radius: 11px; display: inline-flex; justify-content: center; align-items: center; gap: 7px; border: 1px solid var(--res-line); background: #fff; color: var(--res-heading); font-weight: 900; font-size: .82rem; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
+.res-action-pill { min-height: 38px; border-radius: 11px; display: inline-flex; justify-content: center; align-items: center; gap: 7px; border: 1px solid var(--res-line); background: #fff; color: var(--res-heading); font-weight: 700; font-size: .82rem; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
 .res-action-pill:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--res-accent) 36%, var(--res-line)); box-shadow: 0 10px 20px -16px rgba(15,23,42,.38); }
 .res-action-primary { background: var(--res-brand); border-color: var(--res-brand); color: #fff; }
 .res-action-warning { background: #D97706; border-color: #D97706; color: #fff; }
@@ -641,7 +681,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin-bottom: 5px;
     color: color-mix(in srgb, var(--res-accent) 68%, var(--res-heading));
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
 }
@@ -650,7 +690,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     color: var(--res-heading);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.42rem;
-    font-weight: 800;
+    font-weight: 650;
     line-height: 1.05;
 }
 .res-upcoming-head p {
@@ -694,7 +734,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-upcoming-date span {
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.65rem;
-    font-weight: 800;
+    font-weight: 650;
     line-height: 1;
 }
 .res-upcoming-date strong {
@@ -713,14 +753,14 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 }
 .res-upcoming-title a {
     color: var(--res-heading);
-    font-weight: 950;
+    font-weight: 700;
     text-decoration: none;
 }
 .res-upcoming-title a:hover { text-decoration: underline; text-decoration-color: var(--res-accent); text-underline-offset: 3px; }
 .res-upcoming-title span {
     color: #8B96A9;
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 .res-upcoming-meta {
     display: flex;
@@ -728,7 +768,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     gap: 8px 12px;
     color: #758198;
     font-size: .78rem;
-    font-weight: 800;
+    font-weight: 650;
 }
 .res-upcoming-meta span { display: inline-flex; align-items: center; gap: 6px; }
 .res-upcoming-side {
@@ -740,7 +780,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-upcoming-total {
     color: var(--res-heading);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 .res-upcoming-view {
     width: 38px;
@@ -766,7 +806,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .modal-hd { background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); padding: 16px 20px; }
 .lc-form-input { width: 100%; border: 1px solid var(--res-line); border-radius: 11px; padding: 10px 12px; outline: none; color: var(--res-brand-2); background: #fff; }
 .lc-form-input:focus { border-color: var(--res-brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--res-brand) 12%, transparent); }
-.btn-modal-cancel, .btn-modal-confirm { flex: 1; border-radius: 11px; padding: 11px 14px; font-weight: 900; }
+.btn-modal-cancel, .btn-modal-confirm { flex: 1; border-radius: 11px; padding: 11px 14px; font-weight: 700; }
 .btn-modal-cancel { background: #F2F4F7; color: #475467; }
 .btn-modal-confirm { background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); color: #fff; }
 
@@ -787,22 +827,22 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-export-hd { display: flex; align-items: center; gap: 13px; padding: 20px 22px; color: #fff; background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); }
 .res-export-hd--excel { background: linear-gradient(135deg, #16A34A, #15803D); }
 .res-export-ic { width: 46px; height: 46px; border-radius: 13px; display: inline-grid; place-items: center; font-size: 1.3rem; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.26); flex: none; }
-.res-export-title { margin: 0; font-size: 1.12rem; font-weight: 800; line-height: 1.1; }
+.res-export-title { margin: 0; font-size: 1.12rem; font-weight: 650; line-height: 1.1; }
 .res-export-sub { margin: 3px 0 0; font-size: .76rem; color: rgba(255,255,255,.74); font-weight: 600; }
 .res-export-body { padding: 22px; }
-.res-export-label { display: block; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--res-brand-2); margin-bottom: 8px; }
+.res-export-label { display: block; font-size: .7rem; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--res-brand-2); margin-bottom: 8px; }
 .res-export-body .lc-form-input { height: 48px; padding: 12px 14px; font-weight: 700; font-size: .95rem; border-radius: 12px; }
 .res-export-help { margin: 10px 2px 0; font-size: .75rem; color: #667085; display: flex; align-items: center; gap: 7px; line-height: 1.4; }
 .res-export-help i { color: color-mix(in srgb, var(--res-brand) 50%, #98A2B3); }
-.res-export-error { display: none; margin: 9px 2px 0; border: 1px solid #FECACA; border-radius: 10px; background: #FEF2F2; color: #B42318; padding: 8px 10px; font-size: .75rem; font-weight: 800; line-height: 1.35; }
+.res-export-error { display: none; margin: 9px 2px 0; border: 1px solid #FECACA; border-radius: 10px; background: #FEF2F2; color: #B42318; padding: 8px 10px; font-size: .75rem; font-weight: 650; line-height: 1.35; }
 .res-export-error.is-visible { display: block; }
 .res-export-actions { display: flex; gap: 10px; margin-top: 22px; }
-.res-export-actions .btn-modal-cancel { flex: 1; border: 1px solid var(--res-line); background: #fff; color: var(--res-brand-2); border-radius: 12px; padding: 12px; font-weight: 800; transition: .16s; }
+.res-export-actions .btn-modal-cancel { flex: 1; border: 1px solid var(--res-line); background: #fff; color: var(--res-brand-2); border-radius: 12px; padding: 12px; font-weight: 650; transition: .16s; }
 .res-export-actions .btn-modal-cancel:hover { background: color-mix(in srgb, var(--res-brand) 5%, #fff); border-color: color-mix(in srgb, var(--res-brand) 28%, var(--res-line)); }
-.res-export-actions .btn-modal-confirm { flex: 1.5; border-radius: 12px; padding: 12px; font-weight: 800; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--res-brand) 60%, transparent); transition: .16s; border: none; cursor: pointer; }
+.res-export-actions .btn-modal-confirm { flex: 1.5; border-radius: 12px; padding: 12px; font-weight: 650; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--res-brand) 60%, transparent); transition: .16s; border: none; cursor: pointer; }
 .res-export-actions .btn-modal-confirm:hover { transform: translateY(-1px); filter: brightness(1.05); }
 .res-export-actions .btn-modal-confirm--excel { background: linear-gradient(135deg, #16A34A, #15803D); box-shadow: 0 12px 26px -10px rgba(21,128,61,.55); }
-.res-inline-toast { position: fixed; right: 22px; bottom: 22px; z-index: 15000; max-width: min(360px, calc(100vw - 32px)); border-radius: 14px; border: 1px solid transparent; padding: 12px 14px; box-shadow: 0 18px 42px rgba(24, 32, 48, .18); font-size: .82rem; font-weight: 850; line-height: 1.42; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+.res-inline-toast { position: fixed; right: 22px; bottom: 22px; z-index: 15000; max-width: min(360px, calc(100vw - 32px)); border-radius: 14px; border: 1px solid transparent; padding: 12px 14px; box-shadow: 0 18px 42px rgba(24, 32, 48, .18); font-size: .82rem; font-weight: 650; line-height: 1.42; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
 .res-inline-toast.is-visible { opacity: 1; transform: translateY(0); }
 .res-inline-toast.is-info { border-color: #BFD4F5; background: #F0F6FF; color: #255AA7; }
 .res-inline-toast.is-warning { border-color: #F4D38E; background: #FFF8E8; color: #9A5F10; }
@@ -843,7 +883,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-swal-checkout-cancel {
     min-height: 42px !important;
     border-radius: 12px !important;
-    font-weight: 900 !important;
+    font-weight: 700 !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
@@ -936,7 +976,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     max-width: 9ch;
     font-size: clamp(1.55rem, 3.8vw, 2.3rem);
     line-height: .96;
-    font-weight: 950;
+    font-weight: 700;
     text-wrap: balance;
 }
 .res-checkin-title p {
@@ -1013,7 +1053,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     display: block;
     color: #667085;
     font-size: .72rem;
-    font-weight: 850;
+    font-weight: 650;
     letter-spacing: .055em;
     text-transform: uppercase;
 }
@@ -1021,7 +1061,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin-top: 4px;
     color: var(--res-brand-2);
     font-size: clamp(1.55rem, 4vw, 2.2rem);
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -1030,7 +1070,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     display: block;
     color: var(--res-brand);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
 }
@@ -1055,7 +1095,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     gap: 12px;
     margin-bottom: 10px;
 }
-.res-ci-section-head h4 { margin: 0; color: var(--res-brand-2); font-size: .95rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.res-ci-section-head h4 { margin: 0; color: var(--res-brand-2); font-size: .95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .res-ci-section-head span { color: #7A8498; font-size: .72rem; font-weight: 750; }
 .res-ci-prompt { margin: -2px 0 12px; color: #687386; font-size: .78rem; font-weight: 650; line-height: 1.45; }
 .res-ci-breakdown {
@@ -1089,7 +1129,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin: 0;
     color: var(--res-brand-2);
     font-size: .86rem;
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1.2;
 }
 .res-ci-breakdown-sub {
@@ -1126,7 +1166,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     padding-top: 8px;
     border-top: 1px solid color-mix(in srgb, var(--res-brand) 10%, #E7DDD1);
     color: var(--res-brand-2);
-    font-weight: 900;
+    font-weight: 700;
 }
 .res-ci-breakdown-line.is-due strong {
     color: #DC2626;
@@ -1221,7 +1261,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     display: block;
     color: #6B3B08;
     font-size: .84rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 .res-ci-pending-option small {
     display: block;
@@ -1249,12 +1289,12 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin-bottom: 4px;
     color: #7C4A12;
     font-size: .72rem;
-    font-weight: 820;
+    font-weight: 650;
 }
 .res-ci-pending-preview strong {
     color: #263247;
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 .res-ci-methods { display: grid; gap: 10px; }
 .res-pay-method {
@@ -1291,7 +1331,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     padding: 13px 14px 13px 17px;
     cursor: pointer;
     color: var(--res-brand-2);
-    font-weight: 900;
+    font-weight: 700;
     position: relative;
 }
 .res-pay-toggle input { width: 18px; height: 18px; accent-color: var(--res-pay-color); flex: none; }
@@ -1313,7 +1353,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: rgba(255,255,255,.78);
     color: #475467;
     font-size: .82rem;
-    font-weight: 800;
+    font-weight: 650;
 }
 .res-change-row strong { color: #148653; font-variant-numeric: tabular-nums; }
 .res-change-row strong.is-negative { color: #DC2626; }
@@ -1326,7 +1366,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     cursor: pointer;
     transition: .16s ease;
 }
-.res-radio-chip { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; color: #1E40AF; font-size: .82rem; font-weight: 850; }
+.res-radio-chip { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; color: #1E40AF; font-size: .82rem; font-weight: 650; }
 .res-radio-chip input,
 .res-invoice-choice input { accent-color: var(--res-brand); }
 .res-radio-chip:has(input:checked) { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 10px 24px -20px rgba(37,99,235,.75); }
@@ -1369,7 +1409,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-ci-alert.is-info { border-color: #BFDBFE; background: #EFF6FF; color: #1D4ED8; }
 .res-ci-alert.is-success { border-color: #BBF7D0; background: #F0FDF4; color: #047857; }
 .res-ci-summary { padding: 15px 16px; background: linear-gradient(135deg, #fff, #F6F2EA); }
-.res-ci-summary h5 { margin: 0 0 8px; color: var(--res-brand-2); font-size: .82rem; font-weight: 950; }
+.res-ci-summary h5 { margin: 0 0 8px; color: var(--res-brand-2); font-size: .82rem; font-weight: 700; }
 .res-ci-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #667085; font-size: .82rem; padding: 4px 0; }
 .res-ci-row strong { color: var(--res-brand-2); font-variant-numeric: tabular-nums; }
 .res-ci-row.is-paid strong { color: #148653; }
@@ -1391,7 +1431,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     min-height: 44px;
     border-radius: 13px;
     padding: 0 16px;
-    font-weight: 900;
+    font-weight: 700;
     cursor: pointer;
     transition: .16s ease;
 }
@@ -1517,7 +1557,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         border: 1px solid rgba(255,255,255,.26);
         color: #fff;
         font-size: .7rem;
-        font-weight: 850;
+        font-weight: 650;
         letter-spacing: .03em;
     }
     .ci-step-pill[hidden] { display: none; }
@@ -1539,7 +1579,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         min-height: 46px;
         border-radius: 13px;
         padding: 0 16px;
-        font-weight: 900;
+        font-weight: 700;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -1695,7 +1735,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin: 0 0 4px;
     color: color-mix(in srgb, var(--hb-modal-blue) 68%, var(--hb-modal-soft-ink)) !important;
     font-size: .68rem;
-    font-weight: 850;
+    font-weight: 650;
     letter-spacing: 0;
     line-height: 1.1;
     text-transform: uppercase;
@@ -1705,7 +1745,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin: 0;
     color: var(--hb-modal-ink) !important;
     font-size: 1.15rem;
-    font-weight: 850;
+    font-weight: 650;
     letter-spacing: 0;
     line-height: 1.12;
 }
@@ -1800,7 +1840,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: color-mix(in srgb, var(--hb-modal-action) 7%, #fff) !important;
     color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-soft-ink)) !important;
     font-size: .67rem;
-    font-weight: 800;
+    font-weight: 650;
     line-height: 1;
 }
 .hb-client-option__body {
@@ -1810,7 +1850,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .hb-client-option__body strong {
     color: var(--hb-modal-ink) !important;
     font-size: .98rem;
-    font-weight: 850;
+    font-weight: 650;
     line-height: 1.15;
 }
 .hb-client-option__body span {
@@ -1828,7 +1868,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     border-top: 1px solid color-mix(in srgb, var(--hb-modal-action) 10%, #ECE5D8) !important;
     color: var(--hb-modal-action) !important;
     font-size: .78rem;
-    font-weight: 850;
+    font-weight: 650;
 }
 .hb-arrival-context {
     display: grid;
@@ -1874,7 +1914,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .hb-date-row span {
     color: var(--hb-modal-muted) !important;
     font-size: .68rem;
-    font-weight: 820;
+    font-weight: 650;
     letter-spacing: 0;
     line-height: 1;
     text-transform: uppercase;
@@ -1882,7 +1922,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .hb-date-row strong {
     color: var(--hb-modal-ink) !important;
     font-size: .93rem;
-    font-weight: 850;
+    font-weight: 650;
     line-height: 1.15;
 }
 .hb-arrival-card {
@@ -1897,7 +1937,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin: 0 !important;
     color: var(--hb-modal-ink) !important;
     font-size: .9rem;
-    font-weight: 850;
+    font-weight: 650;
     line-height: 1.15;
 }
 .hb-arrival-copy {
@@ -1938,7 +1978,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: linear-gradient(135deg, var(--hb-modal-blue), color-mix(in srgb, var(--hb-modal-sage) 60%, var(--hb-modal-blue))) !important;
     color: var(--hb-modal-action-text) !important;
     box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--hb-modal-blue) 76%, transparent) !important;
-    font-weight: 850 !important;
+    font-weight: 650 !important;
 }
 .hb-arrival-now {
     display: inline-flex;
@@ -1980,7 +2020,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 }
 .hb-arrival-later strong {
     font-size: .84rem;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1.15;
 }
 .hb-arrival-later small {
@@ -2533,7 +2573,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     display: block;
     margin: 0 0 12px;
     font-size: .70rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .18em;
     line-height: 1;
     text-transform: uppercase;
@@ -2599,7 +2639,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     display: block;
     color: rgba(255,255,255,.54);
     font-size: .68rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .06em;
     text-transform: uppercase;
 }
@@ -2609,7 +2649,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     margin-top: 2px;
     color: #FFFFFF;
     font-size: .88rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .res-reserve-steps {
@@ -2627,7 +2667,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     gap: 10px;
     color: rgba(255,255,255,.60);
     font-size: .88rem;
-    font-weight: 850;
+    font-weight: 650;
 }
 
 .res-reserve-steps li span {
@@ -2770,7 +2810,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     color: color-mix(in srgb, var(--res-choice-color) 84%, var(--res-reserve-ink));
     font-size: .62rem;
     font-style: normal;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
     white-space: nowrap;
     word-break: keep-all;
@@ -2821,7 +2861,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: #FFFFFF;
     color: #4F5969;
     font-size: .84rem;
-    font-weight: 850;
+    font-weight: 650;
     cursor: pointer;
     transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
 }
@@ -2861,7 +2901,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: transparent !important;
     color: var(--res-reserve-brand-2) !important;
     font-size: 1.28rem !important;
-    font-weight: 900 !important;
+    font-weight: 700 !important;
     box-shadow: none !important;
 }
 
@@ -2883,7 +2923,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     background: #FFF3F2;
     color: #A4423E;
     font-size: .80rem;
-    font-weight: 800;
+    font-weight: 650;
 }
 
 .res-reserve-validation.hidden {
@@ -2909,7 +2949,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     border-radius: 12px;
     padding: 0 16px;
     font-size: .88rem;
-    font-weight: 900;
+    font-weight: 700;
     cursor: pointer;
     transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
@@ -3381,7 +3421,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         margin: 0 48px 6px 0 !important;
         color: #8A93A4;
         font-size: .64rem !important;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: .16em !important;
         line-height: 1;
         text-transform: uppercase;
@@ -3392,7 +3432,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         color: color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #111827);
         font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
         font-size: 1.36rem !important;
-        font-weight: 850;
+        font-weight: 650;
         letter-spacing: -.02em;
         line-height: 1.05 !important;
     }
@@ -3439,7 +3479,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         display: block;
         color: #8A93A4;
         font-size: .50rem !important;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: .07em !important;
         line-height: 1;
         text-transform: uppercase;
@@ -3450,7 +3490,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         margin-top: 3px !important;
         color: color-mix(in srgb, var(--brand-secondary, #0F172A) 88%, #111827);
         font-size: .68rem !important;
-        font-weight: 850;
+        font-weight: 650;
         line-height: 1.1;
         white-space: nowrap;
     }
@@ -3466,7 +3506,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-reserve-mobile-progress-title {
         color: color-mix(in srgb, var(--brand-secondary, #0F172A) 56%, #6B7280);
         font-size: .74rem !important;
-        font-weight: 820;
+        font-weight: 650;
         line-height: 26px !important;
     }
 
@@ -3495,7 +3535,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         gap: 0 !important;
         color: #7A8496;
         font-size: .72rem;
-        font-weight: 820;
+        font-weight: 650;
         text-align: center;
     }
 
@@ -3509,7 +3549,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         background: #FFFEFB;
         color: #7A8496;
         font-size: .70rem !important;
-        font-weight: 850;
+        font-weight: 650;
         font-variant-numeric: tabular-nums;
     }
 
@@ -3543,7 +3583,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         color: color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #111827);
         font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
         font-size: 1.06rem !important;
-        font-weight: 850;
+        font-weight: 650;
         letter-spacing: -.02em;
         line-height: 1.15 !important;
     }
@@ -3672,16 +3712,17 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         box-shadow: 0 18px 36px -26px color-mix(in srgb, var(--brand-secondary, #0F172A) 76%, transparent);
     }
 }
-/* Viewport alignment: match the broad operational canvas used by huespedes/facturacion/inventario. */
+/* Viewport alignment: contenido centrado con margen lateral igual que
+   operacion/diaria (1320px) y forecast, en vez de estirarse a ancho completo. */
 .res-bookings {
     padding: 1rem !important;
 }
 
 .res-shell {
     width: 100%;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    max-width: 1320px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     padding: 0 !important;
 }
 
@@ -4248,6 +4289,158 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         box-sizing: border-box;
     }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   CUPERTINO · Header liquid glass (misma losa que /habitaciones)
+   El header se queda en su sitio (no sticky) pero se viste como barra de
+   cristal traslúcido: gradiente teñido de marca + blur + filo de luz.
+   Receta calcada del .modern-header de habitaciones (bloque candy glass).
+   Solo Cupertino claro y ≥768px; en otros temas el header queda intacto.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-topbar {
+        position: relative;
+        overflow: hidden;
+        margin: 0 0 22px !important;
+        padding: 16px 22px !important;
+        border-radius: 22px;
+        background:
+            radial-gradient(40% 150% at 96% 60%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%),
+            linear-gradient(165deg,
+                color-mix(in srgb, var(--res-brand) 10%, rgba(255,255,255,.6)) 0%,
+                color-mix(in srgb, var(--res-brand) 17%, rgba(255,255,255,.42)) 100%);
+        -webkit-backdrop-filter: blur(28px) saturate(1.7);
+        backdrop-filter: blur(28px) saturate(1.7);
+        border: 1px solid color-mix(in srgb, var(--res-brand) 18%, rgba(255,255,255,.75));
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,.85),
+            inset 0 -1px 2px rgba(255,255,255,.3),
+            0 12px 30px -14px color-mix(in srgb, var(--res-brand) 35%, rgba(27,39,70,.18));
+    }
+    /* Filo de luz superior sutil sobre el vidrio */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-topbar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        border-radius: inherit;
+        background:
+            radial-gradient(60% 100% at 12% -30%, rgba(255,255,255,.45), transparent 58%),
+            linear-gradient(180deg, rgba(255,255,255,.3), transparent 42%);
+    }
+    /* Contenido por encima del brillo */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-topbar > * {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CUPERTINO · Interior del header rediseñado (la losa glass NO cambia).
+   Identidad a la izquierda; a la derecha un panel de control en dos niveles:
+   · Nivel 1: buscador esmerilado + CTA primario "Nueva reservación".
+   · Nivel 2: herramientas (Calendario / PDF / Excel) como chips de vidrio.
+   Solo Cupertino claro y ≥781px; el móvil conserva su hero card intacto.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 781px) {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 30px;
+        row-gap: 0;
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-title-lockup {
+        grid-column: 1;
+        flex: none;
+        max-width: none;
+    }
+
+    /* Panel de control derecho — rejilla de dos niveles */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions {
+        grid-column: 2;
+        display: grid;
+        grid-template-columns: minmax(250px, 1fr) auto;
+        grid-template-areas:
+            "search  primary"
+            "tools   tools";
+        align-items: center;
+        gap: 11px 12px;
+        width: clamp(430px, 40vw, 600px);
+        min-width: 0;
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-search {
+        grid-area: search;
+        min-width: 0;
+        flex: none;
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions-tools {
+        grid-area: tools;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions > .res-btn-primary {
+        grid-area: primary;
+    }
+
+    /* Buscador esmerilado sobre el vidrio */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-search input {
+        height: 46px;
+        border-radius: 13px;
+        border: 1px solid color-mix(in srgb, var(--res-brand) 14%, rgba(255,255,255,.7));
+        background: rgba(255,255,255,.66);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.9), 0 6px 16px -11px rgba(15,23,42,.4);
+        padding: 0 15px 0 44px;
+        font-size: .9rem;
+        color: var(--res-heading);
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-search i {
+        left: 16px;
+        color: color-mix(in srgb, var(--res-brand) 55%, #8792A6);
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-search input:focus {
+        background: rgba(255,255,255,.92);
+        border-color: color-mix(in srgb, var(--res-brand) 40%, transparent);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--res-brand) 14%, transparent);
+    }
+
+    /* Chips de herramienta — vidrio lechoso, icono con color semántico */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions-tools .res-btn {
+        min-height: 37px;
+        padding: 0 13px;
+        border-radius: 11px;
+        background: rgba(255,255,255,.5);
+        border: 1px solid rgba(255,255,255,.7);
+        color: color-mix(in srgb, var(--res-brand) 74%, #1F2937);
+        font-weight: 600;
+        font-size: .81rem;
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 2px 7px -4px rgba(15,23,42,.3);
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions-tools .res-btn:hover {
+        background: rgba(255,255,255,.85);
+        border-color: #fff;
+        transform: translateY(-1px);
+    }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions-tools .res-btn-danger i { color: #D0433B; }
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions-tools .res-btn-success i { color: #1E9E63; }
+
+    /* CTA primario — ancla del header, el único sólido de marca */
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-actions > .res-btn-primary {
+        align-self: center;
+        min-height: 46px;
+        padding: 0 20px;
+        border-radius: 13px;
+        font-weight: 700;
+        font-size: .88rem;
+        white-space: nowrap;
+    }
+}
 </style>
 
 <div class="res-bookings">
@@ -4275,20 +4468,22 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <i class="fas fa-search"></i>
                     <input type="text" id="buscarReservacion" class="search-input" value="<?= htmlspecialchars($buscar) ?>" placeholder="Buscar folio, huesped o habitacion" autocomplete="off">
                 </label>
-                <a href="<?= url('reservaciones/calendario') ?>" class="res-btn ms-glass-btn" title="Abrir calendario de reservaciones">
-                    <i class="fas fa-calendar-alt"></i>
-                    Calendario
-                </a>
-                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
-                <button type="button" onclick="abrirModalExportarPDF()" class="res-btn res-btn-danger" title="Exportar reservaciones a PDF">
-                    <i class="fas fa-file-pdf"></i>
-                    PDF
-                </button>
-                <button type="button" onclick="abrirModalExportarExcel()" class="res-btn res-btn-success" title="Exportar reservaciones a Excel">
-                    <i class="fas fa-file-excel"></i>
-                    Excel
-                </button>
-                <?php endif; ?>
+                <div class="res-actions-tools">
+                    <a href="<?= url('reservaciones/calendario') ?>" class="res-btn" title="Abrir calendario de reservaciones">
+                        <i class="fas fa-calendar-alt"></i>
+                        Calendario
+                    </a>
+                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
+                    <button type="button" onclick="abrirModalExportarPDF()" class="res-btn res-btn-danger" title="Exportar reservaciones a PDF">
+                        <i class="fas fa-file-pdf"></i>
+                        PDF
+                    </button>
+                    <button type="button" onclick="abrirModalExportarExcel()" class="res-btn res-btn-success" title="Exportar reservaciones a Excel">
+                        <i class="fas fa-file-excel"></i>
+                        Excel
+                    </button>
+                    <?php endif; ?>
+                </div>
                 <a id="cop-ancla-nueva-reserva" href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
                     <i class="fas fa-plus"></i>
                     Nueva reservacion
@@ -4360,7 +4555,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         <?php if (empty($reservaciones)): ?>
             <section class="res-empty">
                 <div style="font-size:2rem;color:var(--res-accent);margin-bottom:10px;"><i class="fas fa-calendar-day"></i></div>
-                <h2 style="font-size:1.1rem;font-weight:900;color:var(--res-heading);margin:0 0 6px;">
+                <h2 style="font-size:1.1rem;font-weight:700;color:var(--res-heading);margin:0 0 6px;">
                     <?= $total_proximas > 0 ? 'Sin reservaciones en esta fecha' : 'Sin reservaciones' ?>
                 </h2>
                 <p style="margin:0 0 18px;">
@@ -4598,7 +4793,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                                         <?php endforeach; ?>
                                     </div>
                                 <?php else: ?>
-                                    <small style="color:#8B96A9;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    <small style="color:#8B96A9;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                         <?= $habitacion_tipo !== '' ? htmlspecialchars($habitacion_tipo) : 'Habitacion' ?>
                                     </small>
                                 <?php endif; ?>

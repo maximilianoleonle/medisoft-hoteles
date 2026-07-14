@@ -97,6 +97,33 @@ class CamaristaController extends Controller {
             $salidasHoy[(int) $fila['habitacion_id']] = (string) $fila['reservacion_estado'];
         }
 
+        // Ocupación vigente por cuarto (huésped + fechas): da contexto en el
+        // tablero — quién está hospedado y qué día sale cada habitación ocupada.
+        $stmt = $db->query(
+            "SELECT rh.habitacion_id, r.fecha_entrada, r.fecha_salida, h.nombre_completo
+             FROM reservacion_habitaciones rh
+             INNER JOIN reservaciones r ON r.id = rh.reservacion_id AND r.hotel_id = rh.hotel_id
+             INNER JOIN huespedes h ON h.id = r.huesped_id
+             WHERE rh.hotel_id = ?
+               AND r.estado = 'checked_in'
+               AND DATE(r.fecha_entrada) <= CURDATE()
+               AND DATE(r.fecha_salida) >= CURDATE()
+             ORDER BY r.fecha_salida",
+            [$hotelId]
+        );
+        $ocupacion = [];
+        foreach (($stmt ? $stmt->fetchAll() : []) as $fila) {
+            $habId = (int) $fila['habitacion_id'];
+            if (isset($ocupacion[$habId])) {
+                continue;
+            }
+            $ocupacion[$habId] = [
+                'huesped' => (string) $fila['nombre_completo'],
+                'fecha_entrada' => (string) $fila['fecha_entrada'],
+                'fecha_salida' => (string) $fila['fecha_salida'],
+            ];
+        }
+
         // Personal activo + limpieza activa por cuarto (asignados / programadas).
         $personal = $this->personalActivo($hotelId);
         $tareasPorHabitacion = [];
@@ -122,6 +149,7 @@ class CamaristaController extends Controller {
             'title' => 'Limpieza - ' . current_hotel_display_name(),
             'habitaciones' => $habitaciones,
             'salidasHoy' => $salidasHoy,
+            'ocupacion' => $ocupacion,
             'personal' => $personal,
             'tareasLimpieza' => $tareasPorHabitacion,
         ]);
