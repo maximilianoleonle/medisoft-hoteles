@@ -1657,7 +1657,7 @@ public function mantenimientoAction() {
                 $tipoMantenimiento,
                 $prioridad,
                 $motivo,
-                current_user('id')
+                user_id()
             ]);
             
             $db->commit();
@@ -1862,7 +1862,7 @@ public function programarMantenimientoAction() {
         'descripcion' => $descripcion,
         'fecha_programada' => $fecha_inicio,
         'fecha_programada_fin' => $fecha_fin ?: null,
-        'usuario_registro_id' => current_user('id')
+        'usuario_registro_id' => user_id()
     ];
     
     $resultado = $mantenimientoModel->programar($id, $data);
