@@ -347,6 +347,15 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
 .habitaciones-view .hb-alerts-btn--pending:hover{
     background: color-mix(in srgb, var(--c-maint, #D97706) 8%, #fff);
 }
+.habitaciones-view .hb-alerts-btn--noshow{
+    border-color: color-mix(in srgb, var(--hb-slate-500, #6C7689) 26%, var(--hb-line, #E2D9C8));
+    color: var(--hb-slate-500, #6C7689);
+}
+.habitaciones-view .hb-alerts-btn--noshow:hover{
+    background: color-mix(in srgb, var(--hb-late, #C9322B) 8%, #fff);
+    border-color: color-mix(in srgb, var(--hb-late, #C9322B) 30%, var(--hb-line, #E2D9C8));
+    color: var(--hb-late, #C9322B);
+}
 @media (max-width: 640px){
     .habitaciones-view .hb-alerts-btn span{ display: none; }
     .habitaciones-view .hb-alerts-btn{
@@ -552,6 +561,12 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
                     </p>
                 </div>
                 <button type="button"
+                        onclick="marcarNoShow(<?= (int)$checkin['id'] ?>, <?= htmlspecialchars(json_encode($checkin['nombre_completo'] ?? 'este huésped'), ENT_QUOTES, 'UTF-8') ?>)"
+                        title="Marcar como no-show (el huésped no llegó; se retiene el anticipo)"
+                        class="hb-alerts-btn hb-alerts-btn--noshow">
+                    <i class="fas fa-user-slash"></i><span>No llegó</span>
+                </button>
+                <button type="button"
                         onclick="abrirModalCheckIn(<?= (int)$checkin['id'] ?>, <?= htmlspecialchars(json_encode((float)($checkin['precio_total'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>)"
                         title="Abrir check-in de esta reservación"
                         class="hb-alerts-btn hb-alerts-btn--pending">
@@ -609,6 +624,47 @@ function hbToggleAlertas() {
     const open = card.classList.toggle('is-open');
     if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
+
+// Marcar una reservación como no-show desde la alerta (retiene el anticipo).
+window.marcarNoShow = function (id, nombre) {
+    const doPost = function () {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= url("reservaciones/no-show/") ?>' + id;
+
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            const tok = document.createElement('input');
+            tok.type = 'hidden';
+            tok.name = 'csrf_token';
+            tok.value = meta.getAttribute('content') || '';
+            form.appendChild(tok);
+        }
+        const razon = document.createElement('input');
+        razon.type = 'hidden';
+        razon.name = 'razon_no_show';
+        razon.value = 'El huésped no se presentó (no-show).';
+        form.appendChild(razon);
+
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+    const msg = 'Se marcará como no-show la reservación de ' + (nombre || 'este huésped') +
+                '. El anticipo pagado se retendrá como penalización (no se devuelve).';
+
+    if (typeof msConfirm === 'function') {
+        msConfirm({
+            type: 'error',
+            icon: 'logout',
+            title: '¿Marcar como no-show?',
+            msg: msg,
+            confirmLabel: 'Sí, no llegó'
+        }).then(function (ok) { if (ok) doPost(); });
+    } else if (window.confirm(msg)) {
+        doPost();
+    }
+};
 
 (function () {
     const card = document.getElementById('hbAlertsCard');

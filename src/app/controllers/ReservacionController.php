@@ -4353,6 +4353,65 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
 }
 
 /**
+ * Marcar una reservación como NO-SHOW (el huésped no se presentó).
+ * El anticipo se RETIENE como penalización (no se devuelve).
+ */
+public function noShowAction() {
+    $id = $this->route_params['id'] ?? 0;
+
+    if (!$this->isPost()) {
+        $this->redirect('reservaciones/ver/' . $id);
+        return;
+    }
+
+    $this->validateCSRF();
+
+    try {
+        $hotel_id = obtenerHotelIdActualCompat();
+        $razon = trim($this->getPost('razon_no_show', ''));
+        if ($razon === '') {
+            $razon = 'El huésped no se presentó (no-show).';
+        }
+
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
+        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+            set_mensaje('Reservación no encontrada', 'error');
+            $this->redirect('reservaciones');
+            return;
+        }
+
+        if ($reservacion['estado'] !== 'confirmada') {
+            set_mensaje('Solo se puede marcar no-show una reservación confirmada pendiente de check-in.', 'error');
+            $this->redirect('reservaciones/ver/' . $id);
+            return;
+        }
+
+        $resultado = $this->reservacionModel->marcarNoShow($id, $razon);
+
+        $mensaje = 'Reservación marcada como no-show.';
+        $retenido = is_array($resultado) ? (float)($resultado['total_retenido'] ?? 0) : 0;
+        if ($retenido > 0) {
+            $mensaje .= sprintf(' Se retuvo el anticipo de %s como penalización.', format_money($retenido));
+        }
+        set_mensaje($mensaje, 'success');
+
+        error_log(sprintf(
+            "Reservación #%d marcada como NO-SHOW por %s. Anticipo retenido: $%s",
+            $id,
+            $_SESSION['user_name'] ?? 'Desconocido',
+            number_format($retenido, 2)
+        ));
+    } catch (Exception $e) {
+        error_log("Error en noShowAction: " . $e->getMessage());
+        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        $this->redirect('reservaciones/ver/' . $id);
+        return;
+    }
+
+    $this->redirect('reservaciones');
+}
+
+/**
  * Método adicional para verificar si se puede cancelar una reservación
  * Agregar este método al controlador para validaciones adicionales
  */

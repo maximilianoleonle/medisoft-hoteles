@@ -2929,6 +2929,114 @@ public function checkOut($reservacion_id, $hora_salida = null) {
 }
 
 /**
+ * Marcar una reservación como NO-SHOW (el huésped no se presentó).
+ *
+ * A diferencia de cancelar(), el anticipo NO se devuelve: se RETIENE como
+ * penalización por no presentarse. El movimiento de caja se reclasifica a la
+ * categoría "Penalización no-show" para que quede claro en caja y reportes que
+ * ese dinero ya no es un anticipo de una reserva viva. La reservación pasa a
+ * 'cancelada' con una nota [NO-SHOW] (el enum de estado no tiene 'no_show').
+ *
+ * @param int    $id
+ * @param string $razon
+ * @return array{success:bool,total_retenido:float}
+ */
+public function marcarNoShow($id, $razon) {
+    $db = Database::getInstance();
+
+    try {
+        $db->beginTransaction();
+
+        $hotel_id = $this->hotelIdActual();
+        $reservacion = $this->obtenerPorId($id);
+
+        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+            throw new Exception("Reservación no encontrada");
+        }
+
+        // Solo tiene sentido para una reserva confirmada que nunca hizo check-in.
+        if ($reservacion['estado'] !== 'confirmada') {
+            throw new Exception("Solo se puede marcar no-show una reservación confirmada pendiente de check-in");
+        }
+
+        // Retener los anticipos: reclasificar los ingresos de esta reserva a
+        // "Penalización no-show" (NO se genera devolución).
+        $stmt = $db->query(
+            "SELECT id, monto FROM movimientos_caja
+             WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso'",
+            [$id, $hotel_id]
+        );
+        $ingresos = $stmt ? $stmt->fetchAll() : [];
+        $total_retenido = 0.0;
+
+        if (!empty($ingresos)) {
+            // Obtener o crear la categoría de ingreso "Penalización no-show".
+            $catStmt = $db->query(
+                "SELECT id FROM categorias_movimientos
+                 WHERE nombre = 'Penalización no-show' AND tipo = 'ingreso'
+                   AND activa = 1 AND hotel_id = ? LIMIT 1",
+                [$hotel_id]
+            );
+            $catRow = $catStmt ? $catStmt->fetch() : null;
+            if ($catRow) {
+                $categoria_id = $catRow['id'];
+            } else {
+                $db->query(
+                    "INSERT INTO categorias_movimientos
+                        (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
+                     VALUES (?, 'Penalización no-show', 'ingreso', 'Anticipos retenidos por no presentarse',
+                             'fas fa-user-slash', '#B45309', 1, NOW())",
+                    [$hotel_id]
+                );
+                $categoria_id = $db->lastInsertId();
+            }
+
+            foreach ($ingresos as $mov) {
+                $db->query(
+                    "UPDATE movimientos_caja
+                        SET categoria = 'Penalización no-show',
+                            categoria_id = ?,
+                            descripcion = CONCAT('No-show (anticipo retenido) - Reservación #', ?)
+                      WHERE id = ? AND hotel_id = ? AND tipo = 'ingreso'",
+                    [$categoria_id, $id, $mov['id'], $hotel_id]
+                );
+                $total_retenido += (float)$mov['monto'];
+            }
+        }
+
+        // Marcar la reservación como cancelada con nota de no-show.
+        $usuario_nombre = $_SESSION['user_name'] ?? $_SESSION['usuario_nombre'] ?? 'Usuario';
+        $nota = "\n\n[NO-SHOW] " . date('Y-m-d H:i:s') . " - Por: " . $usuario_nombre . "\nRazón: " . $razon;
+        if ($total_retenido > 0) {
+            $nota .= "\nAnticipo retenido como penalización: $" . number_format($total_retenido, 2);
+        }
+
+        $stmt = $db->query(
+            "UPDATE reservaciones
+                SET estado = 'cancelada', notas = CONCAT(IFNULL(notas, ''), ?)
+              WHERE id = ? AND hotel_id = ?",
+            [$nota, $id, $hotel_id]
+        );
+
+        if (!$stmt || $stmt->rowCount() == 0) {
+            throw new Exception("No se pudo actualizar la reservación");
+        }
+
+        $db->commit();
+
+        return [
+            'success' => true,
+            'total_retenido' => $total_retenido,
+        ];
+
+    } catch (Exception $e) {
+        $db->rollBack();
+        error_log("Error en marcarNoShow #$id: " . $e->getMessage());
+        throw $e;
+    }
+}
+
+/**
  * Método auxiliar para verificar si existe la categoría de devoluciones
  * Agregar este método al modelo Reservacion
  */

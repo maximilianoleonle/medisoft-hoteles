@@ -542,6 +542,7 @@ $router->post('/reservaciones/check-out/{id:[0-9]+}', ['controller' => 'Reservac
 
 $router->post('/reservaciones/check-out-parcial/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutParcial']);
 $router->post('/reservaciones/cancelar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'cancelar']);
+$router->post('/reservaciones/no-show/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'noShow']);
 $router->post('/reservaciones/{id:[0-9]+}/anticipo', ['controller' => 'Reservacion', 'action' => 'registrarAnticipo']);
 $router->post('/reservaciones/{id:[0-9]+}/anticipo/revertir', ['controller' => 'Reservacion', 'action' => 'revertirAnticipo']);
 $router->get('/reservaciones/calendario', ['controller' => 'Reservacion', 'action' => 'calendario']);
