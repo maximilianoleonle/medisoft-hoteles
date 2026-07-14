@@ -3371,6 +3371,19 @@ document.addEventListener('DOMContentLoaded', function(){
             unset($__grp);
             ?>
             <?php foreach ($habitaciones_por_cat as $__catKey => $__habs): ?>
+                <?php
+                // El colapso del badge (room-code-long) se decide POR GRUPO, no por
+                // tarjeta: si un nombre del grupo es largo, todo el grupo usa icono.
+                // Evita píldora y ✓ mezclados en la misma fila con el mismo estado.
+                $__grupoNumeroMax = 0;
+                foreach ($__habs as $__h) {
+                    $__numTxt = (string)($__h['numero'] ?? '');
+                    $__numLen = function_exists('mb_strlen') ? mb_strlen($__numTxt, 'UTF-8') : strlen($__numTxt);
+                    if ($__numLen > $__grupoNumeroMax) {
+                        $__grupoNumeroMax = $__numLen;
+                    }
+                }
+                ?>
                 <section class="floor-section">
                     <div class="floor-label">
                         <span class="floor-t"><?= htmlspecialchars($__catKey !== '' ? $__catKey : 'Otras') ?></span>
@@ -3589,9 +3602,8 @@ if ($tiene_doble_movimiento) {
                 $habitacionNumeroLongitud = function_exists('mb_strlen')
                     ? mb_strlen($habitacionNumeroTexto, 'UTF-8')
                     : strlen($habitacionNumeroTexto);
-                $habitacionNumeroLayoutClass = $habitacionNumeroLongitud > 8
-                    ? ' room-code-long room-code-xl'
-                    : ($habitacionNumeroLongitud > 5 ? ' room-code-long' : '');
+                $habitacionNumeroLayoutClass = ($__grupoNumeroMax > 5 ? ' room-code-long' : '')
+                    . ($habitacionNumeroLongitud > 8 ? ' room-code-xl' : '');
                 ?>
                 <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $tieneEstadoLimpiezaOperativa ? 'has-cleaning-state' : '' ?><?= $habitacionNumeroLayoutClass ?>"
                       onclick="toggleFlip(this, event)"
