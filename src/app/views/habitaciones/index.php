@@ -3145,7 +3145,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                  INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
                                  WHERE r.hotel_id = ?
                                  AND DATE(r.fecha_salida) = ?
-                                 AND r.estado IN ('checked_in', 'confirmada')
+                                 AND r.estado = 'checked_in'
                                  GROUP BY r.id
                                  ORDER BY r.hora_entrada";
                 $stmt = $db->query($sql_checkouts, [$hotel_id_actual, $fecha_consulta]);
@@ -3192,7 +3192,12 @@ document.addEventListener('DOMContentLoaded', function(){
                         <?php else: ?>
                             <div class="space-y-1">
                                 <?php foreach ($checkins_dia as $checkin): ?>
-                                    <div class="flex items-center justify-between p-2 bg-purple-50 rounded hover:bg-purple-100 transition-colors hb-move-item hb-move-item--in">
+                                    <div class="flex items-center justify-between p-2 bg-purple-50 rounded hover:bg-purple-100 transition-colors hb-move-item hb-move-item--in"
+                                         data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$checkin['id']), ENT_QUOTES, 'UTF-8') ?>"
+                                         role="link"
+                                         tabindex="0"
+                                         title="Abrir reservación"
+                                         aria-label="Abrir reservación de <?= htmlspecialchars($checkin['nombre_completo'] ?? 'huésped', ENT_QUOTES, 'UTF-8') ?>">
                                         <div class="flex-1 min-w-0">
                                             <p class="font-medium text-sm text-gray-800 truncate">
                                                 <?= htmlspecialchars($checkin['nombre_completo']) ?>
@@ -3203,7 +3208,8 @@ document.addEventListener('DOMContentLoaded', function(){
                                             </p>
                                         </div>
                                         <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
-                                           class="text-purple-600 hover:text-purple-800 ml-2 hb-move-action">
+                                           class="text-purple-600 hover:text-purple-800 ml-2 hb-move-action"
+                                           tabindex="-1" aria-hidden="true">
                                             <i class="fas fa-arrow-right text-sm"></i>
                                         </a>
                                     </div>
@@ -3258,6 +3264,49 @@ document.addEventListener('DOMContentLoaded', function(){
                     </div>
                 </div>
             </div>
+            <script>
+            (function () {
+                const zone = document.querySelector('.hb-movements');
+                if (!zone) { return; }
+
+                function rowFromTarget(target) {
+                    if (!(target instanceof Element)) { return null; }
+                    if (target.closest('a, button, input, textarea, select, label')) { return null; }
+                    return target.closest('.hb-move-item[data-href]');
+                }
+
+                function openRow(row, event) {
+                    const href = row.getAttribute('data-href');
+                    if (!href) { return; }
+                    if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
+                        window.open(href, '_blank', 'noopener');
+                        return;
+                    }
+                    window.location.href = href;
+                }
+
+                zone.addEventListener('click', function (event) {
+                    const row = rowFromTarget(event.target);
+                    if (row) { openRow(row, event); }
+                });
+
+                zone.addEventListener('auxclick', function (event) {
+                    if (event.button !== 1) { return; }
+                    const row = rowFromTarget(event.target);
+                    if (!row) { return; }
+                    event.preventDefault();
+                    openRow(row, event);
+                });
+
+                zone.addEventListener('keydown', function (event) {
+                    if (event.key !== 'Enter' && event.key !== ' ') { return; }
+                    const row = event.target.closest && event.target.closest('.hb-move-item[data-href]');
+                    if (!row || row !== event.target) { return; }
+                    event.preventDefault();
+                    openRow(row, event);
+                });
+            })();
+            </script>
             <?php endif; ?>
         <?php endif; ?>
 
@@ -4539,6 +4588,139 @@ if ($tiene_doble_movimiento) {
             animation: none !important;
         }
     }
+</style>
+
+<style id="hb-quick-glass-cupertino">
+/* Vista Rápida (modal): la banda verde del encabezado pasa a losa candy de
+   la marca — SOLO Cupertino claro, y SOLO el header (sutil: las celdas y las
+   píldoras de estado quedan intactas para no saturar). Deleite y modo oscuro
+   sin cambios. Revertir: borrar este bloque. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-header {
+    color: #1D1D1F !important;
+    background:
+        radial-gradient(46% 160% at 96% 76%, rgba(255,255,255,.82), rgba(255,255,255,0) 72%),
+        linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 40%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--qv-primary) 12%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--qv-primary) 26%, #FFFFFF) 100%) !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--qv-primary) 18%, rgba(17,24,39,.06)) !important;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.9) !important;
+}
+/* Retícula "operativa": líneas casi imperceptibles teñidas de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-header::before {
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--qv-primary) 24%, transparent) 1px, transparent 1px),
+        linear-gradient(180deg, color-mix(in srgb, var(--qv-primary) 24%, transparent) 1px, transparent 1px) !important;
+    opacity: .1 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-eyebrow {
+    color: color-mix(in srgb, var(--qv-primary) 55%, #6E6E73) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-title {
+    color: color-mix(in srgb, var(--qv-primary) 30%, #111827) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-subtitle {
+    color: #6E6E73 !important;
+}
+/* Tesela del ícono: lechosa con tinta de marca */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-mark {
+    color: color-mix(in srgb, var(--qv-primary) 72%, #111827) !important;
+    background: rgba(255,255,255,.62) !important;
+    border: 1px solid rgba(255,255,255,.9) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px color-mix(in srgb, var(--qv-primary) 16%, transparent) !important;
+}
+/* Cerrar (X): chip lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-close {
+    color: color-mix(in srgb, var(--qv-primary) 66%, #111827) !important;
+    background: rgba(255,255,255,.62) !important;
+    border: 1px solid rgba(255,255,255,.9) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-close:hover,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #vistaRapidaModal .hb-quick-close:focus-visible {
+    background: rgba(255,255,255,.85) !important;
+    border-color: #FFFFFF !important;
+}
+</style>
+
+<style id="hb-reserve-glass-cupertino">
+/* Wizard "Crear reservación" (modal Nueva Reserva): el rail izquierdo oscuro
+   pasa a losa candy de la marca — SOLO Cupertino claro. Tinta oscura, caja de
+   fechas y pasos lechosos; el paso activo conserva su relleno de marca y el
+   completo su verde semántico. Botones del wizard sin tocar (contraste de CTA).
+   Deleite y modo oscuro intactos. Revertir: borrar este bloque. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-side {
+    color: #1D1D1F !important;
+    background:
+        radial-gradient(260px 210px at 100% 10%, rgba(255,255,255,.55), transparent 62%),
+        linear-gradient(155deg,
+            color-mix(in srgb, var(--hb-reserve-brand) 12%, #FFFFFF),
+            color-mix(in srgb, var(--hb-reserve-brand) 26%, #FFFFFF)) !important;
+    border-right: 1px solid color-mix(in srgb, var(--hb-reserve-brand) 16%, rgba(17,24,39,.06)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-side::after {
+    background: color-mix(in srgb, var(--hb-reserve-brand) 16%, transparent) !important;
+    opacity: .4 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-side__eyebrow {
+    color: color-mix(in srgb, var(--hb-reserve-brand) 55%, #6E6E73) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-side h2 {
+    color: color-mix(in srgb, var(--hb-reserve-brand) 30%, #111827) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-side p {
+    color: #6E6E73 !important;
+}
+/* Caja de fechas: panel lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-datebox {
+    border: 1px solid rgba(255,255,255,.9) !important;
+    background: rgba(255,255,255,.55) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-dateitem + .hb-reserve-dateitem {
+    border-top: 1px solid color-mix(in srgb, var(--hb-reserve-brand) 12%, rgba(17,24,39,.06)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-dateicon {
+    background: rgba(255,255,255,.7) !important;
+    color: color-mix(in srgb, var(--hb-reserve-brand) 66%, #111827) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-dateitem small {
+    color: #6E6E73 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-dateitem strong {
+    color: #1D1D1F !important;
+}
+/* Pasos: tinta sobre lienzo; activo = marca, completo = verde semántico */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-steps li {
+    color: #8A8A8F !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-steps li span {
+    border: 1px solid color-mix(in srgb, var(--hb-reserve-brand) 20%, rgba(17,24,39,.12)) !important;
+    color: #6E6E73 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-steps li.is-active,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-steps li.is-complete {
+    color: #1D1D1F !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-steps li.is-active span {
+    border-color: color-mix(in srgb, var(--hb-reserve-brand) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--hb-reserve-brand) 82%, #FFFFFF) !important;
+    color: #FFFFFF !important;
+}
+
+/* Skeleton del wizard: su lado izquierdo también en candy (antes gradiente navy),
+   así el "cargando" no rompe con el nuevo diseño; barras en tinta de marca. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserve-sk__side {
+    background: linear-gradient(155deg,
+        color-mix(in srgb, var(--hb-reserve-brand) 12%, #FFFFFF),
+        color-mix(in srgb, var(--hb-reserve-brand) 26%, #FFFFFF)) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserve-sk__side .hb-reserve-sk-bar {
+    background: color-mix(in srgb, var(--hb-reserve-brand) 15%, #FFFFFF) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserve-sk__side .hb-reserve-sk-bar::after {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent) !important;
+}
 </style>
 
 <div id="vistaRapidaModal" class="hb-quick-modal fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -6483,6 +6665,11 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 }
 .habitaciones-view .hb-move-item:last-child{ margin-bottom: 0; }
 .habitaciones-view .hb-move-item:hover{ background: var(--hb-surface-warm, #FAF8F4); }
+.habitaciones-view .hb-move-item[data-href]{ cursor: pointer; }
+.habitaciones-view .hb-move-item[data-href]:focus-visible{
+    outline: 2px solid color-mix(in srgb, var(--c-arriving, #7C3AED) 65%, transparent);
+    outline-offset: -2px;
+}
 .habitaciones-view .hb-move-item p:first-child{
     font-size: .84rem;
     font-weight: 700;
@@ -8351,8 +8538,17 @@ body.hb-modal-open{ overflow:hidden; }
   border-left-color:var(--c-maint)!important;
 }
 
+/* "No llegó" + habitación DISPONIBLE: el badge verde se perdía sobre la
+   superficie verde de la tarjeta (mismo tono + sin sombra). Le damos una
+   píldora nítida —fondo claro, texto verde profundo, aro y sombra— para que
+   la leyenda "Disponible" resalte sin competir con el chip rojo "No llegó". */
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible .rc-badge,
-.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha .rc-badge{ background:var(--c-available)!important; }
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha .rc-badge{
+  background:#fff!important;
+  color:#12784A!important;
+  border:1px solid color-mix(in srgb,var(--c-available) 42%,#fff)!important;
+  box-shadow:0 3px 8px -3px color-mix(in srgb,var(--c-available) 55%,transparent), inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-por_llegar .rc-badge,
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-doble .rc-badge{ background:var(--c-arriving)!important; }
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-ocupada .rc-badge,
@@ -13570,17 +13766,17 @@ html[data-tema="cupertino"] .habitaciones-view .rc-id{ min-width:0; }
      propósito, no solo pintura. Un solo elemento con blur = barato. */
   html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .modern-header{
     background:
-      radial-gradient(40% 150% at 96% 60%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%),
+      radial-gradient(42% 150% at 96% 55%, rgba(255,255,255,.4), rgba(255,255,255,0) 70%),
       linear-gradient(165deg,
-        color-mix(in srgb, var(--hb-primary) 10%, rgba(255,255,255,.6)) 0%,
-        color-mix(in srgb, var(--hb-primary) 17%, rgba(255,255,255,.42)) 100%)!important;
-    -webkit-backdrop-filter: blur(28px) saturate(1.7);
-    backdrop-filter: blur(28px) saturate(1.7);
-    border:1px solid color-mix(in srgb, var(--hb-primary) 18%, rgba(255,255,255,.75))!important;
+        color-mix(in srgb, var(--hb-primary) 22%, rgba(255,255,255,.82)) 0%,
+        color-mix(in srgb, var(--hb-primary) 40%, rgba(255,255,255,.62)) 100%)!important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    backdrop-filter: blur(28px) saturate(1.8);
+    border:1px solid color-mix(in srgb, var(--hb-primary) 26%, rgba(255,255,255,.7))!important;
     box-shadow:
       inset 0 1px 1px rgba(255,255,255,.85),
       inset 0 -1px 2px rgba(255,255,255,.3),
-      0 12px 30px -14px color-mix(in srgb, var(--hb-primary) 35%, rgba(27,39,70,.18))!important;
+      0 12px 30px -14px color-mix(in srgb, var(--hb-primary) 42%, rgba(27,39,70,.2))!important;
   }
 
   /* Filo de luz superior sutil sobre el vidrio */
@@ -13852,14 +14048,26 @@ body.hb-lm-sidebar-under #sidebar.sidebar-main.sidebar-saas{
    La sidebar ya queda cubierta por el overlay de SweetAlert; aquí sumamos el "pop" de entrada
    (reemplaza el zoom por defecto de swal2) y un skeleton que se auto-desvanece (~560ms). */
 
-/* Entrada: pop (sube + escala) en vez del zoom por defecto — gana por especificidad a .swal2-show */
-.swal2-popup.hb-reserve-swal.swal2-show{
-  animation:hbReservePop .42s cubic-bezier(.22,1,.36,1);
-}
-@keyframes hbReservePop{
-  0%{ opacity:0; transform:translateY(18px) scale(.965); }
-  100%{ opacity:1; transform:translateY(0) scale(1); }
-}
+/* Entrada/salida como STEPPER direccional (customClass show/hide del wizard):
+   - Primera apertura (data-hbdir="initial"): "pop" (sube + escala).
+   - Avanzar (fwd): el paso actual desliza y se desvanece hacia la IZQUIERDA y el
+     nuevo entra deslizando DESDE LA DERECHA → sensación de "seguir adelante".
+   - Volver (back): al revés. El desplazamiento es corto (~36px), no vuela fuera
+     de pantalla, para que se sienta conectado y no "desaparezca por completo". */
+.swal2-popup.hb-reserve-swal.hb-reserve-swal-in{ animation:hbReservePop .42s cubic-bezier(.22,1,.36,1); }
+.swal2-popup.hb-reserve-swal.hb-reserve-swal-out{ animation:hbReserveFadeOut .16s ease forwards; }
+
+.hb-swal-sheet-container[data-hbdir="fwd"] .swal2-popup.hb-reserve-swal.hb-reserve-swal-in{ animation:hbReserveInRight .42s cubic-bezier(.22,1,.36,1); }
+.hb-swal-sheet-container[data-hbdir="fwd"] .swal2-popup.hb-reserve-swal.hb-reserve-swal-out{ animation:hbReserveOutLeft .24s cubic-bezier(.45,0,.7,.25) forwards; }
+.hb-swal-sheet-container[data-hbdir="back"] .swal2-popup.hb-reserve-swal.hb-reserve-swal-in{ animation:hbReserveInLeft .42s cubic-bezier(.22,1,.36,1); }
+.hb-swal-sheet-container[data-hbdir="back"] .swal2-popup.hb-reserve-swal.hb-reserve-swal-out{ animation:hbReserveOutRight .24s cubic-bezier(.45,0,.7,.25) forwards; }
+
+@keyframes hbReservePop{ 0%{ opacity:0; transform:translateY(18px) scale(.965); } 100%{ opacity:1; transform:translateY(0) scale(1); } }
+@keyframes hbReserveInRight{ 0%{ opacity:0; transform:translateX(38px) scale(.99); } 100%{ opacity:1; transform:none; } }
+@keyframes hbReserveInLeft{ 0%{ opacity:0; transform:translateX(-38px) scale(.99); } 100%{ opacity:1; transform:none; } }
+@keyframes hbReserveOutLeft{ 0%{ opacity:1; transform:none; } 100%{ opacity:0; transform:translateX(-30px) scale(.99); } }
+@keyframes hbReserveOutRight{ 0%{ opacity:1; transform:none; } 100%{ opacity:0; transform:translateX(30px) scale(.99); } }
+@keyframes hbReserveFadeOut{ to{ opacity:0; } }
 
 /* ── Skeleton: cubre el shell mientras "carga" y se desvanece revelando el contenido ── */
 .hb-reserve-shell{ position:relative; }
@@ -13911,7 +14119,8 @@ body.hb-lm-sidebar-under #sidebar.sidebar-main.sidebar-saas{
 
 /* Respeta a quien prefiere menos movimiento */
 @media (prefers-reduced-motion: reduce){
-  .swal2-popup.hb-reserve-swal.swal2-show{ animation-duration:.01ms; }
+  .swal2-popup.hb-reserve-swal.hb-reserve-swal-in,
+  .swal2-popup.hb-reserve-swal.hb-reserve-swal-out{ animation-duration:.01ms !important; }
   .hb-reserve-swal .hb-reserve-sk{ animation:hbReserveSkHide .01s linear 300ms forwards; }
   .hb-reserve-swal .hb-reserve-sk-bar::after,
   .hb-reserve-swal .hb-reserve-sk-card::after{ animation:none; }
@@ -14223,6 +14432,29 @@ function hbReservaFormatearHoraChip(hora) {
 }
 
 let hbReservaSwalTimer = null;
+
+/* Dirección del stepper del wizard: 'initial' (pop de entrada), 'fwd' (avanza,
+   desliza izq→entra der) o 'back' (Volver, entra izq). Al fijarla también se
+   actualiza el contenedor swal ACTUAL para que su salida sea del lado correcto. */
+window.__hbReserveDir = 'initial';
+function hbReserveSetDir(dir) {
+    window.__hbReserveDir = dir || 'initial';
+    var c = document.querySelector('.hb-swal-sheet-container');
+    if (c) c.setAttribute('data-hbdir', window.__hbReserveDir);
+}
+/* Config compartida de animación direccional para los Swal del wizard. */
+function hbReserveSwalAnim() {
+    return {
+        showClass: { popup: 'hb-reserve-swal-in', backdrop: 'swal2-backdrop-show' },
+        hideClass: { popup: 'hb-reserve-swal-out', backdrop: 'swal2-backdrop-hide' },
+        willOpen: function (popup) {
+            try {
+                var c = popup && popup.closest ? popup.closest('.swal2-container') : null;
+                if (c) c.setAttribute('data-hbdir', window.__hbReserveDir || 'initial');
+            } catch (e) {}
+        }
+    };
+}
 
 function hbCerrarSwalReserva(callback, delay = 160) {
     if (hbReservaSwalTimer) {
@@ -14593,7 +14825,8 @@ function hbMostrarReservaSheetHora(tipo, habitacionId, fechaEntrada, fechaSalida
     `);
 }
 
-function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
+function mostrarSelectorTipoCliente(habitacionId, datosReserva, dir) {
+    window.__hbReserveDir = dir || 'initial';
     const tieneHabitacion = habitacionId !== null && habitacionId !== undefined && habitacionId !== '';
     const habitacionArg = tieneHabitacion ? parseInt(habitacionId, 10) : 'null';
     const fechaEntrada = datosReserva.fechaEntrada;
@@ -14604,10 +14837,11 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         : 'Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente que ya existe.';
 
     Swal.fire({
+        ...hbReserveSwalAnim(),
         title: '',
         html: `
             <div class="hb-reserve-shell" data-tipo="nuevo">
-                ${hbReservaSkeleton()}
+                ${(window.__hbReserveDir || 'initial') === 'initial' ? hbReservaSkeleton() : ''}
                 ${hbReservaSidebar(fechaEntrada, fechaSalida, 1, habitacionId)}
                 <section class="hb-reserve-main" aria-label="Tipo de cliente">
                     ${hbReservaMobileIntro(fechaEntrada, fechaSalida, 1, habitacionId)}
@@ -15186,12 +15420,14 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
     const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
     const habitacionArg = tieneHabitacion ? parseInt(habitacionId, 10) : 'null';
 
+    hbReserveSetDir('fwd');
     hbCerrarSwalReserva(() => {
         Swal.fire({
+            ...hbReserveSwalAnim(),
             title: '',
             html: `
                 <div class="hb-reserve-shell" data-tipo="${tipo}">
-                    ${hbReservaSkeleton()}
+                    ${(window.__hbReserveDir || 'initial') === 'initial' ? hbReservaSkeleton() : ''}
                     ${hbReservaSidebar(fechaEntrada, fechaSalida, 2, habitacionId)}
                     <section class="hb-reserve-main" aria-label="Hora de llegada">
                         ${hbReservaMobileIntro(fechaEntrada, fechaSalida, 2, habitacionId)}
@@ -15219,7 +15455,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                         <p id="hbReserveValidation" class="hb-reserve-validation hidden">Ingresa la hora de llegada o usa Definir despues.</p>
 
                         <div class="hb-reserve-footer">
-                            <button type="button" onclick="hbCerrarSwalReserva(() => mostrarSelectorTipoCliente(${habitacionArg}, { fechaEntrada: '${fechaEntrada}', fechaSalida: '${fechaSalida}', horaActual: '${horaActual}' }), 90)" class="hb-reserve-btn hb-reserve-btn--ghost">
+                            <button type="button" onclick="hbReserveSetDir('back'); hbCerrarSwalReserva(() => mostrarSelectorTipoCliente(${habitacionArg}, { fechaEntrada: '${fechaEntrada}', fechaSalida: '${fechaSalida}', horaActual: '${horaActual}' }, 'back'), 150)" class="hb-reserve-btn hb-reserve-btn--ghost">
                                 <i class="fas fa-arrow-left"></i> Volver
                             </button>
                             <button type="button" onclick="hbCrearReservacionDesdeHora('${tipo}', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}')" class="hb-reserve-btn hb-reserve-btn--primary">
