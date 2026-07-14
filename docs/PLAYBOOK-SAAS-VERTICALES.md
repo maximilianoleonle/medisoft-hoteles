@@ -139,7 +139,8 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
 | P10 | Sesiones de IA maratónicas multi-tema | 1 sesión = 1 objetivo con test verde y commit al cierre |
 | P11 | Construir features antes de que alguien las pida/pague | La demo se vende con UN módulo estrella. Todo lo demás espera un cliente que lo pida |
 | P12 | Paralelizar giros antes de facturar | Un vertical hasta que pague; el template hace barato el siguiente |
-| P13 | CSS compilado en el navegador (Tailwind Play CDN) | Tailwind PRECOMPILADO en build (Vite lo da gratis en Laravel). El compilador en cliente cuesta cientos de ms por página en cada carga, peor en móvil, y obliga a `unsafe-eval` en la CSP |
+| P13 | CSS compilado en el navegador (Tailwind Play CDN) | Tailwind PRECOMPILADO en build (Vite lo da gratis en Laravel). El compilador en cliente cuesta cientos de ms por página en cada carga, peor en móvil, y obliga a `unsafe-eval` en la CSP. GOTCHA pagado: los `content` globs JAMÁS deben tocar archivos vendoreados con líneas gigantes (fuentes CID de TCPDF: 1.5MB, líneas de 1.1M chars) — el extractor pasa de segundos a 5+ MINUTOS y parece colgado. Ante un build lento: bisect por glob con `--content` |
+| P14 | Llamar helpers con firmas inventadas (`current_user('id')`) | PHP no truena por argumentos extra: el helper ignora el argumento, devuelve el array completo y el bug aparece hasta la DB como `'Array' for column usuario_registro_id` (rompió Iniciar/Programar mantenimiento en Medisoft). Para el id del usuario SIEMPRE el helper dedicado (`user_id()`); en Laravel, `auth()->id()`. Y los errores SQL crudos JAMÁS llegan al toast: loguear completo, mostrar mensaje genérico |
 
 ---
 
@@ -603,6 +604,18 @@ p95 162ms y 0% error).
     anti doble pago).
 11. Aislamiento: NINGUNA operación de dinero cruza tenants (test A/B).
 12. Toda cifra mostrada se recalcula de la fuente, no de acumuladores sueltos.
+13. Cancelar y no-show resuelven SIEMPRE el dinero ya cobrado, sin importar el
+    estado de la reserva: cancelar → devolución registrada en caja (egreso
+    'Devoluciones', maneja pagos de cortes cerrados); no-show → retención
+    reclasificada como ingreso 'Penalización no-show'. Un anticipo jamás queda
+    huérfano en un estado terminal (bug pagado: anticipos de confirmadas
+    canceladas quedaban como ingreso sin rastro).
+14. Las vistas de cobranza derivan el "por cobrar" EXCLUYENDO estados
+    terminales sin adeudo (canceladas): una reserva cancelada no es deuda
+    (bug pagado: $21,150 de 'saldo por cobrar' fantasma, 75% del total).
+15. La resolución de un no-show es una ACCIÓN de primera clase en la alerta
+    (no solo "hacer check-in"): el estado colgado retiene inventario y
+    ensucia los tableros de salidas.
 
 ## APÉNDICE C. Checklist Fase 0 (comando por comando, para la IA)
 
