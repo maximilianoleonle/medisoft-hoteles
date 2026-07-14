@@ -1438,7 +1438,8 @@ $mantenimientos_count = count($mantenimientos_programados);
                                             <span class="hdv-meta-pill"><i class="fas fa-clock"></i><?= $fp_dias == 0 ? 'Llega hoy' : ($fp_dias == 1 ? 'Manana' : 'En ' . $fp_dias . ' dias') ?></span>
                                             <span class="hdv-meta-pill"><i class="fas fa-moon"></i><?= $fp_noches ?> <?= $fp_noches == 1 ? 'noche' : 'noches' ?></span>
                                             <?php if (($proxima_destacada['precio_total'] ?? 0) > 0): ?>
-                                                <span class="hdv-meta-pill"><i class="fas fa-dollar-sign"></i><?= format_money($proxima_destacada['precio_total']) ?></span>
+                                                <?php $pd_habs = (int)($proxima_destacada['total_habitaciones'] ?? 1); ?>
+                                                <span class="hdv-meta-pill"><i class="fas fa-dollar-sign"></i><?= format_money($proxima_destacada['precio_total']) ?><?= $pd_habs > 1 ? ' &middot; grupo de ' . $pd_habs . ' hab.' : '' ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <a href="<?= url('/reservaciones/ver/' . $proxima_destacada['id']) ?>" class="hdv-btn hdv-btn-info hdv-btn-sm" style="margin-top:10px;">
@@ -1476,7 +1477,8 @@ $mantenimientos_count = count($mantenimientos_programados);
                                             <span class="hdv-meta-pill"><i class="fas fa-calendar-alt"></i><?= room_detail_relative_exit($fl_dias) ?></span>
                                             <span class="hdv-meta-pill"><i class="fas fa-moon"></i><?= $fl_noches ?> <?= $fl_noches == 1 ? 'noche' : 'noches' ?></span>
                                             <?php if (($ultima_destacada['precio_total'] ?? 0) > 0): ?>
-                                                <span class="hdv-meta-pill"><i class="fas fa-dollar-sign"></i><?= format_money($ultima_destacada['precio_total']) ?></span>
+                                                <?php $ud_habs = (int)($ultima_destacada['total_habitaciones'] ?? 1); ?>
+                                                <span class="hdv-meta-pill"><i class="fas fa-dollar-sign"></i><?= format_money($ultima_destacada['precio_total']) ?><?= $ud_habs > 1 ? ' &middot; grupo de ' . $ud_habs . ' hab.' : '' ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <a href="<?= url('/reservaciones/ver/' . $ultima_destacada['id']) ?>" class="hdv-btn hdv-btn-info hdv-btn-sm" style="margin-top:10px;">
