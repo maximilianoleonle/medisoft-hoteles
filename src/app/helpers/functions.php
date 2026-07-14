@@ -702,9 +702,19 @@ function is_https_request() {
 }
 
 /**
- * Establecer mensaje flash
+ * Establecer mensaje flash.
+ * Los errores SQL crudos (SQLSTATE) jamás llegan al usuario: se loguean
+ * completos y el toast muestra un mensaje genérico. Los mensajes de reglas
+ * de negocio pasan intactos.
  */
 function set_mensaje($texto, $tipo = 'info') {
+    if (is_string($texto) && stripos($texto, 'SQLSTATE') !== false) {
+        error_log('set_mensaje ocultó error SQL al usuario: ' . $texto);
+        $texto = preg_replace('/\s*\(?SQLSTATE\[.*$/is', '', $texto);
+        $texto = trim($texto, " :.\t\n");
+        $texto = ($texto !== '' ? $texto . '. ' : '')
+            . 'Ocurrió un error interno; el detalle quedó registrado. Intenta de nuevo o contacta soporte.';
+    }
     $_SESSION['flash_message'] = [
         'texto' => $texto,
         'tipo' => $tipo
