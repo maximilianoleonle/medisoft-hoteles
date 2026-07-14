@@ -4256,11 +4256,20 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             throw new Exception("Esta reservación ya está cancelada");
         }
         
-        // Si hay un pago registrado, verificar que haya caja abierta
-        if ($reservacion['estado'] == 'checked_in' && !empty($reservacion['metodo_pago'])) {
+        // Si esta reservación tiene pagos/anticipos cobrados en caja, hay que devolverlos:
+        // se requiere caja abierta (aplica también a reservas confirmadas con anticipo,
+        // no solo a las que ya tenían check-in).
+        $stmt_ingresos = $this->db->prepare(
+            "SELECT COUNT(*) FROM movimientos_caja
+             WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso'"
+        );
+        $stmt_ingresos->execute([$id, $hotel_id]);
+        $tiene_ingresos_cobrados = (int) $stmt_ingresos->fetchColumn() > 0;
+
+        if ($tiene_ingresos_cobrados) {
             $corteActual = $this->cajaModel->obtenerCorteActual();
             if (!$corteActual || (int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
-                set_mensaje('No se puede cancelar la reservación. Debe abrir la caja primero para procesar la devolución.', 'error');
+                set_mensaje('No se puede cancelar la reservación. Debe abrir la caja primero para procesar la devolución del anticipo/pago.', 'error');
                 $this->redirect('reservaciones/ver/' . $id);
                 return;
             }
@@ -4292,30 +4301,31 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
     if ($reservacion['estado'] == 'checked_in') {
         $mensaje .= ' Las habitaciones han sido liberadas.';
 
-        // Información sobre devolución de dinero
-        if (!empty($reservacion['metodo_pago'])) {
-            $mensaje .= sprintf(' Se registró la devolución de %s en caja.',
-                              format_money($reservacion['precio_total']));
-        }
-
-        // ⚠️ Advertencia si el pago era de un corte cerrado
-        if (!empty($_SESSION['alerta_corte_cerrado'])) {
-            unset($_SESSION['alerta_corte_cerrado']);
-            set_mensaje(
-                '⚠️ Aviso contable: el pago original de esta reservación pertenecía a un corte de caja ya cerrado (de un día anterior). ' .
-                'Se registró la devolución en el corte actual. ' .
-                'Para evitar esto en el futuro, usa "Modificar días" en vez de cancelar y volver a crear la reservación.',
-                'warning'
-            );
-        }
-        
         // NUEVO: Información sobre productos devueltos
         if (is_array($resultado) && !empty($resultado['productos_devueltos'])) {
-            $mensaje .= sprintf(' Se devolvieron %d productos al inventario.', 
+            $mensaje .= sprintf(' Se devolvieron %d productos al inventario.',
                               count($resultado['productos_devueltos']));
         }
     }
-    
+
+    // Información sobre la devolución del dinero realmente cobrado (anticipos o pagos).
+    // Aplica tanto a reservas con check-in como a confirmadas con anticipo.
+    $total_devuelto = is_array($resultado) ? (float)($resultado['total_devuelto'] ?? 0) : 0;
+    if ($total_devuelto > 0) {
+        $mensaje .= sprintf(' Se registró la devolución de %s en caja.', format_money($total_devuelto));
+    }
+
+    // ⚠️ Advertencia si el pago era de un corte cerrado
+    if (!empty($_SESSION['alerta_corte_cerrado'])) {
+        unset($_SESSION['alerta_corte_cerrado']);
+        set_mensaje(
+            '⚠️ Aviso contable: el pago original de esta reservación pertenecía a un corte de caja ya cerrado (de un día anterior). ' .
+            'Se registró la devolución en el corte actual. ' .
+            'Para evitar esto en el futuro, usa "Modificar días" en vez de cancelar y volver a crear la reservación.',
+            'warning'
+        );
+    }
+
     set_mensaje($mensaje, 'success');
     
     // Log adicional para auditoría (actualizado)

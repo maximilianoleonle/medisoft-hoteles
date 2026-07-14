@@ -2630,9 +2630,18 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         error_log("=== INICIO CANCELACIÓN RESERVACIÓN #$id ===");
         error_log("Estado actual: " . $reservacion['estado']);
         
-        // 2. Si la reservación estaba en check-in, revertir TODOS los pagos de caja
-        if ($reservacion['estado'] == 'checked_in') {
-            
+        // 2. Revertir TODOS los pagos de caja de esta reservación (anticipos incluidos),
+        //    sin importar si estaba en check-in o solo confirmada/pendiente. Un anticipo
+        //    de una reserva confirmada también es dinero cobrado que debe devolverse.
+        $stmtIngresosDev = $db->query(
+            "SELECT COUNT(*) FROM movimientos_caja
+             WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso'",
+            [$id, $hotel_id]
+        );
+        $tieneIngresosParaDevolver = $stmtIngresosDev && (int)$stmtIngresosDev->fetchColumn() > 0;
+
+        if ($tieneIngresosParaDevolver) {
+
             // Verificar que haya una caja abierta
             $cajaModel = new Caja();
             $corteActual = $cajaModel->obtenerCorteActual();
