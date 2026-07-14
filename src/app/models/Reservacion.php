@@ -2681,10 +2681,12 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 }
             }
             
-            // Obtener o crear categoría de devolución (del hotel actual)
+            // Obtener o crear categoría de devolución (del hotel actual).
+            // OJO: el enum de categorias_movimientos.tipo es ('ingreso','gasto','ambos');
+            // usar 'egreso' aquí insertaba '' y cada cancelación creaba una categoría nueva.
             $sql = "SELECT id FROM categorias_movimientos
                     WHERE nombre = 'Devoluciones'
-                    AND tipo = 'egreso'
+                    AND tipo = 'gasto'
                     AND activa = 1
                     AND hotel_id = ?
                     LIMIT 1";
@@ -2696,7 +2698,7 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 try {
                     $sql = "INSERT INTO categorias_movimientos
                             (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
-                            VALUES (?, 'Devoluciones', 'egreso', 'Devoluciones por cancelaciones',
+                            VALUES (?, 'Devoluciones', 'gasto', 'Devoluciones por cancelaciones',
                                     'fas fa-undo', '#EF4444', 1, NOW())";
                     $db->query($sql, [$hotel_id]);
                     $categoria_id = $db->lastInsertId();
@@ -2704,7 +2706,7 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 } catch (Exception $e) {
                     // Si falla, usar la primera categoría de egreso disponible DEL HOTEL
                     $sql = "SELECT id FROM categorias_movimientos
-                            WHERE tipo = 'egreso' AND activa = 1 AND hotel_id = ?
+                            WHERE tipo = 'gasto' AND activa = 1 AND hotel_id = ?
                             ORDER BY id LIMIT 1";
                     $stmt = $db->query($sql, [$hotel_id]);
                     $cat_temp = $stmt->fetch();
@@ -3044,10 +3046,11 @@ private function obtenerCategoriaDevolucion() {
     $db = Database::getInstance();
     $hotelId = $this->hotelIdActual();
 
-    // Buscar categoría de devoluciones (del hotel actual)
+    // Buscar categoría de devoluciones (del hotel actual).
+    // 'gasto' es el valor válido del enum; 'egreso' insertaba '' y duplicaba.
     $sql = "SELECT id FROM categorias_movimientos
             WHERE nombre = 'Devoluciones'
-            AND tipo = 'egreso'
+            AND tipo = 'gasto'
             AND activa = 1
             AND hotel_id = ?
             LIMIT 1";
@@ -3062,15 +3065,15 @@ private function obtenerCategoriaDevolucion() {
     // Si no existe, intentar crearla en el hotel actual
     $sql = "INSERT INTO categorias_movimientos
             (hotel_id, nombre, tipo, activa, created_at)
-            VALUES (?, 'Devoluciones', 'egreso', 1, NOW())";
+            VALUES (?, 'Devoluciones', 'gasto', 1, NOW())";
 
     try {
         $db->query($sql, [$hotelId]);
         return $db->lastInsertId();
     } catch (Exception $e) {
-        // Si falla la creación, usar cualquier categoría de egreso activa DEL HOTEL
+        // Si falla la creación, usar cualquier categoría de gasto activa DEL HOTEL
         $sql = "SELECT id FROM categorias_movimientos
-                WHERE tipo = 'egreso'
+                WHERE tipo = 'gasto'
                 AND activa = 1
                 AND hotel_id = ?
                 LIMIT 1";

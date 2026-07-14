@@ -6526,10 +6526,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                         error_log("Reduccion de dias sin devolucion: pagado $" . $pagado_antes . ", nuevo total $" . $precio_nuevo . " - Reservacion #" . $reservacion_id);
                     } else {
 
-                        // Obtener o crear categoría de Devoluciones (del hotel actual)
+                        // Obtener o crear categoría de Devoluciones (del hotel actual).
+                        // 'gasto' es el valor válido del enum; 'egreso' insertaba '' y duplicaba.
                         $stmt_cat = $db->query(
                             "SELECT id FROM categorias_movimientos
-                             WHERE nombre = 'Devoluciones' AND tipo = 'egreso' AND activa = 1
+                             WHERE nombre = 'Devoluciones' AND tipo = 'gasto' AND activa = 1
                                AND hotel_id = ?
                              LIMIT 1",
                             [$hotel_id]
@@ -6540,7 +6541,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                             $db->query(
                                 "INSERT INTO categorias_movimientos
                                  (hotel_id, nombre, tipo, descripcion, icono, color, activa, created_at)
-                                 VALUES (?, 'Devoluciones', 'egreso', 'Devoluciones por ajustes',
+                                 VALUES (?, 'Devoluciones', 'gasto', 'Devoluciones por ajustes',
                                          'fas fa-undo', '#EF4444', 1, NOW())",
                                 [$hotel_id]
                             );
