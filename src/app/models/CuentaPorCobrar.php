@@ -81,6 +81,12 @@ class CuentaPorCobrar extends Model
         if ($estadoReservacion !== 'todas') {
             $where[] = 'r.estado = ?';
             $params[] = $estadoReservacion;
+        } else {
+            // Una reservación cancelada no representa un saldo por cobrar real:
+            // el huésped no debe nada (el anticipo se devolvió o se retuvo como
+            // penalización). Se excluye de la vista de cuentas por cobrar para no
+            // inflar el "saldo por cobrar" con adeudos fantasma.
+            $where[] = "r.estado <> 'cancelada'";
         }
 
         $buscar = trim((string)($filtros['buscar'] ?? ''));
