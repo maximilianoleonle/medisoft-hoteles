@@ -138,6 +138,16 @@ class ConfiguracionHotelRegistry
             'default' => true,
             'description' => 'Permitir que el copiloto use IA (Claude) para preguntas abiertas. Apagado = solo reglas, sin costo de API.',
         ],
+        'copiloto.briefing_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Enviar el briefing matutino por push (bloque copiloto_briefing).',
+        ],
+        'copiloto.briefing_hora' => [
+            'type' => 'string',
+            'default' => '08:00',
+            'description' => 'Hora local a partir de la cual se envia el briefing matutino.',
+        ],
         'nomina.modo' => [
             'type' => 'string',
             'default' => 'simplificada',
@@ -177,6 +187,56 @@ class ConfiguracionHotelRegistry
             'type' => 'string',
             'default' => 'hotel',
             'description' => 'Giro del negocio (hotel, restaurante, academia...); selecciona el adaptador de nomina.',
+        ],
+        'canal_whatsapp.confirmacion_activa' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Ofrecer el mensaje de confirmacion de reserva en la cola de Mensajes (bloque canal_whatsapp).',
+        ],
+        'canal_whatsapp.recordatorio_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Ofrecer el recordatorio "te esperamos manana" para las llegadas del dia siguiente.',
+        ],
+        'canal_whatsapp.anticipo_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Ofrecer el mensaje informativo de anticipo (instrucciones de deposito; no registra pagos).',
+        ],
+        'canal_whatsapp.encuesta_activa' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Ofrecer la encuesta post-estancia por WhatsApp a las salidas del dia (requiere bloque reputacion).',
+        ],
+        'canal_whatsapp.datos_deposito' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Cuenta/CLABE y banco que el mensaje de anticipo indica al huesped para depositar.',
+        ],
+        'canal_whatsapp.link_maps' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Link de Google Maps del hotel que acompana al recordatorio de llegada.',
+        ],
+        'canal_whatsapp.plantilla_confirmacion' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Plantilla propia del hotel para la confirmacion; vacio = usar la sugerida.',
+        ],
+        'canal_whatsapp.plantilla_recordatorio' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Plantilla propia del hotel para el recordatorio; vacio = usar la sugerida.',
+        ],
+        'canal_whatsapp.plantilla_anticipo' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Plantilla propia del hotel para el aviso de anticipo; vacio = usar la sugerida.',
+        ],
+        'canal_whatsapp.plantilla_encuesta' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Plantilla propia del hotel para la invitacion a la encuesta; vacio = usar la sugerida.',
         ],
     ];
 

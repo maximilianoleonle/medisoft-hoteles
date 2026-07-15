@@ -63,6 +63,48 @@ class VigilanciaFinancieraService
     }
 
     /**
+     * Resumen determinista de anomalias para consumo interno (briefing push):
+     * misma fuente que analizar() (conciliacion read-only), $0 y sin IA.
+     * Devuelve ['errores', 'avisos', 'titulos' => hasta 3 titulos de alertas
+     * con hallazgos] o null si el esquema financiero no esta completo.
+     */
+    public function resumenAnomalias(int $hotelId): ?array
+    {
+        if ($hotelId <= 0) {
+            return null;
+        }
+
+        try {
+            $modelo = new ConciliacionFinanciera();
+            $reporte = $modelo->reporteReadOnlyPorHotel($hotelId, ['page' => 1, 'limit' => 50]);
+        } catch (Throwable $e) {
+            error_log('Vigilancia financiera: error en resumen de anomalias: ' . $e->getMessage());
+            return null;
+        }
+
+        if (empty($reporte['schema_ok'])) {
+            return null;
+        }
+
+        $totales = (array) ($reporte['totales_alertas'] ?? []);
+        $titulos = [];
+        foreach ((array) ($reporte['alertas'] ?? []) as $alerta) {
+            if (count($titulos) >= 3) {
+                break;
+            }
+            if ((int) ($alerta['conteo'] ?? 0) > 0 && in_array((string) ($alerta['severidad'] ?? ''), ['error', 'warning'], true)) {
+                $titulos[] = (string) ($alerta['titulo'] ?? '');
+            }
+        }
+
+        return [
+            'errores' => (int) ($totales['error'] ?? 0),
+            'avisos' => (int) ($totales['warning'] ?? 0),
+            'titulos' => array_values(array_filter($titulos)),
+        ];
+    }
+
+    /**
      * Informe forense del hotel. Usa el cache del dia salvo $regenerar.
      * $filtros se pasan tal cual a la conciliacion (fecha_desde/fecha_hasta,
      * tipo, severidad). Devuelve:

@@ -508,6 +508,24 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'required' => false,
                 'max' => 80,
             ],
+            'copiloto.briefing_activo' => [
+                'label' => 'Briefing matutino por push',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'copiloto',
+                'descripcion' => 'Enviar cada manana el pulso del dia (llegadas, salidas, limpieza, caja y avisos) por notificacion push. Requiere el bloque Copiloto proactivo.',
+                'required' => false,
+            ],
+            'copiloto.briefing_hora' => [
+                'label' => 'Hora del briefing',
+                'type' => 'string',
+                'input' => 'time',
+                'default' => '08:00',
+                'grupo' => 'copiloto',
+                'descripcion' => 'Hora local a partir de la cual se envia el briefing matutino.',
+                'required' => true,
+            ],
         ];
     }
 }

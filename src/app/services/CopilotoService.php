@@ -992,8 +992,11 @@ class CopilotoService
         return ['total' => $total, 'nombres' => $texto];
     }
 
-    /** Mini-briefing del dia: ocupacion + llegadas/salidas + pendientes + caja. */
-    private function resumenDelDia(int $hotelId): array
+    /**
+     * Mini-briefing del dia: ocupacion + llegadas/salidas + pendientes + caja.
+     * Publico: tambien lo compone el briefing matutino push (CopilotoBriefingService).
+     */
+    public function resumenDelDia(int $hotelId): array
     {
         $o = $this->ocupacionHoy($hotelId);
         $lleg = $this->reservasPorFecha($hotelId, 'entrada');
