@@ -61,20 +61,15 @@ class DuenoController extends Controller {
      * ---------------------------------------------------------------- */
 
     private function armarResumen(int $hotelId): array {
-        $dinero = $this->bloqueDinero($hotelId);
-        $hotel = $this->bloqueHotel($hotelId);
-        $guardian = $this->bloqueGuardian($hotelId);
-        $resenas = $this->bloqueResenas($hotelId);
-
         return [
             'generado_en' => time(),
             'saludo' => $this->saludo(),
             'hotel_nombre' => (string) (current_hotel_nombre() ?: ''),
-            'semaforo' => $this->bloqueSemaforo($dinero, $guardian),
-            'dinero' => $dinero,
-            'hotel' => $hotel,
-            'guardian' => $guardian,
-            'resenas' => $resenas,
+            'semaforo' => $this->bloqueSemaforo($hotelId),
+            'dinero' => $this->bloqueDinero($hotelId),
+            'hotel' => $this->bloqueHotel($hotelId),
+            'guardian' => $this->bloqueGuardian($hotelId),
+            'resenas' => $this->bloqueResenas($hotelId),
         ];
     }
 
@@ -374,35 +369,30 @@ class DuenoController extends Controller {
     }
 
     /**
-     * "¿Cómo va el día?" — placeholder simple de Fase 2: verde si la caja
-     * esta trabajando y el Guardian no vio nada; ambar si hay pendientes.
-     * La Fase 3 lo reemplaza por el score determinista del dia.
+     * "¿Cómo va el día?" — score determinista del dia (DuenoScoreService):
+     * numero 0-100 + etiqueta en palabras + desglose en lenguaje hablado.
+     * Solo pondera lo que este usuario puede ver.
      */
-    private function bloqueSemaforo(?array $dinero, ?array $guardian): array {
-        $temasGuardian = $guardian !== null && empty($guardian['ok']);
-        $cajaSinAbrir = $dinero !== null && empty($dinero['caja_abierta'])
-            && ($dinero['caja_linea'] ?? '') === 'La caja aún no se abre hoy';
+    private function bloqueSemaforo(int $hotelId): array {
+        try {
+            require_once APP_PATH . '/services/DuenoScoreService.php';
+            $servicio = new DuenoScoreService();
 
-        if ($temasGuardian) {
-            return [
-                'estado' => 'ambar',
-                'etiqueta' => 'Hay pendientes',
-                'detalle' => 'El vigilante financiero encontró temas para revisar con calma.',
-            ];
-        }
+            return $servicio->scoreDelDia($hotelId, [
+                'caja' => can('caja.view') && hotel_has_module('caja', $hotelId),
+                'habitaciones' => can('habitaciones.view'),
+                'resenas' => can('reputacion.view') && hotel_has_module('reputacion', $hotelId),
+            ]);
+        } catch (Throwable $e) {
+            error_log('ModoDueno semaforo: ' . $e->getMessage());
 
-        if ($cajaSinAbrir) {
             return [
-                'estado' => 'ambar',
+                'score' => null,
+                'estado' => 'verde',
                 'etiqueta' => 'Día tranquilo',
-                'detalle' => 'La caja aún no se abre hoy.',
+                'detalle' => 'Estamos preparando el resumen del día.',
+                'desglose' => [],
             ];
         }
-
-        return [
-            'estado' => 'verde',
-            'etiqueta' => 'El día va bien',
-            'detalle' => 'La operación marcha con normalidad.',
-        ];
     }
 }

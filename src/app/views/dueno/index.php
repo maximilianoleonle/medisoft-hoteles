@@ -27,7 +27,10 @@ $duFecha = $duDias[(int) date('w')] . ' ' . (int) date('j') . ' de ' . $duMeses[
 
 $duHotelNombre = (string) ($resumen['hotel_nombre'] ?? '');
 $duSaludo = (string) ($resumen['saludo'] ?? 'Hola');
-$duSemaforo = $resumen['semaforo'] ?? ['estado' => 'verde', 'etiqueta' => 'El día va bien', 'detalle' => ''];
+$duSemaforo = $resumen['semaforo'] ?? ['score' => null, 'estado' => 'verde', 'etiqueta' => 'Día tranquilo', 'detalle' => '', 'desglose' => []];
+$duScore = $duSemaforo['score'] ?? null;
+$duDesglose = is_array($duSemaforo['desglose'] ?? null) ? $duSemaforo['desglose'] : [];
+$duEsBuenDia = ($duSemaforo['estado'] ?? '') === 'verde' && $duScore !== null && $duScore >= 80;
 $duDinero = $resumen['dinero'] ?? null;
 $duHotel = $resumen['hotel'] ?? null;
 $duGuardian = $resumen['guardian'] ?? null;
@@ -113,6 +116,18 @@ body.page-dueno { padding-top: 0 !important; }
 .du-card[data-estado="ambar"] .du-sem-dot { background: var(--du-warn); box-shadow: 0 0 0 5px var(--du-warn-soft); }
 .du-sem-etiqueta { font-family: var(--du-serif); font-weight: 700; font-size: 30px; line-height: 1.15; }
 .du-sem-detalle { margin-top: 8px; color: var(--du-ink-soft); font-size: 17px; }
+.du-sem-score { margin-left: auto; align-self: flex-start; font-size: 16px; font-weight: 700; color: var(--du-ink-faint); background: var(--du-ivory); border-radius: 999px; padding: 4px 12px; }
+/* Destello dorado: microrecompensa cuando el dia esta bien (la etiqueta manda). */
+.du-spark { width: 15px; height: 15px; flex: none; background: linear-gradient(135deg, #fff, var(--du-gold)); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); animation: duTwinkle 2.6s ease-in-out infinite; }
+@keyframes duTwinkle { 0%, 100% { transform: scale(.7) rotate(0); opacity: .55; } 50% { transform: scale(1) rotate(90deg); opacity: 1; } }
+.du-sem-toggle { display: flex; align-items: center; gap: 9px; min-height: 48px; margin-top: 6px; padding: 0 4px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 17px; font-weight: 700; color: var(--du-ink-soft); }
+.du-sem-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--du-brand) 40%, #fff); outline-offset: 2px; border-radius: 8px; }
+.du-sem-toggle i { font-size: 13px; transition: transform .25s var(--du-ease); }
+.du-sem-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+.du-sem-desglose { margin: 4px 0 2px; padding: 0 0 0 2px; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.du-sem-desglose[hidden] { display: none; }
+.du-sem-desglose li { position: relative; padding-left: 22px; color: var(--du-ink-soft); font-size: 17px; }
+.du-sem-desglose li::before { content: ''; position: absolute; left: 4px; top: .62em; width: 7px; height: 7px; border-radius: 50%; background: var(--du-line); }
 
 /* Cifra protagonista (dinero) */
 .du-cifra { font-family: var(--du-serif); font-weight: 700; font-size: clamp(34px, 9vw, 40px); line-height: 1.05; letter-spacing: -.01em; }
@@ -200,14 +215,25 @@ html[data-theme="dark"] .du-guard-link { color: #E3A63C; }
             </p>
         </header>
 
-        <!-- 2 · ¿Como va el dia? -->
+        <!-- 2 · ¿Como va el dia? (score determinista, Fase 3) -->
         <section class="du-card" data-estado="<?= $duSafe($duSemaforo['estado']) ?>" data-du-card="semaforo" aria-label="Cómo va el día">
             <p class="du-kicker">¿Cómo va el día?</p>
             <div class="du-sem-fila">
                 <span class="du-sem-dot" aria-hidden="true"></span>
                 <h2 class="du-sem-etiqueta" data-du="semaforo-etiqueta"><?= $duSafe($duSemaforo['etiqueta']) ?></h2>
+                <span class="du-spark" data-du-spark aria-hidden="true" <?= $duEsBuenDia ? '' : 'hidden' ?>></span>
+                <span class="du-sem-score" data-du="semaforo-score" <?= $duScore === null ? 'hidden' : '' ?>><?= $duScore !== null ? (int) $duScore : '' ?></span>
             </div>
             <p class="du-sem-detalle" data-du="semaforo-detalle"><?= $duSafe($duSemaforo['detalle']) ?></p>
+            <button type="button" class="du-sem-toggle" data-du-sem-toggle aria-expanded="false" <?= empty($duDesglose) ? 'hidden' : '' ?>>
+                <span data-du-toggle-texto>Ver el detalle</span>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <ul class="du-sem-desglose" data-du-desglose hidden>
+                <?php foreach ($duDesglose as $duLineaSem): ?>
+                <li><?= $duSafe($duLineaSem) ?></li>
+                <?php endforeach; ?>
+            </ul>
         </section>
 
         <?php if ($duDinero !== null): ?>
@@ -330,6 +356,27 @@ html[data-theme="dark"] .du-guard-link { color: #E3A63C; }
             if (sem) { sem.setAttribute('data-estado', r.semaforo.estado || 'verde'); }
             poner('semaforo-etiqueta', r.semaforo.etiqueta);
             poner('semaforo-detalle', r.semaforo.detalle);
+
+            var score = raiz.querySelector('[data-du="semaforo-score"]');
+            if (score) {
+                score.hidden = (r.semaforo.score === null || r.semaforo.score === undefined);
+                if (!score.hidden) { score.textContent = String(r.semaforo.score); }
+            }
+            var spark = raiz.querySelector('[data-du-spark]');
+            if (spark) {
+                spark.hidden = !(r.semaforo.estado === 'verde' && r.semaforo.score >= 80);
+            }
+            var lista = raiz.querySelector('[data-du-desglose]');
+            var toggle = raiz.querySelector('[data-du-sem-toggle]');
+            if (lista && Array.isArray(r.semaforo.desglose)) {
+                lista.textContent = '';
+                r.semaforo.desglose.forEach(function (linea) {
+                    var li = document.createElement('li');
+                    li.textContent = linea;
+                    lista.appendChild(li);
+                });
+                if (toggle) { toggle.hidden = r.semaforo.desglose.length === 0; }
+            }
         }
         if (r.dinero) {
             poner('dinero-ingresos', r.dinero.ingresos);
@@ -374,6 +421,19 @@ html[data-theme="dark"] .du-guard-link { color: #E3A63C; }
             reloj.setAttribute('data-desde', String(r.generado_en));
             pintarReloj();
         }
+    }
+
+    // Desglose del dia: se abre al tocar (nada se mueve solo).
+    var semToggle = raiz.querySelector('[data-du-sem-toggle]');
+    if (semToggle) {
+        semToggle.addEventListener('click', function () {
+            var lista = raiz.querySelector('[data-du-desglose]');
+            var abierto = semToggle.getAttribute('aria-expanded') === 'true';
+            semToggle.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+            if (lista) { lista.hidden = abierto; }
+            var texto = semToggle.querySelector('[data-du-toggle-texto]');
+            if (texto) { texto.textContent = abierto ? 'Ver el detalle' : 'Ocultar el detalle'; }
+        });
     }
 
     var boton = raiz.querySelector('[data-du-refrescar]');
