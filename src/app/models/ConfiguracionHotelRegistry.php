@@ -178,6 +178,61 @@ class ConfiguracionHotelRegistry
             'default' => 'hotel',
             'description' => 'Giro del negocio (hotel, restaurante, academia...); selecciona el adaptador de nomina.',
         ],
+        'guardian.horario_inicio' => [
+            'type' => 'string',
+            'default' => '06:00',
+            'description' => 'Inicio del horario operativo del hotel; movimientos de caja fuera de esta ventana generan patron a revisar (Guardian).',
+        ],
+        'guardian.horario_fin' => [
+            'type' => 'string',
+            'default' => '23:59',
+            'description' => 'Fin del horario operativo del hotel para la ventana del Guardian.',
+        ],
+        'guardian.ventana_dias' => [
+            'type' => 'integer',
+            'default' => 30,
+            'description' => 'Dias hacia atras que analiza el Guardian para detectar patrones.',
+        ],
+        'guardian.min_volumen' => [
+            'type' => 'integer',
+            'default' => 10,
+            'description' => 'Minimo de movimientos+reservas en la ventana para activar reglas estadisticas (evita falsas alarmas en hoteles chicos).',
+        ],
+        'guardian.descuento_factor' => [
+            'type' => 'float',
+            'default' => 2.5,
+            'description' => 'Veces por encima de la mediana del hotel para considerar atipico el descuento de un usuario.',
+        ],
+        'guardian.descuento_piso_pct' => [
+            'type' => 'float',
+            'default' => 5.0,
+            'description' => 'Piso absoluto (%) del umbral de descuento atipico cuando la mediana del hotel es muy baja.',
+        ],
+        'guardian.cancelaciones_min' => [
+            'type' => 'integer',
+            'default' => 2,
+            'description' => 'Cancelaciones tardias minimas de un usuario en la ventana para marcar el patron.',
+        ],
+        'guardian.fuera_horario_min' => [
+            'type' => 'integer',
+            'default' => 3,
+            'description' => 'Movimientos fuera de horario (o en corte ajeno) minimos por usuario para marcar el patron.',
+        ],
+        'guardian.diferencia_monto' => [
+            'type' => 'float',
+            'default' => 20.0,
+            'description' => 'Diferencia absoluta de corte ($) a partir de la cual cuenta para el patron de recurrencia.',
+        ],
+        'guardian.diferencia_repeticiones' => [
+            'type' => 'integer',
+            'default' => 3,
+            'description' => 'Cortes descuadrados en la ventana a partir de los cuales la recurrencia se vuelve patron.',
+        ],
+        'guardian.reversiones_pct' => [
+            'type' => 'integer',
+            'default' => 60,
+            'description' => 'Porcentaje de las reversiones/ajustes del hotel concentrado en un usuario que dispara el patron.',
+        ],
     ];
 
     private static $legacyFallbacks = [

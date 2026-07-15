@@ -318,6 +318,54 @@ function has_hotel_context() {
     return current_hotel_id() !== null && current_hotel_slug() !== null;
 }
 
+/**
+ * Clave del rol configurable del usuario en el hotel actual (roles.clave),
+ * o null si no hay rol resoluble. La consume el aterrizaje por rol.
+ */
+function current_hotel_role_clave() {
+    static $cache = [];
+
+    $roleId = current_hotel_role_id();
+
+    if (!$roleId || !class_exists('Database')) {
+        return null;
+    }
+
+    if (array_key_exists($roleId, $cache)) {
+        return $cache[$roleId];
+    }
+
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT clave FROM roles WHERE id = ? LIMIT 1",
+            [(int) $roleId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+        return $cache[$roleId] = $row ? (string) $row['clave'] : null;
+    } catch (Throwable $e) {
+        error_log('current_hotel_role_clave: ' . $e->getMessage());
+        return $cache[$roleId] = null;
+    }
+}
+
+/**
+ * Ruta "hogar" del usuario actual. Los usuarios con rol Dueno (remoto)
+ * aterrizan en el Modo Dueno (/dueno) y nunca ven el dashboard completo;
+ * el resto conserva el dashboard. Exige modulo activo + permiso para no
+ * mandar a nadie a una pantalla que lo rebotaria (evita bucles de redirect).
+ */
+function home_route_for_current_user() {
+    if (has_hotel_context()
+        && current_hotel_role_clave() === 'dueno_remoto'
+        && function_exists('hotel_has_module') && hotel_has_module('modo_dueno')
+        && can('dueno.view')) {
+        return 'dueno';
+    }
+
+    return 'dashboard';
+}
+
 function login_path_for_current_context($requestUri = null) {
     $hotelId = current_hotel_id();
     $slug = $hotelId ? hotel_login_slug_for_hotel_id($hotelId) : null;
@@ -534,7 +582,8 @@ function can_legacy($permission) {
             'habitaciones.all', 'huespedes.all', 'inventarios.all',
             'facturacion.all', 'compras.all',
             'personal.view', 'personal.gestionar', 'personal.pagar',
-            'cuentas_por_cobrar.all', 'cuentas_por_pagar.all'
+            'cuentas_por_cobrar.all', 'cuentas_por_pagar.all',
+            'guardian.view'
         ],
         'administrador' => [
             'usuarios.view', 'usuarios.create', 'usuarios.edit',
@@ -613,7 +662,7 @@ function require_role($role) {
         }
         
         set_mensaje('No tiene permisos para acceder a esta página', 'error');
-        redirect('dashboard');
+        redirect(home_route_for_current_user());
     }
 }
 
@@ -651,7 +700,7 @@ function require_permission($permission) {
         }
         
         set_mensaje('No tiene permisos para realizar esta acción', 'error');
-        redirect('dashboard');
+        redirect(home_route_for_current_user());
     }
 }
 

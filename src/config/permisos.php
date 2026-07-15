@@ -215,6 +215,30 @@ return [
                 'notificaciones.view' => ['label' => 'Ver notificaciones', 'tipo' => 'acceso'],
             ],
         ],
+        'guardian' => [
+            'label' => 'Guardian financiero',
+            'modulo' => 'ia_ejecutiva',
+            'permisos' => [
+                // Sensible: incluye patrones de comportamiento POR USUARIO.
+                // Solo direccion (dueno/gerencia); un operativo jamas debe ver
+                // su propio perfil ni el de un companero.
+                'guardian.view' => ['label' => 'Ver el Guardian financiero (patrones por usuario)', 'tipo' => 'acceso'],
+            ],
+        ],
+        'reputacion' => [
+            'label' => 'Reputacion',
+            'modulo' => 'reputacion',
+            'permisos' => [
+                'reputacion.view' => ['label' => 'Ver reputacion y encuestas', 'tipo' => 'acceso'],
+            ],
+        ],
+        'dueno' => [
+            'label' => 'Modo Dueno',
+            'modulo' => 'modo_dueno',
+            'permisos' => [
+                'dueno.view' => ['label' => 'Ver el Modo Dueno (resumen remoto de solo lectura)', 'tipo' => 'acceso'],
+            ],
+        ],
     ],
 
     'presets' => [
@@ -246,6 +270,7 @@ return [
                 'documentos.all', 'tareas.all',
                 'personal.view', 'personal.gestionar', 'personal.pagar', 'nomina.all',
                 'tarifas.view', 'tarifas.edit', 'notificaciones.view',
+                'guardian.view',
             ],
         ],
         'administrador' => [
@@ -278,6 +303,20 @@ return [
                 'documentos.view', 'tareas.view',
                 'notificaciones.view',
                 'llaves.control',
+            ],
+        ],
+        'dueno_remoto' => [
+            'nombre'      => 'Dueno (remoto)',
+            'descripcion' => 'Dueno que no opera el hotel: solo lectura del resumen del dia (Modo Dueno).',
+            'es_sistema'  => 1,
+            'permisos'    => [
+                'dueno.view',
+                'caja.view',
+                'habitaciones.view',
+                'reservaciones.view',
+                'reputacion.view',
+                'guardian.view',
+                'notificaciones.view',
             ],
         ],
     ],
