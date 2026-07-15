@@ -321,6 +321,7 @@ $router->post('/ia/regenerar-resumen', ['controller' => 'IaEjecutiva', 'action' 
 // (gating temporal en ia_ejecutiva; al monetizar, bloque vigilancia_financiera)
 $router->get('/ia/vigilancia-financiera', ['controller' => 'VigilanciaFinanciera', 'action' => 'index']);
 $router->post('/ia/vigilancia-financiera/regenerar', ['controller' => 'VigilanciaFinanciera', 'action' => 'regenerar']);
+$router->post('/ia/vigilancia-financiera/hallazgos/{id:[0-9]+}/estado', ['controller' => 'VigilanciaFinanciera', 'action' => 'estadoHallazgo']);
 
 // Motor de reservas interno: tablero, conciliacion a Caja y configuracion
 $router->get('/motor-reservas', ['controller' => 'MotorReservas', 'action' => 'index']);

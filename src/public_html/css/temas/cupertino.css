@@ -3923,6 +3923,37 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.vgf, .iav) :is(.vgf-reading,
     color: #F5F5F7;
 }
 
+/* §42c — El Guardián (vigilancia v2): banda del día, pestañas, tarjetas de
+   hallazgo, radiografía por persona e histórico. El generador §42 ya remapea
+   los tokens base --vgf-*; aquí solo los bordes semánticos (-line) que el
+   generador no cubre y las superficies nuevas, en oscuro. */
+html[data-theme="dark"][data-tema="cupertino"] .vgf {
+    --vgf-success-line: color-mix(in srgb, #30D158 34%, #1C1C1E);
+    --vgf-warning-line: color-mix(in srgb, #FF9F0A 34%, #1C1C1E);
+    --vgf-danger-line: color-mix(in srgb, #FF453A 34%, #1C1C1E);
+}
+html[data-theme="dark"][data-tema="cupertino"] .vgf :is(.vgf-card, .vgf-persona, .vgf-hist-item, .vgf-tabs, .vgf-alert) {
+    background: #1C1C1E !important;
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .vgf .vgf-dia {
+    border-color: #38383A;
+    background: #1C1C1E;
+    box-shadow: none;
+}
+html[data-theme="dark"][data-tema="cupertino"] .vgf .vgf-dia.is-verde {
+    border-color: var(--vgf-success-line);
+    background: linear-gradient(160deg, var(--vgf-success-bg), #1C1C1E 70%);
+}
+html[data-theme="dark"][data-tema="cupertino"] .vgf .vgf-dia.is-amarillo {
+    border-color: var(--vgf-warning-line);
+    background: linear-gradient(160deg, var(--vgf-warning-bg), #1C1C1E 70%);
+}
+html[data-theme="dark"][data-tema="cupertino"] .vgf .vgf-dia.is-rojo {
+    border-color: var(--vgf-danger-line);
+    background: linear-gradient(160deg, var(--vgf-danger-bg), #1C1C1E 70%);
+}
+
 /* §44b — Tablero ejecutivo: componentes con blanco literal, en oscuro */
 html[data-theme="dark"][data-tema="cupertino"] .exec-page :is(.exec-metric, .exec-stat, .exec-panel, .exec-filter, .exec-field, .exec-table) {
     background: #1C1C1E !important;
