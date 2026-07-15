@@ -272,6 +272,9 @@ $router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina',
 
 // Copiloto Medisoft (bloque copiloto: asistente hibrido, solo lectura)
 $router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'preguntar']);
+// Accion confirmada del copiloto (SOLO limpieza/tareas operativas; el servicio
+// valida el permiso del rol y jamas toca dinero)
+$router->post('/copiloto/accion', ['controller' => 'Copiloto', 'action' => 'accion']);
 
 // Copiloto IA (bloque copiloto_ia: IA sobre reputacion/forecast, solo lectura;
 // el gate del bloque lo resuelve el servicio para permitir la prueba gratis)
@@ -309,6 +312,13 @@ $router->post('/camarista/programar/{id:[0-9]+}', ['controller' => 'Camarista', 
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
 $router->post('/whatsapp/guardar', ['controller' => 'WhatsApp', 'action' => 'guardar']);
 $router->post('/whatsapp/probar', ['controller' => 'WhatsApp', 'action' => 'probar']);
+
+// Mensajes (bloque canal_whatsapp): cola diaria de WhatsApp asistido via wa.me
+$router->get('/mensajes', ['controller' => 'Mensajes', 'action' => 'index']);
+$router->post('/mensajes/enviar', ['controller' => 'Mensajes', 'action' => 'enviar']);
+$router->post('/mensajes/descartar', ['controller' => 'Mensajes', 'action' => 'descartar']);
+$router->get('/mensajes/configuracion', ['controller' => 'Mensajes', 'action' => 'configuracion']);
+$router->post('/mensajes/configuracion/guardar', ['controller' => 'Mensajes', 'action' => 'guardarConfiguracion']);
 
 // IA Ejecutiva: resumen gerencial diario narrado (bloque ia_ejecutiva)
 $router->get('/ia/resumen-diario', ['controller' => 'IaEjecutiva', 'action' => 'resumenDiario']);

@@ -3447,8 +3447,10 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .wav,
 html[data-tema="cupertino"]:not([data-theme="dark"]) .mrv,
 html[data-tema="cupertino"]:not([data-theme="dark"]) .iav,
 html[data-tema="cupertino"]:not([data-theme="dark"]) .vgf,
+html[data-tema="cupertino"]:not([data-theme="dark"]) .msj,
 html[data-tema="cupertino"]:not([data-theme="dark"]) .audit-page {
     --cnl-ivory: #F5F5F7; --cnl-ivory-2: #FAFAFC; --cnl-surface: #FFFFFF; --cnl-surface-warm: #F5F5F7; --cnl-border: #E8E8ED; --cnl-text: #48484A; --cnl-muted: #6E6E73; --cnl-heading: #1D1D1F;
+    --msj-ivory: #F5F5F7; --msj-ivory-2: #FAFAFC; --msj-surface: #FFFFFF; --msj-surface-warm: #F5F5F7; --msj-border: #E8E8ED; --msj-text: #48484A; --msj-muted: #6E6E73; --msj-heading: #1D1D1F;
     --lea-ivory: #F5F5F7; --lea-ivory-2: #FAFAFC; --lea-surface: #FFFFFF; --lea-surface-warm: #F5F5F7; --lea-border: #E8E8ED; --lea-text: #48484A; --lea-muted: #6E6E73; --lea-heading: #1D1D1F;
     --rep-ivory: #F5F5F7; --rep-ivory-2: #FAFAFC; --rep-surface: #FFFFFF; --rep-surface-warm: #F5F5F7; --rep-border: #E8E8ED; --rep-text: #48484A; --rep-muted: #6E6E73; --rep-heading: #1D1D1F;
     --fc-ivory: #F5F5F7; --fc-ivory-2: #FAFAFC; --fc-surface: #FFFFFF; --fc-surface-warm: #F5F5F7; --fc-border: #E8E8ED; --fc-text: #48484A; --fc-muted: #6E6E73; --fc-heading: #1D1D1F;
@@ -3460,7 +3462,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .audit-page {
     --cnl-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
     --lea-serif: var(--cnl-serif); --rep-serif: var(--cnl-serif); --fc-serif: var(--cnl-serif);
     --wav-serif: var(--cnl-serif); --mrv-serif: var(--cnl-serif); --iav-serif: var(--cnl-serif);
-    --vgf-serif: var(--cnl-serif); --au-serif: var(--cnl-serif);
+    --vgf-serif: var(--cnl-serif); --au-serif: var(--cnl-serif); --msj-sans: var(--cnl-serif);
     background: #F5F5F7 !important;
 }
 html[data-theme="dark"][data-tema="cupertino"] .cnl,
@@ -3471,8 +3473,10 @@ html[data-theme="dark"][data-tema="cupertino"] .wav,
 html[data-theme="dark"][data-tema="cupertino"] .mrv,
 html[data-theme="dark"][data-tema="cupertino"] .iav,
 html[data-theme="dark"][data-tema="cupertino"] .vgf,
+html[data-theme="dark"][data-tema="cupertino"] .msj,
 html[data-theme="dark"][data-tema="cupertino"] .audit-page {
     --cnl-ivory: #000000; --cnl-ivory-2: #161617; --cnl-surface: #1C1C1E; --cnl-surface-warm: #161617; --cnl-border: #38383A; --cnl-text: #D1D1D6; --cnl-muted: #98989D; --cnl-heading: #F5F5F7;
+    --msj-ivory: #000000; --msj-ivory-2: #161617; --msj-surface: #1C1C1E; --msj-surface-warm: #161617; --msj-border: #38383A; --msj-text: #D1D1D6; --msj-muted: #98989D; --msj-heading: #F5F5F7;
     --lea-ivory: #000000; --lea-ivory-2: #161617; --lea-surface: #1C1C1E; --lea-surface-warm: #161617; --lea-border: #38383A; --lea-text: #D1D1D6; --lea-muted: #98989D; --lea-heading: #F5F5F7;
     --rep-ivory: #000000; --rep-ivory-2: #161617; --rep-surface: #1C1C1E; --rep-surface-warm: #161617; --rep-border: #38383A; --rep-text: #D1D1D6; --rep-muted: #98989D; --rep-heading: #F5F5F7;
     --fc-ivory: #000000; --fc-ivory-2: #161617; --fc-surface: #1C1C1E; --fc-surface-warm: #161617; --fc-border: #38383A; --fc-text: #D1D1D6; --fc-muted: #98989D; --fc-heading: #F5F5F7;
@@ -3490,6 +3494,7 @@ html[data-theme="dark"][data-tema="cupertino"] .audit-page {
     --iav-gold: #E0A64C; --iav-gold-soft: var(--cnl-gold-soft); --iav-gold-line: var(--cnl-gold-line); --iav-gold-ink: #E8C083;
     --vgf-gold: #E0A64C; --vgf-gold-soft: var(--cnl-gold-soft); --vgf-gold-line: var(--cnl-gold-line); --vgf-gold-ink: #E8C083;
     --au-gold: #E0A64C; --au-gold-soft: var(--cnl-gold-soft); --au-gold-line: var(--cnl-gold-line); --au-gold-ink: #E8C083;
+    --msj-gold: #E0A64C; --msj-gold-soft: var(--cnl-gold-soft); --msj-gold-line: var(--cnl-gold-line); --msj-gold-ink: #E8C083;
     --cnl-success: #30D158; --cnl-success-bg: color-mix(in srgb, #30D158 16%, #1C1C1E); --cnl-warning: #FF9F0A; --cnl-warning-bg: color-mix(in srgb, #FF9F0A 16%, #1C1C1E); --cnl-danger: #FF6961; --cnl-danger-bg: color-mix(in srgb, #FF453A 16%, #1C1C1E); --cnl-info: #6CB4FF; --cnl-info-bg: color-mix(in srgb, #0A84FF 18%, #1C1C1E);
     --lea-success: #30D158; --lea-success-bg: var(--cnl-success-bg); --lea-warning: #FF9F0A; --lea-warning-bg: var(--cnl-warning-bg); --lea-danger: #FF6961; --lea-danger-bg: var(--cnl-danger-bg); --lea-info: #6CB4FF; --lea-info-bg: var(--cnl-info-bg);
     --rep-success: #30D158; --rep-success-bg: var(--cnl-success-bg); --rep-warning: #FF9F0A; --rep-warning-bg: var(--cnl-warning-bg); --rep-danger: #FF6961; --rep-danger-bg: var(--cnl-danger-bg); --rep-info: #6CB4FF; --rep-info-bg: var(--cnl-info-bg);
@@ -3499,6 +3504,7 @@ html[data-theme="dark"][data-tema="cupertino"] .audit-page {
     --iav-success: #30D158; --iav-success-bg: var(--cnl-success-bg); --iav-warning: #FF9F0A; --iav-warning-bg: var(--cnl-warning-bg); --iav-danger: #FF6961; --iav-danger-bg: var(--cnl-danger-bg); --iav-info: #6CB4FF; --iav-info-bg: var(--cnl-info-bg);
     --vgf-success: #30D158; --vgf-success-bg: var(--cnl-success-bg); --vgf-warning: #FF9F0A; --vgf-warning-bg: var(--cnl-warning-bg); --vgf-danger: #FF6961; --vgf-danger-bg: var(--cnl-danger-bg); --vgf-info: #6CB4FF; --vgf-info-bg: var(--cnl-info-bg);
     --au-danger: #FF6961; --au-danger-bg: var(--cnl-danger-bg); --au-info: #6CB4FF; --au-info-bg: var(--cnl-info-bg);
+    --msj-success: #30D158; --msj-success-bg: var(--cnl-success-bg); --msj-warning: #FF9F0A; --msj-warning-bg: var(--cnl-warning-bg); --msj-danger: #FF6961; --msj-info: #6CB4FF; --msj-info-bg: var(--cnl-info-bg);
     background: #000000 !important;
 }
 
@@ -3797,7 +3803,7 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.workers-page, .worker-form-p
    El mismo pase de pulido (rgba(255,255,255,.8x)) se repite en compras,
    proveedores, CxC/CxP, whatsapp, canales, lealtad, forecast, reputación,
    auditoría, motor y tarifas: se corrige por componente, no por vista. */
-html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-report-page, .purchase-detail-page, .providers-page, .provider-form-page, .provider-detail-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxc-op-detail, .cxp-page, .cxp-detail-page, .cxp-cash-page, .cxp-preview-page, .wav, .cnl, .lea, .fc, .rep, .mrv, .audit-page, .tar-page, .tarifa-create-page) :is(.cp-summary-item, .cp-panel, .cp-mobile-card, .pv-summary-item, .pv-panel, .pv-mobile-card, .cx-summary-item, .cx-panel, .cx-mobile-card, .cx-stat, .cx-pay-card, .cx-resolution, .wav-summary-item, .wav-panel, .cnl-summary-item, .cnl-panel, .cnl-alert, .lea-summary-item, .lea-panel, .fc-summary-item, .fc-panel, .rep-card, .rep-kpi, .au-summary-item, .au-panel, .mrv-shortcut, .tar-filters, .tar-panel-body) {
+html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-report-page, .purchase-detail-page, .providers-page, .provider-form-page, .provider-detail-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxc-op-detail, .cxp-page, .cxp-detail-page, .cxp-cash-page, .cxp-preview-page, .wav, .cnl, .lea, .fc, .rep, .msj, .mrv, .audit-page, .tar-page, .tarifa-create-page) :is(.cp-summary-item, .cp-panel, .cp-mobile-card, .pv-summary-item, .pv-panel, .pv-mobile-card, .cx-summary-item, .cx-panel, .cx-mobile-card, .cx-stat, .cx-pay-card, .cx-resolution, .wav-summary-item, .wav-panel, .cnl-summary-item, .cnl-panel, .cnl-alert, .lea-summary-item, .lea-panel, .fc-summary-item, .fc-panel, .rep-card, .rep-kpi, .msj-card, .msj-kpi, .msj-panel, .au-summary-item, .au-panel, .mrv-shortcut, .tar-filters, .tar-panel-body) {
     background: #1C1C1E !important;
 }
 html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-report-page, .purchase-detail-page, .providers-page, .provider-form-page, .provider-detail-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxc-op-detail, .cxp-page, .cxp-detail-page, .cxp-cash-page, .cxp-preview-page, .mrv) :is(.cp-btn-muted, .pv-btn-muted, .cx-btn-muted, .mrv-btn) {
@@ -3817,7 +3823,7 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.tar-page, .tarifa-create-pag
 html[data-theme="dark"][data-tema="cupertino"] :is(.tar-page, .tarifa-create-page) .modal-header {
     background: #161617 !important;
 }
-html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-detail-page, .providers-page, .provider-form-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxp-page, .cxp-cash-page, .wav, .cnl, .lea, .fc, .rep, .mrv, .audit-page, .tar-page, .tarifa-create-page, .roles-view, .rolf-view, .nomina-page, .nomina-cat-page, .nomina-config-page, .nomina-ficha-page, .nomina-emp-page, .nomina-inc-page, .nomina-pv-page, .nomina-pd-page, .nomina-per-page, .informes-page, .worker-page, .arqueo-page, .ee-page) :is(input, select, textarea) {
+html[data-theme="dark"][data-tema="cupertino"] :is(.purchases-page, .purchase-form-page, .purchase-detail-page, .providers-page, .provider-form-page, .cxc-page, .cxc-op-page, .cxc-cash-page, .cxp-page, .cxp-cash-page, .wav, .cnl, .lea, .fc, .rep, .msj, .mrv, .audit-page, .tar-page, .tarifa-create-page, .roles-view, .rolf-view, .nomina-page, .nomina-cat-page, .nomina-config-page, .nomina-ficha-page, .nomina-emp-page, .nomina-inc-page, .nomina-pv-page, .nomina-pd-page, .nomina-per-page, .informes-page, .worker-page, .arqueo-page, .ee-page) :is(input, select, textarea) {
     background: #1C1C1E !important;
     border-color: #38383A !important;
     color: #F5F5F7 !important;
@@ -3835,7 +3841,7 @@ html[data-theme="dark"][data-tema="cupertino"] :is(.cp-row, .pv-row, .cx-row, .w
 html[data-theme="dark"][data-tema="cupertino"] :is(.cp-row, .pv-row, .cx-row, .wk-row, .lea-row):hover {
     background: #2C2C2E !important;
 }
-html[data-theme="dark"][data-tema="cupertino"] :is(.cp-empty, .pv-empty, .cx-empty, .wk-empty, .lea-empty, .cnl-empty, .rep-empty, .au-empty) {
+html[data-theme="dark"][data-tema="cupertino"] :is(.cp-empty, .pv-empty, .cx-empty, .wk-empty, .lea-empty, .cnl-empty, .rep-empty, .msj-vacio, .au-empty) {
     background: #161617 !important;
 }
 html[data-theme="dark"][data-tema="cupertino"] :is(.wk-tabs, .cp-tabs, .pv-tabs, .cx-tabs) {

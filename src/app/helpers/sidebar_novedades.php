@@ -220,6 +220,24 @@ if (!function_exists('sidebar_novedades')) {
             }
         }
 
+        // Mensajes WhatsApp por enviar hoy (bloque canal_whatsapp). La cuenta
+        // es derivada (candidatos del dia menos ya atendidos), asi que usa el
+        // MISMO criterio del servicio en lugar de un COUNT de tabla.
+        if (
+            _sidebar_novedades_tabla_existe($db, 'mensajes_whatsapp')
+            && (!function_exists('hotel_has_module') || hotel_has_module('canal_whatsapp', $hotelId))
+        ) {
+            try {
+                require_once APP_PATH . '/services/CanalWhatsAppService.php';
+                $n = (new CanalWhatsAppService($db))->contarPendientesHoy($hotelId);
+                if ($n > 0) {
+                    $map['mensajes'] = ['count' => $n, 'tono' => 'count'];
+                }
+            } catch (Throwable $e) {
+                // Sin burbuja de mensajes si el bloque aun no migra.
+            }
+        }
+
         // Notificaciones sin leer (respeta rol/usuario via el modelo).
         if (_sidebar_novedades_tabla_existe($db, 'notificaciones')) {
             try {

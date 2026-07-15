@@ -41,6 +41,8 @@ $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolH
 // Vigilancia financiera: gating temporal en ia_ejecutiva (al monetizar, usar su propio modulo).
 $mostrarVigilanciaFinanciera = $mostrarIaEjecutiva;
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+// Mensajes (canal_whatsapp) lo opera recepcion: visible para todo rol del hotel.
+$mostrarMensajes = $menuModuloActivo('canal_whatsapp');
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCamarista = $menuModuloActivo('camarista');
@@ -51,7 +53,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad');
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
-$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
+$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarMensajes || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
@@ -98,6 +100,7 @@ $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveVigilanciaFinanciera = $sidebarPathStarts('ia/vigilancia-financiera');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia') && !$sidebarActiveVigilanciaFinanciera;
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
+$sidebarActiveMensajes = $sidebarPathStarts('mensajes');
 $sidebarActiveReputacion = $sidebarPathStarts('reputacion');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
 $sidebarActiveCanales = $sidebarPathStarts('canales');
@@ -616,6 +619,17 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-calendar-alt"></i>
                 </div>
                 <span class="nav-text">Canales (iCal)</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarMensajes): ?>
+            <a href="<?= url('mensajes') ?>"
+               class="nav-item <?= $sidebarActiveMensajes ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-comment-dots"></i>
+                    <?= $sidebarBadge('mensajes', $sidebarActiveMensajes) ?>
+                </div>
+                <span class="nav-text">Mensajes</span>
             </a>
             <?php endif; ?>
 

@@ -138,6 +138,14 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'modules_any' => ['reportes'],
                 'descripcion' => 'Indicadores e informes del hotel.',
             ],
+            'mensajes' => [
+                'label' => 'Mensajes',
+                'short' => 'Mensajes',
+                'icon' => 'fa-comment-dots',
+                'path' => 'mensajes',
+                'modules_any' => ['canal_whatsapp'],
+                'descripcion' => 'WhatsApp del día listo para enviar.',
+            ],
             // 'notificaciones' ya no se ofrece aquí: la campana vive fija en el
             // header móvil, así el hotel no gasta un atajo del footer en avisos.
         ];

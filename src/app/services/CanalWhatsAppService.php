@@ -395,6 +395,39 @@ class CanalWhatsAppService
         return $total;
     }
 
+    /** Pulso del dia para la cabecera de la seccion: por enviar / enviados / descartados hoy. */
+    public function resumenHoy(int $hotelId): array
+    {
+        $resumen = [
+            'pendientes' => $this->contarPendientesHoy($hotelId),
+            'enviados' => 0,
+            'descartados' => 0,
+        ];
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT estado, COUNT(*) AS n
+                 FROM mensajes_whatsapp
+                 WHERE hotel_id = ?
+                   AND updated_at >= CURDATE() AND updated_at < CURDATE() + INTERVAL 1 DAY
+                 GROUP BY estado",
+                [$hotelId]
+            );
+
+            foreach (($stmt ? $stmt->fetchAll() : []) as $fila) {
+                if ($fila['estado'] === 'enviado') {
+                    $resumen['enviados'] = (int) $fila['n'];
+                } elseif ($fila['estado'] === 'descartado') {
+                    $resumen['descartados'] = (int) $fila['n'];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('CanalWhatsApp: fallo resumenHoy: ' . $e->getMessage());
+        }
+
+        return $resumen;
+    }
+
     /** Timeline reciente del hotel: que se envio/descarto, a quien y cuando. */
     public function historial(int $hotelId, int $limite = 60): array
     {
