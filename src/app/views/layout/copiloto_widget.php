@@ -384,6 +384,16 @@ html[data-theme="dark"] .cop-viz-fill { background: linear-gradient(90deg, color
 .cop-foot button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 75%, transparent); }
 .cop-foot button:active { transform: translateY(0) scale(.96); }
 .cop-foot button:disabled { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
+/* ---- Dictado por voz: boton de microfono (solo se crea si hay soporte) ---- */
+.cop-mic { flex: none; width: 42px; min-height: 42px; padding: 0; border: 1px solid #D8D4C9; border-radius: 10px; background: #fff; color: #55607A; display: grid; place-items: center; cursor: pointer; box-shadow: none; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .16s cubic-bezier(.34,1.56,.64,1); }
+.cop-mic:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); transform: translateY(-1px); }
+.cop-mic:active { transform: translateY(0) scale(.94); }
+/* Rojo semantico: SOLO significa "grabando". */
+.cop-mic.cop-mic-rec { border-color: #DC2626; color: #DC2626; background: rgba(220,38,38,.08); animation: cop-mic-pulso 1.4s ease-in-out infinite; }
+@keyframes cop-mic-pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.26); } 50% { box-shadow: 0 0 0 7px rgba(220,38,38,0); } }
+html[data-theme="dark"] .cop-mic { background: #211F1A; border-color: rgba(239,233,220,.14); color: #C9C3B4; }
+html[data-theme="dark"] .cop-mic:hover { border-color: rgba(239,233,220,.4); color: #EFE9DC; }
+html[data-theme="dark"] .cop-mic.cop-mic-rec { background: rgba(220,38,38,.14); border-color: #EF4444; color: #F87171; }
 
 /* ---- Estado "pensando": skeleton con brillo (shimmer) ---- */
 .cop-skeleton { display: flex; flex-direction: column; gap: 8px; padding: 3px 0; min-width: 128px; }
@@ -437,6 +447,7 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     .cop-accion,
     .cop-viz-col-bar,
     .cop-viz-fill,
+    .cop-mic,
     .cop-foot button { animation: none !important; transition: opacity .12s ease, visibility 0s !important; }
     #cop-panel { transform: none !important; }
 }
@@ -894,5 +905,82 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         var chip = e.target.closest('.cop-chip');
         if (chip) { preguntar(chip.getAttribute('data-q')); }
     });
+
+    // ── Dictado por voz (Web Speech API, es-MX) ──
+    // Feature-detect: sin soporte el boton ni se crea. En iOS PWA u otros
+    // entornos que niegan el permiso, el primer error lo oculta en silencio.
+    (function () {
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { return; }
+
+        var mic = document.createElement('button');
+        mic.type = 'button';
+        mic.id = 'cop-mic';
+        mic.className = 'cop-mic';
+        mic.setAttribute('aria-label', 'Dictar pregunta');
+        mic.setAttribute('aria-pressed', 'false');
+        mic.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<rect x="9" y="2" width="6" height="12" rx="3"></rect>' +
+            '<path d="M5 10a7 7 0 0 0 14 0"></path>' +
+            '<line x1="12" y1="19" x2="12" y2="22"></line>' +
+        '</svg>';
+        form.insertBefore(mic, sendBtn);
+
+        var rec = null;
+        var grabando = false;
+
+        function detener() {
+            grabando = false;
+            mic.classList.remove('cop-mic-rec');
+            mic.setAttribute('aria-pressed', 'false');
+            if (rec) { try { rec.stop(); } catch (e) {} }
+        }
+
+        mic.addEventListener('click', function () {
+            if (grabando) { detener(); return; }
+            try {
+                rec = new SR();
+            } catch (e) {
+                mic.style.display = 'none';
+                return;
+            }
+            rec.lang = 'es-MX';
+            rec.interimResults = true;
+            rec.maxAlternatives = 1;
+            rec.onresult = function (ev) {
+                var texto = '';
+                var esFinal = false;
+                for (var i = ev.resultIndex; i < ev.results.length; i++) {
+                    texto += ev.results[i][0].transcript;
+                    if (ev.results[i].isFinal) { esFinal = true; }
+                }
+                if (texto) { input.value = texto; }
+                if (esFinal) {
+                    detener();
+                    if (input.value.trim()) { preguntar(input.value); }
+                }
+            };
+            rec.onerror = function (ev) {
+                detener();
+                // Permiso negado o servicio no disponible: degradar en silencio.
+                if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) {
+                    mic.style.display = 'none';
+                }
+            };
+            rec.onend = detener;
+            try {
+                rec.start();
+                grabando = true;
+                mic.classList.add('cop-mic-rec');
+                mic.setAttribute('aria-pressed', 'true');
+            } catch (e) {
+                detener();
+            }
+        });
+
+        // Cerrar el panel corta cualquier dictado en curso.
+        closeBtn.addEventListener('click', detener);
+        if (backdrop) { backdrop.addEventListener('click', detener); }
+    })();
 })();
 </script>
