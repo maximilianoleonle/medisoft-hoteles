@@ -7,6 +7,10 @@ $porDia = $porDia ?? [];
 $kpis = $kpis ?? ['ocupacion_30' => null, 'ocupacion_60' => null, 'ocupacion_90' => null];
 $pickup = $pickup ?? [];
 $semanas = $semanas ?? [];
+$temporadas = $temporadas ?? [];
+$eventos = $eventos ?? [];
+$eventosPorDia = $eventosPorDia ?? [];
+$puedeEditarTemporadas = !empty($puedeEditarTemporadas);
 
 $fcSafe = static function ($v) {
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
@@ -111,7 +115,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 .fc-panel-sub { margin: 4px 0 0; color: var(--fc-muted); font-size: .78rem; font-weight: 500; line-height: 1.45; }
 .fc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; margin-left: 8px; border-radius: 999px; background: var(--fc-gold-soft); color: var(--fc-gold-ink); border: 1px solid var(--fc-gold-line); font-size: .68rem; font-weight: 700; letter-spacing: .02em; vertical-align: 2px; white-space: nowrap; }
 
-.fc-barras { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 16px 16px 6px; }
+.fc-barras { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 16px 16px 14px; }
 .fc-barra { flex: 1; min-width: 4px; background: linear-gradient(180deg, var(--fc-brand), color-mix(in srgb, var(--fc-brand) 70%, #000)); border-radius: 4px 4px 0 0; position: relative; transition: transform .16s ease; }
 .fc-barra.finde { background: linear-gradient(180deg, var(--fc-gold), color-mix(in srgb, var(--fc-gold) 74%, var(--fc-brand))); }
 .fc-barra:hover { transform: scaleY(1.03); }
@@ -120,7 +124,41 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     margin-bottom: 6px; background: var(--fc-brand); color: #fff; font-size: .7rem; font-weight: 650;
     padding: 4px 9px; border-radius: 7px; white-space: nowrap; z-index: 5; box-shadow: 0 8px 18px -10px rgba(27,39,70,.5);
 }
+.fc-barra.evento::before { content: ''; position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--fc-gold-ink); }
 .fc-ejes { display: flex; justify-content: space-between; padding: 0 16px 16px; font-size: .72rem; color: var(--fc-muted); font-weight: 650; }
+
+/* Temporadas y eventos (Fase 3): calendario que alimenta al Copiloto */
+.fct-lista { display: grid; gap: 8px; padding: 14px 16px 4px; }
+.fct-item { display: flex; align-items: flex-start; gap: 10px; background: var(--fc-surface-warm); border: 1px solid var(--fc-border); border-radius: 12px; padding: 11px 13px; }
+.fct-info { min-width: 0; flex: 1; }
+.fct-nombre { margin: 0; color: var(--fc-heading); font-size: .88rem; font-weight: 650; overflow-wrap: anywhere; }
+.fct-fechas { margin: 2px 0 0; color: var(--fc-muted); font-size: .78rem; font-weight: 500; }
+.fct-notas { margin: 3px 0 0; color: var(--fc-muted); font-size: .76rem; line-height: 1.4; }
+.fct-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+.fct-badge.alta { color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); background: var(--fc-success-bg); border-color: color-mix(in srgb, var(--fc-success) 24%, #fff); }
+.fct-badge.baja { color: color-mix(in srgb, var(--fc-info) 74%, var(--fc-text)); background: var(--fc-info-bg); border-color: color-mix(in srgb, var(--fc-info) 24%, #fff); }
+.fct-acciones { display: flex; gap: 4px; }
+.fct-icon-btn { display: inline-grid; place-items: center; width: 34px; min-height: 34px; border: 1px solid var(--fc-border); border-radius: 9px; background: var(--fc-surface); color: var(--fc-muted); cursor: pointer; font-size: .8rem; transition: color .15s ease, border-color .15s ease; }
+.fct-icon-btn:hover { color: var(--fc-gold-ink); border-color: var(--fc-gold-line); }
+.fct-vacio { padding: 14px 16px 4px; color: var(--fc-muted); font-size: .85rem; line-height: 1.5; }
+.fct-festivos { padding: 10px 16px 14px; }
+.fct-festivos-titulo { margin: 0 0 7px; color: var(--fc-muted); font-size: .7rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
+.fct-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fct-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: var(--fc-gold-soft); border: 1px solid var(--fc-gold-line); color: var(--fc-gold-ink); font-size: .73rem; font-weight: 650; }
+.fct-form { display: grid; gap: 9px; padding: 14px 16px 16px; border-top: 1px dashed var(--fc-border); margin-top: 8px; }
+.fct-form-titulo { margin: 0; color: var(--fc-heading); font-size: .84rem; font-weight: 650; }
+.fct-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
+.fct-campo { display: grid; gap: 3px; min-width: 0; }
+.fct-label { color: var(--fc-muted); font-size: .7rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.fct-input, .fct-select { width: 100%; min-height: 40px; padding: 0 11px; border: 1px solid var(--fc-border); border-radius: 10px; background: var(--fc-surface); color: var(--fc-heading); font-family: inherit; font-size: .86rem; font-weight: 500; }
+.fct-input:focus, .fct-select:focus { outline: none; border-color: var(--fc-gold-line); box-shadow: 0 0 0 3px var(--fc-ring); }
+.fct-check { display: inline-flex; align-items: center; gap: 8px; color: var(--fc-text); font-size: .84rem; font-weight: 500; cursor: pointer; }
+.fct-check input { width: 17px; height: 17px; accent-color: var(--fc-gold-ink); }
+.fct-form-acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+@media (min-width: 720px) {
+    .fct-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fct-grid .fct-campo.ancho { grid-column: 1 / -1; }
+}
 
 .fc-table-wrap { overflow-x: auto; padding: 0 0 4px; }
 .fc-table { width: 100%; min-width: 460px; border-collapse: collapse; font-size: .85rem; }
@@ -251,7 +289,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
         <section class="fc-panel">
             <div class="fc-panel-head">
                 <h2 class="fc-panel-title">Pr&oacute;ximos 30 d&iacute;as, d&iacute;a por d&iacute;a</h2>
-                <p class="fc-panel-sub"><?= (int) $totalHabitaciones ?> habitaciones activas &middot; barras doradas = fin de semana &middot; pasa el cursor para el detalle</p>
+                <p class="fc-panel-sub"><?= (int) $totalHabitaciones ?> habitaciones activas &middot; barras doradas = fin de semana &middot; punto = temporada o festivo &middot; pasa el cursor para el detalle</p>
             </div>
             <div class="fc-barras">
                 <?php foreach ($dias30 as $fecha => $ocupadas): ?>
@@ -259,10 +297,13 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
                     $pct = $totalHabitaciones > 0 ? min(100, round($ocupadas * 100 / $totalHabitaciones)) : 0;
                     $altura = max(3, $pct);
                     $diaSemana = (int) date('N', strtotime($fecha . ' 12:00:00'));
+                    $eventosDia = $eventosPorDia[$fecha] ?? [];
+                    $tip = $fcFecha($fecha) . ': ' . (int) $ocupadas . ' hab · ' . $pct . '%'
+                        . ($eventosDia ? ' · ' . implode(' · ', array_unique($eventosDia)) : '');
                     ?>
-                    <div class="fc-barra <?= $diaSemana >= 5 ? 'finde' : '' ?>"
+                    <div class="fc-barra <?= $diaSemana >= 5 ? 'finde' : '' ?> <?= $eventosDia ? 'evento' : '' ?>"
                          style="height: <?= $altura ?>%;"
-                         data-tip="<?= $fcSafe($fcFecha($fecha)) ?>: <?= (int) $ocupadas ?> hab &middot; <?= $pct ?>%"></div>
+                         data-tip="<?= $fcSafe($tip) ?>"></div>
                 <?php endforeach; ?>
             </div>
             <div class="fc-ejes">
@@ -347,8 +388,175 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
                 </table>
             </div>
         </section>
+
+        <section class="fc-panel" id="temporadas">
+            <div class="fc-panel-head">
+                <h2 class="fc-panel-title">Temporadas y eventos<span class="fc-chip"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i>Alimenta al Copiloto</span></h2>
+                <p class="fc-panel-sub">Marca lo que mueve tu ocupaci&oacute;n (ferias, vacaciones locales, temporada de lluvias). El forecast lo se&ntilde;ala y el consejo de tarifa lo toma en cuenta. Los festivos de M&eacute;xico se calculan solos.</p>
+            </div>
+
+            <?php if (empty($temporadas)): ?>
+                <div class="fct-vacio">A&uacute;n no marcas ninguna temporada. Con 2 o 3 (tus meses fuertes y flojos) el consejo de tarifa afina mucho.</div>
+            <?php else: ?>
+                <div class="fct-lista">
+                    <?php foreach ($temporadas as $t): ?>
+                        <div class="fct-item">
+                            <div class="fct-info">
+                                <p class="fct-nombre"><?= $fcSafe($t['nombre']) ?></p>
+                                <p class="fct-fechas">
+                                    <?= $fcSafe($fcFecha($t['desde'])) ?> &ndash; <?= $fcSafe($fcFecha($t['hasta'])) ?>
+                                    <?= !empty($t['recurrente_anual']) ? ' &middot; se repite cada a&ntilde;o' : ' &middot; ' . $fcSafe(substr((string) $t['desde'], 0, 4)) ?>
+                                </p>
+                                <?php if (trim((string) ($t['notas'] ?? '')) !== ''): ?>
+                                    <p class="fct-notas"><?= $fcSafe($t['notas']) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <span class="fct-badge <?= $t['intensidad'] === 'baja' ? 'baja' : 'alta' ?>">
+                                <?= $t['intensidad'] === 'baja' ? '▼ Baja' : '▲ Alta' ?>
+                            </span>
+                            <?php if ($puedeEditarTemporadas): ?>
+                                <div class="fct-acciones">
+                                    <button type="button" class="fct-icon-btn fct-editar" title="Editar"
+                                            data-id="<?= (int) $t['id'] ?>"
+                                            data-nombre="<?= $fcSafe($t['nombre']) ?>"
+                                            data-desde="<?= $fcSafe($t['desde']) ?>"
+                                            data-hasta="<?= $fcSafe($t['hasta']) ?>"
+                                            data-intensidad="<?= $fcSafe($t['intensidad']) ?>"
+                                            data-recurrente="<?= !empty($t['recurrente_anual']) ? '1' : '0' ?>"
+                                            data-notas="<?= $fcSafe($t['notas'] ?? '') ?>"><i class="fas fa-pen" aria-hidden="true"></i></button>
+                                    <form method="POST" action="<?= url('forecast/temporadas/eliminar') ?>"
+                                          data-ms-confirm data-ms-type="warning"
+                                          data-ms-title="&iquest;Eliminar esta temporada?"
+                                          data-ms-msg="<?= $fcSafe('Se eliminará "' . $t['nombre'] . '". El Copiloto dejará de tomarla en cuenta.') ?>"
+                                          data-ms-ok="S&iacute;, eliminar">
+                                        <?= function_exists('csrf_field') ? csrf_field() : '' ?>
+                                        <input type="hidden" name="id" value="<?= (int) $t['id'] ?>">
+                                        <button type="submit" class="fct-icon-btn" title="Eliminar"><i class="fas fa-trash-can" aria-hidden="true"></i></button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php
+            $festivos90 = array_values(array_filter($eventos, static function ($e) {
+                return !isset($e['id']); // los festivos calculados no traen id
+            }));
+            ?>
+            <?php if (!empty($festivos90)): ?>
+                <div class="fct-festivos">
+                    <p class="fct-festivos-titulo">Festivos y puentes autom&aacute;ticos (M&eacute;xico) &middot; pr&oacute;ximos 90 d&iacute;as</p>
+                    <div class="fct-chips">
+                        <?php foreach ($festivos90 as $f): ?>
+                            <span class="fct-chip">
+                                <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+                                <?= $fcSafe($fcFecha($f['desde'])) ?><?= $f['hasta'] !== $f['desde'] ? '&ndash;' . $fcSafe($fcFecha($f['hasta'])) : '' ?>
+                                <?= $fcSafe($f['nombre']) ?>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($puedeEditarTemporadas): ?>
+                <form class="fct-form" id="fct-form" method="POST" action="<?= url('forecast/temporadas/guardar') ?>">
+                    <?= function_exists('csrf_field') ? csrf_field() : '' ?>
+                    <input type="hidden" name="id" id="fct-id" value="">
+                    <p class="fct-form-titulo" id="fct-form-titulo">Agregar temporada</p>
+                    <div class="fct-grid">
+                        <div class="fct-campo ancho">
+                            <label class="fct-label" for="fct-nombre">Nombre</label>
+                            <input class="fct-input" type="text" id="fct-nombre" name="nombre" maxlength="120" required placeholder="Feria del pueblo, vacaciones de verano&hellip;">
+                        </div>
+                        <div class="fct-campo">
+                            <label class="fct-label" for="fct-desde">Desde</label>
+                            <input class="fct-input" type="date" id="fct-desde" name="desde" required>
+                        </div>
+                        <div class="fct-campo">
+                            <label class="fct-label" for="fct-hasta">Hasta</label>
+                            <input class="fct-input" type="date" id="fct-hasta" name="hasta" required>
+                        </div>
+                        <div class="fct-campo">
+                            <label class="fct-label" for="fct-intensidad">&iquest;C&oacute;mo pega?</label>
+                            <select class="fct-select" id="fct-intensidad" name="intensidad">
+                                <option value="alta">Alta &mdash; se llena</option>
+                                <option value="baja">Baja &mdash; se vac&iacute;a</option>
+                            </select>
+                        </div>
+                        <div class="fct-campo">
+                            <label class="fct-label" for="fct-notas">Notas (opcional)</label>
+                            <input class="fct-input" type="text" id="fct-notas" name="notas" maxlength="500" placeholder="Detalle breve">
+                        </div>
+                        <div class="fct-campo ancho">
+                            <label class="fct-check">
+                                <input type="checkbox" name="recurrente_anual" id="fct-recurrente" value="1" checked>
+                                Se repite cada a&ntilde;o (mismas fechas)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="fct-form-acciones">
+                        <button type="submit" class="fc-btn" id="fct-guardar"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>Guardar temporada</button>
+                        <button type="button" class="fcia-btn sec" id="fct-cancelar" hidden>Cancelar edici&oacute;n</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+        </section>
     </div>
 </div>
+
+<?php if ($puedeEditarTemporadas): ?>
+<script>
+(function () {
+    'use strict';
+    var form = document.getElementById('fct-form');
+    if (!form) { return; }
+    var campos = {
+        id: document.getElementById('fct-id'),
+        nombre: document.getElementById('fct-nombre'),
+        desde: document.getElementById('fct-desde'),
+        hasta: document.getElementById('fct-hasta'),
+        intensidad: document.getElementById('fct-intensidad'),
+        recurrente: document.getElementById('fct-recurrente'),
+        notas: document.getElementById('fct-notas')
+    };
+    var titulo = document.getElementById('fct-form-titulo');
+    var guardar = document.getElementById('fct-guardar');
+    var cancelar = document.getElementById('fct-cancelar');
+
+    function modoAlta() {
+        campos.id.value = '';
+        form.reset();
+        titulo.textContent = 'Agregar temporada';
+        cancelar.hidden = true;
+    }
+
+    document.querySelectorAll('.fct-editar').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            campos.id.value = btn.getAttribute('data-id');
+            campos.nombre.value = btn.getAttribute('data-nombre') || '';
+            campos.desde.value = btn.getAttribute('data-desde') || '';
+            campos.hasta.value = btn.getAttribute('data-hasta') || '';
+            campos.intensidad.value = btn.getAttribute('data-intensidad') || 'alta';
+            campos.recurrente.checked = btn.getAttribute('data-recurrente') === '1';
+            campos.notas.value = btn.getAttribute('data-notas') || '';
+            titulo.textContent = 'Editar temporada';
+            cancelar.hidden = false;
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            campos.nombre.focus();
+        });
+    });
+
+    cancelar.addEventListener('click', modoAlta);
+
+    // Anti doble envio
+    form.addEventListener('submit', function () {
+        guardar.disabled = true;
+    });
+})();
+</script>
+<?php endif; ?>
 
 <?php if ($fcIaOk): ?>
 <script>

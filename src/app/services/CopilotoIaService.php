@@ -521,7 +521,8 @@ class CopilotoIaService
             . "\n**Ojo con** — 1 o 2 riesgos u oportunidades concretos que se vean en las cifras."
             . "\nReglas: usa SOLO las cifras proporcionadas y cita las que uses; rangos conservadores (5% a 15%); "
             . 'la decision es del dueno, nunca lo presentes como orden ni como cambio ya aplicado; '
-            . 'si los datos son pocos o la ocupacion es muy baja, dilo con honestidad; montos con formato $1,234.56.'
+            . 'si los datos son pocos o la ocupacion es muy baja, dilo con honestidad; montos con formato $1,234.56; '
+            . 'si el servidor incluye temporadas marcadas por el hotel o festivos/puentes, tomalos en cuenta al elegir fechas y direccion, y nombralos.'
             . "\nDespues del texto anterior, agrega al FINAL un bloque <sugerencias>...</sugerencias> con un arreglo JSON "
             . 'que traduzca tu recomendacion por ventana a datos, una entrada por ventana como maximo, con esta forma exacta: '
             . '[{"ventana":"30","accion":"subir","pct":8,"desde":"YYYY-MM-DD","hasta":"YYYY-MM-DD","motivo":"una linea"}]. '
@@ -603,6 +604,38 @@ class CopilotoIaService
         }
         if (!empty($tabla)) {
             $lineas[] = "Proximas semanas vs el ano pasado:\n" . implode("\n", $tabla);
+        }
+
+        // Temporadas marcadas por el hotel + festivos MX de los proximos 90 dias.
+        // Contexto de demanda para la IA; si algo falla aqui, el consejo sale igual.
+        try {
+            require_once __DIR__ . '/../helpers/festivos_mx.php';
+
+            $hoy = date('Y-m-d');
+            $tope = date('Y-m-d', strtotime('+90 days'));
+
+            $temporadas = (new TemporadaHotel())->enRango($hoy, $tope, $hotelId);
+            if (!empty($temporadas)) {
+                $lt = [];
+                foreach ($temporadas as $t) {
+                    $lt[] = $t['nombre'] . ' (' . $t['intensidad'] . '): del ' . $t['desde'] . ' al ' . $t['hasta']
+                        . (trim((string) ($t['notas'] ?? '')) !== '' ? ' — ' . mb_substr(trim($t['notas']), 0, 120) : '');
+                }
+                $lineas[] = "Temporadas marcadas por el hotel (proximos 90 dias):\n- " . implode("\n- ", $lt);
+            } else {
+                $lineas[] = 'Temporadas marcadas por el hotel: ninguna capturada aun.';
+            }
+
+            $festivos = festivos_mx_en_rango($hoy, $tope);
+            if (!empty($festivos)) {
+                $lf = [];
+                foreach ($festivos as $f) {
+                    $lf[] = $f['nombre'] . ': ' . ($f['desde'] === $f['hasta'] ? $f['desde'] : 'del ' . $f['desde'] . ' al ' . $f['hasta']);
+                }
+                $lineas[] = "Festivos y puentes en Mexico (proximos 90 dias):\n- " . implode("\n- ", $lf);
+            }
+        } catch (Throwable $e) {
+            error_log('CopilotoIA: error al leer temporadas/festivos: ' . $e->getMessage());
         }
 
         return ['usuario' => implode("\n", $lineas)];

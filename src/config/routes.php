@@ -223,6 +223,9 @@ $router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['con
 
 // Forecast de ocupacion (bloque forecast, solo lectura)
 $router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
+// Calendario de temporadas del hotel (alimenta forecast y consejo del Copiloto)
+$router->post('/forecast/temporadas/guardar', ['controller' => 'Forecast', 'action' => 'temporadaGuardar']);
+$router->post('/forecast/temporadas/eliminar', ['controller' => 'Forecast', 'action' => 'temporadaEliminar']);
 
 // Bitacora de auditoria (bloque auditoria, solo lectura para gerencia)
 $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);

@@ -2486,6 +2486,25 @@ CREATE TABLE `tarifas_temporada` (
   KEY `idx_activa` (`activa`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `temporadas_hotel`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temporadas_hotel` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `nombre` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Feria del pueblo, boda grande, temporada de lluvias...',
+  `desde` date NOT NULL,
+  `hasta` date NOT NULL,
+  `intensidad` enum('alta','baja') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'alta' COMMENT 'alta = se llena; baja = se vacia',
+  `recurrente_anual` tinyint(1) NOT NULL DEFAULT '0' COMMENT '1 = se repite cada anio (mismo mes-dia)',
+  `notas` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_temporadas_hotel_rango` (`hotel_id`,`desde`,`hasta`),
+  CONSTRAINT `fk_temporadas_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Temporadas y eventos marcados por el hotel (alimentan forecast y consejo IA)';
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tipos_habitacion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
