@@ -10,6 +10,18 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
 $copilotoUrlAccion = function_exists('url') ? url('copiloto/accion') : '/copiloto/accion';
+
+// Nombre white-label del asistente (config copiloto.nombre por hotel).
+require_once __DIR__ . '/../../services/CopilotoService.php';
+$copHotelId = (int) (function_exists('current_hotel_id') ? current_hotel_id() : 0);
+try {
+    $copNombre = CopilotoService::nombreAsistente($copHotelId);
+} catch (Throwable $e) {
+    $copNombre = 'Copiloto';
+}
+// El FAB conserva su etiqueta comercial de siempre salvo que el hotel haya
+// bautizado a su asistente.
+$copEtiquetaFab = $copNombre !== 'Copiloto' ? $copNombre : 'Asesor inteligente';
 $copilotoLogoUrl = function_exists('asset_version')
     ? asset_version('img/logo.png')
     : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
@@ -221,9 +233,7 @@ $copChips = $copChipsContexto;
 // siempre quedan como relleno/fallback.
 if (empty($copChips)) {
     try {
-        require_once __DIR__ . '/../../services/CopilotoService.php';
-        $copHotelIdChips = (int) (function_exists('current_hotel_id') ? current_hotel_id() : 0);
-        $copChips = (new CopilotoService())->chipsFrecuentes($copHotelIdChips, 6);
+        $copChips = (new CopilotoService())->chipsFrecuentes($copHotelId, 6);
     } catch (Throwable $e) {
         $copChips = [];
     }
@@ -587,22 +597,22 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
 }
 </style>
 
-<button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir asesor inteligente">
+<button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir <?= htmlspecialchars($copEtiquetaFab, ENT_QUOTES, 'UTF-8') ?>">
     <span class="cop-fab-mark" aria-hidden="true">
         <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
         <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
     </span>
-    <span class="cop-fab-label" aria-hidden="true">Asesor inteligente</span>
+    <span class="cop-fab-label" aria-hidden="true"><?= htmlspecialchars($copEtiquetaFab, ENT_QUOTES, 'UTF-8') ?></span>
 </button>
 <div id="cop-backdrop" aria-hidden="true"></div>
-<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft" data-ms-keep-sidebar data-ms-no-modal>
+<div id="cop-panel" role="dialog" aria-label="<?= htmlspecialchars($copNombre, ENT_QUOTES, 'UTF-8') ?>" data-ms-keep-sidebar data-ms-no-modal>
     <div class="cop-head">
         <span class="cop-logo-mark" aria-hidden="true">
             <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
             <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
         </span>
         <div>
-            <strong>Copiloto</strong>
+            <strong><?= htmlspecialchars($copNombre, ENT_QUOTES, 'UTF-8') ?></strong>
             <div class="cop-sub">Pregunta sobre tu hotel</div>
         </div>
         <button type="button" class="cop-close" id="cop-close" aria-label="Cerrar">&times;</button>

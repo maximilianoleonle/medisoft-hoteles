@@ -508,6 +508,16 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'required' => false,
                 'max' => 80,
             ],
+            'copiloto.nombre' => [
+                'label' => 'Nombre del asistente',
+                'type' => 'string',
+                'input' => 'text',
+                'default' => 'Copiloto',
+                'grupo' => 'copiloto',
+                'descripcion' => 'Como se llama el asistente en tu hotel; se refleja en el widget, el briefing push y sus textos.',
+                'required' => false,
+                'max' => 40,
+            ],
             'copiloto.briefing_activo' => [
                 'label' => 'Briefing matutino por push',
                 'type' => 'boolean',

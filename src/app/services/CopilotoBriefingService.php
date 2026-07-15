@@ -102,7 +102,7 @@ class CopilotoBriefingService
         }
 
         return [
-            'titulo' => '☀️ Asi arranca tu dia',
+            'titulo' => '☀️ ' . CopilotoService::nombreAsistente($hotelId) . ': asi arranca tu dia',
             'mensaje' => mb_substr(implode("\n", $lineas), 0, 900),
             'url' => 'dashboard',
         ];
@@ -220,7 +220,7 @@ class CopilotoBriefingService
         $mensaje = "{$diasBajo} de los proximos 7 dias estan por debajo del {$umbral}% de ocupacion"
             . " (promedio {$sem['promedio']}%, {$sem['libres_hoy']} habitaciones libres hoy).";
         $mensaje .= $conForecast
-            ? ' Revisa el consejo de tarifa del Copiloto en Forecast para reaccionar a tiempo.'
+            ? ' Revisa el consejo de tarifa de ' . CopilotoService::nombreAsistente($hotelId) . ' en Forecast para reaccionar a tiempo.'
             : ' Considera una promocion o ajuste de tarifa para levantar la semana.';
 
         $id = NotificacionService::crear([

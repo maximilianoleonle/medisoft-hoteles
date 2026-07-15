@@ -136,6 +136,21 @@ class CopilotoService
     }
 
     /**
+     * Nombre white-label del asistente para ESTE hotel (config copiloto.nombre,
+     * default "Copiloto"). Lo usan el widget, el briefing push y los textos.
+     */
+    public static function nombreAsistente(int $hotelId): string
+    {
+        if ($hotelId > 0 && function_exists('hotel_config_get')) {
+            $valor = trim((string) hotel_config_get('copiloto.nombre', 'Copiloto', $hotelId));
+            if ($valor !== '') {
+                return mb_substr($valor, 0, 40);
+            }
+        }
+        return 'Copiloto';
+    }
+
+    /**
      * Responde una pregunta. Devuelve
      * ['success', 'texto', 'fuente' => 'reglas'|'ia'|'fallback', 'enlace' => ?['url','texto']].
      *
@@ -2243,7 +2258,9 @@ class CopilotoService
 
     private function responderConIa(int $hotelId, string $pregunta): array
     {
-        $sistema = 'Eres el Copiloto de Medisoft Hoteles, un asistente dentro del sistema de gestion de un hotel '
+        // White-label: el asistente se presenta con el nombre que el hotel
+        // configuro, no con la marca de la plataforma.
+        $sistema = 'Te llamas ' . self::nombreAsistente($hotelId) . ' y eres el asistente dentro del sistema de gestion de un hotel '
             . 'pequeno o mediano en Mexico. Respondes SOLO con la informacion que se te da (datos en vivo del hotel '
             . 'y la guia de uso). Reglas estrictas:'
             . "\n- Nunca inventes cifras: si un numero no esta en los datos, di que no lo tienes a la mano y sugiere donde verlo."
