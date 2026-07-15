@@ -56,6 +56,42 @@ class CopilotoController extends Controller {
         View::renderJSON($resultado, 200);
     }
 
+    /**
+     * Ejecuta una accion previamente confirmada por el usuario en el widget
+     * (msConfirm). SOLO limpieza/tareas operativas; el servicio valida el
+     * permiso del rol y jamas toca dinero.
+     */
+    public function accionAction() {
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false, 'texto' => 'Metodo no permitido.'], 405);
+        }
+
+        $this->validateCSRF();
+
+        $hotelId = (int) obtenerHotelIdActualCompat();
+
+        if (!$this->permitirSolicitud($hotelId)) {
+            View::renderJSON(['success' => false, 'texto' => 'Vas muy rapido. Espera un momento e intenta de nuevo.', 'fuente' => 'fallback'], 429);
+        }
+
+        $tipo = (string) $this->getPost('tipo', '');
+        $params = [
+            'habitacion_id' => (int) $this->getPost('habitacion_id', 0),
+            'fecha' => mb_substr((string) $this->getPost('fecha', ''), 0, 10),
+        ];
+
+        try {
+            $servicio = new CopilotoService();
+            $resultado = $servicio->ejecutarAccion($hotelId, $tipo, $params, user_id());
+        } catch (Throwable $e) {
+            error_log('Copiloto: error al ejecutar accion: ' . $e->getMessage());
+            View::renderJSON(['success' => false, 'texto' => 'Ocurrio un error. Intenta de nuevo.', 'fuente' => 'fallback'], 500);
+            return;
+        }
+
+        View::renderJSON($resultado, 200);
+    }
+
     /** Rate-limit por usuario reutilizando login_intentos (prefijo copiloto|). */
     private function permitirSolicitud(int $hotelId) {
         $uid = (int) user_id();

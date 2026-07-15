@@ -9,6 +9,7 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 }
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
+$copilotoUrlAccion = function_exists('url') ? url('copiloto/accion') : '/copiloto/accion';
 $copilotoLogoUrl = function_exists('asset_version')
     ? asset_version('img/logo.png')
     : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
@@ -592,6 +593,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     var sendBtn = document.getElementById('cop-send');
     var closeBtn = document.getElementById('cop-close');
     var URL = <?= json_encode($copilotoUrl) ?>;
+    var URL_ACCION = <?= json_encode($copilotoUrlAccion) ?>;
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var RUTA = <?= json_encode($copRuta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
@@ -704,25 +706,12 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                var html = formato(data.texto || 'No pude responder.');
-                var fuente = data.fuente || 'fallback';
-                var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
-                html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
-                // Deep-links: botones de accion [{label, url}] (solo navegacion).
-                // Si vienen, sustituyen al enlace suelto para no duplicar destinos.
-                var acciones = (data.acciones || []).filter(function (a) { return a && a.url; }).slice(0, 3);
-                if (acciones.length) {
-                    html += '<div class="cop-acciones">';
-                    acciones.forEach(function (a) {
-                        html += '<a class="cop-accion" href="' + escapar(resolverUrl(a.url)) + '">' + escapar(a.label || 'Abrir') + ' →</a>';
-                    });
-                    html += '</div>';
-                } else if (data.enlace && data.enlace.url) {
-                    html += '<br><a class="cop-enlace" href="' + escapar(resolverUrl(data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
+                pintarRespuesta(pensando, data);
+                // Accion ejecutable propuesta por el servidor: confirmar con
+                // msConfirm y solo entonces ejecutar (POST /copiloto/accion).
+                if (data.accion && data.accion.tipo) {
+                    confirmarAccion(data.accion);
                 }
-                pensando.classList.remove('cop-loading');
-                pensando.innerHTML = '<span class="cop-reveal">' + html + '</span>';
-                body.scrollTop = body.scrollHeight;
             })
             .catch(function () {
                 pensando.classList.remove('cop-loading');
@@ -732,6 +721,84 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 ocupado = false;
                 sendBtn.disabled = false;
                 input.focus();
+            });
+    }
+
+    // Pinta una respuesta del copiloto (texto + etiqueta de fuente + deep-links)
+    // dentro de la burbuja indicada. Compartido por preguntas y acciones.
+    function pintarRespuesta(burbuja, data) {
+        var html = formato(data.texto || 'No pude responder.');
+        var fuente = data.fuente || 'fallback';
+        var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
+        html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
+        // Deep-links: botones de accion [{label, url}] (solo navegacion).
+        // Si vienen, sustituyen al enlace suelto para no duplicar destinos.
+        var acciones = (data.acciones || []).filter(function (a) { return a && a.url; }).slice(0, 3);
+        if (acciones.length) {
+            html += '<div class="cop-acciones">';
+            acciones.forEach(function (a) {
+                html += '<a class="cop-accion" href="' + escapar(resolverUrl(a.url)) + '">' + escapar(a.label || 'Abrir') + ' →</a>';
+            });
+            html += '</div>';
+        } else if (data.enlace && data.enlace.url) {
+            html += '<br><a class="cop-enlace" href="' + escapar(resolverUrl(data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
+        }
+        burbuja.classList.remove('cop-loading');
+        burbuja.innerHTML = '<span class="cop-reveal">' + html + '</span>';
+        body.scrollTop = body.scrollHeight;
+    }
+
+    // Confirmacion humana antes de ejecutar (msConfirm del sistema; si no
+    // esta, confirm nativo). Cancelar no ejecuta nada.
+    function confirmarAccion(accion) {
+        var pedir = window.msConfirm
+            ? window.msConfirm({ type: 'info', title: accion.confirm_titulo || '¿Confirmar accion?', msg: accion.confirm_msg || '', confirmLabel: accion.confirm_ok || 'Confirmar' })
+            : Promise.resolve(window.confirm(accion.confirm_msg || '¿Confirmar accion?'));
+
+        pedir.then(function (ok) {
+            if (!ok) {
+                agregar('bot', '<span class="cop-reveal">Sin problema, no programé nada.</span>');
+                return;
+            }
+            ejecutarAccion(accion);
+        });
+    }
+
+    function ejecutarAccion(accion) {
+        if (ocupado) { return; }
+        ocupado = true;
+        sendBtn.disabled = true;
+        var pensando = agregar('bot cop-loading',
+            '<div class="cop-skeleton" role="status" aria-label="Ejecutando">' +
+                '<span class="cop-sk-line"></span>' +
+                '<span class="cop-sk-line"></span>' +
+            '</div>');
+
+        var datos = new URLSearchParams();
+        datos.append('csrf_token', TOKEN);
+        datos.append('tipo', accion.tipo);
+        datos.append('habitacion_id', accion.habitacion_id || '');
+        datos.append('fecha', accion.fecha || '');
+
+        fetch(URL_ACCION, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-CSRF-Token': TOKEN },
+            body: datos.toString()
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                pintarRespuesta(pensando, data);
+                if (data.success && window.msToast) {
+                    window.msToast('success', 'Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️');
+                }
+            })
+            .catch(function () {
+                pensando.classList.remove('cop-loading');
+                pensando.innerHTML = '<span class="cop-reveal">No pude ejecutar la acción. Intenta de nuevo.</span>';
+            })
+            .finally(function () {
+                ocupado = false;
+                sendBtn.disabled = false;
             });
     }
 

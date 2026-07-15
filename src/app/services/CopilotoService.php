@@ -148,6 +148,10 @@ class CopilotoService
             && $this->tieneModulo('promociones', $hotelId)) {
             return 'cupones_activos';
         }
+        if (($tiene(['mensajes pendientes', 'mensajes por enviar', 'mensajes de whatsapp', 'whatsapp por enviar', 'whatsapps pendientes', 'cuantos mensajes tengo', 'que mensajes tengo', 'mensajes de hoy', 'whatsapp de hoy']))
+            && $this->tieneModulo('canal_whatsapp', $hotelId)) {
+            return 'mensajes_pendientes';
+        }
         if (($tiene(['por agotarse', 'agotandose', 'se esta acabando', 'stock bajo', 'bajo minimo', 'bajo el minimo', 'inventario bajo', 'por acabarse', 'productos por acabar', 'falta de stock', 'bajo de stock']))
             && $this->tieneModulo('inventario', $hotelId)) {
             return 'inventario_bajo';
@@ -332,6 +336,21 @@ class CopilotoService
                         : "Tienes **{$m['n']} pago(s) online por conciliar** a Caja, por \${$m['monto']} en total.",
                     'enlace' => ['url' => 'motor-reservas', 'texto' => 'Ir al motor'],
                     'acciones' => $m['n'] > 0 ? [['label' => 'Conciliar en el motor', 'url' => 'motor-reservas']] : [],
+                ];
+
+            case 'mensajes_pendientes':
+                require_once __DIR__ . '/CanalWhatsAppService.php';
+                $mw = (new CanalWhatsAppService())->contarPendientesHoy($hotelId);
+                if ($mw === 0) {
+                    return [
+                        'texto' => 'La cola de WhatsApp esta al dia: no hay mensajes pendientes de enviar hoy.',
+                        'enlace' => ['url' => 'mensajes', 'texto' => 'Abrir Mensajes'],
+                    ];
+                }
+                return [
+                    'texto' => "Tienes **{$mw} mensaje" . ($mw === 1 ? '' : 's') . " de WhatsApp por enviar hoy** (confirmaciones, recordatorios de llegada y encuestas de salida). Cada uno ya viene redactado: solo falta tocar Enviar.",
+                    'enlace' => ['url' => 'mensajes', 'texto' => 'Abrir la cola de Mensajes'],
+                    'acciones' => [['label' => 'Abrir Mensajes', 'url' => 'mensajes']],
                 ];
 
             case 'resumen_dia':
