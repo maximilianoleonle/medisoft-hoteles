@@ -97,10 +97,20 @@ foreach ($hoteles as $hotel) {
 
         $r = $servicio->enviarSiCorresponde($hotelId, $forzarHora);
         if ($r['enviado']) {
-            echo "  OK    {$hotel['nombre']} (hotel {$hotelId}) -> {$r['motivo']}\n";
+            echo "  OK    {$hotel['nombre']} (hotel {$hotelId}) -> briefing: {$r['motivo']}\n";
             $enviados++;
         } else {
-            echo "  SKIP  {$hotel['nombre']} (hotel {$hotelId}) -> {$r['motivo']}\n";
+            echo "  SKIP  {$hotel['nombre']} (hotel {$hotelId}) -> briefing: {$r['motivo']}\n";
+            $saltados++;
+        }
+
+        // Alerta proactiva de ocupacion baja: misma tuberia, candado semanal propio.
+        $a = $servicio->evaluarAlertaOcupacion($hotelId, $forzarHora);
+        if ($a['enviado']) {
+            echo "  OK    {$hotel['nombre']} (hotel {$hotelId}) -> alerta ocupacion: {$a['motivo']}\n";
+            $enviados++;
+        } else {
+            echo "  SKIP  {$hotel['nombre']} (hotel {$hotelId}) -> alerta ocupacion: {$a['motivo']}\n";
             $saltados++;
         }
     } catch (Throwable $e) {

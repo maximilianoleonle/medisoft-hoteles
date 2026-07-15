@@ -1047,8 +1047,12 @@ class CopilotoService
         ];
     }
 
-    /** Ocupacion promedio de los proximos 7 dias y el mejor dia. */
-    private function ocupacionProximos7(int $hotelId): ?array
+    /**
+     * Ocupacion promedio de los proximos 7 dias, el mejor dia y la serie
+     * diaria ('por_dia': fecha => habitaciones ocupadas). Publico: tambien lo
+     * usan las alertas proactivas (CopilotoBriefingService).
+     */
+    public function ocupacionProximos7(int $hotelId): ?array
     {
         $o = $this->ocupacionHoy($hotelId);
         if ($o['activas'] <= 0) {
@@ -1105,6 +1109,7 @@ class CopilotoService
             'mejor_dia' => $mejorHabs > 0 ? ($dias[date('l', strtotime($mejorFecha))] ?? $mejorFecha) . ' ' . date('d/m', strtotime($mejorFecha)) : null,
             'mejor_pct' => $mejorHabs > 0 ? (int) round($mejorHabs * 100 / $o['activas']) : 0,
             'mejor_habs' => max(0, $mejorHabs),
+            'por_dia' => $porDia,
         ];
     }
 

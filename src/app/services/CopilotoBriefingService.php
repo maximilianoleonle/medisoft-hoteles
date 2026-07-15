@@ -160,6 +160,88 @@ class CopilotoBriefingService
         return ['enviado' => true, 'motivo' => 'briefing enviado (evento #' . $id . ')'];
     }
 
+    // ───────────────────────── Alertas proactivas con criterio ─────────────────────────
+
+    /**
+     * Regla de ocupacion baja: si N o mas de los proximos 7 dias quedan por
+     * debajo del umbral X% de ocupacion, avisa por push con la sugerencia de
+     * revisar el consejo de tarifa (CopilotoIaService, pantalla Forecast).
+     *
+     * Umbrales por hotel (hotel_configuracion, defaults sensatos):
+     *   copiloto.alerta_ocupacion_activa (true) · _umbral (40%) · _dias (4).
+     * Anti-insistencia: maximo UNA alerta cada 7 dias por hotel.
+     * Devuelve ['enviado' => bool, 'motivo' => string].
+     */
+    public function evaluarAlertaOcupacion(int $hotelId, bool $forzarHora = false): array
+    {
+        if (!$this->tieneModulo(self::MODULO, $hotelId)) {
+            return ['enviado' => false, 'motivo' => 'sin bloque copiloto_briefing'];
+        }
+        if (!$this->configBool($hotelId, 'copiloto.alerta_ocupacion_activa', true)) {
+            return ['enviado' => false, 'motivo' => 'alerta de ocupacion apagada en la configuracion del hotel'];
+        }
+        if (!$this->tieneModulo('notificaciones', $hotelId)) {
+            return ['enviado' => false, 'motivo' => 'sin bloque notificaciones (la cadena push lo requiere)'];
+        }
+
+        // Misma ventana horaria que el briefing: evaluar ya entrada la manana,
+        // no a medianoche (el cron corre cada pocos minutos).
+        $hora = $this->horaConfigurada($hotelId);
+        $ahora = $this->horaLocalHotel($hotelId);
+        if (!$forzarHora && $ahora < $hora) {
+            return ['enviado' => false, 'motivo' => "aun no es la hora configurada ({$hora}; hora del hotel {$ahora})"];
+        }
+
+        if ($this->yaEnviadoEnDias($hotelId, 'copiloto_alerta_ocupacion', 7)) {
+            return ['enviado' => false, 'motivo' => 'ya hubo alerta de ocupacion en los ultimos 7 dias'];
+        }
+
+        $sem = (new CopilotoService($this->db))->ocupacionProximos7($hotelId);
+        if ($sem === null || empty($sem['por_dia']) || (int) $sem['activas'] <= 0) {
+            return ['enviado' => false, 'motivo' => 'sin habitaciones activas para evaluar ocupacion'];
+        }
+
+        $umbral = max(5, min(95, $this->configInt($hotelId, 'copiloto.alerta_ocupacion_umbral', 40)));
+        $diasMin = max(1, min(7, $this->configInt($hotelId, 'copiloto.alerta_ocupacion_dias', 4)));
+
+        $diasBajo = 0;
+        foreach ($sem['por_dia'] as $habs) {
+            $pct = (int) round((int) $habs * 100 / (int) $sem['activas']);
+            if ($pct < $umbral) {
+                $diasBajo++;
+            }
+        }
+
+        if ($diasBajo < $diasMin) {
+            return ['enviado' => false, 'motivo' => "ocupacion sana: {$diasBajo} dia(s) bajo el {$umbral}% (umbral: {$diasMin} dias)"];
+        }
+
+        $conForecast = $this->tieneModulo('forecast', $hotelId);
+        $mensaje = "{$diasBajo} de los proximos 7 dias estan por debajo del {$umbral}% de ocupacion"
+            . " (promedio {$sem['promedio']}%, {$sem['libres_hoy']} habitaciones libres hoy).";
+        $mensaje .= $conForecast
+            ? ' Revisa el consejo de tarifa del Copiloto en Forecast para reaccionar a tiempo.'
+            : ' Considera una promocion o ajuste de tarifa para levantar la semana.';
+
+        $id = NotificacionService::crear([
+            'hotel_id' => $hotelId,
+            'rol_destino' => 'gerente',
+            'modulo' => 'copiloto',
+            'tipo' => 'copiloto_alerta_ocupacion',
+            'severidad' => 'media',
+            'titulo' => '📉 Semana floja a la vista',
+            'mensaje' => $mensaje,
+            'url' => $conForecast ? 'forecast' : 'reservaciones',
+            'dedupe_key' => 'copiloto.alerta_ocupacion.' . date('oW'),
+        ]);
+
+        if ($id === null) {
+            return ['enviado' => false, 'motivo' => 'no se pudo crear el evento de notificacion'];
+        }
+
+        return ['enviado' => true, 'motivo' => "alerta enviada: {$diasBajo}/7 dias bajo el {$umbral}% (evento #{$id})"];
+    }
+
     /** Hoteles activos con el bloque contratado (para iterar desde cron/CLI). */
     public function hotelesConBloque(): array
     {
@@ -200,6 +282,45 @@ class CopilotoBriefingService
             error_log('Copiloto briefing: error en candado diario: ' . $e->getMessage());
             return true; // ante la duda, no duplicar push
         }
+    }
+
+    /** Candado por ventana: ¿ya hubo un evento de este tipo en los ultimos N dias? */
+    protected function yaEnviadoEnDias(int $hotelId, string $tipo, int $dias): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM notificaciones
+                 WHERE hotel_id = ? AND tipo = ? AND created_at >= NOW() - INTERVAL " . max(1, $dias) . " DAY"
+            );
+            $stmt->execute([$hotelId, $tipo]);
+            return (int) $stmt->fetchColumn() > 0;
+        } catch (Throwable $e) {
+            error_log('Copiloto briefing: error en candado por ventana: ' . $e->getMessage());
+            return true; // ante la duda, no insistir
+        }
+    }
+
+    /**
+     * Umbrales por hotel via hotel_config_get (lee hotel_configuracion
+     * directo, sin depender del registry): mismos valores que edita la
+     * pantalla de Configuracion.
+     */
+    private function configBool(int $hotelId, string $clave, bool $default): bool
+    {
+        if (!function_exists('hotel_config_get')) {
+            return $default;
+        }
+        $v = hotel_config_get($clave, $default, $hotelId);
+        return is_bool($v) ? $v : filter_var($v, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function configInt(int $hotelId, string $clave, int $default): int
+    {
+        if (!function_exists('hotel_config_get')) {
+            return $default;
+        }
+        $v = hotel_config_get($clave, $default, $hotelId);
+        return is_numeric($v) ? (int) $v : $default;
     }
 
     /** Habitaciones activas sucias (estado limpieza) con llegada programada hoy. */
