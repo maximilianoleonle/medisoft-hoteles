@@ -204,6 +204,15 @@ class CopilotoService
             return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentSeguimiento];
         }
 
+        // 0.8) Busqueda de huesped por nombre: "¿tiene reserva Garcia?",
+        //      "¿en que habitacion esta Lopez?". Scope de hotel + permiso.
+        $nombreBuscado = $this->detectarBusquedaHuesped($norm);
+        if ($nombreBuscado !== null) {
+            $r = $this->responderBusquedaHuesped($hotelId, $nombreBuscado);
+            $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', 'busca:huesped', 0, 0);
+            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => 'busca:huesped'];
+        }
+
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
         //    especificas ("como hago un corte") y no deben confundirse con la
         //    pregunta de dato ("como voy de caja" -> saldo). Consciente de modulos:
@@ -945,6 +954,166 @@ class CopilotoService
         return null;
     }
 
+    // ───────────────────────── Busqueda de huesped por nombre ─────────────────────────
+
+    /**
+     * Detecta "¿tiene reserva Garcia?" / "¿en que habitacion esta Lopez?" y
+     * extrae el nombre a buscar. Devuelve null si la frase no trae un nombre
+     * usable (asi "¿quien esta hospedado?" sigue siendo el intent general).
+     */
+    private function detectarBusquedaHuesped(string $norm): ?string
+    {
+        $disparadores = [
+            'tiene reservacion ', 'tiene reserva ', 'hay reservacion de ', 'hay reserva de ',
+            'reservacion a nombre de ', 'reserva a nombre de ', 'a nombre de ',
+            'en que habitacion esta ', 'en cual habitacion esta ', 'que habitacion tiene ',
+            'esta hospedado ', 'esta hospedada ', 'busca a ', 'buscame a ', 'buscar a ',
+            'cuando llega ', 'cuando se va ', 'cuando sale ',
+        ];
+
+        foreach ($disparadores as $t) {
+            $pos = strpos($norm, $t);
+            if ($pos === false) {
+                continue;
+            }
+            $nombre = $this->limpiarNombreBuscado(substr($norm, $pos + strlen($t)));
+            if ($nombre !== null) {
+                return $nombre;
+            }
+        }
+
+        return null;
+    }
+
+    /** Recorta la cola de la frase a un nombre buscable; null si no hay nombre real. */
+    private function limpiarNombreBuscado(string $resto): ?string
+    {
+        $resto = trim((string) preg_replace('/[¿?¡!.,;]/u', ' ', $resto));
+        // Articulos/tratamientos al inicio.
+        $resto = (string) preg_replace('/^(el|la|los|las|a|al|don|dona|sr|sra|srta)\s+/u', '', $resto);
+        // Colas que no son nombre ("hoy", "manana", "por favor").
+        $resto = (string) preg_replace('/\b(hoy|manana|pasado manana|por favor|porfa)\b/u', ' ', $resto);
+        $resto = trim((string) preg_replace('/\s+/', ' ', $resto));
+
+        if ($resto === '' || mb_strlen($resto) < 3 || mb_strlen($resto) > 60) {
+            return null;
+        }
+        if (!preg_match('/[a-z]/', $resto)) {
+            return null;
+        }
+        // Si empieza con preposicion/relleno no es un nombre ("...hospedado en el hotel").
+        if (preg_match('/^(en|con|de|del|para|por|mi|mis|tu|tus|algun|alguna)\b/', $resto)) {
+            return null;
+        }
+        // Palabras que delatan que NO es un nombre propio.
+        foreach (['alguien', 'cuanto', 'cuanta', 'quien', 'reserva', 'habitacion', 'huesped', 'cliente'] as $generica) {
+            if ($resto === $generica) {
+                return null;
+            }
+        }
+
+        return $resto;
+    }
+
+    /**
+     * Busca al huesped por nombre en las reservaciones VIGENTES del hotel
+     * (dentro ahora o con llegada/salida por venir) y responde segun haya
+     * cero, uno o varios resultados. Mismo permiso que la pantalla.
+     */
+    private function responderBusquedaHuesped(int $hotelId, string $nombre): array
+    {
+        if (function_exists('can') && !can('reservaciones.view')) {
+            return ['texto' => 'Tu rol no tiene permiso para ver los datos de reservaciones. Pidele el acceso a tu gerente.', 'enlace' => null];
+        }
+
+        $like = '%' . addcslashes($nombre, "%_\\") . '%';
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida, h.nombre_completo
+                 FROM reservaciones r
+                 INNER JOIN huespedes h ON h.id = r.huesped_id AND h.hotel_id = r.hotel_id
+                 WHERE r.hotel_id = ?
+                   AND h.nombre_completo LIKE ?
+                   AND r.estado IN ('pendiente', 'confirmada', 'checked_in')
+                   AND (r.estado = 'checked_in' OR r.fecha_salida >= CURDATE())
+                 ORDER BY (r.estado = 'checked_in') DESC, r.fecha_entrada ASC
+                 LIMIT 4"
+            );
+            $stmt->execute([$hotelId, $like]);
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error busqueda huesped: ' . $e->getMessage());
+            $filas = [];
+        }
+
+        $nombreBonito = ucwords($nombre);
+
+        if (empty($filas)) {
+            $enlace = $this->tieneModulo('huespedes', $hotelId)
+                ? ['url' => 'huespedes', 'texto' => 'Buscar en Huespedes']
+                : ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'];
+            return [
+                'texto' => "No encuentro reservaciones vigentes a nombre de **{$nombreBonito}** (busque en huespedes dentro y llegadas por venir).",
+                'enlace' => $enlace,
+            ];
+        }
+
+        $estados = ['pendiente' => 'pendiente de confirmar', 'confirmada' => 'confirmada', 'checked_in' => 'con el huesped dentro'];
+
+        if (count($filas) === 1) {
+            $r = $filas[0];
+            $quien = trim((string) $r['nombre_completo']);
+            $estado = $estados[(string) $r['estado']] ?? (string) $r['estado'];
+
+            if ((string) $r['estado'] === 'checked_in') {
+                $numeros = $this->numerosHabitacionesDeReserva($hotelId, (int) $r['id']);
+                $texto = "**{$quien}** esta **hospedado ahora**"
+                    . (!empty($numeros) ? ' en la(s) habitacion(es) **' . implode(', ', $numeros) . '**' : '')
+                    . ", con salida el {$this->fechaCortaConAnio((string) $r['fecha_salida'])}.";
+            } else {
+                $texto = "**{$quien}** tiene una reservacion **{$estado}**: llega el {$this->fechaCortaConAnio((string) $r['fecha_entrada'])} y sale el {$this->fechaCortaConAnio((string) $r['fecha_salida'])}.";
+            }
+
+            return [
+                'texto' => $texto,
+                'enlace' => null,
+                'acciones' => [['label' => 'Ver la reservacion', 'url' => 'reservaciones/ver/' . (int) $r['id']]],
+            ];
+        }
+
+        $lineas = ['Encontre **' . count($filas) . ' reservaciones vigentes** que casan con "' . $nombreBonito . '":'];
+        foreach ($filas as $r) {
+            $quien = trim((string) $r['nombre_completo']);
+            $lineas[] = (string) $r['estado'] === 'checked_in'
+                ? "• {$quien} — hospedado ahora, sale el " . date('d/m', strtotime((string) $r['fecha_salida']))
+                : "• {$quien} — llega el " . date('d/m', strtotime((string) $r['fecha_entrada'])) . ' (' . ($estados[(string) $r['estado']] ?? $r['estado']) . ')';
+        }
+
+        return [
+            'texto' => implode("\n", $lineas),
+            'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+        ];
+    }
+
+    /** Numeros de habitacion asignados a una reservacion (scope de hotel). */
+    private function numerosHabitacionesDeReserva(int $hotelId, int $reservacionId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT hab.numero
+                 FROM reservacion_habitaciones rh
+                 INNER JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = rh.hotel_id
+                 WHERE rh.reservacion_id = ? AND rh.hotel_id = ?
+                 ORDER BY hab.numero LIMIT 5"
+            );
+            $stmt->execute([$reservacionId, $hotelId]);
+            return array_column($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'numero');
+        } catch (Throwable $e) {
+            error_log('Copiloto: error numeros de reserva: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     // ───────────────────────── Contexto de pantalla ─────────────────────────
 
     /**
@@ -1087,20 +1256,7 @@ class CopilotoService
         }
 
         // ctx:reserva_general — estado + habitaciones asignadas.
-        $numeros = [];
-        try {
-            $stmtH = $this->pdo->prepare(
-                "SELECT hab.numero
-                 FROM reservacion_habitaciones rh
-                 INNER JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = rh.hotel_id
-                 WHERE rh.reservacion_id = ? AND rh.hotel_id = ?
-                 ORDER BY hab.numero LIMIT 10"
-            );
-            $stmtH->execute([$reservacionId, $hotelId]);
-            $numeros = array_column($stmtH->fetchAll(PDO::FETCH_ASSOC) ?: [], 'numero');
-        } catch (Throwable $e) {
-            error_log('Copiloto: error habitaciones de reserva: ' . $e->getMessage());
-        }
+        $numeros = $this->numerosHabitacionesDeReserva($hotelId, $reservacionId);
 
         $texto = "Esta reservacion es de **{$huesped}**, esta **{$estado}** y va del {$this->fechaCortaConAnio((string) $r['fecha_entrada'])} al {$this->fechaCortaConAnio((string) $r['fecha_salida'])}.";
         if (!empty($numeros)) {
@@ -2577,6 +2733,7 @@ class CopilotoService
         return "No estoy seguro de esa. Prueba con algo como:\n"
             . "• \"dame el resumen del dia\"\n"
             . "• \"¿cuantas habitaciones libres tengo?\" o \"¿quien llega hoy/manana?\"\n"
+            . "• \"¿tiene reserva Garcia?\" o \"¿en que habitacion esta Lopez?\"\n"
             . "• \"¿como pinta la semana?\" o \"¿quien esta hospedado?\"\n"
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
