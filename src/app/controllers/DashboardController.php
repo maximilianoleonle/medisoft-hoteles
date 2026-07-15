@@ -108,7 +108,23 @@ class DashboardController extends Controller {
                 NotificacionService::sincronizarBandeja($this->hotelIdActual());
             }
             $notificacionesDashboard = $this->getNotificacionesDashboard();
-            
+
+            // Mensajes WhatsApp por enviar hoy (bloque canal_whatsapp): ficha
+            // discreta. Solo lectura y a prueba de fallos: sin bloque -> null.
+            $mensajesWhatsApp = null;
+            try {
+                if (function_exists('hotel_has_module') && hotel_has_module('canal_whatsapp', (int) $this->hotelIdActual())) {
+                    require_once __DIR__ . '/../services/CanalWhatsAppService.php';
+                    $cwServicio = new CanalWhatsAppService();
+                    $mensajesWhatsApp = [
+                        'pendientes' => $cwServicio->contarPendientesHoy((int) $this->hotelIdActual()),
+                        'faltantes' => $cwServicio->configuracionFaltante((int) $this->hotelIdActual()),
+                    ];
+                }
+            } catch (Throwable $e) {
+                $mensajesWhatsApp = null;
+            }
+
             // Preparar datos para la vista
             $data = [
                 'title' => $this->dashboardTitle(),
@@ -123,7 +139,8 @@ class DashboardController extends Controller {
                 'llegadas_tardias' => [], // Puedes implementar esta funcionalidad después
                 'graficos' => $datosGraficos,
                 'notificaciones_resumen' => $notificacionesDashboard['resumen'],
-                'notificaciones_recientes' => $notificacionesDashboard['recientes']
+                'notificaciones_recientes' => $notificacionesDashboard['recientes'],
+                'mensajes_whatsapp' => $mensajesWhatsApp
             ];
             
             // Renderizar vista
