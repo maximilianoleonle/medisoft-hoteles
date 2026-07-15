@@ -268,6 +268,143 @@ $momentos = [
             </section>
         <?php endforeach; ?>
 
+        <!-- Costo y gasto en caja -->
+        <?php
+        $costoReal = isset($mant['costo']) && $mant['costo'] !== null ? (float)$mant['costo'] : null;
+        $gastoRegistrado = !empty($mant['gasto_movimiento_id']);
+        $metodosPago = $metodos_pago ?? [];
+        ?>
+        <?php if ($estado === 'completado' || $costoReal !== null): ?>
+            <section class="mdet-card">
+                <div class="mdet-sec-head">
+                    <div class="mdet-sec-title">
+                        <i class="fas fa-coins"></i>
+                        <div>
+                            <h2>Costo del trabajo</h2>
+                            <p>Lo que costo resolver esta incidencia</p>
+                        </div>
+                    </div>
+                    <?php if ($costoReal !== null && $costoReal > 0): ?>
+                        <?php if ($gastoRegistrado): ?>
+                            <span class="mdet-estado is-ok"><i class="fas fa-circle-check"></i> Registrado en gastos</span>
+                        <?php else: ?>
+                            <span class="mdet-estado is-warn" style="background:var(--md-warn-bg);color:var(--md-warn);"><i class="fas fa-hourglass-half"></i> Por registrar</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="mdet-meta">
+                    <div class="mdet-meta-item">
+                        <small>Costo real</small>
+                        <span><?= $costoReal !== null ? '$' . number_format($costoReal, 2) : '-' ?></span>
+                    </div>
+                    <div class="mdet-meta-item">
+                        <small>Estimado</small>
+                        <span><?= isset($mant['costo_estimado']) && $mant['costo_estimado'] !== null ? '$' . number_format((float)$mant['costo_estimado'], 2) : '-' ?></span>
+                    </div>
+                    <div class="mdet-meta-item">
+                        <small>Proveedor</small>
+                        <span><?= mdet_safe($mant['proveedor'] ?? '', '-') ?></span>
+                    </div>
+                    <div class="mdet-meta-item">
+                        <small>Gasto en caja</small>
+                        <span>
+                            <?php if ($gastoRegistrado): ?>
+                                <i class="fas fa-check" style="color:var(--md-ok);"></i> MANT-<?= $mantId ?> · <?= mdet_fecha($mant['gasto_registrado_en'] ?? null) ?>
+                            <?php elseif ($costoReal !== null && $costoReal > 0): ?>
+                                Pendiente
+                            <?php else: ?>
+                                Sin costo
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                </div>
+
+                <?php if (!empty($mant['nota_costo'])): ?>
+                    <p class="mdet-desc" style="margin-top:10px;"><i class="fas fa-note-sticky" style="color:var(--md-gold);margin-right:6px;"></i><?= mdet_safe($mant['nota_costo']) ?></p>
+                <?php endif; ?>
+
+                <?php if (!$gastoRegistrado && $costoReal !== null && $costoReal > 0 && !empty($puede_caja)): ?>
+                    <form class="mdet-upload" method="POST" action="<?= url('mantenimientos/' . $mantId . '/registrar-gasto') ?>" data-mdet-once>
+                        <?= csrf_field() ?>
+                        <div class="mdet-upload-row">
+                            <select name="metodo_pago" class="mdet-file-btn" style="cursor:pointer;border-style:solid;appearance:auto;">
+                                <?php foreach ($metodosPago as $mpClave => $mpMeta): ?>
+                                    <option value="<?= mdet_safe($mpClave) ?>"><?= mdet_safe($mpMeta['label'] ?? ucfirst($mpClave)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" class="mdet-btn" data-mdet-once-btn>
+                                <i class="fas fa-cash-register"></i> Registrar en gastos
+                            </button>
+                        </div>
+                        <p class="mdet-hint">Crea el egreso en la caja abierta con referencia MANT-<?= $mantId ?>. Si la caja est&aacute; cerrada, quedar&aacute; pendiente y aparecer&aacute; en la cola al abrirla.</p>
+                    </form>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
+
+        <!-- Cierre con costo y evidencia -->
+        <?php if ($esActivo && !empty($puede_gestionar)): ?>
+            <section class="mdet-card" id="cerrarMantenimiento">
+                <div class="mdet-sec-head">
+                    <div class="mdet-sec-title">
+                        <i class="fas fa-flag-checkered"></i>
+                        <div>
+                            <h2>Cerrar mantenimiento</h2>
+                            <p>Foto del arreglo, costo real y registro del gasto</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="mdet-upload" method="POST" action="<?= url('mantenimientos/' . $mantId . '/cerrar') ?>" enctype="multipart/form-data" data-mdet-once>
+                    <?= csrf_field() ?>
+
+                    <div style="display:grid;gap:12px;margin-top:4px;">
+                        <label class="mdet-file-btn">
+                            <input type="file" name="fotos_resuelto[]" accept="image/*" capture="environment" multiple data-mdet-input>
+                            <i class="fas fa-camera"></i> Foto del arreglo (opcional)
+                            <span class="mdet-file-num" data-mdet-num></span>
+                        </label>
+
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                            <div>
+                                <label class="mdet-label" style="display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--md-muted);font-weight:700;margin-bottom:4px;">Costo real</label>
+                                <input type="text" name="costo" inputmode="decimal" data-money-format="true" placeholder="0.00" class="mdet-input" style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;font-size:.9rem;">
+                            </div>
+                            <div>
+                                <label class="mdet-label" style="display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--md-muted);font-weight:700;margin-bottom:4px;">Proveedor (opcional)</label>
+                                <input type="text" name="proveedor" maxlength="200" placeholder="Plomeria Lopez..." class="mdet-input" style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;font-size:.9rem;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mdet-label" style="display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--md-muted);font-weight:700;margin-bottom:4px;">Nota del costo (opcional)</label>
+                            <input type="text" name="nota_costo" maxlength="255" placeholder="Refacciones + mano de obra..." class="mdet-input" style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;font-size:.9rem;">
+                        </div>
+
+                        <?php if (!empty($puede_caja)): ?>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;background:color-mix(in srgb, var(--md-brand) 2%, #FCFAF5);">
+                                <label style="display:inline-flex;align-items:center;gap:8px;font-size:.84rem;font-weight:700;color:var(--md-heading);cursor:pointer;">
+                                    <input type="checkbox" name="registrar_gasto" value="1" checked>
+                                    Registrar en gastos de caja
+                                </label>
+                                <select name="metodo_pago" style="padding:8px 10px;border:1px solid var(--md-border);border-radius:9px;font-size:.82rem;">
+                                    <?php foreach ($metodosPago as $mpClave => $mpMeta): ?>
+                                        <option value="<?= mdet_safe($mpClave) ?>"><?= mdet_safe($mpMeta['label'] ?? ucfirst($mpClave)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
+                        <button type="submit" class="mdet-btn" data-mdet-once-btn style="background:var(--md-ok);">
+                            <i class="fas fa-check-circle"></i> Cerrar mantenimiento
+                        </button>
+                        <p class="mdet-hint" style="margin-top:-4px;">Sin costo tambi&eacute;n se puede cerrar; la habitaci&oacute;n vuelve a disponible.</p>
+                    </div>
+                </form>
+            </section>
+        <?php endif; ?>
+
         <!-- Tarea vinculada -->
         <?php if (!empty($tarea_activa)): ?>
             <section class="mdet-card">
@@ -313,21 +450,42 @@ $momentos = [
 
 <script>
 (function () {
-    document.querySelectorAll('[data-mdet-upload]').forEach(function (form) {
-        var input = form.querySelector('[data-mdet-input]');
-        var num = form.querySelector('[data-mdet-num]');
-        var submit = form.querySelector('[data-mdet-submit]');
-        if (!input || !submit) return;
-
+    // Contador de fotos elegidas junto a cada input de archivo.
+    document.querySelectorAll('[data-mdet-input]').forEach(function (input) {
         input.addEventListener('change', function () {
+            var form = input.closest('form');
+            var num = form ? form.querySelector('[data-mdet-num]') : null;
             var n = input.files ? input.files.length : 0;
             if (num) num.textContent = n > 0 ? '(' + n + ')' : '';
-            submit.disabled = n === 0;
+            var submit = form ? form.querySelector('[data-mdet-submit]') : null;
+            if (submit) submit.disabled = n === 0;
         });
+    });
 
+    // Formularios de solo-fotos: exigen al menos un archivo.
+    document.querySelectorAll('[data-mdet-upload]').forEach(function (form) {
+        var submit = form.querySelector('[data-mdet-submit]');
+        if (!submit) return;
         form.addEventListener('submit', function () {
             submit.disabled = true;
             submit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+        });
+    });
+
+    // Guardia anti doble clic (cerrar / registrar gasto): un solo envio.
+    document.querySelectorAll('[data-mdet-once]').forEach(function (form) {
+        var enviado = false;
+        form.addEventListener('submit', function (e) {
+            if (enviado) {
+                e.preventDefault();
+                return;
+            }
+            enviado = true;
+            var btn = form.querySelector('[data-mdet-once-btn]');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            }
         });
     });
 })();

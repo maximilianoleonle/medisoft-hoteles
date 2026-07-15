@@ -468,6 +468,9 @@ $router->get('/tareas/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'ver']
 // Mantenimiento Plus: detalle con evidencia fotografica (el correctivo basico sigue en /habitaciones).
 $router->get('/mantenimientos/{id:[0-9]+}', ['controller' => 'Mantenimiento', 'action' => 'ver']);
 $router->post('/mantenimientos/{id:[0-9]+}/fotos', ['controller' => 'Mantenimiento', 'action' => 'subirFotos']);
+// Mantenimiento Plus F2: cierre con costo real y egreso por el flujo existente de caja.
+$router->post('/mantenimientos/{id:[0-9]+}/cerrar', ['controller' => 'Mantenimiento', 'action' => 'cerrar']);
+$router->post('/mantenimientos/{id:[0-9]+}/registrar-gasto', ['controller' => 'Mantenimiento', 'action' => 'registrarGasto']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);

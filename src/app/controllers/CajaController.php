@@ -90,6 +90,33 @@ class CajaController extends Controller {
         $categorias['egreso'] ?? []
     );
     
+    // Cola de gastos de mantenimiento POR REGISTRAR (bloque mantenimiento_plus):
+    // cierres con costo real que encontraron la caja cerrada. Nunca rompe Caja.
+    $gastosMantenimientoPendientes = [];
+    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')) {
+        try {
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "SELECT m.id, m.motivo, m.costo, m.proveedor, m.fecha_fin,
+                        h.numero AS habitacion_numero
+                 FROM mantenimientos_habitaciones m
+                 LEFT JOIN habitaciones h
+                    ON h.id = m.habitacion_id
+                   AND h.hotel_id = m.hotel_id
+                 WHERE m.hotel_id = ?
+                   AND m.estado = 'completado'
+                   AND COALESCE(m.costo, 0) > 0
+                   AND m.gasto_movimiento_id IS NULL
+                 ORDER BY m.fecha_fin DESC
+                 LIMIT 10",
+                [obtenerHotelIdActualCompat()]
+            );
+            $gastosMantenimientoPendientes = $stmt ? $stmt->fetchAll() : [];
+        } catch (Throwable $e) {
+            error_log('Cola de gastos de mantenimiento no disponible: ' . $e->getMessage());
+        }
+    }
+
     View::renderTemplate('caja/index', [
         'title' => 'Caja - ' . current_hotel_display_name(),
         'caja' => $caja,
@@ -98,7 +125,8 @@ class CajaController extends Controller {
         'ultimos_movimientos' => $ultimosMovimientos,
         'movimientos_categoria' => $movimientosPorCategoria,
         'categorias' => $categorias,
-        'metodos_pago' => MovimientoCaja::getMetodosPago()
+        'metodos_pago' => MovimientoCaja::getMetodosPago(),
+        'gastos_mantenimiento_pendientes' => $gastosMantenimientoPendientes
     ]);
 }
     

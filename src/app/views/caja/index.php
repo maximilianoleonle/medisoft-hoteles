@@ -1085,6 +1085,44 @@ $cash_methods = [
             </div>
         </div><!-- /.cj-resh -->
 
+        <?php if (!empty($gastos_mantenimiento_pendientes)): ?>
+        <!-- ── Cola: gastos de mantenimiento por registrar (mantenimiento_plus) ── -->
+        <div style="background:#FAF0DC;border:1px solid rgba(194,132,28,.35);border-radius:14px;padding:14px 16px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <i class="fas fa-triangle-exclamation" style="color:#C2841C;"></i>
+                <strong style="color:#8A5D12;font-size:.92rem;font-weight:700;">Gastos de mantenimiento por registrar</strong>
+                <span style="font-size:.78rem;color:#8A5D12;">Se cerraron con costo cuando la caja estaba cerrada.</span>
+            </div>
+            <div style="display:grid;gap:8px;">
+                <?php foreach ($gastos_mantenimiento_pendientes as $gmp): ?>
+                    <form method="POST" action="<?= url('mantenimientos/' . (int)$gmp['id'] . '/registrar-gasto') ?>"
+                          style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FFFFFF;border:1px solid rgba(194,132,28,.22);border-radius:11px;padding:9px 12px;">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="volver_a" value="caja">
+                        <div style="flex:1 1 220px;min-width:0;">
+                            <a href="<?= url('mantenimientos/' . (int)$gmp['id']) ?>" style="font-weight:700;color:#1B2746;text-decoration:none;font-size:.86rem;">
+                                MANT-<?= (int)$gmp['id'] ?><?= !empty($gmp['habitacion_numero']) ? ' · Hab. ' . htmlspecialchars((string)$gmp['habitacion_numero']) : '' ?>
+                            </a>
+                            <span style="display:block;font-size:.76rem;color:#6C7788;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <?= htmlspecialchars(mb_substr((string)($gmp['motivo'] ?? ''), 0, 70)) ?><?= !empty($gmp['proveedor']) ? ' · ' . htmlspecialchars((string)$gmp['proveedor']) : '' ?>
+                            </span>
+                        </div>
+                        <strong style="font-size:.92rem;color:#8A5D12;white-space:nowrap;">$<?= number_format((float)$gmp['costo'], 2) ?></strong>
+                        <select name="metodo_pago" style="padding:7px 9px;border:1px solid rgba(194,132,28,.3);border-radius:9px;font-size:.78rem;">
+                            <?php foreach (($metodos_pago ?? []) as $mpClave => $mpMeta): ?>
+                                <option value="<?= htmlspecialchars($mpClave) ?>"><?= htmlspecialchars($mpMeta['label'] ?? ucfirst($mpClave)) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" onclick="this.disabled=true;this.form.submit();"
+                                style="padding:8px 13px;border:none;border-radius:9px;background:#C2841C;color:#FFF;font-weight:700;font-size:.8rem;cursor:pointer;">
+                            <i class="fas fa-cash-register"></i> Registrar
+                        </button>
+                    </form>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- ── Two-col grid ── -->
         <div class="cj-grid">
 
