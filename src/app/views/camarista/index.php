@@ -8,6 +8,10 @@ $salidasHoy = $salidasHoy ?? [];
 $ocupacion = $ocupacion ?? [];
 $personal = $personal ?? [];
 $tareasLimpieza = $tareasLimpieza ?? [];
+
+// Hora de salida estándar del hotel (HH:MM); vacía si no aplica.
+$horaSalidaFmt = trim((string) ($horaSalida ?? ''));
+$horaSalidaFmt = $horaSalidaFmt !== '' ? substr($horaSalidaFmt, 0, 5) : '';
 $camHayPersonal = !empty($personal);
 
 $camSafe = static function ($v) {
@@ -213,6 +217,8 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
 .cam-chip--staff i{ color:var(--dx-clean); }
 .cam-chip--fecha{ background:#FBF3E2; color:#8A6A1F; }
 .cam-chip--fecha i{ color:var(--dx-gold); }
+.cam-chip--salida{ background:var(--dx-occ-soft); color:var(--dx-occ); }
+.cam-chip--salida i{ color:var(--dx-occ); }
 
 /* ── Acciones de tarjeta ── */
 .cam-foot{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
@@ -436,16 +442,17 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
                     if ($occ && (string) $occ['fecha_salida'] !== '') {
                         $sts = strtotime((string) $occ['fecha_salida']);
                         $sdia = $sts ? date('Y-m-d', $sts) : '';
+                        $conHora = $horaSalidaFmt !== '' ? ' · ' . $horaSalidaFmt : '';
                         if ($sdia === $camHoy) {
-                            $salidaLbl = 'Sale hoy'; $salidaTono = ' cam-stay__out--hoy';
+                            $salidaLbl = 'Sale hoy' . $conHora; $salidaTono = ' cam-stay__out--hoy';
                         } elseif ($sdia === $camManana) {
-                            $salidaLbl = 'Sale mañana'; $salidaTono = ' cam-stay__out--pronto';
+                            $salidaLbl = 'Sale mañana' . $conHora; $salidaTono = ' cam-stay__out--pronto';
                         } elseif ($sdia !== '') {
                             $noches = (int) floor((strtotime($sdia) - strtotime($camHoy)) / 86400);
                             $salidaLbl = 'Sale el ' . date('d/m', $sts) . ($noches > 0 ? ' · ' . $noches . ' noche' . ($noches === 1 ? '' : 's') : '');
                         }
                     } elseif ($esSalidaHoy) {
-                        $salidaLbl = 'Sale hoy'; $salidaTono = ' cam-stay__out--hoy';
+                        $salidaLbl = 'Sale hoy' . ($horaSalidaFmt !== '' ? ' · ' . $horaSalidaFmt : ''); $salidaTono = ' cam-stay__out--hoy';
                     }
                     ?>
                     <div class="cam-stay">
@@ -462,8 +469,12 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
                     </div>
                 <?php endif; ?>
 
-                <?php if ($asignadosNombres !== '' || $fechaProgLabel !== ''): ?>
+                <?php $recienDesocupada = ($estado === 'limpieza' && $esSalidaHoy); ?>
+                <?php if ($asignadosNombres !== '' || $fechaProgLabel !== '' || $recienDesocupada): ?>
                 <div class="cam-meta">
+                    <?php if ($recienDesocupada): ?>
+                        <span class="cam-chip cam-chip--salida"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span>Recién desocupada</span></span>
+                    <?php endif; ?>
                     <?php if ($fechaProgLabel !== ''): ?>
                         <span class="cam-chip cam-chip--fecha"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>Programada <?= $camSafe($fechaProgLabel) ?></span></span>
                     <?php endif; ?>

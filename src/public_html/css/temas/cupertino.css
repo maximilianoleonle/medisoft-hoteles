@@ -435,11 +435,13 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .hotel-
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-menu-toggle,
-    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-actions button {
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-actions button,
+    html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-bell {
         border: 0;
         border-radius: 999px;
         background: rgba(0, 0, 0, .05);
         color: #1D1D1F;
+        box-shadow: none;
     }
 
     html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-name {
@@ -644,11 +646,13 @@ html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi.ms-on i {
     }
 
     html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-menu-toggle,
-    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-actions button {
+    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-actions button,
+    html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-bell {
         border: 0;
         border-radius: 999px;
         background: rgba(255, 255, 255, .1);
         color: #F5F5F7;
+        box-shadow: none;
     }
 }
 

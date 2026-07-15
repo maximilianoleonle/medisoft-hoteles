@@ -124,6 +124,12 @@ class CamaristaController extends Controller {
             ];
         }
 
+        // Hora de salida estándar del hotel: anticipa a qué hora se liberan los
+        // cuartos que salen hoy/mañana. (La hora por reserva no es confiable.)
+        $horaSalida = function_exists('hotel_config_get')
+            ? (string) hotel_config_get('operacion.checkout_hora', '12:00', $hotelId)
+            : '12:00';
+
         // Personal activo + limpieza activa por cuarto (asignados / programadas).
         $personal = $this->personalActivo($hotelId);
         $tareasPorHabitacion = [];
@@ -150,6 +156,7 @@ class CamaristaController extends Controller {
             'habitaciones' => $habitaciones,
             'salidasHoy' => $salidasHoy,
             'ocupacion' => $ocupacion,
+            'horaSalida' => $horaSalida,
             'personal' => $personal,
             'tareasLimpieza' => $tareasPorHabitacion,
         ]);

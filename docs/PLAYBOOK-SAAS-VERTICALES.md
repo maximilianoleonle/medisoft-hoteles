@@ -142,6 +142,24 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       "Sale hoy/mañana/el dd/mm · N noches"). Transferible: en veterinaria la
       tarjeta de "en consulta" carga la mascota + hora de cita; en taller, la
       orden carga el vehículo + fecha prometida.
+13. **Listas móviles = bandeja de teléfono, no tabla web.** En móvil el usuario
+    espera gestos de teléfono, no pestañas ni botones densos. Receta (probada en
+    /notificaciones de Medisoft, jul 2026, transferible a cualquier bandeja:
+    tareas, tickets, avisos):
+    - **Swipe-para-archivar** con pointer events: seguir el dedo con
+      `translateX`, umbral ~84px, POST real al endpoint de descarte con
+      `csrf_token` en el body + `X-Requested-With`; al éxito colapsar altura y
+      remover. Guardar `dataset.dragged` para NO navegar tras un arrastre.
+      (Reusar el mecanismo del `notification_bell.php`, no reinventarlo.)
+    - **En móvil se ocultan las pestañas de estado** (Atendidas/Archivadas): la
+      bandeja móvil es solo "pendientes" + gesto; el historial vive en PC.
+    - **Confirmar destructivo con un control que se transforma** (× → "Borrar
+      todo") antes de la acción masiva, con barrido escalonado de las tarjetas.
+    - **GOTCHA CSS**: NO animar `width` de un botón que es flex-item o de tamaño
+      intrínseco — la transición no progresa (se queda en el valor inicial).
+      Crecer por CONTENIDO: botón `width:auto` + animar `max-width` del texto
+      interno. Y ojo: el preview headless no avanza transiciones CSS; verificar
+      estados finales desactivándolas (`*{transition:none}`) + la lógica JS.
 
 ---
 
@@ -163,6 +181,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
 | P12 | Paralelizar giros antes de facturar | Un vertical hasta que pague; el template hace barato el siguiente |
 | P13 | CSS compilado en el navegador (Tailwind Play CDN) | Tailwind PRECOMPILADO en build (Vite lo da gratis en Laravel). El compilador en cliente cuesta cientos de ms por página en cada carga, peor en móvil, y obliga a `unsafe-eval` en la CSP. GOTCHA pagado: los `content` globs JAMÁS deben tocar archivos vendoreados con líneas gigantes (fuentes CID de TCPDF: 1.5MB, líneas de 1.1M chars) — el extractor pasa de segundos a 5+ MINUTOS y parece colgado. Ante un build lento: bisect por glob con `--content` |
 | P14 | Llamar helpers con firmas inventadas (`current_user('id')`) | PHP no truena por argumentos extra: el helper ignora el argumento, devuelve el array completo y el bug aparece hasta la DB como `'Array' for column usuario_registro_id` (rompió Iniciar/Programar mantenimiento en Medisoft). Para el id del usuario SIEMPRE el helper dedicado (`user_id()`); en Laravel, `auth()->id()`. Y los errores SQL crudos JAMÁS llegan al toast: loguear completo, mostrar mensaje genérico |
+| P15 | Estilos de un modal/bottom-sheet scopeados bajo un wrapper (`.vista .sheet{…}`) cuando el nodo del sheet puede quedar FUERA de ese wrapper en el DOM | Es la causa REAL de "hoja/modal en blanco en móvil" (pagado en el bottom-sheet de /habitaciones, jul 2026): el bloque entero de reglas (posición fija, `bottom:0`, y el clon del contenido en flujo) vivía bajo `.habitaciones-view`, pero el markup del sheet quedaba fuera de ese contenedor → ninguna regla aplicaba, el sheet no se anclaba al viewport y el contenido clonado conservaba su `position:absolute; top:100%`, empujándose ~una pantalla abajo (fuera de vista) → BLANCO. Reglas: (a) el sheet/modal NO debe depender de un ancestro-wrapper para sus estilos base — o se scopean con su propia clase raíz, o se garantiza en JS que viva dentro del wrapper al abrir (`if (sheet.parentElement !== wrapper) wrapper.appendChild(sheet)`); (b) mover un `position:fixed` dentro de un wrapper es seguro SOLO si ese wrapper no crea bloque-contenedor (sin `transform`/`filter`/`contain`/`will-change`). GOTCHA de diagnóstico que ahorró horas: cuando el bug NO reproduce en escritorio/Chromium (aunque cargues TODAS las hojas y el tema), instrumenta el dispositivo REAL con un panel `position:fixed;z-index:max` que vuelque rects/offsetTop/ancestros al abrir; una sola captura del usuario da la causa exacta. No asumir "es de iOS" sin ese dato — la primera hipótesis (`-webkit-overflow-scrolling:touch`) fue errónea y no costó nada verificarla mal |
 
 ---
 

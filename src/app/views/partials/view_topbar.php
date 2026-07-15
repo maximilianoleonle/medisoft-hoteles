@@ -128,14 +128,8 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
     $vtbCrumbs = [['label' => $vtbActual]];
     $vtbBack = strpos($vtbRuta, '/') !== false ? back_url($vtbRoot) : back_url('dashboard');
 }
-
-// ── Campanita de notificaciones ──
-// Réplica del dropdown del dashboard dentro de la barra. Se muestra en TODAS
-// las vistas que pintan esta barra (el propio partial se auto-oculta si no hay
-// contexto de hotel o el módulo de notificaciones está apagado).
-$vtbShowBell = true;
 ?>
-<nav class="ms-vtb<?= $vtbShowBell ? ' ms-vtb--has-bell' : '' ?>" aria-label="Ruta de navegación">
+<nav class="ms-vtb" aria-label="Ruta de navegación">
     <a href="<?= htmlspecialchars($vtbBack, ENT_QUOTES, 'UTF-8') ?>" class="ms-vtb-back" aria-label="Regresar" title="Regresar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -155,7 +149,6 @@ $vtbShowBell = true;
             <?php endforeach; ?>
         </div>
     </div>
-    <?php if ($vtbShowBell) { include APP_PATH . '/views/partials/notification_bell.php'; } ?>
 </nav>
 <style>
 /* ── Barra de navegación global (partials/view_topbar.php) ──
@@ -249,13 +242,42 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-vtb.is-stuck {
 .ms-vtb-crumbs strong { color: var(--brand-primary, #1B2746); font-weight: 700; }
 
 @media (max-width: 768px) {
-    .ms-vtb { margin: 8px 14px 6px; gap: 10px; }
-    .ms-vtb--nested { margin: 0 0 8px; }
-    .ms-vtb--nested.ms-vtb--pad { margin: 8px 14px 6px; }
-    /* Chips más compactos: la barra deja de sentirse "amontonada" */
-    .ms-vtb-back { width: 34px; height: 34px; border-radius: 11px; }
-    .ms-vtb-back svg { width: 15px; height: 15px; }
-    .ms-vtb-crumbs { font-size: .8rem; }
+    .ms-vtb { margin: 6px 12px 4px; gap: 8px; }
+    .ms-vtb--nested { margin: 0 0 6px; }
+    .ms-vtb--nested.ms-vtb--pad { margin: 6px 12px 4px; }
+
+    /* Icono puro (sin chip) para una barra más limpia. La caja conserva ~36px
+       de área de toque, pero transparente: se ve solo el icono. */
+    .ms-vtb-back,
+    html[data-tema="cupertino"] .ms-vtb-back {
+        width: 36px;
+        height: 36px;
+        margin-left: -7px;          /* alinea el icono al borde óptico del texto */
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        border-radius: 10px;        /* solo para el halo de foco/tap */
+        color: var(--brand-primary, #1B2746);
+    }
+    .ms-vtb-back svg { width: 20px; height: 20px; }
+    .ms-vtb-back:hover { background: transparent; }
+    .ms-vtb-back:active { background: color-mix(in srgb, var(--brand-primary, #1B2746) 9%, transparent); }
+    .ms-vtb-crumbs { font-size: .82rem; }
+
+    /* Pegada al hacer scroll: cristal limpio, hairline sutil, sin sombra dura */
+    .ms-vtb.is-stuck {
+        margin-top: 0;
+        background: rgba(255, 255, 255, .70);
+        -webkit-backdrop-filter: saturate(180%) blur(16px);
+        backdrop-filter: saturate(180%) blur(16px);
+        box-shadow: none;
+        border-bottom: 1px solid color-mix(in srgb, var(--brand-border, #E4DDCE) 55%, transparent);
+    }
+    html[data-theme="dark"] .ms-vtb.is-stuck {
+        background: rgba(22, 24, 30, .66);
+        box-shadow: none;
+        border-bottom-color: rgba(255, 255, 255, .08);
+    }
 }
 
 /* Modo oscuro: los tokens neutrales ya voltean; el énfasis usa tinta clara

@@ -7162,6 +7162,11 @@ body.hb-modal-open{ overflow:hidden; }
   .habitaciones-view .hb-mobile-sheet-content .flip-card-back{
     position:static!important;
     inset:auto!important;
+    /* El reverso se oculta en la tarjeta con transform:translateY(100%+12px)
+       (mecanismo de "panel que sube"). El clon dentro de la hoja NO debe heredar
+       ese desplazamiento: sin este reset el contenido se va ~una pantalla abajo
+       (fuera de vista) y la hoja se ve EN BLANCO en móvil. */
+    transform:none!important;
     width:auto!important;
     min-height:0!important;
     max-height:none!important;

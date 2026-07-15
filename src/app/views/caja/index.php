@@ -190,7 +190,6 @@ if (!function_exists('cj_finance_sentence')) {
 .cj-crumbs a { color:inherit; text-decoration:none; transition:color .15s; }
 .cj-crumbs a:hover { color:var(--cj-text); }
 .cj-topbar-acts { display:flex; align-items:center; gap:8px; margin-left:auto; }
-.cj-topbar-acts .ms-vtb-bell-shell { margin-left:0; }
 .cj-btn-ghost {
     display:inline-flex; align-items:center; gap:6px;
     height:32px; padding:0 11px;
@@ -1052,7 +1051,6 @@ $cash_methods = [
                 <i class="fas fa-tags"></i> Conceptos
             </a>
             <?php endif; ?>
-            <?php include APP_PATH . '/views/partials/notification_bell.php'; ?>
         </div>
     </nav>
 

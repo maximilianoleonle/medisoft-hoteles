@@ -547,6 +547,101 @@ foreach ($notificaciones as $ntxItem) {
     transform: translateY(0);
 }
 
+/* ── Swipe-para-archivar + "borrar todo" (bandeja estilo teléfono, móvil) ── */
+.ntxm-swipe { position: relative; border-radius: 20px; }
+
+.ntxm-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0 26px;
+    border-radius: 20px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--ntx-tone-amber) 14%, #fff),
+        color-mix(in srgb, var(--ntx-tone-amber) 34%, #fff));
+    color: color-mix(in srgb, var(--ntx-tone-amber) 86%, #5a4413);
+    font-size: .82rem;
+    font-weight: 750;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .16s ease;
+}
+
+.ntxm-swipe-bg i { font-size: 1.05rem; }
+.ntxm-swipe.is-swiping .ntxm-swipe-bg { opacity: 1; }
+
+.ntxm-swipe > .ntxm-card { position: relative; z-index: 1; touch-action: pan-y; }
+.ntxm-swipe > .ntxm-card.dragging { transition: none; will-change: transform; }
+.ntxm-swipe > .ntxm-card.settle { transition: transform .26s cubic-bezier(.22, 1, .36, 1); }
+
+/* Colapso al soltar-archivar y al barrer todo */
+.ntxm-swipe.gone {
+    overflow: hidden;
+    opacity: 0;
+    transition: height .34s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+}
+
+.ntxm-swipe.is-erasing > .ntxm-card {
+    transition: transform .42s cubic-bezier(.55, 0, .68, .19), opacity .38s ease;
+    transform: translateX(-116%) rotate(-1.5deg);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Botón "×" que se transforma en "Borrar todo" (solo móvil) */
+/* .ntxm-clear NO es contenedor flex a propósito: si el botón fuera flex-item,
+   su width animado se colapsaría al contenido del ícono. */
+.ntxm-clear { display: none; flex: 0 0 auto; padding-bottom: 5px; }
+.ntxm-clear-form { display: none; }
+
+/* El botón crece por CONTENIDO (el texto revela con max-width); no animamos el
+   width del botón porque, dentro del flex del header, esa transición no progresa. */
+.ntxm-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    border: 1px solid var(--ntx-line);
+    border-radius: 999px;
+    background: #fff;
+    color: #97a1b2;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 750;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: padding .26s ease, background .2s ease, color .2s ease,
+                border-color .2s ease, transform .12s ease;
+}
+
+.ntxm-clear-btn > i { flex: 0 0 auto; width: 36px; text-align: center; font-size: .95rem; transition: transform .2s ease; }
+.ntxm-clear-txt { display: inline-block; max-width: 0; opacity: 0; overflow: hidden; transition: max-width .3s cubic-bezier(.22, 1, .36, 1), opacity .2s ease; }
+
+.ntxm-clear-btn.is-confirming {
+    padding-right: 15px;
+    border-color: color-mix(in srgb, var(--ntx-tone-coral) 45%, var(--ntx-line));
+    background: color-mix(in srgb, var(--ntx-tone-coral) 12%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-coral) 84%, #7a2c22);
+}
+
+.ntxm-clear-btn.is-confirming .ntxm-clear-txt { max-width: 100px; opacity: 1; }
+.ntxm-clear-btn:active { transform: scale(.94); }
+.ntxm-clear-btn[disabled] { opacity: .6; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ntxm-swipe > .ntxm-card,
+    .ntxm-swipe.gone,
+    .ntxm-swipe.is-erasing > .ntxm-card,
+    .ntxm-clear-btn,
+    .ntxm-clear-txt { transition-duration: .01ms !important; }
+}
+
 /* ── PC: mas aire y hover en tarjetas ── */
 @media (min-width: 769px) {
     .ntxm-title { font-size: 2.5rem; }
@@ -574,6 +669,8 @@ foreach ($notificaciones as $ntxItem) {
 
     .ntxm-head { padding: 6px 2px 0; }
     .ntxm-actions { display: none; }
+    .ntxm-tabs { display: none; }   /* fuera Atendidas / Archivadas en móvil */
+    .ntxm-clear { display: block; } /* aparece el botón "×" de borrar todo */
 }
 </style>
 
@@ -624,6 +721,22 @@ foreach ($notificaciones as $ntxItem) {
                         </button>
                     </div>
                 </div>
+
+                <?php if ($tablaDisponible && $pendientesArchivables > 0): ?>
+                    <div class="ntxm-clear" data-ntx-clear>
+                        <form class="ntxm-clear-form" method="POST"
+                              action="<?= url('notificaciones/marcar-todas-leidas') ?>"
+                              data-ntx-clear-form>
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="accion" value="archivar_pendientes">
+                        </form>
+                        <button type="button" class="ntxm-clear-btn" data-ntx-clear-btn
+                                aria-label="Borrar todas las notificaciones">
+                            <i class="fas fa-xmark" data-ntx-clear-icon aria-hidden="true"></i>
+                            <span class="ntxm-clear-txt">Borrar todo</span>
+                        </button>
+                    </div>
+                <?php endif; ?>
             </header>
 
             <nav class="ntxm-tabs" aria-label="Cambiar estado">
@@ -662,8 +775,13 @@ foreach ($notificaciones as $ntxItem) {
                                 $urlDestinoFinal = ($urlDestino !== '' && $id > 0) ? url('notificaciones/' . $id . '/abrir') : '';
                                 $tituloNotificacion = (string)($notificacion['titulo'] ?? 'Notificacion');
                                 $mensajeNotificacion = trim((string)($notificacion['mensaje'] ?? ''));
+                                $archivarUrl = ($tablaDisponible && $id > 0) ? url('notificaciones/' . $id . '/descartar') : '';
                             ?>
-                            <article class="ntxm-card state-<?= $estadoClass ?> sev-<?= $severidadClass ?> mod-<?= ntx_class($modulo, 'sistema') ?><?= $estadoClass === 'nueva' ? ' is-new' : '' ?>"
+                            <div class="ntxm-swipe"<?= $archivarUrl !== '' ? ' data-ntx-swipe' : '' ?>>
+                                <?php if ($archivarUrl !== ''): ?>
+                                    <div class="ntxm-swipe-bg" aria-hidden="true"><span>Archivar</span><i class="fas fa-box-archive"></i></div>
+                                <?php endif; ?>
+                            <article class="ntxm-card state-<?= $estadoClass ?> sev-<?= $severidadClass ?> mod-<?= ntx_class($modulo, 'sistema') ?><?= $estadoClass === 'nueva' ? ' is-new' : '' ?>"<?= $archivarUrl !== '' ? ' data-archive-url="' . htmlspecialchars($archivarUrl, ENT_QUOTES, 'UTF-8') . '" data-notif-id="' . $id . '"' : '' ?>
                                      <?php if ($urlDestinoFinal !== ''): ?>
                                          data-notif-url="<?= htmlspecialchars($urlDestinoFinal, ENT_QUOTES, 'UTF-8') ?>"
                                          role="link"
@@ -684,6 +802,7 @@ foreach ($notificaciones as $ntxItem) {
                                     </p>
                                 </div>
                             </article>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endforeach; ?>
@@ -701,6 +820,10 @@ document.addEventListener('click', function (event) {
     const item = event.target.closest('.ntxm-card[data-notif-url]');
     if (!item || event.target.closest('a, button, input, select, textarea, label')) {
         return;
+    }
+
+    if (item.dataset.dragged === '1') {
+        return; // se acaba de arrastrar: no navegar
     }
 
     window.location.href = item.dataset.notifUrl;
@@ -1065,5 +1188,176 @@ document.addEventListener('keydown', function (event) {
     }
 
     refresh();
+})();
+
+// ── Swipe-para-archivar (una) + botón "×" → "Borrar todo" (barrido de todas) ──
+(function () {
+    'use strict';
+
+    var section = document.querySelector('.ntxm');
+    if (!section) { return; }
+
+    var isMobile = function () { return window.matchMedia('(max-width: 768px)').matches; };
+    var csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    var THRESHOLD = 84;
+
+    function remaining() { return document.querySelectorAll('.ntxm-swipe:not(.gone)').length; }
+
+    function showEmptyIfCleared() {
+        if (remaining() > 0) { return; }
+        section.querySelectorAll('.ntxm-group, .ntxm-list').forEach(function (el) { el.remove(); });
+        var clear = section.querySelector('[data-ntx-clear]');
+        if (clear) { clear.remove(); }
+        var dot = section.querySelector('.ntxm-dot');
+        if (dot) { dot.remove(); }
+        if (!section.querySelector('.ntxm-empty')) {
+            var empty = document.createElement('div');
+            empty.className = 'ntxm-empty';
+            empty.innerHTML = '<i class="fas fa-circle-check"></i>' +
+                '<h3>Bandeja limpia</h3>' +
+                '<p>No hay pendientes por ahora. Los avisos archivados quedan en el historial.</p>';
+            section.appendChild(empty);
+        }
+    }
+
+    function collapse(wrap, done) {
+        wrap.style.height = wrap.offsetHeight + 'px';
+        void wrap.offsetHeight;
+        wrap.classList.add('gone');
+        wrap.style.height = '0px';
+        window.setTimeout(function () {
+            wrap.remove();
+            if (typeof done === 'function') { done(); }
+        }, 360);
+    }
+
+    function archiveOne(wrap, card, bg) {
+        var url = card.dataset.archiveUrl;
+        if (!url) { return; }
+        card.classList.remove('dragging');
+        card.classList.add('settle');
+        card.style.transform = 'translateX(-116%)';
+        if (bg) { bg.style.opacity = '1'; }
+        var body = new URLSearchParams();
+        body.set('csrf_token', csrf);
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: body
+        }).then(function (res) {
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            collapse(wrap, showEmptyIfCleared);
+        }).catch(function () {
+            card.style.transform = 'translateX(0)';
+            wrap.classList.remove('is-swiping');
+            if (bg) { bg.style.opacity = ''; }
+            if (typeof window.msToast === 'function') {
+                window.msToast('No se pudo archivar la notificación.', 'error');
+            }
+        });
+    }
+
+    section.querySelectorAll('[data-ntx-swipe]').forEach(function (wrap) {
+        var card = wrap.querySelector('.ntxm-card');
+        if (!card || !card.dataset.archiveUrl) { return; }
+        var bg = wrap.querySelector('.ntxm-swipe-bg');
+        var startX = 0, startY = 0, dx = 0, active = false, decided = false, horiz = false;
+
+        card.addEventListener('pointerdown', function (e) {
+            if (!isMobile()) { return; }
+            if (e.pointerType === 'mouse' && e.button !== 0) { return; }
+            startX = e.clientX; startY = e.clientY;
+            dx = 0; active = true; decided = false; horiz = false;
+            card.classList.remove('settle');
+        });
+        card.addEventListener('pointermove', function (e) {
+            if (!active) { return; }
+            var mx = e.clientX - startX;
+            var my = e.clientY - startY;
+            if (!decided && (Math.abs(mx) > 6 || Math.abs(my) > 6)) {
+                decided = true;
+                horiz = Math.abs(mx) > Math.abs(my);
+                if (horiz) {
+                    card.classList.add('dragging');
+                    wrap.classList.add('is-swiping');
+                    try { card.setPointerCapture(e.pointerId); } catch (err) {}
+                }
+            }
+            if (!horiz) { return; }
+            if (e.cancelable) { e.preventDefault(); }
+            dx = Math.min(0, mx);
+            card.style.transform = 'translateX(' + dx + 'px)';
+            if (bg) { bg.style.opacity = String(Math.min(1, Math.abs(dx) / 120)); }
+        });
+        function finish() {
+            if (!active) { return; }
+            active = false;
+            if (!horiz) { return; }
+            card.dataset.dragged = '1';
+            window.setTimeout(function () { delete card.dataset.dragged; }, 0);
+            if (dx < -THRESHOLD) {
+                archiveOne(wrap, card, bg);
+            } else {
+                card.classList.remove('dragging');
+                card.classList.add('settle');
+                card.style.transform = 'translateX(0)';
+                wrap.classList.remove('is-swiping');
+                if (bg) { bg.style.opacity = ''; }
+            }
+        }
+        card.addEventListener('pointerup', finish);
+        card.addEventListener('pointercancel', finish);
+    });
+
+    var clear = section.querySelector('[data-ntx-clear]');
+    if (clear) {
+        var btn = clear.querySelector('[data-ntx-clear-btn]');
+        var icon = clear.querySelector('[data-ntx-clear-icon]');
+        var form = clear.querySelector('[data-ntx-clear-form]');
+        var confirmTimer = null;
+
+        function resetClear() {
+            btn.classList.remove('is-confirming');
+            if (icon) { icon.className = 'fas fa-xmark'; }
+            btn.setAttribute('aria-label', 'Borrar todas las notificaciones');
+            window.clearTimeout(confirmTimer);
+        }
+
+        function eraseAll() {
+            var wraps = Array.prototype.slice.call(document.querySelectorAll('.ntxm-swipe:not(.gone)'));
+            btn.disabled = true;
+            if (!wraps.length) { form.submit(); return; }
+            var stagger = 65;
+            wraps.forEach(function (w) { w.style.height = w.offsetHeight + 'px'; });
+            void section.offsetHeight;
+            wraps.forEach(function (w, i) {
+                window.setTimeout(function () {
+                    w.classList.add('is-erasing');
+                    window.setTimeout(function () { w.classList.add('gone'); w.style.height = '0px'; }, 170);
+                }, i * stagger);
+            });
+            window.setTimeout(function () { form.submit(); }, (wraps.length - 1) * stagger + 560);
+        }
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (btn.classList.contains('is-confirming')) {
+                eraseAll();
+                return;
+            }
+            btn.classList.add('is-confirming');
+            if (icon) { icon.className = 'fas fa-trash-can'; }
+            btn.setAttribute('aria-label', 'Confirmar: borrar todas');
+            confirmTimer = window.setTimeout(resetClear, 3500);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!btn.classList.contains('is-confirming')) { return; }
+            if (e.target instanceof Element && clear.contains(e.target)) { return; }
+            resetClear();
+        });
+    }
 })();
 </script>

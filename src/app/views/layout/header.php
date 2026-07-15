@@ -830,13 +830,18 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
                 align-items: center;
                 justify-content: center;
                 border-radius: 50%;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.18);
+                background: rgba(255, 255, 255, 0.22);
+                border: 1px solid rgba(255, 255, 255, 0.5);
                 color: #fff;
-                font-size: 1.05rem;
+                font-size: 1.15rem;
                 text-decoration: none;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
                 -webkit-tap-highlight-color: transparent;
                 transition: background 0.2s ease, transform 0.15s ease;
+            }
+
+            .mobile-header-bell:hover {
+                background: rgba(255, 255, 255, 0.3);
             }
 
             .mobile-header-bell:active {
