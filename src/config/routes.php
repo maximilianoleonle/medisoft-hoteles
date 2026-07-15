@@ -462,6 +462,10 @@ $router->post('/tareas/{id:[0-9]+}/completar', ['controller' => 'Tarea', 'action
 $router->post('/tareas/{id:[0-9]+}/cancelar', ['controller' => 'Tarea', 'action' => 'cancelar']);
 $router->get('/tareas/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'ver']);
 
+// Mantenimiento Plus: detalle con evidencia fotografica (el correctivo basico sigue en /habitaciones).
+$router->get('/mantenimientos/{id:[0-9]+}', ['controller' => 'Mantenimiento', 'action' => 'ver']);
+$router->post('/mantenimientos/{id:[0-9]+}/fotos', ['controller' => 'Mantenimiento', 'action' => 'subirFotos']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);

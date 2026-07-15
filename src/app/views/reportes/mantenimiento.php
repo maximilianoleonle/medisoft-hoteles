@@ -1513,6 +1513,9 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                                     <th>Responsable</th>
                                     <th>Costo</th>
                                     <th>Estado</th>
+                                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                                        <th></th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1585,6 +1588,13 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                                                 <?= mant_safe($state['label']) ?>
                                             </span>
                                         </td>
+                                        <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                                            <td>
+                                                <a href="<?= url('mantenimientos/' . (int)($mantenimiento['id'] ?? 0)) ?>" class="mant-btn is-soft" title="Ver evidencia y detalle">
+                                                    <i class="fas fa-camera"></i> Detalle
+                                                </a>
+                                            </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

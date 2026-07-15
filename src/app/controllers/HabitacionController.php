@@ -1659,9 +1659,36 @@ public function mantenimientoAction() {
                 $motivo,
                 user_id()
             ]);
-            
+
+            $mantenimientoId = (int)$db->lastInsertId();
+
             $db->commit();
-            set_mensaje('Mantenimiento iniciado correctamente', 'success');
+
+            // Evidencia del problema (bloque mantenimiento_plus): las fotos no
+            // son transaccionales; se guardan tras el commit y solo avisan.
+            $avisoFotos = '';
+            if ($mantenimientoId > 0
+                && function_exists('current_hotel_has_module')
+                && current_hotel_has_module('mantenimiento_plus')
+                && !empty($_FILES['fotos_reporte']['name'][0] ?? '')) {
+                require_once __DIR__ . '/../models/MantenimientoFoto.php';
+                $resultadoFotos = (new MantenimientoFoto())->guardarLoteDesdeUpload(
+                    (int)$hotelId,
+                    $mantenimientoId,
+                    'reporte',
+                    $_FILES['fotos_reporte'],
+                    user_id()
+                );
+                $subidas = count($resultadoFotos['fotos']);
+                if ($subidas > 0) {
+                    $avisoFotos = ' Se guardo la evidencia (' . $subidas . ' foto' . ($subidas === 1 ? '' : 's') . ').';
+                }
+                if (!empty($resultadoFotos['errores'])) {
+                    $avisoFotos .= ' Fotos con aviso: ' . implode('; ', $resultadoFotos['errores']) . '.';
+                }
+            }
+
+            set_mensaje('Mantenimiento iniciado correctamente.' . $avisoFotos, 'success');
             $this->registrarNotificacionHabitacion(
                 (int)$id,
                 'mantenimiento_iniciado',
