@@ -266,7 +266,10 @@ class CamaristaController extends Controller {
             $this->redirect('camarista');
         }
 
-        $fecha = (string) $this->getPost('fecha', date('Y-m-d'));
+        // Normalizar igual que el modelo (fecha invalida = hoy) para que el
+        // mensaje de exito diga la fecha que realmente quedo guardada.
+        $fechaTs = strtotime(trim((string) $this->getPost('fecha', '')));
+        $fecha = date('Y-m-d', $fechaTs ?: time());
         $trabajadorIds = [];
         $raw = $this->getPost('trabajador_ids', []);
         if (is_array($raw)) {
