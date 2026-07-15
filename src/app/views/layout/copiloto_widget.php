@@ -333,6 +333,30 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-enlace:active { transform: translateY(0) scale(.98); }
 .cop-link { color: var(--brand-primary, #1B2746); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .cop-link:hover { opacity: .8; }
+/* ---- Microvisualizaciones inline (CSS puro, cromadas desde --brand-*) ---- */
+.cop-viz { margin-top: 10px; }
+.cop-viz-cols { display: flex; align-items: flex-end; gap: 5px; height: 64px; padding: 2px 1px 0; }
+.cop-viz-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.cop-viz-col-bar { width: 100%; max-width: 26px; min-height: 3px; border-radius: 5px 5px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #fff), var(--brand-primary, #1B2746)); transform-origin: bottom; animation: cop-viz-crece .5s cubic-bezier(.22,1,.36,1) both; }
+.cop-viz-col.destacada .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-accent, #BD9441) 55%, #fff), var(--brand-accent, #BD9441)); box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--brand-accent, #BD9441) 80%, transparent); }
+.cop-viz-col-lbl { font-size: .6rem; line-height: 1; color: #7C8496; white-space: nowrap; }
+.cop-viz-rows { display: flex; flex-direction: column; gap: 6px; }
+.cop-viz-row { display: flex; align-items: center; gap: 8px; }
+.cop-viz-row-lbl { flex: none; width: 84px; font-size: .7rem; color: #55607A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cop-viz-track { flex: 1; height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #EFECE3); overflow: hidden; display: block; }
+.cop-viz-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 62%, var(--brand-accent, #BD9441))); transform-origin: left; animation: cop-viz-crece-x .55s cubic-bezier(.22,1,.36,1) both; }
+.cop-viz-row.destacada .cop-viz-fill { background: linear-gradient(90deg, var(--brand-accent, #BD9441), color-mix(in srgb, var(--brand-accent, #BD9441) 62%, var(--brand-primary, #1B2746))); }
+.cop-viz-val { flex: none; font-size: .7rem; font-weight: 700; color: var(--brand-primary, #1B2746); }
+@keyframes cop-viz-crece { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
+@keyframes cop-viz-crece-x { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+html[data-theme="dark"] .cop-viz-col-lbl { color: #8A8478; }
+html[data-theme="dark"] .cop-viz-row-lbl { color: #C9C3B4; }
+html[data-theme="dark"] .cop-viz-track { background: rgba(239,233,220,.1); }
+html[data-theme="dark"] .cop-viz-val { color: #EFE9DC; }
+html[data-theme="dark"] .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-primary, #1B2746) 45%, #EFE9DC), color-mix(in srgb, var(--brand-primary, #1B2746) 70%, #EFE9DC)); }
+html[data-theme="dark"] .cop-viz-col.destacada .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-accent, #BD9441) 60%, #EFE9DC), var(--brand-accent, #BD9441)); }
+html[data-theme="dark"] .cop-viz-fill { background: linear-gradient(90deg, color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #EFE9DC), color-mix(in srgb, var(--brand-primary, #1B2746) 45%, var(--brand-accent, #BD9441))); }
+
 /* Deep-links de respuesta: botones estilo chip, cromados desde --brand-*. */
 .cop-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .cop-accion { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--brand-primary, #1B2746); text-decoration: none; padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, #D8D4C9); border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff); transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background .18s ease, border-color .18s ease; }
@@ -401,6 +425,8 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     .cop-chip,
     .cop-enlace,
     .cop-accion,
+    .cop-viz-col-bar,
+    .cop-viz-fill,
     .cop-foot button { animation: none !important; transition: opacity .12s ease, visibility 0s !important; }
     #cop-panel { transform: none !important; }
 }
@@ -745,6 +771,11 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         var fuente = data.fuente || 'fallback';
         var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
         html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
+        // Microvisualizacion inline (CSS puro): la cifra ya viene en el texto,
+        // la grafica es apoyo visual (aria-hidden).
+        if (data.viz && data.viz.items && data.viz.items.length) {
+            html += vizHtml(data.viz);
+        }
         // Deep-links: botones de accion [{label, url}] (solo navegacion).
         // Si vienen, sustituyen al enlace suelto para no duplicar destinos.
         var acciones = (data.acciones || []).filter(function (a) { return a && a.url; }).slice(0, 3);
@@ -760,6 +791,38 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         burbuja.classList.remove('cop-loading');
         burbuja.innerHTML = '<span class="cop-reveal">' + html + '</span>';
         body.scrollTop = body.scrollHeight;
+    }
+
+    // Mini-grafica en CSS puro a partir de {tipo: 'columnas'|'barras', items:
+    // [{etiqueta, valor, pct, destacar}]}. Todo texto pasa por escapar() y el
+    // porcentaje se acota 0-100 tambien aqui.
+    function vizHtml(viz) {
+        var items = (viz.items || []).slice(0, 8);
+        var clamp = function (p) { return Math.max(0, Math.min(100, parseInt(p, 10) || 0)); };
+        var h = '';
+        if (viz.tipo === 'columnas') {
+            h += '<div class="cop-viz cop-viz-cols" aria-hidden="true">';
+            items.forEach(function (it) {
+                var pct = clamp(it.pct);
+                h += '<div class="cop-viz-col' + (it.destacar ? ' destacada' : '') + '" title="' + escapar((it.etiqueta || '') + ': ' + (it.valor || '')) + '">' +
+                        '<div class="cop-viz-col-bar" style="height:' + Math.max(pct, 4) + '%"></div>' +
+                        '<span class="cop-viz-col-lbl">' + escapar(it.etiqueta || '') + '</span>' +
+                    '</div>';
+            });
+            h += '</div>';
+            return h;
+        }
+        h += '<div class="cop-viz cop-viz-rows" aria-hidden="true">';
+        items.forEach(function (it) {
+            var pct = clamp(it.pct);
+            h += '<div class="cop-viz-row' + (it.destacar ? ' destacada' : '') + '">' +
+                    '<span class="cop-viz-row-lbl">' + escapar(it.etiqueta || '') + '</span>' +
+                    '<span class="cop-viz-track"><span class="cop-viz-fill" style="width:' + Math.max(pct, 2) + '%"></span></span>' +
+                    '<span class="cop-viz-val">' + escapar(it.valor || '') + '</span>' +
+                '</div>';
+        });
+        h += '</div>';
+        return h;
     }
 
     // Confirmacion humana antes de ejecutar (msConfirm del sistema; si no

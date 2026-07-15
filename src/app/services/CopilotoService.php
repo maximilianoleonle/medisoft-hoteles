@@ -483,7 +483,7 @@ class CopilotoService
                 $enlace = $this->tieneModulo('forecast', $hotelId)
                     ? ['url' => 'forecast', 'texto' => 'Ver forecast completo']
                     : ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'];
-                return ['texto' => $texto, 'enlace' => $enlace];
+                return ['texto' => $texto, 'enlace' => $enlace, 'viz' => $this->vizOcupacionSemana($sem)];
 
             case 'habitaciones_estado':
                 $he = $this->habitacionesPorEstado($hotelId);
@@ -576,10 +576,15 @@ class CopilotoService
                 } else {
                     $veredicto = 'Vas **igual** que a estas alturas del mes pasado.';
                 }
+                $maxAbs = max(abs($cmp['netoActualNum']), abs($cmp['netoPasadoNum']), 1);
                 return [
                     'texto' => "Comparando los primeros {$cmp['dia']} dias del mes: en {$cmp['mesActual']} llevas **\${$cmp['netoActual']}** de ganancia neta, "
                         . "contra **\${$cmp['netoPasado']}** en el mismo tramo de {$cmp['mesPasado']}.\n{$veredicto}",
                     'enlace' => $this->tieneModulo('reportes', $hotelId) ? ['url' => 'reportes', 'texto' => 'Ver reportes'] : ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                    'viz' => ['tipo' => 'barras', 'items' => [
+                        ['etiqueta' => ucfirst($cmp['mesActual']), 'valor' => '$' . $cmp['netoActual'], 'pct' => (int) round(abs($cmp['netoActualNum']) * 100 / $maxAbs), 'destacar' => $cmp['netoActualNum'] >= $cmp['netoPasadoNum']],
+                        ['etiqueta' => ucfirst($cmp['mesPasado']), 'valor' => '$' . $cmp['netoPasado'], 'pct' => (int) round(abs($cmp['netoPasadoNum']) * 100 / $maxAbs), 'destacar' => $cmp['netoPasadoNum'] > $cmp['netoActualNum']],
+                    ]],
                 ];
 
             case 'ganancias_dia':
@@ -622,9 +627,15 @@ class CopilotoService
                 if (!$pm['hay']) {
                     return ['texto' => "Aun no tengo ingresos registrados este mes ({$pm['mes']}) para separarlos por metodo.", 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
                 }
+                $maxPm = max($pm['efectivo_num'], $pm['tarjeta_num'], $pm['transferencia_num'], 1);
                 return [
                     'texto' => "Ingresos de {$pm['mes']} por metodo: **efectivo \${$pm['efectivo']}**, **tarjeta \${$pm['tarjeta']}**, transferencia \${$pm['transferencia']}.",
                     'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                    'viz' => ['tipo' => 'barras', 'items' => [
+                        ['etiqueta' => 'Efectivo', 'valor' => '$' . $pm['efectivo'], 'pct' => (int) round($pm['efectivo_num'] * 100 / $maxPm)],
+                        ['etiqueta' => 'Tarjeta', 'valor' => '$' . $pm['tarjeta'], 'pct' => (int) round($pm['tarjeta_num'] * 100 / $maxPm)],
+                        ['etiqueta' => 'Transferencia', 'valor' => '$' . $pm['transferencia'], 'pct' => (int) round($pm['transferencia_num'] * 100 / $maxPm)],
+                    ]],
                 ];
 
             case 'gastos_categoria':
@@ -1731,8 +1742,43 @@ class CopilotoService
             'efectivo' => number_format($out['efectivo'], 2),
             'tarjeta' => number_format($out['tarjeta'], 2),
             'transferencia' => number_format($out['transferencia'], 2),
+            'efectivo_num' => $out['efectivo'],
+            'tarjeta_num' => $out['tarjeta'],
+            'transferencia_num' => $out['transferencia'],
             'mes' => $this->nombreMes((int) date('n')),
         ];
+    }
+
+    /**
+     * Mini-grafica de columnas (una por dia) para la ocupacion de los
+     * proximos 7 dias. El dia mas fuerte va destacado; los porcentajes ya
+     * vienen acotados 0-100 por construccion.
+     */
+    private function vizOcupacionSemana(array $sem): ?array
+    {
+        if (empty($sem['por_dia']) || (int) $sem['activas'] <= 0) {
+            return null;
+        }
+
+        $diasCortos = ['Mon' => 'lun', 'Tue' => 'mar', 'Wed' => 'mié', 'Thu' => 'jue', 'Fri' => 'vie', 'Sat' => 'sáb', 'Sun' => 'dom'];
+        $mejorPct = -1;
+        $items = [];
+        foreach ($sem['por_dia'] as $fecha => $habs) {
+            $ts = strtotime((string) $fecha);
+            $pct = (int) round((int) $habs * 100 / (int) $sem['activas']);
+            $items[] = [
+                'etiqueta' => ($diasCortos[date('D', $ts)] ?? '') . ' ' . date('j', $ts),
+                'valor' => $pct . '%',
+                'pct' => max(0, min(100, $pct)),
+            ];
+            $mejorPct = max($mejorPct, $pct);
+        }
+        foreach ($items as &$item) {
+            $item['destacar'] = $mejorPct > 0 && $item['pct'] === $mejorPct;
+        }
+        unset($item);
+
+        return ['tipo' => 'columnas', 'items' => $items];
     }
 
     /** Top 3 categorias de gasto del mes en curso. */
