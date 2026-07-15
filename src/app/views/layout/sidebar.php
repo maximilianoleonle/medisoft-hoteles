@@ -38,8 +38,9 @@ $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActi
 $mostrarAuditoria = $menuModuloActivo('auditoria') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-// Vigilancia financiera: gating temporal en ia_ejecutiva (al monetizar, usar su propio modulo).
-$mostrarVigilanciaFinanciera = $mostrarIaEjecutiva;
+// Guardian (vigilancia financiera): gating temporal en ia_ejecutiva (al monetizar, usar su
+// propio modulo) + permiso guardian.view: el informe nombra usuarios, solo direccion lo ve.
+$mostrarVigilanciaFinanciera = $mostrarIaEjecutiva && function_exists('can') && can('guardian.view');
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);

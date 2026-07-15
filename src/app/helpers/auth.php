@@ -337,9 +337,11 @@ function current_hotel_role_clave() {
 
     try {
         $db = Database::getInstance();
+        // role_id ya viene de hotel_usuarios del hotel actual; el hotel_id
+        // extra es cinturon de seguridad multi-tenant.
         $stmt = $db->query(
-            "SELECT clave FROM roles WHERE id = ? LIMIT 1",
-            [(int) $roleId]
+            "SELECT clave FROM roles WHERE id = ? AND hotel_id = ? LIMIT 1",
+            [(int) $roleId, (int) current_hotel_id()]
         );
         $row = $stmt ? $stmt->fetch() : null;
         return $cache[$roleId] = $row ? (string) $row['clave'] : null;

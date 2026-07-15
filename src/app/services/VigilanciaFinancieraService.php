@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../models/ConciliacionFinanciera.php';
+require_once __DIR__ . '/../models/GuardianPatrones.php';
 
 /**
  * VigilanciaFinancieraService (bloque premium: vigilancia_financiera)
@@ -19,14 +20,20 @@ require_once __DIR__ . '/../models/ConciliacionFinanciera.php';
  *  - Nivel 2 (claude-opus-4-8): hay hallazgos -> Opus interpreta el resumen
  *    agregado. Suficiente para la v1 (el payload es compacto) y a mitad de
  *    precio del modelo mayor.
- *  - Nivel 3 (claude-fable-5, FUTURO v2): cuando se enriquezca el prompt con
- *    los movimientos crudos detras de las top-alertas (montos, referencias,
- *    timestamps), escalar a Fable 5 para deteccion de patrones (constante
- *    MODELO_FORENSE_V2 abajo). Notas del API de Fable 5 para ese momento:
+ *  - Nivel 3 (claude-fable-5, ACTIVO desde el Guardian v2): cuando
+ *    GuardianPatrones detecta patrones de comportamiento por usuario, el
+ *    prompt se enriquece con los movimientos crudos detras de las top-alertas
+ *    (montos, referencias, timestamps, usuario) y escala a Fable 5
+ *    (MODELO_FORENSE_V2). Notas del API de Fable 5 (vigentes, NO "corregir"):
  *    OMITIR el campo 'thinking' (siempre activo; disabled=400), sin
  *    temperature/top_p/top_k, effort via output_config, fallback opt-in a
  *    opus-4-8 (header anthropic-beta: server-side-fallback-2026-06-01 +
  *    fallbacks:[{model:...}]), timeout curl 300s, requiere retencion 30 dias.
+ *    La respuesta puede traer stop_reason 'refusal' (clasificadores) y bloques
+ *    'fallback' en content: solo se leen los bloques de tipo text.
+ *
+ *    VISIBILIDAD: el informe v2 nombra usuarios. Todo lo que lo muestre
+ *    (vista, push, Copiloto) debe gatearse con el permiso guardian.view.
  *
  * Integracion: POST https://api.anthropic.com/v1/messages (curl REST, sin SDK;
  * mismo patron que IaEjecutivaService/CopilotoIaService). Notas del API de
@@ -42,7 +49,7 @@ class VigilanciaFinancieraService
     private const API_URL = 'https://api.anthropic.com/v1/messages';
     private const API_VERSION = '2023-06-01';
     private const MODELO = 'claude-opus-4-8';
-    /** Reservado para la v2 forense con movimientos crudos (ver docblock). */
+    /** Nivel 3: forense con movimientos crudos y patrones por usuario. */
     private const MODELO_FORENSE_V2 = 'claude-fable-5';
     private const MODELO_PLANTILLA = 'plantilla';
     private const MAX_TOKENS = 4096;
@@ -114,10 +121,22 @@ class VigilanciaFinancieraService
         $totales = (array) ($reporte['totales_alertas'] ?? []);
         $hallazgos = (int) ($totales['hallazgos'] ?? 0);
 
-        // ── Nivel 1: conciliacion limpia -> informe verde de plantilla, $0 ──
-        if ((int) ($totales['error'] ?? 0) === 0 && (int) ($totales['warning'] ?? 0) === 0) {
+        // Patrones de comportamiento por usuario (Guardian, determinista y $0).
+        // Si el motor de patrones falla, se degrada al comportamiento v1 sin
+        // tumbar el informe de integridad.
+        $patrones = null;
+        try {
+            $patrones = (new GuardianPatrones())->reporteReadOnlyPorHotel($hotelId);
+        } catch (Throwable $e) {
+            error_log('Vigilancia financiera: error en GuardianPatrones: ' . $e->getMessage());
+        }
+        $patronesTotales = (array) ($patrones['totales'] ?? ['alta' => 0, 'media' => 0, 'hallazgos' => 0]);
+        $hayPatrones = ((int) ($patronesTotales['alta'] ?? 0) + (int) ($patronesTotales['media'] ?? 0)) > 0;
+
+        // ── Nivel 1: integridad Y patrones limpios -> plantilla verde, $0 ──
+        if ((int) ($totales['error'] ?? 0) === 0 && (int) ($totales['warning'] ?? 0) === 0 && !$hayPatrones) {
             $respuesta = [
-                'texto' => $this->informeVerdePlantilla($reporte),
+                'texto' => $this->informeVerdePlantilla($reporte, $patrones),
                 'modelo' => self::MODELO_PLANTILLA,
                 'tokens_entrada' => 0,
                 'tokens_salida' => 0,
@@ -128,13 +147,15 @@ class VigilanciaFinancieraService
                 'success' => true,
                 'informe' => (string) $respuesta['texto'],
                 'hallazgos_deterministas' => 0,
+                'hallazgos_patrones' => 0,
+                'nivel' => 1,
                 'generado_en' => date('Y-m-d H:i:s'),
                 'modelo' => self::MODELO_PLANTILLA,
                 'desde_cache' => false,
             ];
         }
 
-        // ── Nivel 2: hay hallazgos -> Opus 4.8 interpreta ──
+        // ── Nivel 2/3: hay hallazgos -> el analista interpreta ──
         if (!$this->configurado()) {
             return [
                 'success' => false,
@@ -142,7 +163,20 @@ class VigilanciaFinancieraService
             ];
         }
 
-        $respuesta = $this->llamarClaude($this->promptSistema(), $this->promptUsuario($fecha, $reporte));
+        if ($hayPatrones && $patrones !== null) {
+            // Nivel 3: patrones por usuario -> forense (Fable 5) con los
+            // movimientos crudos detras de las top-alertas.
+            $nivel = 3;
+            $respuesta = $this->llamarClaude(
+                $this->promptSistemaForense(),
+                $this->promptUsuarioForense($fecha, $reporte, $patrones),
+                self::MODELO_FORENSE_V2
+            );
+        } else {
+            // Nivel 2: solo integridad agregada -> Opus 4.8 (v1).
+            $nivel = 2;
+            $respuesta = $this->llamarClaude($this->promptSistema(), $this->promptUsuario($fecha, $reporte));
+        }
         if (!$respuesta['success']) {
             return $respuesta;
         }
@@ -153,6 +187,8 @@ class VigilanciaFinancieraService
             'success' => true,
             'informe' => (string) $respuesta['texto'],
             'hallazgos_deterministas' => $hallazgos,
+            'hallazgos_patrones' => (int) ($patronesTotales['hallazgos'] ?? 0),
+            'nivel' => $nivel,
             'generado_en' => date('Y-m-d H:i:s'),
             'modelo' => (string) ($respuesta['modelo'] ?? self::MODELO),
             'desde_cache' => false,
@@ -162,7 +198,7 @@ class VigilanciaFinancieraService
     // ───────────────────────── Nivel 1: plantilla verde ─────────────────────────
 
     /** Informe verde sin IA: todo cuadro, se narra con los numeros del resumen. */
-    private function informeVerdePlantilla(array $reporte): string
+    private function informeVerdePlantilla(array $reporte, ?array $patrones = null): string
     {
         $r = (array) ($reporte['resumen'] ?? []);
         $cxc = (array) ($r['cxc'] ?? []);
@@ -187,6 +223,16 @@ class VigilanciaFinancieraService
             . ' y ' . (int) ($cxp['pagos'] ?? 0) . ' pagos a proveedor por ' . $monto($cxp['pagos_importe'] ?? 0) . '.';
         $lineas[] = '- Caja: ' . ((int) ($caja['movimientos_cxc'] ?? 0) + (int) ($caja['movimientos_cxp'] ?? 0))
             . ' movimientos financieros conciliados contra sus cortes.';
+
+        if ($patrones !== null) {
+            $reglas = count((array) ($patrones['alertas'] ?? []));
+            $vol = (array) ($patrones['volumen'] ?? []);
+            $lineas[] = '- Guardian: ' . $reglas . ' patrones de comportamiento vigilados sobre '
+                . ((int) ($vol['movimientos'] ?? 0) + (int) ($vol['reservaciones'] ?? 0))
+                . ' operaciones de los ultimos ' . (int) ($patrones['ventana']['dias'] ?? 30)
+                . ' dias, sin nada que revisar.';
+        }
+
         $lineas[] = '';
         $lineas[] = 'No se requiere ninguna accion hoy. La proxima revision volvera a verificar todo automaticamente.';
 
@@ -258,32 +304,141 @@ class VigilanciaFinancieraService
         return "Reporte de conciliacion financiera del hotel al {$fecha}:\n\n" . ($json ?: '{}');
     }
 
-    // ───────────────────────── API de Claude (nivel 2) ─────────────────────────
+    // ───────────────────────── Prompts (nivel 3, forense) ─────────────────────────
+
+    private function promptSistemaForense(): string
+    {
+        return 'Eres un auditor financiero forense que asesora al dueno de un hotel pequeno o mediano '
+            . 'en Mexico. Recibes dos bloques de datos generados por reglas automaticas read-only: '
+            . '(1) la conciliacion de integridad de los libros (CxC, CxP y Caja) y (2) los patrones de '
+            . 'comportamiento por usuario del Guardian, cada uno con los movimientos crudos que lo '
+            . "respaldan (montos, fechas, referencias) y el contexto estadistico del hotel.\n\n"
+            . "El dueno no es tecnico y este informe puede afectar relaciones laborales reales, asi que "
+            . "el tono importa tanto como el analisis:\n"
+            . "- JAMAS uses palabras como robo, fraude, culpable, ladron o hormiga. Habla de 'patron a "
+            . "revisar' y 'conviene confirmarlo con el equipo'.\n"
+            . "- Nunca afirmes mala fe: la estadistica señala donde mirar, no dictamina. Distingue "
+            . "siempre 'posible' de 'confirmado'.\n"
+            . "- En cada hallazgo clasifica explicitamente si el patron PARECE UN ERROR HONESTO (captura, "
+            . "proceso mal entendido, turno compartido) o si es UN PATRON QUE CONVIENE REVISAR con calma, "
+            . "y explica en una frase por que lo clasificas asi (frecuencia, montos, combinacion de señales).\n\n"
+            . "Estructura del informe (Markdown):\n"
+            . "1. Una linea de semaforo: 🟡 Amarillo (revisar esta semana) o 🔴 Rojo (revisar hoy), con "
+            . "la razon en una frase.\n"
+            . "2. Seccion \"Hallazgos por riesgo\" ordenada de mayor a menor riesgo (maximo 6). Por cada "
+            . "hallazgo: que se detecto y a quien involucra (usa el nombre solo como referencia de con "
+            . "quien confirmar); por que es atipico VS el patron del hotel (usa la mediana o el umbral que "
+            . "viene en los datos); si parece error honesto o patron a revisar y por que; y UNA sola "
+            . "accion concreta recomendada (ej. 'revisa el corte #123 del martes con Ana', no una lista).\n"
+            . "3. Seccion \"Historia completa\" (opcional): cuando varias señales del mismo usuario o del "
+            . "mismo dia cuenten una sola historia, narrala en 2-3 frases. Si no la hay, omite la seccion.\n"
+            . "4. Cierra con el proximo paso mas importante en una oracion.\n\n"
+            . "Reglas estrictas: usa SOLO los datos recibidos, jamas inventes cifras, fechas ni nombres. "
+            . "Escribe montos como \$1,234.56. Una regla en 'ok' o con conteo 0 esta bien: no la conviertas "
+            . "en problema. Prioriza severidad alta sobre media y error sobre warning. Si el volumen del "
+            . "hotel es bajo, dilo como atenuante. No menciones que usas un modelo externo ni el formato "
+            . 'de los datos.';
+    }
+
+    private function promptUsuarioForense(string $fecha, array $reporte, array $patrones): string
+    {
+        // Integridad compacta (como el nivel 2).
+        $alertasIntegridad = [];
+        foreach ((array) ($reporte['alertas'] ?? []) as $a) {
+            $alertasIntegridad[] = [
+                'tipo' => $a['tipo'] ?? '',
+                'severidad' => $a['severidad'] ?? '',
+                'codigo' => $a['codigo'] ?? '',
+                'titulo' => $a['titulo'] ?? '',
+                'conteo' => (int) ($a['conteo'] ?? 0),
+                'detalle' => $a['detalle'] ?? '',
+            ];
+        }
+
+        // Patrones: solo las reglas con hallazgo, con sus usuarios y los casos
+        // crudos (ya vienen limitados a 10 por usuario desde GuardianPatrones).
+        $alertasPatrones = [];
+        foreach ((array) ($patrones['alertas'] ?? []) as $a) {
+            if ((int) ($a['conteo'] ?? 0) === 0) {
+                continue;
+            }
+            $alertasPatrones[] = [
+                'codigo' => $a['codigo'] ?? '',
+                'titulo' => $a['titulo'] ?? '',
+                'severidad' => $a['severidad'] ?? '',
+                'detalle' => $a['detalle'] ?? '',
+                'usuarios' => $a['usuarios'] ?? [],
+            ];
+        }
+
+        $payload = [
+            'consultado_en' => $reporte['consultado_en'] ?? $fecha,
+            'resumen_libros' => $reporte['resumen'] ?? [],
+            'integridad' => [
+                'totales' => $reporte['totales_alertas'] ?? [],
+                'alertas' => $alertasIntegridad,
+            ],
+            'patrones_guardian' => [
+                'ventana' => $patrones['ventana'] ?? [],
+                'volumen' => $patrones['volumen'] ?? [],
+                'umbrales' => $patrones['config'] ?? [],
+                'totales' => $patrones['totales'] ?? [],
+                'alertas' => $alertasPatrones,
+                'contexto_por_persona' => $patrones['por_persona']['promedio_hotel'] ?? [],
+            ],
+        ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+
+        // Techo defensivo: los casos crudos crecen con los hallazgos.
+        if ($json !== false && strlen($json) > 300000) {
+            $json = substr($json, 0, 300000);
+        }
+
+        return "Datos de vigilancia del hotel al {$fecha} (integridad de libros + patrones de comportamiento del Guardian):\n\n" . ($json ?: '{}');
+    }
+
+    // ───────────────────────── API de Claude (niveles 2 y 3) ─────────────────────────
 
     /** Devuelve ['success', 'texto', 'modelo', 'tokens_entrada', 'tokens_salida', 'message']. */
-    private function llamarClaude(string $sistema, string $usuario): array
+    private function llamarClaude(string $sistema, string $usuario, string $modelo = self::MODELO): array
     {
-        $payload = json_encode([
-            'model' => self::MODELO,
+        $cuerpo = [
+            'model' => $modelo,
             'max_tokens' => self::MAX_TOKENS,
-            'thinking' => ['type' => 'adaptive'],
             'system' => $sistema,
             'messages' => [
                 ['role' => 'user', 'content' => $usuario],
             ],
-        ], JSON_UNESCAPED_UNICODE);
+        ];
+        $headers = [
+            'Content-Type: application/json',
+            'x-api-key: ' . trim((string) getenv('ANTHROPIC_API_KEY')),
+            'anthropic-version: ' . self::API_VERSION,
+        ];
+
+        if ($modelo === self::MODELO_FORENSE_V2) {
+            // Fable 5: thinking siempre activo (se OMITE el campo; enviarlo
+            // 'disabled' es 400), profundidad via output_config.effort, y
+            // fallback opt-in a Opus 4.8 por si los clasificadores rechazan.
+            $cuerpo['output_config'] = ['effort' => 'high'];
+            $cuerpo['fallbacks'] = [['model' => self::MODELO]];
+            $headers[] = 'anthropic-beta: server-side-fallback-2026-06-01';
+            $timeout = 300; // los turnos de Fable 5 pueden tomar minutos
+        } else {
+            $cuerpo['thinking'] = ['type' => 'adaptive'];
+            $timeout = 120;
+        }
+
+        $payload = json_encode($cuerpo, JSON_UNESCAPED_UNICODE);
 
         $ch = curl_init(self::API_URL);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $payload,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'x-api-key: ' . trim((string) getenv('ANTHROPIC_API_KEY')),
-                'anthropic-version: ' . self::API_VERSION,
-            ],
-            CURLOPT_TIMEOUT => 120,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => $timeout,
             CURLOPT_CONNECTTIMEOUT => 10,
         ]);
 
@@ -331,7 +486,9 @@ class VigilanciaFinancieraService
         return [
             'success' => true,
             'texto' => $texto,
-            'modelo' => (string) ($json['model'] ?? self::MODELO),
+            // El API reporta el modelo que realmente respondio (con fallback
+            // puede ser Opus 4.8 aunque se pidiera Fable 5).
+            'modelo' => (string) ($json['model'] ?? $modelo),
             'tokens_entrada' => (int) ($json['usage']['input_tokens'] ?? 0),
             'tokens_salida' => (int) ($json['usage']['output_tokens'] ?? 0),
         ];

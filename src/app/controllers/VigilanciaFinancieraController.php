@@ -23,6 +23,14 @@ class VigilanciaFinancieraController extends Controller {
             require_hotel_module('ia_ejecutiva');
         }
 
+        // El Guardian analiza patrones POR USUARIO: la vista, los endpoints y
+        // el informe se gatean con guardian.view (solo dueno/gerencia). Un
+        // operativo jamas debe ver su perfil de riesgo ni el de un companero.
+        if (!can('guardian.view')) {
+            set_mensaje('No tienes permiso para ver la vigilancia financiera.', 'error');
+            $this->redirect('dashboard');
+        }
+
         return true;
     }
 
