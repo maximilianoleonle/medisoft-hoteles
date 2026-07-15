@@ -75,6 +75,14 @@ class GuardianHallazgoEstado extends Model
                             resumen = VALUES(resumen),
                             detalle_json = VALUES(detalle_json),
                             ultima_vez_en = VALUES(ultima_vez_en),
+                            -- Si un 'resuelto' reaparece con casos nuevos se reabre y se
+                            -- limpia la marca de push para poder avisar otra vez.
+                            -- (notificado_en va ANTES de estado: las asignaciones se
+                            -- evaluan en orden y aqui 'estado' aun es el valor viejo.)
+                            notificado_en = CASE
+                                WHEN estado = 'resuelto' AND VALUES(casos_conteo) > casos_conteo THEN NULL
+                                ELSE notificado_en
+                            END,
                             estado = CASE
                                 WHEN estado = 'resuelto' AND VALUES(casos_conteo) > casos_conteo THEN 'nuevo'
                                 ELSE estado
@@ -157,6 +165,68 @@ class GuardianHallazgoEstado extends Model
         } catch (Throwable $e) {
             error_log('GuardianHallazgoEstado: error al cambiar estado: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /** Hallazgos de severidad alta, nuevos y aun sin push (para alerta inmediata). */
+    public function listarParaNotificar(int $hotelId): array
+    {
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT id, codigo_regla, titulo, severidad
+                 FROM {$this->table}
+                 WHERE hotel_id = ?
+                   AND severidad = 'alta'
+                   AND estado = 'nuevo'
+                   AND notificado_en IS NULL",
+                [$hotelId]
+            );
+            return $stmt ? ($stmt->fetchAll() ?: []) : [];
+        } catch (Throwable $e) {
+            error_log('GuardianHallazgoEstado: error al listar para notificar: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function marcarNotificados(array $ids, int $hotelId): void
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (empty($ids) || $hotelId <= 0 || !$this->tablaDisponible()) {
+            return;
+        }
+
+        try {
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $this->db->query(
+                "UPDATE {$this->table} SET notificado_en = NOW(), updated_at = NOW()
+                 WHERE hotel_id = ? AND id IN ({$placeholders})",
+                array_merge([$hotelId], $ids)
+            );
+        } catch (Throwable $e) {
+            error_log('GuardianHallazgoEstado: error al marcar notificados: ' . $e->getMessage());
+        }
+    }
+
+    /** Hallazgos detectados dentro de un rango (para el digest semanal). */
+    public function contarDetectadosEntre(int $hotelId, string $desde, string $hasta): int
+    {
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return 0;
+        }
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT COUNT(*) FROM {$this->table}
+                 WHERE hotel_id = ? AND detectado_en >= ? AND detectado_en <= ?",
+                [$hotelId, $desde, $hasta]
+            );
+            return $stmt ? (int) $stmt->fetchColumn() : 0;
+        } catch (Throwable $e) {
+            return 0;
         }
     }
 
