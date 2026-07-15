@@ -665,6 +665,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         return u.charAt(0) === '/' || u.indexOf('http') === 0 ? u : BASE + u;
     }
     var ocupado = false;
+    // Memoria de conversacion: el intent que respondio el servidor a la
+    // pregunta anterior; se reenvia para que "¿y manana?" herede el tema.
+    var intentPrevio = '';
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
             ? String(window.MEDISOFT_CONTEXT.hotel_id)
@@ -759,6 +762,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('csrf_token', TOKEN);
         datos.append('pregunta', texto);
         datos.append('ruta', RUTA);
+        datos.append('intent_previo', intentPrevio);
 
         fetch(URL, {
             method: 'POST',
@@ -767,6 +771,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
+                intentPrevio = typeof data.intent === 'string' ? data.intent : '';
                 pintarRespuesta(pensando, data);
                 // Accion ejecutable propuesta por el servidor: confirmar con
                 // msConfirm y solo entonces ejecutar (POST /copiloto/accion).

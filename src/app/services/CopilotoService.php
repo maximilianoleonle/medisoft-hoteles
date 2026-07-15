@@ -36,6 +36,7 @@ class CopilotoService
         'llegadas' => ['Llegadas de hoy', '¿Quién llega hoy?', null],
         'llegadas_manana' => ['Llegadas de mañana', '¿Quién llega mañana?', null],
         'salidas' => ['Salidas de hoy', '¿Quién se va hoy?', null],
+        'salidas_manana' => ['Salidas de mañana', '¿Quién se va mañana?', null],
         'caja' => ['Estado de caja', '¿Cómo voy de caja?', null],
         'ganancias_mes_actual' => ['Ganancias del mes', '¿Cuánto llevo de ganancias este mes?', null],
         'ganancias_mes_pasado' => ['Ganancias del mes pasado', '¿Cuáles fueron las ganancias del mes pasado?', null],
@@ -152,13 +153,18 @@ class CopilotoService
 
     /**
      * Responde una pregunta. Devuelve
-     * ['success', 'texto', 'fuente' => 'reglas'|'ia'|'fallback', 'enlace' => ?['url','texto']].
+     * ['success', 'texto', 'fuente' => 'reglas'|'ia'|'fallback', 'enlace' => ?['url','texto'], 'intent' => ?string].
      *
      * $rutaContexto es la ruta relativa de la pantalla desde la que pregunta el
      * usuario ("reservaciones/ver/12"). Solo sirve para saber DE QUE entidad
      * habla; toda lectura va con scope de hotel y valida el permiso del rol.
+     *
+     * $intentPrevio es el intent que el propio servicio devolvio en la pregunta
+     * anterior del usuario (memoria de conversacion): permite que "¿y manana?"
+     * herede el tema. Viene del cliente pero SOLO decide que plantilla usar;
+     * los datos siempre se leen con scope de hotel.
      */
-    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = ''): array
+    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = '', string $intentPrevio = ''): array
     {
         $pregunta = trim($pregunta);
         if ($pregunta === '') {
@@ -176,7 +182,7 @@ class CopilotoService
             if ($intentCtx !== null) {
                 $r = $this->responderEntidad($hotelId, $intentCtx, $contexto);
                 $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentCtx, 0, 0);
-                return $r + ['success' => true, 'fuente' => 'reglas'];
+                return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentCtx];
             }
         }
 
@@ -186,7 +192,16 @@ class CopilotoService
         $accion = $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
-            return $accion['respuesta'] + ['success' => true, 'fuente' => 'reglas'];
+            return $accion['respuesta'] + ['success' => true, 'fuente' => 'reglas', 'intent' => $accion['intent']];
+        }
+
+        // 0.7) Memoria de conversacion: un seguimiento corto ("¿y manana?",
+        //      "¿y el mes pasado?") hereda el tema de la pregunta anterior.
+        $intentSeguimiento = $this->detectarSeguimiento($norm, $intentPrevio, $hotelId);
+        if ($intentSeguimiento !== null) {
+            $r = $this->responderIntent($hotelId, $intentSeguimiento, $norm);
+            $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentSeguimiento, 0, 0);
+            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentSeguimiento];
         }
 
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
@@ -196,7 +211,7 @@ class CopilotoService
         $faq = $this->detectarFaq($norm, $hotelId);
         if ($faq !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $faq['intent'], 0, 0);
-            return ['success' => true, 'texto' => $faq['texto'], 'fuente' => 'reglas', 'enlace' => $faq['enlace']];
+            return ['success' => true, 'texto' => $faq['texto'], 'fuente' => 'reglas', 'enlace' => $faq['enlace'], 'intent' => $faq['intent']];
         }
 
         // 2) Reglas de datos (deterministas).
@@ -204,7 +219,7 @@ class CopilotoService
         if ($intent !== null) {
             $r = $this->responderIntent($hotelId, $intent, $norm);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intent, 0, 0);
-            return $r + ['success' => true, 'fuente' => 'reglas'];
+            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intent];
         }
 
         // 3) IA opcional para lo abierto.
@@ -242,6 +257,9 @@ class CopilotoService
         }
         if ($tiene(['manana llega', 'llegan manana', 'quien llega manana', 'llegadas de manana', 'entradas de manana', 'reservas de manana'])) {
             return 'llegadas_manana';
+        }
+        if ($tiene(['salen manana', 'se van manana', 'salidas de manana', 'quien se va manana', 'checkouts de manana', 'checkout de manana'])) {
+            return 'salidas_manana';
         }
         if (($tiene(['semana']) && $tiene(['ganancia', 'ingreso', 'vendi', 'gane', 'venta', 'utilidad']))
             || $tiene(['como va la semana', 'como vamos esta semana', 'como va esta semana', 'que tal la semana'])) {
@@ -483,6 +501,19 @@ class CopilotoService
                         ? 'Manana no tienes llegadas programadas.'
                         : "Manana llegan **{$lm['total']} reservacion(es)**" . ($lm['nombres'] !== '' ? ': ' . $lm['nombres'] : '') . '.',
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                ];
+
+            case 'salidas_manana':
+                $sm = $this->reservasPorFecha($hotelId, 'salida', 1);
+                return [
+                    'texto' => $sm['total'] === 0
+                        ? 'Manana no tienes salidas programadas.'
+                        : "Manana salen **{$sm['total']} reservacion(es)**" . ($sm['nombres'] !== '' ? ': ' . $sm['nombres'] : '') . '.',
+                    'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                    'acciones' => $sm['total'] > 0 ? [
+                        ['label' => 'Ver salidas', 'url' => 'reservaciones'],
+                        ['label' => 'Ir a limpieza', 'url' => $this->urlLimpieza($hotelId)],
+                    ] : [],
                 ];
 
             case 'ocupacion_semana':
@@ -822,6 +853,96 @@ class CopilotoService
         }
 
         return ['texto' => $this->textoFallback(), 'enlace' => null];
+    }
+
+    // ───────────────────────── Memoria de conversacion ─────────────────────────
+
+    /**
+     * Resuelve un seguimiento corto contra el intent de la pregunta anterior:
+     * "¿y manana?" tras las llegadas de hoy son las llegadas de manana.
+     * Solo aplica a frases elipticas (cortas, sin tema propio) y solo cambia
+     * QUE plantilla responde; una pregunta completa sigue su camino normal.
+     */
+    private function detectarSeguimiento(string $norm, string $intentPrevio, int $hotelId): ?string
+    {
+        $intentPrevio = strtolower(trim($intentPrevio));
+        if ($intentPrevio === '' || !preg_match('/^[a-z0-9_:]{1,40}$/', $intentPrevio)) {
+            return null;
+        }
+
+        // Forma eliptica: se quita puntuacion y el "y" inicial; lo que queda
+        // debe ser corto ("manana", "el mes pasado", "las bajas").
+        $limpia = trim((string) preg_replace('/[¿?¡!.,]/u', ' ', $norm));
+        $limpia = trim((string) preg_replace('/^y\s+/', '', $limpia));
+        $limpia = trim((string) preg_replace('/\s+/', ' ', $limpia));
+        if ($limpia === '' || mb_strlen($limpia) > 22) {
+            return null;
+        }
+
+        // Familia del tema anterior -> transiciones por modificador. El norm
+        // original se pasa a responderIntent, asi "y el jueves" o "y diciembre"
+        // resuelven su dia/mes con los resolvers de siempre.
+        $familias = [
+            'llegadas' => 'llegadas', 'llegadas_manana' => 'llegadas',
+            'salidas' => 'salidas', 'salidas_manana' => 'salidas',
+            'ocupacion' => 'ocupacion', 'ocupacion_semana' => 'ocupacion',
+            'ganancias_dia' => 'ganancias', 'ganancias_semana' => 'ganancias',
+            'ganancias_mes_actual' => 'ganancias', 'ganancias_mes_pasado' => 'ganancias',
+            'comparar_meses' => 'ganancias', 'dia_top' => 'ganancias',
+            'reservaciones_mes' => 'reservaciones',
+            'calificacion' => 'reputacion', 'calificaciones_bajas' => 'reputacion',
+        ];
+        $familia = $familias[$intentPrevio] ?? null;
+        if ($familia === null) {
+            return null;
+        }
+
+        $dias = 'lunes|martes|miercoles|jueves|viernes|sabado|domingo|ayer|antier|anteayer|hoy';
+        $meses = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|proximo mes|mes que viene|este mes';
+
+        // [familia => [patron regex sobre $limpia => intent destino]] en orden
+        // (los patrones mas especificos primero).
+        $transiciones = [
+            'llegadas' => [
+                '/\bmanana\b/' => 'llegadas_manana',
+                '/\bhoy\b/' => 'llegadas',
+                '/\bsalidas?\b|se van/' => 'salidas',
+            ],
+            'salidas' => [
+                '/\bmanana\b/' => 'salidas_manana',
+                '/\bhoy\b/' => 'salidas',
+                '/\bllegadas?\b|llegan/' => 'llegadas',
+            ],
+            'ocupacion' => [
+                '/\bsemana\b|proximos dias/' => 'ocupacion_semana',
+                '/\bhoy\b/' => 'ocupacion',
+            ],
+            'ganancias' => [
+                '/mes pasado|mes anterior/' => 'ganancias_mes_pasado',
+                '/este mes|mes actual/' => 'ganancias_mes_actual',
+                '/\bsemana\b/' => 'ganancias_semana',
+                '/\b(' . $dias . ')\b/' => 'ganancias_dia',
+            ],
+            'reservaciones' => [
+                '/\b(' . $meses . ')\b/' => 'reservaciones_mes',
+            ],
+            'reputacion' => [
+                '/\bbajas?\b|\bmalas?\b|quejas/' => 'calificaciones_bajas',
+                '/promedio|general/' => 'calificacion',
+            ],
+        ];
+
+        foreach (($transiciones[$familia] ?? []) as $patron => $intentNuevo) {
+            if (preg_match($patron, $limpia)) {
+                // Los temas de bloque respetan su gate igual que siempre.
+                if (in_array($intentNuevo, ['calificacion', 'calificaciones_bajas'], true) && !$this->tieneModulo('reputacion', $hotelId)) {
+                    return null;
+                }
+                return $intentNuevo;
+            }
+        }
+
+        return null;
     }
 
     // ───────────────────────── Contexto de pantalla ─────────────────────────

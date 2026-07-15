@@ -43,10 +43,13 @@ class CopilotoController extends Controller {
         // ("reservaciones/ver/12"). Solo orienta la respuesta; el servicio hace
         // todas sus lecturas con scope de hotel y validando el permiso del rol.
         $ruta = mb_substr((string) $this->getPost('ruta', ''), 0, 200);
+        // Memoria de conversacion: el intent que este mismo endpoint devolvio
+        // en la pregunta anterior ("¿y manana?" hereda el tema).
+        $intentPrevio = mb_substr((string) $this->getPost('intent_previo', ''), 0, 40);
 
         try {
             $servicio = new CopilotoService();
-            $resultado = $servicio->responder($hotelId, $pregunta, user_id(), $ruta);
+            $resultado = $servicio->responder($hotelId, $pregunta, user_id(), $ruta, $intentPrevio);
         } catch (Throwable $e) {
             error_log('Copiloto: error al responder: ' . $e->getMessage());
             View::renderJSON(['success' => false, 'texto' => 'Ocurrio un error. Intenta de nuevo.', 'fuente' => 'fallback'], 500);
