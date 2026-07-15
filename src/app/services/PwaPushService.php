@@ -476,6 +476,22 @@ class PwaPushService {
     }
 
     private function rolesDestinoParaNotificacion(array $notificacion): array {
+        $roles = $this->rolesDestinoBase($notificacion);
+
+        // El Dueno (remoto) NO recibe el ruido operativo del hotel: solo su
+        // briefing matutino (ia_ejecutiva) y las alertas del Guardian
+        // financiero (hook listo: cualquier notificacion con tipo guardian_*
+        // le llegara cuando ese modulo las emita).
+        $tipo = strtolower((string)($notificacion['tipo'] ?? ''));
+        if ($tipo === 'regla_ia_resumen_diario' || strpos($tipo, 'guardian') !== false) {
+            $roles[] = 'dueno_remoto';
+            $roles = array_values(array_unique($roles));
+        }
+
+        return $roles;
+    }
+
+    private function rolesDestinoBase(array $notificacion): array {
         $rolesConfigurados = $this->parseRolesDestino($notificacion['rol_destino'] ?? '');
         if (!empty($rolesConfigurados)) {
             return $this->expandirRolesDestino($rolesConfigurados);

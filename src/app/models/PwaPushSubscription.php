@@ -203,21 +203,31 @@ class PwaPushSubscription extends Model {
         }
 
         $placeholders = implode(', ', array_fill(0, count($roles), '?'));
-        $params = array_merge([$hotelId], $roles, $roles);
+        $params = array_merge([$hotelId], $roles, $roles, $roles);
 
+        // El rol efectivo del usuario es la CLAVE de su rol configurable
+        // (hotel_usuarios.role_id -> roles.clave), igual que can(). El ENUM
+        // hu.rol queda como fallback para membresias sin role_id: los roles
+        // custom guardan 'recepcionista' ahi solo por compatibilidad y no
+        // deben rutearse por el (p.ej. el Dueno remoto no es recepcion).
         $stmt = $this->db->query(
             "SELECT s.*
              FROM pwa_push_subscriptions s
              LEFT JOIN hotel_usuarios hu
                ON hu.hotel_id = s.hotel_id
               AND hu.usuario_id = s.usuario_id
+             LEFT JOIN roles r
+               ON r.id = hu.role_id
              LEFT JOIN usuarios u
                ON u.id = s.usuario_id
              WHERE s.hotel_id = ?
                AND s.activo = 1
                AND u.activo = 1
                AND (
-                    (hu.id IS NOT NULL AND hu.activo = 1 AND hu.rol IN ({$placeholders}))
+                    (hu.id IS NOT NULL AND hu.activo = 1 AND (
+                        (r.clave IS NOT NULL AND r.clave IN ({$placeholders}))
+                        OR (r.clave IS NULL AND hu.rol IN ({$placeholders}))
+                    ))
                     OR (hu.id IS NULL AND u.rol IN ({$placeholders}))
                )
              ORDER BY s.last_seen_at DESC, s.id DESC",

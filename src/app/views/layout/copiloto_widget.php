@@ -25,6 +25,10 @@ $copilotoLogoNocheUrl = function_exists('asset_version')
 $copU = function ($ruta) { return function_exists('url') ? url($ruta) : '/' . ltrim($ruta, '/'); };
 $copMod = function ($clave) { return function_exists('hotel_menu_module_enabled') ? hotel_menu_module_enabled($clave) : true; };
 
+// En el Modo Dueno (/dueno) los chips hablan el idioma del dueno remoto:
+// preguntas de negocio, no de operacion.
+$copEsModoDueno = (bool) preg_match('#/dueno(/|$)#', parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+
 $copSecciones = [
     // Core: siempre disponibles. Las negritas inline llevan a la pantalla; los
     // anclas de accion exacta los pone cada respuesta del copiloto en su enlace.
@@ -400,6 +404,15 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     </div>
     <div class="cop-body" id="cop-body">
         <div class="cop-msg bot">
+            <?php if ($copEsModoDueno): ?>
+            Hola 👋 Preg&uacute;ntame c&oacute;mo va tu hotel.
+            <div class="cop-sugerencias" style="margin-top:10px;">
+                <button type="button" class="cop-chip" data-q="¿Cuánto entró hoy?">¿Cuánto entró hoy?</button>
+                <button type="button" class="cop-chip" data-q="¿Cómo va el mes?">¿Cómo va el mes?</button>
+                <button type="button" class="cop-chip" data-q="¿Todo en orden?">¿Todo en orden?</button>
+                <button type="button" class="cop-chip" data-q="¿Quién llega hoy?">¿Quién llega hoy?</button>
+            </div>
+            <?php else: ?>
             Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n o c&oacute;mo hacer algo.
             <div class="cop-sugerencias" style="margin-top:10px;">
                 <button type="button" class="cop-chip" data-q="Dame el resumen del día">📋 Resumen del día</button>
@@ -409,6 +422,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 <button type="button" class="cop-chip" data-q="¿Cómo voy de caja?">Estado de caja</button>
                 <button type="button" class="cop-chip" data-q="¿Cómo hago un corte de caja?">¿Cómo hago un corte?</button>
             </div>
+            <?php endif; ?>
         </div>
     </div>
     <form class="cop-foot" id="cop-form" autocomplete="off">

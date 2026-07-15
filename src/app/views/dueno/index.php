@@ -158,6 +158,15 @@ body.page-dueno { padding-top: 0 !important; }
 .du-estrellas-iconos .apagada { color: var(--du-line); }
 .du-resena { margin-top: 12px; color: var(--du-ink-soft); font-size: 17px; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
+/* Hint de instalacion (solo iPhone fuera de la app instalada) */
+.du-instala { position: relative; background: var(--du-warm); }
+.du-instala[hidden] { display: none; }
+.du-instala-titulo { font-family: var(--du-serif); font-weight: 700; font-size: 22px; line-height: 1.25; padding-right: 40px; }
+.du-instala-pasos { margin-top: 8px; color: var(--du-ink-soft); font-size: 17px; }
+.du-instala-pasos i { color: var(--du-brand); margin: 0 2px; }
+.du-instala-cerrar { position: absolute; top: 8px; right: 8px; width: 48px; height: 48px; border: 0; background: none; cursor: pointer; font-size: 26px; line-height: 1; color: var(--du-ink-faint); border-radius: 50%; }
+.du-instala-cerrar:focus-visible { outline: 3px solid color-mix(in srgb, var(--du-brand) 40%, #fff); outline-offset: 2px; }
+
 /* Pie: actualizar */
 .du-pie { text-align: center; padding: 4px 0 8px; }
 .du-reloj { font-size: 15px; color: var(--du-ink-faint); margin-bottom: 12px; }
@@ -301,6 +310,14 @@ html[data-theme="dark"] .du-guard-link { color: #E3A63C; }
         </section>
         <?php endif; ?>
 
+        <!-- Hint de instalacion en iPhone (solo Safari iOS fuera de la app
+             instalada; misma deteccion que el panel push de pwa.js) -->
+        <aside class="du-card du-instala" data-du-instala hidden aria-label="Guarda tu hotel en la pantalla de inicio">
+            <button type="button" class="du-instala-cerrar" data-du-instala-cerrar aria-label="Cerrar este aviso">&times;</button>
+            <p class="du-instala-titulo">Guarda tu hotel en la pantalla de inicio</p>
+            <p class="du-instala-pasos">Toca <i class="fas fa-arrow-up-from-bracket" aria-hidden="true"></i> <strong>Compartir</strong> y elige <strong>“Agregar a pantalla de inicio”</strong>. Así tu hotel queda a un toque, como una app.</p>
+        </aside>
+
         <!-- Pie: frescura del dato + actualizar -->
         <footer class="du-pie">
             <p class="du-reloj" aria-live="polite">Actualizado <span data-du-reloj data-desde="<?= (int) ($resumen['generado_en'] ?? time()) ?>">hace un momento</span></p>
@@ -422,6 +439,29 @@ html[data-theme="dark"] .du-guard-link { color: #E3A63C; }
             pintarReloj();
         }
     }
+
+    // Hint de instalacion: solo iPhone/iPad en Safari, fuera de la app ya
+    // instalada, y respetando si el dueno lo cerro antes.
+    (function () {
+        var hint = raiz.querySelector('[data-du-instala]');
+        if (!hint) { return; }
+        var esIos = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+        var esInstalada = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+            || window.navigator.standalone === true;
+        var CERRADO = 'medisoft:dueno-instala-hint:v1';
+        var cerrado = false;
+        try { cerrado = window.localStorage.getItem(CERRADO) === '1'; } catch (e) {}
+
+        if (esIos && !esInstalada && !cerrado) { hint.hidden = false; }
+
+        var cerrar = hint.querySelector('[data-du-instala-cerrar]');
+        if (cerrar) {
+            cerrar.addEventListener('click', function () {
+                hint.hidden = true;
+                try { window.localStorage.setItem(CERRADO, '1'); } catch (e) {}
+            });
+        }
+    })();
 
     // Desglose del dia: se abre al tocar (nada se mueve solo).
     var semToggle = raiz.querySelector('[data-du-sem-toggle]');
