@@ -42,8 +42,12 @@ class CopilotoService
     /**
      * Responde una pregunta. Devuelve
      * ['success', 'texto', 'fuente' => 'reglas'|'ia'|'fallback', 'enlace' => ?['url','texto']].
+     *
+     * $rutaContexto es la ruta relativa de la pantalla desde la que pregunta el
+     * usuario ("reservaciones/ver/12"). Solo sirve para saber DE QUE entidad
+     * habla; toda lectura va con scope de hotel y valida el permiso del rol.
      */
-    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null): array
+    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = ''): array
     {
         $pregunta = trim($pregunta);
         if ($pregunta === '') {
@@ -51,6 +55,19 @@ class CopilotoService
         }
         $pregunta = mb_substr($pregunta, 0, 500);
         $norm = $this->normalizar($pregunta);
+
+        // 0) Preguntas sobre LA entidad visible en pantalla (la reservacion o
+        //    habitacion abierta). Va antes que todo: "¿cuanto debe?" dicho sobre
+        //    una reservacion abierta es de ESA reservacion, no una duda general.
+        $contexto = $this->parseContexto($rutaContexto);
+        if ($contexto !== null) {
+            $intentCtx = $this->detectarIntentEntidad($norm, $contexto);
+            if ($intentCtx !== null) {
+                $r = $this->responderEntidad($hotelId, $intentCtx, $contexto);
+                $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentCtx, 0, 0);
+                return $r + ['success' => true, 'fuente' => 'reglas'];
+            }
+        }
 
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
         //    especificas ("como hago un corte") y no deben confundirse con la
@@ -607,6 +624,236 @@ class CopilotoService
         }
 
         return ['texto' => $this->textoFallback(), 'enlace' => null];
+    }
+
+    // ───────────────────────── Contexto de pantalla ─────────────────────────
+
+    /**
+     * Interpreta la ruta relativa que manda el widget ("reservaciones/ver/12",
+     * "habitaciones/8", "habitaciones/8/historial") como contexto de entidad.
+     * La ruta viene del cliente: NO se confia en ella para permisos; solo dice
+     * de que registro habla el usuario.
+     */
+    private function parseContexto(string $ruta): ?array
+    {
+        $ruta = strtolower(trim($ruta));
+        if ($ruta === '' || strlen($ruta) > 200) {
+            return null;
+        }
+        $ruta = trim((string) (parse_url($ruta, PHP_URL_PATH) ?: ''), '/');
+
+        if (preg_match('#^reservaciones/ver/([0-9]+)#', $ruta, $m)) {
+            return ['tipo' => 'reservacion', 'id' => (int) $m[1]];
+        }
+        if (preg_match('#^habitaciones/([0-9]+)#', $ruta, $m)) {
+            return ['tipo' => 'habitacion', 'id' => (int) $m[1]];
+        }
+
+        return null;
+    }
+
+    /**
+     * Intents sobre la entidad visible. Frases especificas + guardas de tema
+     * global para no robarle preguntas a los intents de siempre ("cuanto vendi
+     * este mes" sigue siendo global aunque haya una reservacion abierta).
+     */
+    private function detectarIntentEntidad(string $norm, array $contexto): ?string
+    {
+        foreach (['proveedor', 'nomina', 'online', 'conciliar', 'inventario', 'vendi', 'del mes', 'mes pasado', 'de la semana', 'promedio', 'caja', 'corte'] as $global) {
+            if (strpos($norm, $global) !== false) {
+                return null;
+            }
+        }
+
+        $tiene = static function (array $palabras) use ($norm) {
+            foreach ($palabras as $p) {
+                if (strpos($norm, $p) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if ($contexto['tipo'] === 'reservacion') {
+            if ($tiene(['cuanto debe', 'cuanto le falta', 'cuanto falta', 'saldo', 'ya pago', 'anticipo', 'cuanto ha pagado', 'esta pagada', 'esta pagado', 'por pagar', 'cuanto es el total', 'total de la reserva', 'total de esta reserva', 'debe algo', 'al corriente'])) {
+                return 'ctx:reserva_pagos';
+            }
+            if ($tiene(['cuando llega', 'cuando entra', 'cuando se va', 'cuando sale', 'hasta cuando se queda', 'que fechas', 'cuantas noches se queda', 'cuantos dias se queda', 'cuantas noches son', 'fecha de entrada', 'fecha de salida'])) {
+                return 'ctx:reserva_fechas';
+            }
+            if ($tiene(['ya hizo check', 'ya llego', 'esta hospedad', 'como va esta reserva', 'estado de esta reserva', 'quien es el huesped', 'de quien es esta reserva', 'que habitacion tiene', 'que habitaciones tiene'])) {
+                return 'ctx:reserva_general';
+            }
+        }
+
+        if ($contexto['tipo'] === 'habitacion') {
+            if ($tiene(['esta ocupada', 'esta libre', 'esta disponible', 'quien esta en esta habitacion', 'quien la ocupa', 'quien esta aqui', 'estado de esta habitacion', 'cuando se desocupa', 'cuando se libera', 'hasta cuando esta ocupada', 'quien llega a esta habitacion'])) {
+                return 'ctx:habitacion';
+            }
+        }
+
+        return null;
+    }
+
+    /** Valida el permiso del rol y despacha a la lectura de la entidad. */
+    private function responderEntidad(int $hotelId, string $intent, array $contexto): array
+    {
+        if ($contexto['tipo'] === 'reservacion') {
+            // Mismo permiso que la pantalla que muestra estos datos.
+            if (function_exists('can') && !can('reservaciones.view')) {
+                return ['texto' => 'Tu rol no tiene permiso para ver los datos de reservaciones. Pidele el acceso a tu gerente.', 'enlace' => null];
+            }
+            return $this->responderReservacionVisible($hotelId, (int) $contexto['id'], $intent);
+        }
+
+        if (function_exists('can') && !can('habitaciones.view')) {
+            return ['texto' => 'Tu rol no tiene permiso para ver los datos de habitaciones. Pidele el acceso a tu gerente.', 'enlace' => null];
+        }
+        return $this->responderHabitacionVisible($hotelId, (int) $contexto['id']);
+    }
+
+    /** Lee la reservacion en pantalla (scope de hotel) y responde el intent. */
+    private function responderReservacionVisible(int $hotelId, int $reservacionId, string $intent): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida, r.precio_total, h.nombre_completo
+                 FROM reservaciones r
+                 INNER JOIN huespedes h ON h.id = r.huesped_id
+                 WHERE r.id = ? AND r.hotel_id = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$reservacionId, $hotelId]);
+            $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error reservacion visible: ' . $e->getMessage());
+            $r = null;
+        }
+
+        if (!$r) {
+            return ['texto' => 'No encuentro esa reservacion en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
+        }
+
+        $huesped = trim((string) $r['nombre_completo']);
+        $estados = ['pendiente' => 'pendiente de confirmar', 'confirmada' => 'confirmada', 'checked_in' => 'con el huesped dentro (check-in hecho)', 'checked_out' => 'ya con check-out', 'cancelada' => 'cancelada'];
+        $estado = $estados[(string) $r['estado']] ?? (string) $r['estado'];
+
+        if ($intent === 'ctx:reserva_pagos') {
+            require_once __DIR__ . '/../models/Reservacion.php';
+            $resumen = (new Reservacion())->resumenPagos($reservacionId, $hotelId);
+            $totalNum = (float) $resumen['total'];
+            $pagadoNum = (float) $resumen['pagado'];
+            $saldoNum = (float) $resumen['saldo'];
+            $total = number_format($totalNum, 2);
+            $pagado = number_format($pagadoNum, 2);
+
+            if ($totalNum <= 0) {
+                $texto = "La reservacion de **{$huesped}** no tiene precio total registrado, asi que no hay saldo que cobrar.";
+            } elseif ($saldoNum <= 0) {
+                $texto = "La reservacion de **{$huesped}** esta **pagada por completo**: total \${$total}, pagado \${$pagado}. ✔";
+            } elseif ($pagadoNum <= 0) {
+                $texto = "La reservacion de **{$huesped}** no tiene ningun pago registrado (ni anticipo): **debe el total, \${$total}**.";
+            } else {
+                $texto = "La reservacion de **{$huesped}** tiene un total de \${$total}; lleva pagado \${$pagado} (anticipos y abonos) y **debe \$" . number_format($saldoNum, 2) . '**.';
+            }
+            return ['texto' => $texto, 'enlace' => null];
+        }
+
+        if ($intent === 'ctx:reserva_fechas') {
+            $noches = max(0, (int) round((strtotime((string) $r['fecha_salida']) - strtotime((string) $r['fecha_entrada'])) / 86400));
+            return [
+                'texto' => "La reservacion de **{$huesped}** ({$estado}) va del **{$this->fechaCortaConAnio((string) $r['fecha_entrada'])}** al **{$this->fechaCortaConAnio((string) $r['fecha_salida'])}**: {$noches} noche(s).",
+                'enlace' => null,
+            ];
+        }
+
+        // ctx:reserva_general — estado + habitaciones asignadas.
+        $numeros = [];
+        try {
+            $stmtH = $this->pdo->prepare(
+                "SELECT hab.numero
+                 FROM reservacion_habitaciones rh
+                 INNER JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = rh.hotel_id
+                 WHERE rh.reservacion_id = ? AND rh.hotel_id = ?
+                 ORDER BY hab.numero LIMIT 10"
+            );
+            $stmtH->execute([$reservacionId, $hotelId]);
+            $numeros = array_column($stmtH->fetchAll(PDO::FETCH_ASSOC) ?: [], 'numero');
+        } catch (Throwable $e) {
+            error_log('Copiloto: error habitaciones de reserva: ' . $e->getMessage());
+        }
+
+        $texto = "Esta reservacion es de **{$huesped}**, esta **{$estado}** y va del {$this->fechaCortaConAnio((string) $r['fecha_entrada'])} al {$this->fechaCortaConAnio((string) $r['fecha_salida'])}.";
+        if (!empty($numeros)) {
+            $texto .= ' Habitacion(es): **' . implode(', ', $numeros) . '**.';
+        }
+        return ['texto' => $texto, 'enlace' => null];
+    }
+
+    /** Lee la habitacion en pantalla (scope de hotel): estado, ocupante y proxima llegada. */
+    private function responderHabitacionVisible(int $hotelId, int $habitacionId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT numero, estado, activa FROM habitaciones WHERE id = ? AND hotel_id = ? LIMIT 1");
+            $stmt->execute([$habitacionId, $hotelId]);
+            $hab = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error habitacion visible: ' . $e->getMessage());
+            $hab = null;
+        }
+
+        if (!$hab) {
+            return ['texto' => 'No encuentro esa habitacion en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
+        }
+
+        $estados = ['disponible' => 'disponible', 'ocupada' => 'ocupada', 'limpieza' => 'en limpieza', 'mantenimiento' => 'en mantenimiento'];
+        $estado = $estados[(string) $hab['estado']] ?? (string) $hab['estado'];
+        $texto = "La habitacion **{$hab['numero']}** esta **{$estado}**" . ((int) $hab['activa'] === 1 ? '' : ' (y marcada como inactiva)') . '.';
+
+        try {
+            // Ocupante actual: reservacion con check-in sobre esta habitacion.
+            $stmt = $this->pdo->prepare(
+                "SELECT h.nombre_completo, r.fecha_salida
+                 FROM reservaciones r
+                 INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                 INNER JOIN huespedes h ON h.id = r.huesped_id
+                 WHERE r.hotel_id = ? AND rh.habitacion_id = ? AND r.estado = 'checked_in'
+                 ORDER BY r.fecha_salida ASC LIMIT 1"
+            );
+            $stmt->execute([$hotelId, $habitacionId]);
+            $ocupante = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+            if ($ocupante) {
+                $texto .= " La ocupa **" . trim((string) $ocupante['nombre_completo']) . "** con salida el {$this->fechaCortaConAnio((string) $ocupante['fecha_salida'])}.";
+            } else {
+                $stmt = $this->pdo->prepare(
+                    "SELECT h.nombre_completo, r.fecha_entrada
+                     FROM reservaciones r
+                     INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                     INNER JOIN huespedes h ON h.id = r.huesped_id
+                     WHERE r.hotel_id = ? AND rh.habitacion_id = ? AND r.estado IN ('confirmada', 'pendiente')
+                       AND r.fecha_entrada >= CURDATE()
+                     ORDER BY r.fecha_entrada ASC LIMIT 1"
+                );
+                $stmt->execute([$hotelId, $habitacionId]);
+                $proxima = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                $texto .= $proxima
+                    ? " La proxima llegada para esta habitacion es de **" . trim((string) $proxima['nombre_completo']) . "** el {$this->fechaCortaConAnio((string) $proxima['fecha_entrada'])}."
+                    : ' No tiene llegadas proximas reservadas.';
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error ocupante habitacion: ' . $e->getMessage());
+        }
+
+        return ['texto' => $texto, 'enlace' => null];
+    }
+
+    /** fechaCorta() + el anio cuando no es el actual ("sabado 3 de enero de 2027"). */
+    private function fechaCortaConAnio(string $ymd): string
+    {
+        $texto = $this->fechaCorta($ymd);
+        $anio = date('Y', strtotime($ymd));
+        return $anio === date('Y') ? $texto : $texto . ' de ' . $anio;
     }
 
     // ───────────────────────── Consultas de solo lectura ─────────────────────────

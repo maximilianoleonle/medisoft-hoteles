@@ -69,6 +69,166 @@ foreach ($copOpcionales as $clave => $mapa) {
         }
     }
 }
+
+/**
+ * Contexto de pantalla: ruta relativa de la app ("reservaciones/ver/12").
+ * Se manda con cada pregunta (el servicio la usa para responder sobre la
+ * entidad visible) y aqui decide los chips contextuales de la seccion.
+ */
+$copBasePath = rtrim((string) parse_url($copU(''), PHP_URL_PATH), '/');
+$copRuta = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+if ($copBasePath !== '' && strpos($copRuta, $copBasePath) === 0) {
+    $copRuta = substr($copRuta, strlen($copBasePath));
+}
+$copRuta = trim($copRuta, '/');
+$copSegmentos = explode('/', $copRuta);
+$copSeccion = strtolower((string) ($copSegmentos[0] ?? ''));
+
+$copEntidad = null;
+if (preg_match('#^reservaciones/ver/[0-9]+#i', $copRuta)) {
+    $copEntidad = 'reservacion';
+} elseif (preg_match('#^habitaciones/[0-9]+#i', $copRuta)) {
+    $copEntidad = 'habitacion';
+}
+
+// Chips [etiqueta, pregunta data-q]. Los de la seccion visible van primero;
+// si faltan, se completa con los generales de siempre (fallback).
+$copChipsDefault = [
+    ['📋 Resumen del día', 'Dame el resumen del día'],
+    ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?'],
+    ['Llegadas de hoy', '¿Quién llega hoy?'],
+    ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?'],
+    ['Estado de caja', '¿Cómo voy de caja?'],
+    ['¿Cómo hago un corte?', '¿Cómo hago un corte de caja?'],
+];
+
+$copChipsContexto = [];
+if ($copEntidad === 'reservacion') {
+    $copChipsContexto = [
+        ['¿Cuánto debe?', '¿Cuánto debe esta reservación?'],
+        ['¿Ya pagó anticipo?', '¿Ya pagó el anticipo?'],
+        ['¿Cuántas noches?', '¿Cuántas noches se queda?'],
+        ['Llegadas de hoy', '¿Quién llega hoy?'],
+    ];
+} elseif ($copEntidad === 'habitacion') {
+    $copChipsContexto = [
+        ['¿Está ocupada?', '¿Está ocupada?'],
+        ['¿Quién la ocupa?', '¿Quién está en esta habitación?'],
+        ['¿Cuándo se desocupa?', '¿Cuándo se desocupa?'],
+        ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+    ];
+} else {
+    switch ($copSeccion) {
+        case 'reservaciones':
+            $copChipsContexto = [
+                ['Llegadas de hoy', '¿Quién llega hoy?'],
+                ['Salidas de hoy', '¿Quién se va hoy?'],
+                ['¿Hay no-shows?', '¿Tengo no-shows pendientes?'],
+                ['Llegadas de mañana', '¿Quién llega mañana?'],
+                ['Checkouts vencidos', '¿Hay checkouts vencidos?'],
+            ];
+            break;
+        case 'habitaciones':
+            $copChipsContexto = [
+                ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+                ['¿Qué limpio hoy?', '¿Qué hay que limpiar hoy?'],
+                ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?'],
+                ['Checkouts vencidos', '¿Hay checkouts vencidos?'],
+            ];
+            break;
+        case 'caja':
+            $copChipsContexto = [
+                ['Estado de caja', '¿Cómo voy de caja?'],
+                ['¿Cómo hago un corte?', '¿Cómo hago un corte de caja?'],
+                ['Gastos del mes', '¿En qué se me va el dinero este mes?'],
+                ['¿Cómo me pagan?', '¿Cómo me pagaron este mes?'],
+            ];
+            break;
+        case 'camarista':
+        case 'tareas':
+            $copChipsContexto = [
+                ['¿Qué limpio hoy?', '¿Qué hay que limpiar hoy?'],
+                ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+                ['Salidas de hoy', '¿Quién se va hoy?'],
+            ];
+            break;
+        case 'inventario':
+            $copChipsContexto = [
+                ['Por agotarse', '¿Qué productos están por agotarse?'],
+                ['¿Cómo registro un movimiento?', '¿Cómo registro un movimiento de inventario?'],
+            ];
+            break;
+        case 'reputacion':
+            $copChipsContexto = [
+                ['¿Cómo me califican?', '¿Cómo me califican mis huéspedes?'],
+                ['Calificaciones bajas', '¿Tengo calificaciones bajas?'],
+                ['Enviar encuesta', '¿Cómo mando una encuesta?'],
+            ];
+            break;
+        case 'compras':
+            $copChipsContexto = [
+                ['¿Cuánto debo?', '¿Cuánto debo a proveedores?'],
+                ['Registrar compra', '¿Cómo registro una compra?'],
+            ];
+            break;
+        case 'cuentas-por-cobrar':
+            $copChipsContexto = [
+                ['¿Quién me debe?', '¿Quién me debe?'],
+            ];
+            break;
+        case 'nomina':
+            $copChipsContexto = [
+                ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?'],
+                ['¿Cómo corro la nómina?', '¿Cómo corro la nómina?'],
+            ];
+            break;
+        case 'trabajadores':
+            if ($copMod('nomina_avanzada')) {
+                $copChipsContexto[] = ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?'];
+            }
+            $copChipsContexto[] = ['Alta de trabajador', '¿Cómo registro a un trabajador?'];
+            break;
+        case 'forecast':
+            $copChipsContexto = [
+                ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?'],
+                ['Noches vendidas', '¿Cuántas noches vendí este mes?'],
+                ['Tarifa promedio', '¿Cuál es mi tarifa promedio?'],
+            ];
+            break;
+        case 'motor-reservas':
+            $copChipsContexto = [
+                ['Pagos por conciliar', '¿Tengo pagos online por conciliar?'],
+            ];
+            if ($copMod('promociones')) {
+                $copChipsContexto[] = ['Cupones activos', '¿Qué cupones tengo activos?'];
+            }
+            break;
+        case 'reportes':
+            $copChipsContexto = [
+                ['Ganancias del mes pasado', '¿Cuáles fueron las ganancias del mes pasado?'],
+                ['¿Mejor o peor que el mes pasado?', '¿Voy mejor o peor que el mes pasado?'],
+                ['Mi mejor día', '¿Cuál fue mi mejor día del mes?'],
+            ];
+            break;
+    }
+}
+
+$copChips = $copChipsContexto;
+foreach ($copChipsDefault as $chip) {
+    if (count($copChips) >= 6) {
+        break;
+    }
+    $repetido = false;
+    foreach ($copChips as $existente) {
+        if ($existente[1] === $chip[1]) {
+            $repetido = true;
+            break;
+        }
+    }
+    if (!$repetido) {
+        $copChips[] = $chip;
+    }
+}
 ?>
 <style>
 /* ============================================================
@@ -402,12 +562,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         <div class="cop-msg bot">
             Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n o c&oacute;mo hacer algo.
             <div class="cop-sugerencias" style="margin-top:10px;">
-                <button type="button" class="cop-chip" data-q="Dame el resumen del día">📋 Resumen del día</button>
-                <button type="button" class="cop-chip" data-q="¿Cuántas habitaciones libres tengo hoy?">Habitaciones libres</button>
-                <button type="button" class="cop-chip" data-q="¿Quién llega hoy?">Llegadas de hoy</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo pinta la semana?">¿Cómo pinta la semana?</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo voy de caja?">Estado de caja</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo hago un corte de caja?">¿Cómo hago un corte?</button>
+                <?php foreach ($copChips as $copChip): ?>
+                <button type="button" class="cop-chip" data-q="<?= htmlspecialchars($copChip[1], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($copChip[0], ENT_QUOTES, 'UTF-8') ?></button>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
@@ -429,6 +586,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     var URL = <?= json_encode($copilotoUrl) ?>;
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var RUTA = <?= json_encode($copRuta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var ocupado = false;
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
@@ -523,6 +681,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         var datos = new URLSearchParams();
         datos.append('csrf_token', TOKEN);
         datos.append('pregunta', texto);
+        datos.append('ruta', RUTA);
 
         fetch(URL, {
             method: 'POST',
