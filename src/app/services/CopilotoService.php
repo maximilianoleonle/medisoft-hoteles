@@ -24,6 +24,48 @@ class CopilotoService
     private const MODELO = 'claude-opus-4-8';
     private const MAX_TOKENS = 1024;
 
+    /**
+     * Chip sugerido por intent: [etiqueta, pregunta data-q, ?bloque requerido].
+     * Lo usa chipsFrecuentes() para convertir el log real de uso del hotel
+     * (registrar() en copiloto_mensajes) en los chips del saludo.
+     */
+    private const CHIPS_POR_INTENT = [
+        'resumen_dia' => ['📋 Resumen del día', 'Dame el resumen del día', null],
+        'ocupacion' => ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?', null],
+        'ocupacion_semana' => ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?', null],
+        'llegadas' => ['Llegadas de hoy', '¿Quién llega hoy?', null],
+        'llegadas_manana' => ['Llegadas de mañana', '¿Quién llega mañana?', null],
+        'salidas' => ['Salidas de hoy', '¿Quién se va hoy?', null],
+        'caja' => ['Estado de caja', '¿Cómo voy de caja?', null],
+        'ganancias_mes_actual' => ['Ganancias del mes', '¿Cuánto llevo de ganancias este mes?', null],
+        'ganancias_mes_pasado' => ['Ganancias del mes pasado', '¿Cuáles fueron las ganancias del mes pasado?', null],
+        'comparar_meses' => ['¿Mejor que el mes pasado?', '¿Voy mejor o peor que el mes pasado?', null],
+        'ganancias_semana' => ['¿Cómo va la semana?', '¿Cómo va la semana de ventas?', null],
+        'ganancias_dia' => ['¿Cuánto vendí ayer?', '¿Cuánto vendí ayer?', null],
+        'dia_top' => ['Mi mejor día', '¿Cuál fue mi mejor día del mes?', null],
+        'pago_metodo' => ['¿Cómo me pagan?', '¿Cómo me pagaron este mes?', null],
+        'gastos_categoria' => ['Gastos del mes', '¿En qué se me va el dinero este mes?', null],
+        'habitaciones_estado' => ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?', null],
+        'hospedados' => ['¿Quién está hospedado?', '¿Quién está hospedado?', null],
+        'limpiar_hoy' => ['¿Qué limpio hoy?', '¿Qué hay que limpiar hoy?', null],
+        'no_shows' => ['¿Hay no-shows?', '¿Tengo no-shows pendientes?', null],
+        'checkouts_vencidos' => ['Checkouts vencidos', '¿Hay checkouts vencidos?', null],
+        'reservas_hoy' => ['Reservas nuevas de hoy', '¿Cuántas reservas entraron hoy?', null],
+        'noches_vendidas' => ['Noches vendidas', '¿Cuántas noches vendí este mes?', null],
+        'tarifa_promedio' => ['Tarifa promedio', '¿Cuál es mi tarifa promedio?', null],
+        'estancia_promedio' => ['Estancia promedio', '¿Cuánto se quedan mis huéspedes?', null],
+        'cancelaciones_mes' => ['Cancelaciones', '¿Cuántas cancelaciones llevo este mes?', null],
+        'reservaciones_mes' => ['Reservas del mes', '¿Cuántas reservaciones hay para este mes?', null],
+        'motor_conciliar' => ['Pagos por conciliar', '¿Tengo pagos online por conciliar?', 'motor_reservas'],
+        'calificacion' => ['¿Cómo me califican?', '¿Cómo me califican mis huéspedes?', 'reputacion'],
+        'calificaciones_bajas' => ['Calificaciones bajas', '¿Tengo calificaciones bajas?', 'reputacion'],
+        'cupones_activos' => ['Cupones activos', '¿Qué cupones tengo activos?', 'promociones'],
+        'inventario_bajo' => ['Por agotarse', '¿Qué productos están por agotarse?', 'inventario'],
+        'cxp_debo' => ['¿Cuánto debo?', '¿Cuánto debo a proveedores?', 'compras'],
+        'cxc_deben' => ['¿Quién me debe?', '¿Quién me debe?', 'cuentas_cobrar'],
+        'nomina_periodo' => ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?', 'nomina_avanzada'],
+    ];
+
     private $db;
     private $pdo;
 
@@ -31,6 +73,60 @@ class CopilotoService
     {
         $this->db = $db ?: Database::getInstance();
         $this->pdo = $this->db->getConnection();
+    }
+
+    /**
+     * Chips que aprenden: los intents mas consultados por ESTE hotel en los
+     * ultimos 60 dias (log de registrar() en copiloto_mensajes), convertidos
+     * a chips y filtrados por bloque activo. Cache APCu de 1 hora; si el log
+     * es corto devuelve menos de $limite y el widget completa con los fijos.
+     */
+    public function chipsFrecuentes(int $hotelId, int $limite = 6): array
+    {
+        if ($hotelId <= 0) {
+            return [];
+        }
+
+        $consultar = function () use ($hotelId) {
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT intent, COUNT(*) n
+                     FROM copiloto_mensajes
+                     WHERE hotel_id = ? AND fuente = 'reglas' AND intent IS NOT NULL
+                       AND intent NOT LIKE 'faq%' AND intent NOT LIKE 'ctx:%' AND intent NOT LIKE 'accion:%'
+                       AND created_at >= NOW() - INTERVAL 60 DAY
+                     GROUP BY intent
+                     ORDER BY n DESC, intent
+                     LIMIT 12"
+                );
+                $stmt->execute([$hotelId]);
+                return array_column($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'intent');
+            } catch (Throwable $e) {
+                error_log('Copiloto: error chips frecuentes: ' . $e->getMessage());
+                return null; // null no se cachea: el fallo no se pega 1 hora
+            }
+        };
+
+        $intents = function_exists('ms_cache_remember')
+            ? ms_cache_remember('copiloto_chips_' . $hotelId, 3600, $consultar)
+            : $consultar();
+
+        $chips = [];
+        foreach ((array) ($intents ?: []) as $intent) {
+            if (count($chips) >= $limite) {
+                break;
+            }
+            $def = self::CHIPS_POR_INTENT[(string) $intent] ?? null;
+            if ($def === null) {
+                continue;
+            }
+            if ($def[2] !== null && !$this->tieneModulo($def[2], $hotelId)) {
+                continue;
+            }
+            $chips[] = [$def[0], $def[1]];
+        }
+
+        return $chips;
     }
 
     public function iaDisponible(int $hotelId): bool
@@ -67,6 +163,15 @@ class CopilotoService
                 $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentCtx, 0, 0);
                 return $r + ['success' => true, 'fuente' => 'reglas'];
             }
+        }
+
+        // 0.5) Accion ejecutable (SOLO limpieza; jamas dinero): aqui solo se
+        //      PROPONE. El widget pide confirmacion (msConfirm) y ejecutar
+        //      pasa por POST /copiloto/accion con CSRF y permiso del rol.
+        $accion = $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
+        if ($accion !== null) {
+            $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
+            return $accion['respuesta'] + ['success' => true, 'fuente' => 'reglas'];
         }
 
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
@@ -921,6 +1026,189 @@ class CopilotoService
         $texto = $this->fechaCorta($ymd);
         $anio = date('Y', strtotime($ymd));
         return $anio === date('Y') ? $texto : $texto . ' de ' . $anio;
+    }
+
+    // ───────────────────────── Accion ejecutable: programar limpieza ─────────────────────────
+
+    /**
+     * Detecta "programa limpieza de la 204 hoy" y arma la PROPUESTA (no
+     * ejecuta). Devuelve null si la frase no es una orden de limpieza.
+     * La habitacion se busca contra el catalogo real del hotel (los numeros
+     * pueden ser nombres); si no viene en la frase pero el usuario esta
+     * parado sobre una habitacion (contexto de pantalla), se usa esa.
+     */
+    private function detectarAccionLimpieza(string $norm, int $hotelId, ?array $contexto = null): ?array
+    {
+        $verbos = ['programa limpieza', 'programar limpieza', 'programa la limpieza', 'programa una limpieza',
+            'agenda limpieza', 'agendar limpieza', 'agenda la limpieza', 'agenda una limpieza',
+            'manda limpiar', 'manda a limpiar', 'mandar limpiar', 'pon a limpiar', 'que limpien la', 'que limpien el'];
+        $hayVerbo = false;
+        foreach ($verbos as $v) {
+            if (strpos($norm, $v) !== false) {
+                $hayVerbo = true;
+                break;
+            }
+        }
+        if (!$hayVerbo) {
+            return null;
+        }
+
+        // Mismo permiso que gatea el modulo de tareas operativas.
+        if (function_exists('can') && !can('habitaciones.view')) {
+            return ['intent' => 'accion:limpieza_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para programar limpiezas. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        // Fecha referida: hoy (default), manana o pasado manana.
+        if (strpos($norm, 'pasado manana') !== false) {
+            $fecha = date('Y-m-d', strtotime('+2 days'));
+            $fechaTexto = 'pasado manana (' . date('d/m', strtotime($fecha)) . ')';
+        } elseif (strpos($norm, 'manana') !== false) {
+            $fecha = date('Y-m-d', strtotime('+1 day'));
+            $fechaTexto = 'manana (' . date('d/m', strtotime($fecha)) . ')';
+        } else {
+            $fecha = date('Y-m-d');
+            $fechaTexto = 'hoy (' . date('d/m') . ')';
+        }
+
+        $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
+        if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
+            $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
+        }
+        if ($hab === null) {
+            return ['intent' => 'accion:limpieza_sin_hab', 'respuesta' => [
+                'texto' => "No identifique la habitacion. Dimelo asi: \"programa limpieza de la 204 hoy\" (con el numero o nombre tal como aparece en **Habitaciones**).",
+                'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+            ]];
+        }
+
+        return ['intent' => 'accion:limpieza', 'respuesta' => [
+            'texto' => "Puedo programar la limpieza de la habitacion **{$hab['numero']}** para {$fechaTexto}. "
+                . 'La tarea queda pendiente de asignar personal (eso se hace en el tablero de limpieza). Confirmalo y la creo.',
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'programar_limpieza',
+                'habitacion_id' => (int) $hab['id'],
+                'habitacion' => (string) $hab['numero'],
+                'fecha' => $fecha,
+                'confirm_titulo' => '¿Programar limpieza?',
+                'confirm_msg' => "Habitacion {$hab['numero']}, {$fechaTexto}. Se creara la tarea de limpieza pendiente de asignar personal.",
+                'confirm_ok' => 'Programar',
+            ],
+        ]];
+    }
+
+    /**
+     * Busca en la frase un numero/nombre de habitacion DEL hotel (palabra
+     * completa, el candidato mas largo gana). Los nombres tipo "la" o "el"
+     * se ignoran para no confundirlos con articulos.
+     */
+    private function buscarHabitacionEnTexto(string $norm, int $hotelId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT id, numero FROM habitaciones WHERE hotel_id = ? AND activa = 1 LIMIT 300");
+            $stmt->execute([$hotelId]);
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error catalogo habitaciones: ' . $e->getMessage());
+            return null;
+        }
+
+        $stopwords = ['la', 'el', 'de', 'del', 'a', 'y', 'o', 'con', 'para', 'hoy', 'esta', 'este'];
+        $mejor = null;
+        $mejorLen = 0;
+        foreach ($filas as $f) {
+            $candidato = $this->normalizar((string) $f['numero']);
+            if ($candidato === '' || in_array($candidato, $stopwords, true)) {
+                continue;
+            }
+            if (!is_numeric($candidato) && mb_strlen($candidato) < 2) {
+                continue;
+            }
+            $patron = '/(^|[^a-z0-9])' . preg_quote($candidato, '/') . '($|[^a-z0-9])/';
+            if (preg_match($patron, $norm) && mb_strlen($candidato) > $mejorLen) {
+                $mejor = ['id' => (int) $f['id'], 'numero' => (string) $f['numero']];
+                $mejorLen = mb_strlen($candidato);
+            }
+        }
+
+        return $mejor;
+    }
+
+    private function habitacionPorId(int $hotelId, int $habitacionId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT id, numero FROM habitaciones WHERE id = ? AND hotel_id = ? AND activa = 1 LIMIT 1");
+            $stmt->execute([$habitacionId, $hotelId]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $f ? ['id' => (int) $f['id'], 'numero' => (string) $f['numero']] : null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error habitacion por id: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Ejecuta una accion confirmada por el usuario. SOLO limpieza: crea o
+     * reprograma la tarea en tareas_operativas respetando su contrato (sin
+     * personal asignado queda 'pendiente'; quien limpio se registra al cerrar
+     * la limpieza, nunca aqui). CERO acciones sobre dinero/caja/cortes.
+     */
+    public function ejecutarAccion(int $hotelId, string $tipo, array $params, ?int $usuarioId = null): array
+    {
+        if ($tipo !== 'programar_limpieza') {
+            return ['success' => false, 'texto' => 'Esa accion no esta disponible desde el copiloto.', 'fuente' => 'reglas'];
+        }
+
+        if (function_exists('can') && !can('habitaciones.view')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para programar limpiezas.', 'fuente' => 'reglas'];
+        }
+
+        $habitacionId = (int) ($params['habitacion_id'] ?? 0);
+        $fecha = (string) ($params['fecha'] ?? date('Y-m-d'));
+
+        require_once __DIR__ . '/../models/TareaOperativa.php';
+        $tareas = new TareaOperativa();
+
+        try {
+            if (!$tareas->tablaDisponible() || !$tareas->eventosDisponibles()) {
+                return ['success' => false, 'texto' => 'La base de tareas operativas no esta disponible en este hotel.', 'fuente' => 'reglas'];
+            }
+            $tareas->programarLimpiezaParaHotel($hotelId, $habitacionId, $fecha, [], $usuarioId);
+        } catch (Throwable $e) {
+            $this->registrar($hotelId, $usuarioId, "[accion limpieza hab {$habitacionId} {$fecha}]", 'reglas', 'accion:limpieza_error', 0, 0);
+            // Los mensajes de validacion del modelo son para humanos; un error
+            // de BD crudo jamas llega al usuario.
+            $texto = ($e instanceof PDOException) ? 'No se pudo programar la limpieza. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo programar la limpieza.');
+            return ['success' => false, 'texto' => $texto, 'fuente' => 'reglas'];
+        }
+
+        $hab = $this->habitacionPorId($hotelId, $habitacionId);
+        $numero = $hab !== null ? $hab['numero'] : (string) $habitacionId;
+        $etiqueta = $fecha === date('Y-m-d') ? 'hoy' : 'el ' . $this->fechaCortaConAnio($fecha);
+
+        $urlTablero = 'habitaciones';
+        $labelTablero = 'Ver habitaciones';
+        if ($this->tieneModulo('tareas', $hotelId)) {
+            $urlTablero = 'tareas';
+            $labelTablero = 'Asignar personal en Tareas';
+        } elseif ($this->tieneModulo('camarista', $hotelId)) {
+            $urlTablero = 'camarista';
+            $labelTablero = 'Asignar personal en Camarista';
+        }
+
+        $this->registrar($hotelId, $usuarioId, "[accion limpieza hab {$habitacionId} {$fecha}]", 'reglas', 'accion:limpieza_ok', 0, 0);
+
+        return [
+            'success' => true,
+            'texto' => "Listo ✅ Limpieza de la habitacion **{$numero}** programada para {$etiqueta}. "
+                . 'Quedo **pendiente de asignar personal**; asignalo desde el tablero para que aparezca en su agenda.',
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => $labelTablero, 'url' => $urlTablero]],
+        ];
     }
 
     // ───────────────────────── Consultas de solo lectura ─────────────────────────

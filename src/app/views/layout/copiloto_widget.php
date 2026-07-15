@@ -215,6 +215,20 @@ if ($copEntidad === 'reservacion') {
 }
 
 $copChips = $copChipsContexto;
+
+// Chips que aprenden: sin chips de seccion, el orden lo dicta la frecuencia
+// real de uso del hotel (log copiloto_mensajes, cache 1h). Los fijos de
+// siempre quedan como relleno/fallback.
+if (empty($copChips)) {
+    try {
+        require_once __DIR__ . '/../../services/CopilotoService.php';
+        $copHotelIdChips = (int) (function_exists('current_hotel_id') ? current_hotel_id() : 0);
+        $copChips = (new CopilotoService())->chipsFrecuentes($copHotelIdChips, 6);
+    } catch (Throwable $e) {
+        $copChips = [];
+    }
+}
+
 foreach ($copChipsDefault as $chip) {
     if (count($copChips) >= 6) {
         break;
