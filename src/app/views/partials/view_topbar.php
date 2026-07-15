@@ -40,7 +40,7 @@ $vtbRoot = $vtbSegs[0] ?? '';
 
 // ── Exclusiones ──
 $vtbSkip = $vtbRuta === ''
-    || in_array($vtbRoot, ['dashboard', 'inicio', 'admin', 'api', 'login', 'logout'], true)
+    || in_array($vtbRoot, ['dashboard', 'inicio', 'admin', 'api', 'login', 'logout', 'dueno'], true)
     || $vtbRoot === 'reportes'                                   // hermanitos de reportes
     || strpos($vtbRuta, 'reporte') !== false                     // reportes de otros módulos (contrato)
     || strpos($vtbRuta, 'recibo-laboral') !== false              // documentos imprimibles

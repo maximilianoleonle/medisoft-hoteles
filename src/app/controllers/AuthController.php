@@ -14,7 +14,7 @@ class AuthController extends Controller {
     public function loginAction() {
         // Si ya está autenticado, redirigir al dashboard
         if (is_authenticated()) {
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
         }
         
         // Renderizar vista de login
@@ -56,11 +56,11 @@ class AuthController extends Controller {
             $sessionSlug = $_SESSION['hotel_slug'] ?? null;
 
             if ($sessionSlug === $hotel['slug']) {
-                $this->redirect('dashboard');
+                $this->redirect(home_route_for_current_user());
             }
 
             set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
         }
 
         $branding = function_exists('hotel_branding')
@@ -96,11 +96,11 @@ class AuthController extends Controller {
 
         if (is_authenticated()) {
             if (($_SESSION['hotel_slug'] ?? null) === $hotel['slug']) {
-                $this->redirect('dashboard');
+                $this->redirect(home_route_for_current_user());
             }
 
             set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
         }
 
         if (!$this->isPost()) {
@@ -155,7 +155,7 @@ class AuthController extends Controller {
             $this->logLogin($usuario['id'], true);
             $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
             set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
         }
 
         $fallo = $rateLimiter->registrarFallo($ip, $nombre_usuario, $hotel['slug']);
@@ -237,7 +237,7 @@ class AuthController extends Controller {
             $this->logLogin($usuario['id'], true);
             $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, $hotelContext['id'] ?? null, 'login');
             set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
 
         } else {
             // Incrementar contador de intentos persistente
@@ -261,7 +261,7 @@ class AuthController extends Controller {
      */
     public function logoutAction() {
         if (!$this->isPost()) {
-            $this->redirect('dashboard');
+            $this->redirect(home_route_for_current_user());
         }
 
         // El logout es idempotente y "fail-safe": NO usamos validateCSRF() aquí

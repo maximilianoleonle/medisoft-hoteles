@@ -335,6 +335,10 @@ $router->post('/motor-reservas/extras/crear', ['controller' => 'MotorReservas', 
 $router->post('/motor-reservas/extras/{id:[0-9]+}/alternar', ['controller' => 'MotorReservas', 'action' => 'alternarExtra']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
+// Modo Dueno (bloque modo_dueno): resumen remoto de solo lectura para el dueno
+$router->get('/dueno', ['controller' => 'Dueno', 'action' => 'index']);
+$router->get('/dueno/datos', ['controller' => 'Dueno', 'action' => 'datos']);
+
 // Dashboard
 $router->get('/dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
 $router->get('/dashboard/stats', ['controller' => 'Dashboard', 'action' => 'stats']);

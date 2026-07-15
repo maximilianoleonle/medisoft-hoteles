@@ -146,5 +146,5 @@ function require_hotel_module($clave) {
     }
 
     set_mensaje($mensaje, 'error');
-    redirect('dashboard');
+    redirect(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard');
 }
