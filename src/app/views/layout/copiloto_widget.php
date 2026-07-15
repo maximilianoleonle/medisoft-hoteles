@@ -318,6 +318,11 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-enlace:active { transform: translateY(0) scale(.98); }
 .cop-link { color: var(--brand-primary, #1B2746); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .cop-link:hover { opacity: .8; }
+/* Deep-links de respuesta: botones estilo chip, cromados desde --brand-*. */
+.cop-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.cop-accion { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--brand-primary, #1B2746); text-decoration: none; padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, #D8D4C9); border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff); transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background .18s ease, border-color .18s ease; }
+.cop-accion:hover { transform: translateY(-1px); border-color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #fff); box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 60%, transparent); }
+.cop-accion:active { transform: translateY(0) scale(.96); }
 .cop-sugerencias { display: flex; flex-wrap: wrap; gap: 6px; }
 .cop-chip { border: 1px solid #D8D4C9; background: #fff; border-radius: 999px; padding: 5px 11px; font-size: .78rem; cursor: pointer; color: #55607A; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease; }
 .cop-chip:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 4%, #fff); transform: translateY(-1px); box-shadow: 0 8px 16px -10px rgba(20,28,45,.4); }
@@ -355,6 +360,8 @@ html[data-theme="dark"] .cop-foot input { background: #211F1A; border-color: rgb
 html[data-theme="dark"] .cop-foot input::placeholder { color: #8A8478; }
 html[data-theme="dark"] .cop-chip { background: #211F1A; border-color: rgba(239,233,220,.14); color: #C9C3B4; }
 html[data-theme="dark"] .cop-enlace { border-color: rgba(239,233,220,.16); color: #EFE9DC; }
+html[data-theme="dark"] .cop-accion { background: #211F1A; border-color: rgba(239,233,220,.18); color: #EFE9DC; }
+html[data-theme="dark"] .cop-accion:hover { background: #2A2721; border-color: rgba(239,233,220,.32); box-shadow: 0 8px 16px -10px rgba(0,0,0,.6); }
 html[data-theme="dark"] .cop-link { color: #E7E1D3; }
 html[data-theme="dark"] .cop-close:hover { background: rgba(239,233,220,.14); }
 html[data-theme="dark"] .cop-fuente.reglas { background: rgba(34,197,94,.16); color: #4ADE80; }
@@ -378,6 +385,7 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     .cop-close,
     .cop-chip,
     .cop-enlace,
+    .cop-accion,
     .cop-foot button { animation: none !important; transition: opacity .12s ease, visibility 0s !important; }
     #cop-panel { transform: none !important; }
 }
@@ -587,6 +595,12 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var RUTA = <?= json_encode($copRuta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var BASE = <?= json_encode(function_exists('url') ? rtrim(url(''), '/') . '/' : '/') ?>;
+    // Rutas relativas del sistema ("caja#ancla") -> URL absoluta con el base.
+    function resolverUrl(u) {
+        u = String(u || '');
+        return u.charAt(0) === '/' || u.indexOf('http') === 0 ? u : BASE + u;
+    }
     var ocupado = false;
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
@@ -694,16 +708,20 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 var fuente = data.fuente || 'fallback';
                 var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
                 html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
-                if (data.enlace && data.enlace.url) {
-                    html += '<br><a class="cop-enlace" href="' + escapar(data.enlace.url.charAt(0) === '/' ? data.enlace.url : (data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
+                // Deep-links: botones de accion [{label, url}] (solo navegacion).
+                // Si vienen, sustituyen al enlace suelto para no duplicar destinos.
+                var acciones = (data.acciones || []).filter(function (a) { return a && a.url; }).slice(0, 3);
+                if (acciones.length) {
+                    html += '<div class="cop-acciones">';
+                    acciones.forEach(function (a) {
+                        html += '<a class="cop-accion" href="' + escapar(resolverUrl(a.url)) + '">' + escapar(a.label || 'Abrir') + ' →</a>';
+                    });
+                    html += '</div>';
+                } else if (data.enlace && data.enlace.url) {
+                    html += '<br><a class="cop-enlace" href="' + escapar(resolverUrl(data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
                 }
                 pensando.classList.remove('cop-loading');
                 pensando.innerHTML = '<span class="cop-reveal">' + html + '</span>';
-                // Los enlaces vienen como ruta relativa del sistema; resolverlos con el base.
-                var a = pensando.querySelector('.cop-enlace');
-                if (a && data.enlace && data.enlace.url && data.enlace.url.charAt(0) !== '/') {
-                    a.setAttribute('href', <?= json_encode(function_exists('url') ? rtrim(url(''), '/') . '/' : '/') ?> + data.enlace.url);
-                }
                 body.scrollTop = body.scrollHeight;
             })
             .catch(function () {

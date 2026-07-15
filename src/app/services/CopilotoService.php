@@ -236,6 +236,15 @@ class CopilotoService
         return null;
     }
 
+    /**
+     * Deep-link de limpieza: la pantalla operativa que le toque a este hotel.
+     * Solo navegacion (las acciones ejecutables no viven en esta capa).
+     */
+    private function urlLimpieza(int $hotelId): string
+    {
+        return $this->tieneModulo('camarista', $hotelId) ? 'camarista' : 'habitaciones';
+    }
+
     private function responderIntent(int $hotelId, string $intent, string $norm = ''): array
     {
         switch ($intent) {
@@ -252,11 +261,19 @@ class CopilotoService
             case 'caja':
                 $c = $this->caja($hotelId);
                 if (!$c['abierto']) {
-                    return ['texto' => 'No hay ningun corte de caja abierto en este momento.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                    return [
+                        'texto' => 'No hay ningun corte de caja abierto en este momento.',
+                        'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                        'acciones' => [['label' => 'Ir a Caja', 'url' => 'caja']],
+                    ];
                 }
                 return [
                     'texto' => "El corte de caja abierto tiene un **efectivo esperado de \${$c['esperado']}** (abierto desde {$c['desde']}).",
                     'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                    'acciones' => [
+                        ['label' => 'Ir a Caja', 'url' => 'caja'],
+                        ['label' => 'Hacer el corte', 'url' => 'caja#cop-ancla-corte'],
+                    ],
                 ];
 
             case 'llegadas':
@@ -267,6 +284,10 @@ class CopilotoService
                 return [
                     'texto' => "Hoy llegan **{$l['total']} reservacion(es)**" . ($l['nombres'] !== '' ? ': ' . $l['nombres'] : '') . '.',
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                    'acciones' => [
+                        ['label' => 'Ver llegadas', 'url' => 'reservaciones'],
+                        ['label' => 'Ver habitaciones', 'url' => 'habitaciones'],
+                    ],
                 ];
 
             case 'salidas':
@@ -277,6 +298,10 @@ class CopilotoService
                 return [
                     'texto' => "Hoy salen **{$s['total']} reservacion(es)**" . ($s['nombres'] !== '' ? ': ' . $s['nombres'] : '') . '.',
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                    'acciones' => [
+                        ['label' => 'Ver salidas', 'url' => 'reservaciones'],
+                        ['label' => 'Ir a limpieza', 'url' => $this->urlLimpieza($hotelId)],
+                    ],
                 ];
 
             case 'no_shows':
@@ -286,6 +311,7 @@ class CopilotoService
                         ? 'No tienes no-shows pendientes. Todo en orden.'
                         : "Tienes **{$n} no-show(s)**: reservaciones confirmadas cuya llegada ya paso y no hicieron check-in.",
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                    'acciones' => $n > 0 ? [['label' => 'Revisar no-shows', 'url' => 'reservaciones']] : [],
                 ];
 
             case 'checkouts_vencidos':
@@ -295,6 +321,7 @@ class CopilotoService
                         ? 'No hay checkouts vencidos: nadie sigue dentro despues de su fecha de salida.'
                         : "Hay **{$v} checkout(s) vencido(s)**: huespedes con check-in cuya salida ya paso.",
                     'enlace' => ['url' => 'reservaciones', 'texto' => 'Ver reservaciones'],
+                    'acciones' => $v > 0 ? [['label' => 'Revisar checkouts', 'url' => 'reservaciones']] : [],
                 ];
 
             case 'motor_conciliar':
@@ -304,6 +331,7 @@ class CopilotoService
                         ? 'No tienes pagos online pendientes de conciliar a Caja.'
                         : "Tienes **{$m['n']} pago(s) online por conciliar** a Caja, por \${$m['monto']} en total.",
                     'enlace' => ['url' => 'motor-reservas', 'texto' => 'Ir al motor'],
+                    'acciones' => $m['n'] > 0 ? [['label' => 'Conciliar en el motor', 'url' => 'motor-reservas']] : [],
                 ];
 
             case 'resumen_dia':
@@ -344,9 +372,14 @@ class CopilotoService
                         $partes[] = "{$he[$estado]} {$etiqueta}";
                     }
                 }
+                $accionesHe = [['label' => 'Ver habitaciones', 'url' => 'habitaciones']];
+                if (!empty($he['limpieza'])) {
+                    $accionesHe[] = ['label' => 'Ir a limpieza', 'url' => $this->urlLimpieza($hotelId)];
+                }
                 return [
                     'texto' => 'Asi estan tus habitaciones ahorita: **' . implode(', ', $partes) . '**.',
                     'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+                    'acciones' => $accionesHe,
                 ];
 
             case 'hospedados':
@@ -562,7 +595,15 @@ class CopilotoService
                 if ($lh['salidas'] > 0) {
                     $partesLh[] = "**{$lh['salidas']} salida(s) de hoy** por limpiar";
                 }
-                return ['texto' => 'Para limpieza: ' . implode(' y ', $partesLh) . '.', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
+                $accionesLh = [['label' => 'Ir a limpieza', 'url' => $this->urlLimpieza($hotelId)]];
+                if ($this->tieneModulo('tareas', $hotelId)) {
+                    $accionesLh[] = ['label' => 'Ver tareas', 'url' => 'tareas'];
+                }
+                return [
+                    'texto' => 'Para limpieza: ' . implode(' y ', $partesLh) . '.',
+                    'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+                    'acciones' => $accionesLh,
+                ];
 
             case 'calificaciones_bajas':
                 $cb = $this->calificacionesBajas($hotelId);
@@ -571,6 +612,7 @@ class CopilotoService
                         ? 'No tienes calificaciones bajas (3 o menos) en los ultimos 90 dias. 👏'
                         : "Tienes **{$cb['n']} calificacion(es) baja(s)** (3 o menos) en los ultimos 90 dias, promedio {$cb['prom']}/5. Vale la pena revisarlas.",
                     'enlace' => ['url' => 'reputacion', 'texto' => 'Ver reputacion'],
+                    'acciones' => $cb['n'] > 0 ? [['label' => 'Revisar calificaciones', 'url' => 'reputacion']] : [],
                 ];
 
             case 'inventario_bajo':
@@ -582,9 +624,14 @@ class CopilotoService
                 if ($ib['n'] > count($ib['items'])) {
                     $muestraIb .= ' y ' . ($ib['n'] - count($ib['items'])) . ' mas';
                 }
+                $accionesIb = [['label' => 'Ver inventario', 'url' => 'inventario']];
+                if ($this->tieneModulo('compras', $hotelId)) {
+                    $accionesIb[] = ['label' => 'Registrar compra', 'url' => 'compras'];
+                }
                 return [
                     'texto' => "Tienes **{$ib['n']} producto(s) por agotarse** (en o bajo su minimo): {$muestraIb}.",
                     'enlace' => ['url' => 'inventario', 'texto' => 'Ver inventario'],
+                    'acciones' => $accionesIb,
                 ];
 
             case 'cxp_debo':
@@ -607,6 +654,7 @@ class CopilotoService
                 return [
                     'texto' => "Te deben **\${$cxc['saldo']}** en **{$cxc['n']} cuenta(s) por cobrar**{$vtxtC}.",
                     'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ver cuentas por cobrar'],
+                    'acciones' => [['label' => 'Ver quien te debe', 'url' => 'cuentas-por-cobrar']],
                 ];
 
             case 'nomina_periodo':
@@ -975,14 +1023,25 @@ class CopilotoService
             ? "• Caja: corte abierto, efectivo esperado \${$c['esperado']}."
             : "• Caja: sin corte abierto.";
 
+        $acciones = [];
+        if ($lleg['total'] > 0 || $sal['total'] > 0 || $noShow > 0 || $venc > 0) {
+            $acciones[] = ['label' => 'Ver reservaciones', 'url' => 'reservaciones'];
+        }
+        $acciones[] = ['label' => 'Ir a Caja', 'url' => 'caja'];
+
         if ($this->tieneModulo('motor_reservas', $hotelId)) {
             $m = $this->motorPorConciliar($hotelId);
             if ($m['n'] > 0) {
                 $lineas[] = "• Motor: **{$m['n']} pago(s) online por conciliar** (\${$m['monto']}).";
+                $acciones[] = ['label' => 'Conciliar en el motor', 'url' => 'motor-reservas'];
             }
         }
 
-        return ['texto' => implode("\n", $lineas), 'enlace' => ['url' => 'dashboard', 'texto' => 'Ir al dashboard']];
+        return [
+            'texto' => implode("\n", $lineas),
+            'enlace' => ['url' => 'dashboard', 'texto' => 'Ir al dashboard'],
+            'acciones' => $acciones,
+        ];
     }
 
     /** Ocupacion promedio de los proximos 7 dias y el mejor dia. */
