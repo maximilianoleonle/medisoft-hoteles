@@ -138,16 +138,6 @@ class ConfiguracionHotelRegistry
             'default' => true,
             'description' => 'Permitir que el copiloto use IA (Claude) para preguntas abiertas. Apagado = solo reglas, sin costo de API.',
         ],
-        'copiloto.briefing_activo' => [
-            'type' => 'boolean',
-            'default' => true,
-            'description' => 'Enviar el briefing matutino por push (bloque copiloto_briefing).',
-        ],
-        'copiloto.briefing_hora' => [
-            'type' => 'string',
-            'default' => '08:00',
-            'description' => 'Hora local a partir de la cual se envia el briefing matutino.',
-        ],
         'nomina.modo' => [
             'type' => 'string',
             'default' => 'simplificada',

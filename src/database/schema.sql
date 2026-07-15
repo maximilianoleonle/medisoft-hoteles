@@ -1309,6 +1309,34 @@ CREATE TABLE `mantenimientos_habitaciones` (
   CONSTRAINT `fk_mantenimientos_habitaciones_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Registro histórico de mantenimientos realizados a las habitaciones';
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `mensajes_whatsapp`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mensajes_whatsapp` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `reservacion_id` int NOT NULL,
+  `tipo` enum('confirmacion','recordatorio','anticipo','encuesta') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `telefono` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contenido` text COLLATE utf8mb4_unicode_ci,
+  `estado` enum('pendiente','enviado','descartado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',
+  `canal` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
+  `motivo` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `enviado_por` int DEFAULT NULL,
+  `enviado_en` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_mensaje_reservacion_tipo` (`hotel_id`,`reservacion_id`,`tipo`),
+  KEY `idx_mensajes_wa_hotel_estado` (`hotel_id`,`estado`),
+  KEY `idx_mensajes_wa_hotel_enviado` (`hotel_id`,`enviado_en`),
+  KEY `fk_mensajes_wa_reservacion` (`reservacion_id`),
+  KEY `fk_mensajes_wa_usuario` (`enviado_por`),
+  CONSTRAINT `fk_mensajes_wa_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mensajes_wa_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mensajes_wa_usuario` FOREIGN KEY (`enviado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
