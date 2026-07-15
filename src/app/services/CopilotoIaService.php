@@ -153,6 +153,29 @@ class CopilotoIaService
         return $this->guardarYResponder($hotelId, 'tarifa', $hoy, $ia, $prep['en_prueba'], $usuarioId);
     }
 
+    /**
+     * Fila cacheada del consejo de tarifa de HOY (id, contenido, updated_at) o
+     * null si aun no se genera. El id sirve como consejo_ref al aplicar una
+     * sugerencia: el ajuste queda ligado al consejo exacto que lo origino.
+     */
+    public function consejoTarifaHoy(int $hotelId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, contenido, updated_at
+                 FROM copiloto_ia_generaciones
+                 WHERE hotel_id = ? AND tipo = 'tarifa' AND ref_clave = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$hotelId, date('Y-m-d')]);
+            $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $fila ?: null;
+        } catch (Throwable $e) {
+            error_log('CopilotoIA: error al leer consejo de hoy: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     // ───────────────────── Gating: cache, prueba gratis y limites ─────────────────────
 
     /**

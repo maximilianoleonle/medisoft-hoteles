@@ -147,6 +147,15 @@ if (empty($tarifaRoomTypeLabels) && class_exists('Habitacion')) {
     color:#065F46; border:1px solid rgba(16,185,129,.2);
 }
 
+/* ── Badge de origen Copiloto IA ─────────── */
+.copiloto-badge {
+    display:inline-flex; align-items:center; gap:3px;
+    padding:2px 8px; border-radius:999px; font-size:.66rem; font-weight:700;
+    background:linear-gradient(135deg,rgba(189,148,65,.14),rgba(189,148,65,.06));
+    color:#7A5C1E; border:1px solid rgba(189,148,65,.32);
+    white-space:nowrap; vertical-align:1px;
+}
+
 /* ── Scope badges ────────────────────────── */
 .scope-badge {
     display:inline-flex; align-items:center; gap:3px;
@@ -1873,6 +1882,9 @@ input.toggle-activo:checked ~ div {
                                         <p class="text-xs font-semibold text-gray-800 truncate max-w-[160px]">
                                             <?= htmlspecialchars($inc['nombre']) ?>
                                         </p>
+                                        <?php if (($inc['origen'] ?? null) === 'copiloto'): ?>
+                                            <span class="copiloto-badge" title="Creado desde el consejo del Copiloto IA y aprobado por una persona">&#10024; Copiloto</span>
+                                        <?php endif; ?>
                                         <?php if ($inc['descripcion']): ?>
                                             <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">
                                                 <?= htmlspecialchars($inc['descripcion']) ?>

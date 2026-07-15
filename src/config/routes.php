@@ -278,6 +278,9 @@ $router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'p
 $router->post('/copiloto-ia/resena', ['controller' => 'CopilotoIa', 'action' => 'resena']);
 $router->post('/copiloto-ia/analisis', ['controller' => 'CopilotoIa', 'action' => 'analisis']);
 $router->post('/copiloto-ia/tarifa', ['controller' => 'CopilotoIa', 'action' => 'tarifa']);
+// Aplicar una sugerencia del consejo como IncrementoTarifa (confirmacion humana
+// + permiso tarifas.edit; la IA solo propone, PHP valida, el humano decide)
+$router->post('/copiloto-ia/tarifa/aplicar', ['controller' => 'CopilotoIa', 'action' => 'aplicarTarifa']);
 
 // Huesped frecuente (bloque lealtad: cupon personal via motor_cupones)
 $router->get('/lealtad', ['controller' => 'Lealtad', 'action' => 'index']);

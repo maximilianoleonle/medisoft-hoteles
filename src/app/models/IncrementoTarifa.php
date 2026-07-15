@@ -20,7 +20,10 @@ class IncrementoTarifa extends Model {
         'fecha_fin',
         'activo',
         'prioridad',
-        'usuario_id'
+        'usuario_id',
+        'origen',
+        'consejo_ref',
+        'aprobado_por'
     ];
 
     private function hotelIdActual($hotelId = null) {

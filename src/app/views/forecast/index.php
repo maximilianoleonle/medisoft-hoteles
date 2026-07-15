@@ -161,6 +161,34 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 .fcia-upsell { font-size: .87rem; background: var(--fc-gold-soft); border: 1px solid var(--fc-gold-line); color: var(--fc-gold-ink); border-radius: 12px; padding: 13px 15px; line-height: 1.5; }
 .fcia-error { font-size: .87rem; background: var(--fc-danger-bg); border: 1px solid color-mix(in srgb, var(--fc-danger) 24%, #fff); color: color-mix(in srgb, var(--fc-danger) 72%, var(--fc-text)); border-radius: 12px; padding: 11px 14px; }
 
+/* Sugerencias accionables del consejo (Fase 2): tarjeta por ventana */
+.fcia-cards { display: grid; gap: 10px; margin-top: 12px; }
+.fcia-card { display: flex; flex-direction: column; gap: 9px; background: var(--fc-surface-warm); border: 1px solid var(--fc-border); border-radius: 14px; padding: 14px; }
+.fcia-card-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.fcia-accion { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
+.fcia-accion.subir { color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); background: var(--fc-success-bg); border-color: color-mix(in srgb, var(--fc-success) 24%, #fff); }
+.fcia-accion.bajar { color: color-mix(in srgb, var(--fc-info) 74%, var(--fc-text)); background: var(--fc-info-bg); border-color: color-mix(in srgb, var(--fc-info) 24%, #fff); }
+.fcia-accion.mantener { color: var(--fc-muted); background: var(--fc-surface); border-color: var(--fc-border); }
+.fcia-pct { color: var(--fc-heading); font-family: var(--fc-serif); font-size: 1.55rem; font-weight: 700; line-height: 1; }
+.fcia-ventana { margin-left: auto; color: var(--fc-muted); font-size: .72rem; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.fcia-fechas { color: var(--fc-heading); font-size: .85rem; font-weight: 650; }
+.fcia-motivo { color: var(--fc-muted); font-size: .8rem; line-height: 1.45; }
+.fcia-preview { display: grid; gap: 4px; padding: 9px 11px; background: var(--fc-surface); border: 1px solid var(--fc-border); border-radius: 10px; font-size: .82rem; }
+.fcia-preview-row { display: flex; justify-content: space-between; gap: 8px; }
+.fcia-preview-row .np { font-weight: 700; color: var(--fc-heading); white-space: nowrap; }
+.fcia-acciones-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.fcia-stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--fc-border); border-radius: 10px; background: var(--fc-surface); overflow: hidden; }
+.fcia-step-btn { width: 38px; min-height: 38px; border: 0; background: transparent; color: var(--fc-gold-ink); font-size: 1rem; font-weight: 700; cursor: pointer; }
+.fcia-step-btn:disabled { opacity: .35; cursor: default; }
+.fcia-step-val { min-width: 44px; text-align: center; color: var(--fc-heading); font-weight: 700; font-size: .92rem; }
+.fcia-exito { font-size: .87rem; background: var(--fc-success-bg); border: 1px solid color-mix(in srgb, var(--fc-success) 24%, #fff); color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); border-radius: 12px; padding: 12px 14px; line-height: 1.5; }
+.fcia-exito a { color: inherit; font-weight: 700; }
+.fcia-conflicto { font-size: .84rem; background: var(--fc-warning-bg); border: 1px solid color-mix(in srgb, var(--fc-warning) 26%, #fff); color: color-mix(in srgb, var(--fc-warning) 72%, var(--fc-text)); border-radius: 12px; padding: 12px 14px; line-height: 1.5; }
+.fcia-conflicto a { color: inherit; font-weight: 700; }
+@media (min-width: 760px) {
+    .fcia-cards { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+}
+
 @media (min-width: 900px) {
     .fc-hero-section { grid-template-columns: minmax(0, 1fr) auto; }
 }
@@ -327,13 +355,14 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 (function () {
     'use strict';
     var URL_TARIFA = <?= json_encode(url('copiloto-ia/tarifa')) ?>;
+    var URL_APLICAR = <?= json_encode(url('copiloto-ia/tarifa/aplicar')) ?>;
     var TOKEN = <?= json_encode(function_exists('csrf_token') ? csrf_token() : '') ?>;
 
-    function post(params, cb) {
+    function post(url, params, cb) {
         var datos = new URLSearchParams();
         datos.append('csrf_token', TOKEN);
         Object.keys(params).forEach(function (k) { datos.append(k, params[k]); });
-        fetch(URL_TARIFA, {
+        fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': TOKEN, 'X-Requested-With': 'XMLHttpRequest' },
             body: datos.toString()
@@ -353,6 +382,155 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     var cont = document.getElementById('fcia-consejo');
     if (!btn || !cont) { return; }
 
+    // ── Sugerencias accionables (Fase 2): tarjeta por ventana ──
+    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    function el(tag, clase, texto) {
+        var n = document.createElement(tag);
+        if (clase) { n.className = clase; }
+        if (texto != null) { n.textContent = texto; }
+        return n;
+    }
+    function fmtFecha(iso) {
+        var p = String(iso || '').split('-');
+        return p.length === 3 ? parseInt(p[2], 10) + ' ' + (MESES[parseInt(p[1], 10) - 1] || '') : iso;
+    }
+    function fmtDinero(n) {
+        return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtPct(n) {
+        return String(Math.round(n * 10) / 10).replace(/\.0$/, '');
+    }
+
+    function tarjeta(s, data) {
+        var esMantener = s.accion === 'mantener';
+        var dir = s.accion === 'bajar' ? -1 : 1;
+        var pctMax = Number(data.pct_max) || 15;
+        var pct = Math.min(pctMax, Math.max(1, Math.round(s.pct)));
+
+        var card = el('div', 'fcia-card');
+        var top = el('div', 'fcia-card-top');
+        var badge = el('span', 'fcia-accion ' + s.accion,
+            esMantener ? '· Mantener tarifa' : (s.accion === 'subir' ? '▲ Subir tarifa' : '▼ Bajar tarifa'));
+        top.appendChild(badge);
+        var pctEl = null;
+        if (!esMantener) {
+            pctEl = el('span', 'fcia-pct', (dir < 0 ? '−' : '+') + fmtPct(pct) + '%');
+            top.appendChild(pctEl);
+        }
+        top.appendChild(el('span', 'fcia-ventana', 'Próx. ' + s.ventana + ' días'));
+        card.appendChild(top);
+
+        card.appendChild(el('div', 'fcia-fechas', fmtFecha(s.desde) + ' – ' + fmtFecha(s.hasta)));
+        if (s.motivo) { card.appendChild(el('div', 'fcia-motivo', s.motivo)); }
+        if (esMantener) { return card; }
+
+        // Preview real de precios (viene del servidor solo con permiso de tarifas)
+        var previewFilas = [];
+        if (s.preview && s.preview.length) {
+            var pv = el('div', 'fcia-preview');
+            s.preview.forEach(function (p) {
+                var row = el('div', 'fcia-preview-row');
+                row.appendChild(el('span', null, p.nombre));
+                var np = el('span', 'np');
+                row.appendChild(np);
+                pv.appendChild(row);
+                previewFilas.push({ p: p, np: np });
+            });
+            card.appendChild(pv);
+        }
+
+        function nuevoPrecio(p) { return Math.max(0, p.actual + dir * pct * p.delta_punto); }
+        function pintarPreview() {
+            previewFilas.forEach(function (f) {
+                f.np.textContent = fmtDinero(f.p.actual) + ' → ' + fmtDinero(nuevoPrecio(f.p));
+            });
+        }
+        function repintar() {
+            if (pctEl) { pctEl.textContent = (dir < 0 ? '−' : '+') + fmtPct(pct) + '%'; }
+            pintarPreview();
+            menos.disabled = pct <= 1;
+            mas.disabled = pct >= pctMax;
+        }
+
+        // Sin permiso de tarifas: la tarjeta informa, pero no hay stepper ni boton.
+        if (!data.puede_aplicar) { pintarPreview(); return card; }
+
+        var fila = el('div', 'fcia-acciones-row');
+        var stepper = el('div', 'fcia-stepper');
+        var menos = el('button', 'fcia-step-btn', '−');
+        var val = el('span', 'fcia-step-val', fmtPct(pct) + '%');
+        var mas = el('button', 'fcia-step-btn', '+');
+        menos.type = 'button'; mas.type = 'button';
+        menos.setAttribute('aria-label', 'Bajar un punto porcentual');
+        mas.setAttribute('aria-label', 'Subir un punto porcentual');
+        stepper.appendChild(menos); stepper.appendChild(val); stepper.appendChild(mas);
+        fila.appendChild(stepper);
+
+        var aplicar = el('button', 'fc-btn fcia-aplicar', 'Aplicar ajuste');
+        aplicar.type = 'button';
+        fila.appendChild(aplicar);
+        card.appendChild(fila);
+
+        menos.addEventListener('click', function () { if (pct > 1) { pct--; val.textContent = fmtPct(pct) + '%'; repintar(); } });
+        mas.addEventListener('click', function () { if (pct < pctMax) { pct++; val.textContent = fmtPct(pct) + '%'; repintar(); } });
+
+        aplicar.addEventListener('click', function () {
+            var resumen = 'Se creará un ajuste de tarifa: ' + (dir < 0 ? 'bajar' : 'subir') + ' ' + fmtPct(pct) + '%'
+                + ' del ' + fmtFecha(s.desde) + ' al ' + fmtFecha(s.hasta) + ' (todas las habitaciones).';
+            if (previewFilas.length) {
+                resumen += ' Ejemplo: ' + previewFilas.map(function (f) {
+                    return f.p.nombre + ' ' + fmtDinero(f.p.actual) + ' → ' + fmtDinero(nuevoPrecio(f.p));
+                }).join(' · ') + '.';
+            }
+            resumen += ' Podrás editarlo o borrarlo en Tarifas como cualquier otro ajuste.';
+
+            window.msConfirm({
+                type: 'warning',
+                icon: 'money',
+                title: 'Aplicar ajuste del Copiloto',
+                msg: resumen,
+                confirmLabel: 'Sí, crear ajuste'
+            }).then(function (ok) {
+                if (!ok) { return; }
+                aplicar.disabled = true;
+                aplicar.textContent = 'Creando…';
+                post(URL_APLICAR, { ventana: s.ventana, pct: pct }, function (r) {
+                    if (r.success) {
+                        var exito = el('div', 'fcia-exito');
+                        exito.appendChild(el('span', null, '✓ Ajuste creado: ' + (r.nombre || '') + '. Las cotizaciones de esas fechas ya lo aplican. '));
+                        var link = el('a', null, 'Ver en tarifas');
+                        link.href = r.url_tarifas || data.url_tarifas || '#';
+                        exito.appendChild(link);
+                        card.replaceChildren(top, exito);
+                        if (window.msToast) { window.msToast('success', 'Tarifa ajustada', r.message || 'Ajuste creado.'); }
+                        return;
+                    }
+                    aplicar.disabled = false;
+                    aplicar.textContent = 'Aplicar ajuste';
+                    if (r.conflicto) {
+                        var viejo = card.querySelector('.fcia-conflicto');
+                        if (viejo) { viejo.remove(); }
+                        var box = el('div', 'fcia-conflicto');
+                        var lineas = (r.conflictos || []).map(function (c) {
+                            return '“' + c.nombre + '” (' + c.valor + ') del ' + fmtFecha(c.desde) + (c.hasta ? ' al ' + fmtFecha(c.hasta) : ', permanente');
+                        });
+                        box.appendChild(el('span', null, 'Ya tienes un ajuste vigente en esas fechas: ' + (lineas.join('; ') || '') + '. No se apilan ajustes en automático. '));
+                        var verLink = el('a', null, 'Ver tarifas');
+                        verLink.href = data.url_tarifas || '#';
+                        box.appendChild(verLink);
+                        card.insertBefore(box, fila);
+                        return;
+                    }
+                    if (window.msToast) { window.msToast('error', 'No se aplicó', r.message || 'Intenta de nuevo.'); }
+                });
+            });
+        });
+
+        repintar();
+        return card;
+    }
+
     function pintar(data) {
         if (data.success) {
             var partes = ['<div class="fcia-texto">' + iaHtml(data.texto) + '</div>'];
@@ -362,6 +540,12 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
             }
             partes.push('<div class="fcia-botones"><button type="button" class="fcia-btn sec" id="fcia-regen">Regenerar</button></div>');
             cont.innerHTML = partes.join('');
+            if (data.sugerencias && data.sugerencias.length) {
+                var cards = el('div', 'fcia-cards');
+                data.sugerencias.forEach(function (s) { cards.appendChild(tarjeta(s, data)); });
+                var texto = cont.querySelector('.fcia-texto');
+                if (texto) { texto.insertAdjacentElement('afterend', cards); }
+            }
             document.getElementById('fcia-regen').addEventListener('click', function () { cargar(true); });
         } else if (data.upsell) {
             cont.innerHTML = '<div class="fcia-upsell">🔒 ' + iaHtml(data.message) + '</div>';
@@ -373,7 +557,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     function cargar(regen) {
         cont.hidden = false;
         cont.innerHTML = '<div class="fcia-meta">💡 Leyendo tu proyección y ritmo de ventas…</div>';
-        post({ regenerar: regen ? '1' : '0' }, pintar);
+        post(URL_TARIFA, { regenerar: regen ? '1' : '0' }, pintar);
     }
 
     btn.addEventListener('click', function () { cargar(false); });
