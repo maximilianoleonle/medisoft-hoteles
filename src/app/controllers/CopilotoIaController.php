@@ -116,6 +116,19 @@ class CopilotoIaController extends Controller {
                 ], 200);
             }
 
+            // Foto del momento (Fase 5): ocupacion proyectada y tarifa promedio
+            // de la ventana AL APLICAR, para comparar contra el resultado real
+            // cuando la ventana pase. Si falla, el ajuste se crea igual.
+            $snapOcupacion = null;
+            $snapTarifa = null;
+            try {
+                $snap = (new ForecastService())->resultadoVentana($hotelId, $sugerencia['desde'], $sugerencia['hasta'], true);
+                $snapOcupacion = $snap['ocupacion'];
+                $snapTarifa = $snap['tarifa_promedio'];
+            } catch (Throwable $e) {
+                error_log('CopilotoIA: no se pudo tomar el snapshot del ajuste: ' . $e->getMessage());
+            }
+
             $verbo = $sugerencia['accion'] === 'subir' ? 'subir' : 'bajar';
             $registro = $tarifaModel->create([
                 'hotel_id' => $hotelId,
@@ -134,6 +147,8 @@ class CopilotoIaController extends Controller {
                 'origen' => 'copiloto',
                 'consejo_ref' => (int) $fila['id'],
                 'aprobado_por' => user_id(),
+                'snapshot_ocupacion' => $snapOcupacion,
+                'snapshot_tarifa' => $snapTarifa,
             ]);
 
             if (!$registro) {

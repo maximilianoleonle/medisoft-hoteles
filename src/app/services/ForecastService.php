@@ -224,6 +224,67 @@ class ForecastService
     }
 
     /**
+     * Ocupacion (%) y venta de una ventana [desde, hasta] (inclusive):
+     * noches-habitacion vendidas, ingreso por hospedaje derramado por noche y
+     * tarifa promedio por noche-habitacion. Con $soloVigentes = true mide lo
+     * ya reservado de una ventana futura (snapshot al aplicar un ajuste);
+     * con false mide lo que realmente ocurrio (resultado, ventana pasada).
+     * 100% lectura.
+     */
+    public function resultadoVentana(int $hotelId, string $desde, string $hasta, bool $soloVigentes = false): array
+    {
+        $vacio = ['ocupacion' => null, 'noches' => 0, 'ingreso' => 0.0, 'tarifa_promedio' => null];
+        if ($desde > $hasta) {
+            return $vacio;
+        }
+
+        $dias = (int) ((strtotime($hasta) - strtotime($desde)) / 86400) + 1;
+        $total = $this->habitacionesActivas($hotelId);
+        $porDia = $this->ocupacionPorDia($hotelId, $desde, $dias, $soloVigentes);
+        $ocupacion = self::promedio($porDia, $dias, $total);
+
+        // Ingreso derramado por noche: cada reserva aporta su precio por noche
+        // multiplicado por las noches que caen dentro de la ventana.
+        $filtroEstado = $soloVigentes
+            ? "estado IN ('confirmada', 'checked_in')"
+            : "estado NOT IN ('cancelada', 'pendiente')";
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT
+                    COALESCE(SUM(
+                        precio_total / GREATEST(1, DATEDIFF(fecha_salida, fecha_entrada))
+                        * GREATEST(0, DATEDIFF(LEAST(fecha_salida, DATE_ADD(?, INTERVAL 1 DAY)), GREATEST(fecha_entrada, ?)))
+                    ), 0) AS ingreso,
+                    COALESCE(SUM(
+                        GREATEST(0, DATEDIFF(LEAST(fecha_salida, DATE_ADD(?, INTERVAL 1 DAY)), GREATEST(fecha_entrada, ?)))
+                        * GREATEST(1, total_habitaciones)
+                    ), 0) AS noches
+                 FROM reservaciones
+                 WHERE hotel_id = ?
+                   AND {$filtroEstado}
+                   AND fecha_salida > ?
+                   AND fecha_entrada <= ?"
+            );
+            $stmt->execute([$hasta, $desde, $hasta, $desde, $hotelId, $desde, $hasta]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['ingreso' => 0, 'noches' => 0];
+        } catch (Throwable $e) {
+            error_log('Forecast: error al calcular resultado de ventana: ' . $e->getMessage());
+            $row = ['ingreso' => 0, 'noches' => 0];
+        }
+
+        $noches = (int) $row['noches'];
+        $ingreso = round((float) $row['ingreso'], 2);
+
+        return [
+            'ocupacion' => $ocupacion,
+            'noches' => $noches,
+            'ingreso' => $ingreso,
+            'tarifa_promedio' => $noches > 0 ? round($ingreso / $noches, 2) : null,
+        ];
+    }
+
+    /**
      * true si el hotel ya tiene historia de hace ~1 anio (alguna estancia no
      * cancelada iniciada hace 11 meses o mas). Sirve para detectar el
      * arranque en frio del consejo de tarifa.

@@ -156,6 +156,13 @@ if (empty($tarifaRoomTypeLabels) && class_exists('Habitacion')) {
     white-space:nowrap; vertical-align:1px;
 }
 
+.copiloto-resultado {
+    margin:3px 0 0; font-size:.7rem; color:#6B7280; line-height:1.45;
+}
+.copiloto-resultado strong { color:#374151; font-weight:700; }
+.copiloto-resultado .rc-up { color:#059669; font-weight:700; }
+.copiloto-resultado .rc-down { color:#B4392B; font-weight:700; }
+
 /* ── Scope badges ────────────────────────── */
 .scope-badge {
     display:inline-flex; align-items:center; gap:3px;
@@ -1884,6 +1891,17 @@ input.toggle-activo:checked ~ div {
                                         </p>
                                         <?php if (($inc['origen'] ?? null) === 'copiloto'): ?>
                                             <span class="copiloto-badge" title="Creado desde el consejo del Copiloto IA y aprobado por una persona">&#10024; Copiloto</span>
+                                            <?php if (!empty($inc['resultado_copiloto'])): $rc = $inc['resultado_copiloto']; ?>
+                                                <p class="copiloto-resultado">
+                                                    Resultado: ocupaci&oacute;n <strong><?= number_format((float) $rc['ocupacion_real'], 1) ?>%</strong> real<?php
+                                                        if ($rc['ocupacion_proyectada'] !== null):
+                                                            $mejoro = $rc['ocupacion_real'] >= $rc['ocupacion_proyectada'];
+                                                    ?> vs <?= number_format($rc['ocupacion_proyectada'], 1) ?>% proyectada al aplicar
+                                                        <span class="<?= $mejoro ? 'rc-up' : 'rc-down' ?>"><?= $mejoro ? '▲' : '▼' ?></span><?php endif; ?><?php
+                                                        if ($rc['tarifa_real'] !== null): ?> &middot; tarifa prom. $<?= number_format((float) $rc['tarifa_real'], 2) ?><?php
+                                                            if ($rc['tarifa_al_aplicar'] !== null): ?> (al aplicar $<?= number_format($rc['tarifa_al_aplicar'], 2) ?>)<?php endif; ?><?php endif; ?>
+                                                </p>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                         <?php if ($inc['descripcion']): ?>
                                             <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">

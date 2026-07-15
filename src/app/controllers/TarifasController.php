@@ -177,12 +177,56 @@ class TarifasController extends Controller {
     public function indexAction() {
         $incrementos = $this->tarifaModel->getAllConInfo();
         $estadisticas = $this->tarifaModel->getEstadisticas();
-        
+
+        // Cierre del circulo del Copiloto: para ajustes origen='copiloto' cuya
+        // ventana ya paso, calcula on-demand el resultado real y comparalo
+        // contra la foto tomada al aplicar. Honesto: si no mejoro, se dice.
+        $incrementos = $this->conResultadoCopiloto($incrementos);
+
         View::renderTemplate('configuracion/tarifas/index', [
             'title' => 'Gestión de Tarifas Dinámicas',
             'incrementos' => $incrementos,
             'estadisticas' => $estadisticas
         ]);
+    }
+
+    /** Agrega 'resultado_copiloto' a los ajustes del copiloto con ventana concluida. */
+    private function conResultadoCopiloto(array $incrementos): array {
+        $hoy = date('Y-m-d');
+        $forecast = null;
+
+        foreach ($incrementos as $i => $inc) {
+            if (($inc['origen'] ?? null) !== 'copiloto'
+                || empty($inc['fecha_fin'])
+                || $inc['fecha_fin'] >= $hoy) {
+                continue;
+            }
+
+            try {
+                require_once __DIR__ . '/../services/ForecastService.php';
+                $forecast = $forecast ?: new ForecastService();
+                $real = $forecast->resultadoVentana($this->hotelIdActual(), $inc['fecha_inicio'], $inc['fecha_fin'], false);
+            } catch (Throwable $e) {
+                error_log('Tarifas: error al calcular resultado del ajuste copiloto: ' . $e->getMessage());
+                continue;
+            }
+
+            if ($real['ocupacion'] === null) {
+                continue;
+            }
+
+            $incrementos[$i]['resultado_copiloto'] = [
+                'ocupacion_real' => $real['ocupacion'],
+                'ocupacion_proyectada' => isset($inc['snapshot_ocupacion']) && $inc['snapshot_ocupacion'] !== null
+                    ? (float) $inc['snapshot_ocupacion'] : null,
+                'tarifa_real' => $real['tarifa_promedio'],
+                'tarifa_al_aplicar' => isset($inc['snapshot_tarifa']) && $inc['snapshot_tarifa'] !== null
+                    ? (float) $inc['snapshot_tarifa'] : null,
+                'ingreso' => $real['ingreso'],
+            ];
+        }
+
+        return $incrementos;
     }
     
     /**

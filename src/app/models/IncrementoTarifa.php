@@ -23,7 +23,9 @@ class IncrementoTarifa extends Model {
         'usuario_id',
         'origen',
         'consejo_ref',
-        'aprobado_por'
+        'aprobado_por',
+        'snapshot_ocupacion',
+        'snapshot_tarifa'
     ];
 
     private function hotelIdActual($hotelId = null) {

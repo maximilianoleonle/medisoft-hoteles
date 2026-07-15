@@ -1081,6 +1081,8 @@ CREATE TABLE `incrementos_tarifas` (
   `origen` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'NULL=manual; copiloto=sugerencia IA confirmada por un humano',
   `consejo_ref` bigint DEFAULT NULL COMMENT 'id de copiloto_ia_generaciones del consejo que origino el ajuste',
   `aprobado_por` int DEFAULT NULL COMMENT 'usuario que confirmo la sugerencia del copiloto',
+  `snapshot_ocupacion` decimal(5,1) DEFAULT NULL COMMENT 'Ocupacion proyectada (%) de la ventana al momento de aplicar el ajuste del copiloto',
+  `snapshot_tarifa` decimal(10,2) DEFAULT NULL COMMENT 'Tarifa promedio por noche-habitacion vendida en la ventana al momento de aplicar',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

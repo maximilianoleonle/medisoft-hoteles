@@ -522,7 +522,9 @@ class CopilotoIaService
             . "\nReglas: usa SOLO las cifras proporcionadas y cita las que uses; rangos conservadores (5% a 15%); "
             . 'la decision es del dueno, nunca lo presentes como orden ni como cambio ya aplicado; '
             . 'si los datos son pocos o la ocupacion es muy baja, dilo con honestidad; montos con formato $1,234.56; '
-            . 'si el servidor incluye temporadas marcadas por el hotel o festivos/puentes, tomalos en cuenta al elegir fechas y direccion, y nombralos.'
+            . 'si el servidor incluye temporadas marcadas por el hotel o festivos/puentes, tomalos en cuenta al elegir fechas y direccion, y nombralos; '
+            . 'si incluye resultados de ajustes anteriores del copiloto, evalualos con honestidad total en la seccion que corresponda: '
+            . 'si el ajuste no mejoro la ocupacion o el ingreso, dilo tal cual y ajusta tu recomendacion (la credibilidad vale mas que el ego).'
             . "\nDespues del texto anterior, agrega al FINAL un bloque <sugerencias>...</sugerencias> con un arreglo JSON "
             . 'que traduzca tu recomendacion por ventana a datos, una entrada por ventana como maximo, con esta forma exacta: '
             . '[{"ventana":"30","accion":"subir","pct":8,"desde":"YYYY-MM-DD","hasta":"YYYY-MM-DD","motivo":"una linea"}]. '
@@ -639,6 +641,52 @@ class CopilotoIaService
             }
         } catch (Throwable $e) {
             error_log('CopilotoIA: error al leer temporadas/festivos: ' . $e->getMessage());
+        }
+
+        // Cierre del circulo (Fase 5): resultado real de los ultimos ajustes
+        // del copiloto cuya ventana ya termino, para que el consejo aprenda
+        // de ellos y hable con honestidad de lo que paso.
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT nombre, clase, valor_incremento, fecha_inicio, fecha_fin,
+                        snapshot_ocupacion, snapshot_tarifa
+                 FROM incrementos_tarifas
+                 WHERE hotel_id = ? AND origen = 'copiloto'
+                   AND fecha_fin IS NOT NULL AND fecha_fin < ? AND fecha_fin >= ?
+                 ORDER BY fecha_fin DESC
+                 LIMIT 3"
+            );
+            $stmt->execute([$hotelId, date('Y-m-d'), date('Y-m-d', strtotime('-90 days'))]);
+            $ajustes = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (!empty($ajustes)) {
+                $fs2 = new ForecastService();
+                $lr = [];
+                foreach ($ajustes as $aj) {
+                    $real = $fs2->resultadoVentana($hotelId, (string) $aj['fecha_inicio'], (string) $aj['fecha_fin'], false);
+                    if ($real['ocupacion'] === null) {
+                        continue;
+                    }
+                    $signo = ($aj['clase'] === 'descuento' ? '-' : '+') . rtrim(rtrim(number_format((float) $aj['valor_incremento'], 1), '0'), '.') . '%';
+                    $linea = 'Ajuste ' . $signo . ' del ' . $aj['fecha_inicio'] . ' al ' . $aj['fecha_fin']
+                        . ': ocupacion real ' . number_format((float) $real['ocupacion'], 1) . '%';
+                    if ($aj['snapshot_ocupacion'] !== null) {
+                        $linea .= ' vs ' . number_format((float) $aj['snapshot_ocupacion'], 1) . '% proyectada al aplicarlo';
+                    }
+                    if ($real['tarifa_promedio'] !== null) {
+                        $linea .= '; tarifa promedio real $' . number_format((float) $real['tarifa_promedio'], 2);
+                        if ($aj['snapshot_tarifa'] !== null) {
+                            $linea .= ' (al aplicar iba en $' . number_format((float) $aj['snapshot_tarifa'], 2) . ')';
+                        }
+                    }
+                    $lr[] = $linea;
+                }
+                if (!empty($lr)) {
+                    $lineas[] = "Resultados de ajustes anteriores del copiloto (ya concluidos):\n- " . implode("\n- ", $lr);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('CopilotoIA: error al leer resultados de ajustes: ' . $e->getMessage());
         }
 
         return ['usuario' => implode("\n", $lineas)];
