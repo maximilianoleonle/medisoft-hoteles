@@ -3117,6 +3117,51 @@ try {
             $trabajadoresLimpieza = [];
         }
 
+        // Canal WhatsApp (bloque canal_whatsapp): estado del timeline de mensajes
+        // de ESTA reservacion para el panel lateral. Solo LECTURAS aqui; el envio
+        // real va por POST /mensajes/enviar. Defensivo: jamas rompe la ficha.
+        $canalWhatsApp = null;
+        try {
+            $cwHotelId = (int)$this->hotelIdActual();
+            if (function_exists('hotel_has_module') && hotel_has_module('canal_whatsapp', $cwHotelId)) {
+                require_once __DIR__ . '/../services/CanalWhatsAppService.php';
+                $cwServicio = new CanalWhatsAppService();
+                $cwReservacion = [
+                    'id' => (int)$id,
+                    'estado' => (string)($reservacion['estado'] ?? ''),
+                    'precio_total' => (float)($reservacion['precio_total'] ?? 0),
+                    'fecha_entrada' => (string)($reservacion['fecha_entrada'] ?? ''),
+                    'fecha_salida' => (string)($reservacion['fecha_salida'] ?? ''),
+                    'huesped_nombre' => (string)($reservacion['huesped_nombre'] ?? ''),
+                    'huesped_telefono' => (string)($reservacion['huesped_telefono'] ?? ''),
+                    'habitaciones' => implode(', ', array_filter(array_map(
+                        static function ($h) { return (string)($h['numero'] ?? ''); },
+                        is_array($reservacion['habitaciones'] ?? null) ? $reservacion['habitaciones'] : []
+                    ))),
+                ];
+
+                $cwTelefonoWa = $cwServicio->normalizarTelefono($cwReservacion['huesped_telefono']);
+                $cwAplicables = $cwServicio->tiposParaReservacion($cwHotelId, $cwReservacion);
+                $cwFaltantes = [];
+                foreach ($cwAplicables as $cwTipo) {
+                    $cwFaltantes[$cwTipo] = $cwServicio->componer($cwTipo, $cwReservacion, $cwHotelId, false)['faltantes'];
+                }
+
+                $canalWhatsApp = [
+                    'telefono' => $cwReservacion['huesped_telefono'],
+                    'telefono_wa' => $cwTelefonoWa,
+                    'motivo_telefono' => $cwTelefonoWa === null ? $cwServicio->motivoTelefono($cwReservacion['huesped_telefono']) : '',
+                    'activos' => $cwServicio->tiposActivos($cwHotelId),
+                    'aplicables' => $cwAplicables,
+                    'faltantes' => $cwFaltantes,
+                    'timeline' => $cwServicio->porReservacion($cwHotelId, (int)$id),
+                ];
+            }
+        } catch (Throwable $e) {
+            error_log('Reservaciones: bloque canal_whatsapp no disponible en la ficha: ' . $e->getMessage());
+            $canalWhatsApp = null;
+        }
+
         View::renderTemplate('reservaciones/ver', [
     'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
     'reservacion' => $reservacion,
@@ -3140,6 +3185,7 @@ try {
         'id' => (int)$id,
         'label' => 'Reservacion',
     ],
+    'canalWhatsApp' => $canalWhatsApp,
 ]);
     }
     

@@ -4632,6 +4632,151 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                             </div>
                         </section>
 
+                        <?php if (!empty($canalWhatsApp) && !empty(array_filter($canalWhatsApp['activos'] ?? []))): ?>
+                        <?php
+                            // Bloque canal_whatsapp: mismos CanalWhatsAppService y tabla que la
+                            // seccion Mensajes (un solo timeline). Solo pinta estado; el envio es
+                            // POST /mensajes/enviar con CSRF.
+                            $cwTiposMeta = [
+                                'confirmacion' => ['Confirmación', 'fa-calendar-check'],
+                                'anticipo' => ['Anticipo', 'fa-building-columns'],
+                                'recordatorio' => ['Recordatorio', 'fa-bell'],
+                                'encuesta' => ['Encuesta', 'fa-star'],
+                            ];
+                            $cwTimeline = $canalWhatsApp['timeline'] ?? [];
+                            $cwAplicables = $canalWhatsApp['aplicables'] ?? [];
+                            $cwTelOk = ($canalWhatsApp['telefono_wa'] ?? null) !== null;
+                        ?>
+                        <style>
+                        #rdv3-whatsapp-panel .rdv3-wa { display: grid; gap: 8px; }
+                        #rdv3-whatsapp-panel .rdv3-wa-tel { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--rdv3-muted); font-size: .8rem; font-weight: 600; }
+                        #rdv3-whatsapp-panel .rdv3-wa-tel i { color: var(--rdv3-green); }
+                        #rdv3-whatsapp-panel .rdv3-wa-tel.is-off i { color: var(--rdv3-muted); }
+                        #rdv3-whatsapp-panel .rdv3-wa-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 9px; min-height: 46px; padding: 5px 9px; border: 1px solid var(--rdv3-line); border-radius: 12px; background: color-mix(in srgb, var(--rdv3-card) 96%, transparent); }
+                        #rdv3-whatsapp-panel .rdv3-wa-row.is-off { opacity: .55; }
+                        #rdv3-whatsapp-panel .rdv3-wa-ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: .78rem; color: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 12%, transparent); }
+                        #rdv3-whatsapp-panel .rdv3-wa-nombre { margin: 0; color: var(--rdv3-ink); font-size: .84rem; font-weight: 650; line-height: 1.2; }
+                        #rdv3-whatsapp-panel .rdv3-wa-meta { margin: 1px 0 0; color: var(--rdv3-muted); font-size: .72rem; font-weight: 560; line-height: 1.3; overflow-wrap: anywhere; }
+                        #rdv3-whatsapp-panel .rdv3-wa-estado { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 650; white-space: nowrap; }
+                        #rdv3-whatsapp-panel .rdv3-wa-estado.is-enviado { color: var(--rdv3-green); }
+                        #rdv3-whatsapp-panel .rdv3-wa-estado.is-descartado { color: var(--rdv3-muted); }
+                        #rdv3-whatsapp-panel .rdv3-wa-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; color: #fff; background: linear-gradient(145deg, var(--rdv3-gold), color-mix(in srgb, var(--rdv3-gold) 68%, var(--rdv3-primary))); font-family: inherit; font-size: .78rem; font-weight: 650; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease; }
+                        #rdv3-whatsapp-panel .rdv3-wa-btn:hover:not([disabled]) { transform: translateY(-1px); box-shadow: 0 10px 18px -10px color-mix(in srgb, var(--rdv3-gold) 80%, transparent); }
+                        #rdv3-whatsapp-panel .rdv3-wa-btn[disabled] { opacity: .55; cursor: not-allowed; }
+                        #rdv3-whatsapp-panel .rdv3-wa-aviso { margin: 0; padding: 9px 11px; border-radius: 10px; border: 1px solid color-mix(in srgb, #C2841C 26%, transparent); background: color-mix(in srgb, #C2841C 10%, transparent); color: color-mix(in srgb, #C2841C 78%, var(--rdv3-ink)); font-size: .76rem; font-weight: 600; line-height: 1.45; }
+                        #rdv3-whatsapp-panel .rdv3-wa-aviso a { color: inherit; font-weight: 700; }
+                        </style>
+                        <section id="rdv3-whatsapp-panel" class="rdv3-card rdv3-side-card rdv3-side-card--whatsapp">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading"><span class="rdv3-icon rdv3-icon--green"><i class="fab fa-whatsapp"></i></span><h2 class="rdv3-card-title">WhatsApp al huesped</h2></div>
+                            </header>
+                            <div class="rdv3-card-body rdv3-wa">
+                                <?php if ($cwTelOk): ?>
+                                    <p class="rdv3-wa-tel"><i class="fab fa-whatsapp" aria-hidden="true"></i> <?= $rdSafe($canalWhatsApp['telefono']) ?></p>
+                                <?php else: ?>
+                                    <p class="rdv3-wa-tel is-off"><i class="fas fa-phone-slash" aria-hidden="true"></i> <?= $rdSafe($canalWhatsApp['motivo_telefono']) ?> — corrígelo en la ficha del huésped.</p>
+                                <?php endif; ?>
+
+                                <?php foreach ($cwTiposMeta as $cwTipo => [$cwLabel, $cwIcono]): ?>
+                                    <?php
+                                        if (empty($canalWhatsApp['activos'][$cwTipo])) {
+                                            continue; // El hotel apago este tipo.
+                                        }
+                                        $cwFila = $cwTimeline[$cwTipo] ?? null;
+                                        $cwEstado = $cwFila['estado'] ?? null;
+                                        $cwAplica = in_array($cwTipo, $cwAplicables, true);
+                                        $cwFaltan = $canalWhatsApp['faltantes'][$cwTipo] ?? [];
+                                        $cwEnviadoEn = ($cwFila && !empty($cwFila['enviado_en'])) ? strtotime((string)$cwFila['enviado_en']) : false;
+                                        $cwPuedeEnviar = $cwAplica && $cwTelOk && empty($cwFaltan);
+                                        $cwNota = '';
+                                        if ($cwEstado !== 'enviado' && !$cwAplica) {
+                                            $cwNota = $cwTipo === 'encuesta' ? 'Se ofrece tras el check-out' : 'Ya no aplica para el estado actual';
+                                            if (in_array($cwTipo, ['confirmacion', 'recordatorio', 'anticipo'], true) && ($reservacion['estado'] ?? '') === 'confirmada') {
+                                                $cwNota = 'Sin saldo pendiente'; // unico motivo de no-aplicar estando confirmada
+                                            }
+                                        }
+                                    ?>
+                                    <div class="rdv3-wa-row <?= (!$cwAplica && $cwEstado !== 'enviado') ? 'is-off' : '' ?>" data-cw-row="<?= $rdSafe($cwTipo) ?>">
+                                        <span class="rdv3-wa-ico" aria-hidden="true"><i class="fas <?= $rdSafe($cwIcono) ?>"></i></span>
+                                        <div>
+                                            <p class="rdv3-wa-nombre"><?= $rdSafe($cwLabel) ?></p>
+                                            <?php if ($cwEstado === 'enviado'): ?>
+                                                <p class="rdv3-wa-meta">Enviado <?= $cwEnviadoEn ? 'el ' . date('d/m/Y H:i', $cwEnviadoEn) : '' ?></p>
+                                            <?php elseif ($cwEstado === 'descartado'): ?>
+                                                <p class="rdv3-wa-meta">Descartado<?= !empty($cwFila['motivo']) ? ': ' . $rdSafe($cwFila['motivo']) : '' ?></p>
+                                            <?php elseif (!empty($cwFaltan)): ?>
+                                                <p class="rdv3-wa-meta">Falta configurar: <?= $rdSafe(implode(', ', $cwFaltan)) ?></p>
+                                            <?php elseif ($cwNota !== ''): ?>
+                                                <p class="rdv3-wa-meta"><?= $rdSafe($cwNota) ?></p>
+                                            <?php else: ?>
+                                                <p class="rdv3-wa-meta">Pendiente</p>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if ($cwEstado === 'enviado'): ?>
+                                            <span class="rdv3-wa-estado is-enviado"><i class="fas fa-check" aria-hidden="true"></i> Enviado</span>
+                                        <?php elseif ($cwPuedeEnviar): ?>
+                                            <button type="button" class="rdv3-wa-btn" data-cw-enviar="<?= $rdSafe($cwTipo) ?>"><i class="fab fa-whatsapp" aria-hidden="true"></i> Enviar</button>
+                                        <?php elseif ($cwEstado === 'descartado'): ?>
+                                            <span class="rdv3-wa-estado is-descartado"><i class="fas fa-ban" aria-hidden="true"></i> Descartado</span>
+                                        <?php else: ?>
+                                            <span></span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+
+                                <?php if ($cwTelOk && array_filter($canalWhatsApp['faltantes'] ?? [], static function ($f) { return !empty($f); })): ?>
+                                    <p class="rdv3-wa-aviso"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Hay mensajes que necesitan datos del hotel. <a href="<?= url('mensajes/configuracion') ?>">Completar configuración</a></p>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+                        <script>
+                        (function () {
+                            'use strict';
+                            var panel = document.getElementById('rdv3-whatsapp-panel');
+                            if (!panel) return;
+                            var esMovilWa = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+                            panel.addEventListener('click', function (ev) {
+                                var btn = ev.target.closest('[data-cw-enviar]');
+                                if (!btn || btn.disabled) return;
+                                btn.disabled = true;
+                                var ventana = esMovilWa ? null : window.open('', '_blank');
+                                var datos = new URLSearchParams();
+                                datos.set('reservacion_id', '<?= (int)$reservacion['id'] ?>');
+                                datos.set('tipo', btn.getAttribute('data-cw-enviar'));
+                                datos.set('csrf_token', '<?= csrf_token() ?>');
+                                fetch('<?= url('mensajes/enviar') ?>', {
+                                    method: 'POST',
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'X-CSRF-Token': '<?= csrf_token() ?>'
+                                    },
+                                    body: datos.toString()
+                                }).then(function (r) { return r.json(); }).then(function (r) {
+                                    if (r && r.success && r.link) {
+                                        var fila = btn.closest('[data-cw-row]');
+                                        if (fila) {
+                                            var meta = fila.querySelector('.rdv3-wa-meta');
+                                            if (meta) meta.textContent = 'Enviado justo ahora';
+                                            btn.outerHTML = '<span class="rdv3-wa-estado is-enviado"><i class="fas fa-check" aria-hidden="true"></i> Enviado</span>';
+                                        }
+                                        if (ventana) { ventana.location = r.link; } else { window.location.href = r.link; }
+                                    } else {
+                                        if (ventana) ventana.close();
+                                        btn.disabled = false;
+                                        alert((r && r.motivo) || 'No se pudo preparar el mensaje. Intenta de nuevo.');
+                                    }
+                                }).catch(function () {
+                                    if (ventana) ventana.close();
+                                    btn.disabled = false;
+                                    alert('Sin conexión con el sistema. El mensaje NO se marcó como enviado.');
+                                });
+                            });
+                        })();
+                        </script>
+                        <?php endif; ?>
+
                         <section class="rdv3-card rdv3-side-card rdv3-side-card--timeline">
                             <header class="rdv3-card-header">
                                 <div class="rdv3-heading"><span class="rdv3-icon"><i class="far fa-clock"></i></span><h2 class="rdv3-card-title">Timeline</h2></div>
