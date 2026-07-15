@@ -596,14 +596,17 @@ class CopilotoIaService
             $lineas[] = "Dias con mas reservas ya confirmadas:\n- " . implode("\n- ", $picos);
         }
 
+        $aniosCmp = (int) ($semanas[0]['anios_comparados'] ?? 1);
+        $etiquetaPasado = $aniosCmp > 1 ? 'promedio de ' . $aniosCmp . ' anios anteriores' : 'hace 1 ano';
+
         $tabla = [];
         foreach ($semanas as $s) {
             $tabla[] = 'Semana del ' . $s['inicio'] . ' al ' . $s['fin'] . ': proyectada ' . $pct($s['ocupacion'])
-                . ', hace 1 ano ' . $pct($s['ocupacion_anterior'])
+                . ', ' . $etiquetaPasado . ' ' . $pct($s['ocupacion_anterior'])
                 . ($s['delta'] !== null ? ' (delta ' . number_format((float) $s['delta'], 1) . ' pts)' : '');
         }
         if (!empty($tabla)) {
-            $lineas[] = "Proximas semanas vs el ano pasado:\n" . implode("\n", $tabla);
+            $lineas[] = 'Proximas semanas vs ' . ($aniosCmp > 1 ? 'anios anteriores (promedio)' : 'el ano pasado') . ":\n" . implode("\n", $tabla);
         }
 
         // Temporadas marcadas por el hotel + festivos MX de los proximos 90 dias.

@@ -74,7 +74,70 @@ class ForecastController extends Controller {
             'eventos' => $eventos,
             'eventosPorDia' => $eventosPorDia,
             'puedeEditarTemporadas' => function_exists('can') && can('tarifas.edit'),
+            // Arranque en frio: sin historico de hace 1 anio NI temporadas
+            // capturadas, el consejo de tarifa vuela a ciegas -> aviso ambar.
+            'arranqueFrio' => empty($temporadas) && !$servicio->tieneHistoricoAnual($hotelId),
         ]);
+    }
+
+    /**
+     * Captura expres del arranque en frio: meses fuertes/flojos elegidos en
+     * chips se convierten en temporadas recurrentes (mes completo, cada anio).
+     */
+    public function temporadaExpressAction() {
+        $this->soloPostTemporadas();
+
+        $meses = [1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+        $limpiar = static function ($lista) {
+            $out = [];
+            foreach ((array) $lista as $m) {
+                $m = (int) $m;
+                if ($m >= 1 && $m <= 12) {
+                    $out[$m] = true;
+                }
+            }
+            return $out;
+        };
+
+        $altas = $limpiar($this->getPost('meses_alta', []));
+        $bajas = array_diff_key($limpiar($this->getPost('meses_baja', [])), $altas);
+
+        if (empty($altas) && empty($bajas)) {
+            set_mensaje('Elige al menos un mes fuerte o flojo.', 'error');
+            $this->redirect('forecast');
+        }
+
+        $modelo = new TemporadaHotel();
+        $anio = (int) date('Y');
+        $creadas = 0;
+
+        foreach ([['alta', $altas], ['baja', $bajas]] as [$intensidad, $lista]) {
+            foreach (array_keys($lista) as $mes) {
+                $desde = sprintf('%04d-%02d-01', $anio, $mes);
+                $hasta = date('Y-m-t', strtotime($desde));
+                $ok = $modelo->create([
+                    'nombre' => 'Temporada ' . $intensidad . ' de ' . $meses[$mes],
+                    'desde' => $desde,
+                    'hasta' => $hasta,
+                    'intensidad' => $intensidad,
+                    'recurrente_anual' => 1,
+                    'notas' => 'Captura expres',
+                ]);
+                if ($ok) {
+                    $creadas++;
+                }
+            }
+        }
+
+        set_mensaje(
+            $creadas > 0
+                ? "Listo: {$creadas} temporada(s) guardadas. El Copiloto ya las toma en cuenta y puedes afinarlas cuando quieras."
+                : 'No se pudo guardar la captura expres.',
+            $creadas > 0 ? 'success' : 'error'
+        );
+        $this->redirect('forecast');
     }
 
     /** Alta/edicion de una temporada del hotel (id vacio = crear). */

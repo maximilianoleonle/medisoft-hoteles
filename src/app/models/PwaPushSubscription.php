@@ -160,6 +160,34 @@ class PwaPushSubscription extends Model {
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    /**
+     * Suscripciones activas de usuarios CONCRETOS del hotel. A diferencia del
+     * ruteo por rol, aqui la lista de destinatarios ya viene resuelta (p.ej.
+     * usuarios con el permiso guardian.view).
+     */
+    public function listarActivasPorHotelUsuarios(int $hotelId, array $usuarioIds): array {
+        $usuarioIds = array_values(array_unique(array_filter(array_map('intval', $usuarioIds))));
+        if ($hotelId <= 0 || empty($usuarioIds) || !$this->tablaDisponible()) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($usuarioIds), '?'));
+        $stmt = $this->db->query(
+            "SELECT s.*
+             FROM pwa_push_subscriptions s
+             INNER JOIN usuarios u
+                ON u.id = s.usuario_id
+               AND u.activo = 1
+             WHERE s.hotel_id = ?
+               AND s.activo = 1
+               AND s.usuario_id IN ({$placeholders})
+             ORDER BY s.last_seen_at DESC, s.id DESC",
+            array_merge([$hotelId], $usuarioIds)
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function listarActivasPorHotelRoles(int $hotelId, array $roles): array {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
             return [];

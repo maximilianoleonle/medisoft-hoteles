@@ -151,34 +151,61 @@ class ForecastService
 
     /**
      * Resumen semanal de las proximas $semanas: ocupacion proyectada y la del
-     * mismo periodo del anio pasado. Devuelve filas listas para la vista.
+     * mismo periodo de anios anteriores. Cuando el hotel tiene historia, la
+     * comparativa promedia hasta 3 anios del mismo periodo (solo anios CON
+     * datos cuentan); con 1 anio de historia todo se comporta como antes.
+     * Formato de salida estable para los consumidores existentes; agrega
+     * 'anios_comparados' (informativo) a cada fila.
      */
     public function resumenSemanal(int $hotelId, int $semanas, int $totalHabitaciones): array
     {
         $dias = $semanas * 7;
         $hoy = date('Y-m-d');
-        $hoyAnterior = date('Y-m-d', strtotime('-1 year'));
 
         $futuro = $this->ocupacionPorDia($hotelId, $hoy, $dias, true);
-        $pasado = $this->ocupacionPorDia($hotelId, $hoyAnterior, $dias, false);
+
+        // Series del mismo periodo de hasta 3 anios atras; un anio sin una
+        // sola noche vendida no existe para la comparativa.
+        $series = [];
+        $serieAnio1 = null;
+        for ($y = 1; $y <= 3; $y++) {
+            $inicioAnio = date('Y-m-d', strtotime($hoy . ' -' . $y . ' year'));
+            $serie = array_values($this->ocupacionPorDia($hotelId, $inicioAnio, $dias, false));
+            if ($y === 1) {
+                $serieAnio1 = $serie;
+            }
+            if (array_sum($serie) > 0) {
+                $series[] = $serie;
+            }
+        }
+        // Sin historia en ningun anio: comparar contra el anio pasado (ceros),
+        // exactamente como se comportaba antes.
+        if (empty($series)) {
+            $series[] = $serieAnio1 ?? array_fill(0, $dias, 0);
+        }
+        $aniosComparados = count($series);
 
         $valoresFuturo = array_values($futuro);
-        $valoresPasado = array_values($pasado);
         $clavesFuturo = array_keys($futuro);
 
         $filas = [];
         for ($s = 0; $s < $semanas; $s++) {
             $sliceFuturo = array_slice($valoresFuturo, $s * 7, 7);
-            $slicePasado = array_slice($valoresPasado, $s * 7, 7);
             $inicio = $clavesFuturo[$s * 7] ?? $hoy;
 
             $nochesFuturo = array_sum($sliceFuturo);
             $ocupacion = $totalHabitaciones > 0
                 ? round($nochesFuturo * 100 / (7 * $totalHabitaciones), 1)
                 : null;
-            $ocupacionPasado = $totalHabitaciones > 0
-                ? round(array_sum($slicePasado) * 100 / (7 * $totalHabitaciones), 1)
-                : null;
+
+            $ocupacionPasado = null;
+            if ($totalHabitaciones > 0) {
+                $sumaPct = 0.0;
+                foreach ($series as $serie) {
+                    $sumaPct += array_sum(array_slice($serie, $s * 7, 7)) * 100 / (7 * $totalHabitaciones);
+                }
+                $ocupacionPasado = round($sumaPct / $aniosComparados, 1);
+            }
 
             $filas[] = [
                 'inicio' => $inicio,
@@ -189,9 +216,34 @@ class ForecastService
                 'delta' => ($ocupacion !== null && $ocupacionPasado !== null)
                     ? round($ocupacion - $ocupacionPasado, 1)
                     : null,
+                'anios_comparados' => $aniosComparados,
             ];
         }
 
         return $filas;
+    }
+
+    /**
+     * true si el hotel ya tiene historia de hace ~1 anio (alguna estancia no
+     * cancelada iniciada hace 11 meses o mas). Sirve para detectar el
+     * arranque en frio del consejo de tarifa.
+     */
+    public function tieneHistoricoAnual(int $hotelId): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT 1
+                 FROM reservaciones
+                 WHERE hotel_id = ?
+                   AND estado NOT IN ('cancelada', 'pendiente')
+                   AND fecha_entrada <= ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$hotelId, date('Y-m-d', strtotime('-11 months'))]);
+            return (bool) $stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Forecast: error al detectar historico anual: ' . $e->getMessage());
+            return true; // ante la duda, no molestar con el aviso
+        }
     }
 }

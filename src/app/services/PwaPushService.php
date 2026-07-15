@@ -92,6 +92,43 @@ class PwaPushService {
         ], $rolesDestino);
     }
 
+    /**
+     * Envio dirigido a usuarios concretos (por id), sin ruteo por rol.
+     * Lo usa el Guardian: sus alertas van SOLO a quienes tienen el permiso
+     * guardian.view (resuelto contra roles.permisos_json), no a un rol-string.
+     */
+    public function enviarDirectoAUsuarios(int $hotelId, array $payload, array $usuarioIds): array {
+        $usuarioIds = array_values(array_unique(array_filter(array_map('intval', $usuarioIds))));
+        if (empty($usuarioIds) || !$this->estaActivoParaHotel($hotelId) || !$this->estaConfigurado()) {
+            return ['sent' => 0, 'failed' => 0, 'skipped' => true];
+        }
+
+        $payload['title'] = $this->limitarTexto((string)($payload['title'] ?? 'Notificacion'), 90);
+        $payload['body'] = $this->limitarTexto((string)($payload['body'] ?? ''), 180);
+        $payload['url'] = $this->normalizarUrlPush((string)($payload['url'] ?? 'notificaciones'));
+        $payload = $this->agregarBrandingAlPayload($hotelId, $payload);
+
+        $suscripciones = $this->subscriptionModel->listarActivasPorHotelUsuarios($hotelId, $usuarioIds);
+        $resultado = ['sent' => 0, 'failed' => 0, 'skipped' => false];
+
+        foreach ($suscripciones as $suscripcion) {
+            $envio = $this->enviarWebPush($suscripcion, $payload);
+
+            if (!empty($envio['ok'])) {
+                $resultado['sent']++;
+                continue;
+            }
+
+            $resultado['failed']++;
+            $status = (int)($envio['status'] ?? 0);
+            if (in_array($status, [404, 410], true)) {
+                $this->subscriptionModel->desactivarPorId((int)($suscripcion['id'] ?? 0));
+            }
+        }
+
+        return $resultado;
+    }
+
     private function enviarPayloadHotel(int $hotelId, array $payload, array $rolesDestino = []): array {
         if (!$this->estaActivoParaHotel($hotelId) || !$this->estaConfigurado()) {
             return ['sent' => 0, 'failed' => 0, 'skipped' => true];

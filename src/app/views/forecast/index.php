@@ -11,6 +11,8 @@ $temporadas = $temporadas ?? [];
 $eventos = $eventos ?? [];
 $eventosPorDia = $eventosPorDia ?? [];
 $puedeEditarTemporadas = !empty($puedeEditarTemporadas);
+$arranqueFrio = !empty($arranqueFrio);
+$aniosComparados = (int) ($semanas[0]['anios_comparados'] ?? 1);
 
 $fcSafe = static function ($v) {
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
@@ -160,6 +162,27 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     .fct-grid .fct-campo.ancho { grid-column: 1 / -1; }
 }
 
+/* Aviso ambar de arranque en frio (patron configuracion incompleta) */
+.fc-aviso { display: flex; align-items: flex-start; gap: 11px; background: var(--fc-warning-bg); border: 1px solid color-mix(in srgb, var(--fc-warning) 30%, #fff); border-radius: 14px; padding: 13px 15px; }
+.fc-aviso > i { color: var(--fc-warning); font-size: 1rem; margin-top: 2px; }
+.fc-aviso-cuerpo { flex: 1; min-width: 0; }
+.fc-aviso-titulo { margin: 0; color: color-mix(in srgb, var(--fc-warning) 78%, var(--fc-text)); font-size: .9rem; font-weight: 700; }
+.fc-aviso-texto { margin: 3px 0 0; color: color-mix(in srgb, var(--fc-warning) 62%, var(--fc-text)); font-size: .82rem; line-height: 1.5; }
+.fc-aviso-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; color: color-mix(in srgb, var(--fc-warning) 80%, var(--fc-text)); font-size: .84rem; font-weight: 700; text-decoration: none; }
+.fc-aviso-cta:hover { text-decoration: underline; }
+
+/* Captura expres: chips de meses fuertes/flojos */
+.fct-express { display: grid; gap: 10px; padding: 14px 16px 16px; border-top: 1px dashed var(--fc-border); }
+.fct-express-titulo { margin: 0; color: var(--fc-heading); font-size: .86rem; font-weight: 650; }
+.fct-express-sub { margin: -4px 0 0; color: var(--fc-muted); font-size: .78rem; line-height: 1.45; }
+.fct-meses { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.fct-mes { min-height: 42px; border: 1px solid var(--fc-border); border-radius: 10px; background: var(--fc-surface); color: var(--fc-text); font-family: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; transition: all .15s ease; }
+.fct-mes[data-estado="alta"] { background: var(--fc-success-bg); color: color-mix(in srgb, var(--fc-success) 70%, var(--fc-text)); border-color: color-mix(in srgb, var(--fc-success) 30%, #fff); }
+.fct-mes[data-estado="baja"] { background: var(--fc-info-bg); color: color-mix(in srgb, var(--fc-info) 74%, var(--fc-text)); border-color: color-mix(in srgb, var(--fc-info) 30%, #fff); }
+@media (min-width: 720px) {
+    .fct-meses { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
 .fc-table-wrap { overflow-x: auto; padding: 0 0 4px; }
 .fc-table { width: 100%; min-width: 460px; border-collapse: collapse; font-size: .85rem; }
 .fc-table thead { background: var(--fc-surface-warm); border-bottom: 1px solid var(--fc-border); border-top: 1px solid var(--fc-border); }
@@ -262,6 +285,17 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
             </div>
         </section>
 
+        <?php if ($arranqueFrio): ?>
+        <div class="fc-aviso" role="status">
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            <div class="fc-aviso-cuerpo">
+                <p class="fc-aviso-titulo">Cu&eacute;ntale al Copiloto tus temporadas</p>
+                <p class="fc-aviso-texto">Este hotel a&uacute;n no tiene hist&oacute;rico del a&ntilde;o pasado ni temporadas marcadas, as&iacute; que el consejo de tarifa trabaja a ciegas. Marca tus meses fuertes y flojos (toma 1 minuto) y sus consejos se afinan de inmediato.</p>
+                <a class="fc-aviso-cta" href="#temporadas">Marcar mis temporadas <i class="fas fa-arrow-down" aria-hidden="true"></i></a>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <section class="fc-summary" aria-label="Indicadores de forecast">
             <div class="fc-summary-item">
                 <div class="fc-summary-label">Ocupaci&oacute;n pr&oacute;x. 30 d&iacute;as</div>
@@ -357,13 +391,15 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 
         <section class="fc-panel">
             <div class="fc-panel-head">
-                <h2 class="fc-panel-title">Pr&oacute;ximas 12 semanas vs el a&ntilde;o pasado</h2>
-                <p class="fc-panel-sub">La columna "hace 1 a&ntilde;o" usa la ocupaci&oacute;n real que tuviste en esas mismas fechas del a&ntilde;o anterior.</p>
+                <h2 class="fc-panel-title">Pr&oacute;ximas 12 semanas vs <?= $aniosComparados > 1 ? 'a&ntilde;os pasados' : 'el a&ntilde;o pasado' ?></h2>
+                <p class="fc-panel-sub"><?= $aniosComparados > 1
+                    ? 'La comparativa promedia la ocupaci&oacute;n real de esas mismas fechas en tus &uacute;ltimos ' . $aniosComparados . ' a&ntilde;os con datos.'
+                    : 'La columna "hace 1 a&ntilde;o" usa la ocupaci&oacute;n real que tuviste en esas mismas fechas del a&ntilde;o anterior.' ?></p>
             </div>
             <div class="fc-table-wrap">
                 <table class="fc-table">
                     <thead>
-                        <tr><th>Semana</th><th>Noches vendidas</th><th>Ocupaci&oacute;n proyectada</th><th>Hace 1 a&ntilde;o</th><th>Diferencia</th></tr>
+                        <tr><th>Semana</th><th>Noches vendidas</th><th>Ocupaci&oacute;n proyectada</th><th><?= $aniosComparados > 1 ? 'A&ntilde;os pasados (prom. ' . $aniosComparados . ')' : 'Hace 1 a&ntilde;o' ?></th><th>Diferencia</th></tr>
                     </thead>
                     <tbody>
                     <?php foreach ($semanas as $sem): ?>
@@ -395,8 +431,26 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
                 <p class="fc-panel-sub">Marca lo que mueve tu ocupaci&oacute;n (ferias, vacaciones locales, temporada de lluvias). El forecast lo se&ntilde;ala y el consejo de tarifa lo toma en cuenta. Los festivos de M&eacute;xico se calculan solos.</p>
             </div>
 
+            <?php if ($arranqueFrio && $puedeEditarTemporadas): ?>
+                <form class="fct-express" id="fct-express" method="POST" action="<?= url('forecast/temporadas/express') ?>">
+                    <?= function_exists('csrf_field') ? csrf_field() : '' ?>
+                    <p class="fct-express-titulo">Captura expr&eacute;s: &iquest;qu&eacute; meses te pegan?</p>
+                    <p class="fct-express-sub">Toca un mes una vez = fuerte (▲ se llena) &middot; dos veces = flojo (▼ se vac&iacute;a) &middot; tres = quitar. Se guardan como temporadas que se repiten cada a&ntilde;o; luego puedes afinarlas.</p>
+                    <div class="fct-meses" id="fct-meses">
+                        <?php foreach (['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'] as $i => $mesCorto): ?>
+                            <button type="button" class="fct-mes" data-mes="<?= $i + 1 ?>" data-estado=""><?= $mesCorto ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="fct-form-acciones">
+                        <button type="submit" class="fc-btn" id="fct-express-guardar"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>Guardar y afinar consejos</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+
             <?php if (empty($temporadas)): ?>
-                <div class="fct-vacio">A&uacute;n no marcas ninguna temporada. Con 2 o 3 (tus meses fuertes y flojos) el consejo de tarifa afina mucho.</div>
+                <?php if (!($arranqueFrio && $puedeEditarTemporadas)): ?>
+                    <div class="fct-vacio">A&uacute;n no marcas ninguna temporada. Con 2 o 3 (tus meses fuertes y flojos) el consejo de tarifa afina mucho.</div>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="fct-lista">
                     <?php foreach ($temporadas as $t): ?>
@@ -554,6 +608,41 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     form.addEventListener('submit', function () {
         guardar.disabled = true;
     });
+
+    // ── Captura expres: chips de meses (vacio -> alta -> baja -> vacio) ──
+    var express = document.getElementById('fct-express');
+    if (express) {
+        express.querySelectorAll('.fct-mes').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                var estado = chip.getAttribute('data-estado');
+                var siguiente = estado === '' ? 'alta' : (estado === 'alta' ? 'baja' : '');
+                chip.setAttribute('data-estado', siguiente);
+                var mes = chip.textContent.replace(/[▲▼]\s*/, '');
+                chip.textContent = (siguiente === 'alta' ? '▲ ' : siguiente === 'baja' ? '▼ ' : '') + mes;
+            });
+        });
+
+        express.addEventListener('submit', function (e) {
+            express.querySelectorAll('input[name="meses_alta[]"], input[name="meses_baja[]"]').forEach(function (i) { i.remove(); });
+            var alguno = false;
+            express.querySelectorAll('.fct-mes').forEach(function (chip) {
+                var estado = chip.getAttribute('data-estado');
+                if (estado !== 'alta' && estado !== 'baja') { return; }
+                alguno = true;
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = estado === 'alta' ? 'meses_alta[]' : 'meses_baja[]';
+                input.value = chip.getAttribute('data-mes');
+                express.appendChild(input);
+            });
+            if (!alguno) {
+                e.preventDefault();
+                if (window.msToast) { window.msToast('warning', 'Nada que guardar', 'Toca al menos un mes fuerte o flojo.'); }
+                return;
+            }
+            document.getElementById('fct-express-guardar').disabled = true;
+        });
+    }
 })();
 </script>
 <?php endif; ?>

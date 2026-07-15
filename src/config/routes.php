@@ -226,6 +226,7 @@ $router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
 // Calendario de temporadas del hotel (alimenta forecast y consejo del Copiloto)
 $router->post('/forecast/temporadas/guardar', ['controller' => 'Forecast', 'action' => 'temporadaGuardar']);
 $router->post('/forecast/temporadas/eliminar', ['controller' => 'Forecast', 'action' => 'temporadaEliminar']);
+$router->post('/forecast/temporadas/express', ['controller' => 'Forecast', 'action' => 'temporadaExpress']);
 
 // Bitacora de auditoria (bloque auditoria, solo lectura para gerencia)
 $router->get('/auditoria', ['controller' => 'Auditoria', 'action' => 'index']);
