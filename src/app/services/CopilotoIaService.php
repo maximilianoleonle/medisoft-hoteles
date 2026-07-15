@@ -36,6 +36,11 @@ class CopilotoIaService
     private const MAX_TOKENS_ANALISIS = 4096;
     private const MAX_TOKENS_TARIFA = 2048;
 
+    // Limites duros de las sugerencias accionables de tarifa. La IA solo
+    // PROPONE; estos topes los aplica PHP y no son negociables por el modelo.
+    public const SUG_PCT_MAX = 15;         // |pct| maximo por sugerencia
+    public const SUG_HORIZONTE_DIAS = 90;  // fechas dentro de los proximos 90 dias
+
     public const PRUEBAS_GRATIS = 3;      // usos por funcion para hoteles sin el bloque
     private const MAX_REGENERACIONES = 5; // regeneraciones por elemento ya generado
     private const MAX_RESENAS_MES = 100;  // borradores nuevos por mes natural (con bloque)
@@ -160,14 +165,14 @@ class CopilotoIaService
 
         // Lo ya generado se sirve del cache: no vuelve a pagar API ni consume prueba.
         if ($fila && !$regenerar) {
-            return ['listo' => false, 'respuesta' => [
+            return ['listo' => false, 'respuesta' => $this->decorarRespuesta($tipo, [
                 'success' => true,
                 'texto' => (string) $fila['contenido'],
                 'desde_cache' => true,
                 'generado_en' => (string) $fila['updated_at'],
                 'prueba' => $this->infoPrueba($hotelId, $tipo),
                 'upsell' => false,
-            ]];
+            ])];
         }
 
         if (!$this->iaConfigurada()) {
@@ -315,14 +320,14 @@ class CopilotoIaService
             error_log('CopilotoIA: no se pudo guardar la generacion: ' . $e->getMessage());
         }
 
-        return [
+        return $this->decorarRespuesta($tipo, [
             'success' => true,
             'texto' => (string) $ia['texto'],
             'desde_cache' => false,
             'generado_en' => date('Y-m-d H:i:s'),
             'prueba' => $this->infoPrueba($hotelId, $tipo),
             'upsell' => false,
-        ];
+        ]);
     }
 
     private function falla(string $mensaje): array
@@ -493,7 +498,15 @@ class CopilotoIaService
             . "\n**Ojo con** — 1 o 2 riesgos u oportunidades concretos que se vean en las cifras."
             . "\nReglas: usa SOLO las cifras proporcionadas y cita las que uses; rangos conservadores (5% a 15%); "
             . 'la decision es del dueno, nunca lo presentes como orden ni como cambio ya aplicado; '
-            . 'si los datos son pocos o la ocupacion es muy baja, dilo con honestidad; montos con formato $1,234.56.';
+            . 'si los datos son pocos o la ocupacion es muy baja, dilo con honestidad; montos con formato $1,234.56.'
+            . "\nDespues del texto anterior, agrega al FINAL un bloque <sugerencias>...</sugerencias> con un arreglo JSON "
+            . 'que traduzca tu recomendacion por ventana a datos, una entrada por ventana como maximo, con esta forma exacta: '
+            . '[{"ventana":"30","accion":"subir","pct":8,"desde":"YYYY-MM-DD","hasta":"YYYY-MM-DD","motivo":"una linea"}]. '
+            . 'Reglas del bloque: "ventana" es "30", "60" o "90"; "accion" es "subir", "bajar" o "mantener"; '
+            . '"pct" es un entero entre 5 y 15, siempre el extremo CONSERVADOR (el mas bajo) del rango que recomendaste en el texto, y 0 si la accion es mantener; '
+            . '"desde" y "hasta" son fechas dentro de los proximos 90 dias que cubran la ventana o los dias concretos que senalaste; '
+            . '"motivo" resume en una linea el porque con la cifra clave. '
+            . 'El bloque es datos para el sistema: no lo menciones en el texto ni escribas nada despues de </sugerencias>.';
     }
 
     private function datosTarifa(int $hotelId): array
@@ -570,6 +583,121 @@ class CopilotoIaService
         }
 
         return ['usuario' => implode("\n", $lineas)];
+    }
+
+    // ───────────────────── Sugerencias accionables de tarifa ─────────────────────
+
+    /**
+     * Extrae y valida el bloque <sugerencias> que la IA agrega al final del
+     * consejo de tarifa. La IA solo PROPONE: aqui PHP aplica los limites duros
+     * (|pct| <= SUG_PCT_MAX, fechas dentro de los proximos SUG_HORIZONTE_DIAS
+     * dias, desde <= hasta) y descarta cada entrada invalida SIN tirar el
+     * consejo completo. Bloque ausente o JSON malformado => sugerencias vacias
+     * y el consejo se muestra como texto plano (como hoy).
+     *
+     * Devuelve ['texto' => consejo sin el bloque, 'sugerencias' => entradas
+     * validas]. $hoy es inyectable para pruebas (default: hoy).
+     */
+    public static function parsearSugerenciasTarifa(string $texto, ?string $hoy = null): array
+    {
+        $hoy = $hoy ?: date('Y-m-d');
+        $limpio = trim((string) preg_replace('/<sugerencias>.*?<\/sugerencias>/is', '', $texto));
+        if ($limpio === '') {
+            $limpio = trim($texto);
+        }
+
+        if (!preg_match('/<sugerencias>(.*?)<\/sugerencias>/is', $texto, $m)) {
+            return ['texto' => $limpio, 'sugerencias' => []];
+        }
+
+        $json = json_decode(trim($m[1]), true);
+        if (!is_array($json)) {
+            return ['texto' => $limpio, 'sugerencias' => []];
+        }
+
+        $tope = date('Y-m-d', strtotime($hoy . ' +' . self::SUG_HORIZONTE_DIAS . ' days'));
+        $validas = [];
+        $ventanasVistas = [];
+
+        foreach ($json as $s) {
+            if (!is_array($s)) {
+                continue;
+            }
+
+            $ventana = (string) ($s['ventana'] ?? '');
+            $accion = strtolower(trim((string) ($s['accion'] ?? '')));
+            $desde = trim((string) ($s['desde'] ?? ''));
+            $hasta = trim((string) ($s['hasta'] ?? ''));
+
+            if (!in_array($ventana, ['30', '60', '90'], true) || isset($ventanasVistas[$ventana])) {
+                continue;
+            }
+            if (!in_array($accion, ['subir', 'bajar', 'mantener'], true)) {
+                continue;
+            }
+
+            // pct: numerico, positivo, dentro del tope duro. 'mantener' siempre 0.
+            $pct = $s['pct'] ?? null;
+            if ($accion === 'mantener') {
+                $pct = 0.0;
+            } else {
+                if (!is_numeric($pct)) {
+                    continue;
+                }
+                $pct = abs((float) $pct);
+                if ($pct <= 0 || $pct > self::SUG_PCT_MAX) {
+                    continue;
+                }
+            }
+
+            // Fechas: formato real, desde <= hasta, dentro de [hoy, hoy+90].
+            if (!self::fechaValida($desde) || !self::fechaValida($hasta)) {
+                continue;
+            }
+            if ($desde > $hasta || $desde < $hoy || $hasta > $tope) {
+                continue;
+            }
+
+            $motivo = trim((string) preg_replace('/\s+/', ' ', (string) ($s['motivo'] ?? '')));
+
+            $ventanasVistas[$ventana] = true;
+            $validas[] = [
+                'ventana' => $ventana,
+                'accion' => $accion,
+                'pct' => $pct,
+                'desde' => $desde,
+                'hasta' => $hasta,
+                'motivo' => mb_substr($motivo, 0, 200),
+            ];
+        }
+
+        return ['texto' => $limpio, 'sugerencias' => $validas];
+    }
+
+    /** YYYY-MM-DD real (rechaza 2026-02-31 y formatos raros). */
+    private static function fechaValida(string $fecha): bool
+    {
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $fecha, $m)) {
+            return false;
+        }
+        return checkdate((int) $m[2], (int) $m[3], (int) $m[1]);
+    }
+
+    /**
+     * Post-proceso comun de la respuesta: para el consejo de tarifa separa el
+     * bloque <sugerencias> del texto visible. El bloque viaja DENTRO del
+     * contenido cacheado, asi que servir desde cache no re-paga tokens.
+     */
+    private function decorarRespuesta(string $tipo, array $respuesta): array
+    {
+        if ($tipo !== 'tarifa' || empty($respuesta['success'])) {
+            return $respuesta;
+        }
+
+        $parseado = self::parsearSugerenciasTarifa((string) ($respuesta['texto'] ?? ''));
+        $respuesta['texto'] = $parseado['texto'];
+        $respuesta['sugerencias'] = $parseado['sugerencias'];
+        return $respuesta;
     }
 
     // ───────────────────── Llamada al API (patron del repo) ─────────────────────
