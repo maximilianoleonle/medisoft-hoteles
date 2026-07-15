@@ -131,9 +131,10 @@ class DashboardController extends Controller {
                 'llegadas_tardias' => [], // Puedes implementar esta funcionalidad después
                 'graficos' => $datosGraficos,
                 'notificaciones_resumen' => $notificacionesDashboard['resumen'],
-                'notificaciones_recientes' => $notificacionesDashboard['recientes']
+                'notificaciones_recientes' => $notificacionesDashboard['recientes'],
+                'guardian_resumen' => $this->getGuardianResumen()
             ];
-            
+
             // Renderizar vista
             View::renderTemplate('dashboard/index', $data);
             
@@ -155,8 +156,38 @@ class DashboardController extends Controller {
                 'graficos' => [],
                 'notificaciones_resumen' => $this->getResumenNotificacionesVacio(),
                 'notificaciones_recientes' => [],
+                'guardian_resumen' => null,
                 'error' => 'Error al cargar los datos del dashboard'
             ]);
+        }
+    }
+
+    /**
+     * Ficha discreta del Guardian (vigilancia financiera). Solo para roles con
+     * guardian.view y con el modulo activo; los demas reciben null y la vista
+     * no pinta nada. Lee el registro de hallazgos (1 query barata) — el
+     * registro lo mantienen frescos la vista del Guardian y el cron de
+     * guardian_notificar.php, aqui no se corre el motor de patrones.
+     */
+    private function getGuardianResumen(): ?array {
+        try {
+            $hotelId = (int) $this->hotelIdActual();
+            if ($hotelId <= 0
+                || !function_exists('hotel_has_module') || !hotel_has_module('ia_ejecutiva', $hotelId)
+                || !function_exists('can') || !can('guardian.view')) {
+                return null;
+            }
+
+            require_once __DIR__ . '/../models/GuardianHallazgoEstado.php';
+            $conteos = (new GuardianHallazgoEstado())->conteos($hotelId);
+
+            return [
+                'nuevos' => (int) ($conteos['nuevo'] ?? 0),
+                'revisados' => (int) ($conteos['revisado'] ?? 0),
+            ];
+        } catch (Throwable $e) {
+            error_log('Dashboard: error en ficha del Guardian: ' . $e->getMessage());
+            return null;
         }
     }
     

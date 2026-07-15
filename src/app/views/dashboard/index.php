@@ -4405,6 +4405,26 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             </article>
         </section>
 
+        <?php if (isset($guardian_resumen) && is_array($guardian_resumen)): ?>
+            <?php $guardian_nuevos = (int) ($guardian_resumen['nuevos'] ?? 0); ?>
+            <!-- Ficha discreta del Guardian: solo roles con guardian.view (verde casi siempre) -->
+            <a href="<?= url('ia/vigilancia-financiera') ?>" class="card ms-pressable"
+               style="display:flex;align-items:center;gap:14px;padding:14px 18px;text-decoration:none;margin-top:14px;border-left:4px solid <?= $guardian_nuevos > 0 ? 'var(--dash-maint, #C2841C)' : 'var(--dash-available, #1E9E63)' ?>;">
+                <div class="mini-icon" style="flex:0 0 auto;background:<?= $guardian_nuevos > 0 ? 'var(--dash-bg-maint, #FAF0DC)' : 'var(--dash-bg-available, #E7F4EC)' ?>;color:<?= $guardian_nuevos > 0 ? 'var(--dash-maint, #C2841C)' : 'var(--dash-available, #1E9E63)' ?>;">
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                </div>
+                <div style="min-width:0;flex:1;">
+                    <div class="card-title">El Guardi&aacute;n</div>
+                    <div class="soft-note" style="margin-top:2px;">
+                        <?= $guardian_nuevos > 0
+                            ? $guardian_nuevos . ' patr&oacute;n(es) a revisar &mdash; conviene confirmar con el equipo'
+                            : 'Todo en orden: nada se sale del patr&oacute;n de tu hotel' ?>
+                    </div>
+                </div>
+                <i class="fas fa-arrow-right" aria-hidden="true" style="flex:0 0 auto;opacity:.55;"></i>
+            </a>
+        <?php endif; ?>
+
         <section class="dashboard-main-flow">
             <div class="dashboard-left-flow">
             <article class="card card-pad weekly-occupancy-card">

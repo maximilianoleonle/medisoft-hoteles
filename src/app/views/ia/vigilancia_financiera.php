@@ -359,6 +359,14 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
     border: 1px solid var(--vgf-info); background: var(--vgf-info-bg);
     color: var(--vgf-info); font-size: .82rem; line-height: 1.5;
 }
+.vgf-nota-ambar {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 14px; border-radius: 12px;
+    border: 1px solid var(--vgf-warning-line); background: var(--vgf-warning-bg);
+    color: var(--vgf-warning); font-size: .82rem; line-height: 1.5;
+}
+.vgf-nota-ambar i { margin-top: 2px; }
+.vgf-nota-ambar a { color: inherit; font-weight: 700; text-decoration: underline; }
 .vgf-personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .vgf-persona {
     border: 1px solid var(--vgf-border); border-radius: 16px;
@@ -554,6 +562,22 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
                 <?php endif; ?>
             </div>
         </section>
+
+        <?php if ($patrones !== null && empty($patrones['config']['horario_configurado'])): ?>
+            <!-- Aviso ambar (patron "configuracion incompleta"): trampa silenciosa,
+                 el Guardian esta usando el horario operativo default. -->
+            <div class="vgf-nota-ambar">
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                <span>
+                    <strong>Horario operativo sin configurar.</strong>
+                    El Guardi&aacute;n est&aacute; usando el horario default
+                    (<?= $vgfSafe($patrones['config']['horario_inicio'] ?? '06:00') ?> a <?= $vgfSafe($patrones['config']['horario_fin'] ?? '23:59') ?>).
+                    Si tu recepci&oacute;n opera de noche, movimientos nocturnos leg&iacute;timos aparecer&aacute;n como patr&oacute;n a revisar.
+                    P&iacute;delo en <a href="<?= url('configuracion') ?>">Configuraci&oacute;n</a> o a tu asesor Medisoft
+                    (claves guardian.horario_inicio / guardian.horario_fin).
+                </span>
+            </div>
+        <?php endif; ?>
 
         <?php if ($volumenInsuficiente): ?>
             <div class="vgf-nota-neutral">

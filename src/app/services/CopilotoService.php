@@ -100,6 +100,17 @@ class CopilotoService
 
         // Los intents mas especificos van primero para no ser "robados" por los
         // genericos (ej. "ocupacion de la semana" debe caer en semana, no en hoy).
+
+        // Guardian financiero: va ANTES que 'caja' para que "todo en orden con
+        // la caja" no caiga en el saldo. Doble gate: modulo + permiso
+        // guardian.view (sus hallazgos nombran usuarios; un operativo no debe
+        // poder preguntarle al copiloto por ellos).
+        if (($tiene(['guardian', 'vigilancia financiera', 'todo en orden con la caja', 'todo en orden en la caja', 'todo bien con la caja', 'algo raro en caja', 'algo raro en la caja', 'patrones a revisar', 'patron a revisar']))
+            && $this->tieneModulo('ia_ejecutiva', $hotelId)
+            && $this->puedeVerGuardian()) {
+            return 'guardian';
+        }
+
         if ($tiene(['resumen del dia', 'resumen de hoy', 'como va el dia', 'como vamos hoy', 'como esta el dia', 'briefing', 'dame el resumen'])) {
             return 'resumen_dia';
         }
@@ -222,6 +233,27 @@ class CopilotoService
     private function responderIntent(int $hotelId, string $intent, string $norm = ''): array
     {
         switch ($intent) {
+            case 'guardian':
+                require_once __DIR__ . '/../models/GuardianPatrones.php';
+                $g = (new GuardianPatrones())->reporteReadOnlyPorHotel($hotelId);
+                $gt = (array) ($g['totales'] ?? []);
+                $altos = (int) ($gt['alta'] ?? 0);
+                $hallazgos = (int) ($gt['hallazgos'] ?? 0);
+                $reglas = count((array) ($g['alertas'] ?? []));
+                if ($hallazgos === 0) {
+                    return [
+                        'texto' => "**Hoy: todo en orden.** El Guardián revisó {$reglas} patrones de comportamiento en los últimos "
+                            . (int) ($g['ventana']['dias'] ?? 30) . ' días y nada se sale del patrón de tu hotel.',
+                        'enlace' => ['url' => 'ia/vigilancia-financiera', 'texto' => 'Abrir el Guardián'],
+                    ];
+                }
+                return [
+                    'texto' => "El Guardián tiene **{$hallazgos} patrón(es) a revisar**"
+                        . ($altos > 0 ? " ({$altos} de prioridad alta)" : '')
+                        . '. No es una acusación: son puntos donde conviene confirmar con el equipo. El detalle está en la app.',
+                    'enlace' => ['url' => 'ia/vigilancia-financiera', 'texto' => 'Abrir el Guardián'],
+                ];
+
             case 'ocupacion':
                 $o = $this->ocupacionHoy($hotelId);
                 if ($o['activas'] <= 0) {
@@ -1782,6 +1814,12 @@ class CopilotoService
     private function tieneModulo(string $clave, int $hotelId): bool
     {
         return function_exists('hotel_has_module') && hotel_has_module($clave, $hotelId);
+    }
+
+    /** El intent del Guardian exige el mismo permiso que su vista (guardian.view). */
+    private function puedeVerGuardian(): bool
+    {
+        return function_exists('can') && can('guardian.view');
     }
 
     private function normalizar(string $texto): string
