@@ -1116,7 +1116,7 @@ class TareaOperativa extends Model
                         m.estado,
                         h.numero AS habitacion_numero
                  FROM mantenimientos_habitaciones m
-                 INNER JOIN habitaciones h
+                 LEFT JOIN habitaciones h
                     ON h.id = m.habitacion_id
                    AND h.hotel_id = m.hotel_id
                  WHERE m.id = ?
@@ -1146,10 +1146,14 @@ class TareaOperativa extends Model
                 throw new RuntimeException('Ya existe una tarea activa vinculada a este mantenimiento.');
             }
 
+            // Preventivo de activo general (boiler, bomba...): sin habitacion.
+            $referenciaUbicacion = !empty($mantenimiento['habitacion_id'])
+                ? 'hab. ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'])
+                : 'instalaciones';
             $titulo = $this->limitarTexto(
                 $datos['titulo'] ?? '',
                 160,
-                'Seguimiento mantenimiento hab. ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'])
+                'Seguimiento mantenimiento ' . $referenciaUbicacion
             );
             $descripcion = $this->limitarTexto(
                 $datos['descripcion'] ?? '',
@@ -1178,7 +1182,7 @@ class TareaOperativa extends Model
                     $titulo,
                     $descripcion,
                     $prioridad,
-                    (int)$mantenimiento['habitacion_id'],
+                    !empty($mantenimiento['habitacion_id']) ? (int)$mantenimiento['habitacion_id'] : null,
                     $mantenimientoId,
                     $fechaProgramada,
                     $fechaLimite,
@@ -1993,7 +1997,9 @@ class TareaOperativa extends Model
     {
         $lineas = [
             'Tarea vinculada al mantenimiento #' . (int)($mantenimiento['id'] ?? 0) . '.',
-            'Habitacion: ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'] ?? '-'),
+            'Ubicacion: ' . (!empty($mantenimiento['habitacion_id'])
+                ? 'Habitacion ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'])
+                : 'Instalaciones generales'),
             'Tipo: ' . (string)($mantenimiento['tipo_mantenimiento'] ?? '-'),
             'Estado mantenimiento: ' . (string)($mantenimiento['estado'] ?? '-'),
         ];

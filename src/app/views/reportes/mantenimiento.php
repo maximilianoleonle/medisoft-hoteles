@@ -1040,6 +1040,12 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                         <i class="fas fa-list-ul"></i>
                         Ver registro
                     </a>
+                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                        <a href="<?= url('mantenimientos/activos') ?>" class="mant-btn is-soft">
+                            <i class="fas fa-toolbox"></i>
+                            Activos y preventivo
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
 

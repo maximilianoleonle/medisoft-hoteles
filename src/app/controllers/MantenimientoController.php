@@ -7,7 +7,9 @@ require_once __DIR__ . '/../helpers/modulos.php';
 require_once __DIR__ . '/../models/Mantenimiento.php';
 require_once __DIR__ . '/../models/MantenimientoFoto.php';
 require_once __DIR__ . '/../models/TareaOperativa.php';
+require_once __DIR__ . '/../models/ActivoHotel.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
+require_once __DIR__ . '/../services/MantenimientoPreventivoService.php';
 
 /**
  * Detalle de mantenimiento (bloque mantenimiento_plus).
@@ -247,6 +249,19 @@ class MantenimientoController extends Controller
 
         $mensajes = ['Mantenimiento cerrado correctamente.'];
 
+        // Preventivo por activo: el cierre marca el servicio realizado y
+        // recalcula proximo_servicio (hoy + periodicidad).
+        if (!empty($mant['activo_id'])) {
+            $activoModel = new ActivoHotel();
+            if ($activoModel->registrarServicioCompletado($hotelId, (int)$mant['activo_id'])) {
+                $activoInfo = $activoModel->obtenerPorId((int)$mant['activo_id'], $hotelId);
+                if ($activoInfo && !empty($activoInfo['proximo_servicio'])) {
+                    $mensajes[] = 'Proximo servicio de "' . (string)$activoInfo['nombre'] . '": '
+                        . date('d/m/Y', strtotime((string)$activoInfo['proximo_servicio'])) . '.';
+                }
+            }
+        }
+
         // Evidencia del arreglo (post-commit: las fotos no son transaccionales).
         if (!empty($_FILES['fotos_resuelto']['name'][0] ?? '')) {
             $resultadoFotos = $this->fotoModel->guardarLoteDesdeUpload(
@@ -479,6 +494,222 @@ class MantenimientoController extends Controller
         }
     }
 
+    /**
+     * GET /mantenimientos/activos
+     * Catalogo de activos con preventivo (boiler, bomba, aires...).
+     */
+    public function activosAction()
+    {
+        $hotelId = (int)$this->hotelIdActual();
+        $activoModel = new ActivoHotel();
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT id, numero FROM habitaciones
+             WHERE hotel_id = ? AND COALESCE(activa, 1) = 1
+             ORDER BY CAST(numero AS UNSIGNED), numero",
+            [$hotelId]
+        );
+
+        View::renderTemplate('mantenimientos/activos', [
+            'title' => 'Activos y preventivo - ' . current_hotel_display_name(),
+            'activos' => $activoModel->listar($hotelId),
+            'habitaciones' => $stmt ? ($stmt->fetchAll() ?: []) : [],
+            'puede_gestionar' => function_exists('can') ? can('habitaciones.mantenimiento') : true,
+        ]);
+    }
+
+    /**
+     * GET /mantenimientos/activos/{id}
+     * Historial de servicios del activo con costo acumulado.
+     */
+    public function activoAction()
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = (int)$this->hotelIdActual();
+
+        $activoModel = new ActivoHotel();
+        $activo = $activoModel->obtenerPorId($id, $hotelId);
+
+        if (!$activo) {
+            set_mensaje('Activo no encontrado', 'error');
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        View::renderTemplate('mantenimientos/activo', [
+            'title' => (string)$activo['nombre'] . ' - ' . current_hotel_display_name(),
+            'activo' => $activo,
+            'historial' => $activoModel->historialServicios($id, $hotelId),
+            'puede_gestionar' => function_exists('can') ? can('habitaciones.mantenimiento') : true,
+        ]);
+    }
+
+    /**
+     * POST /mantenimientos/activos/guardar (alta o edicion segun id).
+     */
+    public function guardarActivoAction()
+    {
+        if (!$this->isPost()) {
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        $this->validateCSRF();
+        $this->requirePermission('habitaciones.mantenimiento');
+
+        $hotelId = (int)$this->hotelIdActual();
+        $id = (int)$this->getPost('id', 0);
+
+        $nombre = trim((string)$this->getPost('nombre', ''));
+        $ubicacion = trim((string)$this->getPost('ubicacion', ''));
+        $habitacionId = (int)$this->getPost('habitacion_id', 0);
+        $periodicidad = (int)$this->getPost('periodicidad_dias', 0);
+        $ultimoServicio = trim((string)$this->getPost('ultimo_servicio', ''));
+        $proximoServicio = trim((string)$this->getPost('proximo_servicio', ''));
+        $notas = trim((string)$this->getPost('notas', ''));
+
+        if ($nombre === '') {
+            set_mensaje('El nombre del activo es obligatorio', 'error');
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        if ($periodicidad < 1 || $periodicidad > 3650) {
+            set_mensaje('La periodicidad debe ser entre 1 y 3650 dias', 'error');
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        // Habitacion opcional: si viene, debe ser del hotel.
+        if ($habitacionId > 0) {
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "SELECT id FROM habitaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                [$habitacionId, $hotelId]
+            );
+            if (!$stmt || !$stmt->fetch()) {
+                set_mensaje('La habitacion elegida no pertenece a este hotel', 'error');
+                $this->redirect('mantenimientos/activos');
+                return;
+            }
+        }
+
+        $ultimoServicio = $this->parseFecha($ultimoServicio);
+        $proximoServicio = $this->parseFecha($proximoServicio);
+
+        // proximo_servicio calculado si no se capturo: desde el ultimo
+        // servicio (o desde hoy) + periodicidad.
+        if ($proximoServicio === null) {
+            $base = $ultimoServicio ?: date('Y-m-d');
+            $proximoServicio = date('Y-m-d', strtotime($base . ' +' . $periodicidad . ' days'));
+        }
+
+        $activoModel = new ActivoHotel();
+
+        if ($id > 0 && !$activoModel->obtenerPorId($id, $hotelId)) {
+            set_mensaje('Activo no encontrado', 'error');
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        $resultado = $activoModel->guardar([
+            'nombre' => mb_substr($nombre, 0, 160),
+            'ubicacion' => $ubicacion !== '' ? mb_substr($ubicacion, 0, 160) : null,
+            'habitacion_id' => $habitacionId > 0 ? $habitacionId : null,
+            'periodicidad_dias' => $periodicidad,
+            'ultimo_servicio' => $ultimoServicio,
+            'proximo_servicio' => $proximoServicio,
+            'notas' => $notas !== '' ? $notas : null,
+            'activo' => 1,
+        ], $id > 0 ? $id : null);
+
+        if ($resultado) {
+            set_mensaje($id > 0 ? 'Activo actualizado' : 'Activo registrado; su preventivo vence el ' . date('d/m/Y', strtotime($proximoServicio)), 'success');
+        } else {
+            set_mensaje('No se pudo guardar el activo', 'error');
+        }
+
+        $this->redirect('mantenimientos/activos');
+    }
+
+    /**
+     * POST /mantenimientos/activos/{id}/toggle (pausar/reactivar preventivo).
+     */
+    public function toggleActivoAction()
+    {
+        if (!$this->isPost()) {
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        $this->validateCSRF();
+        $this->requirePermission('habitaciones.mantenimiento');
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = (int)$this->hotelIdActual();
+
+        $activoModel = new ActivoHotel();
+        $activo = $activoModel->obtenerPorId($id, $hotelId);
+
+        if (!$activo) {
+            set_mensaje('Activo no encontrado', 'error');
+        } else {
+            $nuevo = (int)($activo['activo'] ?? 1) === 1 ? 0 : 1;
+            $activoModel->guardar(['activo' => $nuevo], $id);
+            set_mensaje($nuevo ? 'Preventivo reactivado' : 'Preventivo pausado (no generara mantenimientos)', 'success');
+        }
+
+        $this->redirect('mantenimientos/activos');
+    }
+
+    /**
+     * POST /mantenimientos/activos/generar
+     * Genera ahora los preventivos vencidos del hotel (mismo motor del cron).
+     */
+    public function generarPreventivosAction()
+    {
+        if (!$this->isPost()) {
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
+        $this->validateCSRF();
+        $this->requirePermission('habitaciones.mantenimiento');
+
+        $servicio = new MantenimientoPreventivoService();
+        $resumen = $servicio->generarParaHotel((int)$this->hotelIdActual());
+
+        $partes = [];
+        if ($resumen['generados'] > 0) {
+            $partes[] = $resumen['generados'] . ' preventivo' . ($resumen['generados'] === 1 ? '' : 's') . ' generado' . ($resumen['generados'] === 1 ? '' : 's') . ' con su tarea';
+        }
+        if ($resumen['omitidos'] > 0) {
+            $partes[] = $resumen['omitidos'] . ' ya tenian mantenimiento abierto';
+        }
+        if (empty($partes)) {
+            $partes[] = 'No hay activos vencidos por generar';
+        }
+
+        $tono = empty($resumen['errores']) ? 'success' : 'warning';
+        if (!empty($resumen['errores'])) {
+            $partes[] = 'Errores: ' . implode('; ', $resumen['errores']);
+        }
+
+        set_mensaje(implode('. ', $partes) . '.', $tono);
+        $this->redirect('mantenimientos/activos');
+    }
+
+    private function parseFecha(string $valor): ?string
+    {
+        $valor = trim($valor);
+        if ($valor === '') {
+            return null;
+        }
+        $ts = strtotime($valor);
+        return $ts ? date('Y-m-d', $ts) : null;
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
@@ -501,13 +732,18 @@ class MantenimientoController extends Controller
                     h.numero AS habitacion_numero,
                     h.tipo AS habitacion_tipo,
                     h.estado AS habitacion_estado,
-                    u.nombre_completo AS usuario_registro_nombre
+                    u.nombre_completo AS usuario_registro_nombre,
+                    a.nombre AS activo_nombre,
+                    a.ubicacion AS activo_ubicacion
              FROM mantenimientos_habitaciones m
              LEFT JOIN habitaciones h
                 ON h.id = m.habitacion_id
                AND h.hotel_id = m.hotel_id
              LEFT JOIN usuarios u
                 ON u.id = m.usuario_registro_id
+             LEFT JOIN activos_hotel a
+                ON a.id = m.activo_id
+               AND a.hotel_id = m.hotel_id
              WHERE m.id = ?
                AND m.hotel_id = ?
              LIMIT 1",

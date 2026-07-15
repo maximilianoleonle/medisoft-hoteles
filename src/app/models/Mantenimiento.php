@@ -448,8 +448,9 @@ class Mantenimiento extends Model {
      */
     public function buscar($filtros = []) {
         $hotelId = $this->hotelIdActual();
-        $conditions = ["m.hotel_id = ?", "h.hotel_id = ?"];
-        $params = [$hotelId, $hotelId];
+        // LEFT JOIN: los preventivos de activos generales no tienen habitacion.
+        $conditions = ["m.hotel_id = ?"];
+        $params = [$hotelId];
         
         if (!empty($filtros['habitacion_id'])) {
             $conditions[] = "m.habitacion_id = ?";
@@ -481,7 +482,7 @@ class Mantenimiento extends Model {
         
         $sql = "SELECT m.*, h.numero as habitacion_numero, u.nombre as usuario_nombre
                 FROM {$this->table} m
-                INNER JOIN habitaciones h ON m.habitacion_id = h.id
+                LEFT JOIN habitaciones h ON m.habitacion_id = h.id AND h.hotel_id = m.hotel_id
                 LEFT JOIN usuarios u ON m.usuario_registro_id = u.id
                 $where
                 ORDER BY m.fecha_inicio DESC";

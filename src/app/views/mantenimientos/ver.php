@@ -39,7 +39,18 @@ $estadoMeta = [
 
 $esActivo = in_array($estado, ['en_proceso', 'programado'], true);
 $habitacionNumero = trim((string)($mant['habitacion_numero'] ?? ''));
-$ubicacionLabel = $habitacionNumero !== '' ? 'Hab. ' . $habitacionNumero : 'Instalaciones generales';
+$activoNombre = trim((string)($mant['activo_nombre'] ?? ''));
+if ($habitacionNumero !== '') {
+    $ubicacionLabel = 'Hab. ' . $habitacionNumero;
+} elseif ($activoNombre !== '') {
+    $ubicacionLabel = $activoNombre;
+    $activoUbicacion = trim((string)($mant['activo_ubicacion'] ?? ''));
+    if ($activoUbicacion !== '') {
+        $ubicacionLabel .= ' · ' . $activoUbicacion;
+    }
+} else {
+    $ubicacionLabel = 'Instalaciones generales';
+}
 
 $momentos = [
     'reporte' => [
@@ -436,6 +447,11 @@ $momentos = [
                     <?php if (!empty($mant['habitacion_id'])): ?>
                         <a class="mdet-link" href="<?= url('habitaciones/' . (int)$mant['habitacion_id']) ?>">
                             <i class="fas fa-door-open"></i> Habitaci&oacute;n
+                        </a>
+                    <?php endif; ?>
+                    <?php if (!empty($mant['activo_id'])): ?>
+                        <a class="mdet-link" href="<?= url('mantenimientos/activos/' . (int)$mant['activo_id']) ?>">
+                            <i class="fas fa-fire-burner"></i> Historial del activo
                         </a>
                     <?php endif; ?>
                     <a class="mdet-link" href="<?= url('reportes/mantenimiento') ?>">

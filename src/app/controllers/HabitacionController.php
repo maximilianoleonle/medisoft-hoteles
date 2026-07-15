@@ -1710,17 +1710,40 @@ public function mantenimientoAction() {
                 throw new RuntimeException('Solo se puede finalizar mantenimiento de una habitaciÃ³n en mantenimiento');
             }
 
+            // Preventivos de activo que van a cerrarse: para recalcular su
+            // proximo_servicio despues del commit (bloque mantenimiento_plus).
+            $activosServidos = [];
+            try {
+                $stmtActivos = $db->query(
+                    "SELECT DISTINCT activo_id FROM mantenimientos_habitaciones
+                     WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso' AND activo_id IS NOT NULL",
+                    [$id, $hotelId]
+                );
+                $activosServidos = $stmtActivos ? array_column($stmtActivos->fetchAll(), 'activo_id') : [];
+            } catch (Throwable $eActivos) {
+                // Sin la migracion de activos el finalizar basico sigue funcionando.
+                $activosServidos = [];
+            }
+
             // Actualizar estado de habitación
             $this->habitacionModel->update($id, ['estado' => 'disponible']);
-            
+
             // Actualizar registro de mantenimiento
-            $sql = "UPDATE mantenimientos_habitaciones 
-                    SET estado = 'completado', fecha_fin = NOW() 
+            $sql = "UPDATE mantenimientos_habitaciones
+                    SET estado = 'completado', fecha_fin = NOW()
                     WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'";
-            
+
             $db->query($sql, [$id, $hotelId]);
-            
+
             $db->commit();
+
+            if (!empty($activosServidos)) {
+                require_once __DIR__ . '/../models/ActivoHotel.php';
+                $activoModel = new ActivoHotel();
+                foreach ($activosServidos as $activoServidoId) {
+                    $activoModel->registrarServicioCompletado((int)$hotelId, (int)$activoServidoId);
+                }
+            }
             set_mensaje('Mantenimiento finalizado correctamente', 'success');
             $this->registrarNotificacionHabitacion(
                 (int)$id,

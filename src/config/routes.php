@@ -476,6 +476,12 @@ $router->post('/mantenimientos/{id:[0-9]+}/fotos', ['controller' => 'Mantenimien
 // Mantenimiento Plus F2: cierre con costo real y egreso por el flujo existente de caja.
 $router->post('/mantenimientos/{id:[0-9]+}/cerrar', ['controller' => 'Mantenimiento', 'action' => 'cerrar']);
 $router->post('/mantenimientos/{id:[0-9]+}/registrar-gasto', ['controller' => 'Mantenimiento', 'action' => 'registrarGasto']);
+// Mantenimiento Plus F3: activos del hotel con preventivo ("boiler cada 6 meses").
+$router->get('/mantenimientos/activos', ['controller' => 'Mantenimiento', 'action' => 'activos']);
+$router->get('/mantenimientos/activos/{id:[0-9]+}', ['controller' => 'Mantenimiento', 'action' => 'activo']);
+$router->post('/mantenimientos/activos/guardar', ['controller' => 'Mantenimiento', 'action' => 'guardarActivo']);
+$router->post('/mantenimientos/activos/{id:[0-9]+}/toggle', ['controller' => 'Mantenimiento', 'action' => 'toggleActivo']);
+$router->post('/mantenimientos/activos/generar', ['controller' => 'Mantenimiento', 'action' => 'generarPreventivos']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
