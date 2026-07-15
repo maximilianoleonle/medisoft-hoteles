@@ -186,10 +186,12 @@ class CopilotoService
             }
         }
 
-        // 0.5) Accion ejecutable (SOLO limpieza; jamas dinero): aqui solo se
-        //      PROPONE. El widget pide confirmacion (msConfirm) y ejecutar
+        // 0.5) Accion ejecutable (SOLO limpieza/tareas; jamas dinero): aqui solo
+        //      se PROPONE. El widget pide confirmacion (msConfirm) y ejecutar
         //      pasa por POST /copiloto/accion con CSRF y permiso del rol.
-        $accion = $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
+        //      Asignar va primero: sus verbos son mas especificos.
+        $accion = $this->detectarAccionAsignar($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
             return $accion['respuesta'] + ['success' => true, 'fuente' => 'reglas', 'intent' => $accion['intent']];
@@ -1404,6 +1406,132 @@ class CopilotoService
     }
 
     /**
+     * Detecta "asigna a Maria la limpieza de la 204" y arma la PROPUESTA de
+     * asignacion (no ejecuta). Cierra el ciclo de la limpieza programada sin
+     * personal: la tarea pasa a 'asignada' y aparece en la agenda de la
+     * persona. Devuelve null si la frase no es una asignacion de limpieza.
+     */
+    private function detectarAccionAsignar(string $norm, int $hotelId, ?array $contexto = null): ?array
+    {
+        if (!preg_match('/\b(asigna|asignale|asignarle|asignar|encarga|encargale)\b/', $norm) || strpos($norm, 'limpi') === false) {
+            return null;
+        }
+
+        // Mismo permiso que el resto de las acciones de limpieza.
+        if (function_exists('can') && !can('habitaciones.view')) {
+            return ['intent' => 'accion:asignar_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para asignar limpiezas. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
+        if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
+            $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
+        }
+        if ($hab === null) {
+            return ['intent' => 'accion:asignar_sin_hab', 'respuesta' => [
+                'texto' => "No identifique la habitacion. Dimelo asi: \"asigna a Maria la limpieza de la 204\".",
+                'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+            ]];
+        }
+
+        $trab = $this->buscarTrabajadorEnTexto($norm, $hotelId);
+        if ($trab !== null && isset($trab['ambiguos'])) {
+            return ['intent' => 'accion:asignar_ambiguo', 'respuesta' => [
+                'texto' => 'Hay varias personas que casan con ese nombre: **' . implode('**, **', $trab['ambiguos']) . '**. Dimelo con el nombre completo.',
+                'enlace' => null,
+            ]];
+        }
+        if ($trab === null) {
+            return ['intent' => 'accion:asignar_sin_quien', 'respuesta' => [
+                'texto' => 'No identifique a quien asignarle la limpieza. Dimelo con su nombre tal como aparece en **Personal**: "asigna a Maria la limpieza de la ' . $hab['numero'] . '".',
+                'enlace' => $this->tieneModulo('personal', $hotelId) ? ['url' => 'trabajadores', 'texto' => 'Ver personal'] : null,
+            ]];
+        }
+
+        // Si ya hay tarea de limpieza activa se respeta su fecha (si sigue
+        // vigente); si no, la asignacion es para hoy.
+        $fecha = date('Y-m-d');
+        try {
+            require_once __DIR__ . '/../models/TareaOperativa.php';
+            $tarea = (new TareaOperativa())->buscarTareaActivaLimpiezaPorHabitacionHotel($hotelId, (int) $hab['id']);
+            if ($tarea && !empty($tarea['fecha_programada'])) {
+                $fechaTarea = date('Y-m-d', strtotime((string) $tarea['fecha_programada']));
+                if ($fechaTarea >= date('Y-m-d')) {
+                    $fecha = $fechaTarea;
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error tarea activa para asignar: ' . $e->getMessage());
+        }
+        $fechaTexto = $fecha === date('Y-m-d') ? 'hoy (' . date('d/m') . ')' : 'el ' . date('d/m', strtotime($fecha));
+
+        return ['intent' => 'accion:asignar', 'respuesta' => [
+            'texto' => "Puedo dejar a **{$trab['nombre']}** a cargo de la limpieza de la habitacion **{$hab['numero']}** para {$fechaTexto}. Confirmalo y queda en su agenda.",
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'asignar_limpieza',
+                'habitacion_id' => (int) $hab['id'],
+                'habitacion' => (string) $hab['numero'],
+                'trabajador_id' => (int) $trab['id'],
+                'trabajador' => (string) $trab['nombre'],
+                'fecha' => $fecha,
+                'confirm_titulo' => '¿Asignar la limpieza?',
+                'confirm_msg' => "{$trab['nombre']} — habitacion {$hab['numero']}, {$fechaTexto}. La tarea queda asignada y visible en su agenda.",
+                'confirm_ok' => 'Asignar',
+            ],
+        ]];
+    }
+
+    /**
+     * Busca en la frase a un trabajador ACTIVO del hotel: primero por nombre
+     * completo, luego por tokens del nombre (palabra completa, >= 3 letras).
+     * Devuelve ['id','nombre'], ['ambiguos' => nombres] si varios casan, o null.
+     */
+    private function buscarTrabajadorEnTexto(string $norm, int $hotelId): ?array
+    {
+        try {
+            require_once __DIR__ . '/../models/TareaOperativa.php';
+            $filas = (new TareaOperativa())->trabajadoresActivosOpciones($hotelId);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error catalogo trabajadores: ' . $e->getMessage());
+            return null;
+        }
+
+        $candidatos = [];
+        foreach ($filas as $f) {
+            $nombre = trim((string) ($f['nombre_completo'] ?? ''));
+            $nc = $this->normalizar($nombre);
+            if ($nc === '') {
+                continue;
+            }
+            // Nombre completo en la frase: gana de inmediato.
+            if (strpos($norm, $nc) !== false) {
+                return ['id' => (int) $f['id'], 'nombre' => $nombre];
+            }
+            foreach (explode(' ', $nc) as $token) {
+                if (mb_strlen($token) < 3 || in_array($token, ['del', 'los', 'las'], true)) {
+                    continue;
+                }
+                if (preg_match('/(^|[^a-z0-9])' . preg_quote($token, '/') . '($|[^a-z0-9])/', $norm)) {
+                    $candidatos[(int) $f['id']] = $nombre;
+                    break;
+                }
+            }
+        }
+
+        if (count($candidatos) === 1) {
+            return ['id' => (int) array_key_first($candidatos), 'nombre' => (string) reset($candidatos)];
+        }
+        if (count($candidatos) > 1) {
+            return ['ambiguos' => array_slice(array_values($candidatos), 0, 3)];
+        }
+
+        return null;
+    }
+
+    /**
      * Busca en la frase un numero/nombre de habitacion DEL hotel (palabra
      * completa, el candidato mas largo gana). Los nombres tipo "la" o "el"
      * se ignoran para no confundirlos con articulos.
@@ -1461,16 +1589,23 @@ class CopilotoService
      */
     public function ejecutarAccion(int $hotelId, string $tipo, array $params, ?int $usuarioId = null): array
     {
-        if ($tipo !== 'programar_limpieza') {
+        if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
             return ['success' => false, 'texto' => 'Esa accion no esta disponible desde el copiloto.', 'fuente' => 'reglas'];
         }
 
         if (function_exists('can') && !can('habitaciones.view')) {
-            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para programar limpiezas.', 'fuente' => 'reglas'];
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para gestionar limpiezas.', 'fuente' => 'reglas'];
         }
 
         $habitacionId = (int) ($params['habitacion_id'] ?? 0);
         $fecha = (string) ($params['fecha'] ?? date('Y-m-d'));
+        $trabajadorId = (int) ($params['trabajador_id'] ?? 0);
+        $conPersonal = $tipo === 'asignar_limpieza';
+        $logRef = $conPersonal ? 'asignar' : 'limpieza';
+
+        if ($conPersonal && $trabajadorId <= 0) {
+            return ['success' => false, 'texto' => 'Falta a quien asignarle la limpieza. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
 
         require_once __DIR__ . '/../models/TareaOperativa.php';
         $tareas = new TareaOperativa();
@@ -1479,18 +1614,34 @@ class CopilotoService
             if (!$tareas->tablaDisponible() || !$tareas->eventosDisponibles()) {
                 return ['success' => false, 'texto' => 'La base de tareas operativas no esta disponible en este hotel.', 'fuente' => 'reglas'];
             }
-            $tareas->programarLimpiezaParaHotel($hotelId, $habitacionId, $fecha, [], $usuarioId);
+            // El modelo valida habitacion, fechas y que el personal siga
+            // activo en ESTE hotel; con personal la tarea queda 'asignada'.
+            $tareas->programarLimpiezaParaHotel($hotelId, $habitacionId, $fecha, $conPersonal ? [$trabajadorId] : [], $usuarioId);
         } catch (Throwable $e) {
-            $this->registrar($hotelId, $usuarioId, "[accion limpieza hab {$habitacionId} {$fecha}]", 'reglas', 'accion:limpieza_error', 0, 0);
+            $this->registrar($hotelId, $usuarioId, "[accion {$logRef} hab {$habitacionId} {$fecha}]", 'reglas', "accion:{$logRef}_error", 0, 0);
             // Los mensajes de validacion del modelo son para humanos; un error
             // de BD crudo jamas llega al usuario.
-            $texto = ($e instanceof PDOException) ? 'No se pudo programar la limpieza. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo programar la limpieza.');
+            $texto = ($e instanceof PDOException) ? 'No se pudo completar la accion. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo completar la accion.');
             return ['success' => false, 'texto' => $texto, 'fuente' => 'reglas'];
         }
 
         $hab = $this->habitacionPorId($hotelId, $habitacionId);
         $numero = $hab !== null ? $hab['numero'] : (string) $habitacionId;
         $etiqueta = $fecha === date('Y-m-d') ? 'hoy' : 'el ' . $this->fechaCortaConAnio($fecha);
+
+        $this->registrar($hotelId, $usuarioId, "[accion {$logRef} hab {$habitacionId} {$fecha}]", 'reglas', "accion:{$logRef}_ok", 0, 0);
+
+        if ($conPersonal) {
+            $nombreTrab = $this->nombreTrabajador($hotelId, $trabajadorId) ?? 'La persona elegida';
+            $urlAgenda = $this->tieneModulo('tareas', $hotelId) ? 'tareas' : ($this->tieneModulo('camarista', $hotelId) ? 'camarista' : 'habitaciones');
+            return [
+                'success' => true,
+                'texto' => "Listo ✅ **{$nombreTrab}** quedo a cargo de la limpieza de la habitacion **{$numero}** para {$etiqueta}. Ya aparece en su agenda.",
+                'fuente' => 'reglas',
+                'enlace' => null,
+                'acciones' => [['label' => 'Ver la agenda', 'url' => $urlAgenda]],
+            ];
+        }
 
         $urlTablero = 'habitaciones';
         $labelTablero = 'Ver habitaciones';
@@ -1502,16 +1653,28 @@ class CopilotoService
             $labelTablero = 'Asignar personal en Camarista';
         }
 
-        $this->registrar($hotelId, $usuarioId, "[accion limpieza hab {$habitacionId} {$fecha}]", 'reglas', 'accion:limpieza_ok', 0, 0);
-
         return [
             'success' => true,
             'texto' => "Listo ✅ Limpieza de la habitacion **{$numero}** programada para {$etiqueta}. "
-                . 'Quedo **pendiente de asignar personal**; asignalo desde el tablero para que aparezca en su agenda.',
+                . 'Quedo **pendiente de asignar personal**; puedes decirme "asigna a Maria la limpieza de la ' . $numero . '" o hacerlo desde el tablero.',
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => $labelTablero, 'url' => $urlTablero]],
         ];
+    }
+
+    /** Nombre del trabajador activo (scope de hotel) para los textos. */
+    private function nombreTrabajador(int $hotelId, int $trabajadorId): ?string
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT nombre_completo FROM trabajadores WHERE id = ? AND hotel_id = ? LIMIT 1");
+            $stmt->execute([$trabajadorId, $hotelId]);
+            $nombre = trim((string) $stmt->fetchColumn());
+            return $nombre !== '' ? $nombre : null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error nombre trabajador: ' . $e->getMessage());
+            return null;
+        }
     }
 
     // ───────────────────────── Consultas de solo lectura ─────────────────────────

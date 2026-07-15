@@ -81,6 +81,7 @@ class CopilotoController extends Controller {
         $params = [
             'habitacion_id' => (int) $this->getPost('habitacion_id', 0),
             'fecha' => mb_substr((string) $this->getPost('fecha', ''), 0, 10),
+            'trabajador_id' => (int) $this->getPost('trabajador_id', 0),
         ];
 
         try {

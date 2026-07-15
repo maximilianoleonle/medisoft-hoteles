@@ -882,6 +882,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('tipo', accion.tipo);
         datos.append('habitacion_id', accion.habitacion_id || '');
         datos.append('fecha', accion.fecha || '');
+        if (accion.trabajador_id) { datos.append('trabajador_id', accion.trabajador_id); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -892,7 +893,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             .then(function (data) {
                 pintarRespuesta(pensando, data);
                 if (data.success && window.msToast) {
-                    window.msToast('success', 'Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️');
+                    window.msToast('success',
+                        accion.tipo === 'asignar_limpieza' ? 'Limpieza asignada' : 'Limpieza programada',
+                        'La tarea quedó en el tablero de limpieza. 🗓️');
                 }
             })
             .catch(function () {
