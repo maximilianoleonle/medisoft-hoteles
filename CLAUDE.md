@@ -27,14 +27,14 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - `src/app/views/partials/` componentes compartidos: `filtros.php` (barras filtro boutique), `confirm.php` (msConfirm), `back_arrow.php`, `view_topbar.php` (inyectado desde header.php a TODAS las vistas), `section_subnav.php`.
 - Layout: `src/app/views/layout/` (header.php, footer.php, sidebar.php).
 - CSS: `src/public_html/css/` (tailwind.css generado, dark-theme.css, cupertino.css) · JS: `src/public_html/js/` (app.js, sidebar-rail.js, instant-nav.js, modal-sidebar-fix.js).
-- Copiloto IA: `CopilotoController` + `CopilotoIaController` + widget `views/partials/copiloto_widget.php` (campos fijos + whitelist de acciones).
+- Copiloto IA: `CopilotoController` + `CopilotoIaController` + widget `views/layout/copiloto_widget.php`. Acción nueva por chat = 3 puntos: `detectarAccion*`+`ejecutar*` en CopilotoService, campos en `ejecutarAccion()` del widget, whitelist en `accionAction` del controller. Parsers de frases = estáticos puros públicos con test propio (`parsearGasto/Cupon/PagoProveedor/FechasReserva`, `sanearHistorial/Flujo`).
 - `dist/` = builds de deploy (Hostinger): **nunca editar ahí**, solo `src/`.
 
 ## Comandos
 
 - **Radiografía (correr AL ARRANCAR y tras merges)**: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/radiografia.php` — migraciones pendientes, tenancy, frescura CSS, errores en logs, tests. GOTCHA Git Bash: sin `MSYS_NO_PATHCONV=1`, MSYS rompe las rutas `/var/...` de todo `docker exec`.
 - CSS: `npm run build:css` tras tocar clases Tailwind (o `watch:css`). GOTCHA: los globs de `tailwind.config` jamás deben incluir helpers/tcpdf/fonts (líneas de 1.1M chars → build de 5 min).
-- Tests: `php src/tests/run.php` (casos en `src/tests/casos/`, concurrencia en `src/tests/concurrencia/`).
+- Tests: `php src/tests/run.php` (casos en `src/tests/casos/`, concurrencia en `src/tests/concurrencia/`). **Todo caso DEBE terminar con `t_fin()`** (sin él los FAIL no tumban el runner y reporta verde); si un caso necesita un helper nuevo, cargarlo en `tests/bootstrap.php` espejo de `index.php`.
 - Linter tenancy: `php src/tools/lint_tenancy.php` (baseline en `lint_tenancy_baseline.json`; no subir el conteo).
 - Migraciones: `php src/tools/migrate.php` (SQL en `src/database/migrations/`).
 - Crons de referencia en `src/tools/cron_*.php` (night audit, ical, copiloto, cobros saas…).
@@ -56,6 +56,7 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - Sesiones concurrentes de edición se pisan sin commit (mantenimiento) — avisar al usuario si aplica.
 - `navegacion.php` tiene un OR de permisos traicionero (caso Guardián).
 - MySQL enum: insertar valor inválido (ej. 'egreso') no truena, duplica conceptos — validar enums en PHP.
+- `can_legacy` (roles sin `role_id`) NO conoce `reservaciones.*`: un gate `can('reservaciones.x')` bloquea a TODOS los roles legacy (admin incluido). Regla: un enlace/acción jamás exige más permiso que la pantalla a la que apunta.
 
 ## Componentes reutilizables (no reinventar)
 

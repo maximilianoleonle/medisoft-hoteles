@@ -26,8 +26,12 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 - **INNER JOIN a `habitacion_id` en mantenimientos** → la columna es NULLABLE (mantenimiento de áreas/activos) → LEFT JOIN siempre.
 - **Duplicar pestaña "Pre-nómina" en la /nomina nueva** → doble superficie confundía; la vieja trabajadores/nomina sigue siendo la pantalla de PAGO → /nomina nueva es fachada sin pago; no borrar la vieja.
 - **Dejar que la IA del Copiloto ejecute directo** → riesgo y errores → patrón fijo: propuesta determinista → confirmación humana → motor de pantalla estándar.
+- **Gatear la reservación por chat con `can('reservaciones.create')`** → `can_legacy` no conoce `reservaciones.*` y bloqueaba a TODOS los roles legacy (admin incluido); la pantalla de crear no exige ese permiso → paridad exacta: un enlace nunca pide más permiso que su pantalla destino.
+- **Crear la reservación completa desde el chat** → precio/tarifas/anticipo viven en `crear.php` y duplicarlos es riesgo de dinero → el chat entiende+valida (disponibilidad, huésped) y entrega el formulario PRELLENADO por query (`crearAction` ya lo soportaba).
 
 ## Entorno / herramientas
 
 - **`docker exec ... php /var/www/html/...` desde Git Bash** → MSYS convierte `/var/...` a ruta de Windows y falla → prefijar `MSYS_NO_PATHCONV=1` (o correr desde PowerShell).
 - **Aplicar migraciones "cuando me acuerde" tras un merge multi-PC** → BDs locales divergen silenciosamente → `tools/migrate.php status` (o la radiografía) tras cada merge.
+- **Escribir casos de test sin `t_fin()` al final** → los FAIL no se cuentan y el runner reporta "TODOS PASARON" con aserciones rotas → todo caso cierra con `t_fin()` (así se descubrió: un gate falso pasaba en verde).
+- **Asumir que `tests/bootstrap.php` carga lo mismo que `index.php`** → faltaba `helpers/modulos.php`: `function_exists('hotel_has_module')` daba false y los gates de bloque degradaban EN SILENCIO (el caso negativo pasaba por la razón equivocada) → al usar un helper nuevo en tests, verificar que el bootstrap lo cargue.

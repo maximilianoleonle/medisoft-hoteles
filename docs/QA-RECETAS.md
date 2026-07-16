@@ -45,9 +45,12 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 ## Copiloto (acciones por chat)
 
 1. Abrir widget del Copiloto (exento del difuminador de sidebar).
-2. Pedir una acción (gasto en caja / bloquear habitación / cupón / pago a proveedor).
+2. Pedir una acción: "registra un gasto de 450 de plomería en Mantenimiento" (exige caja abierta) / "bloquea la 204 por pintura" / "desbloquea la 204" / "crea un cupón de 10% para agosto" / "págale 500 al proveedor X".
 3. Debe responder con **propuesta** de campos fijos → confirmar → la ejecuta el motor de pantalla estándar (verificar el registro resultante igual que en la receta del módulo destino).
 4. Rechazar una propuesta también es caso de prueba: no debe ejecutar nada.
+5. Reservación campo a campo: "quiero hacer una reservación" → debe ir pidiendo fechas → habitación (rechaza ocupadas) → nombre → teléfono si es nuevo → confirmar registra al huésped y da botón al formulario prellenado. ⬜ confirmar en navegador que el formulario abre con fechas/habitación/huésped puestos y que "cancelar" a media captura corta el flujo.
+6. Multi-turno IA: pregunta abierta ("dame un consejo para temporada baja") y luego "¿y de esas ideas cuál primero?" → debe retomar el hilo (verificado por CLI contra el API; ⬜ confirmar desde el widget).
+7. Pregunta de datos a media captura ("¿cuánto tengo en caja?") → responde normal y el wizard sigue donde iba.
 
 ## Limpieza / camaristas
 
