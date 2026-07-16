@@ -20,7 +20,8 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 2. Crear reservación con huésped nuevo y ⬜ (datos mínimos exactos del form).
 3. Registrar **anticipo** desde ⬜ (pantalla/modal) → debe crear fila en `reservacion_abonos` ligada a caja (AnticipoService).
 4. **Check-in**: el cobro debe ser saldo-aware (total − anticipo, sin doble cobro). En móvil el modal es wizard de 2 pasos (≤640px); `ver.php` tiene su propio wizard distinto.
-5. Checkout → verificar por PDO que los movimientos de caja cuadran con lo cobrado.
+5. **Paso 2 del check-in de `ver.php` (cobro tipo POS, rediseñado jul-2026)** — verificado en navegador: (a) 1 toque a una ficha → autollena el total, barra 100%, "Cobro completo"; (b) split: teclear $800 en tarjeta → "Falta $1,200" → tocar efectivo → rellena $1,200 (efectivo es el relleno automático); (c) saldo pendiente + efectivo $500 → barra 25%, "Se cobra una parte hoy", `permitir_saldo_pendiente=1`. **Invariante**: nunca coexisten "Cobro completo" + "paga solo una parte" marcado — al cubrir el total el checkbox se apaga solo (`calcularTotales`), y activarlo estando cubierto parte de cero para capturar el parcial real (`toggleSaldoPendienteCheckIn`). IDs de inputs y validación (`validarPagoCheckInWizard`) intactos. GOTCHA de prueba: `SALDO_RESERVACION_CHECKIN` puede ser 0 en reservas ya saldadas (#32869 quedó en 0) → para probar la lógica, forzar `totalReservacion=2000` en la consola. ⬜ falta confirmar el mismo rediseño en el modal de **check-in tardío** (`#modalCheckInTardio`, aún patrón viejo de chips).
+6. Checkout → verificar por PDO que los movimientos de caja cuadran con lo cobrado.
 
 ## Caja (cortes y movimientos)
 
@@ -48,9 +49,11 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 2. Pedir una acción: "registra un gasto de 450 de plomería en Mantenimiento" (exige caja abierta) / "bloquea la 204 por pintura" / "desbloquea la 204" / "crea un cupón de 10% para agosto" / "págale 500 al proveedor X".
 3. Debe responder con **propuesta** de campos fijos → confirmar → la ejecuta el motor de pantalla estándar (verificar el registro resultante igual que en la receta del módulo destino).
 4. Rechazar una propuesta también es caso de prueba: no debe ejecutar nada.
-5. Reservación campo a campo: "quiero hacer una reservación" → debe ir pidiendo fechas → habitación (rechaza ocupadas) → nombre → teléfono si es nuevo → confirmar registra al huésped y da botón al formulario prellenado. ⬜ confirmar en navegador que el formulario abre con fechas/habitación/huésped puestos y que "cancelar" a media captura corta el flujo.
+5. Reservación campo a campo: "quiero hacer una reservación" → debe ir pidiendo fechas → habitación (rechaza ocupadas) → nombre → teléfono si es nuevo → confirmar registra al huésped y da botón al formulario prellenado. **Verificado en navegador (jul-2026)**: wizard completo con "mañana por 2 noches" → "cualquiera" → "sin nombre" → botón abre `reservaciones/crear` con fechas puestas en los inputs. ⬜ confirmar prellenado de habitación/huésped (mismo mecanismo de query) y "cancelar" a media captura desde el widget.
 6. Multi-turno IA: pregunta abierta ("dame un consejo para temporada baja") y luego "¿y de esas ideas cuál primero?" → debe retomar el hilo (verificado por CLI contra el API; ⬜ confirmar desde el widget).
 7. Pregunta de datos a media captura ("¿cuánto tengo en caja?") → responde normal y el wizard sigue donde iba.
+8. **Eliminar pregunta (✕ en la burbuja, hover en PC)** — verificado en navegador (jul-2026): borra pregunta+respuesta del hilo y, si era la última, restaura el contexto anterior — probado con el wizard: eliminar la respuesta de fechas regresa al paso de fechas y la siguiente frase se interpreta como fechas. Borrar el mensaje NO deshace acciones ya ejecutadas.
+9. GOTCHA de QA por widget: los params JSON (`historial`, `flujo`) viajan por POST y el `sanitize()` global los rompía — si el wizard "cae a IA sin razón", revisar el `html_entity_decode` del controller antes de culpar al servicio.
 
 ## Limpieza / camaristas
 

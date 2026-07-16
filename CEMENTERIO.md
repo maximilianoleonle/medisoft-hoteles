@@ -17,6 +17,7 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 - **Migas de pan locales por vista** → duplicaban la navegación → kill-list aplicada; `view_topbar.php` global las provee.
 - **Ajustar headers glass Cupertino sin `!important`** → el `padding-inline` de cada vista los pisa → override con `!important` en la sección §N correspondiente de cupertino.css.
 - **Reimplementar formato de dinero en inputs** → ya existe `MedisoftMoneyInput` en app.js (~2204) → solo agregar `data-money-format="true"`.
+- **Rediseñar el paso "Métodos de pago" del check-in (ver.php) como lista de casillas** (chips "exacto" + checkbox por método + ledger de 3 celdas) → el dueño lo rechazó: "muy igual al pasado, no más rápido" → modelo POS: meta con barra de progreso viva + fichas grandes que al tocarlas se autollenan con lo que falta y muestran el monto asignado; efectivo es el "relleno" automático, para dividir se teclea primero el otro método. Colores por método vía clase `.rv-pay-*` (`--rv-pay-color`); NO poner fallback `--rv-pay-color` en `.rv-tile`/`.rv-pay-panel`: pisa las clases de método (misma especificidad, gana el último) y todo sale del color de marca.
 
 ## Backend / datos
 
@@ -28,6 +29,7 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 - **Dejar que la IA del Copiloto ejecute directo** → riesgo y errores → patrón fijo: propuesta determinista → confirmación humana → motor de pantalla estándar.
 - **Gatear la reservación por chat con `can('reservaciones.create')`** → `can_legacy` no conoce `reservaciones.*` y bloqueaba a TODOS los roles legacy (admin incluido); la pantalla de crear no exige ese permiso → paridad exacta: un enlace nunca pide más permiso que su pantalla destino.
 - **Crear la reservación completa desde el chat** → precio/tarifas/anticipo viven en `crear.php` y duplicarlos es riesgo de dinero → el chat entiende+valida (disponibilidad, huésped) y entrega el formulario PRELLENADO por query (`crearAction` ya lo soportaba).
+- **Mandar JSON por POST confiando en `getPost()`** → el `sanitize()` global lo pasa por `htmlspecialchars` y el `json_decode` muere en silencio (el flujo del copiloto caía a IA "sin razón"; los tests por servicio no lo ven) → `html_entity_decode(ENT_QUOTES)` en el controller SOLO para params de json_decode, y verificar el cable real en navegador.
 
 ## Entorno / herramientas
 
@@ -35,3 +37,5 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 - **Aplicar migraciones "cuando me acuerde" tras un merge multi-PC** → BDs locales divergen silenciosamente → `tools/migrate.php status` (o la radiografía) tras cada merge.
 - **Escribir casos de test sin `t_fin()` al final** → los FAIL no se cuentan y el runner reporta "TODOS PASARON" con aserciones rotas → todo caso cierra con `t_fin()` (así se descubrió: un gate falso pasaba en verde).
 - **Asumir que `tests/bootstrap.php` carga lo mismo que `index.php`** → faltaba `helpers/modulos.php`: `function_exists('hotel_has_module')` daba false y los gates de bloque degradaban EN SILENCIO (el caso negativo pasaba por la razón equivocada) → al usar un helper nuevo en tests, verificar que el bootstrap lo cargue.
+- **Ante `Unknown column` en logs, asumir "falta una migración" o "bug en la BD real"** → las migraciones estaban al día y `medisoft_hoteles_import` tenía la columna; los errores eran `metodo:cli` = TESTS contra `medisoft_test`, recreada desde un `src/database/schema.sql` congelado → primero ver `metodo`/`ruta` del error en el log JSON: si es cli, comparar contra `medisoft_test` y regenerar schema.sql (comando en CLAUDE.md §Comandos).
+- **Depurar una falla de test "imposible" (tabla existente que 'no existe', deadlock en CREATE TABLE) leyendo código** → era otra suite corriendo EN PARALELO recreando `medisoft_test` a media corrida → `SHOW PROCESSLIST` primero; esperar a que la otra conexión suelte la BD y reintentar.

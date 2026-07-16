@@ -336,7 +336,12 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--brand-primary, #1B2746) 20%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 .cop-body::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--brand-primary, #1B2746) 34%, transparent); background-clip: padding-box; }
 .cop-msg { max-width: 88%; padding: 10px 13px; border-radius: 16px; font-size: .88rem; line-height: 1.5; animation: cop-msg-in .42s cubic-bezier(.22,1,.36,1) both; }
-.cop-msg.user { align-self: flex-end; transform-origin: bottom right; background: linear-gradient(135deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 84%, #000)); color: #fff; border-bottom-right-radius: 5px; box-shadow: 0 6px 16px -9px color-mix(in srgb, var(--brand-primary, #1B2746) 70%, transparent); }
+.cop-msg.user { position: relative; align-self: flex-end; transform-origin: bottom right; background: linear-gradient(135deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 84%, #000)); color: #fff; border-bottom-right-radius: 5px; box-shadow: 0 6px 16px -9px color-mix(in srgb, var(--brand-primary, #1B2746) 70%, transparent); }
+.cop-del { position: absolute; top: -7px; left: -7px; width: 20px; height: 20px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 25%, #D8D4C9); background: #fff; color: #6B7280; font-size: 12px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity .18s ease, transform .16s ease, color .18s ease; padding: 0; }
+.cop-msg.user:hover .cop-del, .cop-del:focus-visible { opacity: 1; }
+.cop-del:hover { color: #B4232A; transform: scale(1.12); }
+@media (hover: none) { .cop-del { opacity: .55; } }
+html[data-theme="dark"] .cop-del { background: #211F1A; border-color: rgba(239,233,220,.22); color: #A8A193; }
 .cop-msg.bot { align-self: flex-start; transform-origin: bottom left; background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #EBE7DC); color: #2A3242; border-bottom-left-radius: 5px; box-shadow: 0 6px 18px -13px rgba(20,28,45,.28); }
 .cop-fuente { display: inline-block; margin-top: 6px; font-size: .68rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
 .cop-fuente.reglas { background: rgba(22,163,74,.12); color: #15803D; }
@@ -689,6 +694,13 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     // Flujo campo-por-campo pendiente (reservacion). Lo dicta el servidor:
     // se conserva hasta recibir un 'flujo' nuevo o 'flujo_fin'.
     var flujoActual = null;
+    // Intercambios pregunta/respuesta con su snapshot de contexto PREVIO
+    // (intent, flujo, entradas del historial). Eliminar una pregunta borra
+    // sus burbujas, la saca del historial y, si era la ultima, restaura el
+    // contexto anterior (incluido el paso del wizard). Todo el contexto vive
+    // en el cliente, asi que no hay nada que borrar del lado servidor; las
+    // acciones YA ejecutadas no se deshacen por borrar el mensaje.
+    var intercambios = [];
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
             ? String(window.MEDISOFT_CONTEXT.hotel_id)
@@ -770,7 +782,14 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         if (ocupado || !texto.trim()) { return; }
         ocupado = true;
         sendBtn.disabled = true;
-        agregar('user', escapar(texto));
+        var userDiv = agregar('user', escapar(texto));
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'cop-del';
+        del.setAttribute('aria-label', 'Eliminar esta pregunta y volver al contexto anterior');
+        del.title = 'Eliminar esta pregunta';
+        del.textContent = '✕';
+        userDiv.appendChild(del);
         input.value = '';
         var pensando = agregar('bot cop-loading',
             '<div class="cop-skeleton" role="status" aria-label="Pensando">' +
@@ -778,6 +797,17 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 '<span class="cop-sk-line"></span>' +
                 '<span class="cop-sk-line"></span>' +
             '</div>');
+
+        // Snapshot del contexto ANTES de esta pregunta, para poder restaurarlo
+        // si el usuario la elimina.
+        var registro = {
+            userEl: userDiv,
+            botEl: pensando,
+            prevIntent: intentPrevio,
+            prevFlujo: flujoActual ? JSON.parse(JSON.stringify(flujoActual)) : null,
+            entradas: []
+        };
+        intercambios.push(registro);
 
         var datos = new URLSearchParams();
         datos.append('csrf_token', TOKEN);
@@ -797,9 +827,13 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 intentPrevio = typeof data.intent === 'string' ? data.intent : '';
                 if (data.flujo) { flujoActual = data.flujo; }
                 else if (data.flujo_fin) { flujoActual = null; }
-                historial.push({ r: 'u', t: texto });
+                var entradaU = { r: 'u', t: texto };
+                historial.push(entradaU);
+                registro.entradas.push(entradaU);
                 if (typeof data.texto === 'string' && data.texto) {
-                    historial.push({ r: 'a', t: data.texto.slice(0, 600) });
+                    var entradaA = { r: 'a', t: data.texto.slice(0, 600) };
+                    historial.push(entradaA);
+                    registro.entradas.push(entradaA);
                 }
                 historial = historial.slice(-8);
                 pintarRespuesta(pensando, data);
@@ -963,8 +997,33 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             });
     }
 
+    // Elimina un intercambio: quita sus burbujas y sus entradas del historial
+    // multi-turno; si era el ULTIMO, restaura el contexto previo (intent y
+    // paso del wizard). Borrar el mensaje NO deshace una accion ya ejecutada.
+    function eliminarPregunta(btn) {
+        if (ocupado) { return; }
+        var burbuja = btn.closest('.cop-msg');
+        for (var i = 0; i < intercambios.length; i++) {
+            if (intercambios[i].userEl === burbuja) {
+                var ex = intercambios[i];
+                var esUltimo = i === intercambios.length - 1;
+                intercambios.splice(i, 1);
+                if (ex.userEl && ex.userEl.parentNode) { ex.userEl.parentNode.removeChild(ex.userEl); }
+                if (ex.botEl && ex.botEl.parentNode) { ex.botEl.parentNode.removeChild(ex.botEl); }
+                historial = historial.filter(function (h) { return ex.entradas.indexOf(h) === -1; });
+                if (esUltimo) {
+                    intentPrevio = ex.prevIntent;
+                    flujoActual = ex.prevFlujo;
+                }
+                return;
+            }
+        }
+    }
+
     form.addEventListener('submit', function (e) { e.preventDefault(); preguntar(input.value); });
     body.addEventListener('click', function (e) {
+        var del = e.target.closest('.cop-del');
+        if (del) { eliminarPregunta(del); return; }
         var chip = e.target.closest('.cop-chip');
         if (chip) { preguntar(chip.getAttribute('data-q')); }
     });

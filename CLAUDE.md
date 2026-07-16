@@ -17,8 +17,9 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - App: Docker → http://localhost:8080 · phpMyAdmin: 8081 · MySQL expuesto: 3307 (user `medisoft_user`/`medisoft_pass`).
 - **BD real de trabajo: `medisoft_hoteles_import`** (no `medisoft_hoteles` que dice el README).
 - Cada PC tiene su BD local independiente: tras merge, correr migraciones a mano (`php src/tools/migrate.php`).
-- Hotel semilla/QA: **Los Cedros**. Usuarios QA: `claude_qa1` (nómina/general), `dueno_qa` (modo dueño).
+- Hotel semilla/QA: **Los Cedros** (`hotel_id=1`, slug `los-cedros`). Usuarios QA: `claude_qa1` (nómina/general, `usuarios.id=43`), `dueno_qa` (modo dueño).
 - Verificar cifras de dinero SIEMPRE vía PDO (script PHP), nunca mysql CLI directo: el timezone de sesión difiere y no cuadra con la app.
+- **QA en navegador (Browser pane)**: no hay dev-login. Para entrar con sesión, crear endpoint temporal en `src/public_html/` que haga `session_start()` + setee `$_SESSION` (`user_id=43`, `hotel_id=1`, `hotel_slug='los-cedros'`, `hotel_usuario=['id'=>34,'rol'=>'gerente']`), navegar a él y **borrarlo al terminar**. GOTCHA visor: el app tapa viewport horizontal con overlay "Modo vertical requerido" y el screenshot del pane se cuelga en landscape → usar viewport **portrait** (390×844) o desktop alto (1280×900). El `.htaccess` cachea la vista (bfcache): recargar con query `?nc=N` para ver cambios. Reserva útil para check-in: **#32869** (confirmada, $2,000, Los Cedros).
 
 ## Mapa del código
 
@@ -36,7 +37,9 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - CSS: `npm run build:css` tras tocar clases Tailwind (o `watch:css`). GOTCHA: los globs de `tailwind.config` jamás deben incluir helpers/tcpdf/fonts (líneas de 1.1M chars → build de 5 min).
 - Tests: `php src/tests/run.php` (casos en `src/tests/casos/`, concurrencia en `src/tests/concurrencia/`). **Todo caso DEBE terminar con `t_fin()`** (sin él los FAIL no tumban el runner y reporta verde); si un caso necesita un helper nuevo, cargarlo en `tests/bootstrap.php` espejo de `index.php`.
 - Linter tenancy: `php src/tools/lint_tenancy.php` (baseline en `lint_tenancy_baseline.json`; no subir el conteo).
-- Migraciones: `php src/tools/migrate.php` (SQL en `src/database/migrations/`).
+- Migraciones: `php src/tools/migrate.php` (SQL en `migrations/` de la RAÍZ del repo, ~100 archivos; `src/database/migrations/` es un directorio muerto). GOTCHA: tras cualquier migración que cambie esquema, regenerar `src/database/schema.sql` (los tests recrean `medisoft_test` desde ahí; si queda viejo, la suite llena el log de `Unknown column`): `docker exec medisoft_hoteles_db mysqldump --no-data --skip-comments --ignore-table=medisoft_hoteles_import.vista_caja_actual -umedisoft_user -pmedisoft_pass medisoft_hoteles_import | sed 's/ AUTO_INCREMENT=[0-9]*//' > src/database/schema.sql`.
+- Tests en paralelo NO: dos corridas simultáneas se pisan (`run.php` hace DROP/CREATE de `medisoft_test` → deadlocks, `1146 table doesn't exist`, duplicados de semilla fantasma). Si fallan raro, revisar `SHOW PROCESSLIST` por otra conexión a `medisoft_test` antes de depurar.
+- **Centinela de errores**: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/centinela.php` — agrupa errores de logs por firma con estado persistente (NUEVA/REGRESIÓN gritan, conocidas callan; exit 1 = actuar). `resolver <firma> "nota"` al arreglar un bug, `ignorar <firma>` para ruido; `--json` = contrato para autocorrección futura con IA. Canal cli suele ser tests, no la BD real.
 - Crons de referencia en `src/tools/cron_*.php` (night audit, ical, copiloto, cobros saas…).
 
 ## Invariantes — NO ROMPER
@@ -57,6 +60,7 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - `navegacion.php` tiene un OR de permisos traicionero (caso Guardián).
 - MySQL enum: insertar valor inválido (ej. 'egreso') no truena, duplica conceptos — validar enums en PHP.
 - `can_legacy` (roles sin `role_id`) NO conoce `reservaciones.*`: un gate `can('reservaciones.x')` bloquea a TODOS los roles legacy (admin incluido). Regla: un enlace/acción jamás exige más permiso que la pantalla a la que apunta.
+- **JSON por POST**: `post()`/`getPost()` pasan TODO por `htmlspecialchars(ENT_QUOTES)` → un JSON llega como `{&quot;...}` y `json_decode` falla EN SILENCIO. Revertir con `html_entity_decode(..., ENT_QUOTES, 'UTF-8')` solo para params que alimentan json_decode (caso copiloto historial/flujo). Los tests por servicio NO lo detectan: probar el cable real.
 
 ## Componentes reutilizables (no reinventar)
 

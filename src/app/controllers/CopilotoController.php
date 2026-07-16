@@ -50,10 +50,14 @@ class CopilotoController extends Controller {
         // Hilo reciente del chat (JSON del widget) para el multi-turno de la
         // IA; el servicio lo sanea (roles, alternancia, topes) y las cifras
         // siguen saliendo solo del snapshot del servidor.
-        $historial = mb_substr((string) $this->getPost('historial', ''), 0, 8000);
+        // GOTCHA: post() pasa todo por htmlspecialchars(ENT_QUOTES), lo que
+        // rompe el JSON ("{&quot;t&quot;...}") y el json_decode fallaria en
+        // silencio. Se revierte SOLO para estos dos parametros: jamas se
+        // imprimen crudos, solo alimentan json_decode + saneadores propios.
+        $historial = html_entity_decode(mb_substr((string) $this->getPost('historial', ''), 0, 8000), ENT_QUOTES, 'UTF-8');
         // Estado del flujo campo-por-campo (reservacion). El servicio lo
         // sanea completo y revalida contra la base lo critico.
-        $flujo = mb_substr((string) $this->getPost('flujo', ''), 0, 2000);
+        $flujo = html_entity_decode(mb_substr((string) $this->getPost('flujo', ''), 0, 2000), ENT_QUOTES, 'UTF-8');
 
         try {
             $servicio = new CopilotoService();
