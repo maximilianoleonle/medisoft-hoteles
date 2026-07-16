@@ -130,6 +130,145 @@ class CopilotoService
         return $chips;
     }
 
+    /**
+     * Uso real del copiloto para el panel de valor de gerencia. Todo sale del
+     * log existente (copiloto_mensajes) y de la bandeja de notificaciones;
+     * cero tablas nuevas. Solo lectura, scope de hotel.
+     */
+    public function resumenUso(int $hotelId, int $dias = 30): array
+    {
+        $dias = max(7, min(90, $dias));
+        $desde = date('Y-m-d 00:00:00', strtotime("-{$dias} days"));
+
+        $out = [
+            'dias' => $dias,
+            'total' => 0,
+            'por_fuente' => ['reglas' => 0, 'ia' => 0, 'fallback' => 0],
+            'usuarios' => 0,
+            'acciones_ok' => 0,
+            'tokens_entrada' => 0,
+            'tokens_salida' => 0,
+            'serie' => [],
+            'top' => [],
+            'briefings' => 0,
+            'alertas' => 0,
+        ];
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT fuente, COUNT(*) n, COUNT(DISTINCT usuario_id) u,
+                        COALESCE(SUM(tokens_entrada), 0) tin, COALESCE(SUM(tokens_salida), 0) tout
+                 FROM copiloto_mensajes
+                 WHERE hotel_id = ? AND created_at >= ?
+                 GROUP BY fuente"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            $usuariosMax = 0;
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                $fuente = (string) $f['fuente'];
+                if (isset($out['por_fuente'][$fuente])) {
+                    $out['por_fuente'][$fuente] = (int) $f['n'];
+                }
+                $out['total'] += (int) $f['n'];
+                $out['tokens_entrada'] += (int) $f['tin'];
+                $out['tokens_salida'] += (int) $f['tout'];
+                $usuariosMax = max($usuariosMax, (int) $f['u']);
+            }
+
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(DISTINCT usuario_id) FROM copiloto_mensajes WHERE hotel_id = ? AND created_at >= ? AND usuario_id IS NOT NULL"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            $out['usuarios'] = (int) $stmt->fetchColumn();
+
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM copiloto_mensajes
+                 WHERE hotel_id = ? AND created_at >= ? AND intent LIKE 'accion:%\\_ok'"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            $out['acciones_ok'] = (int) $stmt->fetchColumn();
+
+            // Serie diaria de los ultimos 14 dias (con ceros para dias sin uso).
+            $serieDesde = date('Y-m-d 00:00:00', strtotime('-13 days'));
+            $stmt = $this->pdo->prepare(
+                "SELECT DATE(created_at) f, COUNT(*) n
+                 FROM copiloto_mensajes
+                 WHERE hotel_id = ? AND created_at >= ?
+                 GROUP BY DATE(created_at)"
+            );
+            $stmt->execute([$hotelId, $serieDesde]);
+            $porFecha = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                $porFecha[(string) $f['f']] = (int) $f['n'];
+            }
+            for ($i = 13; $i >= 0; $i--) {
+                $fecha = date('Y-m-d', strtotime("-{$i} days"));
+                $out['serie'][] = ['fecha' => $fecha, 'n' => (int) ($porFecha[$fecha] ?? 0)];
+            }
+
+            $stmt = $this->pdo->prepare(
+                "SELECT intent, COUNT(*) n
+                 FROM copiloto_mensajes
+                 WHERE hotel_id = ? AND created_at >= ? AND intent IS NOT NULL
+                 GROUP BY intent ORDER BY n DESC, intent LIMIT 8"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                $out['top'][] = [
+                    'intent' => (string) $f['intent'],
+                    'etiqueta' => $this->etiquetaIntent((string) $f['intent']),
+                    'n' => (int) $f['n'],
+                ];
+            }
+
+            $stmt = $this->pdo->prepare(
+                "SELECT tipo, COUNT(*) n FROM notificaciones
+                 WHERE hotel_id = ? AND created_at >= ? AND tipo IN ('copiloto_briefing', 'copiloto_alerta_ocupacion')
+                 GROUP BY tipo"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) {
+                if ((string) $f['tipo'] === 'copiloto_briefing') {
+                    $out['briefings'] = (int) $f['n'];
+                } else {
+                    $out['alertas'] = (int) $f['n'];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error resumen de uso: ' . $e->getMessage());
+        }
+
+        return $out;
+    }
+
+    /** Etiqueta humana de un intent del log (para el panel de valor). */
+    public function etiquetaIntent(string $intent): string
+    {
+        $def = self::CHIPS_POR_INTENT[$intent] ?? null;
+        if ($def !== null) {
+            return $def[0];
+        }
+        if (strpos($intent, 'faq_inactivo:') === 0) {
+            return 'Modulo no contratado (' . substr($intent, 13) . ')';
+        }
+        if (strpos($intent, 'faq:') === 0) {
+            return 'Como se hace: ' . str_replace('_', ' ', substr($intent, 4));
+        }
+        $fijas = [
+            'ctx:reserva_pagos' => 'Saldo de la reservacion en pantalla',
+            'ctx:reserva_fechas' => 'Fechas de la reservacion en pantalla',
+            'ctx:reserva_general' => 'Datos de la reservacion en pantalla',
+            'ctx:habitacion' => 'Estado de la habitacion en pantalla',
+            'busca:huesped' => 'Buscar huesped por nombre',
+            'accion:limpieza' => 'Programar limpieza (propuesta)',
+            'accion:limpieza_ok' => 'Limpieza programada',
+            'accion:asignar' => 'Asignar limpieza (propuesta)',
+            'accion:asignar_ok' => 'Limpieza asignada',
+            'resumen_dia' => '📋 Resumen del dia',
+        ];
+        return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
+    }
+
     public function iaDisponible(int $hotelId): bool
     {
         return trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== ''

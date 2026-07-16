@@ -275,6 +275,8 @@ $router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'p
 // Accion confirmada del copiloto (SOLO limpieza/tareas operativas; el servicio
 // valida el permiso del rol y jamas toca dinero)
 $router->post('/copiloto/accion', ['controller' => 'Copiloto', 'action' => 'accion']);
+// Panel de valor del copiloto (gerencia): uso real del asistente
+$router->get('/copiloto/valor', ['controller' => 'Copiloto', 'action' => 'valor']);
 
 // Copiloto IA (bloque copiloto_ia: IA sobre reputacion/forecast, solo lectura;
 // el gate del bloque lo resuelve el servicio para permitir la prueba gratis)

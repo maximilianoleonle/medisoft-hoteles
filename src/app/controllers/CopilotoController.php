@@ -96,6 +96,30 @@ class CopilotoController extends Controller {
         View::renderJSON($resultado, 200);
     }
 
+    /**
+     * Panel de valor del copiloto (GET /copiloto/valor): uso real del
+     * asistente para gerencia. Solo lectura sobre el log existente.
+     */
+    public function valorAction() {
+        // Mismo criterio de acceso que la pantalla de Configuracion: gerencia.
+        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+        if (!(is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true))) {
+            set_mensaje('No tiene permisos para acceder a esta sección', 'error');
+            $this->redirect('dashboard');
+            return;
+        }
+
+        $hotelId = (int) obtenerHotelIdActualCompat();
+        $servicio = new CopilotoService();
+
+        View::renderTemplate('copiloto/valor', [
+            'title' => 'Copiloto - ' . current_hotel_display_name(),
+            'uso' => $servicio->resumenUso($hotelId, 30),
+            'nombreAsistente' => CopilotoService::nombreAsistente($hotelId),
+            'iaDisponible' => $servicio->iaDisponible($hotelId),
+        ]);
+    }
+
     /** Rate-limit por usuario reutilizando login_intentos (prefijo copiloto|). */
     private function permitirSolicitud(int $hotelId) {
         $uid = (int) user_id();
