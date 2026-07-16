@@ -262,6 +262,18 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - Precondiciones se validan al PROPONER (caja cerrada, habitación que no
       está bloqueada, motivo obligatorio): una confirmación que va a fallar es
       peor que un aviso temprano.
+    - Valores dictados ambiguos se PREGUNTAN, no se adivinan ("cupón de 10"
+      → ¿10% o $10?). Si el usuario no dicta identificador, generarlo legible
+      y verificar disponibilidad (AGOSTO10 → AGOSTO10-2); el UNIQUE de la
+      tabla es el candado final. Un mes referido que ya pasó se corre al año
+      siguiente (una vigencia no puede nacer vencida).
+    - **GOTCHA (tests)**: el bootstrap de pruebas debe cargar los MISMOS
+      helpers que el front controller — un gate con `function_exists()`
+      degrada en SILENCIO y el caso negativo pasa por la razón equivocada
+      (en hoteles: `modulos.php` no estaba en el bootstrap y el gate de
+      bloques daba falso para todos). Y en un harness casero, el caso que no
+      llama al finalizador (`t_fin()`) no cuenta sus FAIL: el runner reporta
+      verde con aserciones rotas.
 
 ---
 

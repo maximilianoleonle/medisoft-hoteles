@@ -61,3 +61,5 @@ t_eq(null, $r['monto'], 'monto 0: null');
 // ── Signos de pregunta/exclamacion al final no ensucian ──
 $r = CopilotoService::parsearGasto('registra un gasto de 450 de plomeria!');
 t_eq('plomeria', $r['concepto'], 'signo final: concepto limpio');
+
+t_fin();

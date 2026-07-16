@@ -275,6 +275,8 @@ class CopilotoService
             'accion:desbloqueo_ok' => 'Habitacion liberada',
             'accion:gasto' => 'Registrar gasto (propuesta)',
             'accion:gasto_ok' => 'Gasto registrado en caja',
+            'accion:cupon' => 'Crear cupon (propuesta)',
+            'accion:cupon_ok' => 'Cupon creado',
             'resumen_dia' => '📋 Resumen del dia',
         ];
         return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
@@ -346,6 +348,7 @@ class CopilotoService
             ?? $this->detectarAccionFinalizarMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionGasto($norm, $hotelId)
+            ?? $this->detectarAccionCupon($norm, $hotelId)
             ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
@@ -2053,6 +2056,179 @@ class CopilotoService
         return null;
     }
 
+    /**
+     * Detecta "crea un cupon de 10% para agosto" y arma la PROPUESTA del
+     * cupon del motor (no ejecuta). Mismo gate que la pantalla de Cupones:
+     * bloques motor_reservas + promociones. El registro final pasa por
+     * MotorCuponService::crear (mismas validaciones de codigo, rango y
+     * fechas). Si no dictan codigo se genera uno legible y disponible.
+     */
+    private function detectarAccionCupon(string $norm, int $hotelId): ?array
+    {
+        if (!preg_match('/\b(crea|crear|creame|haz|hazme|genera|generame|arma|armame|lanza|lanzar|lanzame)\b/', $norm)
+            || !preg_match('/\bcupon(es)?\b/', $norm)) {
+            return null;
+        }
+
+        // Mismo gate que MotorReservasController::cuponesAction.
+        if (!$this->tieneModulo('motor_reservas', $hotelId) || !$this->tieneModulo('promociones', $hotelId)) {
+            return ['intent' => 'accion:cupon_sin_bloque', 'respuesta' => [
+                'texto' => 'Los cupones son del bloque **Promociones** (con el motor de reservas), que este hotel no tiene activo. Se contrata desde Configuracion.',
+                'enlace' => ['url' => 'configuracion', 'texto' => 'Ver bloques'],
+            ]];
+        }
+
+        $p = self::parsearCupon($norm);
+        if ($p['valor'] === null) {
+            return ['intent' => 'accion:cupon_sin_valor', 'respuesta' => [
+                'texto' => "No identifique el descuento. Dimelo asi: \"crea un cupon de 10% para agosto\" o \"crea un cupon de \$100 con 20 usos\".",
+                'enlace' => null,
+            ]];
+        }
+        if ($p['valor_ambiguo']) {
+            $n = rtrim(rtrim(number_format($p['valor'], 2), '0'), '.');
+            return ['intent' => 'accion:cupon_valor_ambiguo', 'respuesta' => [
+                'texto' => "¿El descuento es **{$n}%** o **\${$n}**? Repitemelo con el signo: \"crea un cupon de {$n}%...\" o \"crea un cupon de \${$n}...\".",
+                'enlace' => null,
+            ]];
+        }
+        if ($p['tipo'] === 'porcentaje' && ($p['valor'] < 1 || $p['valor'] > 100)) {
+            return ['intent' => 'accion:cupon_valor_fuera', 'respuesta' => [
+                'texto' => 'El porcentaje del cupon debe estar entre 1 y 100.',
+                'enlace' => null,
+            ]];
+        }
+        if ($p['tipo'] === 'monto' && $p['valor'] < 1) {
+            return ['intent' => 'accion:cupon_valor_fuera', 'respuesta' => [
+                'texto' => 'El monto del descuento debe ser mayor a cero.',
+                'enlace' => null,
+            ]];
+        }
+
+        // Vigencia: mes referido ("para agosto", "el proximo mes"). Un mes ya
+        // pasado se corre al proximo año (un cupon no puede nacer vencido).
+        $mes = $this->resolverMesReferido($norm);
+        $desde = null;
+        $hasta = null;
+        $vigenciaTexto = 'sin fecha de expiracion (lo puedes desactivar cuando quieras)';
+        if ($mes !== null) {
+            if ($mes['hasta'] <= date('Y-m-d')) {
+                $mes['desde'] = date('Y-m-d', strtotime($mes['desde'] . ' +1 year'));
+                $mes['hasta'] = date('Y-m-d', strtotime($mes['hasta'] . ' +1 year'));
+                $mes['etiqueta'] = preg_replace_callback('/\d{4}/', function ($a) {
+                    return (string) ((int) $a[0] + 1);
+                }, $mes['etiqueta']);
+            }
+            $desde = $mes['desde'];
+            // resolverMesReferido devuelve 'hasta' EXCLUSIVO (dia 1 del mes
+            // siguiente); la vigencia del cupon es inclusiva.
+            $hasta = date('Y-m-d', strtotime($mes['hasta'] . ' -1 day'));
+            $vigenciaTexto = 'vigente todo ' . $mes['etiqueta'] . ' (' . date('d/m', strtotime($desde)) . ' al ' . date('d/m', strtotime($hasta)) . ')';
+        }
+
+        $valorEntero = rtrim(rtrim(number_format($p['valor'], 2), '0'), '.');
+        $beneficio = $p['tipo'] === 'porcentaje' ? "{$valorEntero}% de descuento" : "\${$valorEntero} de descuento";
+
+        $codigo = $p['codigo'];
+        if ($codigo === null) {
+            $base = ($mes !== null ? strtok($mes['etiqueta'], ' ') : 'CUPON') . $valorEntero;
+            $codigo = $this->generarCodigoCupon($hotelId, $base);
+        }
+
+        $limiteTexto = $p['limite'] !== null ? "limite de {$p['limite']} uso(s)" : 'sin limite de usos';
+
+        return ['intent' => 'accion:cupon', 'respuesta' => [
+            'texto' => "Puedo crear el cupon **{$codigo}** — {$beneficio}, {$vigenciaTexto}, {$limiteTexto}. "
+                . 'Queda activo en el motor de reservas al confirmar.',
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'crear_cupon',
+                'codigo' => $codigo,
+                'cupon_tipo' => $p['tipo'],
+                'valor' => $p['valor'],
+                'vigente_desde' => (string) $desde,
+                'vigente_hasta' => (string) $hasta,
+                'limite_usos' => $p['limite'] !== null ? (string) $p['limite'] : '',
+                'fecha' => date('Y-m-d'),
+                'confirm_titulo' => '¿Crear el cupon?',
+                'confirm_msg' => "{$codigo}: {$beneficio}, {$vigenciaTexto}, {$limiteTexto}.",
+                'confirm_ok' => 'Crear cupon',
+            ],
+        ]];
+    }
+
+    /**
+     * Parser puro (sin BD) del cupon dictado. Espera texto ya normalizado.
+     * Devuelve ['tipo' => 'porcentaje'|'monto'|null, 'valor' => ?float,
+     * 'valor_ambiguo' => bool, 'codigo' => ?string, 'limite' => ?int].
+     * Un numero sin "%" ni "$"/"pesos" es ambiguo: se pregunta, no se adivina.
+     */
+    public static function parsearCupon(string $norm): array
+    {
+        $frase = $norm;
+
+        $codigo = null;
+        if (preg_match('/\bcodigo\s+([a-z0-9][a-z0-9_-]{2,29})\b/', $frase, $m)) {
+            $codigo = strtoupper($m[1]);
+            $frase = str_replace($m[0], ' ', $frase);
+        }
+
+        $limite = null;
+        if (preg_match('/\b(\d{1,5})\s+usos?\b/', $frase, $m)
+            || preg_match('/\blimite\s+(?:de\s+)?(\d{1,5})\b/', $frase, $m)) {
+            $limite = (int) $m[1] > 0 ? (int) $m[1] : null;
+            $frase = str_replace($m[0], ' ', $frase);
+        }
+
+        $tipo = null;
+        $valor = null;
+        $ambiguo = false;
+        if (preg_match('/(\d+(?:\.\d+)?)\s*(?:%|por\s*ciento|porciento)/', $frase, $m)) {
+            $tipo = 'porcentaje';
+            $valor = (float) $m[1];
+        } elseif (preg_match('/\$\s*(\d[\d,]*(?:\.\d{1,2})?)/', $frase, $m)
+            || preg_match('/(\d[\d,]*(?:\.\d{1,2})?)\s*pesos\b/', $frase, $m)) {
+            $tipo = 'monto';
+            $valor = (float) str_replace(',', '', $m[1]);
+        } elseif (preg_match('/\b(\d[\d,]*(?:\.\d{1,2})?)\b/', $frase, $m)) {
+            $ambiguo = true;
+            $valor = (float) str_replace(',', '', $m[1]);
+        }
+
+        return ['tipo' => $tipo, 'valor' => $valor, 'valor_ambiguo' => $ambiguo, 'codigo' => $codigo, 'limite' => $limite];
+    }
+
+    /**
+     * Codigo legible y DISPONIBLE en este hotel ("AGOSTO10", "AGOSTO10-2"...).
+     * Si todo esta tomado cae a un sufijo de hora; el UNIQUE de la tabla es
+     * el candado final en crear().
+     */
+    private function generarCodigoCupon(int $hotelId, string $base): string
+    {
+        $base = strtoupper((string) preg_replace('/[^A-Z0-9_-]/', '', strtoupper($base)));
+        if ($base === '' || strlen($base) < 3) {
+            $base = 'CUPON' . $base;
+        }
+        $base = substr($base, 0, 26);
+
+        $candidato = $base;
+        for ($i = 2; $i <= 9; $i++) {
+            try {
+                $stmt = $this->pdo->prepare("SELECT id FROM motor_cupones WHERE hotel_id = ? AND codigo = ? LIMIT 1");
+                $stmt->execute([$hotelId, $candidato]);
+                if (!$stmt->fetch()) {
+                    return $candidato;
+                }
+            } catch (Throwable $e) {
+                error_log('Copiloto: error al verificar codigo de cupon: ' . $e->getMessage());
+                break;
+            }
+            $candidato = $base . '-' . $i;
+        }
+
+        return $base . '-' . date('His');
+    }
+
     /** Estado actual de la habitacion (scope de hotel) o '' si no se pudo leer. */
     private function estadoHabitacion(int $hotelId, int $habitacionId): string
     {
@@ -2180,6 +2356,9 @@ class CopilotoService
         }
         if ($tipo === 'registrar_gasto') {
             return $this->ejecutarGasto($hotelId, $params, $usuarioId);
+        }
+        if ($tipo === 'crear_cupon') {
+            return $this->ejecutarCupon($hotelId, $params, $usuarioId);
         }
 
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
@@ -2411,6 +2590,56 @@ class CopilotoService
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => 'Ver la caja', 'url' => 'caja']],
+        ];
+    }
+
+    /**
+     * Ejecuta "crear cupon" via MotorCuponService::crear (mismo motor y
+     * validaciones que la pantalla de Cupones: formato del codigo, rango del
+     * valor, orden de fechas, UNIQUE del codigo). Mismo gate de bloques que
+     * la pantalla.
+     */
+    private function ejecutarCupon(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (!$this->tieneModulo('motor_reservas', $hotelId) || !$this->tieneModulo('promociones', $hotelId)) {
+            return ['success' => false, 'texto' => 'Este hotel no tiene activo el bloque Promociones.', 'fuente' => 'reglas'];
+        }
+
+        $tipoCupon = (string) ($params['cupon_tipo'] ?? 'porcentaje');
+        if (!in_array($tipoCupon, ['porcentaje', 'monto'], true)) {
+            $tipoCupon = 'porcentaje';
+        }
+
+        require_once __DIR__ . '/MotorCuponService.php';
+
+        try {
+            $r = (new MotorCuponService($this->db))->crear($hotelId, [
+                'codigo' => (string) ($params['codigo'] ?? ''),
+                'tipo' => $tipoCupon,
+                'valor' => (string) ($params['valor'] ?? '0'),
+                'vigente_desde' => (string) ($params['vigente_desde'] ?? ''),
+                'vigente_hasta' => (string) ($params['vigente_hasta'] ?? ''),
+                'limite_usos' => (string) ($params['limite_usos'] ?? ''),
+            ], $usuarioId);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error al crear cupon: ' . $e->getMessage());
+            $r = ['success' => false, 'message' => 'No se pudo crear el cupon. Intenta de nuevo.'];
+        }
+
+        if (empty($r['success'])) {
+            $this->registrar($hotelId, $usuarioId, '[accion cupon ' . (string) ($params['codigo'] ?? '') . ']', 'reglas', 'accion:cupon_error', 0, 0);
+            return ['success' => false, 'texto' => (string) ($r['message'] ?? 'No se pudo crear el cupon.'), 'fuente' => 'reglas'];
+        }
+
+        $this->registrar($hotelId, $usuarioId, '[accion cupon ' . (string) ($params['codigo'] ?? '') . ']', 'reglas', 'accion:cupon_ok', 0, 0);
+
+        $codigo = strtoupper(trim((string) ($params['codigo'] ?? '')));
+        return [
+            'success' => true,
+            'texto' => "Listo ✅ El cupon **{$codigo}** ya esta **activo** en el motor de reservas. Compartelo tal cual: el huesped lo escribe al reservar en linea y el descuento se aplica solo.",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver cupones', 'url' => 'motor-reservas/cupones']],
         ];
     }
 
@@ -3760,7 +3989,7 @@ class CopilotoService
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
             . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
-            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\"\n"
+            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\", \"crea un cupon de 10% para agosto\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 

@@ -90,6 +90,13 @@ class CopilotoController extends Controller {
             'monto' => (float) str_replace([',', '$', ' '], '', (string) $this->getPost('monto', '0')),
             'categoria_id' => (int) $this->getPost('categoria_id', 0),
             'descripcion' => mb_substr(trim((string) $this->getPost('descripcion', '')), 0, 200),
+            // Solo para crear_cupon (MotorCuponService::crear revalida todo).
+            'codigo' => mb_substr(trim((string) $this->getPost('codigo', '')), 0, 30),
+            'cupon_tipo' => mb_substr((string) $this->getPost('cupon_tipo', ''), 0, 10),
+            'valor' => mb_substr((string) $this->getPost('valor', ''), 0, 12),
+            'vigente_desde' => mb_substr((string) $this->getPost('vigente_desde', ''), 0, 10),
+            'vigente_hasta' => mb_substr((string) $this->getPost('vigente_hasta', ''), 0, 10),
+            'limite_usos' => mb_substr((string) $this->getPost('limite_usos', ''), 0, 6),
         ];
 
         try {

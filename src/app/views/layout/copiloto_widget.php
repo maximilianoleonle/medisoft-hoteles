@@ -901,6 +901,12 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         if (accion.monto) { datos.append('monto', accion.monto); }
         if (accion.categoria_id) { datos.append('categoria_id', accion.categoria_id); }
         if (accion.descripcion) { datos.append('descripcion', accion.descripcion); }
+        if (accion.codigo) { datos.append('codigo', accion.codigo); }
+        if (accion.cupon_tipo) { datos.append('cupon_tipo', accion.cupon_tipo); }
+        if (accion.valor) { datos.append('valor', accion.valor); }
+        if (accion.vigente_desde) { datos.append('vigente_desde', accion.vigente_desde); }
+        if (accion.vigente_hasta) { datos.append('vigente_hasta', accion.vigente_hasta); }
+        if (accion.limite_usos) { datos.append('limite_usos', accion.limite_usos); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -915,6 +921,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                         iniciar_mantenimiento: ['Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧'],
                         finalizar_mantenimiento: ['Habitación liberada', 'Quedó disponible para rentar de nuevo. ✅'],
                         registrar_gasto: ['Gasto registrado', 'Quedó anotado en la caja de hoy. 💸'],
+                        crear_cupon: ['Cupón creado', 'Ya está activo en el motor de reservas. 🎟️'],
                         asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️']
                     };
                     var toast = toastPorTipo[accion.tipo] || ['Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️'];

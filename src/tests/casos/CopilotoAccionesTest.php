@@ -28,6 +28,12 @@ $categoriaId = (int) $db->lastInsertId();
 $db->query("INSERT INTO categorias_movimientos (hotel_id, nombre, tipo, activa, orden)
             VALUES (?, 'Papeleria', 'gasto', 1, 1)", [$hotelId]);
 
+// Bloques motor_reservas + promociones activos (gate de la accion de cupon).
+foreach (['motor_reservas', 'promociones'] as $clave) {
+    $db->query("INSERT INTO modulos (clave, nombre) VALUES (?, ?)", [$clave, ucfirst($clave)]);
+    $db->query("INSERT INTO hotel_modulos (hotel_id, modulo_id, activo) VALUES (?, ?, 1)", [$hotelId, (int) $db->lastInsertId()]);
+}
+
 $servicio = new CopilotoService();
 
 // ── Gasto sin caja abierta: se frena en la propuesta ──
@@ -129,3 +135,51 @@ t_eq('completado', $mant['estado'] ?? null, 'desbloqueo ejecutado: mantenimiento
 $r = $servicio->responder($hotelId, 'desbloquea la 204', $usuarioId);
 t_eq('accion:desbloqueo_no_aplica', $r['intent'] ?? null, 'desbloqueo no aplica: avisa');
 t_ok(empty($r['accion']), 'desbloqueo no aplica: sin payload de accion');
+
+// ── Cupon: propuesta con codigo generado y mes resuelto ──
+$r = $servicio->responder($hotelId, 'crea un cupon de 10% para agosto', $usuarioId);
+t_eq('accion:cupon', $r['intent'] ?? null, 'cupon: propone');
+$acc = $r['accion'] ?? [];
+t_eq('crear_cupon', $acc['tipo'] ?? null, 'cupon: tipo de accion');
+t_eq('porcentaje', $acc['cupon_tipo'] ?? null, 'cupon: porcentaje');
+t_eq(10.0, (float) ($acc['valor'] ?? 0), 'cupon: valor 10');
+t_eq('AGOSTO10', $acc['codigo'] ?? null, 'cupon: codigo generado legible');
+t_eq('08-01', substr((string) ($acc['vigente_desde'] ?? ''), 5), 'cupon: desde el 1 de agosto');
+t_eq('08-31', substr((string) ($acc['vigente_hasta'] ?? ''), 5), 'cupon: hasta el 31 de agosto');
+t_ok(($acc['vigente_hasta'] ?? '') >= date('Y-m-d'), 'cupon: la vigencia no nace vencida');
+
+// ── Numero sin % ni $: pregunta, no adivina ──
+$r2 = $servicio->responder($hotelId, 'crea un cupon de 10 para agosto', $usuarioId);
+t_eq('accion:cupon_valor_ambiguo', $r2['intent'] ?? null, 'cupon ambiguo: pregunta % o $');
+t_ok(empty($r2['accion']), 'cupon ambiguo: sin payload de accion');
+
+// ── Ejecutar el cupon confirmado (payload real de la propuesta) ──
+$e = $servicio->ejecutarAccion($hotelId, 'crear_cupon', $acc, $usuarioId);
+t_ok(!empty($e['success']), 'ejecutar cupon: success');
+$cup = $db->query(
+    "SELECT codigo, tipo, valor, activo, vigente_desde, vigente_hasta, limite_usos
+     FROM motor_cupones WHERE hotel_id = ? ORDER BY id DESC LIMIT 1",
+    [$hotelId]
+)->fetch();
+t_eq('AGOSTO10', $cup['codigo'] ?? null, 'cupon en BD: codigo');
+t_eq('porcentaje', $cup['tipo'] ?? null, 'cupon en BD: tipo');
+t_eq(10.0, (float) ($cup['valor'] ?? 0), 'cupon en BD: valor');
+t_eq(1, (int) ($cup['activo'] ?? 0), 'cupon en BD: activo');
+t_eq(null, $cup['limite_usos'], 'cupon en BD: sin limite');
+
+// ── El generador no repite codigos: la siguiente propuesta sufija ──
+$r3 = $servicio->responder($hotelId, 'crea un cupon de 10% para agosto', $usuarioId);
+t_eq('AGOSTO10-2', $r3['accion']['codigo'] ?? null, 'cupon repetido: codigo sufijado');
+
+// ── Duplicado forzado: el UNIQUE de la tabla lo frena con mensaje humano ──
+$e = $servicio->ejecutarAccion($hotelId, 'crear_cupon', $acc, $usuarioId);
+t_ok(empty($e['success']), 'cupon duplicado: rechazado');
+
+// ── Hotel sin el bloque promociones: la accion ni se propone ──
+$db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel Sin Promos', 'sin-promos', 1, NOW())");
+$hotelB = (int) $db->lastInsertId();
+$r = $servicio->responder($hotelB, 'crea un cupon de 10% para agosto', $usuarioId);
+t_eq('accion:cupon_sin_bloque', $r['intent'] ?? null, 'sin bloque: avisa que no esta contratado');
+t_ok(empty($r['accion']), 'sin bloque: sin payload de accion');
+
+t_fin();
