@@ -160,6 +160,39 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       Crecer por CONTENIDO: botón `width:auto` + animar `max-width` del texto
       interno. Y ojo: el preview headless no avanza transiciones CSS; verificar
       estados finales desactivándolas (`*{transition:none}`) + la lógica JS.
+14. **"Modo Dueño": la vista remota del dueño que NO opera, como bloque
+    vendible (asiento adicional).** El dueño de 55-75 años abre el teléfono y
+    entiende su negocio en 10 segundos. Receta (probada en Medisoft /dueno,
+    jul 2026; transferible: dueño de veterinaria/taller es el MISMO usuario):
+    - **Rol preset de solo-lectura** (`dueno_remoto`) + módulo comercial
+      propio (`modo_dueno`) + ruta propia. Cero botones que escriban. Ni uno.
+    - **Aterrizaje por rol**: helper `home_route_for_current_user()` decide
+      el hogar (valida módulo + permiso para no crear bucles); login,
+      dashboard y TODOS los redirects amables (`require_permission`,
+      `require_hotel_module`) regresan al hogar del rol, no al dashboard.
+    - **Una tarjeta por PREGUNTA del dueño** en orden fijo (¿cómo va el día?
+      / ¿cuánto entró? / ¿cómo está el negocio? / ¿todo en orden? / ¿qué
+      dicen los clientes?), cada una gateada por permiso + módulo en el
+      CONTROLADOR (bloque null = tarjeta no se pinta; la vista queda
+      armónica con cualquier subconjunto).
+    - **Textos redactados en el SERVIDOR en lenguaje hablado** (cero jerga:
+      nada de cortes/CxC/RevPAR) y compartidos entre el render y el endpoint
+      JSON de "Actualizar" — un solo lugar para el copy.
+    - **Score del día determinista** (sin IA, sin tablas): pesos fijos por
+      señal (caja cuadrada / limpieza o cola al día / ocupación vs promedio
+      PROPIO mismo día de semana 4 semanas / calificación reciente),
+      renormalizados sobre las señales que el usuario puede ver. La ETIQUETA
+      en palabras manda; el número va en chip chico. Desglose al tocar.
+    - **Push selectivo por clave de rol**: el ruteo de suscripciones resuelve
+      el rol efectivo por `roles.clave` via `role_id` (el ENUM de
+      compatibilidad guarda 'recepcionista' y ruteaba al dueño como
+      recepción); el rol dueño solo recibe briefing + alertas de vigilancia,
+      jamás el ruido operativo.
+    - **Chips del copiloto contextuales por superficie**: en /dueno pregunta
+      de negocio ("¿Cuánto entró hoy?"), no de operación.
+    - **GOTCHA**: si la vista esconde el header móvil fijo, quitar también el
+      `padding-top` que el body reserva para él; y un `display:flex` propio
+      pisa el atributo `hidden` (agregar `[hidden]{display:none}`).
 
 ---
 
