@@ -342,6 +342,27 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       siempre, y el cierre revalida: disponibilidad al momento (pudo
       ocuparse mientras chateaban) y "buscar antes de insertar" para que el
       doble clic reuse en vez de duplicar.
+20. **Tool use de SOLO LECTURA en el fallback IA** (copiloto de hoteles,
+    jul 2026): además del snapshot fijo de "hoy" (que sigue respondiendo lo
+    común en un solo turno, sin round-trips), el modelo recibe 4-5
+    herramientas de consulta — dinero por rango de fechas, transacciones
+    por rango, disponibilidad futura, búsqueda de entidad — y así responde
+    preguntas de CUALQUIER periodo sin inventar. Reglas:
+    - Toda herramienta es de solo lectura, con el tenant amarrado del lado
+      SERVIDOR (el modelo jamás elige el hotel), fechas validadas (formato,
+      orden, tope de días) y salida compacta acotada (mb_substr). Nombre
+      fuera del whitelist = rechazado antes de tocar nada.
+    - Bucle agéntico acotado (máx 4 rondas de herramientas); los bloques de
+      la respuesta (thinking incluido) se devuelven INTACTOS en el turno
+      assistant del loop, como exige el API; tokens se acumulan entre
+      rondas para el log de costos.
+    - El system prompt ordena: lo que la herramienta devuelva ES la cifra;
+      error o vacío se dice tal cual. Probar la herramienta con test E2E
+      SIN API (cifras, tenancy, validaciones) y el loop completo con UNA
+      llamada real de humo.
+    - GOTCHA de la prueba de humo: el router determinista atrapa las
+      palabras clave del giro ("caja") antes de llegar a la IA — la
+      pregunta de prueba debe esquivar los intents.
 
 ---
 

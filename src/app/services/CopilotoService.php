@@ -5106,6 +5106,188 @@ class CopilotoService
         return array_values($limpio);
     }
 
+    /**
+     * Herramientas de SOLO LECTURA para el fallback IA: rangos de fechas y
+     * busquedas que el snapshot fijo no cubre. El modelo decide cuando
+     * usarlas; los datos salen SIEMPRE de aqui (scope de hotel, fechas
+     * validadas), jamas de su memoria.
+     */
+    private function herramientasIa(): array
+    {
+        $fechas = [
+            'desde' => ['type' => 'string', 'description' => 'Fecha inicial YYYY-MM-DD (inclusive)'],
+            'hasta' => ['type' => 'string', 'description' => 'Fecha final YYYY-MM-DD (inclusive)'],
+        ];
+
+        return [
+            [
+                'name' => 'dinero_entre_fechas',
+                'description' => 'Ingresos, gastos y ganancia neta de caja del hotel en un rango de fechas, con las principales categorias de gasto. Usala para cualquier pregunta de dinero de un periodo que no este en los datos en vivo.',
+                'input_schema' => ['type' => 'object', 'properties' => $fechas, 'required' => ['desde', 'hasta']],
+            ],
+            [
+                'name' => 'reservaciones_entre_fechas',
+                'description' => 'Reservaciones (no canceladas) con llegada en un rango de fechas: cuantas, cuantas habitaciones y cuantas noches vendidas.',
+                'input_schema' => ['type' => 'object', 'properties' => $fechas, 'required' => ['desde', 'hasta']],
+            ],
+            [
+                'name' => 'disponibilidad_entre_fechas',
+                'description' => 'Habitaciones LIBRES por tipo para una estancia (desde = llegada, hasta = salida), segun las reservas actuales. Usala para "¿tengo lugar el puente?" o fechas futuras.',
+                'input_schema' => ['type' => 'object', 'properties' => $fechas, 'required' => ['desde', 'hasta']],
+            ],
+            [
+                'name' => 'buscar_huesped',
+                'description' => 'Busca un huesped por nombre: datos de contacto, cuantas estancias ha tenido y sus reservaciones vigentes o proximas.',
+                'input_schema' => ['type' => 'object', 'properties' => [
+                    'nombre' => ['type' => 'string', 'description' => 'Nombre o parte del nombre del huesped'],
+                ], 'required' => ['nombre']],
+            ],
+        ];
+    }
+
+    /**
+     * Ejecuta una herramienta del fallback IA y devuelve texto compacto.
+     * Publica para poder testearla directo. Fechas validadas (formato, orden,
+     * rango <= 400 dias); toda consulta con scope de hotel.
+     */
+    public function ejecutarHerramientaIa(int $hotelId, string $nombre, array $input): string
+    {
+        if (!in_array($nombre, ['dinero_entre_fechas', 'reservaciones_entre_fechas', 'disponibilidad_entre_fechas', 'buscar_huesped'], true)) {
+            return 'Herramienta desconocida.';
+        }
+
+        if ($nombre === 'buscar_huesped') {
+            $q = trim((string) ($input['nombre'] ?? ''));
+            if (mb_strlen($q) < 3) {
+                return 'Dame al menos 3 letras del nombre.';
+            }
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT h.id, h.nombre_completo, h.telefono,
+                            (SELECT COUNT(*) FROM reservaciones r
+                              WHERE r.huesped_id = h.id AND r.hotel_id = h.hotel_id AND r.estado <> 'cancelada') estancias
+                     FROM huespedes h WHERE h.hotel_id = ? AND h.nombre_completo LIKE ?
+                     ORDER BY estancias DESC LIMIT 3"
+                );
+                $stmt->execute([$hotelId, '%' . addcslashes($q, "%_\\") . '%']);
+                $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Throwable $e) {
+                error_log('Copiloto: herramienta buscar_huesped: ' . $e->getMessage());
+                return 'No se pudo consultar.';
+            }
+            if ($filas === []) {
+                return "No hay ningun huesped que case con \"{$q}\".";
+            }
+            $lineas = [];
+            foreach ($filas as $h) {
+                $linea = $h['nombre_completo'] . ' — ' . (int) $h['estancias'] . ' estancia(s)'
+                    . (trim((string) $h['telefono']) !== '' ? ', tel ' . $h['telefono'] : '');
+                try {
+                    $st2 = $this->pdo->prepare(
+                        "SELECT fecha_entrada, fecha_salida, estado FROM reservaciones
+                         WHERE huesped_id = ? AND hotel_id = ? AND estado IN ('pendiente','confirmada','checked_in')
+                           AND (estado = 'checked_in' OR fecha_salida >= CURDATE())
+                         ORDER BY fecha_entrada ASC LIMIT 2"
+                    );
+                    $st2->execute([(int) $h['id'], $hotelId]);
+                    foreach ($st2->fetchAll(PDO::FETCH_ASSOC) as $rr) {
+                        $linea .= '; reserva ' . $rr['estado'] . ' del ' . $rr['fecha_entrada'] . ' al ' . $rr['fecha_salida'];
+                    }
+                } catch (Throwable $e) {
+                    // sin reservas vigentes: la linea base basta
+                }
+                $lineas[] = $linea;
+            }
+            return implode("\n", $lineas);
+        }
+
+        // El resto son herramientas de rango de fechas.
+        $desde = (string) ($input['desde'] ?? '');
+        $hasta = (string) ($input['hasta'] ?? '');
+        foreach ([$desde, $hasta] as $fch) {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fch) || strtotime($fch) === false) {
+                return 'Fechas invalidas: usa YYYY-MM-DD.';
+            }
+        }
+        if ($hasta < $desde) {
+            return 'Fechas invalidas: "hasta" es anterior a "desde".';
+        }
+        if ((strtotime($hasta) - strtotime($desde)) > 400 * 86400) {
+            return 'Rango demasiado grande: maximo 400 dias.';
+        }
+
+        switch ($nombre) {
+            case 'dinero_entre_fechas':
+                // gananciasEntre usa "hasta" EXCLUSIVO sobre created_at.
+                $hastaEx = date('Y-m-d', strtotime($hasta . ' +1 day'));
+                $g = $this->gananciasEntre($hotelId, $desde, $hastaEx);
+                if (!$g['hay']) {
+                    return "Sin movimientos de caja entre {$desde} y {$hasta}.";
+                }
+                $out = "Del {$desde} al {$hasta}: ingresos \${$g['ingresos']}, gastos \${$g['gastos']}, ganancia neta \${$g['neto']}.";
+                try {
+                    $stmt = $this->pdo->prepare(
+                        "SELECT categoria, COALESCE(SUM(monto), 0) t FROM movimientos_caja
+                         WHERE hotel_id = ? AND tipo = 'gasto' AND created_at >= ? AND created_at < ?
+                         GROUP BY categoria ORDER BY t DESC LIMIT 5"
+                    );
+                    $stmt->execute([$hotelId, $desde, $hastaEx]);
+                    $cats = [];
+                    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                        $cats[] = ucfirst((string) ($c['categoria'] ?? 'sin categoria')) . ' $' . number_format((float) $c['t'], 2);
+                    }
+                    if ($cats !== []) {
+                        $out .= ' Gastos por categoria: ' . implode(', ', $cats) . '.';
+                    }
+                } catch (Throwable $e) {
+                    // sin desglose: los totales bastan
+                }
+                return $out;
+
+            case 'reservaciones_entre_fechas':
+                $hastaEx = date('Y-m-d', strtotime($hasta . ' +1 day'));
+                $rm = $this->reservacionesDelMes($hotelId, $desde, $hastaEx);
+                return "Llegadas del {$desde} al {$hasta}: {$rm['total']} reservacion(es), {$rm['habitaciones']} habitacion(es), {$rm['noches']} noche(s) vendida(s).";
+
+            case 'disponibilidad_entre_fechas':
+                if ($hasta === $desde) {
+                    return 'Para disponibilidad, "hasta" debe ser la fecha de salida (posterior a la llegada).';
+                }
+                try {
+                    $stmt = $this->pdo->prepare(
+                        "SELECT h.tipo, COUNT(*) libres FROM habitaciones h
+                         WHERE h.hotel_id = ? AND h.activa = 1 AND h.estado <> 'mantenimiento'
+                           AND NOT EXISTS (
+                             SELECT 1 FROM reservacion_habitaciones rh
+                             INNER JOIN reservaciones r ON r.id = rh.reservacion_id AND r.hotel_id = rh.hotel_id
+                             WHERE rh.habitacion_id = h.id AND rh.hotel_id = h.hotel_id
+                               AND r.estado IN ('confirmada', 'checked_in')
+                               AND ? < r.fecha_salida AND ? > r.fecha_entrada)
+                         GROUP BY h.tipo ORDER BY h.tipo"
+                    );
+                    $stmt->execute([$hotelId, $desde, $hasta]);
+                    $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                } catch (Throwable $e) {
+                    error_log('Copiloto: herramienta disponibilidad: ' . $e->getMessage());
+                    return 'No se pudo consultar.';
+                }
+                if ($filas === []) {
+                    return "Sin habitaciones libres del {$desde} al {$hasta} (segun las reservas actuales).";
+                }
+                $total = 0;
+                $partes = [];
+                foreach ($filas as $fila) {
+                    $n = (int) $fila['libres'];
+                    $total += $n;
+                    $etiqueta = function_exists('get_tipo_habitacion') ? get_tipo_habitacion((string) $fila['tipo']) : ucfirst((string) $fila['tipo']);
+                    $partes[] = "{$n} {$etiqueta}";
+                }
+                return "Libres del {$desde} al {$hasta} (llegada→salida, segun reservas actuales): {$total} en total — " . implode(', ', $partes) . '.';
+        }
+
+        return 'Herramienta desconocida.';
+    }
+
     private function responderConIa(int $hotelId, string $pregunta, array $historial = []): array
     {
         // White-label: el asistente se presenta con el nombre que el hotel
@@ -5119,6 +5301,9 @@ class CopilotoService
             . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin mencionar que usas un modelo externo."
             . "\n- Si hay mensajes previos, usalos para entender a que se refiere el usuario (\"¿y eso por que?\", \"¿y manana?\"),"
             . ' pero las cifras validas son SOLO las de los datos en vivo actuales: un numero del historial puede estar viejo.'
+            . "\n- Tienes HERRAMIENTAS para consultar datos reales del hotel (dinero por rango de fechas, reservaciones,"
+            . ' disponibilidad, huespedes). Usalas cuando la pregunta pida cifras de un periodo o dato que NO este en los datos'
+            . ' en vivo, en vez de decir que no lo tienes. Lo que la herramienta devuelva es LA cifra; si devuelve error o vacio, dilo tal cual.'
             . "\n- Montos con formato \$1,234.56.";
 
         $usuario = "Datos en vivo del hotel (calculados por el servidor, son la unica fuente de cifras):\n"
@@ -5126,7 +5311,11 @@ class CopilotoService
             . "\n\nSecciones que ESTE hotel tiene activas (no menciones ni recomiendes ninguna que no este en esta lista):\n" . $this->ayudaConocimiento($hotelId)
             . "\n\nPregunta del usuario del hotel:\n" . $pregunta;
 
-        return $this->llamarClaude($sistema, $usuario, $historial);
+        $ejecutor = function (string $nombre, array $input) use ($hotelId): string {
+            return $this->ejecutarHerramientaIa($hotelId, $nombre, $input);
+        };
+
+        return $this->llamarClaude($sistema, $usuario, $historial, $this->herramientasIa(), $ejecutor);
     }
 
     private function snapshotTexto(int $hotelId): string
@@ -5237,24 +5426,104 @@ class CopilotoService
     }
 
     /** Devuelve ['success', 'texto', 'tokens_entrada', 'tokens_salida', 'message']. */
-    private function llamarClaude(string $sistema, string $usuario, array $mensajesPrevios = []): array
+    /**
+     * Llama a Claude con bucle agentico opcional: si se pasan $tools y un
+     * $ejecutor (callable(nombre, input): string), el modelo puede pedir
+     * datos con herramientas de SOLO LECTURA y aqui se ejecutan con scope de
+     * hotel, maximo 4 rondas (el modelo debe cerrar con texto). Los bloques
+     * de la respuesta (incluido el thinking) se devuelven INTACTOS en el
+     * turno assistant del loop, como exige el API.
+     */
+    private function llamarClaude(string $sistema, string $usuario, array $mensajesPrevios = [], array $tools = [], ?callable $ejecutor = null): array
     {
         // $mensajesPrevios ya viene saneado (sanearHistorial): alternado,
         // empieza en user y termina en assistant; el turno final con el
         // snapshot fresco siempre es esta pregunta.
-        $payload = json_encode([
-            'model' => self::MODELO,
-            'max_tokens' => self::MAX_TOKENS,
-            'thinking' => ['type' => 'adaptive'],
-            'system' => $sistema,
-            'messages' => array_merge($mensajesPrevios, [['role' => 'user', 'content' => $usuario]]),
-        ], JSON_UNESCAPED_UNICODE);
+        $mensajes = array_merge($mensajesPrevios, [['role' => 'user', 'content' => $usuario]]);
+        $tokensIn = 0;
+        $tokensOut = 0;
 
+        for ($ronda = 0; $ronda < 5; $ronda++) {
+            $payload = [
+                'model' => self::MODELO,
+                'max_tokens' => self::MAX_TOKENS,
+                'thinking' => ['type' => 'adaptive'],
+                'system' => $sistema,
+                'messages' => $mensajes,
+            ];
+            if ($tools !== [] && $ejecutor !== null) {
+                $payload['tools'] = $tools;
+            }
+
+            $r = $this->llamadaHttpClaude($payload);
+            if (!empty($r['error'])) {
+                return ['success' => false, 'message' => (string) $r['error']];
+            }
+            $json = $r['json'];
+            $tokensIn += (int) ($json['usage']['input_tokens'] ?? 0);
+            $tokensOut += (int) ($json['usage']['output_tokens'] ?? 0);
+
+            if ((string) ($json['stop_reason'] ?? '') === 'refusal') {
+                return ['success' => false, 'message' => 'No puedo responder eso.'];
+            }
+
+            // ¿Pidio herramientas? Ejecutarlas y devolverle los resultados.
+            if ((string) ($json['stop_reason'] ?? '') === 'tool_use' && $ejecutor !== null && $ronda < 4) {
+                $resultados = [];
+                foreach ((array) ($json['content'] ?? []) as $bloque) {
+                    if (($bloque['type'] ?? '') !== 'tool_use') {
+                        continue;
+                    }
+                    try {
+                        $salida = (string) $ejecutor((string) ($bloque['name'] ?? ''), (array) ($bloque['input'] ?? []));
+                    } catch (Throwable $e) {
+                        error_log('Copiloto: error herramienta IA ' . ($bloque['name'] ?? '?') . ': ' . $e->getMessage());
+                        $salida = 'Error al consultar ese dato.';
+                    }
+                    $resultados[] = [
+                        'type' => 'tool_result',
+                        'tool_use_id' => (string) ($bloque['id'] ?? ''),
+                        'content' => mb_substr($salida, 0, 3000),
+                    ];
+                }
+                if ($resultados === []) {
+                    return ['success' => false, 'message' => 'El asistente no pudo responder ahora mismo.'];
+                }
+                $mensajes[] = ['role' => 'assistant', 'content' => $json['content']];
+                $mensajes[] = ['role' => 'user', 'content' => $resultados];
+                continue;
+            }
+
+            $texto = '';
+            foreach ((array) ($json['content'] ?? []) as $bloque) {
+                if (($bloque['type'] ?? '') === 'text') {
+                    $texto .= (string) ($bloque['text'] ?? '');
+                }
+            }
+            $texto = trim($texto);
+            if ($texto === '') {
+                return ['success' => false, 'message' => 'El asistente devolvio una respuesta vacia.'];
+            }
+
+            return [
+                'success' => true,
+                'texto' => $texto,
+                'tokens_entrada' => $tokensIn,
+                'tokens_salida' => $tokensOut,
+            ];
+        }
+
+        return ['success' => false, 'message' => 'El asistente no pudo responder ahora mismo.'];
+    }
+
+    /** POST crudo al API de mensajes. Devuelve ['json' => array] o ['error' => string]. */
+    private function llamadaHttpClaude(array $payload): array
+    {
         $ch = curl_init(self::API_URL);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'x-api-key: ' . trim((string) getenv('ANTHROPIC_API_KEY')),
@@ -5270,38 +5539,19 @@ class CopilotoService
 
         if ($respuesta === false) {
             error_log('Copiloto: error curl Claude: ' . $errorCurl);
-            return ['success' => false, 'message' => 'No pude conectar con el asistente. Intenta de nuevo o revisa tu internet.'];
+            return ['error' => 'No pude conectar con el asistente. Intenta de nuevo o revisa tu internet.'];
         }
 
         $json = json_decode((string) $respuesta, true);
         if ($status === 429) {
-            return ['success' => false, 'message' => 'El asistente esta saturado. Intenta en un minuto.'];
+            return ['error' => 'El asistente esta saturado. Intenta en un minuto.'];
         }
         if ($status < 200 || $status >= 300 || !is_array($json)) {
             error_log('Copiloto: API Claude HTTP ' . $status);
-            return ['success' => false, 'message' => 'El asistente no pudo responder ahora mismo.'];
-        }
-        if ((string) ($json['stop_reason'] ?? '') === 'refusal') {
-            return ['success' => false, 'message' => 'No puedo responder eso.'];
+            return ['error' => 'El asistente no pudo responder ahora mismo.'];
         }
 
-        $texto = '';
-        foreach ((array) ($json['content'] ?? []) as $bloque) {
-            if (($bloque['type'] ?? '') === 'text') {
-                $texto .= (string) ($bloque['text'] ?? '');
-            }
-        }
-        $texto = trim($texto);
-        if ($texto === '') {
-            return ['success' => false, 'message' => 'El asistente devolvio una respuesta vacia.'];
-        }
-
-        return [
-            'success' => true,
-            'texto' => $texto,
-            'tokens_entrada' => (int) ($json['usage']['input_tokens'] ?? 0),
-            'tokens_salida' => (int) ($json['usage']['output_tokens'] ?? 0),
-        ];
+        return ['json' => $json];
     }
 
     // ───────────────────────── Helpers ─────────────────────────
