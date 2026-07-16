@@ -14,8 +14,11 @@ require_once __DIR__ . '/../models/ConfiguracionHotelRegistry.php';
  *    encendida (config copiloto.ia_activa) y hay ANTHROPIC_API_KEY. Aun ahi,
  *    los numeros los pone el snapshot del servidor, no el modelo.
  *
- * REGLA DURA: nunca escribe en Caja, reservaciones ni datos operativos. A lo
- * mucho sugiere una accion con un enlace; ejecutarla es decision humana.
+ * REGLA DURA: toda escritura pasa por una PROPUESTA + confirmacion humana
+ * (msConfirm) y reusa el motor de su pantalla (tareas operativas,
+ * MantenimientoService, MovimientoCaja). En dinero SOLO registra gastos con
+ * el permiso caja.movimientos y caja abierta; jamas cobra, jamas toca cortes
+ * ni reservaciones.
  */
 class CopilotoService
 {
@@ -265,6 +268,13 @@ class CopilotoService
             'accion:limpieza_ok' => 'Limpieza programada',
             'accion:asignar' => 'Asignar limpieza (propuesta)',
             'accion:asignar_ok' => 'Limpieza asignada',
+            'accion:mant' => 'Iniciar mantenimiento (propuesta)',
+            'accion:mant_ok' => 'Mantenimiento iniciado',
+            'accion:bloqueo' => 'Bloquear habitacion (propuesta)',
+            'accion:desbloqueo' => 'Liberar habitacion (propuesta)',
+            'accion:desbloqueo_ok' => 'Habitacion liberada',
+            'accion:gasto' => 'Registrar gasto (propuesta)',
+            'accion:gasto_ok' => 'Gasto registrado en caja',
             'resumen_dia' => '📋 Resumen del dia',
         ];
         return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
@@ -326,12 +336,16 @@ class CopilotoService
             }
         }
 
-        // 0.5) Accion ejecutable (SOLO limpieza/tareas; jamas dinero): aqui solo
-        //      se PROPONE. El widget pide confirmacion (msConfirm) y ejecutar
-        //      pasa por POST /copiloto/accion con CSRF y permiso del rol.
-        //      Asignar va primero: sus verbos son mas especificos.
+        // 0.5) Accion ejecutable: aqui solo se PROPONE. El widget pide
+        //      confirmacion (msConfirm) y ejecutar pasa por POST
+        //      /copiloto/accion con CSRF y permiso del rol. En dinero solo
+        //      existe el GASTO (permiso caja.movimientos + caja abierta);
+        //      cobros y cortes jamas. Asignar va primero: sus verbos son mas
+        //      especificos.
         $accion = $this->detectarAccionAsignar($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionFinalizarMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionMantenimiento($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionGasto($norm, $hotelId)
             ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
@@ -1701,7 +1715,11 @@ class CopilotoService
      */
     private function detectarAccionMantenimiento(string $norm, int $hotelId, ?array $contexto = null): ?array
     {
-        if (!preg_match('/\b(manda|mandar|pon|poner|mete|meter|marca|marcar)\b/', $norm) || !preg_match('/\b(a|en) mantenimiento\b/', $norm)) {
+        // "bloquea la 204 por pintura" es la misma accion con otro verbo: en
+        // este dominio bloquear una habitacion = ponerla en mantenimiento.
+        $esBloqueo = (bool) preg_match('/\b(bloquea|bloquear|bloqueame|bloqueen)\b/', $norm);
+        $esMantenimiento = preg_match('/\b(manda|mandar|pon|poner|mete|meter|marca|marcar)\b/', $norm) && preg_match('/\b(a|en) mantenimiento\b/', $norm);
+        if (!$esBloqueo && !$esMantenimiento) {
             return null;
         }
 
@@ -1726,21 +1744,27 @@ class CopilotoService
             $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
         }
         if ($hab === null) {
+            $ejemplo = $esBloqueo ? 'bloquea la 204 por pintura' : 'manda a mantenimiento la 204 por fuga de agua';
             return ['intent' => 'accion:mant_sin_hab', 'respuesta' => [
-                'texto' => "No identifique la habitacion. Dimelo asi: \"manda a mantenimiento la 204 por fuga de agua\".",
+                'texto' => "No identifique la habitacion. Dimelo asi: \"{$ejemplo}\".",
                 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
             ]];
         }
         if (mb_strlen($motivo) < 5) {
+            $ejemplo = $esBloqueo ? "bloquea la {$hab['numero']} por pintura de paredes" : "manda a mantenimiento la {$hab['numero']} por fuga de agua en el bano";
             return ['intent' => 'accion:mant_sin_motivo', 'respuesta' => [
-                'texto' => "El motivo es obligatorio para un mantenimiento. Dimelo asi: \"manda a mantenimiento la {$hab['numero']} por fuga de agua en el bano\".",
+                'texto' => "El motivo es obligatorio para " . ($esBloqueo ? 'bloquear una habitacion' : 'un mantenimiento') . ". Dimelo asi: \"{$ejemplo}\".",
                 'enlace' => null,
             ]];
         }
 
-        return ['intent' => 'accion:mant', 'respuesta' => [
-            'texto' => "Puedo poner la habitacion **{$hab['numero']}** en **mantenimiento correctivo** (prioridad media) por: {$motivo}. "
-                . 'Si tiene reservaciones proximas te avisare sin ejecutar. Confirmalo y queda registrado.',
+        $verboTexto = $esBloqueo
+            ? "Puedo **bloquear** la habitacion **{$hab['numero']}** (queda en mantenimiento correctivo, prioridad media) por: {$motivo}. "
+                . 'Para volver a rentarla dime "desbloquea la ' . $hab['numero'] . '". '
+            : "Puedo poner la habitacion **{$hab['numero']}** en **mantenimiento correctivo** (prioridad media) por: {$motivo}. ";
+
+        return ['intent' => $esBloqueo ? 'accion:bloqueo' : 'accion:mant', 'respuesta' => [
+            'texto' => $verboTexto . 'Si tiene reservaciones proximas te avisare sin ejecutar. Confirmalo y queda registrado.',
             'enlace' => null,
             'accion' => [
                 'tipo' => 'iniciar_mantenimiento',
@@ -1748,11 +1772,298 @@ class CopilotoService
                 'habitacion' => (string) $hab['numero'],
                 'motivo' => mb_substr($motivo, 0, 300),
                 'fecha' => date('Y-m-d'),
-                'confirm_titulo' => '¿Iniciar mantenimiento?',
+                'confirm_titulo' => $esBloqueo ? '¿Bloquear la habitacion?' : '¿Iniciar mantenimiento?',
                 'confirm_msg' => "Habitacion {$hab['numero']} pasa a mantenimiento correctivo (prioridad media). Motivo: {$motivo}.",
-                'confirm_ok' => 'Iniciar',
+                'confirm_ok' => $esBloqueo ? 'Bloquear' : 'Iniciar',
             ],
         ]];
+    }
+
+    /**
+     * Detecta "desbloquea la 204" / "ya quedo el mantenimiento de la 204" y
+     * arma la PROPUESTA de liberar la habitacion (finalizar el mantenimiento
+     * en proceso). Devuelve null si la frase no es una liberacion.
+     */
+    private function detectarAccionFinalizarMantenimiento(string $norm, int $hotelId, ?array $contexto = null): ?array
+    {
+        $esDesbloqueo = (bool) preg_match('/\b(desbloquea|desbloquear|libera|liberar)\b/', $norm);
+        $esFinalizar = preg_match('/\b(finaliza|finalizar|termina|terminar|saca|sacar|quita|quitar|cierra|cerrar)\b/', $norm)
+            && strpos($norm, 'mantenimiento') !== false;
+        if (!$esDesbloqueo && !$esFinalizar) {
+            return null;
+        }
+
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['intent' => 'accion:desbloqueo_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para gestionar mantenimientos. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
+        if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
+            $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
+        }
+        if ($hab === null) {
+            return ['intent' => 'accion:desbloqueo_sin_hab', 'respuesta' => [
+                'texto' => "No identifique la habitacion. Dimelo asi: \"desbloquea la 204\".",
+                'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+            ]];
+        }
+
+        // Solo tiene sentido sobre una habitacion en mantenimiento; avisar
+        // aqui evita una confirmacion que va a fallar.
+        $estado = $this->estadoHabitacion($hotelId, (int) $hab['id']);
+        if ($estado !== 'mantenimiento') {
+            return ['intent' => 'accion:desbloqueo_no_aplica', 'respuesta' => [
+                'texto' => "La habitacion **{$hab['numero']}** no esta bloqueada ni en mantenimiento (su estado es \"{$estado}\"), asi que no hay nada que liberar.",
+                'enlace' => ['url' => 'habitaciones/' . $hab['id'], 'texto' => 'Ver la ficha'],
+            ]];
+        }
+
+        return ['intent' => 'accion:desbloqueo', 'respuesta' => [
+            'texto' => "Puedo liberar la habitacion **{$hab['numero']}**: su mantenimiento se cierra y vuelve a quedar **disponible** para rentar. Confirmalo y la libero.",
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'finalizar_mantenimiento',
+                'habitacion_id' => (int) $hab['id'],
+                'habitacion' => (string) $hab['numero'],
+                'fecha' => date('Y-m-d'),
+                'confirm_titulo' => '¿Liberar la habitacion?',
+                'confirm_msg' => "La habitacion {$hab['numero']} sale de mantenimiento y queda disponible.",
+                'confirm_ok' => 'Liberar',
+            ],
+        ]];
+    }
+
+    /**
+     * Detecta "registra un gasto de 450 de plomeria" y arma la PROPUESTA del
+     * gasto en caja (no ejecuta). Unica accion de dinero del copiloto y solo
+     * en su version mas segura: gasto en EFECTIVO, con caja abierta, permiso
+     * caja.movimientos y categoria del catalogo del hotel; el registro final
+     * pasa por MovimientoCaja::registrarMovimiento (mismo motor y candados
+     * que la pantalla de Caja). Cobros/ingresos jamas se registran por chat.
+     */
+    private function detectarAccionGasto(string $norm, int $hotelId): ?array
+    {
+        if (!preg_match('/\b(registra|registrar|registrame|anota|anotar|anotame|apunta|apuntar|apuntame|mete|meter)\b/', $norm)
+            || !preg_match('/\bgastos?\b/', $norm)) {
+            return null;
+        }
+
+        // Mismo permiso que CajaController::registrarGastoAction.
+        if (function_exists('can') && !can('caja.movimientos')) {
+            return ['intent' => 'accion:gasto_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para registrar gastos en caja. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        // Sin caja abierta el movimiento no tiene donde caer.
+        if (empty($this->caja($hotelId)['abierto'])) {
+            return ['intent' => 'accion:gasto_caja_cerrada', 'respuesta' => [
+                'texto' => 'La caja esta cerrada y un gasto necesita una caja abierta. Abre la caja y vuelve a decirmelo.',
+                'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+            ]];
+        }
+
+        $parse = self::parsearGasto($norm);
+        if ($parse['metodo'] !== 'efectivo') {
+            return ['intent' => 'accion:gasto_metodo', 'respuesta' => [
+                'texto' => 'Desde el chat solo registro gastos en **efectivo** (tarjeta y transferencia piden referencia). Ese registralo en la pantalla de Caja.',
+                'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+            ]];
+        }
+        if ($parse['monto'] === null || $parse['monto'] <= 0) {
+            return ['intent' => 'accion:gasto_sin_monto', 'respuesta' => [
+                'texto' => "No identifique el monto. Dimelo asi: \"registra un gasto de 450 de plomeria\".",
+                'enlace' => null,
+            ]];
+        }
+        if ($parse['concepto'] === null) {
+            return ['intent' => 'accion:gasto_sin_concepto', 'respuesta' => [
+                'texto' => "Me falta el concepto (que se compro o pago). Dimelo asi: \"registra un gasto de " . number_format($parse['monto'], 2) . " de plomeria\".",
+                'enlace' => null,
+            ]];
+        }
+
+        $cat = $this->buscarCategoriaGastoEnTexto($norm, $hotelId);
+        if ($cat !== null && isset($cat['ambiguos'])) {
+            return ['intent' => 'accion:gasto_cat_ambigua', 'respuesta' => [
+                'texto' => 'Ese gasto casa con varias categorias: **' . implode('**, **', $cat['ambiguos']) . '**. Repitemelo mencionando una, por ejemplo: "registra un gasto de '
+                    . number_format($parse['monto'], 2) . ' de ' . $parse['concepto'] . ' en ' . $cat['ambiguos'][0] . '".',
+                'enlace' => null,
+            ]];
+        }
+        if ($cat === null) {
+            $nombres = $this->categoriasGasto($hotelId);
+            if (empty($nombres)) {
+                return ['intent' => 'accion:gasto_sin_catalogo', 'respuesta' => [
+                    'texto' => 'Este hotel aun no tiene categorias de gasto en Caja. Crea al menos una en **Caja → Categorias** y vuelve a decirmelo.',
+                    'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
+                ]];
+            }
+            $lista = array_column(array_slice($nombres, 0, 6), 'nombre');
+            return ['intent' => 'accion:gasto_sin_categoria', 'respuesta' => [
+                'texto' => '¿En que categoria lo anoto? Tengo: **' . implode('**, **', $lista) . '**. Repitemelo asi: "registra un gasto de '
+                    . number_format($parse['monto'], 2) . ' de ' . $parse['concepto'] . ' en ' . $lista[0] . '".',
+                'enlace' => null,
+            ]];
+        }
+
+        $montoTexto = '$' . number_format($parse['monto'], 2);
+        $descripcion = mb_substr(ucfirst($parse['concepto']), 0, 200);
+
+        return ['intent' => 'accion:gasto', 'respuesta' => [
+            'texto' => "Puedo registrar un **gasto de {$montoTexto}** en efectivo — {$descripcion} (categoria **{$cat['nombre']}**). "
+                . 'Cae en la caja abierta de hoy y queda a tu nombre. Confirmalo y lo anoto.',
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'registrar_gasto',
+                'monto' => round($parse['monto'], 2),
+                'categoria_id' => (int) $cat['id'],
+                'categoria' => (string) $cat['nombre'],
+                'descripcion' => $descripcion,
+                'fecha' => date('Y-m-d'),
+                'confirm_titulo' => '¿Registrar el gasto?',
+                'confirm_msg' => "{$montoTexto} en efectivo — {$descripcion} (categoria {$cat['nombre']}). Se registra en la caja abierta.",
+                'confirm_ok' => 'Registrar',
+            ],
+        ]];
+    }
+
+    /**
+     * Parser puro (sin BD) del gasto dictado. Espera texto ya normalizado
+     * (minusculas, sin acentos). Devuelve ['monto' => ?float, 'concepto' =>
+     * ?string, 'metodo' => 'efectivo'|'tarjeta'|'transferencia'].
+     *
+     * Monto: si hay varios numeros gana el que trae "$" y, si no, el mayor
+     * (separa el dinero de las cantidades: "2 focos por 100" -> 100).
+     * Concepto: lo que sigue al monto ("...450 de plomeria") o lo que esta
+     * entre "gasto de|por" y el monto ("gasto de plomeria de 450").
+     */
+    public static function parsearGasto(string $norm): array
+    {
+        $metodo = 'efectivo';
+        if (preg_match('/\btarjeta\b/', $norm)) {
+            $metodo = 'tarjeta';
+        } elseif (strpos($norm, 'transferencia') !== false) {
+            $metodo = 'transferencia';
+        }
+
+        // La mencion del metodo no debe ensuciar el concepto.
+        $frase = (string) preg_replace('/\b(en|con|de|por)\s+(efectivo|tarjeta|transferencia)\b/', ' ', $norm);
+
+        $reNumero = '/(\$\s*)?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/';
+        if (!preg_match_all($reNumero, $frase, $todos, PREG_OFFSET_CAPTURE)) {
+            return ['monto' => null, 'concepto' => null, 'metodo' => $metodo];
+        }
+
+        $elegido = 0;
+        if (count($todos[2]) > 1) {
+            $mejorValor = -1.0;
+            foreach ($todos[2] as $i => $m) {
+                $valor = (float) str_replace(',', '', $m[0]);
+                $conSigno = ($todos[1][$i][0] ?? '') !== '';
+                if ($conSigno) {
+                    $elegido = $i;
+                    break;
+                }
+                if ($valor > $mejorValor) {
+                    $mejorValor = $valor;
+                    $elegido = $i;
+                }
+            }
+        }
+
+        $token = $todos[2][$elegido];
+        $monto = (float) str_replace(',', '', $token[0]);
+        $inicio = (int) $todos[0][$elegido][1];
+        $fin = (int) $token[1] + strlen($token[0]);
+
+        $despues = trim(substr($frase, $fin));
+        $despues = trim((string) preg_replace('/^(?:(?:de|del|por|en|para)\s+)+/', '', $despues));
+        $concepto = trim((string) preg_replace('/[¿?¡!.]+$/u', '', $despues));
+
+        if (mb_strlen($concepto) < 3) {
+            $antes = substr($frase, 0, $inicio);
+            if (preg_match('/gastos?\s+(?:de|por|en)\s+(.+)$/', $antes, $g)) {
+                $concepto = trim((string) preg_replace('/\s+(?:de|del|por|en|para)\s*$/', '', trim($g[1])));
+            }
+        }
+        if (mb_strlen($concepto) < 3) {
+            $concepto = null;
+        }
+
+        return ['monto' => $monto > 0 ? $monto : null, 'concepto' => $concepto, 'metodo' => $metodo];
+    }
+
+    /** Categorias de GASTO activas del hotel: [['id','nombre'], ...]. */
+    private function categoriasGasto(int $hotelId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, nombre FROM categorias_movimientos
+                 WHERE hotel_id = ? AND tipo = 'gasto' AND activa = 1
+                 ORDER BY orden, nombre LIMIT 60"
+            );
+            $stmt->execute([$hotelId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error catalogo categorias gasto: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Busca una categoria de gasto DEL hotel mencionada en la frase (nombre
+     * completo primero, luego tokens de palabra completa >= 4 letras).
+     * Devuelve ['id','nombre'], ['ambiguos' => nombres] o null.
+     */
+    private function buscarCategoriaGastoEnTexto(string $norm, int $hotelId): ?array
+    {
+        $candidatos = [];
+        foreach ($this->categoriasGasto($hotelId) as $f) {
+            $nombre = trim((string) $f['nombre']);
+            $nc = $this->normalizar($nombre);
+            if ($nc === '') {
+                continue;
+            }
+            if (strpos($norm, $nc) !== false) {
+                return ['id' => (int) $f['id'], 'nombre' => $nombre];
+            }
+            foreach (explode(' ', $nc) as $token) {
+                if (mb_strlen($token) < 4) {
+                    continue;
+                }
+                if (preg_match('/(^|[^a-z0-9])' . preg_quote($token, '/') . '($|[^a-z0-9])/', $norm)) {
+                    $candidatos[(int) $f['id']] = $nombre;
+                    break;
+                }
+            }
+        }
+
+        if (count($candidatos) === 1) {
+            return ['id' => (int) array_key_first($candidatos), 'nombre' => (string) reset($candidatos)];
+        }
+        if (count($candidatos) > 1) {
+            return ['ambiguos' => array_slice(array_values($candidatos), 0, 3)];
+        }
+
+        return null;
+    }
+
+    /** Estado actual de la habitacion (scope de hotel) o '' si no se pudo leer. */
+    private function estadoHabitacion(int $hotelId, int $habitacionId): string
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT estado FROM habitaciones WHERE id = ? AND hotel_id = ? LIMIT 1");
+            $stmt->execute([$habitacionId, $hotelId]);
+            return (string) $stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Copiloto: error estado habitacion: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**
@@ -1853,15 +2164,22 @@ class CopilotoService
     }
 
     /**
-     * Ejecuta una accion confirmada por el usuario. SOLO limpieza: crea o
-     * reprograma la tarea en tareas_operativas respetando su contrato (sin
-     * personal asignado queda 'pendiente'; quien limpio se registra al cerrar
-     * la limpieza, nunca aqui). CERO acciones sobre dinero/caja/cortes.
+     * Ejecuta una accion confirmada por el usuario. Cada tipo reusa el motor
+     * de su pantalla (tareas_operativas, MantenimientoService, MovimientoCaja)
+     * y revalida el permiso del rol: la confirmacion del widget es UX, no
+     * seguridad. En dinero SOLO existe registrar_gasto (efectivo, caja
+     * abierta); cobros y cortes jamas se tocan desde aqui.
      */
     public function ejecutarAccion(int $hotelId, string $tipo, array $params, ?int $usuarioId = null): array
     {
         if ($tipo === 'iniciar_mantenimiento') {
             return $this->ejecutarMantenimiento($hotelId, $params, $usuarioId);
+        }
+        if ($tipo === 'finalizar_mantenimiento') {
+            return $this->ejecutarFinalizarMantenimiento($hotelId, $params, $usuarioId);
+        }
+        if ($tipo === 'registrar_gasto') {
+            return $this->ejecutarGasto($hotelId, $params, $usuarioId);
         }
 
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
@@ -1990,6 +2308,109 @@ class CopilotoService
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => 'Ver la ficha', 'url' => 'habitaciones/' . $habitacionId]],
+        ];
+    }
+
+    /**
+     * Ejecuta "liberar habitacion" via MantenimientoService::finalizarParaHotel
+     * (mismo motor que la pantalla): cierra el mantenimiento en proceso y la
+     * habitacion vuelve a 'disponible'.
+     */
+    private function ejecutarFinalizarMantenimiento(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para gestionar mantenimientos.', 'fuente' => 'reglas'];
+        }
+
+        $habitacionId = (int) ($params['habitacion_id'] ?? 0);
+
+        require_once __DIR__ . '/MantenimientoService.php';
+
+        try {
+            (new MantenimientoService($this->db))->finalizarParaHotel($hotelId, $habitacionId, $usuarioId);
+        } catch (Throwable $e) {
+            $this->registrar($hotelId, $usuarioId, "[accion desbloqueo hab {$habitacionId}]", 'reglas', 'accion:desbloqueo_error', 0, 0);
+            $texto = ($e instanceof PDOException) ? 'No se pudo liberar la habitacion. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo liberar la habitacion.');
+            return ['success' => false, 'texto' => $texto, 'fuente' => 'reglas'];
+        }
+
+        $hab = $this->habitacionPorId($hotelId, $habitacionId);
+        $numero = $hab !== null ? $hab['numero'] : (string) ($params['habitacion'] ?? $habitacionId);
+
+        $this->registrar($hotelId, $usuarioId, "[accion desbloqueo hab {$habitacionId}]", 'reglas', 'accion:desbloqueo_ok', 0, 0);
+
+        return [
+            'success' => true,
+            'texto' => "Listo ✅ La habitacion **{$numero}** quedo **disponible** de nuevo; su mantenimiento se cerro y el equipo fue notificado.",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver la ficha', 'url' => 'habitaciones/' . $habitacionId]],
+        ];
+    }
+
+    /**
+     * Ejecuta "registrar gasto" via MovimientoCaja::registrarMovimiento (mismo
+     * motor y candados que la pantalla de Caja: corte abierto FOR UPDATE,
+     * categoria del hotel). Solo EFECTIVO y solo tipo gasto; la categoria se
+     * revalida aqui por si el POST viajo alterado.
+     */
+    private function ejecutarGasto(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (function_exists('can') && !can('caja.movimientos')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para registrar gastos en caja.', 'fuente' => 'reglas'];
+        }
+
+        $monto = round((float) ($params['monto'] ?? 0), 2);
+        $categoriaId = (int) ($params['categoria_id'] ?? 0);
+        $descripcion = trim((string) ($params['descripcion'] ?? ''));
+
+        if ($monto <= 0 || $monto > 9999999.99) {
+            return ['success' => false, 'texto' => 'El monto del gasto no es valido. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
+        if (mb_strlen($descripcion) < 3) {
+            return ['success' => false, 'texto' => 'Falta el concepto del gasto. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
+
+        $categoria = null;
+        foreach ($this->categoriasGasto($hotelId) as $c) {
+            if ((int) $c['id'] === $categoriaId) {
+                $categoria = $c;
+                break;
+            }
+        }
+        if ($categoria === null) {
+            return ['success' => false, 'texto' => 'Esa categoria de gasto no existe en este hotel. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
+
+        require_once __DIR__ . '/../models/Caja.php';
+        require_once __DIR__ . '/../models/MovimientoCaja.php';
+
+        try {
+            $r = (new MovimientoCaja())->registrarMovimiento([
+                'tipo' => 'gasto',
+                'categoria_id' => $categoriaId,
+                'descripcion' => mb_substr($descripcion, 0, 200),
+                'monto' => $monto,
+                'metodo_pago' => 'efectivo',
+            ]);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error al registrar gasto: ' . $e->getMessage());
+            $r = ['success' => false, 'message' => 'No se pudo registrar el gasto. Intenta de nuevo.'];
+        }
+
+        if (empty($r['success'])) {
+            $this->registrar($hotelId, $usuarioId, "[accion gasto {$monto}]", 'reglas', 'accion:gasto_error', 0, 0);
+            return ['success' => false, 'texto' => (string) ($r['message'] ?? 'No se pudo registrar el gasto.'), 'fuente' => 'reglas'];
+        }
+
+        $this->registrar($hotelId, $usuarioId, "[accion gasto {$monto}]", 'reglas', 'accion:gasto_ok', 0, 0);
+
+        return [
+            'success' => true,
+            'texto' => 'Listo ✅ Gasto de **$' . number_format($monto, 2) . "** en efectivo registrado en la caja: {$descripcion} (categoria **{$categoria['nombre']}**).",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver la caja', 'url' => 'caja']],
         ];
     }
 
@@ -3339,6 +3760,7 @@ class CopilotoService
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
             . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
+            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 

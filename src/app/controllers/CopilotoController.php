@@ -1,7 +1,8 @@
 <?php
 /**
  * Copiloto Medisoft (bloque copiloto): endpoint JSON del asistente hibrido.
- * Interno (requiere sesion). Solo lectura; nunca ejecuta cambios.
+ * Interno (requiere sesion). Las preguntas son solo lectura; las acciones
+ * (accionAction) solo ejecutan lo que el usuario ya confirmo en el widget.
  */
 
 require_once __DIR__ . '/../services/CopilotoService.php';
@@ -61,8 +62,9 @@ class CopilotoController extends Controller {
 
     /**
      * Ejecuta una accion previamente confirmada por el usuario en el widget
-     * (msConfirm). SOLO limpieza/tareas operativas; el servicio valida el
-     * permiso del rol y jamas toca dinero.
+     * (msConfirm): limpieza/tareas, mantenimiento (bloquear/liberar) o gasto
+     * de caja en efectivo. El servicio revalida el permiso del rol por tipo;
+     * en dinero solo existe el gasto, jamas cobros ni cortes.
      */
     public function accionAction() {
         if (!$this->isPost()) {
@@ -83,6 +85,11 @@ class CopilotoController extends Controller {
             'fecha' => mb_substr((string) $this->getPost('fecha', ''), 0, 10),
             'trabajador_id' => (int) $this->getPost('trabajador_id', 0),
             'motivo' => mb_substr(trim((string) $this->getPost('motivo', '')), 0, 300),
+            // Solo para registrar_gasto (el metodo es siempre efectivo y lo
+            // fija el servidor; el POST no puede elegirlo).
+            'monto' => (float) str_replace([',', '$', ' '], '', (string) $this->getPost('monto', '0')),
+            'categoria_id' => (int) $this->getPost('categoria_id', 0),
+            'descripcion' => mb_substr(trim((string) $this->getPost('descripcion', '')), 0, 200),
         ];
 
         try {

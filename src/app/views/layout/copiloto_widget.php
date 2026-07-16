@@ -898,6 +898,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('fecha', accion.fecha || '');
         if (accion.trabajador_id) { datos.append('trabajador_id', accion.trabajador_id); }
         if (accion.motivo) { datos.append('motivo', accion.motivo); }
+        if (accion.monto) { datos.append('monto', accion.monto); }
+        if (accion.categoria_id) { datos.append('categoria_id', accion.categoria_id); }
+        if (accion.descripcion) { datos.append('descripcion', accion.descripcion); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -908,13 +911,14 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             .then(function (data) {
                 pintarRespuesta(pensando, data);
                 if (data.success && window.msToast) {
-                    if (accion.tipo === 'iniciar_mantenimiento') {
-                        window.msToast('success', 'Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧');
-                    } else {
-                        window.msToast('success',
-                            accion.tipo === 'asignar_limpieza' ? 'Limpieza asignada' : 'Limpieza programada',
-                            'La tarea quedó en el tablero de limpieza. 🗓️');
-                    }
+                    var toastPorTipo = {
+                        iniciar_mantenimiento: ['Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧'],
+                        finalizar_mantenimiento: ['Habitación liberada', 'Quedó disponible para rentar de nuevo. ✅'],
+                        registrar_gasto: ['Gasto registrado', 'Quedó anotado en la caja de hoy. 💸'],
+                        asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️']
+                    };
+                    var toast = toastPorTipo[accion.tipo] || ['Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️'];
+                    window.msToast('success', toast[0], toast[1]);
                 }
             })
             .catch(function () {

@@ -223,6 +223,45 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - **GOTCHA**: `Model::create` devuelve el ID insertado, no la fila; los
       festivos calculados y las temporadas del hotel deben llevar `tipo`
       explícito al mezclarse en una sola lista de eventos.
+16. **Candados que explican: el error nombra al bloqueador Y la acción.**
+    Un candado que solo dice "recurso no disponible, libérelo" genera confusión
+    y soporte; el que dice QUIÉN lo bloquea y QUÉ hacer se auto-resuelve
+    (check-in de hoteles, jul 2026; transferible a cualquier recurso compartido:
+    consultorio ocupado, bahía de taller, mesa). Receta:
+    - Al bloquear, consultar el registro que ocupa el recurso y nombrarlo:
+      "ocupada por la reservación #X de <nombre> (salida dd/mm, check-out
+      pendiente). Para continuar, haz el check-out de esa reservación".
+    - Agrupar recursos por bloqueador (3 habitaciones del mismo huésped = una
+      frase, no tres) y distinguir "vencido con cierre pendiente" (acción:
+      cerrar) de "vigente hasta fecha" (acción: esperar/reasignar).
+    - **GOTCHA**: la validación vive en UN método compartido por TODOS los
+      caminos de la acción — en hoteles el check-in normal validaba pero el
+      tardío no, y marcaba ocupado encima de otro huésped (overbooking
+      silencioso). Asignar limpieza/tareas NUNCA libera el recurso; solo el
+      cierre del registro que lo ocupa.
+17. **Acciones deterministas por chat = "frase → PROPUESTA → confirmación →
+    motor de la pantalla"** (acciones del Copiloto: limpieza, mantenimiento,
+    bloquear/liberar recurso, gasto de caja, jul 2026; transferible a
+    cualquier asistente del giro). Reglas:
+    - Detectar la orden con verbos + entidades contra el CATÁLOGO real del
+      tenant (habitación/trabajador/categoría por nombre completo y luego por
+      token de palabra completa; ambigüedad = preguntar, jamás adivinar). El
+      parser de monto/concepto es una función PURA y testeada (si hay varios
+      números gana el que trae `$` y si no el mayor: separa dinero de
+      cantidades).
+    - La detección solo arma una PROPUESTA con payload + textos de
+      confirmación; ejecutar es otro endpoint POST con CSRF que REVALIDA
+      permiso del rol y catálogo del tenant (la confirmación del widget es UX,
+      no seguridad) y llama al MISMO servicio/modelo que usa la pantalla, con
+      sus candados (corte abierto FOR UPDATE, conflictos de reservas, estado
+      del recurso).
+    - Dinero por chat: SOLO egresos (gasto), solo efectivo (los métodos con
+      referencia obligatoria se mandan a la pantalla), el método lo fija el
+      SERVIDOR, y con la caja cerrada se avisa en la propuesta (no se deja
+      fallar en la ejecución). Cobros/ingresos jamás por chat.
+    - Precondiciones se validan al PROPONER (caja cerrada, habitación que no
+      está bloqueada, motivo obligatorio): una confirmación que va a fallar es
+      peor que un aviso temprano.
 
 ---
 
