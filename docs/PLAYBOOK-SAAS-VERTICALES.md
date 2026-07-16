@@ -327,6 +327,28 @@ permisos_json (no por rol-string) → umbrales por tenant vía config registry
 acusatorio en TODA superficie ("patrón a revisar", jamás robo/fraude) y
 radiografía por persona SIEMPRE con el promedio del negocio al lado.
 
+**Receta portada — Mantenimiento Plus (jul-2026, vale para TODO giro con
+equipos que se descomponen: hoteles, veterinarias, talleres):** el correctivo
+básico queda GRATIS (crear/cerrar incidencia); el bloque cobrable agrega las
+4 capas que le duelen al dueño: (1) evidencia foto antes/después con el
+patrón de uploads existente (máx 3 por momento, prefijo de tenant, compresión
+GD) capturada desde el celular frente al problema; (2) costo real al cierre
+que cae a gastos SOLO por el flujo de caja existente con sus candados — liga
+gasto_movimiento_id + referencia MANT-{id}, candado anti doble clic FOR
+UPDATE + IS NULL, y con caja cerrada queda "por registrar" con cola ámbar al
+abrir caja (jamás bypass); (3) activos con periodicidad (activos_hotel:
+proximo_servicio calculado, habitacion/ubicación opcional → la FK a la unidad
+de negocio se hace NULLABLE y las queries de despliegue pasan a LEFT JOIN);
+cron idempotente genera preventivo + tarea vinculada (candado "una tarea
+activa por mantenimiento") + push por rol SIN tocar el estado de la unidad
+(bloquearla es decisión humana); el cierre recalcula proximo_servicio; (4)
+visibilidad: burbuja sidebar (vencidos/por vencer), intent de copiloto,
+aviso ámbar si el bloque está activo sin activos, y costo del periodo POR
+activo en el reporte ("este boiler te ha costado $X en el año" = el dato que
+vende). GOTCHA pagado: el validador global de formularios trata cualquier
+input *_costo/*_monto como numérico — los campos de texto libre no se nombran
+así.
+
 ### 7b. Aumentables (receta corta, construir bajo demanda)
 | Módulo | Brilla en | Receta |
 |---|---|---|
