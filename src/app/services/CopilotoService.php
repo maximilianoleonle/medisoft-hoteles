@@ -281,6 +281,9 @@ class CopilotoService
             'accion:pago_ok' => 'Pago a proveedor registrado',
             'accion:reserva_link' => 'Reservacion armada (formulario prellenado)',
             'accion:reserva_ocupada' => 'Reservacion: habitacion ocupada',
+            'accion:reserva_huesped' => 'Reservacion con huesped nuevo (propuesta)',
+            'accion:reserva_fin_ok' => 'Huesped registrado + reservacion armada',
+            'flujo:reserva_cancel' => 'Reservacion paso a paso cancelada',
             'resumen_dia' => '📋 Resumen del dia',
         ];
         return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
@@ -324,7 +327,7 @@ class CopilotoService
      * alimenta a la IA como contexto conversacional multi-turno; se sanea con
      * sanearHistorial() y jamas toca las respuestas deterministas.
      */
-    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = '', string $intentPrevio = '', $historial = null): array
+    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = '', string $intentPrevio = '', $historial = null, $flujo = null): array
     {
         $pregunta = trim($pregunta);
         if ($pregunta === '') {
@@ -343,6 +346,20 @@ class CopilotoService
                 $r = $this->responderEntidad($hotelId, $intentCtx, $contexto);
                 $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentCtx, 0, 0);
                 return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentCtx];
+            }
+        }
+
+        // 0.4) Flujo conversacional pendiente (reservacion campo por campo):
+        //      el estado viaja con el widget y aqui se VALIDA completo. Si el
+        //      mensaje no es respuesta del flujo (una pregunta de datos, por
+        //      ejemplo), cae al pipeline normal y el flujo sigue vivo: el
+        //      widget lo conserva hasta recibir 'flujo' nuevo o 'flujo_fin'.
+        $flujoActivo = self::sanearFlujo($flujo);
+        if ($flujoActivo !== null) {
+            $rf = $this->continuarFlujoReserva($hotelId, $norm, $flujoActivo);
+            if ($rf !== null) {
+                $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $rf['intent'], 0, 0);
+                return $rf['respuesta'] + ['success' => true, 'fuente' => 'reglas', 'intent' => $rf['intent']];
             }
         }
 
@@ -2536,83 +2553,391 @@ class CopilotoService
         $imperativo = (bool) preg_match('/\b(reservale|reservame|apartale|apartame|aparta)\b/', $norm);
         $verboConFechas = preg_match('/\b(reserva|agenda|agendale|crea|creame|haz|hazme)\b/', $norm)
             && preg_match('/\breserva(cion)?\b/', $norm) && $fechas !== null;
+        // "quiero hacer una reservacion" arranca el flujo campo por campo.
+        $arranque = (bool) preg_match('/\b(quiero|necesito|hazme|vamos a|nueva)\b.*\breservacion\b/', $norm);
         // "¿tiene reserva Garcia?" trae el sustantivo pero ni imperativo ni
-        // fechas: no es nuestra y debe caer a la busqueda de huesped.
-        if (!$imperativo && !$verboConFechas) {
+        // fechas ni arranque: cae a la busqueda de huesped.
+        if (!$imperativo && !$verboConFechas && !$arranque) {
             return null;
         }
 
-        // Sin gate de permiso a proposito: esto es un ENLACE al formulario de
-        // crear, y esa pantalla no exige permiso adicional (solo sesion del
-        // hotel). Gatear aqui mas fuerte que la pantalla rompe con los roles
-        // legacy (can_legacy no conoce reservaciones.*).
+        // Sin gate de permiso a proposito: esto termina en un ENLACE al
+        // formulario de crear, y esa pantalla no exige permiso adicional
+        // (solo sesion del hotel). Gatear aqui mas fuerte que la pantalla
+        // rompe con los roles legacy (can_legacy no conoce reservaciones.*).
 
-        if ($fechas === null) {
-            return ['intent' => 'accion:reserva_sin_fechas', 'respuesta' => [
-                'texto' => "No identifique las fechas. Dimelo asi: \"reservale la 204 a Juan del 20 al 22 de agosto\" o \"aparta la 204 manana por 2 noches\".",
-                'enlace' => null,
-            ]];
+        $f = self::flujoReservaVacio();
+
+        if ($fechas !== null) {
+            $f['fe'] = $fechas['entrada'];
+            $f['fs'] = $fechas['salida'];
         }
-
-        $noches = max(1, (int) round((strtotime($fechas['salida']) - strtotime($fechas['entrada'])) / 86400));
-        $rangoTexto = 'del ' . date('d/m', strtotime($fechas['entrada'])) . ' al ' . date('d/m', strtotime($fechas['salida']))
-            . ' (' . $noches . ' noche' . ($noches === 1 ? '' : 's') . ')';
 
         $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
         if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
             $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
         }
-
-        // Disponibilidad real (reservas Y mantenimientos), el mismo motor de
-        // la pantalla. Ocupada = link SIN habitacion para elegir otra ahi.
-        $habLibre = null;
-        if ($hab !== null) {
-            try {
-                require_once __DIR__ . '/../models/Reservacion.php';
-                $habLibre = (bool) (new Reservacion())->verificarDisponibilidadMultiple([(int) $hab['id']], $fechas['entrada'], $fechas['salida']);
-            } catch (Throwable $e) {
-                error_log('Copiloto: error disponibilidad reserva: ' . $e->getMessage());
-                $habLibre = null;
+        if ($hab !== null && $fechas !== null) {
+            $libre = $this->habitacionLibre($hotelId, (int) $hab['id'], $f['fe'], $f['fs']);
+            if ($libre === false) {
+                // Ocupada en el one-shot: aviso + link con fechas sin habitacion.
+                return ['intent' => 'accion:reserva_ocupada', 'respuesta' => [
+                    'texto' => "La habitacion **{$hab['numero']}** NO esta libre {$this->rangoNochesTexto($f['fe'], $f['fs'])}: tiene una reserva o mantenimiento que se cruza. "
+                        . 'Te dejo el formulario con las fechas puestas para que elijas otra habitacion ahi (te muestra solo las disponibles).',
+                    'enlace' => null,
+                    'acciones' => [['label' => 'Crear la reservacion', 'url' => $this->urlCrearReserva($f)]],
+                ]];
             }
+            $f['hab_id'] = (int) $hab['id'];
+            $f['hab_num'] = (string) $hab['numero'];
+        } elseif ($hab !== null) {
+            $f['hab_id'] = (int) $hab['id'];
+            $f['hab_num'] = (string) $hab['numero'];
         }
 
         $huesped = $this->buscarHuespedParaReserva($norm, $hotelId);
-
-        $params = ['fecha_entrada=' . $fechas['entrada'], 'fecha_salida=' . $fechas['salida'], 'preseleccion=1'];
-        if ($hab !== null && $habLibre === true) {
-            $params[] = 'habitacion_id=' . (int) $hab['id'];
-        }
         if ($huesped !== null && isset($huesped['id'])) {
-            $params[] = 'huesped_id=' . (int) $huesped['id'];
+            $f['huesped_id'] = (int) $huesped['id'];
+            $f['nombre'] = (string) $huesped['nombre'];
+        } elseif ($huesped !== null && isset($huesped['nuevo'])) {
+            $f['nombre'] = (string) $huesped['nuevo'];
+            $f['nuevo'] = 1;
+        } elseif ($huesped === null && $fechas !== null) {
+            // Modo rapido (la frase ya traia fechas) sin nombre: no se
+            // estorba preguntando, el formulario captura al huesped. En el
+            // arranque generico ("quiero hacer una reservacion") si se pide.
+            $f['nom_skip'] = 1;
         }
-        $url = 'reservaciones/crear?' . implode('&', $params);
+        // 'varios' se resuelve en el formulario (nom_skip).
+        if ($huesped !== null && isset($huesped['varios'])) {
+            $f['nom_skip'] = 1;
+        }
 
-        if ($hab !== null && $habLibre === false) {
-            return ['intent' => 'accion:reserva_ocupada', 'respuesta' => [
-                'texto' => "La habitacion **{$hab['numero']}** NO esta libre {$rangoTexto}: tiene una reserva o mantenimiento que se cruza. "
-                    . 'Te dejo el formulario con las fechas puestas para que elijas otra habitacion ahi (te muestra solo las disponibles).',
+        // ¿Que falta? Si nada (o solo cosas que el formulario resuelve),
+        // cierre directo; si falta algo que el chat puede pedir, arranca el
+        // flujo campo por campo desde ahi.
+        $paso = self::siguientePasoReserva($f);
+        if ($paso === 'listo') {
+            return $this->cerrarReserva($hotelId, $f, $huesped !== null && isset($huesped['varios']));
+        }
+
+        $f['paso'] = $paso;
+        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f)];
+    }
+
+    /** Estado inicial del flujo conversacional de reservacion. */
+    private static function flujoReservaVacio(): array
+    {
+        return ['t' => 'reserva', 'paso' => '', 'fe' => '', 'fs' => '', 'hab_id' => 0, 'hab_num' => '',
+            'hab_skip' => 0, 'huesped_id' => 0, 'nombre' => '', 'nom_skip' => 0, 'nuevo' => 0, 'tel' => '', 'tel_ok' => 0];
+    }
+
+    /**
+     * Saneador PURO del estado del flujo que reenvia el widget. Viene del
+     * cliente: aqui se valida tipo, paso y formato de cada campo; cualquier
+     * cosa rara invalida el flujo completo (null) y se sigue normal. Los
+     * datos criticos (habitacion del hotel, disponibilidad, huesped) se
+     * REVALIDAN contra la base al cerrar, no aqui.
+     */
+    public static function sanearFlujo($crudo): ?array
+    {
+        if (is_string($crudo)) {
+            $crudo = trim($crudo) === '' ? null : json_decode(mb_substr($crudo, 0, 2000), true);
+        }
+        if (!is_array($crudo) || ($crudo['t'] ?? '') !== 'reserva') {
+            return null;
+        }
+        $paso = (string) ($crudo['paso'] ?? '');
+        if (!in_array($paso, ['fechas', 'habitacion', 'nombre', 'telefono'], true)) {
+            return null;
+        }
+
+        $f = self::flujoReservaVacio();
+        $f['paso'] = $paso;
+        foreach (['fe', 'fs'] as $k) {
+            $v = (string) ($crudo[$k] ?? '');
+            if ($v !== '' && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) || strtotime($v) === false)) {
+                return null;
+            }
+            $f[$k] = $v;
+        }
+        if ($f['fe'] !== '' && $f['fs'] !== '' && $f['fs'] <= $f['fe']) {
+            return null;
+        }
+        $f['hab_id'] = max(0, (int) ($crudo['hab_id'] ?? 0));
+        $f['hab_num'] = mb_substr(trim((string) ($crudo['hab_num'] ?? '')), 0, 20);
+        $f['huesped_id'] = max(0, (int) ($crudo['huesped_id'] ?? 0));
+        $f['nombre'] = mb_substr(trim((string) ($crudo['nombre'] ?? '')), 0, 60);
+        $f['tel'] = mb_substr(preg_replace('/[^\d+ -]/', '', (string) ($crudo['tel'] ?? '')), 0, 20);
+        foreach (['hab_skip', 'nom_skip', 'nuevo', 'tel_ok'] as $k) {
+            $f[$k] = ((int) ($crudo[$k] ?? 0)) === 1 ? 1 : 0;
+        }
+
+        return $f;
+    }
+
+    /** Siguiente dato faltante del flujo, o 'listo'. */
+    private static function siguientePasoReserva(array $f): string
+    {
+        if ($f['fe'] === '' || $f['fs'] === '') {
+            return 'fechas';
+        }
+        if ($f['hab_id'] === 0 && $f['hab_skip'] === 0) {
+            return 'habitacion';
+        }
+        if ($f['huesped_id'] === 0 && $f['nombre'] === '' && $f['nom_skip'] === 0) {
+            return 'nombre';
+        }
+        if ($f['nuevo'] === 1 && $f['tel_ok'] === 0) {
+            return 'telefono';
+        }
+        return 'listo';
+    }
+
+    /** Pregunta del paso actual, con el estado del flujo para el widget. */
+    private function preguntaFlujoReserva(array $f, string $prefacio = ''): array
+    {
+        $preguntas = [
+            'fechas' => '¿Para que fechas? Dime por ejemplo "del 20 al 22 de agosto", "el 15 de agosto por 3 noches" o "manana por 2 noches".',
+            'habitacion' => '¿Que habitacion le doy? Dime el numero (como aparece en Habitaciones) o "cualquiera" para elegirla en el formulario.',
+            'nombre' => '¿A nombre de quien va? Dime el nombre del huesped, o "sin nombre" para capturarlo en el formulario.',
+            'telefono' => 'No encuentro a **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** en tus huespedes; lo registro como nuevo. ¿Cual es su telefono? (o dime "sin telefono")',
+        ];
+
+        return [
+            'texto' => ($prefacio !== '' ? $prefacio . ' ' : '') . ($preguntas[$f['paso']] ?? '¿Seguimos?') . ' _(puedes decir "cancelar" en cualquier momento)_',
+            'enlace' => null,
+            'flujo' => $f,
+        ];
+    }
+
+    /**
+     * Procesa la respuesta del usuario al paso pendiente del flujo. Devuelve
+     * la siguiente pregunta/cierre, o null si el mensaje NO parece respuesta
+     * del flujo (una pregunta de datos): en ese caso el pipeline normal la
+     * atiende y el widget conserva el flujo para el siguiente mensaje.
+     */
+    private function continuarFlujoReserva(int $hotelId, string $norm, array $f): ?array
+    {
+        if (preg_match('/\b(cancela|cancelar|cancelalo|olvidalo|dejalo|ya no|olvida)\b/', $norm)) {
+            return ['intent' => 'flujo:reserva_cancel', 'respuesta' => [
+                'texto' => 'Listo, cancele la reservacion que traiamos a medias. Aqui sigo para lo que necesites.',
                 'enlace' => null,
-                'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
+                'flujo_fin' => true,
             ]];
         }
-
-        $piezas = [];
-        if ($hab !== null) {
-            $piezas[] = 'habitacion **' . $hab['numero'] . '**' . ($habLibre === true ? ' (libre esas noches ✔)' : '');
+        // Una pregunta ("¿cuanto tengo en caja?") no es respuesta del flujo:
+        // que la atienda el pipeline normal sin matar la captura.
+        if (strpos($norm, '?') !== false
+            || preg_match('/^(cuanto|cuanta|cuantos|cuantas|quien|que|cual|cuales|hay|tiene|dame|dime|como)\b/', $norm)) {
+            return null;
         }
-        $piezas[] = $rangoTexto;
-        if ($huesped !== null && isset($huesped['id'])) {
-            $piezas[] = 'para **' . $huesped['nombre'] . '** (ya en tus huespedes)';
-        } elseif ($huesped !== null && isset($huesped['varios'])) {
+
+        $prefacio = '';
+
+        switch ($f['paso']) {
+            case 'fechas':
+                $fechas = self::parsearFechasReserva($norm);
+                if ($fechas === null) {
+                    return ['intent' => 'flujo:reserva_fechas_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No entendi esas fechas.')];
+                }
+                $f['fe'] = $fechas['entrada'];
+                $f['fs'] = $fechas['salida'];
+                // Si ya traiamos habitacion, revalidar que este libre en las
+                // fechas recien dadas.
+                if ($f['hab_id'] > 0 && $this->habitacionLibre($hotelId, $f['hab_id'], $f['fe'], $f['fs']) === false) {
+                    $prefacio = 'Ojo: la habitacion ' . $f['hab_num'] . ' NO esta libre esas noches, elegimos otra.';
+                    $f['hab_id'] = 0;
+                    $f['hab_num'] = '';
+                }
+                break;
+
+            case 'habitacion':
+                if (preg_match('/\b(cualquiera|la que sea|sin habitacion|no se|tu dime|ninguna|luego)\b/', $norm)) {
+                    $f['hab_skip'] = 1;
+                    break;
+                }
+                $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
+                if ($hab === null) {
+                    return ['intent' => 'flujo:reserva_hab_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No encontre esa habitacion en tu catalogo.')];
+                }
+                if ($this->habitacionLibre($hotelId, (int) $hab['id'], $f['fe'], $f['fs']) === false) {
+                    return ['intent' => 'flujo:reserva_hab_ocupada', 'respuesta' => $this->preguntaFlujoReserva($f, 'La ' . $hab['numero'] . ' NO esta libre esas noches.')];
+                }
+                $f['hab_id'] = (int) $hab['id'];
+                $f['hab_num'] = (string) $hab['numero'];
+                break;
+
+            case 'nombre':
+                if (preg_match('/\b(sin nombre|luego|en el formulario|despues|omite)\b/', $norm)) {
+                    $f['nom_skip'] = 1;
+                    break;
+                }
+                $nombre = trim((string) preg_replace('/^(se llama|a nombre de|para|es|el señor|la señora|sr|sra)\s+/', '', $norm));
+                $nombre = trim((string) preg_replace('/[^a-z ]/', '', $nombre));
+                if (mb_strlen($nombre) < 3) {
+                    return ['intent' => 'flujo:reserva_nombre_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'Necesito un nombre de al menos 3 letras.')];
+                }
+                $res = $this->buscarHuespedPorNombre($hotelId, $nombre);
+                if (isset($res['id'])) {
+                    $f['huesped_id'] = (int) $res['id'];
+                    $f['nombre'] = (string) $res['nombre'];
+                    $prefacio = 'Encontre a **' . $res['nombre'] . '** en tus huespedes ✔.';
+                } elseif (isset($res['varios'])) {
+                    return ['intent' => 'flujo:reserva_nombre_varios', 'respuesta' => $this->preguntaFlujoReserva($f, 'Hay varios huespedes que casan: **' . implode('**, **', $res['varios']) . '**. Dimelo con el nombre completo.')];
+                } else {
+                    $f['nombre'] = $nombre;
+                    $f['nuevo'] = 1;
+                }
+                break;
+
+            case 'telefono':
+                if (preg_match('/\b(sin telefono|no tiene|no tengo|no se|luego|omite)\b/', $norm)) {
+                    $f['tel'] = '';
+                    $f['tel_ok'] = 1;
+                    break;
+                }
+                if (!preg_match('/(\d[\d\s-]{5,18}\d)/', $norm, $m)) {
+                    return ['intent' => 'flujo:reserva_tel_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No vi un telefono valido (minimo 7 digitos).')];
+                }
+                $f['tel'] = mb_substr((string) preg_replace('/[^\d]/', '', $m[1]), 0, 20);
+                $f['tel_ok'] = 1;
+                break;
+
+            default:
+                return null;
+        }
+
+        $paso = self::siguientePasoReserva($f);
+        if ($paso === 'listo') {
+            $cierre = $this->cerrarReserva($hotelId, $f, false);
+            return ['intent' => $cierre['intent'], 'respuesta' => $cierre['respuesta'] + ['flujo_fin' => true]];
+        }
+
+        $f['paso'] = $paso;
+        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f, $prefacio)];
+    }
+
+    /**
+     * Cierre comun del one-shot y del flujo: con huesped NUEVO propone la
+     * accion confirmable (registra al huesped y arma el enlace); si no, el
+     * enlace prellenado directo. El precio/anticipo siguen en la pantalla.
+     */
+    private function cerrarReserva(int $hotelId, array $f, bool $huespedVarios): array
+    {
+        $rango = $this->rangoNochesTexto($f['fe'], $f['fs']);
+        $piezas = [];
+        if ($f['hab_id'] > 0) {
+            $piezas[] = 'habitacion **' . $f['hab_num'] . '** (libre esas noches ✔)';
+        }
+        $piezas[] = $rango;
+        if ($f['huesped_id'] > 0) {
+            $piezas[] = 'para **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'el huesped elegido') . '** (ya en tus huespedes)';
+        } elseif ($huespedVarios) {
             $piezas[] = 'el nombre casa con varios huespedes: eligelo en el formulario';
+        }
+
+        if ($f['nuevo'] === 1 && $f['nombre'] !== '') {
+            $nombreBonito = ucwords($f['nombre']);
+            $telTexto = $f['tel'] !== '' ? "tel {$f['tel']}" : 'sin telefono';
+            $piezas[] = "para **{$nombreBonito}** (huesped NUEVO, {$telTexto})";
+            return ['intent' => 'accion:reserva_huesped', 'respuesta' => [
+                'texto' => 'Queda asi: ' . implode(', ', $piezas) . '. Confirmalo: registro a ' . $nombreBonito
+                    . ' en tus huespedes y te abro el formulario con todo puesto (el precio y el cobro se hacen ahi, como siempre).',
+                'enlace' => null,
+                'accion' => [
+                    'tipo' => 'finalizar_reserva',
+                    'fecha_entrada' => $f['fe'],
+                    'fecha_salida' => $f['fs'],
+                    'habitacion_id' => $f['hab_id'],
+                    'huesped_nombre' => $nombreBonito,
+                    'telefono' => $f['tel'],
+                    'huesped_nuevo' => 1,
+                    'fecha' => date('Y-m-d'),
+                    'confirm_titulo' => '¿Registrar huesped y armar la reservacion?',
+                    'confirm_msg' => "Se registra a {$nombreBonito} ({$telTexto}) como huesped y se abre el formulario: " . strip_tags(str_replace('**', '', implode(', ', array_slice($piezas, 0, -1)))) . '.',
+                    'confirm_ok' => 'Registrar y armar',
+                ],
+            ]];
         }
 
         return ['intent' => 'accion:reserva_link', 'respuesta' => [
             'texto' => 'Te dejo la reservacion armada: ' . implode(', ', $piezas) . '. '
                 . 'Abre el formulario, revisa el precio que calcula el sistema y guardala ahi; el cobro o anticipo se hace en esa pantalla, como siempre.',
             'enlace' => null,
-            'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
+            'acciones' => [['label' => 'Crear la reservacion', 'url' => $this->urlCrearReserva($f)]],
         ]];
+    }
+
+    /** URL del formulario de crear con lo que el flujo haya juntado. */
+    private function urlCrearReserva(array $f): string
+    {
+        $params = ['fecha_entrada=' . $f['fe'], 'fecha_salida=' . $f['fs'], 'preseleccion=1'];
+        if (($f['hab_id'] ?? 0) > 0) {
+            $params[] = 'habitacion_id=' . (int) $f['hab_id'];
+        }
+        if (($f['huesped_id'] ?? 0) > 0) {
+            $params[] = 'huesped_id=' . (int) $f['huesped_id'];
+        }
+        return 'reservaciones/crear?' . implode('&', $params);
+    }
+
+    /** "del 20/12 al 22/12 (2 noches)". */
+    private function rangoNochesTexto(string $fe, string $fs): string
+    {
+        $noches = max(1, (int) round((strtotime($fs) - strtotime($fe)) / 86400));
+        return 'del ' . date('d/m', strtotime($fe)) . ' al ' . date('d/m', strtotime($fs))
+            . ' (' . $noches . ' noche' . ($noches === 1 ? '' : 's') . ')';
+    }
+
+    /** Disponibilidad real (reservas + mantenimientos): true/false/null si fallo. */
+    private function habitacionLibre(int $hotelId, int $habitacionId, string $fe, string $fs): ?bool
+    {
+        try {
+            require_once __DIR__ . '/../models/Reservacion.php';
+            return (bool) (new Reservacion())->verificarDisponibilidadMultiple([$habitacionId], $fe, $fs);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error disponibilidad reserva: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Busca huespedes por nombre (LIKE, scope de hotel). Devuelve
+     * ['id','nombre'] si hay UNO, ['varios' => nombres] si hay mas, o [] si
+     * ninguno.
+     */
+    private function buscarHuespedPorNombre(int $hotelId, string $nombre): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, nombre_completo FROM huespedes
+                 WHERE hotel_id = ? AND nombre_completo LIKE ?
+                 ORDER BY id DESC LIMIT 3"
+            );
+            $stmt->execute([$hotelId, '%' . addcslashes($nombre, "%_\\") . '%']);
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error huesped por nombre: ' . $e->getMessage());
+            return [];
+        }
+
+        if (count($filas) === 1) {
+            return ['id' => (int) $filas[0]['id'], 'nombre' => trim((string) $filas[0]['nombre_completo'])];
+        }
+        if (count($filas) > 1) {
+            // Un match EXACTO gana aunque haya parecidos.
+            foreach ($filas as $fila) {
+                if ($this->normalizar((string) $fila['nombre_completo']) === $this->normalizar($nombre)) {
+                    return ['id' => (int) $fila['id'], 'nombre' => trim((string) $fila['nombre_completo'])];
+                }
+            }
+            return ['varios' => array_map(function ($x) {
+                return trim((string) $x['nombre_completo']);
+            }, array_slice($filas, 0, 3))];
+        }
+
+        return [];
     }
 
     /**
@@ -2700,8 +3025,10 @@ class CopilotoService
 
     /**
      * Extrae el posible nombre de huesped de la frase ("a Juan Perez", "para
-     * Maria") y lo busca en el catalogo de huespedes del hotel. Devuelve
-     * ['id','nombre'], ['varios' => true] o null (se captura en la pantalla).
+     * Maria") y lo busca en el catalogo del hotel. Devuelve ['id','nombre']
+     * (existe), ['varios' => true] (ambiguo), ['nuevo' => nombre] (dictado
+     * pero no registrado: el flujo ofrece darlo de alta) o null (la frase no
+     * trae nombre).
      */
     private function buscarHuespedParaReserva(string $norm, int $hotelId): ?array
     {
@@ -2713,27 +3040,15 @@ class CopilotoService
             return null;
         }
 
-        try {
-            $stmt = $this->pdo->prepare(
-                "SELECT id, nombre_completo FROM huespedes
-                 WHERE hotel_id = ? AND nombre_completo LIKE ?
-                 ORDER BY id DESC LIMIT 3"
-            );
-            $stmt->execute([$hotelId, '%' . addcslashes($nombre, "%_\\") . '%']);
-            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (Throwable $e) {
-            error_log('Copiloto: error huesped para reserva: ' . $e->getMessage());
-            return null;
+        $res = $this->buscarHuespedPorNombre($hotelId, $nombre);
+        if (isset($res['id'])) {
+            return $res;
         }
-
-        if (count($filas) === 1) {
-            return ['id' => (int) $filas[0]['id'], 'nombre' => trim((string) $filas[0]['nombre_completo'])];
-        }
-        if (count($filas) > 1) {
+        if (isset($res['varios'])) {
             return ['varios' => true];
         }
 
-        return null;
+        return ['nuevo' => $nombre];
     }
 
     /** Estado actual de la habitacion (scope de hotel) o '' si no se pudo leer. */
@@ -2869,6 +3184,9 @@ class CopilotoService
         }
         if ($tipo === 'pagar_proveedor') {
             return $this->ejecutarPagoProveedor($hotelId, $params, $usuarioId);
+        }
+        if ($tipo === 'finalizar_reserva') {
+            return $this->ejecutarFinalizarReserva($hotelId, $params, $usuarioId);
         }
 
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
@@ -3205,6 +3523,81 @@ class CopilotoService
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => 'Ver cuentas por pagar', 'url' => 'cuentas-por-pagar']],
+        ];
+    }
+
+    /**
+     * Cierra el flujo de reservacion con huesped NUEVO: lo registra en el
+     * catalogo (unica escritura; sin dinero) y devuelve el enlace al
+     * formulario prellenado. Si el nombre aparecio mientras tanto (carrera o
+     * doble clic), se reusa el existente en vez de duplicar.
+     */
+    private function ejecutarFinalizarReserva(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (function_exists('can') && !can('huespedes.create')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para registrar huespedes.', 'fuente' => 'reglas'];
+        }
+
+        $fe = (string) ($params['fecha_entrada'] ?? '');
+        $fs = (string) ($params['fecha_salida'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fe) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fs) || $fs <= $fe) {
+            return ['success' => false, 'texto' => 'Las fechas de la reservacion no son validas. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
+
+        $nombre = trim((string) ($params['huesped_nombre'] ?? ''));
+        if (mb_strlen($nombre) < 3 || mb_strlen($nombre) > 60) {
+            return ['success' => false, 'texto' => 'Falta el nombre del huesped. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+        }
+        $telefono = mb_substr((string) preg_replace('/[^\d]/', '', (string) ($params['telefono'] ?? '')), 0, 20);
+
+        $huespedId = 0;
+        $yaExistia = false;
+        $res = $this->buscarHuespedPorNombre($hotelId, $nombre);
+        if (isset($res['id'])) {
+            $huespedId = (int) $res['id'];
+            $yaExistia = true;
+        } else {
+            try {
+                $stmt = $this->pdo->prepare(
+                    "INSERT INTO huespedes (hotel_id, nombre_completo, telefono, created_at) VALUES (?, ?, ?, NOW())"
+                );
+                $stmt->execute([$hotelId, ucwords(mb_strtolower($nombre, 'UTF-8')), $telefono !== '' ? $telefono : null]);
+                $huespedId = (int) $this->pdo->lastInsertId();
+            } catch (Throwable $e) {
+                error_log('Copiloto: error al registrar huesped: ' . $e->getMessage());
+                $this->registrar($hotelId, $usuarioId, "[accion reserva huesped]", 'reglas', 'accion:reserva_fin_error', 0, 0);
+                return ['success' => false, 'texto' => 'No se pudo registrar al huesped. Intenta de nuevo.', 'fuente' => 'reglas'];
+            }
+        }
+
+        // Habitacion: se revalida scope y disponibilidad al momento (pudo
+        // ocuparse mientras chateabamos); si ya no esta libre, el enlace va
+        // sin ella y se avisa.
+        $habId = (int) ($params['habitacion_id'] ?? 0);
+        $notaHab = '';
+        if ($habId > 0) {
+            $hab = $this->habitacionPorId($hotelId, $habId);
+            if ($hab === null || $this->habitacionLibre($hotelId, $habId, $fe, $fs) === false) {
+                $notaHab = ' Ojo: la habitacion elegida ya no esta libre esas noches; elige otra en el formulario.';
+                $habId = 0;
+            }
+        }
+
+        $url = $this->urlCrearReserva(['fe' => $fe, 'fs' => $fs, 'hab_id' => $habId, 'huesped_id' => $huespedId]);
+
+        $this->registrar($hotelId, $usuarioId, "[accion reserva huesped {$huespedId}]", 'reglas', 'accion:reserva_fin_ok', 0, 0);
+
+        $nombreBonito = ucwords(mb_strtolower($nombre, 'UTF-8'));
+        $quien = $yaExistia
+            ? "**{$nombreBonito}** ya estaba en tus huespedes, asi que lo reuse (sin duplicar)."
+            : "Listo ✅ Registre a **{$nombreBonito}** en tus huespedes" . ($telefono !== '' ? " (tel {$telefono})" : '') . '.';
+
+        return [
+            'success' => true,
+            'texto' => $quien . ' Te dejo el formulario de la reservacion con todo puesto; revisa el precio y guardala ahi.' . $notaHab,
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
         ];
     }
 

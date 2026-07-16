@@ -306,6 +306,25 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       turno actual — un número del historial puede estar viejo.
     - El hilo viene del cliente y es tan confiable como la pregunta misma
       (mismo nivel de confianza, mismo scope de hotel del lado servidor).
+19. **Captura campo por campo por chat (slot-filling determinista, sin
+    framework)** (reservación del copiloto de hoteles, jul 2026). El estado
+    del wizard viaja en el CLIENTE (JSON) y regresa con cada mensaje; sin
+    tabla de sesiones. Reglas:
+    - Un saneador PURO invalida el flujo COMPLETO ante cualquier campo fuera
+      de contrato (tipo, paso, formato de fechas, coherencia); lo crítico
+      (catálogo, disponibilidad, duplicados) se revalida contra la BD al
+      usar y al cerrar, no en el saneo.
+    - El one-shot no muere: si la frase trae todo, cierra directo; el flujo
+      arranca SOLO desde lo que falta, con lo entendido ya capturado.
+    - Una pregunta de datos a media captura se responde normal SIN matar el
+      flujo: el widget conserva el estado hasta recibir flujo nuevo o
+      `flujo_fin`. "Cancelar" disponible en todo paso (y anunciado).
+    - Respuestas de escape por paso ("cualquiera", "sin nombre", "sin
+      teléfono"): lo opcional jamás secuestra la conversación.
+    - La escritura ocurre SOLO al final vía la acción confirmable de
+      siempre, y el cierre revalida: disponibilidad al momento (pudo
+      ocuparse mientras chateaban) y "buscar antes de insertar" para que el
+      doble clic reuse en vez de duplicar.
 
 ---
 

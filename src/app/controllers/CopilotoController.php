@@ -51,10 +51,13 @@ class CopilotoController extends Controller {
         // IA; el servicio lo sanea (roles, alternancia, topes) y las cifras
         // siguen saliendo solo del snapshot del servidor.
         $historial = mb_substr((string) $this->getPost('historial', ''), 0, 8000);
+        // Estado del flujo campo-por-campo (reservacion). El servicio lo
+        // sanea completo y revalida contra la base lo critico.
+        $flujo = mb_substr((string) $this->getPost('flujo', ''), 0, 2000);
 
         try {
             $servicio = new CopilotoService();
-            $resultado = $servicio->responder($hotelId, $pregunta, user_id(), $ruta, $intentPrevio, $historial);
+            $resultado = $servicio->responder($hotelId, $pregunta, user_id(), $ruta, $intentPrevio, $historial, $flujo);
         } catch (Throwable $e) {
             error_log('Copiloto: error al responder: ' . $e->getMessage());
             View::renderJSON(['success' => false, 'texto' => 'Ocurrio un error. Intenta de nuevo.', 'fuente' => 'fallback'], 500);
@@ -94,6 +97,11 @@ class CopilotoController extends Controller {
             'monto' => (float) str_replace([',', '$', ' '], '', (string) $this->getPost('monto', '0')),
             'categoria_id' => (int) $this->getPost('categoria_id', 0),
             'descripcion' => mb_substr(trim((string) $this->getPost('descripcion', '')), 0, 200),
+            // Solo para finalizar_reserva (registrar huesped nuevo + enlace).
+            'fecha_entrada' => mb_substr((string) $this->getPost('fecha_entrada', ''), 0, 10),
+            'fecha_salida' => mb_substr((string) $this->getPost('fecha_salida', ''), 0, 10),
+            'huesped_nombre' => mb_substr(trim((string) $this->getPost('huesped_nombre', '')), 0, 60),
+            'telefono' => mb_substr((string) $this->getPost('telefono', ''), 0, 20),
             // Solo para pagar_proveedor (CuentaPorPagarPagoService revalida
             // cuenta, saldo y corte; el metodo se whitelistea en el servicio).
             'cuenta_id' => (int) $this->getPost('cuenta_id', 0),

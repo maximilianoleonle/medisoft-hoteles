@@ -273,9 +273,10 @@ $url = (string) ($r['acciones'][0]['url'] ?? '');
 t_ok(strpos($url, 'fecha_entrada=') !== false, 'reserva ocupada: conserva las fechas');
 t_ok(strpos($url, 'habitacion_id=') === false, 'reserva ocupada: sin habitacion preseleccionada');
 
-// ── Sin fechas: guia ──
+// ── Sin fechas: arranca el flujo pidiendolas (con lo demas ya capturado) ──
 $r = $servicio->responder($hotelId, 'reservale la 204 a juan perez', $usuarioId);
-t_eq('accion:reserva_sin_fechas', $r['intent'] ?? null, 'reserva sin fechas: pide las fechas');
+t_eq('flujo:reserva_fechas', $r['intent'] ?? null, 'reserva sin fechas: arranca el flujo');
+t_eq($huespedJuanId, (int) ($r['flujo']['huesped_id'] ?? 0), 'reserva sin fechas: huesped ya capturado en el estado');
 
 // ── "¿tiene reserva juan?" sigue siendo busqueda, no accion ──
 $r = $servicio->responder($hotelId, 'tiene reserva juan perez?', $usuarioId);
@@ -284,6 +285,81 @@ t_eq('busca:huesped', $r['intent'] ?? null, 'pregunta de reserva: sigue cayendo 
 // ── "como hago una reservacion" sigue siendo FAQ ──
 $r = $servicio->responder($hotelId, 'como hago una reservacion', $usuarioId);
 t_ok(strpos((string) ($r['intent'] ?? ''), 'accion:reserva') !== 0, 'como hago: no se confunde con la accion');
+
+// ── Flujo campo por campo: arranque generico pide fechas ──
+$r = $servicio->responder($hotelId, 'quiero hacer una reservacion', $usuarioId);
+t_eq('flujo:reserva_fechas', $r['intent'] ?? null, 'flujo: arranca pidiendo fechas');
+$fl = $r['flujo'] ?? null;
+t_eq('fechas', $fl['paso'] ?? null, 'flujo: estado con paso fechas');
+
+// ── Responde fechas -> pide habitacion ──
+$r = $servicio->responder($hotelId, 'del 20 al 22 de diciembre', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_habitacion', $r['intent'] ?? null, 'flujo: tras fechas pide habitacion');
+$fl = $r['flujo'];
+t_eq($fr['entrada'], $fl['fe'] ?? null, 'flujo: fechas guardadas en el estado');
+
+// ── La 204 esta ocupada esas noches: re-pregunta ──
+$r = $servicio->responder($hotelId, 'la 204', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_hab_ocupada', $r['intent'] ?? null, 'flujo: habitacion ocupada re-pregunta');
+$fl = $r['flujo'];
+
+// ── "cualquiera" salta la habitacion -> pide nombre ──
+$r = $servicio->responder($hotelId, 'cualquiera', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_nombre', $r['intent'] ?? null, 'flujo: pide el nombre');
+$fl = $r['flujo'];
+
+// ── Pregunta de datos a MEDIA captura: se responde y el flujo sigue vivo ──
+$r = $servicio->responder($hotelId, 'cuanto tengo en caja?', $usuarioId, '', '', null, json_encode($fl));
+t_eq('caja', $r['intent'] ?? null, 'flujo: una pregunta de caja se responde normal');
+t_ok(empty($r['flujo_fin']), 'flujo: la pregunta no mata la captura');
+
+// ── Nombre no registrado -> pide telefono y marca nuevo ──
+$r = $servicio->responder($hotelId, 'pedro ramirez', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_telefono', $r['intent'] ?? null, 'flujo: huesped nuevo pide telefono');
+$fl = $r['flujo'];
+t_eq(1, $fl['nuevo'] ?? 0, 'flujo: marcado como nuevo');
+
+// ── Telefono -> propuesta final con accion confirmable ──
+$r = $servicio->responder($hotelId, '55 1234 5678', $usuarioId, '', '', null, json_encode($fl));
+t_eq('accion:reserva_huesped', $r['intent'] ?? null, 'flujo: cierre con propuesta');
+t_eq('finalizar_reserva', $r['accion']['tipo'] ?? null, 'flujo: accion finalizar_reserva');
+t_ok(!empty($r['flujo_fin']), 'flujo: el estado se cierra al proponer');
+$accReserva = $r['accion'];
+
+// ── Ejecutar: registra al huesped y entrega el enlace prellenado ──
+$e = $servicio->ejecutarAccion($hotelId, 'finalizar_reserva', $accReserva, $usuarioId);
+t_ok(!empty($e['success']), 'finalizar: success');
+$nuevoHuesped = $db->query(
+    "SELECT id, nombre_completo, telefono FROM huespedes WHERE hotel_id = ? AND nombre_completo = 'Pedro Ramirez' LIMIT 1",
+    [$hotelId]
+)->fetch();
+t_ok(!empty($nuevoHuesped['id']), 'finalizar: huesped Pedro Ramirez registrado');
+t_eq('5512345678', $nuevoHuesped['telefono'] ?? null, 'finalizar: telefono guardado');
+$url = (string) ($e['acciones'][0]['url'] ?? '');
+t_ok(strpos($url, 'huesped_id=' . (int) $nuevoHuesped['id']) !== false, 'finalizar: enlace con el huesped nuevo');
+t_ok(strpos($url, 'fecha_entrada=' . $fr['entrada']) !== false, 'finalizar: enlace con las fechas');
+t_ok(strpos($url, 'habitacion_id=') === false, 'finalizar: sin habitacion (se salto con "cualquiera")');
+
+// ── Doble clic / repeticion: reusa al huesped, no duplica ──
+$e = $servicio->ejecutarAccion($hotelId, 'finalizar_reserva', $accReserva, $usuarioId);
+t_ok(!empty($e['success']), 'finalizar repetido: success');
+$nPedros = (int) $db->query(
+    "SELECT COUNT(*) c FROM huespedes WHERE hotel_id = ? AND nombre_completo = 'Pedro Ramirez'",
+    [$hotelId]
+)->fetch()['c'];
+t_eq(1, $nPedros, 'finalizar repetido: sin duplicados');
+
+// ── Cancelar a media captura ──
+$r = $servicio->responder($hotelId, 'quiero hacer una reservacion', $usuarioId);
+$r = $servicio->responder($hotelId, 'mejor cancelalo', $usuarioId, '', '', null, json_encode($r['flujo']));
+t_eq('flujo:reserva_cancel', $r['intent'] ?? null, 'flujo: cancelar funciona');
+t_ok(!empty($r['flujo_fin']), 'flujo: cancelar cierra el estado');
+
+// ── One-shot con nombre dictado NO registrado: pide telefono directo ──
+$r = $servicio->responder($hotelId, 'reservale la 204 a carlos gomez del 10 al 12 de noviembre', $usuarioId);
+t_eq('flujo:reserva_telefono', $r['intent'] ?? null, 'one-shot nuevo: salta directo al telefono');
+t_eq(1, $r['flujo']['nuevo'] ?? 0, 'one-shot nuevo: marcado nuevo');
+t_eq($habitacionId, (int) ($r['flujo']['hab_id'] ?? 0), 'one-shot nuevo: habitacion ya capturada');
 
 // ── Hotel sin el bloque promociones: la accion ni se propone ──
 $db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel Sin Promos', 'sin-promos', 1, NOW())");

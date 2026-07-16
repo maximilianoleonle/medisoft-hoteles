@@ -686,6 +686,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     // pagina. Se manda ANTES de agregar la pregunta nueva; el servidor lo
     // sanea y solo lo usa como contexto conversacional (cifras = snapshot).
     var historial = [];
+    // Flujo campo-por-campo pendiente (reservacion). Lo dicta el servidor:
+    // se conserva hasta recibir un 'flujo' nuevo o 'flujo_fin'.
+    var flujoActual = null;
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
             ? String(window.MEDISOFT_CONTEXT.hotel_id)
@@ -782,6 +785,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('ruta', RUTA);
         datos.append('intent_previo', intentPrevio);
         datos.append('historial', JSON.stringify(historial.slice(-6)));
+        if (flujoActual) { datos.append('flujo', JSON.stringify(flujoActual)); }
 
         fetch(URL, {
             method: 'POST',
@@ -791,6 +795,8 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 intentPrevio = typeof data.intent === 'string' ? data.intent : '';
+                if (data.flujo) { flujoActual = data.flujo; }
+                else if (data.flujo_fin) { flujoActual = null; }
                 historial.push({ r: 'u', t: texto });
                 if (typeof data.texto === 'string' && data.texto) {
                     historial.push({ r: 'a', t: data.texto.slice(0, 600) });
@@ -920,6 +926,10 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         if (accion.cuenta_id) { datos.append('cuenta_id', accion.cuenta_id); }
         if (accion.metodo) { datos.append('metodo', accion.metodo); }
         if (accion.proveedor) { datos.append('proveedor', accion.proveedor); }
+        if (accion.fecha_entrada) { datos.append('fecha_entrada', accion.fecha_entrada); }
+        if (accion.fecha_salida) { datos.append('fecha_salida', accion.fecha_salida); }
+        if (accion.huesped_nombre) { datos.append('huesped_nombre', accion.huesped_nombre); }
+        if (accion.telefono) { datos.append('telefono', accion.telefono); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -936,6 +946,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                         registrar_gasto: ['Gasto registrado', 'Quedó anotado en la caja de hoy. 💸'],
                         crear_cupon: ['Cupón creado', 'Ya está activo en el motor de reservas. 🎟️'],
                         pagar_proveedor: ['Pago registrado', 'El egreso quedó en la caja y el saldo se actualizó. 🤝'],
+                        finalizar_reserva: ['Huésped listo', 'Quedó registrado; abre el formulario para terminar. 🛎️'],
                         asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️']
                     };
                     var toast = toastPorTipo[accion.tipo] || ['Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️'];
