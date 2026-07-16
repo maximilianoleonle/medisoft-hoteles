@@ -277,7 +277,22 @@ notificaciones+push por rol · WhatsApp saliente · Reportes+links públicos
 firmados · Motor público de venta (pagos Stripe, cupones, holds) · Check-in/
 pre-registro digital público · Encuestas de reputación · Lealtad · Sync iCal ·
 Copiloto IA (Anthropic, revendible) · Cierre diario (night audit) · Auditoría
-+ vigilancia financiera · Health/backups/offsite.
++ vigilancia financiera · Guardián (patrones de comportamiento por usuario) ·
+Health/backups/offsite.
+
+**Receta portada — el Guardián (jul-2026, vale para TODO giro con caja):**
+dos motores read-only separados (integridad de libros + patrones de
+comportamiento por usuario: descuentos vs mediana del equipo, cancelación
+tardía con cobro previo, fuera de horario, cortes descuadrados recurrentes,
+reversiones concentradas) → escalera de costo IA de 3 niveles (día limpio =
+plantilla $0 y ESE mensaje verde es el producto; agregados = Opus; patrones
+por usuario = Fable 5 forense con movimientos crudos, fallback a Opus) →
+única escritura en tabla propia de estados (nuevo/revisado/resuelto, dedupe
+de push con notificado_en) → push dirigido por PERMISO resuelto contra
+permisos_json (no por rol-string) → umbrales por tenant vía config registry
++ mínimo de volumen (negocio chico NO alerta). Innegociables: lenguaje no
+acusatorio en TODA superficie ("patrón a revisar", jamás robo/fraude) y
+radiografía por persona SIEMPRE con el promedio del negocio al lado.
 
 ### 7b. Aumentables (receta corta, construir bajo demanda)
 | Módulo | Brilla en | Receta |
