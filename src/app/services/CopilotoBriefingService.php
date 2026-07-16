@@ -82,7 +82,7 @@ class CopilotoBriefingService
             }
         }
 
-        $sucias = $this->suciasConLlegadaHoy($hotelId);
+        $sucias = $this->suciasConLlegada($hotelId, 0);
         if ($sucias > 0) {
             $lineas[] = "• Ojo: {$sucias} habitacion(es) sucia(s) con llegada hoy.";
         }
@@ -158,6 +158,95 @@ class CopilotoBriefingService
         }
 
         return ['enviado' => true, 'motivo' => 'briefing enviado (evento #' . $id . ')'];
+    }
+
+    // ───────────────────────── Cierre vespertino ─────────────────────────
+
+    /** Hora configurada del cierre (HH:MM); invalidos caen al default 20:00. */
+    public function horaCierreConfigurada(int $hotelId): string
+    {
+        $hora = trim((string) hotel_config_get('copiloto.cierre_hora', '20:00', $hotelId));
+        return preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hora) ? $hora : '20:00';
+    }
+
+    /**
+     * Compone el cierre del dia como texto plano para push: reusa
+     * CopilotoService::resumenDeCierre y agrega lo que manana necesita
+     * preparada la operacion (sucias con llegada manana).
+     */
+    public function componerCierre(int $hotelId): array
+    {
+        $copiloto = new CopilotoService($this->db);
+        $resumen = $copiloto->resumenDeCierre($hotelId);
+
+        $lineas = [];
+        foreach (explode("\n", str_replace('**', '', (string) ($resumen['texto'] ?? ''))) as $linea) {
+            $linea = trim($linea);
+            if ($linea !== '' && strpos($linea, '•') === 0) {
+                $lineas[] = $linea;
+            }
+        }
+
+        $sucias = $this->suciasConLlegada($hotelId, 1);
+        if ($sucias > 0) {
+            $lineas[] = "• Ojo: {$sucias} habitacion(es) sucia(s) con llegada manana.";
+        }
+
+        return [
+            'titulo' => '🌙 ' . CopilotoService::nombreAsistente($hotelId) . ': asi cerro tu dia',
+            'mensaje' => mb_substr(implode("\n", $lineas), 0, 900),
+            'url' => 'dashboard',
+        ];
+    }
+
+    /**
+     * Envia el cierre vespertino si corresponde (idempotente por dia, mismos
+     * candados que el matutino pero con su propia hora y tipo).
+     */
+    public function enviarCierreSiCorresponde(int $hotelId, bool $forzarHora = false): array
+    {
+        if (!$this->tieneModulo(self::MODULO, $hotelId)) {
+            return ['enviado' => false, 'motivo' => 'sin bloque copiloto_briefing'];
+        }
+        if (!$this->configBool($hotelId, 'copiloto.cierre_activo', true)) {
+            return ['enviado' => false, 'motivo' => 'cierre vespertino apagado en la configuracion del hotel'];
+        }
+        if (!$this->tieneModulo('notificaciones', $hotelId)) {
+            return ['enviado' => false, 'motivo' => 'sin bloque notificaciones (la cadena push lo requiere)'];
+        }
+
+        $hora = $this->horaCierreConfigurada($hotelId);
+        $ahora = $this->horaLocalHotel($hotelId);
+        if (!$forzarHora && $ahora < $hora) {
+            return ['enviado' => false, 'motivo' => "aun no es la hora del cierre ({$hora}; hora del hotel {$ahora})"];
+        }
+
+        if ($this->yaEnviadoHoy($hotelId, 'copiloto_cierre')) {
+            return ['enviado' => false, 'motivo' => 'ya se envio el cierre de hoy'];
+        }
+
+        $cierre = $this->componerCierre($hotelId);
+        if (trim($cierre['mensaje']) === '') {
+            return ['enviado' => false, 'motivo' => 'no hubo contenido que reportar'];
+        }
+
+        $id = NotificacionService::crear([
+            'hotel_id' => $hotelId,
+            'rol_destino' => 'gerente',
+            'modulo' => 'copiloto',
+            'tipo' => 'copiloto_cierre',
+            'severidad' => 'info',
+            'titulo' => $cierre['titulo'],
+            'mensaje' => $cierre['mensaje'],
+            'url' => $cierre['url'],
+            'dedupe_key' => 'copiloto.cierre.' . date('Ymd'),
+        ]);
+
+        if ($id === null) {
+            return ['enviado' => false, 'motivo' => 'no se pudo crear el evento de notificacion'];
+        }
+
+        return ['enviado' => true, 'motivo' => 'cierre enviado (evento #' . $id . ')'];
     }
 
     // ───────────────────────── Alertas proactivas con criterio ─────────────────────────
@@ -323,9 +412,13 @@ class CopilotoBriefingService
         return is_numeric($v) ? (int) $v : $default;
     }
 
-    /** Habitaciones activas sucias (estado limpieza) con llegada programada hoy. */
-    private function suciasConLlegadaHoy(int $hotelId): int
+    /**
+     * Habitaciones activas sucias (estado limpieza) con llegada programada
+     * hoy ($offsetDias 0) o manana ($offsetDias 1, para el cierre).
+     */
+    private function suciasConLlegada(int $hotelId, int $offsetDias = 0): int
     {
+        $offsetDias = max(0, min(7, $offsetDias));
         try {
             $stmt = $this->pdo->prepare(
                 "SELECT COUNT(DISTINCT hab.id)
@@ -333,7 +426,7 @@ class CopilotoBriefingService
                  INNER JOIN reservacion_habitaciones rh ON rh.habitacion_id = hab.id AND rh.hotel_id = hab.hotel_id
                  INNER JOIN reservaciones r ON r.id = rh.reservacion_id AND r.hotel_id = rh.hotel_id
                  WHERE hab.hotel_id = ? AND hab.activa = 1 AND hab.estado = 'limpieza'
-                   AND r.fecha_entrada = CURDATE() AND r.estado IN ('confirmada', 'pendiente')"
+                   AND r.fecha_entrada = CURDATE() + INTERVAL {$offsetDias} DAY AND r.estado IN ('confirmada', 'pendiente')"
             );
             $stmt->execute([$hotelId]);
             return (int) $stmt->fetchColumn();

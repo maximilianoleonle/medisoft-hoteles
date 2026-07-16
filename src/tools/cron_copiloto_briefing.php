@@ -2,12 +2,14 @@
 /**
  * Cron del briefing matutino del Copiloto (bloque copiloto_briefing).
  *
- * Recorre los hoteles activos con el bloque contratado y envia el briefing
- * del dia por push cuando ya paso la hora configurada del hotel
- * (copiloto.briefing_hora). Es idempotente por dia: puede programarse cada
- * 10-15 minutos y cada hotel recibe UN briefing diario.
+ * Recorre los hoteles activos con el bloque contratado y envia por push:
+ * el briefing matutino (copiloto.briefing_hora), la alerta de ocupacion baja
+ * y el cierre vespertino (copiloto.cierre_hora). Todo es idempotente por dia
+ * (candados por tipo): puede programarse cada 10-15 minutos y cada hotel
+ * recibe UN briefing y UN cierre diarios.
  *
- * Programar en el host (ej. cada 15 min entre 5:00 y 12:00):
+ * Programar en el host (cada 15 min, todo el dia — las horas las decide
+ * la configuracion de cada hotel):
  *   docker exec medisoft_hoteles_app php /var/www/html/tools/cron_copiloto_briefing.php
  *
  * Uso manual / pruebas:
@@ -111,6 +113,16 @@ foreach ($hoteles as $hotel) {
             $enviados++;
         } else {
             echo "  SKIP  {$hotel['nombre']} (hotel {$hotelId}) -> alerta ocupacion: {$a['motivo']}\n";
+            $saltados++;
+        }
+
+        // Cierre vespertino: su propia hora (copiloto.cierre_hora) y candado diario.
+        $cz = $servicio->enviarCierreSiCorresponde($hotelId, $forzarHora);
+        if ($cz['enviado']) {
+            echo "  OK    {$hotel['nombre']} (hotel {$hotelId}) -> cierre: {$cz['motivo']}\n";
+            $enviados++;
+        } else {
+            echo "  SKIP  {$hotel['nombre']} (hotel {$hotelId}) -> cierre: {$cz['motivo']}\n";
             $saltados++;
         }
     } catch (Throwable $e) {

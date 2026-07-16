@@ -31,6 +31,7 @@ class CopilotoService
      */
     private const CHIPS_POR_INTENT = [
         'resumen_dia' => ['📋 Resumen del día', 'Dame el resumen del día', null],
+        'resumen_cierre' => ['🌙 Cierre del día', '¿Cómo cerró el día?', null],
         'ocupacion' => ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?', null],
         'ocupacion_semana' => ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?', null],
         'llegadas' => ['Llegadas de hoy', '¿Quién llega hoy?', null],
@@ -402,6 +403,9 @@ class CopilotoService
 
         // Los intents mas especificos van primero para no ser "robados" por los
         // genericos (ej. "ocupacion de la semana" debe caer en semana, no en hoy).
+        if ($tiene(['como cerro el dia', 'cierre del dia', 'resumen de cierre', 'como quedo el dia', 'resumen de la noche', 'cerrar el dia como vamos'])) {
+            return 'resumen_cierre';
+        }
         if ($tiene(['resumen del dia', 'resumen de hoy', 'como va el dia', 'como vamos hoy', 'como esta el dia', 'briefing', 'dame el resumen'])) {
             return 'resumen_dia';
         }
@@ -643,6 +647,9 @@ class CopilotoService
 
             case 'resumen_dia':
                 return $this->resumenDelDia($hotelId);
+
+            case 'resumen_cierre':
+                return $this->resumenDeCierre($hotelId);
 
             case 'llegadas_manana':
                 $lm = $this->reservasPorFecha($hotelId, 'entrada', 1);
@@ -1956,6 +1963,62 @@ class CopilotoService
             'texto' => implode("\n", $lineas),
             'enlace' => ['url' => 'dashboard', 'texto' => 'Ir al dashboard'],
             'acciones' => $acciones,
+        ];
+    }
+
+    /**
+     * Cierre del dia: como quedo la noche, el dinero del dia, pendientes y
+     * que viene manana. Publico: tambien lo compone el briefing vespertino
+     * push (CopilotoBriefingService). Solo lectura.
+     */
+    public function resumenDeCierre(int $hotelId): array
+    {
+        $o = $this->ocupacionHoy($hotelId);
+        $dia = $this->gananciasEntre($hotelId, date('Y-m-d'), date('Y-m-d', strtotime('+1 day')));
+        $noShow = $this->pendientes($hotelId, 'no_show');
+        $venc = $this->pendientes($hotelId, 'checkout_vencido');
+        $c = $this->caja($hotelId);
+        $manana = $this->reservasPorFecha($hotelId, 'entrada', 1);
+
+        $lineas = [
+            'Asi cerro tu dia:',
+            "• Esta noche: **{$o['ocupadas']} de {$o['activas']}** habitaciones ocupadas ({$o['pct']}%).",
+        ];
+
+        $lineas[] = $dia['hay']
+            ? "• Hoy en caja: ingresos **\${$dia['ingresos']}**, gastos \${$dia['gastos']} (neto **\${$dia['neto']}**)."
+            : '• Hoy en caja: sin movimientos registrados.';
+
+        $pendientes = [];
+        if ($noShow > 0) {
+            $pendientes[] = "{$noShow} no-show(s)";
+        }
+        if ($venc > 0) {
+            $pendientes[] = "{$venc} checkout(s) vencido(s)";
+        }
+        if ($c['abierto']) {
+            $pendientes[] = "corte de caja abierto (desde {$c['desde']})";
+        }
+        $lineas[] = empty($pendientes)
+            ? '• Pendientes: ninguno, todo cerrado. ✔'
+            : '• Antes de cerrar: **' . implode(', ', $pendientes) . '**.';
+
+        $lineas[] = $manana['total'] === 0
+            ? '• Manana: sin llegadas programadas.'
+            : "• Manana llegan **{$manana['total']} reservacion(es)**" . ($manana['nombres'] !== '' ? ': ' . $manana['nombres'] : '') . '.';
+
+        $accionesCierre = [];
+        if ($c['abierto']) {
+            $accionesCierre[] = ['label' => 'Hacer el corte', 'url' => 'caja#cop-ancla-corte'];
+        }
+        if ($noShow > 0 || $venc > 0 || $manana['total'] > 0) {
+            $accionesCierre[] = ['label' => 'Ver reservaciones', 'url' => 'reservaciones'];
+        }
+
+        return [
+            'texto' => implode("\n", $lineas),
+            'enlace' => ['url' => 'dashboard', 'texto' => 'Ir al dashboard'],
+            'acciones' => $accionesCierre,
         ];
     }
 
