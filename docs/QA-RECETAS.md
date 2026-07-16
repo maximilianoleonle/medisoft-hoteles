@@ -1,0 +1,65 @@
+# QA-RECETAS.md — Flujos de verificación por módulo
+
+Recetas paso a paso para verificar cada módulo tras un cambio, sin redescubrir el flujo. La IA lee la receta del módulo tocado y la ejecuta en el navegador (localhost:8080).
+
+## ⚡ Regla de alimentación
+
+Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son huecos por confirmar en la primera ejecución real: **al ejecutarlos, se reemplazan por el paso confirmado en la misma sesión**. Si la UI cambia y una receta miente, se corrige al detectarlo. Nunca escribir pasos no ejecutados como si fueran hechos.
+
+## Base común
+
+- App: http://localhost:8080 (Docker arriba). Hotel semilla: **Los Cedros**.
+- Usuarios QA: `claude_qa1` (general/nómina), `dueno_qa` (rol dueño remoto). ⬜ contraseñas: pedirlas a Maximiliano la primera vez y anotar aquí dónde viven (no anotar la contraseña).
+- Verificación de dinero: SIEMPRE por script PDO en el contenedor, nunca mysql CLI (timezone). Patrón:
+  `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php -r "...PDO..."`
+- Estado previo: correr la radiografía (`tools/radiografia.php`) para descartar migraciones pendientes antes de culpar al cambio.
+
+## Reservaciones (crear → anticipo → check-in → checkout)
+
+1. `/reservaciones` → botón crear (form activo: `crear.php`, jQuery).
+2. Crear reservación con huésped nuevo y ⬜ (datos mínimos exactos del form).
+3. Registrar **anticipo** desde ⬜ (pantalla/modal) → debe crear fila en `reservacion_abonos` ligada a caja (AnticipoService).
+4. **Check-in**: el cobro debe ser saldo-aware (total − anticipo, sin doble cobro). En móvil el modal es wizard de 2 pasos (≤640px); `ver.php` tiene su propio wizard distinto.
+5. Checkout → verificar por PDO que los movimientos de caja cuadran con lo cobrado.
+
+## Caja (cortes y movimientos)
+
+1. `/caja` → abrir corte (solo puede existir UN corte abierto por caja — probar doble apertura debe fallar).
+2. Registrar un gasto y un ingreso → verificar que caen en el corte abierto.
+3. Cerrar corte → un movimiento posterior NO debe caer en el corte cerrado.
+4. Cifras del corte: validar por PDO contra `Caja/Reportes` (deben cuadrar exacto).
+
+## Nómina (v2)
+
+1. Login `claude_qa1` en Los Cedros → `/nomina` (fachada: subnav fija, ficha con 4 tabs, toggles Pagos/Pre-nómina).
+2. ⬜ receta completa de pre-nómina → período → revisión (reconstruir de la receta original de la fase NP al primer uso).
+3. **PAGAR se hace en la pantalla VIEJA** (trabajadores/nomina), no en /nomina.
+4. Invariante a verificar si se tocó crédito: crédito = bruto − ledger absorbido; anular/reabrir no debe permitir doble pago.
+
+## Modo dueño
+
+1. Login `dueno_qa` → `/dueno`.
+2. Debe mostrar score determinista del hotel y ⬜ (secciones exactas del tablero).
+3. Si se tocó push: verificar que las notificaciones ruteen por clave de rol `dueno_remoto`.
+
+## Copiloto (acciones por chat)
+
+1. Abrir widget del Copiloto (exento del difuminador de sidebar).
+2. Pedir una acción (gasto en caja / bloquear habitación / cupón / pago a proveedor).
+3. Debe responder con **propuesta** de campos fijos → confirmar → la ejecuta el motor de pantalla estándar (verificar el registro resultante igual que en la receta del módulo destino).
+4. Rechazar una propuesta también es caso de prueba: no debe ejecutar nada.
+
+## Limpieza / camaristas
+
+1. Marcar habitación como limpia → debe EXIGIR quién limpió (personal obligatorio, contrato `personal_confirmado`/`trabajador_ids`/`sin_personal`).
+2. Programar limpieza con fecha+personal → verificar fila en `tareas_operativas`.
+
+## Mantenimiento Plus
+
+1. Crear mantenimiento con fotos y costo → el costo debe generar gasto en caja.
+2. Gotcha del validador en campos `*_costo`; mantenimiento sin habitación (área/activo) es válido (`habitacion_id` NULL).
+
+## Dinero E2E (regresión global)
+
+- Suite: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tests/run.php` (recrea la BD de prueba; filtrar por nombre para iterar rápido).
+- Referencia histórica: la verificación E2E de dinero del ciclo jul-2026 cerró con 22 PASS — si algo de dinero baja de ahí, es regresión.

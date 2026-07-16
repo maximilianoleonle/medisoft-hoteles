@@ -588,6 +588,32 @@ Criterio de entrada: se vuelca lo TRANSFERIBLE a cualquier giro (patrones,
 recetas, invariantes, trampas), no lo específico de hoteles. Si la sesión
 cierra una mejora y el playbook no se tocó, la sesión no está cerrada.
 
+### 10e. Sistema de conocimiento vivo (montar en la semana 1 de cada giro)
+Arquitectura de tres capas, verificada en Medisoft (jul-2026). Regla madre:
+**.md para saber, scripts para estado, hooks para comportamiento.**
+
+1. **CLAUDE.md raíz** (lectura forzada: el harness lo inyecta cada sesión).
+   Mapa denso: entorno, rutas del código, comandos, invariantes, gotchas,
+   componentes reutilizables. UNA línea por entrada; nada derivable del código.
+2. **CEMENTERIO.md raíz**: callejones sin salida. Formato "intento → por qué
+   falló → qué se hace". Los fracasos no dejan rastro en el código; esto evita
+   re-pagarlos. Leerlo antes de atacar un problema conocido.
+3. **docs/QA-RECETAS.md**: flujos de verificación por módulo, paso a paso.
+   Los pasos no ejecutados se marcan ⬜ y se completan en la primera corrida
+   real — nunca escribir pasos inventados como hechos.
+4. **tools/radiografia.php**: el estado VIVO jamás va en un .md (nace
+   obsoleto). Un comando imprime: migraciones pendientes, linter vs baseline,
+   frescura de assets compilados, errores recientes en logs, tamaño de suite.
+   Cada sección con try/catch propio: una falla no tumba el reporte.
+5. **Hook de Stop** (`.claude/hooks/` + `.claude/settings.json`, viajan por
+   git): si la sesión modificó el repo, UNA vez por sesión (marcador por
+   session_id en TEMP) exige alimentar los documentos o declarar que no hubo
+   nada. Automatiza el GATILLO (el punto de falla real: acordarse), no la
+   redacción — appendear sin criterio convierte el activo en vertedero.
+6. **Poda mensual**: pase de consolidación sobre los tres .md (fusionar
+   duplicados, borrar lo obsoleto). Sin poda, el sistema engorda hasta costar
+   más de lo que ahorra.
+
 ```markdown
 # [MARCA] — SaaS para [GIRO]
 

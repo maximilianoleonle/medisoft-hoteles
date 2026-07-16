@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/alimentar-docs.sh",
+            "timeout": 10,
+            "statusMessage": "Verificando alimentación de documentos vivos..."
+          }
+        ]
+      }
+    ]
+  }
+}
