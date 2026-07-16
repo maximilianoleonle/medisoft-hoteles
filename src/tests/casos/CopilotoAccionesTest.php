@@ -28,11 +28,23 @@ $categoriaId = (int) $db->lastInsertId();
 $db->query("INSERT INTO categorias_movimientos (hotel_id, nombre, tipo, activa, orden)
             VALUES (?, 'Papeleria', 'gasto', 1, 1)", [$hotelId]);
 
-// Bloques motor_reservas + promociones activos (gate de la accion de cupon).
-foreach (['motor_reservas', 'promociones'] as $clave) {
+// Bloques activos: cupones (motor_reservas + promociones) y pago CxP (compras).
+foreach (['motor_reservas', 'promociones', 'compras'] as $clave) {
     $db->query("INSERT INTO modulos (clave, nombre) VALUES (?, ?)", [$clave, ucfirst($clave)]);
     $db->query("INSERT INTO hotel_modulos (hotel_id, modulo_id, activo) VALUES (?, ?, 1)", [$hotelId, (int) $db->lastInsertId()]);
 }
+
+// Proveedor con dos cuentas pendientes (la vieja debe ganar) y un trabajador
+// que comparte nombre con otro proveedor (guard anti-nomina).
+$db->query("INSERT INTO proveedores (hotel_id, nombre, activo) VALUES (?, 'Garcia Distribuciones', 1)", [$hotelId]);
+$proveedorId = (int) $db->lastInsertId();
+$db->query("INSERT INTO cuentas_por_pagar (hotel_id, proveedor_id, folio, fecha_emision, fecha_vencimiento, estado, total, saldo)
+            VALUES (?, ?, 'F-VIEJA', DATE_SUB(CURDATE(), INTERVAL 30 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'vencida', 500, 500)", [$hotelId, $proveedorId]);
+$cuentaViejaId = (int) $db->lastInsertId();
+$db->query("INSERT INTO cuentas_por_pagar (hotel_id, proveedor_id, folio, fecha_emision, fecha_vencimiento, estado, total, saldo)
+            VALUES (?, ?, 'F-NUEVA', DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 20 DAY), 'pendiente', 800, 800)", [$hotelId, $proveedorId]);
+$db->query("INSERT INTO proveedores (hotel_id, nombre, activo) VALUES (?, 'Maria Materiales', 1)", [$hotelId]);
+$db->query("INSERT INTO trabajadores (hotel_id, nombre_completo, estado) VALUES (?, 'Maria Lopez', 'activo')", [$hotelId]);
 
 $servicio = new CopilotoService();
 
@@ -175,11 +187,67 @@ t_eq('AGOSTO10-2', $r3['accion']['codigo'] ?? null, 'cupon repetido: codigo sufi
 $e = $servicio->ejecutarAccion($hotelId, 'crear_cupon', $acc, $usuarioId);
 t_ok(empty($e['success']), 'cupon duplicado: rechazado');
 
+// ── Pago a proveedor: la cuenta MAS ANTIGUA gana y el monto se respeta ──
+$r = $servicio->responder($hotelId, 'pagale 300 al proveedor garcia', $usuarioId);
+t_eq('accion:pago', $r['intent'] ?? null, 'pago: propone');
+$accPago = $r['accion'] ?? [];
+t_eq('pagar_proveedor', $accPago['tipo'] ?? null, 'pago: tipo de accion');
+t_eq($cuentaViejaId, (int) ($accPago['cuenta_id'] ?? 0), 'pago: elige la cuenta mas antigua');
+t_eq(300.0, (float) ($accPago['monto'] ?? 0), 'pago: monto 300');
+t_eq('efectivo', $accPago['metodo'] ?? null, 'pago: efectivo default');
+
+// ── Sin monto: propone saldar la cuenta ──
+$r = $servicio->responder($hotelId, 'pagale al proveedor garcia', $usuarioId);
+t_eq(500.0, (float) ($r['accion']['monto'] ?? 0), 'pago sin monto: propone el saldo completo');
+
+// ── Monto mayor al saldo: se frena en la propuesta ──
+$r = $servicio->responder($hotelId, 'pagale 2000 al proveedor garcia', $usuarioId);
+t_eq('accion:pago_excede', $r['intent'] ?? null, 'pago excede: avisa el saldo');
+t_ok(empty($r['accion']), 'pago excede: sin payload de accion');
+
+// ── Ejecutar el pago confirmado: cuenta + caja + trazabilidad ──
+$e = $servicio->ejecutarAccion($hotelId, 'pagar_proveedor', $accPago, $usuarioId);
+t_ok(!empty($e['success']), 'ejecutar pago: success');
+$cxp = $db->query("SELECT saldo, estado FROM cuentas_por_pagar WHERE id = ?", [$cuentaViejaId])->fetch();
+t_eq(200.0, (float) ($cxp['saldo'] ?? 0), 'pago ejecutado: saldo 500 - 300 = 200');
+t_eq('parcial', $cxp['estado'] ?? null, 'pago ejecutado: estado parcial');
+$movPago = $db->query(
+    "SELECT tipo, categoria, monto, metodo_pago, corte_id FROM movimientos_caja
+     WHERE hotel_id = ? ORDER BY id DESC LIMIT 1",
+    [$hotelId]
+)->fetch();
+t_eq('gasto', $movPago['tipo'] ?? null, 'pago en caja: tipo gasto');
+t_eq('Pago proveedor', $movPago['categoria'] ?? null, 'pago en caja: categoria Pago proveedor');
+t_eq(300.0, (float) ($movPago['monto'] ?? 0), 'pago en caja: monto 300');
+t_ok((int) ($movPago['corte_id'] ?? 0) > 0, 'pago en caja: ligado al corte abierto');
+$movCxp = $db->query(
+    "SELECT tipo_movimiento, monto, saldo_posterior FROM cuentas_por_pagar_movimientos
+     WHERE hotel_id = ? AND cuenta_por_pagar_id = ? ORDER BY id DESC LIMIT 1",
+    [$hotelId, $cuentaViejaId]
+)->fetch();
+t_eq('PAGO_REFERENCIAL', $movCxp['tipo_movimiento'] ?? null, 'trazabilidad CxP: movimiento referencial');
+t_eq(200.0, (float) ($movCxp['saldo_posterior'] ?? -1), 'trazabilidad CxP: saldo posterior 200');
+
+// ── Proveedor no identificado: lista a quienes se les debe ──
+$r = $servicio->responder($hotelId, 'pagale al proveedor fantasma', $usuarioId);
+t_eq('accion:pago_sin_proveedor', $r['intent'] ?? null, 'pago sin proveedor: pregunta a cual');
+
+// ── Nombre que tambien es de personal y sin la palabra "proveedor" ──
+$r = $servicio->responder($hotelId, 'pagale 200 a maria', $usuarioId);
+t_eq('accion:pago_quiza_nomina', $r['intent'] ?? null, 'nombre compartido: manda a desambiguar');
+t_ok(empty($r['accion']), 'nombre compartido: sin payload de accion');
+
+// ── "paga la nomina" no es un pago a proveedor ──
+$r = $servicio->responder($hotelId, 'paga la nomina', $usuarioId);
+t_ok(strpos((string) ($r['intent'] ?? ''), 'accion:pago') !== 0, 'paga la nomina: no se confunde con proveedor');
+
 // ── Hotel sin el bloque promociones: la accion ni se propone ──
 $db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel Sin Promos', 'sin-promos', 1, NOW())");
 $hotelB = (int) $db->lastInsertId();
 $r = $servicio->responder($hotelB, 'crea un cupon de 10% para agosto', $usuarioId);
 t_eq('accion:cupon_sin_bloque', $r['intent'] ?? null, 'sin bloque: avisa que no esta contratado');
 t_ok(empty($r['accion']), 'sin bloque: sin payload de accion');
+$r = $servicio->responder($hotelB, 'pagale 100 al proveedor garcia', $usuarioId);
+t_eq('accion:pago_sin_bloque', $r['intent'] ?? null, 'sin bloque compras: el pago ni se propone');
 
 t_fin();

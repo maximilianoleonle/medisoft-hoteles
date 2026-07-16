@@ -277,6 +277,8 @@ class CopilotoService
             'accion:gasto_ok' => 'Gasto registrado en caja',
             'accion:cupon' => 'Crear cupon (propuesta)',
             'accion:cupon_ok' => 'Cupon creado',
+            'accion:pago' => 'Pagar a proveedor (propuesta)',
+            'accion:pago_ok' => 'Pago a proveedor registrado',
             'resumen_dia' => '📋 Resumen del dia',
         ];
         return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
@@ -348,6 +350,7 @@ class CopilotoService
             ?? $this->detectarAccionFinalizarMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionGasto($norm, $hotelId)
+            ?? $this->detectarAccionPagoProveedor($norm, $hotelId)
             ?? $this->detectarAccionCupon($norm, $hotelId)
             ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
@@ -2057,6 +2060,283 @@ class CopilotoService
     }
 
     /**
+     * Detecta "pagale 500 al proveedor Garcia" y arma la PROPUESTA del pago
+     * de una cuenta por pagar (no ejecuta). Segunda accion de dinero del
+     * copiloto y tambien solo egreso: el registro pasa por
+     * CuentaPorPagarPagoService::registrarPago (mismo motor y candados que
+     * la pantalla: corte abierto, proveedor del hotel, compra recibida,
+     * monto <= saldo, todo FOR UPDATE). Sin monto dictado se propone saldar
+     * la cuenta. Se paga la cuenta MAS ANTIGUA pendiente del proveedor.
+     */
+    private function detectarAccionPagoProveedor(string $norm, int $hotelId): ?array
+    {
+        if (!preg_match('/\b(paga|pagale|pagarle|pagar|abona|abonale|abonarle|abonar)\b/', $norm)) {
+            return null;
+        }
+
+        $prov = $this->buscarProveedorEnTexto($norm, $hotelId);
+        $mencionaProveedor = strpos($norm, 'proveedor') !== false;
+        // Sin proveedor identificado NI la palabra "proveedor", la frase no es
+        // nuestra ("paga la nomina" debe caer a sus propias respuestas).
+        if ($prov === null && !$mencionaProveedor) {
+            return null;
+        }
+
+        // Mismo gate que la pantalla de Cuentas por pagar.
+        if (!$this->tieneModulo('compras', $hotelId)) {
+            return ['intent' => 'accion:pago_sin_bloque', 'respuesta' => [
+                'texto' => 'Los pagos a proveedores son del bloque **Compras**, que este hotel no tiene activo. Se contrata desde Configuracion.',
+                'enlace' => ['url' => 'configuracion', 'texto' => 'Ver bloques'],
+            ]];
+        }
+        if (function_exists('can') && !can('cuentas_por_pagar.pagar')) {
+            return ['intent' => 'accion:pago_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para pagar a proveedores. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        if ($prov !== null && isset($prov['ambiguos'])) {
+            return ['intent' => 'accion:pago_ambiguo', 'respuesta' => [
+                'texto' => 'Hay varios proveedores que casan con ese nombre: **' . implode('**, **', $prov['ambiguos']) . '**. Dimelo con el nombre completo.',
+                'enlace' => null,
+            ]];
+        }
+
+        // Un nombre que tambien es de un trabajador y sin la palabra
+        // "proveedor" huele a nomina: eso se paga en su pantalla, no aqui.
+        if ($prov !== null && !$mencionaProveedor) {
+            $trab = $this->buscarTrabajadorEnTexto($norm, $hotelId);
+            if ($trab !== null && !isset($trab['ambiguos'])) {
+                return ['intent' => 'accion:pago_quiza_nomina', 'respuesta' => [
+                    'texto' => "**{$prov['nombre']}** tambien casa con alguien de tu personal. Si es pago a proveedor dime \"pagale al proveedor {$prov['nombre']}\"; los pagos de nomina se hacen desde **Personal**.",
+                    'enlace' => $this->tieneModulo('personal', $hotelId) ? ['url' => 'trabajadores', 'texto' => 'Ver personal'] : null,
+                ]];
+            }
+        }
+
+        if ($prov === null) {
+            $conDeuda = $this->proveedoresConDeuda($hotelId);
+            if (empty($conDeuda)) {
+                return ['intent' => 'accion:pago_sin_deuda', 'respuesta' => [
+                    'texto' => 'No tienes cuentas por pagar pendientes con ningun proveedor. ✔',
+                    'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
+                ]];
+            }
+            $lista = array_map(function ($p) {
+                return $p['nombre'] . ' ($' . number_format((float) $p['saldo'], 2) . ')';
+            }, $conDeuda);
+            return ['intent' => 'accion:pago_sin_proveedor', 'respuesta' => [
+                'texto' => '¿A que proveedor? Tienes saldo pendiente con: **' . implode('**, **', $lista) . '**. Dimelo asi: "pagale 500 al proveedor ' . $conDeuda[0]['nombre'] . '".',
+                'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
+            ]];
+        }
+
+        $cuenta = $this->cuentaPendienteProveedor($hotelId, (int) $prov['id']);
+        if ($cuenta === null) {
+            return ['intent' => 'accion:pago_sin_deuda', 'respuesta' => [
+                'texto' => "No le debes nada a **{$prov['nombre']}**; no tiene cuentas por pagar pendientes. ✔",
+                'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
+            ]];
+        }
+
+        // Precondiciones del motor (corte abierto, compra recibida...) se
+        // avisan al proponer, con el motivo humano del propio servicio.
+        require_once __DIR__ . '/CuentaPorPagarPagoService.php';
+        try {
+            $eval = (new CuentaPorPagarPagoService($this->db))->evaluarPago($hotelId, (int) $cuenta['id']);
+        } catch (Throwable $e) {
+            error_log('Copiloto: error al evaluar pago CxP: ' . $e->getMessage());
+            $eval = ['elegible' => false, 'motivo_bloqueo' => 'No se pudo evaluar la cuenta. Intenta de nuevo.'];
+        }
+        if (empty($eval['elegible'])) {
+            return ['intent' => 'accion:pago_bloqueado', 'respuesta' => [
+                'texto' => 'No puedo proponer ese pago: ' . (string) ($eval['motivo_bloqueo'] ?? 'la cuenta no es elegible.'),
+                'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
+            ]];
+        }
+
+        $saldo = (float) $cuenta['saldo'];
+        $p = self::parsearPagoProveedor($norm);
+        $monto = $p['monto'] !== null ? round($p['monto'], 2) : $saldo;
+        if ($monto > $saldo + 0.004) {
+            return ['intent' => 'accion:pago_excede', 'respuesta' => [
+                'texto' => 'El saldo con **' . $prov['nombre'] . '** en su cuenta mas antigua es **$' . number_format($saldo, 2)
+                    . '** y no puedo pagar de mas. Dime un monto hasta esa cantidad, o solo "pagale al proveedor ' . $prov['nombre'] . '" para saldarla.',
+                'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
+            ]];
+        }
+
+        $montoTexto = '$' . number_format($monto, 2);
+        $restante = round($saldo - $monto, 2);
+        $desenlace = $restante <= 0.004
+            ? 'la cuenta queda **pagada**'
+            : 'la cuenta queda en **$' . number_format($restante, 2) . '** (parcial)';
+        $folio = trim((string) ($cuenta['folio'] ?? ''));
+        $refCuenta = $folio !== '' ? "cuenta {$folio}" : 'cuenta #' . $cuenta['id'];
+        $extra = ((int) $cuenta['n_pendientes'] > 1)
+            ? ' Ojo: tiene ' . (int) $cuenta['n_pendientes'] . ' cuentas pendientes por $' . number_format((float) $cuenta['saldo_total'], 2) . ' en total; esta es la mas antigua.'
+            : '';
+
+        return ['intent' => 'accion:pago', 'respuesta' => [
+            'texto' => "Puedo pagarle **{$montoTexto}** en {$p['metodo']} a **{$prov['nombre']}** ({$refCuenta}, saldo \$" . number_format($saldo, 2) . "): {$desenlace}. "
+                . "El egreso sale de la caja abierta.{$extra} Confirmalo y lo registro.",
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'pagar_proveedor',
+                'cuenta_id' => (int) $cuenta['id'],
+                'proveedor' => (string) $prov['nombre'],
+                'monto' => $monto,
+                'metodo' => $p['metodo'],
+                'fecha' => date('Y-m-d'),
+                'confirm_titulo' => '¿Pagar al proveedor?',
+                'confirm_msg' => "{$montoTexto} en {$p['metodo']} a {$prov['nombre']} ({$refCuenta}). Sale de la caja abierta y {$desenlace}.",
+                'confirm_ok' => 'Pagar',
+            ],
+        ]];
+    }
+
+    /**
+     * Parser puro (sin BD) del pago dictado. Espera texto normalizado.
+     * Devuelve ['monto' => ?float (null = saldar la cuenta), 'metodo' =>
+     * 'efectivo'|'tarjeta'|'transferencia']. Mismo criterio de monto que el
+     * gasto: con varios numeros gana el que trae $ y si no el mayor.
+     */
+    public static function parsearPagoProveedor(string $norm): array
+    {
+        $metodo = 'efectivo';
+        if (preg_match('/\btarjeta\b/', $norm)) {
+            $metodo = 'tarjeta';
+        } elseif (strpos($norm, 'transferencia') !== false) {
+            $metodo = 'transferencia';
+        }
+
+        $monto = null;
+        if (preg_match_all('/(\$\s*)?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/', $norm, $todos)) {
+            $elegido = 0;
+            if (count($todos[2]) > 1) {
+                $mejorValor = -1.0;
+                foreach ($todos[2] as $i => $m) {
+                    if (($todos[1][$i] ?? '') !== '') {
+                        $elegido = $i;
+                        $mejorValor = null;
+                        break;
+                    }
+                    $valor = (float) str_replace(',', '', $m);
+                    if ($valor > $mejorValor) {
+                        $mejorValor = $valor;
+                        $elegido = $i;
+                    }
+                }
+            }
+            $monto = (float) str_replace(',', '', $todos[2][$elegido]);
+            if ($monto <= 0) {
+                $monto = null;
+            }
+        }
+
+        return ['monto' => $monto, 'metodo' => $metodo];
+    }
+
+    /**
+     * Busca un proveedor ACTIVO del hotel en la frase (nombre completo
+     * primero, luego tokens >= 3 letras). Devuelve ['id','nombre'],
+     * ['ambiguos' => nombres] o null.
+     */
+    private function buscarProveedorEnTexto(string $norm, int $hotelId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT id, nombre FROM proveedores WHERE hotel_id = ? AND activo = 1 LIMIT 300");
+            $stmt->execute([$hotelId]);
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error catalogo proveedores: ' . $e->getMessage());
+            return null;
+        }
+
+        $candidatos = [];
+        foreach ($filas as $f) {
+            $nombre = trim((string) $f['nombre']);
+            $nc = $this->normalizar($nombre);
+            if ($nc === '') {
+                continue;
+            }
+            if (strpos($norm, $nc) !== false) {
+                return ['id' => (int) $f['id'], 'nombre' => $nombre];
+            }
+            foreach (explode(' ', $nc) as $token) {
+                if (mb_strlen($token) < 3 || in_array($token, ['del', 'los', 'las'], true)) {
+                    continue;
+                }
+                if (preg_match('/(^|[^a-z0-9])' . preg_quote($token, '/') . '($|[^a-z0-9])/', $norm)) {
+                    $candidatos[(int) $f['id']] = $nombre;
+                    break;
+                }
+            }
+        }
+
+        if (count($candidatos) === 1) {
+            return ['id' => (int) array_key_first($candidatos), 'nombre' => (string) reset($candidatos)];
+        }
+        if (count($candidatos) > 1) {
+            return ['ambiguos' => array_slice(array_values($candidatos), 0, 3)];
+        }
+
+        return null;
+    }
+
+    /** Proveedores con saldo pendiente: [['nombre','saldo'], ...] (top 6). */
+    private function proveedoresConDeuda(int $hotelId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT p.nombre, SUM(cxp.saldo) saldo
+                 FROM cuentas_por_pagar cxp
+                 INNER JOIN proveedores p ON p.id = cxp.proveedor_id AND p.hotel_id = cxp.hotel_id
+                 WHERE cxp.hotel_id = ? AND cxp.estado IN ('pendiente', 'parcial', 'vencida') AND cxp.saldo > 0
+                 GROUP BY p.id, p.nombre
+                 ORDER BY saldo DESC LIMIT 6"
+            );
+            $stmt->execute([$hotelId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error proveedores con deuda: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Cuenta pendiente MAS ANTIGUA del proveedor (vence primero gana), con el
+     * total de pendientes del mismo proveedor para dar contexto. Null si no
+     * debe nada.
+     */
+    private function cuentaPendienteProveedor(int $hotelId, int $proveedorId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT cxp.id, cxp.folio, cxp.saldo,
+                        (SELECT COUNT(*) FROM cuentas_por_pagar c2
+                          WHERE c2.hotel_id = cxp.hotel_id AND c2.proveedor_id = cxp.proveedor_id
+                            AND c2.estado IN ('pendiente', 'parcial', 'vencida') AND c2.saldo > 0) n_pendientes,
+                        (SELECT COALESCE(SUM(c3.saldo), 0) FROM cuentas_por_pagar c3
+                          WHERE c3.hotel_id = cxp.hotel_id AND c3.proveedor_id = cxp.proveedor_id
+                            AND c3.estado IN ('pendiente', 'parcial', 'vencida') AND c3.saldo > 0) saldo_total
+                 FROM cuentas_por_pagar cxp
+                 WHERE cxp.hotel_id = ? AND cxp.proveedor_id = ?
+                   AND cxp.estado IN ('pendiente', 'parcial', 'vencida') AND cxp.saldo > 0
+                 ORDER BY COALESCE(cxp.fecha_vencimiento, '9999-12-31') ASC, cxp.fecha_emision ASC, cxp.id ASC
+                 LIMIT 1"
+            );
+            $stmt->execute([$hotelId, $proveedorId]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $f ?: null;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error cuenta pendiente proveedor: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Detecta "crea un cupon de 10% para agosto" y arma la PROPUESTA del
      * cupon del motor (no ejecuta). Mismo gate que la pantalla de Cupones:
      * bloques motor_reservas + promociones. El registro final pasa por
@@ -2360,6 +2640,9 @@ class CopilotoService
         if ($tipo === 'crear_cupon') {
             return $this->ejecutarCupon($hotelId, $params, $usuarioId);
         }
+        if ($tipo === 'pagar_proveedor') {
+            return $this->ejecutarPagoProveedor($hotelId, $params, $usuarioId);
+        }
 
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
             return ['success' => false, 'texto' => 'Esa accion no esta disponible desde el copiloto.', 'fuente' => 'reglas'];
@@ -2640,6 +2923,61 @@ class CopilotoService
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => 'Ver cupones', 'url' => 'motor-reservas/cupones']],
+        ];
+    }
+
+    /**
+     * Ejecuta "pagar proveedor" via CuentaPorPagarPagoService::registrarPago
+     * (mismo motor que la pantalla: cuenta y corte FOR UPDATE, monto <=
+     * saldo, referencia de caja trazable, auditoria). El servicio revalida
+     * TODO; aqui solo permiso, bloque y saneo de parametros.
+     */
+    private function ejecutarPagoProveedor(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (!$this->tieneModulo('compras', $hotelId)) {
+            return ['success' => false, 'texto' => 'Este hotel no tiene activo el bloque Compras.', 'fuente' => 'reglas'];
+        }
+        if (function_exists('can') && !can('cuentas_por_pagar.pagar')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para pagar a proveedores.', 'fuente' => 'reglas'];
+        }
+
+        $cuentaId = (int) ($params['cuenta_id'] ?? 0);
+        $monto = round((float) ($params['monto'] ?? 0), 2);
+        $metodo = (string) ($params['metodo'] ?? 'efectivo');
+        if (!in_array($metodo, ['efectivo', 'tarjeta', 'transferencia'], true)) {
+            $metodo = 'efectivo';
+        }
+
+        require_once __DIR__ . '/CuentaPorPagarPagoService.php';
+
+        try {
+            $r = (new CuentaPorPagarPagoService($this->db))->registrarPago($hotelId, $cuentaId, [
+                'monto' => $monto,
+                'metodo_pago' => $metodo,
+                'notas' => 'Registrado desde el copiloto',
+            ], $usuarioId);
+        } catch (Throwable $e) {
+            $this->registrar($hotelId, $usuarioId, "[accion pago cxp {$cuentaId} {$monto}]", 'reglas', 'accion:pago_error', 0, 0);
+            // Los mensajes del servicio son humanos; un error crudo de BD no
+            // llega al usuario.
+            $texto = ($e instanceof PDOException) ? 'No se pudo registrar el pago. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo registrar el pago.');
+            return ['success' => false, 'texto' => $texto, 'fuente' => 'reglas'];
+        }
+
+        $this->registrar($hotelId, $usuarioId, "[accion pago cxp {$cuentaId} {$monto}]", 'reglas', 'accion:pago_ok', 0, 0);
+
+        $proveedor = trim((string) ($params['proveedor'] ?? 'el proveedor'));
+        $saldoPost = (float) ($r['saldo_posterior'] ?? 0);
+        $cierre = ($r['estado'] ?? '') === 'pagada'
+            ? 'La cuenta quedo **pagada por completo**. 🎉'
+            : 'La cuenta quedo con saldo de **$' . number_format($saldoPost, 2) . '** (parcial).';
+
+        return [
+            'success' => true,
+            'texto' => 'Listo ✅ Pago de **$' . number_format((float) ($r['monto'] ?? $monto), 2) . "** en {$metodo} a **{$proveedor}** registrado en la caja. {$cierre}",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver cuentas por pagar', 'url' => 'cuentas-por-pagar']],
         ];
     }
 
@@ -3989,7 +4327,7 @@ class CopilotoService
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
             . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
-            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\", \"crea un cupon de 10% para agosto\"\n"
+            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\", \"crea un cupon de 10% para agosto\", \"pagale 500 al proveedor Garcia\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 

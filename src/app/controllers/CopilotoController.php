@@ -90,6 +90,11 @@ class CopilotoController extends Controller {
             'monto' => (float) str_replace([',', '$', ' '], '', (string) $this->getPost('monto', '0')),
             'categoria_id' => (int) $this->getPost('categoria_id', 0),
             'descripcion' => mb_substr(trim((string) $this->getPost('descripcion', '')), 0, 200),
+            // Solo para pagar_proveedor (CuentaPorPagarPagoService revalida
+            // cuenta, saldo y corte; el metodo se whitelistea en el servicio).
+            'cuenta_id' => (int) $this->getPost('cuenta_id', 0),
+            'metodo' => mb_substr((string) $this->getPost('metodo', ''), 0, 15),
+            'proveedor' => mb_substr(trim((string) $this->getPost('proveedor', '')), 0, 160),
             // Solo para crear_cupon (MotorCuponService::crear revalida todo).
             'codigo' => mb_substr(trim((string) $this->getPost('codigo', '')), 0, 30),
             'cupon_tipo' => mb_substr((string) $this->getPost('cupon_tipo', ''), 0, 10),

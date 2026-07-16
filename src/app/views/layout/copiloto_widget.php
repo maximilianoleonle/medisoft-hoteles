@@ -907,6 +907,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         if (accion.vigente_desde) { datos.append('vigente_desde', accion.vigente_desde); }
         if (accion.vigente_hasta) { datos.append('vigente_hasta', accion.vigente_hasta); }
         if (accion.limite_usos) { datos.append('limite_usos', accion.limite_usos); }
+        if (accion.cuenta_id) { datos.append('cuenta_id', accion.cuenta_id); }
+        if (accion.metodo) { datos.append('metodo', accion.metodo); }
+        if (accion.proveedor) { datos.append('proveedor', accion.proveedor); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -922,6 +925,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                         finalizar_mantenimiento: ['Habitación liberada', 'Quedó disponible para rentar de nuevo. ✅'],
                         registrar_gasto: ['Gasto registrado', 'Quedó anotado en la caja de hoy. 💸'],
                         crear_cupon: ['Cupón creado', 'Ya está activo en el motor de reservas. 🎟️'],
+                        pagar_proveedor: ['Pago registrado', 'El egreso quedó en la caja y el saldo se actualizó. 🤝'],
                         asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️']
                     };
                     var toast = toastPorTipo[accion.tipo] || ['Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️'];

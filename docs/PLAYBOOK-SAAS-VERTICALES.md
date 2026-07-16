@@ -267,6 +267,14 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       y verificar disponibilidad (AGOSTO10 → AGOSTO10-2); el UNIQUE de la
       tabla es el candado final. Un mes referido que ya pasó se corre al año
       siguiente (una vigencia no puede nacer vencida).
+    - Pagos a deuda por chat (CxP): siempre la cuenta MAS ANTIGUA del
+      acreedor (vence primero gana) diciéndolo y nombrando cuántas más hay;
+      sin monto dictado se propone SALDAR; monto > saldo se frena al
+      proponer. Un nombre que también casa con personal y sin la palabra
+      desambiguadora ("proveedor") NO se adivina: se pide la frase explícita
+      (la nómina tiene su propia pantalla). Los métodos con referencia se
+      aceptan solo si el motor la genera trazable (CXP-id-MOV-id); si la
+      referencia es obligatoria y manual, a la pantalla.
     - **GOTCHA (tests)**: el bootstrap de pruebas debe cargar los MISMOS
       helpers que el front controller — un gate con `function_exists()`
       degrada en SILENCIO y el caso negativo pasa por la razón equivocada
