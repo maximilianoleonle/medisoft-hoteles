@@ -193,6 +193,36 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - **GOTCHA**: si la vista esconde el header móvil fijo, quitar también el
       `padding-top` que el body reserva para él; y un `display:flex` propio
       pisa el atributo `hidden` (agregar `[hidden]{display:none}`).
+15. **IA accionable = "IA propone JSON → PHP valida → humano confirma → registro
+    ESTÁNDAR"** (circuito de tarifas del Copiloto, jul 2026; transferible a
+    cualquier consejo IA que pueda convertirse en acción: precios, compras,
+    agenda). Reglas que no se negocian:
+    - La IA emite, al final de su texto normal, un bloque `<sugerencias>` con
+      JSON; un parser PHP puro y testeado aplica límites duros (|pct| ≤ 15,
+      fechas ≤ 90 días, desde ≤ hasta) y DESCARTA entradas inválidas sin tirar
+      el consejo. Sin bloque o JSON roto = texto plano como siempre. El bloque
+      viaja dentro del mismo contenido cacheado (regenerar la vista no re-paga
+      tokens).
+    - El endpoint de aplicar NO confía en el cliente: relee el consejo cacheado
+      en el servidor (fechas/acción/motivo no forjables), el cliente solo manda
+      ventana y %, y el % se re-valida contra los topes. Gate = permiso RBAC
+      del recurso afectado ADEMÁS del bloque comercial IA.
+    - Lo creado es un registro ESTÁNDAR del módulo existente (mismo motor,
+      editable/borrable como cualquiera — esa ES la reversibilidad; no
+      construir "deshacer" aparte) + trazabilidad: `origen`, `consejo_ref`,
+      `aprobado_por`.
+    - Conflictos NUNCA se apilan en silencio: verificar solapamiento y explicar
+      el choque con el registro vigente nombrado.
+    - Cierre del círculo: snapshot (proyección/tarifa) al aplicar y resultado
+      REAL calculado on-demand al renderizar cuando la ventana pasó (sin cron),
+      mostrado junto al registro y re-inyectado al prompt del consejo siguiente
+      con orden de honestidad total (si no mejoró, se dice).
+    - Arranque en frío: si no hay histórico NI contexto capturado, aviso ámbar
+      con captura exprés (chips de meses → registros recurrentes); comparativa
+      multi-año promedia solo años CON datos manteniendo el formato de salida.
+    - **GOTCHA**: `Model::create` devuelve el ID insertado, no la fila; los
+      festivos calculados y las temporadas del hotel deben llevar `tipo`
+      explícito al mezclarse en una sola lista de eventos.
 
 ---
 
