@@ -230,33 +230,23 @@ if ($copEntidad === 'reservacion') {
     }
 }
 
-$copChips = $copChipsContexto;
-
-// Chips que aprenden: sin chips de seccion, el orden lo dicta la frecuencia
-// real de uso del hotel (log copiloto_mensajes, cache 1h). Los fijos de
-// siempre quedan como relleno/fallback.
-if (empty($copChips)) {
-    try {
-        $copChips = (new CopilotoService())->chipsFrecuentes($copHotelId, 6);
-    } catch (Throwable $e) {
-        $copChips = [];
-    }
+// Catalogo de capacidades por PAGINAS (saludo, flechas ‹ ›), filtrado por
+// bloques: frecuentes aprendidos + categorias fijas. La pagina de la
+// PANTALLA visible (chips de contexto de arriba) va primero si aplica.
+try {
+    $copPaginas = (new CopilotoService())->catalogoCapacidades($copHotelId);
+} catch (Throwable $e) {
+    $copPaginas = [];
 }
-
-foreach ($copChipsDefault as $chip) {
-    if (count($copChips) >= 6) {
-        break;
-    }
-    $repetido = false;
-    foreach ($copChips as $existente) {
-        if ($existente[1] === $chip[1]) {
-            $repetido = true;
-            break;
-        }
-    }
-    if (!$repetido) {
-        $copChips[] = $chip;
-    }
+if (!empty($copChipsContexto)) {
+    array_unshift($copPaginas, ['titulo' => 'En esta pantalla', 'items' => array_map(function ($c) {
+        return [$c[0], $c[1], 0];
+    }, array_slice($copChipsContexto, 0, 5))]);
+}
+if (empty($copPaginas)) {
+    $copPaginas = [['titulo' => 'Sugerencias', 'items' => array_map(function ($c) {
+        return [$c[0], $c[1], 0];
+    }, $copChipsDefault)]];
 }
 ?>
 <style>
@@ -385,6 +375,23 @@ html[data-theme="dark"] .cop-viz-fill { background: linear-gradient(90deg, color
 .cop-chip { border: 1px solid #D8D4C9; background: #fff; border-radius: 999px; padding: 5px 11px; font-size: .78rem; cursor: pointer; color: #55607A; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease; }
 .cop-chip:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 4%, #fff); transform: translateY(-1px); box-shadow: 0 8px 16px -10px rgba(20,28,45,.4); }
 .cop-chip:active { transform: translateY(0) scale(.95); }
+/* Catálogo de capacidades por páginas (saludo) — navegación estilo iOS */
+.cop-cat { margin-top: 10px; }
+.cop-cat-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.cop-cat-titulo { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #8A8471; flex: 1; text-align: center; }
+.cop-cat-nav { width: 26px; height: 26px; border-radius: 999px; border: none; background: color-mix(in srgb, var(--brand-primary, #1B2746) 6%, transparent); color: #6B7280; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: background .18s ease, color .18s ease, transform .16s ease; }
+.cop-cat-nav:hover { background: color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent); color: var(--brand-primary, #1B2746); }
+.cop-cat-nav:active { transform: scale(.9); }
+.cop-cat-page { display: none; flex-wrap: wrap; gap: 6px; }
+.cop-cat-page.activa { display: flex; animation: cop-cat-in .28s cubic-bezier(.22,1,.36,1) both; }
+@keyframes cop-cat-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+.cop-cat-dots { display: flex; justify-content: center; gap: 5px; margin-top: 9px; }
+.cop-cat-dot { width: 5px; height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 18%, #D8D4C9); transition: background .18s ease, transform .18s ease; }
+.cop-cat-dot.activa { background: var(--brand-primary, #1B2746); transform: scale(1.25); }
+html[data-theme="dark"] .cop-cat-titulo { color: #A8A193; }
+html[data-theme="dark"] .cop-cat-nav { background: rgba(239,233,220,.08); color: #C9C3B4; }
+html[data-theme="dark"] .cop-cat-dot { background: rgba(239,233,220,.22); }
+html[data-theme="dark"] .cop-cat-dot.activa { background: #EFE9DC; }
 .cop-foot { padding: 10px; border-top: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #EBE7DC); display: flex; gap: 8px; background: #fff; }
 .cop-foot input { flex: 1; min-height: 42px; border: 1px solid #D8D4C9; border-radius: 10px; padding: 0 12px; font-size: .9rem; background: #fff; color: #2A3242; transition: border-color .18s ease, box-shadow .2s ease, background .18s ease; }
 .cop-foot input::placeholder { color: #9AA1B0; }
@@ -648,11 +655,29 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                 <button type="button" class="cop-chip" data-q="¿Quién llega hoy?">¿Quién llega hoy?</button>
             </div>
             <?php else: ?>
-            Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n o c&oacute;mo hacer algo.
-            <div class="cop-sugerencias" style="margin-top:10px;">
-                <?php foreach ($copChips as $copChip): ?>
-                <button type="button" class="cop-chip" data-q="<?= htmlspecialchars($copChip[1], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($copChip[0], ENT_QUOTES, 'UTF-8') ?></button>
+            Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n, o pide una acci&oacute;n. Esto es lo que s&eacute; hacer:
+            <div class="cop-cat" id="cop-cat">
+                <div class="cop-cat-head">
+                    <button type="button" class="cop-cat-nav" data-dir="-1" aria-label="Categoría anterior">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="cop-cat-titulo" id="cop-cat-titulo"><?= htmlspecialchars($copPaginas[0]['titulo'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
+                    <button type="button" class="cop-cat-nav" data-dir="1" aria-label="Categoría siguiente">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+                <?php foreach ($copPaginas as $copI => $copPag): ?>
+                <div class="cop-cat-page<?= $copI === 0 ? ' activa' : '' ?>" data-pagina="<?= (int) $copI ?>">
+                    <?php foreach ($copPag['items'] as $copItem): ?>
+                    <button type="button" class="cop-chip" <?= !empty($copItem[2]) ? 'data-fill' : 'data-q' ?>="<?= htmlspecialchars($copItem[1], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($copItem[0], ENT_QUOTES, 'UTF-8') ?></button>
+                    <?php endforeach; ?>
+                </div>
                 <?php endforeach; ?>
+                <div class="cop-cat-dots" aria-hidden="true">
+                    <?php foreach ($copPaginas as $copI => $copPag): ?>
+                    <span class="cop-cat-dot<?= $copI === 0 ? ' activa' : '' ?>"></span>
+                    <?php endforeach; ?>
+                </div>
             </div>
             <?php endif; ?>
         </div>
@@ -878,6 +903,17 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         } else if (data.enlace && data.enlace.url) {
             html += '<br><a class="cop-enlace" href="' + escapar(resolverUrl(data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
         }
+        // Sugerencias contextuales del servidor: [etiqueta, texto, plantilla].
+        // plantilla=1 rellena el input (órdenes que piden datos); si no, envía.
+        var sug = (data.sugerencias || []).slice(0, 3);
+        if (sug.length) {
+            html += '<div class="cop-sugerencias" style="margin-top:9px;">';
+            sug.forEach(function (s) {
+                if (!s || !s[0] || !s[1]) { return; }
+                html += '<button type="button" class="cop-chip" ' + (s[2] ? 'data-fill' : 'data-q') + '="' + escapar(s[1]) + '">' + escapar(s[0]) + '</button>';
+            });
+            html += '</div>';
+        }
         burbuja.classList.remove('cop-loading');
         burbuja.innerHTML = '<span class="cop-reveal">' + html + '</span>';
         body.scrollTop = body.scrollHeight;
@@ -1020,12 +1056,45 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         }
     }
 
+    // Catálogo del saludo: navegación de páginas con flechas (cíclica).
+    function catNavegar(dir) {
+        var paginas = [].slice.call(document.querySelectorAll('#cop-cat .cop-cat-page'));
+        var dots = [].slice.call(document.querySelectorAll('#cop-cat .cop-cat-dot'));
+        var titulo = document.getElementById('cop-cat-titulo');
+        if (!paginas.length) { return; }
+        var actual = 0;
+        paginas.forEach(function (p, i) { if (p.classList.contains('activa')) { actual = i; } });
+        var destino = (actual + dir + paginas.length) % paginas.length;
+        paginas[actual].classList.remove('activa');
+        paginas[destino].classList.add('activa');
+        if (dots[actual]) { dots[actual].classList.remove('activa'); }
+        if (dots[destino]) { dots[destino].classList.add('activa'); }
+        if (titulo) { titulo.textContent = TITULOS_CAT[destino] || ''; }
+    }
+    var TITULOS_CAT = [].slice.call(document.querySelectorAll('#cop-cat .cop-cat-page')).map(function () { return ''; });
+    <?php if (!$copEsModoDueno): ?>
+    TITULOS_CAT = <?= json_encode(array_column($copPaginas, 'titulo'), JSON_UNESCAPED_UNICODE) ?>;
+    <?php endif; ?>
+
     form.addEventListener('submit', function (e) { e.preventDefault(); preguntar(input.value); });
     body.addEventListener('click', function (e) {
         var del = e.target.closest('.cop-del');
         if (del) { eliminarPregunta(del); return; }
+        var nav = e.target.closest('.cop-cat-nav');
+        if (nav) { catNavegar(parseInt(nav.getAttribute('data-dir'), 10) || 1); return; }
         var chip = e.target.closest('.cop-chip');
-        if (chip) { preguntar(chip.getAttribute('data-q')); }
+        if (chip) {
+            var plantilla = chip.getAttribute('data-fill');
+            if (plantilla !== null) {
+                // Plantilla: rellena el input para que el usuario complete
+                // los datos (habitación, monto, nombre...) y se enfoca.
+                input.value = plantilla;
+                input.focus();
+                try { input.setSelectionRange(plantilla.length, plantilla.length); } catch (err) { /* inputs sin selección */ }
+                return;
+            }
+            preguntar(chip.getAttribute('data-q'));
+        }
     });
 
     // ── Dictado por voz (Web Speech API, es-MX) ──

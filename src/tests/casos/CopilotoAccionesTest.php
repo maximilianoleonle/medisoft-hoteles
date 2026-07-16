@@ -303,6 +303,11 @@ $r = $servicio->responder($hotelId, 'la 204', $usuarioId, '', '', null, json_enc
 t_eq('flujo:reserva_hab_ocupada', $r['intent'] ?? null, 'flujo: habitacion ocupada re-pregunta');
 $fl = $r['flujo'];
 
+// ── Por TIPO: la unica "doble" (204) esta ocupada -> avisa sin libre de ese tipo ──
+$r = $servicio->responder($hotelId, 'una doble', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_hab_tipo_ocupado', $r['intent'] ?? null, 'flujo: tipo sin habitacion libre re-pregunta');
+$fl = $r['flujo'];
+
 // ── "cualquiera" salta la habitacion -> pide nombre ──
 $r = $servicio->responder($hotelId, 'cualquiera', $usuarioId, '', '', null, json_encode($fl));
 t_eq('flujo:reserva_nombre', $r['intent'] ?? null, 'flujo: pide el nombre');
@@ -369,5 +374,28 @@ t_eq('accion:cupon_sin_bloque', $r['intent'] ?? null, 'sin bloque: avisa que no 
 t_ok(empty($r['accion']), 'sin bloque: sin payload de accion');
 $r = $servicio->responder($hotelB, 'pagale 100 al proveedor garcia', $usuarioId);
 t_eq('accion:pago_sin_bloque', $r['intent'] ?? null, 'sin bloque compras: el pago ni se propone');
+
+// ── Sugerencias contextuales: siempre en respuestas terminales ──
+$r = $servicio->responder($hotelId, 'como voy de caja', $usuarioId);
+$sug = $r['sugerencias'] ?? [];
+t_ok(count($sug) === 3, 'sugerencias: 3 chips tras una respuesta de datos');
+t_ok(strpos((string) ($sug[0][1] ?? ''), 'gasto') !== false, 'sugerencias: tema dinero sugiere registrar gasto');
+t_eq(1, (int) ($sug[0][2] ?? 0), 'sugerencias: la orden de gasto es plantilla (rellena, no envia)');
+
+// En una PROPUESTA de accion o un paso del flujo no hay sugerencias (la
+// siguiente jugada ya esta clara: confirmar o contestar).
+$r = $servicio->responder($hotelId, 'registra un gasto de 100 de garrafones en mantenimiento', $usuarioId);
+t_ok(!isset($r['sugerencias']), 'sugerencias: una propuesta de accion no trae chips');
+$r = $servicio->responder($hotelId, 'quiero hacer una reservacion', $usuarioId);
+t_ok(!isset($r['sugerencias']), 'sugerencias: un paso del wizard no trae chips');
+
+// ── Catalogo de capacidades: paginas core + bloques del hotel ──
+$paginas = $servicio->catalogoCapacidades($hotelId);
+$titulos = array_column($paginas, 'titulo');
+t_ok(in_array('Acciones rápidas', $titulos, true), 'catalogo: pagina de acciones');
+t_ok(in_array('Dinero', $titulos, true), 'catalogo: pagina de dinero');
+t_ok(in_array('Tus bloques', $titulos, true), 'catalogo: pagina de bloques contratados');
+$paginasB = $servicio->catalogoCapacidades($hotelB);
+t_ok(!in_array('Tus bloques', array_column($paginasB, 'titulo'), true), 'catalogo: hotel sin bloques no ve esa pagina');
 
 t_fin();

@@ -246,6 +246,154 @@ class CopilotoService
     }
 
     /** Etiqueta humana de un intent del log (para el panel de valor). */
+    /**
+     * Catalogo de capacidades para el saludo del widget, en PAGINAS por
+     * categoria (se navegan con flechas). Filtrado por los bloques activos
+     * del hotel. Item = [etiqueta, texto, plantilla]: plantilla=1 significa
+     * que el chip RELLENA el input (ordenes que necesitan datos del usuario)
+     * en vez de enviar directo.
+     */
+    public function catalogoCapacidades(int $hotelId): array
+    {
+        $paginas = [];
+
+        $frecuentes = $this->chipsFrecuentes($hotelId, 5);
+        if (count($frecuentes) >= 3) {
+            $paginas[] = ['titulo' => 'Tus frecuentes', 'items' => array_map(function ($c) {
+                return [$c[0], $c[1], 0];
+            }, $frecuentes)];
+        }
+
+        $paginas[] = ['titulo' => 'Tu día', 'items' => [
+            ['📋 Resumen del día', 'Dame el resumen del día', 0],
+            ['¿Cuántas habitaciones libres?', '¿Cuántas habitaciones libres tengo hoy?', 0],
+            ['¿Quién llega hoy?', '¿Quién llega hoy?', 0],
+            ['¿Quién está hospedado?', '¿Quién está hospedado?', 0],
+            ['🌙 ¿Cómo cerró el día?', '¿Cómo cerró el día?', 0],
+        ]];
+
+        $paginas[] = ['titulo' => 'Dinero', 'items' => [
+            ['¿Cómo voy de caja?', '¿Cómo voy de caja?', 0],
+            ['Ganancias del mes', '¿Cuánto llevo de ganancias este mes?', 0],
+            ['¿Mejor que el mes pasado?', '¿Voy mejor o peor que el mes pasado?', 0],
+            ['¿En qué se va el dinero?', '¿En qué se me va el dinero este mes?', 0],
+            ['¿Cuánto vendí ayer?', '¿Cuánto vendí ayer?', 0],
+        ]];
+
+        $paginas[] = ['titulo' => 'Acciones rápidas', 'items' => [
+            ['💸 Registrar un gasto', 'registra un gasto de 450 de ', 1],
+            ['🧹 Programar limpieza', 'programa limpieza de la ', 1],
+            ['🔧 Bloquear habitación', 'bloquea la  por ', 1],
+            ['✅ Liberar habitación', 'desbloquea la ', 1],
+            ['🗣️ Asignar limpieza', 'asigna a  la limpieza de la ', 1],
+        ]];
+
+        $paginas[] = ['titulo' => 'Reservaciones', 'items' => [
+            ['🛎️ Nueva reservación', 'Quiero hacer una reservación', 0],
+            ['¿Tiene reserva...?', '¿tiene reserva ', 1],
+            ['¿Hay no-shows?', '¿Tengo no-shows pendientes?', 0],
+            ['Reservas del mes', '¿Cuántas reservaciones hay para este mes?', 0],
+            ['Tarifa promedio', '¿Cuál es mi tarifa promedio?', 0],
+        ]];
+
+        // Pagina de bloques contratados (solo lo que el hotel tiene).
+        $extras = [];
+        if ($this->tieneModulo('promociones', $hotelId)) {
+            $extras[] = ['🎟️ Crear un cupón', 'crea un cupón de 10% para ', 1];
+            $extras[] = ['Cupones activos', '¿Qué cupones tengo activos?', 0];
+        }
+        if ($this->tieneModulo('compras', $hotelId)) {
+            $extras[] = ['🤝 Pagar a un proveedor', 'págale al proveedor ', 1];
+            $extras[] = ['¿Cuánto debo?', '¿Cuánto debo a proveedores?', 0];
+        }
+        if ($this->tieneModulo('inventario', $hotelId)) {
+            $extras[] = ['Por agotarse', '¿Qué productos están por agotarse?', 0];
+        }
+        if ($this->tieneModulo('reputacion', $hotelId)) {
+            $extras[] = ['¿Cómo me califican?', '¿Cómo me califican mis huéspedes?', 0];
+        }
+        if ($this->tieneModulo('nomina_avanzada', $hotelId)) {
+            $extras[] = ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?', 0];
+        }
+        foreach (array_chunk($extras, 5) as $i => $grupo) {
+            $paginas[] = ['titulo' => 'Tus bloques' . ($i > 0 ? ' · ' . ($i + 1) : ''), 'items' => $grupo];
+        }
+
+        return $paginas;
+    }
+
+    /**
+     * Sugerencias contextuales (max 3) para acompañar una respuesta: chips
+     * relacionados con el TEMA que se acaba de responder, para que el
+     * copiloto siempre proponga el siguiente paso. Mismo formato de item que
+     * el catalogo. No aplica cuando hay accion o flujo pendiente.
+     */
+    public function sugerenciasParaRespuesta(?string $intent, int $hotelId): array
+    {
+        $intent = (string) $intent;
+        $gasto = ['💸 Registrar un gasto', 'registra un gasto de 450 de ', 1];
+        $reserva = ['🛎️ Nueva reservación', 'Quiero hacer una reservación', 0];
+        $resumen = ['📋 Resumen del día', 'Dame el resumen del día', 0];
+
+        if (preg_match('/^(resumen_dia|resumen_cierre)/', $intent)) {
+            return [
+                ['¿Cómo voy de caja?', '¿Cómo voy de caja?', 0],
+                ['¿Quién llega hoy?', '¿Quién llega hoy?', 0],
+                $reserva,
+            ];
+        }
+        if (preg_match('/^(ocupacion|habitaciones_estado|hospedados|limpiar_hoy|ctx:habitacion)/', $intent)) {
+            return [
+                ['🧹 Programar limpieza', 'programa limpieza de la ', 1],
+                ['🔧 Bloquear habitación', 'bloquea la  por ', 1],
+                ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?', 0],
+            ];
+        }
+        if (preg_match('/^(caja|ganancias|comparar_meses|pago_metodo|dia_top|gastos_categoria|noches_vendidas|tarifa_promedio)/', $intent)) {
+            return [
+                $gasto,
+                ['¿En qué se va el dinero?', '¿En qué se me va el dinero este mes?', 0],
+                ['¿Mejor que el mes pasado?', '¿Voy mejor o peor que el mes pasado?', 0],
+            ];
+        }
+        if (preg_match('/^(llegadas|salidas|reservas_hoy|reservaciones_mes|no_shows|checkouts_vencidos|busca:huesped|estancia_promedio|cancelaciones_mes|ctx:reserva)/', $intent)) {
+            return [
+                $reserva,
+                ['¿Quién está hospedado?', '¿Quién está hospedado?', 0],
+                ['¿Hay no-shows?', '¿Tengo no-shows pendientes?', 0],
+            ];
+        }
+        if (strpos($intent, 'cupones') === 0 && $this->tieneModulo('promociones', $hotelId)) {
+            return [
+                ['🎟️ Crear un cupón', 'crea un cupón de 10% para ', 1],
+                ['Reservas del mes', '¿Cuántas reservaciones hay para este mes?', 0],
+                $resumen,
+            ];
+        }
+        if (strpos($intent, 'cxp') === 0 && $this->tieneModulo('compras', $hotelId)) {
+            return [
+                ['🤝 Pagar a un proveedor', 'págale al proveedor ', 1],
+                ['¿Cómo voy de caja?', '¿Cómo voy de caja?', 0],
+                $resumen,
+            ];
+        }
+
+        return [$resumen, $gasto, $reserva];
+    }
+
+    /**
+     * Adjunta sugerencias contextuales a una respuesta terminal (sin accion
+     * pendiente ni flujo en curso: ahi la siguiente jugada ya esta clara).
+     */
+    private function conSugerencias(array $r, ?string $intent, int $hotelId): array
+    {
+        if (!empty($r['accion']) || !empty($r['flujo'])) {
+            return $r;
+        }
+        $r['sugerencias'] = $this->sugerenciasParaRespuesta($intent, $hotelId);
+        return $r;
+    }
+
     public function etiquetaIntent(string $intent): string
     {
         $def = self::CHIPS_POR_INTENT[$intent] ?? null;
@@ -345,7 +493,7 @@ class CopilotoService
             if ($intentCtx !== null) {
                 $r = $this->responderEntidad($hotelId, $intentCtx, $contexto);
                 $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentCtx, 0, 0);
-                return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentCtx];
+                return $this->conSugerencias($r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentCtx], $intentCtx, $hotelId);
             }
         }
 
@@ -388,7 +536,7 @@ class CopilotoService
         if ($intentSeguimiento !== null) {
             $r = $this->responderIntent($hotelId, $intentSeguimiento, $norm);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intentSeguimiento, 0, 0);
-            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentSeguimiento];
+            return $this->conSugerencias($r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intentSeguimiento], $intentSeguimiento, $hotelId);
         }
 
         // 0.8) Busqueda de huesped por nombre: "¿tiene reserva Garcia?",
@@ -397,7 +545,7 @@ class CopilotoService
         if ($nombreBuscado !== null) {
             $r = $this->responderBusquedaHuesped($hotelId, $nombreBuscado);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', 'busca:huesped', 0, 0);
-            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => 'busca:huesped'];
+            return $this->conSugerencias($r + ['success' => true, 'fuente' => 'reglas', 'intent' => 'busca:huesped'], 'busca:huesped', $hotelId);
         }
 
         // 1) Ayuda "como hago X" con FAQ deterministo. Va PRIMERO: sus frases son
@@ -407,7 +555,7 @@ class CopilotoService
         $faq = $this->detectarFaq($norm, $hotelId);
         if ($faq !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $faq['intent'], 0, 0);
-            return ['success' => true, 'texto' => $faq['texto'], 'fuente' => 'reglas', 'enlace' => $faq['enlace'], 'intent' => $faq['intent']];
+            return $this->conSugerencias(['success' => true, 'texto' => $faq['texto'], 'fuente' => 'reglas', 'enlace' => $faq['enlace'], 'intent' => $faq['intent']], $faq['intent'], $hotelId);
         }
 
         // 2) Reglas de datos (deterministas).
@@ -415,7 +563,7 @@ class CopilotoService
         if ($intent !== null) {
             $r = $this->responderIntent($hotelId, $intent, $norm);
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $intent, 0, 0);
-            return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intent];
+            return $this->conSugerencias($r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intent], $intent, $hotelId);
         }
 
         // 3) IA opcional para lo abierto, con el hilo reciente como contexto
@@ -424,14 +572,14 @@ class CopilotoService
             $ia = $this->responderConIa($hotelId, $pregunta, self::sanearHistorial($historial));
             $this->registrar($hotelId, $usuarioId, $pregunta, $ia['success'] ? 'ia' : 'fallback', null, (int) ($ia['tokens_entrada'] ?? 0), (int) ($ia['tokens_salida'] ?? 0));
             if (!empty($ia['success'])) {
-                return ['success' => true, 'texto' => $ia['texto'], 'fuente' => 'ia', 'enlace' => null];
+                return $this->conSugerencias(['success' => true, 'texto' => $ia['texto'], 'fuente' => 'ia', 'enlace' => null], null, $hotelId);
             }
-            return ['success' => true, 'texto' => $ia['message'] ?? $this->textoFallback(), 'fuente' => 'fallback', 'enlace' => null];
+            return $this->conSugerencias(['success' => true, 'texto' => $ia['message'] ?? $this->textoFallback(), 'fuente' => 'fallback', 'enlace' => null], null, $hotelId);
         }
 
         // 4) Sin IA: sugerencias.
         $this->registrar($hotelId, $usuarioId, $pregunta, 'fallback', null, 0, 0);
-        return ['success' => true, 'texto' => $this->textoFallback(), 'fuente' => 'fallback', 'enlace' => null];
+        return $this->conSugerencias(['success' => true, 'texto' => $this->textoFallback(), 'fuente' => 'fallback', 'enlace' => null], null, $hotelId);
     }
 
     // ───────────────────────── Reglas de datos ─────────────────────────
@@ -2622,7 +2770,7 @@ class CopilotoService
         }
 
         $f['paso'] = $paso;
-        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f)];
+        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f, '', $hotelId)];
     }
 
     /** Estado inicial del flujo conversacional de reservacion. */
@@ -2695,11 +2843,11 @@ class CopilotoService
     }
 
     /** Pregunta del paso actual, con el estado del flujo para el widget. */
-    private function preguntaFlujoReserva(array $f, string $prefacio = ''): array
+    private function preguntaFlujoReserva(array $f, string $prefacio = '', int $hotelId = 0): array
     {
         $preguntas = [
             'fechas' => '¿Para que fechas? Dime por ejemplo "del 20 al 22 de agosto", "el 15 de agosto por 3 noches" o "manana por 2 noches".',
-            'habitacion' => '¿Que habitacion le doy? Dime el numero (como aparece en Habitaciones) o "cualquiera" para elegirla en el formulario.',
+            'habitacion' => $this->preguntaHabitacion($hotelId),
             'nombre' => '¿A nombre de quien va? Dime el nombre del huesped, o "sin nombre" para capturarlo en el formulario.',
             'telefono' => 'No encuentro a **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** en tus huespedes; lo registro como nuevo. ¿Cual es su telefono? (o dime "sin telefono")',
         ];
@@ -2739,7 +2887,7 @@ class CopilotoService
             case 'fechas':
                 $fechas = self::parsearFechasReserva($norm);
                 if ($fechas === null) {
-                    return ['intent' => 'flujo:reserva_fechas_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No entendi esas fechas.')];
+                    return ['intent' => 'flujo:reserva_fechas_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No entendi esas fechas.', $hotelId)];
                 }
                 $f['fe'] = $fechas['entrada'];
                 $f['fs'] = $fechas['salida'];
@@ -2757,15 +2905,27 @@ class CopilotoService
                     $f['hab_skip'] = 1;
                     break;
                 }
+                // 1) ¿Dio un numero exacto? (como aparece en Habitaciones)
                 $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
-                if ($hab === null) {
-                    return ['intent' => 'flujo:reserva_hab_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No encontre esa habitacion en tu catalogo.')];
+                if ($hab !== null) {
+                    if ($this->habitacionLibre($hotelId, (int) $hab['id'], $f['fe'], $f['fs']) === false) {
+                        return ['intent' => 'flujo:reserva_hab_ocupada', 'respuesta' => $this->preguntaFlujoReserva($f, 'La ' . $hab['numero'] . ' NO esta libre esas noches.', $hotelId)];
+                    }
+                    $f['hab_id'] = (int) $hab['id'];
+                    $f['hab_num'] = (string) $hab['numero'];
+                    break;
                 }
-                if ($this->habitacionLibre($hotelId, (int) $hab['id'], $f['fe'], $f['fs']) === false) {
-                    return ['intent' => 'flujo:reserva_hab_ocupada', 'respuesta' => $this->preguntaFlujoReserva($f, 'La ' . $hab['numero'] . ' NO esta libre esas noches.')];
+                // 2) ¿Dio un TIPO (sencilla, doble…)? Le aparto una libre de ese tipo.
+                $porTipo = $this->buscarHabitacionLibrePorTipo($hotelId, $norm, $f['fe'], $f['fs']);
+                if ($porTipo === null) {
+                    return ['intent' => 'flujo:reserva_hab_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No reconoci esa habitacion ni el tipo.', $hotelId)];
                 }
-                $f['hab_id'] = (int) $hab['id'];
-                $f['hab_num'] = (string) $hab['numero'];
+                if (isset($porTipo['sin_libre'])) {
+                    return ['intent' => 'flujo:reserva_hab_tipo_ocupado', 'respuesta' => $this->preguntaFlujoReserva($f, 'No me queda ninguna **' . $porTipo['tipo_label'] . '** libre esas noches; dime otro tipo o un numero.', $hotelId)];
+                }
+                $f['hab_id'] = (int) $porTipo['id'];
+                $f['hab_num'] = (string) $porTipo['numero'];
+                $prefacio = 'Te aparto la **' . $porTipo['numero'] . '** (' . $porTipo['tipo_label'] . ') ✔.';
                 break;
 
             case 'nombre':
@@ -2776,7 +2936,7 @@ class CopilotoService
                 $nombre = trim((string) preg_replace('/^(se llama|a nombre de|para|es|el señor|la señora|sr|sra)\s+/', '', $norm));
                 $nombre = trim((string) preg_replace('/[^a-z ]/', '', $nombre));
                 if (mb_strlen($nombre) < 3) {
-                    return ['intent' => 'flujo:reserva_nombre_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'Necesito un nombre de al menos 3 letras.')];
+                    return ['intent' => 'flujo:reserva_nombre_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'Necesito un nombre de al menos 3 letras.', $hotelId)];
                 }
                 $res = $this->buscarHuespedPorNombre($hotelId, $nombre);
                 if (isset($res['id'])) {
@@ -2784,7 +2944,7 @@ class CopilotoService
                     $f['nombre'] = (string) $res['nombre'];
                     $prefacio = 'Encontre a **' . $res['nombre'] . '** en tus huespedes ✔.';
                 } elseif (isset($res['varios'])) {
-                    return ['intent' => 'flujo:reserva_nombre_varios', 'respuesta' => $this->preguntaFlujoReserva($f, 'Hay varios huespedes que casan: **' . implode('**, **', $res['varios']) . '**. Dimelo con el nombre completo.')];
+                    return ['intent' => 'flujo:reserva_nombre_varios', 'respuesta' => $this->preguntaFlujoReserva($f, 'Hay varios huespedes que casan: **' . implode('**, **', $res['varios']) . '**. Dimelo con el nombre completo.', $hotelId)];
                 } else {
                     $f['nombre'] = $nombre;
                     $f['nuevo'] = 1;
@@ -2798,7 +2958,7 @@ class CopilotoService
                     break;
                 }
                 if (!preg_match('/(\d[\d\s-]{5,18}\d)/', $norm, $m)) {
-                    return ['intent' => 'flujo:reserva_tel_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No vi un telefono valido (minimo 7 digitos).')];
+                    return ['intent' => 'flujo:reserva_tel_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'No vi un telefono valido (minimo 7 digitos).', $hotelId)];
                 }
                 $f['tel'] = mb_substr((string) preg_replace('/[^\d]/', '', $m[1]), 0, 20);
                 $f['tel_ok'] = 1;
@@ -2815,7 +2975,7 @@ class CopilotoService
         }
 
         $f['paso'] = $paso;
-        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f, $prefacio)];
+        return ['intent' => 'flujo:reserva_' . $paso, 'respuesta' => $this->preguntaFlujoReserva($f, $prefacio, $hotelId)];
     }
 
     /**
@@ -3146,6 +3306,117 @@ class CopilotoService
         }
 
         return $mejor;
+    }
+
+    /**
+     * Pregunta del paso 'habitacion' redactada con los tipos REALES del hotel
+     * (sencilla, doble, Manolo…, segun su catalogo). Guia por tipo primero —
+     * "cualquiera" queda como salida clara, no como opcion principal.
+     */
+    private function preguntaHabitacion(int $hotelId): string
+    {
+        $tipos = $hotelId > 0 ? $this->tiposHabitacionDisponibles($hotelId) : [];
+        $ejemplos = $tipos !== []
+            ? implode(', ', array_slice(array_values($tipos), 0, 4))
+            : 'sencilla, doble, triple';
+        return '¿De que tipo la quieres? Dime el tipo (' . $ejemplos . ') y te aparto una libre, '
+            . 'o el numero exacto si ya sabes cual. Si prefieres elegirla en el formulario, di "cualquiera".';
+    }
+
+    /**
+     * Tipos de habitacion presentes y activos en el hotel, como
+     * ['clave_enum' => 'Etiqueta bonita'] (reusa el catalogo del hotel).
+     */
+    private function tiposHabitacionDisponibles(int $hotelId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT DISTINCT tipo FROM habitaciones WHERE hotel_id = ? AND activa = 1 ORDER BY tipo"
+            );
+            $stmt->execute([$hotelId]);
+            $tipos = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $t) {
+                $t = (string) $t;
+                if ($t === '') {
+                    continue;
+                }
+                $tipos[$t] = function_exists('get_tipo_habitacion')
+                    ? get_tipo_habitacion($t)
+                    : ucfirst(str_replace('_', ' ', $t));
+            }
+            return $tipos;
+        } catch (Throwable $e) {
+            error_log('Copiloto: error tipos habitacion: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Detecta un TIPO de habitacion en el texto (por clave o etiqueta del
+     * catalogo, mas sinonimos comunes) y devuelve la primera libre de ese tipo
+     * en las fechas. Retornos: ['id','numero','tipo_label'] si aparto una;
+     * ['tipo_label','sin_libre'=>true] si el tipo existe pero no hay libre;
+     * null si el texto no menciona ningun tipo conocido.
+     */
+    private function buscarHabitacionLibrePorTipo(int $hotelId, string $norm, string $fe, string $fs): ?array
+    {
+        $tipos = $this->tiposHabitacionDisponibles($hotelId);
+        if ($tipos === []) {
+            return null;
+        }
+
+        // Match por clave o etiqueta; gana el candidato mas largo (evita que
+        // "doble" pise a "doble con jacuzzi").
+        $tipoMatch = null;
+        $labelMatch = '';
+        $lenMatch = 0;
+        foreach ($tipos as $clave => $label) {
+            foreach ([$clave, $label] as $cand) {
+                $c = trim(str_replace('_', ' ', $this->normalizar((string) $cand)));
+                if ($c === '') {
+                    continue;
+                }
+                $patron = '/(^|[^a-z0-9])' . preg_quote($c, '/') . '($|[^a-z0-9])/';
+                if (preg_match($patron, $norm) && mb_strlen($c) > $lenMatch) {
+                    $tipoMatch = (string) $clave;
+                    $labelMatch = (string) $label;
+                    $lenMatch = mb_strlen($c);
+                }
+            }
+        }
+
+        // Sinonimos habituales cuando no dijo la palabra exacta del catalogo.
+        if ($tipoMatch === null) {
+            $sinonimos = ['individual' => 'sencilla', 'simple' => 'sencilla', 'matrimonial' => 'doble', 'king' => 'doble'];
+            foreach ($sinonimos as $syn => $clave) {
+                if (isset($tipos[$clave]) && preg_match('/(^|[^a-z0-9])' . $syn . '($|[^a-z0-9])/', $norm)) {
+                    $tipoMatch = $clave;
+                    $labelMatch = (string) $tipos[$clave];
+                    break;
+                }
+            }
+        }
+
+        if ($tipoMatch === null) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, numero FROM habitaciones WHERE hotel_id = ? AND activa = 1 AND tipo = ? ORDER BY numero LIMIT 50"
+            );
+            $stmt->execute([$hotelId, $tipoMatch]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $h) {
+                if ($this->habitacionLibre($hotelId, (int) $h['id'], $fe, $fs) === true) {
+                    return ['id' => (int) $h['id'], 'numero' => (string) $h['numero'], 'tipo_label' => $labelMatch];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Copiloto: error habitacion por tipo: ' . $e->getMessage());
+            return null;
+        }
+
+        return ['tipo_label' => $labelMatch, 'sin_libre' => true];
     }
 
     private function habitacionPorId(int $hotelId, int $habitacionId): ?array

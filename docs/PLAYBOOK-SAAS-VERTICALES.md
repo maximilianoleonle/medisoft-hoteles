@@ -321,6 +321,16 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       `flujo_fin`. "Cancelar" disponible en todo paso (y anunciado).
     - Respuestas de escape por paso ("cualquiera", "sin nombre", "sin
       teléfono"): lo opcional jamás secuestra la conversación.
+    - Descubribilidad SIN saturar: el saludo trae el catálogo COMPLETO de
+      capacidades en páginas por categoría (flechas ‹ › estilo iOS + dots,
+      filtrado por bloques del tenant, frecuentes aprendidos primero, la
+      página de la pantalla visible antes que todo); después de CADA
+      respuesta terminal van máximo 3 sugerencias contextuales del TEMA
+      recién respondido (tras caja → registrar gasto). Chips de dos tipos:
+      pregunta completa (envía) y PLANTILLA (rellena el input con la orden
+      a medias — "registra un gasto de 450 de " — y enfoca): una orden que
+      necesita datos jamás se auto-envía. Sin sugerencias cuando hay acción
+      o wizard pendiente (la siguiente jugada ya está clara).
     - La escritura ocurre SOLO al final vía la acción confirmable de
       siempre, y el cierre revalida: disponibilidad al momento (pudo
       ocuparse mientras chateaban) y "buscar antes de insertar" para que el

@@ -54,6 +54,7 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 7. Pregunta de datos a media captura ("¿cuánto tengo en caja?") → responde normal y el wizard sigue donde iba.
 8. **Eliminar pregunta (✕ en la burbuja, hover en PC)** — verificado en navegador (jul-2026): borra pregunta+respuesta del hilo y, si era la última, restaura el contexto anterior — probado con el wizard: eliminar la respuesta de fechas regresa al paso de fechas y la siguiente frase se interpreta como fechas. Borrar el mensaje NO deshace acciones ya ejecutadas.
 9. GOTCHA de QA por widget: los params JSON (`historial`, `flujo`) viajan por POST y el `sanitize()` global los rompía — si el wizard "cae a IA sin razón", revisar el `html_entity_decode` del controller antes de culpar al servicio.
+10. **Catálogo y sugerencias** — verificado en navegador (jul-2026): el saludo muestra el catálogo paginado (flechas ‹ › ciclan páginas, dots, "Tus frecuentes" primero en Los Cedros, "Acciones rápidas"/"Dinero"/"Tus bloques" según bloques); un chip plantilla ("💸 Registrar un gasto") RELLENA el input con la orden a medias y enfoca (no envía); tras responder "¿cómo voy de caja?" aparecen 3 sugerencias del tema dinero. Casos negativos por test: propuestas de acción y pasos del wizard no traen sugerencias.
 
 ## Limpieza / camaristas
 
