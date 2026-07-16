@@ -128,10 +128,13 @@ class GuardianAlertaService
         if (!$dryRun && !empty($usuarios)) {
             try {
                 $envio = (new PwaPushService())->enviarDirectoAUsuarios($hotelId, $payload, $usuarios);
+                // Se marca notificado SOLO si el envio no exploto: si el push
+                // truena, el hallazgo queda pendiente y el proximo --scan lo
+                // reintenta (una alerta alta jamas se pierde en silencio).
+                $estadoModel->marcarNotificados(array_column($pendientes, 'id'), $hotelId);
             } catch (Throwable $e) {
                 error_log('GuardianAlertaService: error al enviar push: ' . $e->getMessage());
             }
-            $estadoModel->marcarNotificados(array_column($pendientes, 'id'), $hotelId);
         }
 
         return [
