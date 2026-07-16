@@ -163,7 +163,7 @@ class MantenimientoController extends Controller
         $costo = $this->parseMonto($this->getPost('costo', ''));
         $costoEstimado = $this->parseMonto($this->getPost('costo_estimado', ''));
         $proveedor = trim((string)$this->getPost('proveedor', ''));
-        $notaCosto = trim((string)$this->getPost('nota_costo', ''));
+        $notaCosto = trim((string)$this->getPost('nota', $this->getPost('nota_costo', '')));
         $observaciones = trim((string)$this->getPost('observaciones', ''));
         $registrarGasto = trim((string)$this->getPost('registrar_gasto', '')) === '1';
         $metodoPago = trim((string)$this->getPost('metodo_pago', 'efectivo'));

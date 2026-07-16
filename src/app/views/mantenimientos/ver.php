@@ -390,7 +390,8 @@ $momentos = [
 
                         <div>
                             <label class="mdet-label" style="display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--md-muted);font-weight:700;margin-bottom:4px;">Nota del costo (opcional)</label>
-                            <input type="text" name="nota_costo" maxlength="255" placeholder="Refacciones + mano de obra..." class="mdet-input" style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;font-size:.9rem;">
+                            <!-- name "nota" (no *_costo): el validador global trata *_costo como campo numerico -->
+                            <input type="text" name="nota" maxlength="255" placeholder="Refacciones + mano de obra..." class="mdet-input" style="width:100%;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;font-size:.9rem;">
                         </div>
 
                         <?php if (!empty($puede_caja)): ?>
