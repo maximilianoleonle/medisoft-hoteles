@@ -69,6 +69,8 @@ body.page-dueno { padding-top: 0 !important; }
     /* Semanticos (fijos por significado) */
     --du-success: #1E9E63; --du-success-soft: #E7F4EC;
     --du-warn: #C2841C; --du-warn-soft: #FBF3E2;
+    /* Ambar para TEXTO: mas oscuro que el semaforo para cumplir AA (5.35:1). */
+    --du-warn-texto: #8F6210;
     --du-error: #D64539;
     /* Base serena */
     --du-surface: #FFFFFF; --du-warm: #FCFAF5; --du-ivory: #F6F2EA;
@@ -104,7 +106,7 @@ body.page-dueno { padding-top: 0 !important; }
     padding: 22px 20px;
     box-shadow: 0 14px 34px -24px rgba(20, 40, 80, .35);
 }
-.du-kicker { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--du-ink-faint); margin-bottom: 8px; }
+.du-kicker { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--du-ink-soft); margin-bottom: 8px; }
 .du-linea { display: flex; align-items: flex-start; gap: 10px; font-size: 18px; color: var(--du-ink-soft); margin-top: 10px; }
 .du-linea i { width: 22px; text-align: center; margin-top: 4px; font-size: 15px; color: var(--du-ink-faint); }
 
@@ -116,7 +118,7 @@ body.page-dueno { padding-top: 0 !important; }
 .du-card[data-estado="ambar"] .du-sem-dot { background: var(--du-warn); box-shadow: 0 0 0 5px var(--du-warn-soft); }
 .du-sem-etiqueta { font-family: var(--du-serif); font-weight: 700; font-size: 30px; line-height: 1.15; }
 .du-sem-detalle { margin-top: 8px; color: var(--du-ink-soft); font-size: 17px; }
-.du-sem-score { margin-left: auto; align-self: flex-start; font-size: 16px; font-weight: 700; color: var(--du-ink-faint); background: var(--du-ivory); border-radius: 999px; padding: 4px 12px; }
+.du-sem-score { margin-left: auto; align-self: flex-start; font-size: 16px; font-weight: 700; color: var(--du-ink-soft); background: var(--du-ivory); border-radius: 999px; padding: 4px 12px; }
 /* Destello dorado: microrecompensa cuando el dia esta bien (la etiqueta manda). */
 .du-spark { width: 15px; height: 15px; flex: none; background: linear-gradient(135deg, #fff, var(--du-gold)); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); animation: duTwinkle 2.6s ease-in-out infinite; }
 @keyframes duTwinkle { 0%, 100% { transform: scale(.7) rotate(0); opacity: .55; } 50% { transform: scale(1) rotate(90deg); opacity: 1; } }
@@ -147,7 +149,7 @@ body.page-dueno { padding-top: 0 !important; }
 .du-card[data-guard="temas"] .du-guard-check { background: var(--du-warn-soft); color: var(--du-warn); }
 .du-guard-texto { font-family: var(--du-serif); font-weight: 700; font-size: 26px; line-height: 1.2; }
 .du-guard-detalle { color: var(--du-ink-soft); font-size: 16px; margin-top: 2px; }
-.du-guard-link { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; margin-top: 10px; padding: 0 4px; font-size: 17px; font-weight: 700; color: var(--du-warn); text-decoration: none; }
+.du-guard-link { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; margin-top: 10px; padding: 0 4px; font-size: 17px; font-weight: 700; color: var(--du-warn-texto); text-decoration: none; }
 .du-guard-link:active { opacity: .7; }
 @keyframes duPop { 0% { transform: scale(.55); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -169,7 +171,7 @@ body.page-dueno { padding-top: 0 !important; }
 
 /* Pie: actualizar */
 .du-pie { text-align: center; padding: 4px 0 8px; }
-.du-reloj { font-size: 15px; color: var(--du-ink-faint); margin-bottom: 12px; }
+.du-reloj { font-size: 15px; color: var(--du-ink-soft); margin-bottom: 12px; }
 .du-refrescar {
     position: relative; overflow: hidden;
     width: 100%; min-height: 56px; border: 0; border-radius: 16px; cursor: pointer;
