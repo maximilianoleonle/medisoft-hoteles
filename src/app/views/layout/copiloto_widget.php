@@ -905,7 +905,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         }
         // Sugerencias contextuales del servidor: [etiqueta, texto, plantilla].
         // plantilla=1 rellena el input (órdenes que piden datos); si no, envía.
-        var sug = (data.sugerencias || []).slice(0, 3);
+        // Tope holgado: las contextuales son 3, pero las respuestas posibles
+        // de un paso del wizard pueden ser hasta 5 (tipos + cancelar).
+        var sug = (data.sugerencias || []).slice(0, 5);
         if (sug.length) {
             html += '<div class="cop-sugerencias" style="margin-top:9px;">';
             sug.forEach(function (s) {

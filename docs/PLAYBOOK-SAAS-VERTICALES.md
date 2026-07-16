@@ -321,6 +321,13 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       `flujo_fin`. "Cancelar" disponible en todo paso (y anunciado).
     - Respuestas de escape por paso ("cualquiera", "sin nombre", "sin
       teléfono"): lo opcional jamás secuestra la conversación.
+    - Cada pregunta del wizard trae sus RESPUESTAS POSIBLES como chips
+      tocables (tocar una ES contestar): las opciones se ven, no se
+      adivinan del texto. Las opciones salen del CATÁLOGO real del tenant
+      (tipos de habitación del hotel, no genéricos; dictar un tipo aparta
+      una unidad libre de ese tipo), el caso "entidad aún no registrada"
+      es un chip explícito que salta el catálogo y va directo al alta, y
+      "✕ Cancelar" siempre es la última opción de cada paso.
     - Descubribilidad SIN saturar: el saludo trae el catálogo COMPLETO de
       capacidades en páginas por categoría (flechas ‹ › estilo iOS + dots,
       filtrado por bloques del tenant, frecuentes aprendidos primero, la

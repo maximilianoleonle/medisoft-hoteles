@@ -2777,7 +2777,7 @@ class CopilotoService
     private static function flujoReservaVacio(): array
     {
         return ['t' => 'reserva', 'paso' => '', 'fe' => '', 'fs' => '', 'hab_id' => 0, 'hab_num' => '',
-            'hab_skip' => 0, 'huesped_id' => 0, 'nombre' => '', 'nom_skip' => 0, 'nuevo' => 0, 'tel' => '', 'tel_ok' => 0];
+            'hab_skip' => 0, 'huesped_id' => 0, 'nombre' => '', 'nom_skip' => 0, 'nuevo' => 0, 'nvo_dir' => 0, 'tel' => '', 'tel_ok' => 0];
     }
 
     /**
@@ -2817,7 +2817,7 @@ class CopilotoService
         $f['huesped_id'] = max(0, (int) ($crudo['huesped_id'] ?? 0));
         $f['nombre'] = mb_substr(trim((string) ($crudo['nombre'] ?? '')), 0, 60);
         $f['tel'] = mb_substr(preg_replace('/[^\d+ -]/', '', (string) ($crudo['tel'] ?? '')), 0, 20);
-        foreach (['hab_skip', 'nom_skip', 'nuevo', 'tel_ok'] as $k) {
+        foreach (['hab_skip', 'nom_skip', 'nuevo', 'nvo_dir', 'tel_ok'] as $k) {
             $f[$k] = ((int) ($crudo[$k] ?? 0)) === 1 ? 1 : 0;
         }
 
@@ -2842,21 +2842,54 @@ class CopilotoService
         return 'listo';
     }
 
-    /** Pregunta del paso actual, con el estado del flujo para el widget. */
+    /**
+     * Pregunta del paso actual, con el estado del flujo para el widget y las
+     * RESPUESTAS POSIBLES como chips (viajan en 'sugerencias', el mismo canal
+     * que ya pinta el widget): tocar una ES contestar. "Cancelar" siempre es
+     * la ultima opcion, asi que el texto ya no lo explica.
+     */
     private function preguntaFlujoReserva(array $f, string $prefacio = '', int $hotelId = 0): array
     {
         $preguntas = [
-            'fechas' => '¿Para que fechas? Dime por ejemplo "del 20 al 22 de agosto", "el 15 de agosto por 3 noches" o "manana por 2 noches".',
+            'fechas' => '¿Para que fechas? Dime por ejemplo "del 20 al 22 de agosto" o "el 15 de agosto por 3 noches", o toca una opcion.',
             'habitacion' => $this->preguntaHabitacion($hotelId),
-            'nombre' => '¿A nombre de quien va? Dime el nombre del huesped, o "sin nombre" para capturarlo en el formulario.',
-            'telefono' => 'No encuentro a **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** en tus huespedes; lo registro como nuevo. ¿Cual es su telefono? (o dime "sin telefono")',
+            'nombre' => $f['nvo_dir'] === 1
+                ? 'Va, lo registro como huesped nuevo 🆕 ¿Como se llama?'
+                : '¿A nombre de quien va? Escribeme el nombre del huesped.',
+            'telefono' => ($f['nvo_dir'] === 1
+                    ? 'Perfecto.'
+                    : 'No encuentro a **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** en tus huespedes; lo registro como nuevo.')
+                . ' ¿Cual es su telefono?',
+        ];
+
+        $cancelar = ['✕ Cancelar', 'cancelar', 0];
+        $opciones = [
+            'fechas' => [['Hoy', 'hoy', 0], ['Mañana', 'manana', 0], ['📅 Del … al …', 'del  al  de ', 1], $cancelar],
+            'habitacion' => $this->opcionesHabitacion($hotelId, $cancelar),
+            'nombre' => $f['nvo_dir'] === 1
+                ? [$cancelar]
+                : [['🆕 Huesped no registrado', 'es un huesped nuevo', 0], ['📝 Capturarlo en el formulario', 'sin nombre', 0], $cancelar],
+            'telefono' => [['Sin telefono', 'sin telefono', 0], $cancelar],
         ];
 
         return [
-            'texto' => ($prefacio !== '' ? $prefacio . ' ' : '') . ($preguntas[$f['paso']] ?? '¿Seguimos?') . ' _(puedes decir "cancelar" en cualquier momento)_',
+            'texto' => ($prefacio !== '' ? $prefacio . ' ' : '') . ($preguntas[$f['paso']] ?? '¿Seguimos?'),
             'enlace' => null,
             'flujo' => $f,
+            'sugerencias' => $opciones[$f['paso']] ?? [$cancelar],
         ];
+    }
+
+    /** Respuestas posibles del paso habitacion: los tipos REALES del hotel. */
+    private function opcionesHabitacion(int $hotelId, array $cancelar): array
+    {
+        $ops = [];
+        foreach (array_slice(array_values($this->tiposHabitacionDisponibles($hotelId)), 0, 3) as $label) {
+            $ops[] = [$label, $label, 0];
+        }
+        $ops[] = ['Cualquiera', 'cualquiera', 0];
+        $ops[] = $cancelar;
+        return $ops;
     }
 
     /**
@@ -2933,10 +2966,21 @@ class CopilotoService
                     $f['nom_skip'] = 1;
                     break;
                 }
+                // "Huesped no registrado" (chip o dictado): el siguiente nombre
+                // va DIRECTO al alta, sin buscarlo en el catalogo.
+                if ($f['nvo_dir'] !== 1 && preg_match('/\b(huesped nuevo|no registrado|no esta registrado|aun no|todavia no)\b/', $norm)) {
+                    $f['nvo_dir'] = 1;
+                    return ['intent' => 'flujo:reserva_nombre_nuevo', 'respuesta' => $this->preguntaFlujoReserva($f, '', $hotelId)];
+                }
                 $nombre = trim((string) preg_replace('/^(se llama|a nombre de|para|es|el señor|la señora|sr|sra)\s+/', '', $norm));
                 $nombre = trim((string) preg_replace('/[^a-z ]/', '', $nombre));
                 if (mb_strlen($nombre) < 3) {
                     return ['intent' => 'flujo:reserva_nombre_reask', 'respuesta' => $this->preguntaFlujoReserva($f, 'Necesito un nombre de al menos 3 letras.', $hotelId)];
+                }
+                if ($f['nvo_dir'] === 1) {
+                    $f['nombre'] = $nombre;
+                    $f['nuevo'] = 1;
+                    break;
                 }
                 $res = $this->buscarHuespedPorNombre($hotelId, $nombre);
                 if (isset($res['id'])) {

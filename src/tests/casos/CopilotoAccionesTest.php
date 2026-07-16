@@ -291,6 +291,10 @@ $r = $servicio->responder($hotelId, 'quiero hacer una reservacion', $usuarioId);
 t_eq('flujo:reserva_fechas', $r['intent'] ?? null, 'flujo: arranca pidiendo fechas');
 $fl = $r['flujo'] ?? null;
 t_eq('fechas', $fl['paso'] ?? null, 'flujo: estado con paso fechas');
+$qs = $r['sugerencias'] ?? [];
+t_ok(count($qs) >= 3, 'flujo fechas: trae respuestas posibles como chips');
+t_eq('hoy', $qs[0][1] ?? null, 'flujo fechas: la primera opcion es hoy');
+t_eq('cancelar', $qs[count($qs) - 1][1] ?? null, 'flujo fechas: cancelar siempre es la ultima opcion');
 
 // ── Responde fechas -> pide habitacion ──
 $r = $servicio->responder($hotelId, 'del 20 al 22 de diciembre', $usuarioId, '', '', null, json_encode($fl));
@@ -312,6 +316,16 @@ $fl = $r['flujo'];
 $r = $servicio->responder($hotelId, 'cualquiera', $usuarioId, '', '', null, json_encode($fl));
 t_eq('flujo:reserva_nombre', $r['intent'] ?? null, 'flujo: pide el nombre');
 $fl = $r['flujo'];
+$labels = array_column($r['sugerencias'] ?? [], 0);
+t_ok(in_array('🆕 Huesped no registrado', $labels, true), 'flujo nombre: chip de huesped no registrado');
+
+// ── Rama "huesped no registrado" (chip): el nombre va DIRECTO al alta ──
+$r2 = $servicio->responder($hotelId, 'es un huesped nuevo', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_nombre_nuevo', $r2['intent'] ?? null, 'nvo_dir: reconoce la intencion de alta');
+t_eq(1, $r2['flujo']['nvo_dir'] ?? 0, 'nvo_dir: flag activo y sobrevive el saneador');
+$r2 = $servicio->responder($hotelId, 'juan perez', $usuarioId, '', '', null, json_encode($r2['flujo']));
+t_eq('flujo:reserva_telefono', $r2['intent'] ?? null, 'nvo_dir: aunque el nombre exista, va directo al alta');
+t_eq(1, $r2['flujo']['nuevo'] ?? 0, 'nvo_dir: marcado nuevo sin buscar el catalogo');
 
 // ── Pregunta de datos a MEDIA captura: se responde y el flujo sigue vivo ──
 $r = $servicio->responder($hotelId, 'cuanto tengo en caja?', $usuarioId, '', '', null, json_encode($fl));
@@ -387,7 +401,8 @@ t_eq(1, (int) ($sug[0][2] ?? 0), 'sugerencias: la orden de gasto es plantilla (r
 $r = $servicio->responder($hotelId, 'registra un gasto de 100 de garrafones en mantenimiento', $usuarioId);
 t_ok(!isset($r['sugerencias']), 'sugerencias: una propuesta de accion no trae chips');
 $r = $servicio->responder($hotelId, 'quiero hacer una reservacion', $usuarioId);
-t_ok(!isset($r['sugerencias']), 'sugerencias: un paso del wizard no trae chips');
+t_ok(!empty($r['sugerencias']), 'sugerencias: un paso del wizard trae sus RESPUESTAS posibles (no el catalogo)');
+t_eq('cancelar', $r['sugerencias'][count($r['sugerencias']) - 1][1] ?? null, 'sugerencias wizard: cierran con cancelar');
 
 // ── Catalogo de capacidades: paginas core + bloques del hotel ──
 $paginas = $servicio->catalogoCapacidades($hotelId);
