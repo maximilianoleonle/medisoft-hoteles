@@ -282,6 +282,21 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       bloques daba falso para todos). Y en un harness casero, el caso que no
       llama al finalizador (`t_fin()`) no cuenta sus FAIL: el runner reporta
       verde con aserciones rotas.
+18. **Multi-turno barato para el asistente híbrido: el CLIENTE guarda el
+    hilo, el SERVIDOR lo sanea, solo la IA lo ve** (copiloto de hoteles, jul
+    2026). Sin tabla nueva ni sesiones de chat: el widget acumula los pares
+    pregunta/respuesta de la página y los reenvía como JSON; las rutas
+    deterministas (intents, acciones, FAQ) lo ignoran por completo. Reglas:
+    - Un saneador PURO y testeado garantiza el contrato del API de mensajes:
+      solo roles user/assistant, consecutivos fusionados (alternancia),
+      empieza en user y termina en assistant (la pregunta nueva con el
+      snapshot fresco siempre es el turno final), topes de turnos y de
+      caracteres. Basura tipada del cliente jamás revienta.
+    - El historial da CONTEXTO ("¿y eso por qué?"), nunca cifras: el system
+      prompt ordena que los números válidos son solo los datos en vivo del
+      turno actual — un número del historial puede estar viejo.
+    - El hilo viene del cliente y es tan confiable como la pregunta misma
+      (mismo nivel de confianza, mismo scope de hotel del lado servidor).
 
 ---
 

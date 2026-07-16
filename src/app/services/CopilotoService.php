@@ -317,8 +317,12 @@ class CopilotoService
      * anterior del usuario (memoria de conversacion): permite que "¿y manana?"
      * herede el tema. Viene del cliente pero SOLO decide que plantilla usar;
      * los datos siempre se leen con scope de hotel.
+     *
+     * $historial es el hilo reciente del chat (JSON del widget o array) y solo
+     * alimenta a la IA como contexto conversacional multi-turno; se sanea con
+     * sanearHistorial() y jamas toca las respuestas deterministas.
      */
-    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = '', string $intentPrevio = ''): array
+    public function responder(int $hotelId, string $pregunta, ?int $usuarioId = null, string $rutaContexto = '', string $intentPrevio = '', $historial = null): array
     {
         $pregunta = trim($pregunta);
         if ($pregunta === '') {
@@ -394,9 +398,10 @@ class CopilotoService
             return $r + ['success' => true, 'fuente' => 'reglas', 'intent' => $intent];
         }
 
-        // 3) IA opcional para lo abierto.
+        // 3) IA opcional para lo abierto, con el hilo reciente como contexto
+        //    (multi-turno): "¿y eso por que?" ya sabe de que veniamos.
         if ($this->iaDisponible($hotelId)) {
-            $ia = $this->responderConIa($hotelId, $pregunta);
+            $ia = $this->responderConIa($hotelId, $pregunta, self::sanearHistorial($historial));
             $this->registrar($hotelId, $usuarioId, $pregunta, $ia['success'] ? 'ia' : 'fallback', null, (int) ($ia['tokens_entrada'] ?? 0), (int) ($ia['tokens_salida'] ?? 0));
             if (!empty($ia['success'])) {
                 return ['success' => true, 'texto' => $ia['texto'], 'fuente' => 'ia', 'enlace' => null];
@@ -4122,7 +4127,56 @@ class CopilotoService
 
     // ───────────────────────── IA (fallback opcional) ─────────────────────────
 
-    private function responderConIa(int $hotelId, string $pregunta): array
+    /**
+     * Saneador PURO del historial de conversacion que manda el widget
+     * (JSON [{r:'u'|'a', t:'...'}, ...]). El historial viene del cliente y
+     * solo da CONTEXTO conversacional a la IA; las cifras validas siguen
+     * siendo las del snapshot del servidor. Garantiza el contrato del API:
+     * roles alternados (consecutivos se fusionan), empieza en user, termina
+     * en assistant (la pregunta nueva va aparte), maximo 6 turnos de hasta
+     * 600 caracteres.
+     */
+    public static function sanearHistorial($crudo): array
+    {
+        if (is_string($crudo)) {
+            $crudo = $crudo === '' ? [] : json_decode(mb_substr($crudo, 0, 8000), true);
+        }
+        if (!is_array($crudo)) {
+            return [];
+        }
+
+        $limpio = [];
+        foreach ($crudo as $e) {
+            if (!is_array($e)) {
+                continue;
+            }
+            $r = (string) ($e['r'] ?? '');
+            $rol = $r === 'a' ? 'assistant' : ($r === 'u' ? 'user' : null);
+            $texto = trim((string) ($e['t'] ?? ''));
+            if ($rol === null || $texto === '') {
+                continue;
+            }
+            $texto = mb_substr($texto, 0, 600);
+            $ultimo = count($limpio) - 1;
+            if ($ultimo >= 0 && $limpio[$ultimo]['role'] === $rol) {
+                $limpio[$ultimo]['content'] = mb_substr($limpio[$ultimo]['content'] . "\n" . $texto, 0, 900);
+                continue;
+            }
+            $limpio[] = ['role' => $rol, 'content' => $texto];
+        }
+
+        $limpio = array_slice($limpio, -6);
+        while (!empty($limpio) && $limpio[0]['role'] !== 'user') {
+            array_shift($limpio);
+        }
+        while (!empty($limpio) && $limpio[count($limpio) - 1]['role'] !== 'assistant') {
+            array_pop($limpio);
+        }
+
+        return array_values($limpio);
+    }
+
+    private function responderConIa(int $hotelId, string $pregunta, array $historial = []): array
     {
         // White-label: el asistente se presenta con el nombre que el hotel
         // configuro, no con la marca de la plataforma.
@@ -4133,6 +4187,8 @@ class CopilotoService
             . "\n- Si preguntan como hacer algo, da los pasos en 2-4 lineas y menciona la seccion del sistema."
             . "\n- Eres de solo lectura: nunca afirmes haber hecho un cambio; a lo mucho sugieres la accion."
             . "\n- Escribe en espanol claro y breve, sin jerga ni tecnicismos, sin mencionar que usas un modelo externo."
+            . "\n- Si hay mensajes previos, usalos para entender a que se refiere el usuario (\"¿y eso por que?\", \"¿y manana?\"),"
+            . ' pero las cifras validas son SOLO las de los datos en vivo actuales: un numero del historial puede estar viejo.'
             . "\n- Montos con formato \$1,234.56.";
 
         $usuario = "Datos en vivo del hotel (calculados por el servidor, son la unica fuente de cifras):\n"
@@ -4140,7 +4196,7 @@ class CopilotoService
             . "\n\nSecciones que ESTE hotel tiene activas (no menciones ni recomiendes ninguna que no este en esta lista):\n" . $this->ayudaConocimiento($hotelId)
             . "\n\nPregunta del usuario del hotel:\n" . $pregunta;
 
-        return $this->llamarClaude($sistema, $usuario);
+        return $this->llamarClaude($sistema, $usuario, $historial);
     }
 
     private function snapshotTexto(int $hotelId): string
@@ -4251,14 +4307,17 @@ class CopilotoService
     }
 
     /** Devuelve ['success', 'texto', 'tokens_entrada', 'tokens_salida', 'message']. */
-    private function llamarClaude(string $sistema, string $usuario): array
+    private function llamarClaude(string $sistema, string $usuario, array $mensajesPrevios = []): array
     {
+        // $mensajesPrevios ya viene saneado (sanearHistorial): alternado,
+        // empieza en user y termina en assistant; el turno final con el
+        // snapshot fresco siempre es esta pregunta.
         $payload = json_encode([
             'model' => self::MODELO,
             'max_tokens' => self::MAX_TOKENS,
             'thinking' => ['type' => 'adaptive'],
             'system' => $sistema,
-            'messages' => [['role' => 'user', 'content' => $usuario]],
+            'messages' => array_merge($mensajesPrevios, [['role' => 'user', 'content' => $usuario]]),
         ], JSON_UNESCAPED_UNICODE);
 
         $ch = curl_init(self::API_URL);

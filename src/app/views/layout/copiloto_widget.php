@@ -682,6 +682,10 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     // Memoria de conversacion: el intent que respondio el servidor a la
     // pregunta anterior; se reenvia para que "¿y manana?" herede el tema.
     var intentPrevio = '';
+    // Hilo reciente (multi-turno de la IA): pares pregunta/respuesta de esta
+    // pagina. Se manda ANTES de agregar la pregunta nueva; el servidor lo
+    // sanea y solo lo usa como contexto conversacional (cifras = snapshot).
+    var historial = [];
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
             ? String(window.MEDISOFT_CONTEXT.hotel_id)
@@ -777,6 +781,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('pregunta', texto);
         datos.append('ruta', RUTA);
         datos.append('intent_previo', intentPrevio);
+        datos.append('historial', JSON.stringify(historial.slice(-6)));
 
         fetch(URL, {
             method: 'POST',
@@ -786,6 +791,11 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 intentPrevio = typeof data.intent === 'string' ? data.intent : '';
+                historial.push({ r: 'u', t: texto });
+                if (typeof data.texto === 'string' && data.texto) {
+                    historial.push({ r: 'a', t: data.texto.slice(0, 600) });
+                }
+                historial = historial.slice(-8);
                 pintarRespuesta(pensando, data);
                 // Accion ejecutable propuesta por el servidor: confirmar con
                 // msConfirm y solo entonces ejecutar (POST /copiloto/accion).
