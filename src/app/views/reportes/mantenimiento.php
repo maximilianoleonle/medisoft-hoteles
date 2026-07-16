@@ -1106,6 +1106,20 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
             </aside>
         </section>
 
+        <?php if (isset($activosRegistrados) && $activosRegistrados === 0): ?>
+        <!-- Aviso: bloque Mantenimiento Plus activo sin activos registrados -->
+        <section role="status" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#FAF0DC;border:1px solid rgba(194,132,28,.35);border-radius:14px;padding:13px 16px;">
+            <i class="fas fa-triangle-exclamation" style="color:#C2841C;font-size:1.1rem;"></i>
+            <div style="flex:1 1 260px;min-width:0;font-size:.86rem;color:#6B4A0E;">
+                <strong style="color:#8A5D12;font-weight:700;">Tienes Mantenimiento Plus, pero sin activos registrados.</strong>
+                Registra tu boiler, bombas o aires con su periodicidad y el preventivo (recordatorios, tarea y costo por activo) se programa solo.
+            </div>
+            <a href="<?= url('mantenimientos/activos') ?>" style="display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:11px;background:#C2841C;color:#FFF;text-decoration:none;font-weight:700;font-size:.8rem;white-space:nowrap;">
+                <i class="fas fa-plus"></i> Registrar activos
+            </a>
+        </section>
+        <?php endif; ?>
+
         <section class="mant-metrics" aria-label="Resumen de mantenimiento">
             <article class="mant-metric is-featured">
                 <div class="mant-metric-head">
@@ -1161,6 +1175,51 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                 <div class="mant-note">Sobre trabajos completados.</div>
             </article>
         </section>
+
+        <?php if (!empty($costosPorActivo)): ?>
+        <!-- Mantenimiento Plus: costo del periodo por activo -->
+        <section class="mant-panel">
+            <div class="mant-section-head">
+                <div>
+                    <span class="mant-section-kicker">Mantenimiento Plus</span>
+                    <h2>Costo del periodo por activo</h2>
+                    <p>Cu&aacute;nto te ha costado cada equipo (cierres completados del periodo).</p>
+                </div>
+            </div>
+            <div class="mant-table-wrap">
+                <table class="mant-table">
+                    <thead>
+                        <tr>
+                            <th>Activo</th>
+                            <th>Servicios</th>
+                            <th>Costo del periodo</th>
+                            <th>Registrado en gastos</th>
+                            <th>&Uacute;ltimo servicio</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($costosPorActivo as $cpa): ?>
+                            <tr>
+                                <td><strong><?= mant_safe($cpa['activo_nombre'] ?? '-') ?></strong></td>
+                                <td><?= number_format((int)($cpa['servicios'] ?? 0)) ?></td>
+                                <td><strong><?= mant_money((float)($cpa['costo_total'] ?? 0)) ?></strong></td>
+                                <td><?= mant_money((float)($cpa['costo_registrado'] ?? 0)) ?></td>
+                                <td><?= !empty($cpa['ultimo_servicio']) ? date('d/m/y', strtotime((string)$cpa['ultimo_servicio'])) : '-' ?></td>
+                                <td>
+                                    <?php if (!empty($cpa['activo_id'])): ?>
+                                        <a href="<?= url('mantenimientos/activos/' . (int)$cpa['activo_id']) ?>" class="mant-btn is-soft">
+                                            <i class="fas fa-clock-rotate-left"></i> Historial
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="mant-layout">
             <article class="mant-panel">

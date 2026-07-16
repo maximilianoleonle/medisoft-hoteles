@@ -124,6 +124,12 @@ class CopilotoService
         if ($tiene(['esta semana', 'proximos dias', 'fin de semana', 'ocupacion de la semana', 'como pinta la semana', 'proximos 7'])) {
             return 'ocupacion_semana';
         }
+        // Mantenimiento Plus: va ANTES que 'habitaciones_estado' para que
+        // "que mantenimientos vienen" no caiga en el estado de cuartos.
+        if (($tiene(['que mantenimientos vienen', 'mantenimientos que vienen', 'proximos mantenimientos', 'mantenimientos proximos', 'mantenimiento preventivo', 'preventivos', 'que servicios vienen', 'proximos servicios', 'servicio del boiler', 'vence el boiler', 'mantenimientos pendientes', 'incidencias abiertas']))
+            && $this->tieneModulo('mantenimiento_plus', $hotelId)) {
+            return 'mantenimientos_proximos';
+        }
         if ($tiene(['mantenimiento', 'habitaciones sucias', 'en limpieza', 'fuera de servicio', 'cuartos sucios', 'estado de las habitaciones', 'estado de habitaciones'])) {
             return 'habitaciones_estado';
         }
@@ -362,6 +368,26 @@ class CopilotoService
                 return [
                     'texto' => 'Asi estan tus habitaciones ahorita: **' . implode(', ', $partes) . '**.',
                     'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+                ];
+
+            case 'mantenimientos_proximos':
+                $mp = $this->mantenimientosProximos($hotelId);
+                if (!$mp['hay']) {
+                    return [
+                        'texto' => 'No tienes preventivos por vencer ni incidencias de mantenimiento abiertas. Todo al dia.',
+                        'enlace' => ['url' => 'mantenimientos/activos', 'texto' => 'Ver activos'],
+                    ];
+                }
+                $partes = [];
+                if (!empty($mp['proximos'])) {
+                    $partes[] = 'Proximos servicios: ' . implode('; ', $mp['proximos']);
+                }
+                if ($mp['incidencias'] > 0) {
+                    $partes[] = '**' . $mp['incidencias'] . ' incidencia(s) de mantenimiento abiertas**';
+                }
+                return [
+                    'texto' => implode('. ', $partes) . '.',
+                    'enlace' => ['url' => 'mantenimientos/activos', 'texto' => 'Ver mantenimiento'],
                 ];
 
             case 'hospedados':
@@ -1166,6 +1192,58 @@ class CopilotoService
         }
 
         return ['hay' => !empty($items), 'items' => $items, 'mes' => $this->nombreMes((int) date('n'))];
+    }
+
+    /**
+     * Mantenimiento Plus: proximos preventivos (vencidos o en 30 dias) e
+     * incidencias abiertas. Defensivo: sin las tablas del bloque no truena.
+     */
+    private function mantenimientosProximos(int $hotelId): array
+    {
+        $proximos = [];
+        $incidencias = 0;
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT a.nombre, a.proximo_servicio,
+                        h.numero AS habitacion_numero,
+                        DATEDIFF(a.proximo_servicio, CURDATE()) AS dias
+                 FROM activos_hotel a
+                 LEFT JOIN habitaciones h
+                    ON h.id = a.habitacion_id
+                   AND h.hotel_id = a.hotel_id
+                 WHERE a.hotel_id = ?
+                   AND a.activo = 1
+                   AND a.proximo_servicio IS NOT NULL
+                   AND a.proximo_servicio <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                 ORDER BY a.proximo_servicio ASC
+                 LIMIT 3"
+            );
+            $stmt->execute([$hotelId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $dias = (int)($r['dias'] ?? 0);
+                $cuando = $dias < 0
+                    ? 'VENCIDO hace ' . abs($dias) . ' dia(s)'
+                    : ($dias === 0 ? 'vence HOY' : 'en ' . $dias . ' dia(s)');
+                $ubic = trim((string)($r['habitacion_numero'] ?? '')) !== '' ? ' (hab. ' . $r['habitacion_numero'] . ')' : '';
+                $proximos[] = '**' . (string)$r['nombre'] . '**' . $ubic . ' ' . $cuando;
+            }
+
+            $stmt = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM mantenimientos_habitaciones
+                 WHERE hotel_id = ? AND estado = 'en_proceso'"
+            );
+            $stmt->execute([$hotelId]);
+            $incidencias = (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Copiloto: error mantenimientos proximos: ' . $e->getMessage());
+        }
+
+        return [
+            'hay' => !empty($proximos) || $incidencias > 0,
+            'proximos' => $proximos,
+            'incidencias' => $incidencias,
+        ];
     }
 
     /**

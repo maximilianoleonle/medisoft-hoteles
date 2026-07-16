@@ -1764,6 +1764,35 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         return $stmt->fetch() ?: ['total_mantenimientos'=>0,'completados'=>0,'en_proceso'=>0,'cancelados'=>0,'programados'=>0,'costo_total'=>0,'costo_promedio'=>0,'duracion_promedio_horas'=>0];
     }
 
+    /**
+     * Mantenimiento Plus: costo del periodo agrupado por activo (los
+     * mantenimientos sin activo se agrupan como correctivo/incidencias).
+     */
+    public function obtenerCostosMantenimientoPorActivo($fecha_inicio, $fecha_fin) {
+        $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
+
+        $sql = "SELECT
+                COALESCE(a.nombre, 'Incidencias (sin activo)') AS activo_nombre,
+                m.activo_id,
+                COUNT(*) AS servicios,
+                COALESCE(SUM(m.costo), 0) AS costo_total,
+                SUM(CASE WHEN m.gasto_movimiento_id IS NOT NULL THEN COALESCE(m.costo, 0) ELSE 0 END) AS costo_registrado,
+                MAX(COALESCE(m.fecha_fin, m.fecha_inicio)) AS ultimo_servicio
+                FROM mantenimientos_habitaciones m
+                LEFT JOIN activos_hotel a
+                    ON a.id = m.activo_id
+                   AND a.hotel_id = m.hotel_id
+                WHERE m.hotel_id = ?
+                AND m.estado = 'completado'
+                AND DATE(COALESCE(m.fecha_fin, m.fecha_inicio)) BETWEEN ? AND ?
+                GROUP BY m.activo_id, activo_nombre
+                ORDER BY costo_total DESC";
+
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     // Los métodos generarPDFProcedencia, generarPDFOcupacion, etc. permanecen igual
     // ya que no contienen referencias a las tablas problemáticas
 }

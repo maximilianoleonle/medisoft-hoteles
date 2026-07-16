@@ -2461,6 +2461,25 @@ public function mantenimientoAction() {
     $realizadoPorTop          = $this->reporteModel->obtenerTopResponsablesMantenimiento($fecha_inicio, $fecha_fin);
     $ultimosMantenimientos    = $this->reporteModel->obtenerRegistroMantenimientos($tipo_filtro);
 
+    // Mantenimiento Plus: costos del periodo por activo + aviso de bloque
+    // activo sin activos registrados. Defensivo: sin el bloque no consulta.
+    $costosPorActivo = [];
+    $activosRegistrados = null;
+    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')) {
+        try {
+            $costosPorActivo = $this->reporteModel->obtenerCostosMantenimientoPorActivo($fecha_inicio, $fecha_fin);
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "SELECT COUNT(*) AS n FROM activos_hotel WHERE hotel_id = ?",
+                [$this->hotelIdActual()]
+            );
+            $row = $stmt ? $stmt->fetch() : null;
+            $activosRegistrados = (int)($row['n'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Reporte mantenimiento: bloque plus no disponible: ' . $e->getMessage());
+        }
+    }
+
     include __DIR__ . '/../views/reportes/mantenimiento.php';
     exit;
 }
