@@ -331,6 +331,7 @@ class CopilotoService
         //      pasa por POST /copiloto/accion con CSRF y permiso del rol.
         //      Asignar va primero: sus verbos son mas especificos.
         $accion = $this->detectarAccionAsignar($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
@@ -1631,6 +1632,70 @@ class CopilotoService
     }
 
     /**
+     * Detecta "manda a mantenimiento la 204 por fuga de agua" y arma la
+     * PROPUESTA (no ejecuta). El motivo es obligatorio (regla del dominio):
+     * sin "por ..." se guia al usuario. Tipo correctivo y prioridad media por
+     * default (lo tipico de un reporte hablado); lo fino se ajusta en la
+     * ficha. Si la habitacion tiene reservaciones proximas, la ejecucion NO
+     * procede desde el chat (eso se confirma en la pantalla, como siempre).
+     */
+    private function detectarAccionMantenimiento(string $norm, int $hotelId, ?array $contexto = null): ?array
+    {
+        if (!preg_match('/\b(manda|mandar|pon|poner|mete|meter|marca|marcar)\b/', $norm) || !preg_match('/\b(a|en) mantenimiento\b/', $norm)) {
+            return null;
+        }
+
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['intent' => 'accion:mant_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para marcar mantenimientos. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        // Motivo obligatorio: lo que venga despues del ultimo " por ".
+        $motivo = '';
+        $posPor = strrpos($norm, ' por ');
+        $parteHabitacion = $norm;
+        if ($posPor !== false) {
+            $motivo = trim((string) preg_replace('/[¿?¡!]/u', '', substr($norm, $posPor + 5)));
+            $parteHabitacion = substr($norm, 0, $posPor);
+        }
+
+        $hab = $this->buscarHabitacionEnTexto($parteHabitacion, $hotelId);
+        if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
+            $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
+        }
+        if ($hab === null) {
+            return ['intent' => 'accion:mant_sin_hab', 'respuesta' => [
+                'texto' => "No identifique la habitacion. Dimelo asi: \"manda a mantenimiento la 204 por fuga de agua\".",
+                'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones'],
+            ]];
+        }
+        if (mb_strlen($motivo) < 5) {
+            return ['intent' => 'accion:mant_sin_motivo', 'respuesta' => [
+                'texto' => "El motivo es obligatorio para un mantenimiento. Dimelo asi: \"manda a mantenimiento la {$hab['numero']} por fuga de agua en el bano\".",
+                'enlace' => null,
+            ]];
+        }
+
+        return ['intent' => 'accion:mant', 'respuesta' => [
+            'texto' => "Puedo poner la habitacion **{$hab['numero']}** en **mantenimiento correctivo** (prioridad media) por: {$motivo}. "
+                . 'Si tiene reservaciones proximas te avisare sin ejecutar. Confirmalo y queda registrado.',
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'iniciar_mantenimiento',
+                'habitacion_id' => (int) $hab['id'],
+                'habitacion' => (string) $hab['numero'],
+                'motivo' => mb_substr($motivo, 0, 300),
+                'fecha' => date('Y-m-d'),
+                'confirm_titulo' => '¿Iniciar mantenimiento?',
+                'confirm_msg' => "Habitacion {$hab['numero']} pasa a mantenimiento correctivo (prioridad media). Motivo: {$motivo}.",
+                'confirm_ok' => 'Iniciar',
+            ],
+        ]];
+    }
+
+    /**
      * Busca en la frase a un trabajador ACTIVO del hotel: primero por nombre
      * completo, luego por tokens del nombre (palabra completa, >= 3 letras).
      * Devuelve ['id','nombre'], ['ambiguos' => nombres] si varios casan, o null.
@@ -1735,6 +1800,10 @@ class CopilotoService
      */
     public function ejecutarAccion(int $hotelId, string $tipo, array $params, ?int $usuarioId = null): array
     {
+        if ($tipo === 'iniciar_mantenimiento') {
+            return $this->ejecutarMantenimiento($hotelId, $params, $usuarioId);
+        }
+
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {
             return ['success' => false, 'texto' => 'Esa accion no esta disponible desde el copiloto.', 'fuente' => 'reglas'];
         }
@@ -1806,6 +1875,61 @@ class CopilotoService
             'fuente' => 'reglas',
             'enlace' => null,
             'acciones' => [['label' => $labelTablero, 'url' => $urlTablero]],
+        ];
+    }
+
+    /**
+     * Ejecuta "iniciar mantenimiento" via MantenimientoService (mismo motor
+     * que la pantalla de habitaciones). Con reservaciones proximas NO se
+     * ejecuta desde el chat: se informa y se manda a la ficha, donde el
+     * flujo de siempre pide la confirmacion del riesgo.
+     */
+    private function ejecutarMantenimiento(int $hotelId, array $params, ?int $usuarioId): array
+    {
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para marcar mantenimientos.', 'fuente' => 'reglas'];
+        }
+
+        $habitacionId = (int) ($params['habitacion_id'] ?? 0);
+        $motivo = trim((string) ($params['motivo'] ?? ''));
+
+        require_once __DIR__ . '/MantenimientoService.php';
+
+        try {
+            $r = (new MantenimientoService($this->db))->iniciarParaHotel($hotelId, $habitacionId, 'correctivo', 'media', $motivo, $usuarioId, false);
+        } catch (Throwable $e) {
+            $this->registrar($hotelId, $usuarioId, "[accion mant hab {$habitacionId}]", 'reglas', 'accion:mant_error', 0, 0);
+            $texto = ($e instanceof PDOException) ? 'No se pudo iniciar el mantenimiento. Intenta de nuevo.' : ($e->getMessage() ?: 'No se pudo iniciar el mantenimiento.');
+            return ['success' => false, 'texto' => $texto, 'fuente' => 'reglas'];
+        }
+
+        $hab = $this->habitacionPorId($hotelId, $habitacionId);
+        $numero = $hab !== null ? $hab['numero'] : (string) ($params['habitacion'] ?? $habitacionId);
+
+        if (empty($r['ok'])) {
+            $conflictos = (array) ($r['conflictos'] ?? []);
+            $primera = $conflictos[0] ?? [];
+            $quien = trim((string) ($primera['nombre_completo'] ?? 'un huesped'));
+            $llega = !empty($primera['fecha_entrada']) ? date('d/m', strtotime((string) $primera['fecha_entrada'])) : '';
+            $this->registrar($hotelId, $usuarioId, "[accion mant hab {$habitacionId}]", 'reglas', 'accion:mant_conflicto', 0, 0);
+            return [
+                'success' => false,
+                'texto' => "No lo ejecute: la habitacion **{$numero}** tiene " . count($conflictos) . ' reservacion(es) proxima(s)'
+                    . ($quien !== '' ? " (la mas cercana: {$quien}" . ($llega !== '' ? ", llega el {$llega}" : '') . ')' : '')
+                    . '. Si el hotel ya gestiono ese riesgo, inicialo desde la ficha de la habitacion, donde se confirma el aviso.',
+                'fuente' => 'reglas',
+                'acciones' => [['label' => 'Abrir la ficha', 'url' => 'habitaciones/' . $habitacionId]],
+            ];
+        }
+
+        $this->registrar($hotelId, $usuarioId, "[accion mant hab {$habitacionId}]", 'reglas', 'accion:mant_ok', 0, 0);
+
+        return [
+            'success' => true,
+            'texto' => "Listo ✅ La habitacion **{$numero}** quedo en **mantenimiento correctivo** (prioridad media): {$motivo}. El equipo ya fue notificado.",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver la ficha', 'url' => 'habitaciones/' . $habitacionId]],
         ];
     }
 

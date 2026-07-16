@@ -883,6 +883,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('habitacion_id', accion.habitacion_id || '');
         datos.append('fecha', accion.fecha || '');
         if (accion.trabajador_id) { datos.append('trabajador_id', accion.trabajador_id); }
+        if (accion.motivo) { datos.append('motivo', accion.motivo); }
 
         fetch(URL_ACCION, {
             method: 'POST',
@@ -893,9 +894,13 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             .then(function (data) {
                 pintarRespuesta(pensando, data);
                 if (data.success && window.msToast) {
-                    window.msToast('success',
-                        accion.tipo === 'asignar_limpieza' ? 'Limpieza asignada' : 'Limpieza programada',
-                        'La tarea quedó en el tablero de limpieza. 🗓️');
+                    if (accion.tipo === 'iniciar_mantenimiento') {
+                        window.msToast('success', 'Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧');
+                    } else {
+                        window.msToast('success',
+                            accion.tipo === 'asignar_limpieza' ? 'Limpieza asignada' : 'Limpieza programada',
+                            'La tarea quedó en el tablero de limpieza. 🗓️');
+                    }
                 }
             })
             .catch(function () {
