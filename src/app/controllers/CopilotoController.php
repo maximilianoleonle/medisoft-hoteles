@@ -39,10 +39,17 @@ class CopilotoController extends Controller {
         }
 
         $pregunta = (string) $this->getPost('pregunta', '');
+        // Contexto de pantalla: ruta relativa desde la que pregunta el usuario
+        // ("reservaciones/ver/12"). Solo orienta la respuesta; el servicio hace
+        // todas sus lecturas con scope de hotel y validando el permiso del rol.
+        $ruta = mb_substr((string) $this->getPost('ruta', ''), 0, 200);
+        // Memoria de conversacion: el intent que este mismo endpoint devolvio
+        // en la pregunta anterior ("¿y manana?" hereda el tema).
+        $intentPrevio = mb_substr((string) $this->getPost('intent_previo', ''), 0, 40);
 
         try {
             $servicio = new CopilotoService();
-            $resultado = $servicio->responder($hotelId, $pregunta, user_id());
+            $resultado = $servicio->responder($hotelId, $pregunta, user_id(), $ruta, $intentPrevio);
         } catch (Throwable $e) {
             error_log('Copiloto: error al responder: ' . $e->getMessage());
             View::renderJSON(['success' => false, 'texto' => 'Ocurrio un error. Intenta de nuevo.', 'fuente' => 'fallback'], 500);
@@ -50,6 +57,68 @@ class CopilotoController extends Controller {
         }
 
         View::renderJSON($resultado, 200);
+    }
+
+    /**
+     * Ejecuta una accion previamente confirmada por el usuario en el widget
+     * (msConfirm). SOLO limpieza/tareas operativas; el servicio valida el
+     * permiso del rol y jamas toca dinero.
+     */
+    public function accionAction() {
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false, 'texto' => 'Metodo no permitido.'], 405);
+        }
+
+        $this->validateCSRF();
+
+        $hotelId = (int) obtenerHotelIdActualCompat();
+
+        if (!$this->permitirSolicitud($hotelId)) {
+            View::renderJSON(['success' => false, 'texto' => 'Vas muy rapido. Espera un momento e intenta de nuevo.', 'fuente' => 'fallback'], 429);
+        }
+
+        $tipo = (string) $this->getPost('tipo', '');
+        $params = [
+            'habitacion_id' => (int) $this->getPost('habitacion_id', 0),
+            'fecha' => mb_substr((string) $this->getPost('fecha', ''), 0, 10),
+            'trabajador_id' => (int) $this->getPost('trabajador_id', 0),
+            'motivo' => mb_substr(trim((string) $this->getPost('motivo', '')), 0, 300),
+        ];
+
+        try {
+            $servicio = new CopilotoService();
+            $resultado = $servicio->ejecutarAccion($hotelId, $tipo, $params, user_id());
+        } catch (Throwable $e) {
+            error_log('Copiloto: error al ejecutar accion: ' . $e->getMessage());
+            View::renderJSON(['success' => false, 'texto' => 'Ocurrio un error. Intenta de nuevo.', 'fuente' => 'fallback'], 500);
+            return;
+        }
+
+        View::renderJSON($resultado, 200);
+    }
+
+    /**
+     * Panel de valor del copiloto (GET /copiloto/valor): uso real del
+     * asistente para gerencia. Solo lectura sobre el log existente.
+     */
+    public function valorAction() {
+        // Mismo criterio de acceso que la pantalla de Configuracion: gerencia.
+        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+        if (!(is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true))) {
+            set_mensaje('No tiene permisos para acceder a esta sección', 'error');
+            $this->redirect('dashboard');
+            return;
+        }
+
+        $hotelId = (int) obtenerHotelIdActualCompat();
+        $servicio = new CopilotoService();
+
+        View::renderTemplate('copiloto/valor', [
+            'title' => 'Copiloto - ' . current_hotel_display_name(),
+            'uso' => $servicio->resumenUso($hotelId, 30),
+            'nombreAsistente' => CopilotoService::nombreAsistente($hotelId),
+            'iaDisponible' => $servicio->iaDisponible($hotelId),
+        ]);
     }
 
     /** Rate-limit por usuario reutilizando login_intentos (prefijo copiloto|). */

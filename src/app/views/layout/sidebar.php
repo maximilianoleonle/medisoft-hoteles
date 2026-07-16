@@ -42,7 +42,11 @@ $mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolH
 // Guardian (vigilancia financiera): gating temporal en ia_ejecutiva (al monetizar, usar su
 // propio modulo) + permiso guardian.view: el informe nombra usuarios, solo direccion lo ve.
 $mostrarVigilanciaFinanciera = $mostrarIaEjecutiva && function_exists('can') && can('guardian.view');
+// Panel de valor del copiloto: uso real del asistente, solo gerencia.
+$mostrarCopilotoPanel = $menuModuloActivo('copiloto') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+// Mensajes (canal_whatsapp) lo opera recepcion: visible para todo rol del hotel.
+$mostrarMensajes = $menuModuloActivo('canal_whatsapp');
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
 $mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarCamarista = $menuModuloActivo('camarista');
@@ -53,7 +57,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad');
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimientoPlus || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
-$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
+$mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarMensajes || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
@@ -100,7 +104,9 @@ $sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
 $sidebarActiveMotorReservas = $sidebarPathStarts('motor-reservas');
 $sidebarActiveVigilanciaFinanciera = $sidebarPathStarts('ia/vigilancia-financiera');
 $sidebarActiveIaEjecutiva = $sidebarPathStarts('ia') && !$sidebarActiveVigilanciaFinanciera;
+$sidebarActiveCopilotoPanel = $sidebarPathStarts('copiloto');
 $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
+$sidebarActiveMensajes = $sidebarPathStarts('mensajes');
 $sidebarActiveReputacion = $sidebarPathStarts('reputacion');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
 $sidebarActiveCanales = $sidebarPathStarts('canales');
@@ -633,6 +639,17 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarMensajes): ?>
+            <a href="<?= url('mensajes') ?>"
+               class="nav-item <?= $sidebarActiveMensajes ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-comment-dots"></i>
+                    <?= $sidebarBadge('mensajes', $sidebarActiveMensajes) ?>
+                </div>
+                <span class="nav-text">Mensajes</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarWhatsApp): ?>
             <a href="<?= url('whatsapp') ?>"
                class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>">
@@ -650,6 +667,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-wand-magic-sparkles"></i>
                 </div>
                 <span class="nav-text">Asesor inteligente</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCopilotoPanel): ?>
+            <a href="<?= url('copiloto/valor') ?>"
+               class="nav-item <?= $sidebarActiveCopilotoPanel ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <span class="nav-text">Copiloto</span>
             </a>
             <?php endif; ?>
 

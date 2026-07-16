@@ -346,6 +346,11 @@ $configHotelSettingGroupMeta = [
         'hint' => 'Nombre visible sugerido para la app instalable.',
         'icon' => 'fa-mobile-screen-button',
     ],
+    'copiloto' => [
+        'title' => 'Copiloto',
+        'hint' => 'Asistente del hotel: briefing matutino y avisos proactivos.',
+        'icon' => 'fa-wand-magic-sparkles',
+    ],
     'otros' => [
         'title' => 'Otros ajustes',
         'hint' => 'Valores adicionales del hotel.',

@@ -1584,181 +1584,46 @@ public function mantenimientoAction() {
         $this->redirect('habitaciones/' . $id);
     }
     
-    $db = Database::getInstance();
-    $habitacion = $this->habitacionModel->find($id);
-    $reservasConflictoMantenimiento = [];
+    // El nucleo (validaciones, conflicto de reservas, transaccion y
+    // notificaciones) vive en MantenimientoService: mismo motor que usa la
+    // accion del copiloto. Aqui solo queda la UX de la pantalla.
+    require_once __DIR__ . '/../services/MantenimientoService.php';
+    $servicio = new MantenimientoService();
 
-    if (!$habitacion) {
-        set_mensaje('Habitación no encontrada', 'error');
-        $this->redirect('habitaciones');
-    }
-    
     try {
-        $db->beginTransaction();
-        
         if ($accion == 'iniciar') {
-            require_once __DIR__ . '/../models/Mantenimiento.php';
-
-            $tipoMantenimiento = trim((string)$this->getPost('tipo_mantenimiento'));
-            $prioridad = trim((string)$this->getPost('prioridad', 'media'));
-            $motivo = trim((string)$this->getPost('motivo'));
-
-            if (!in_array($tipoMantenimiento, array_keys(Mantenimiento::getTipos()), true)) {
-                throw new InvalidArgumentException('Debe seleccionar un tipo de mantenimiento vÃ¡lido');
-            }
-
-            if (!in_array($prioridad, array_keys(Mantenimiento::getPrioridades()), true)) {
-                throw new InvalidArgumentException('Debe seleccionar una prioridad vÃ¡lida');
-            }
-
-            if ($motivo === '') {
-                throw new InvalidArgumentException('El motivo es obligatorio');
-            }
-
-            if (($habitacion['estado'] ?? '') === 'mantenimiento') {
-                throw new RuntimeException('La habitaciÃ³n ya estÃ¡ en mantenimiento');
-            }
-
-            $stmtActivo = $db->query(
-                "SELECT COUNT(*) FROM mantenimientos_habitaciones
-                 WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'",
-                [$id, $hotelId]
-            );
-
-            if ($stmtActivo && (int)$stmtActivo->fetchColumn() > 0) {
-                throw new RuntimeException('La habitaciÃ³n ya tiene un mantenimiento en proceso');
-            }
-
-            // Actualizar estado de habitación
-            $reservasConflictoMantenimiento = $this->reservacionesMantenimientoHabitacion(
+            $resultado = $servicio->iniciarParaHotel(
+                (int)$hotelId,
                 (int)$id,
-                date('Y-m-d'),
-                date('Y-m-d', strtotime('+7 days')),
-                8
+                trim((string)$this->getPost('tipo_mantenimiento')),
+                trim((string)$this->getPost('prioridad', 'media')),
+                trim((string)$this->getPost('motivo')),
+                user_id(),
+                $this->confirmoConflictoMantenimiento()
             );
 
-            if (!empty($reservasConflictoMantenimiento) && !$this->confirmoConflictoMantenimiento()) {
-                $db->rollBack();
-                set_mensaje($this->mensajeConflictoMantenimiento($reservasConflictoMantenimiento, 'iniciar'), 'warning');
+            if (empty($resultado['ok'])) {
+                set_mensaje($this->mensajeConflictoMantenimiento($resultado['conflictos'], 'iniciar'), 'warning');
                 $this->redirect('habitaciones/' . $id);
                 return;
             }
 
-            $this->habitacionModel->update($id, ['estado' => 'mantenimiento']);
-            
-            // Registrar en tabla de mantenimientos - AGREGADO fecha_inicio y estado
-            $sql = "INSERT INTO mantenimientos_habitaciones 
-                    (hotel_id, habitacion_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
-                    VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')";
-            
-            $db->query($sql, [
-                $hotelId,
-                $id,
-                $tipoMantenimiento,
-                $prioridad,
-                $motivo,
-                user_id()
-            ]);
-
-            $mantenimientoId = (int)$db->lastInsertId();
-
-            $db->commit();
-
-            // Evidencia del problema (bloque mantenimiento_plus): las fotos no
-            // son transaccionales; se guardan tras el commit y solo avisan.
-            $avisoFotos = '';
-            if ($mantenimientoId > 0
-                && function_exists('current_hotel_has_module')
-                && current_hotel_has_module('mantenimiento_plus')
-                && !empty($_FILES['fotos_reporte']['name'][0] ?? '')) {
-                require_once __DIR__ . '/../models/MantenimientoFoto.php';
-                $resultadoFotos = (new MantenimientoFoto())->guardarLoteDesdeUpload(
-                    (int)$hotelId,
-                    $mantenimientoId,
-                    'reporte',
-                    $_FILES['fotos_reporte'],
-                    user_id()
-                );
-                $subidas = count($resultadoFotos['fotos']);
-                if ($subidas > 0) {
-                    $avisoFotos = ' Se guardo la evidencia (' . $subidas . ' foto' . ($subidas === 1 ? '' : 's') . ').';
-                }
-                if (!empty($resultadoFotos['errores'])) {
-                    $avisoFotos .= ' Fotos con aviso: ' . implode('; ', $resultadoFotos['errores']) . '.';
-                }
-            }
+            $mantenimientoId = (int)($resultado['mantenimiento_id'] ?? 0);
+            $avisoFotos = $this->guardarFotosReporteMantenimientoPlus(
+                (int)$hotelId,
+                $mantenimientoId,
+                function_exists('user_id') ? user_id() : null
+            );
 
             set_mensaje('Mantenimiento iniciado correctamente.' . $avisoFotos, 'success');
-            $this->registrarNotificacionHabitacion(
-                (int)$id,
-                'mantenimiento_iniciado',
-                'Mantenimiento iniciado en habitacion ' . ($habitacion['numero'] ?? $id),
-                $motivo ?: 'La habitacion paso a mantenimiento.',
-                $prioridad === 'alta' ? 'alta' : 'media'
-            );
-            if (!empty($reservasConflictoMantenimiento)) {
-                $this->registrarNotificacionMantenimientoReserva(
-                    (int)$id,
-                    (string)($habitacion['numero'] ?? $id),
-                    $reservasConflictoMantenimiento,
-                    'iniciado'
-                );
-            }
-
         } elseif ($accion == 'finalizar') {
-            if (($habitacion['estado'] ?? '') !== 'mantenimiento') {
-                throw new RuntimeException('Solo se puede finalizar mantenimiento de una habitaciÃ³n en mantenimiento');
-            }
-
-            // Preventivos de activo que van a cerrarse: para recalcular su
-            // proximo_servicio despues del commit (bloque mantenimiento_plus).
-            $activosServidos = [];
-            try {
-                $stmtActivos = $db->query(
-                    "SELECT DISTINCT activo_id FROM mantenimientos_habitaciones
-                     WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso' AND activo_id IS NOT NULL",
-                    [$id, $hotelId]
-                );
-                $activosServidos = $stmtActivos ? array_column($stmtActivos->fetchAll(), 'activo_id') : [];
-            } catch (Throwable $eActivos) {
-                // Sin la migracion de activos el finalizar basico sigue funcionando.
-                $activosServidos = [];
-            }
-
-            // Actualizar estado de habitación
-            $this->habitacionModel->update($id, ['estado' => 'disponible']);
-
-            // Actualizar registro de mantenimiento
-            $sql = "UPDATE mantenimientos_habitaciones
-                    SET estado = 'completado', fecha_fin = NOW()
-                    WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'";
-
-            $db->query($sql, [$id, $hotelId]);
-
-            $db->commit();
-
-            if (!empty($activosServidos)) {
-                require_once __DIR__ . '/../models/ActivoHotel.php';
-                $activoModel = new ActivoHotel();
-                foreach ($activosServidos as $activoServidoId) {
-                    $activoModel->registrarServicioCompletado((int)$hotelId, (int)$activoServidoId);
-                }
-            }
+            $servicio->finalizarParaHotel((int)$hotelId, (int)$id, user_id());
             set_mensaje('Mantenimiento finalizado correctamente', 'success');
-            $this->registrarNotificacionHabitacion(
-                (int)$id,
-                'mantenimiento_finalizado',
-                'Mantenimiento finalizado en habitacion ' . ($habitacion['numero'] ?? $id),
-                'La habitacion fue marcada como disponible.',
-                'info'
-            );
         }
-        
     } catch (Exception $e) {
-        $db->rollBack();
         set_mensaje('Error al procesar mantenimiento: ' . $e->getMessage(), 'error');
     }
-    
+
     $this->redirect('habitaciones/' . $id);
 }
 
@@ -2095,6 +1960,46 @@ private function reservacionesMantenimientoHabitacion(int $habitacionId, string 
 
 private function confirmoConflictoMantenimiento(): bool {
     return trim((string)$this->getPost('confirmar_conflicto_mantenimiento', '')) === '1';
+}
+
+private function guardarFotosReporteMantenimientoPlus(int $hotelId, int $mantenimientoId, ?int $usuarioId): string {
+    if ($hotelId <= 0 || $mantenimientoId <= 0) {
+        return '';
+    }
+
+    if (!function_exists('current_hotel_has_module') || !current_hotel_has_module('mantenimiento_plus')) {
+        return '';
+    }
+
+    if (empty($_FILES['fotos_reporte']['name'][0] ?? '')) {
+        return '';
+    }
+
+    require_once __DIR__ . '/../models/MantenimientoFoto.php';
+
+    try {
+        $resultadoFotos = (new MantenimientoFoto())->guardarLoteDesdeUpload(
+            $hotelId,
+            $mantenimientoId,
+            'reporte',
+            $_FILES['fotos_reporte'],
+            $usuarioId
+        );
+    } catch (Throwable $e) {
+        error_log('No se pudo guardar evidencia de mantenimiento: ' . $e->getMessage());
+        return ' La habitacion quedo en mantenimiento, pero no se pudo guardar la evidencia.';
+    }
+
+    $mensajes = [];
+    $subidas = count($resultadoFotos['fotos'] ?? []);
+    if ($subidas > 0) {
+        $mensajes[] = 'Se guardo la evidencia (' . $subidas . ' foto' . ($subidas === 1 ? '' : 's') . ').';
+    }
+    if (!empty($resultadoFotos['errores'])) {
+        $mensajes[] = 'Fotos con aviso: ' . implode('; ', $resultadoFotos['errores']) . '.';
+    }
+
+    return !empty($mensajes) ? ' ' . implode(' ', $mensajes) : '';
 }
 
 private function mensajeConflictoMantenimiento(array $reservas, string $accion): string {

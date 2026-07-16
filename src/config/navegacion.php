@@ -40,6 +40,7 @@ return [
     ['ruta' => 'motor-reservas',        'etiqueta' => 'Motor de reservas',   'icono' => 'fa-globe',               'modulo' => 'motor_reservas',   'permiso' => null, 'roles' => ['gerente', 'administrador'], 'buscar' => 'reservas online booking web'],
     ['ruta' => 'canales',               'etiqueta' => 'Canales (iCal)',      'icono' => 'fa-calendar-alt',        'modulo' => 'canales_ical',     'permiso' => null, 'roles' => ['gerente', 'administrador'], 'buscar' => 'ota booking airbnb sincronizacion'],
     ['ruta' => 'whatsapp',              'etiqueta' => 'WhatsApp',            'icono' => 'fab fa-whatsapp',        'modulo' => 'whatsapp',         'permiso' => null, 'roles' => ['gerente', 'administrador'], 'buscar' => 'mensajes confirmaciones'],
+    ['ruta' => 'mensajes',              'etiqueta' => 'Mensajes',            'icono' => 'fa-comment-dots',        'modulo' => 'canal_whatsapp',   'permiso' => null, 'roles' => null, 'buscar' => 'whatsapp cola confirmaciones recordatorios encuestas anticipo huesped'],
     ['ruta' => 'ia/resumen-diario',     'etiqueta' => 'Asesor inteligente',  'icono' => 'fa-wand-magic-sparkles', 'modulo' => 'ia_ejecutiva',     'permiso' => null, 'roles' => ['gerente', 'administrador'], 'buscar' => 'resumen asesor inteligente ejecutivo'],
     // OJO: permiso/roles se evaluan en OR; el Guardian se gatea SOLO por permiso
     // (roles=null) para que un administrador sin guardian.view no lo vea.

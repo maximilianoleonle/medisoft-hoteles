@@ -4503,6 +4503,37 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                 <?php endif; ?>
             </article>
 
+            <?php
+            // Ficha discreta del bloque canal_whatsapp: cuantos mensajes ya
+            // redactados esperan un toque hoy (y aviso si falta configuracion).
+            $waPendientes = (int) ($mensajes_whatsapp['pendientes'] ?? 0);
+            $waFaltantes = $mensajes_whatsapp['faltantes'] ?? [];
+            ?>
+            <?php if (!empty($mensajes_whatsapp) && ($waPendientes > 0 || !empty($waFaltantes))): ?>
+                <a class="card card-pad dashboard-wa-pending" href="<?= url('mensajes') ?>"
+                   style="display:flex;align-items:center;gap:14px;margin-bottom:14px;text-decoration:none;"
+                   title="Abrir la cola de Mensajes">
+                    <span style="flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:1.1rem;color:#1E9E63;background:#E7F4EC;" aria-hidden="true">
+                        <i class="fab fa-whatsapp"></i>
+                    </span>
+                    <span style="min-width:0;flex:1;display:grid;gap:2px;">
+                        <?php if ($waPendientes > 0): ?>
+                            <span class="list-name"><?= $waPendientes ?> mensaje<?= $waPendientes === 1 ? '' : 's' ?> de WhatsApp por enviar hoy</span>
+                            <span class="list-meta">Confirmaciones, recordatorios y encuestas ya redactados — solo falta tocar Enviar.</span>
+                        <?php else: ?>
+                            <span class="list-name">Mensajes WhatsApp: falta un dato para arrancar</span>
+                        <?php endif; ?>
+                        <?php if (!empty($waFaltantes)): ?>
+                            <span class="list-meta" style="color:#C2841C;font-weight:650;">
+                                <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                                Falta capturar <?= implode(' y ', array_map(static function ($f) { return $f === 'datos_deposito' ? 'los datos de depósito' : 'el link de Maps'; }, $waFaltantes)) ?> en la configuración.
+                            </span>
+                        <?php endif; ?>
+                    </span>
+                    <span class="list-action-icon" aria-hidden="true" style="flex:none;"><i class="fas fa-arrow-right"></i></span>
+                </a>
+            <?php endif; ?>
+
             <section class="grid3 dashboard-flow-cards">
             <article class="card card-pad">
                 <div class="section-head">

@@ -9,6 +9,19 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 }
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
+$copilotoUrlAccion = function_exists('url') ? url('copiloto/accion') : '/copiloto/accion';
+
+// Nombre white-label del asistente (config copiloto.nombre por hotel).
+require_once __DIR__ . '/../../services/CopilotoService.php';
+$copHotelId = (int) (function_exists('current_hotel_id') ? current_hotel_id() : 0);
+try {
+    $copNombre = CopilotoService::nombreAsistente($copHotelId);
+} catch (Throwable $e) {
+    $copNombre = 'Copiloto';
+}
+// El FAB conserva su etiqueta comercial de siempre salvo que el hotel haya
+// bautizado a su asistente.
+$copEtiquetaFab = $copNombre !== 'Copiloto' ? $copNombre : 'Asesor inteligente';
 $copilotoLogoUrl = function_exists('asset_version')
     ? asset_version('img/logo.png')
     : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
@@ -71,6 +84,178 @@ foreach ($copOpcionales as $clave => $mapa) {
         foreach ($mapa as $nombre => $urlSeccion) {
             $copSecciones[$nombre] = $urlSeccion;
         }
+    }
+}
+
+/**
+ * Contexto de pantalla: ruta relativa de la app ("reservaciones/ver/12").
+ * Se manda con cada pregunta (el servicio la usa para responder sobre la
+ * entidad visible) y aqui decide los chips contextuales de la seccion.
+ */
+$copBasePath = rtrim((string) parse_url($copU(''), PHP_URL_PATH), '/');
+$copRuta = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+if ($copBasePath !== '' && strpos($copRuta, $copBasePath) === 0) {
+    $copRuta = substr($copRuta, strlen($copBasePath));
+}
+$copRuta = trim($copRuta, '/');
+$copSegmentos = explode('/', $copRuta);
+$copSeccion = strtolower((string) ($copSegmentos[0] ?? ''));
+
+$copEntidad = null;
+if (preg_match('#^reservaciones/ver/[0-9]+#i', $copRuta)) {
+    $copEntidad = 'reservacion';
+} elseif (preg_match('#^habitaciones/[0-9]+#i', $copRuta)) {
+    $copEntidad = 'habitacion';
+}
+
+// Chips [etiqueta, pregunta data-q]. Los de la seccion visible van primero;
+// si faltan, se completa con los generales de siempre (fallback).
+$copChipsDefault = [
+    ['📋 Resumen del día', 'Dame el resumen del día'],
+    ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?'],
+    ['Llegadas de hoy', '¿Quién llega hoy?'],
+    ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?'],
+    ['Estado de caja', '¿Cómo voy de caja?'],
+    ['¿Cómo hago un corte?', '¿Cómo hago un corte de caja?'],
+];
+
+$copChipsContexto = [];
+if ($copEntidad === 'reservacion') {
+    $copChipsContexto = [
+        ['¿Cuánto debe?', '¿Cuánto debe esta reservación?'],
+        ['¿Ya pagó anticipo?', '¿Ya pagó el anticipo?'],
+        ['¿Cuántas noches?', '¿Cuántas noches se queda?'],
+        ['Llegadas de hoy', '¿Quién llega hoy?'],
+    ];
+} elseif ($copEntidad === 'habitacion') {
+    $copChipsContexto = [
+        ['¿Está ocupada?', '¿Está ocupada?'],
+        ['¿Quién la ocupa?', '¿Quién está en esta habitación?'],
+        ['¿Cuándo se desocupa?', '¿Cuándo se desocupa?'],
+        ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+    ];
+} else {
+    switch ($copSeccion) {
+        case 'reservaciones':
+            $copChipsContexto = [
+                ['Llegadas de hoy', '¿Quién llega hoy?'],
+                ['Salidas de hoy', '¿Quién se va hoy?'],
+                ['¿Hay no-shows?', '¿Tengo no-shows pendientes?'],
+                ['Llegadas de mañana', '¿Quién llega mañana?'],
+                ['Checkouts vencidos', '¿Hay checkouts vencidos?'],
+            ];
+            break;
+        case 'habitaciones':
+            $copChipsContexto = [
+                ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+                ['¿Qué limpio hoy?', '¿Qué hay que limpiar hoy?'],
+                ['Habitaciones libres', '¿Cuántas habitaciones libres tengo hoy?'],
+                ['Checkouts vencidos', '¿Hay checkouts vencidos?'],
+            ];
+            break;
+        case 'caja':
+            $copChipsContexto = [
+                ['Estado de caja', '¿Cómo voy de caja?'],
+                ['¿Cómo hago un corte?', '¿Cómo hago un corte de caja?'],
+                ['Gastos del mes', '¿En qué se me va el dinero este mes?'],
+                ['¿Cómo me pagan?', '¿Cómo me pagaron este mes?'],
+            ];
+            break;
+        case 'camarista':
+        case 'tareas':
+            $copChipsContexto = [
+                ['¿Qué limpio hoy?', '¿Qué hay que limpiar hoy?'],
+                ['Estado de las habitaciones', '¿Cómo están mis habitaciones ahorita?'],
+                ['Salidas de hoy', '¿Quién se va hoy?'],
+            ];
+            break;
+        case 'inventario':
+            $copChipsContexto = [
+                ['Por agotarse', '¿Qué productos están por agotarse?'],
+                ['¿Cómo registro un movimiento?', '¿Cómo registro un movimiento de inventario?'],
+            ];
+            break;
+        case 'reputacion':
+            $copChipsContexto = [
+                ['¿Cómo me califican?', '¿Cómo me califican mis huéspedes?'],
+                ['Calificaciones bajas', '¿Tengo calificaciones bajas?'],
+                ['Enviar encuesta', '¿Cómo mando una encuesta?'],
+            ];
+            break;
+        case 'compras':
+            $copChipsContexto = [
+                ['¿Cuánto debo?', '¿Cuánto debo a proveedores?'],
+                ['Registrar compra', '¿Cómo registro una compra?'],
+            ];
+            break;
+        case 'cuentas-por-cobrar':
+            $copChipsContexto = [
+                ['¿Quién me debe?', '¿Quién me debe?'],
+            ];
+            break;
+        case 'nomina':
+            $copChipsContexto = [
+                ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?'],
+                ['¿Cómo corro la nómina?', '¿Cómo corro la nómina?'],
+            ];
+            break;
+        case 'trabajadores':
+            if ($copMod('nomina_avanzada')) {
+                $copChipsContexto[] = ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?'];
+            }
+            $copChipsContexto[] = ['Alta de trabajador', '¿Cómo registro a un trabajador?'];
+            break;
+        case 'forecast':
+            $copChipsContexto = [
+                ['¿Cómo pinta la semana?', '¿Cómo pinta la semana?'],
+                ['Noches vendidas', '¿Cuántas noches vendí este mes?'],
+                ['Tarifa promedio', '¿Cuál es mi tarifa promedio?'],
+            ];
+            break;
+        case 'motor-reservas':
+            $copChipsContexto = [
+                ['Pagos por conciliar', '¿Tengo pagos online por conciliar?'],
+            ];
+            if ($copMod('promociones')) {
+                $copChipsContexto[] = ['Cupones activos', '¿Qué cupones tengo activos?'];
+            }
+            break;
+        case 'reportes':
+            $copChipsContexto = [
+                ['Ganancias del mes pasado', '¿Cuáles fueron las ganancias del mes pasado?'],
+                ['¿Mejor o peor que el mes pasado?', '¿Voy mejor o peor que el mes pasado?'],
+                ['Mi mejor día', '¿Cuál fue mi mejor día del mes?'],
+            ];
+            break;
+    }
+}
+
+$copChips = $copChipsContexto;
+
+// Chips que aprenden: sin chips de seccion, el orden lo dicta la frecuencia
+// real de uso del hotel (log copiloto_mensajes, cache 1h). Los fijos de
+// siempre quedan como relleno/fallback.
+if (empty($copChips)) {
+    try {
+        $copChips = (new CopilotoService())->chipsFrecuentes($copHotelId, 6);
+    } catch (Throwable $e) {
+        $copChips = [];
+    }
+}
+
+foreach ($copChipsDefault as $chip) {
+    if (count($copChips) >= 6) {
+        break;
+    }
+    $repetido = false;
+    foreach ($copChips as $existente) {
+        if ($existente[1] === $chip[1]) {
+            $repetido = true;
+            break;
+        }
+    }
+    if (!$repetido) {
+        $copChips[] = $chip;
     }
 }
 ?>
@@ -162,6 +347,35 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-enlace:active { transform: translateY(0) scale(.98); }
 .cop-link { color: var(--brand-primary, #1B2746); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .cop-link:hover { opacity: .8; }
+/* ---- Microvisualizaciones inline (CSS puro, cromadas desde --brand-*) ---- */
+.cop-viz { margin-top: 10px; }
+.cop-viz-cols { display: flex; align-items: flex-end; gap: 5px; height: 64px; padding: 2px 1px 0; }
+.cop-viz-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.cop-viz-col-bar { width: 100%; max-width: 26px; min-height: 3px; border-radius: 5px 5px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #fff), var(--brand-primary, #1B2746)); transform-origin: bottom; animation: cop-viz-crece .5s cubic-bezier(.22,1,.36,1) both; }
+.cop-viz-col.destacada .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-accent, #BD9441) 55%, #fff), var(--brand-accent, #BD9441)); box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--brand-accent, #BD9441) 80%, transparent); }
+.cop-viz-col-lbl { font-size: .6rem; line-height: 1; color: #7C8496; white-space: nowrap; }
+.cop-viz-rows { display: flex; flex-direction: column; gap: 6px; }
+.cop-viz-row { display: flex; align-items: center; gap: 8px; }
+.cop-viz-row-lbl { flex: none; width: 84px; font-size: .7rem; color: #55607A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cop-viz-track { flex: 1; height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #EFECE3); overflow: hidden; display: block; }
+.cop-viz-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 62%, var(--brand-accent, #BD9441))); transform-origin: left; animation: cop-viz-crece-x .55s cubic-bezier(.22,1,.36,1) both; }
+.cop-viz-row.destacada .cop-viz-fill { background: linear-gradient(90deg, var(--brand-accent, #BD9441), color-mix(in srgb, var(--brand-accent, #BD9441) 62%, var(--brand-primary, #1B2746))); }
+.cop-viz-val { flex: none; font-size: .7rem; font-weight: 700; color: var(--brand-primary, #1B2746); }
+@keyframes cop-viz-crece { 0% { transform: scaleY(0); } 100% { transform: scaleY(1); } }
+@keyframes cop-viz-crece-x { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+html[data-theme="dark"] .cop-viz-col-lbl { color: #8A8478; }
+html[data-theme="dark"] .cop-viz-row-lbl { color: #C9C3B4; }
+html[data-theme="dark"] .cop-viz-track { background: rgba(239,233,220,.1); }
+html[data-theme="dark"] .cop-viz-val { color: #EFE9DC; }
+html[data-theme="dark"] .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-primary, #1B2746) 45%, #EFE9DC), color-mix(in srgb, var(--brand-primary, #1B2746) 70%, #EFE9DC)); }
+html[data-theme="dark"] .cop-viz-col.destacada .cop-viz-col-bar { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-accent, #BD9441) 60%, #EFE9DC), var(--brand-accent, #BD9441)); }
+html[data-theme="dark"] .cop-viz-fill { background: linear-gradient(90deg, color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #EFE9DC), color-mix(in srgb, var(--brand-primary, #1B2746) 45%, var(--brand-accent, #BD9441))); }
+
+/* Deep-links de respuesta: botones estilo chip, cromados desde --brand-*. */
+.cop-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.cop-accion { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--brand-primary, #1B2746); text-decoration: none; padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 26%, #D8D4C9); border-radius: 999px; background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff); transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background .18s ease, border-color .18s ease; }
+.cop-accion:hover { transform: translateY(-1px); border-color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #fff); box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 60%, transparent); }
+.cop-accion:active { transform: translateY(0) scale(.96); }
 .cop-sugerencias { display: flex; flex-wrap: wrap; gap: 6px; }
 .cop-chip { border: 1px solid #D8D4C9; background: #fff; border-radius: 999px; padding: 5px 11px; font-size: .78rem; cursor: pointer; color: #55607A; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease; }
 .cop-chip:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 4%, #fff); transform: translateY(-1px); box-shadow: 0 8px 16px -10px rgba(20,28,45,.4); }
@@ -174,6 +388,16 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-foot button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--brand-primary, #1B2746) 75%, transparent); }
 .cop-foot button:active { transform: translateY(0) scale(.96); }
 .cop-foot button:disabled { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
+/* ---- Dictado por voz: boton de microfono (solo se crea si hay soporte) ---- */
+.cop-mic { flex: none; width: 42px; min-height: 42px; padding: 0; border: 1px solid #D8D4C9; border-radius: 10px; background: #fff; color: #55607A; display: grid; place-items: center; cursor: pointer; box-shadow: none; transition: border-color .18s ease, color .18s ease, background .18s ease, transform .16s cubic-bezier(.34,1.56,.64,1); }
+.cop-mic:hover { border-color: var(--brand-primary, #1B2746); color: var(--brand-primary, #1B2746); transform: translateY(-1px); }
+.cop-mic:active { transform: translateY(0) scale(.94); }
+/* Rojo semantico: SOLO significa "grabando". */
+.cop-mic.cop-mic-rec { border-color: #DC2626; color: #DC2626; background: rgba(220,38,38,.08); animation: cop-mic-pulso 1.4s ease-in-out infinite; }
+@keyframes cop-mic-pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.26); } 50% { box-shadow: 0 0 0 7px rgba(220,38,38,0); } }
+html[data-theme="dark"] .cop-mic { background: #211F1A; border-color: rgba(239,233,220,.14); color: #C9C3B4; }
+html[data-theme="dark"] .cop-mic:hover { border-color: rgba(239,233,220,.4); color: #EFE9DC; }
+html[data-theme="dark"] .cop-mic.cop-mic-rec { background: rgba(220,38,38,.14); border-color: #EF4444; color: #F87171; }
 
 /* ---- Estado "pensando": skeleton con brillo (shimmer) ---- */
 .cop-skeleton { display: flex; flex-direction: column; gap: 8px; padding: 3px 0; min-width: 128px; }
@@ -199,6 +423,8 @@ html[data-theme="dark"] .cop-foot input { background: #211F1A; border-color: rgb
 html[data-theme="dark"] .cop-foot input::placeholder { color: #8A8478; }
 html[data-theme="dark"] .cop-chip { background: #211F1A; border-color: rgba(239,233,220,.14); color: #C9C3B4; }
 html[data-theme="dark"] .cop-enlace { border-color: rgba(239,233,220,.16); color: #EFE9DC; }
+html[data-theme="dark"] .cop-accion { background: #211F1A; border-color: rgba(239,233,220,.18); color: #EFE9DC; }
+html[data-theme="dark"] .cop-accion:hover { background: #2A2721; border-color: rgba(239,233,220,.32); box-shadow: 0 8px 16px -10px rgba(0,0,0,.6); }
 html[data-theme="dark"] .cop-link { color: #E7E1D3; }
 html[data-theme="dark"] .cop-close:hover { background: rgba(239,233,220,.14); }
 html[data-theme="dark"] .cop-fuente.reglas { background: rgba(34,197,94,.16); color: #4ADE80; }
@@ -222,6 +448,10 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     .cop-close,
     .cop-chip,
     .cop-enlace,
+    .cop-accion,
+    .cop-viz-col-bar,
+    .cop-viz-fill,
+    .cop-mic,
     .cop-foot button { animation: none !important; transition: opacity .12s ease, visibility 0s !important; }
     #cop-panel { transform: none !important; }
 }
@@ -382,22 +612,22 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
 }
 </style>
 
-<button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir asesor inteligente">
+<button id="cop-fab" class="cop-fab-discover cop-fab-attention" type="button" aria-label="Abrir <?= htmlspecialchars($copEtiquetaFab, ENT_QUOTES, 'UTF-8') ?>">
     <span class="cop-fab-mark" aria-hidden="true">
         <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
         <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="64" height="64" decoding="async">
     </span>
-    <span class="cop-fab-label" aria-hidden="true">Asesor inteligente</span>
+    <span class="cop-fab-label" aria-hidden="true"><?= htmlspecialchars($copEtiquetaFab, ENT_QUOTES, 'UTF-8') ?></span>
 </button>
 <div id="cop-backdrop" aria-hidden="true"></div>
-<div id="cop-panel" role="dialog" aria-label="Copiloto Medisoft" data-ms-keep-sidebar data-ms-no-modal>
+<div id="cop-panel" role="dialog" aria-label="<?= htmlspecialchars($copNombre, ENT_QUOTES, 'UTF-8') ?>" data-ms-keep-sidebar data-ms-no-modal>
     <div class="cop-head">
         <span class="cop-logo-mark" aria-hidden="true">
             <img class="cop-logo-img cop-logo-img-dia" src="<?= htmlspecialchars($copilotoLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
             <img class="cop-logo-img cop-logo-img-noche" src="<?= htmlspecialchars($copilotoLogoNocheUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" width="34" height="34" decoding="async">
         </span>
         <div>
-            <strong>Copiloto</strong>
+            <strong><?= htmlspecialchars($copNombre, ENT_QUOTES, 'UTF-8') ?></strong>
             <div class="cop-sub">Pregunta sobre tu hotel</div>
         </div>
         <button type="button" class="cop-close" id="cop-close" aria-label="Cerrar">&times;</button>
@@ -415,12 +645,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             <?php else: ?>
             Hola 👋 Preg&uacute;ntame sobre tu operaci&oacute;n o c&oacute;mo hacer algo.
             <div class="cop-sugerencias" style="margin-top:10px;">
-                <button type="button" class="cop-chip" data-q="Dame el resumen del día">📋 Resumen del día</button>
-                <button type="button" class="cop-chip" data-q="¿Cuántas habitaciones libres tengo hoy?">Habitaciones libres</button>
-                <button type="button" class="cop-chip" data-q="¿Quién llega hoy?">Llegadas de hoy</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo pinta la semana?">¿Cómo pinta la semana?</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo voy de caja?">Estado de caja</button>
-                <button type="button" class="cop-chip" data-q="¿Cómo hago un corte de caja?">¿Cómo hago un corte?</button>
+                <?php foreach ($copChips as $copChip): ?>
+                <button type="button" class="cop-chip" data-q="<?= htmlspecialchars($copChip[1], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($copChip[0], ENT_QUOTES, 'UTF-8') ?></button>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
         </div>
@@ -441,9 +668,20 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     var sendBtn = document.getElementById('cop-send');
     var closeBtn = document.getElementById('cop-close');
     var URL = <?= json_encode($copilotoUrl) ?>;
+    var URL_ACCION = <?= json_encode($copilotoUrlAccion) ?>;
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var RUTA = <?= json_encode($copRuta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var BASE = <?= json_encode(function_exists('url') ? rtrim(url(''), '/') . '/' : '/') ?>;
+    // Rutas relativas del sistema ("caja#ancla") -> URL absoluta con el base.
+    function resolverUrl(u) {
+        u = String(u || '');
+        return u.charAt(0) === '/' || u.indexOf('http') === 0 ? u : BASE + u;
+    }
     var ocupado = false;
+    // Memoria de conversacion: el intent que respondio el servidor a la
+    // pregunta anterior; se reenvia para que "¿y manana?" herede el tema.
+    var intentPrevio = '';
     var DISCOVERY_KEY = 'medisoft:copiloto-discovery:v1:' + (
         window.MEDISOFT_CONTEXT && window.MEDISOFT_CONTEXT.hotel_id
             ? String(window.MEDISOFT_CONTEXT.hotel_id)
@@ -537,6 +775,8 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         var datos = new URLSearchParams();
         datos.append('csrf_token', TOKEN);
         datos.append('pregunta', texto);
+        datos.append('ruta', RUTA);
+        datos.append('intent_previo', intentPrevio);
 
         fetch(URL, {
             method: 'POST',
@@ -545,21 +785,13 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                var html = formato(data.texto || 'No pude responder.');
-                var fuente = data.fuente || 'fallback';
-                var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
-                html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
-                if (data.enlace && data.enlace.url) {
-                    html += '<br><a class="cop-enlace" href="' + escapar(data.enlace.url.charAt(0) === '/' ? data.enlace.url : (data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
+                intentPrevio = typeof data.intent === 'string' ? data.intent : '';
+                pintarRespuesta(pensando, data);
+                // Accion ejecutable propuesta por el servidor: confirmar con
+                // msConfirm y solo entonces ejecutar (POST /copiloto/accion).
+                if (data.accion && data.accion.tipo) {
+                    confirmarAccion(data.accion);
                 }
-                pensando.classList.remove('cop-loading');
-                pensando.innerHTML = '<span class="cop-reveal">' + html + '</span>';
-                // Los enlaces vienen como ruta relativa del sistema; resolverlos con el base.
-                var a = pensando.querySelector('.cop-enlace');
-                if (a && data.enlace && data.enlace.url && data.enlace.url.charAt(0) !== '/') {
-                    a.setAttribute('href', <?= json_encode(function_exists('url') ? rtrim(url(''), '/') . '/' : '/') ?> + data.enlace.url);
-                }
-                body.scrollTop = body.scrollHeight;
             })
             .catch(function () {
                 pensando.classList.remove('cop-loading');
@@ -572,10 +804,210 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             });
     }
 
+    // Pinta una respuesta del copiloto (texto + etiqueta de fuente + deep-links)
+    // dentro de la burbuja indicada. Compartido por preguntas y acciones.
+    function pintarRespuesta(burbuja, data) {
+        var html = formato(data.texto || 'No pude responder.');
+        var fuente = data.fuente || 'fallback';
+        var etiqueta = fuente === 'reglas' ? '⚡ Instantáneo' : (fuente === 'ia' ? '✨ Asistida' : '💡 Sugerencia');
+        html += '<br><span class="cop-fuente ' + fuente + '">' + etiqueta + '</span>';
+        // Microvisualizacion inline (CSS puro): la cifra ya viene en el texto,
+        // la grafica es apoyo visual (aria-hidden).
+        if (data.viz && data.viz.items && data.viz.items.length) {
+            html += vizHtml(data.viz);
+        }
+        // Deep-links: botones de accion [{label, url}] (solo navegacion).
+        // Si vienen, sustituyen al enlace suelto para no duplicar destinos.
+        var acciones = (data.acciones || []).filter(function (a) { return a && a.url; }).slice(0, 3);
+        if (acciones.length) {
+            html += '<div class="cop-acciones">';
+            acciones.forEach(function (a) {
+                html += '<a class="cop-accion" href="' + escapar(resolverUrl(a.url)) + '">' + escapar(a.label || 'Abrir') + ' →</a>';
+            });
+            html += '</div>';
+        } else if (data.enlace && data.enlace.url) {
+            html += '<br><a class="cop-enlace" href="' + escapar(resolverUrl(data.enlace.url)) + '">' + escapar(data.enlace.texto || 'Abrir') + ' →</a>';
+        }
+        burbuja.classList.remove('cop-loading');
+        burbuja.innerHTML = '<span class="cop-reveal">' + html + '</span>';
+        body.scrollTop = body.scrollHeight;
+    }
+
+    // Mini-grafica en CSS puro a partir de {tipo: 'columnas'|'barras', items:
+    // [{etiqueta, valor, pct, destacar}]}. Todo texto pasa por escapar() y el
+    // porcentaje se acota 0-100 tambien aqui.
+    function vizHtml(viz) {
+        var items = (viz.items || []).slice(0, 8);
+        var clamp = function (p) { return Math.max(0, Math.min(100, parseInt(p, 10) || 0)); };
+        var h = '';
+        if (viz.tipo === 'columnas') {
+            h += '<div class="cop-viz cop-viz-cols" aria-hidden="true">';
+            items.forEach(function (it) {
+                var pct = clamp(it.pct);
+                h += '<div class="cop-viz-col' + (it.destacar ? ' destacada' : '') + '" title="' + escapar((it.etiqueta || '') + ': ' + (it.valor || '')) + '">' +
+                        '<div class="cop-viz-col-bar" style="height:' + Math.max(pct, 4) + '%"></div>' +
+                        '<span class="cop-viz-col-lbl">' + escapar(it.etiqueta || '') + '</span>' +
+                    '</div>';
+            });
+            h += '</div>';
+            return h;
+        }
+        h += '<div class="cop-viz cop-viz-rows" aria-hidden="true">';
+        items.forEach(function (it) {
+            var pct = clamp(it.pct);
+            h += '<div class="cop-viz-row' + (it.destacar ? ' destacada' : '') + '">' +
+                    '<span class="cop-viz-row-lbl">' + escapar(it.etiqueta || '') + '</span>' +
+                    '<span class="cop-viz-track"><span class="cop-viz-fill" style="width:' + Math.max(pct, 2) + '%"></span></span>' +
+                    '<span class="cop-viz-val">' + escapar(it.valor || '') + '</span>' +
+                '</div>';
+        });
+        h += '</div>';
+        return h;
+    }
+
+    // Confirmacion humana antes de ejecutar (msConfirm del sistema; si no
+    // esta, confirm nativo). Cancelar no ejecuta nada.
+    function confirmarAccion(accion) {
+        var pedir = window.msConfirm
+            ? window.msConfirm({ type: 'info', title: accion.confirm_titulo || '¿Confirmar accion?', msg: accion.confirm_msg || '', confirmLabel: accion.confirm_ok || 'Confirmar' })
+            : Promise.resolve(window.confirm(accion.confirm_msg || '¿Confirmar accion?'));
+
+        pedir.then(function (ok) {
+            if (!ok) {
+                agregar('bot', '<span class="cop-reveal">Sin problema, no programé nada.</span>');
+                return;
+            }
+            ejecutarAccion(accion);
+        });
+    }
+
+    function ejecutarAccion(accion) {
+        if (ocupado) { return; }
+        ocupado = true;
+        sendBtn.disabled = true;
+        var pensando = agregar('bot cop-loading',
+            '<div class="cop-skeleton" role="status" aria-label="Ejecutando">' +
+                '<span class="cop-sk-line"></span>' +
+                '<span class="cop-sk-line"></span>' +
+            '</div>');
+
+        var datos = new URLSearchParams();
+        datos.append('csrf_token', TOKEN);
+        datos.append('tipo', accion.tipo);
+        datos.append('habitacion_id', accion.habitacion_id || '');
+        datos.append('fecha', accion.fecha || '');
+        if (accion.trabajador_id) { datos.append('trabajador_id', accion.trabajador_id); }
+        if (accion.motivo) { datos.append('motivo', accion.motivo); }
+
+        fetch(URL_ACCION, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-CSRF-Token': TOKEN },
+            body: datos.toString()
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                pintarRespuesta(pensando, data);
+                if (data.success && window.msToast) {
+                    if (accion.tipo === 'iniciar_mantenimiento') {
+                        window.msToast('success', 'Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧');
+                    } else {
+                        window.msToast('success',
+                            accion.tipo === 'asignar_limpieza' ? 'Limpieza asignada' : 'Limpieza programada',
+                            'La tarea quedó en el tablero de limpieza. 🗓️');
+                    }
+                }
+            })
+            .catch(function () {
+                pensando.classList.remove('cop-loading');
+                pensando.innerHTML = '<span class="cop-reveal">No pude ejecutar la acción. Intenta de nuevo.</span>';
+            })
+            .finally(function () {
+                ocupado = false;
+                sendBtn.disabled = false;
+            });
+    }
+
     form.addEventListener('submit', function (e) { e.preventDefault(); preguntar(input.value); });
     body.addEventListener('click', function (e) {
         var chip = e.target.closest('.cop-chip');
         if (chip) { preguntar(chip.getAttribute('data-q')); }
     });
+
+    // ── Dictado por voz (Web Speech API, es-MX) ──
+    // Feature-detect: sin soporte el boton ni se crea. En iOS PWA u otros
+    // entornos que niegan el permiso, el primer error lo oculta en silencio.
+    (function () {
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { return; }
+
+        var mic = document.createElement('button');
+        mic.type = 'button';
+        mic.id = 'cop-mic';
+        mic.className = 'cop-mic';
+        mic.setAttribute('aria-label', 'Dictar pregunta');
+        mic.setAttribute('aria-pressed', 'false');
+        mic.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<rect x="9" y="2" width="6" height="12" rx="3"></rect>' +
+            '<path d="M5 10a7 7 0 0 0 14 0"></path>' +
+            '<line x1="12" y1="19" x2="12" y2="22"></line>' +
+        '</svg>';
+        form.insertBefore(mic, sendBtn);
+
+        var rec = null;
+        var grabando = false;
+
+        function detener() {
+            grabando = false;
+            mic.classList.remove('cop-mic-rec');
+            mic.setAttribute('aria-pressed', 'false');
+            if (rec) { try { rec.stop(); } catch (e) {} }
+        }
+
+        mic.addEventListener('click', function () {
+            if (grabando) { detener(); return; }
+            try {
+                rec = new SR();
+            } catch (e) {
+                mic.style.display = 'none';
+                return;
+            }
+            rec.lang = 'es-MX';
+            rec.interimResults = true;
+            rec.maxAlternatives = 1;
+            rec.onresult = function (ev) {
+                var texto = '';
+                var esFinal = false;
+                for (var i = ev.resultIndex; i < ev.results.length; i++) {
+                    texto += ev.results[i][0].transcript;
+                    if (ev.results[i].isFinal) { esFinal = true; }
+                }
+                if (texto) { input.value = texto; }
+                if (esFinal) {
+                    detener();
+                    if (input.value.trim()) { preguntar(input.value); }
+                }
+            };
+            rec.onerror = function (ev) {
+                detener();
+                // Permiso negado o servicio no disponible: degradar en silencio.
+                if (ev && (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')) {
+                    mic.style.display = 'none';
+                }
+            };
+            rec.onend = detener;
+            try {
+                rec.start();
+                grabando = true;
+                mic.classList.add('cop-mic-rec');
+                mic.setAttribute('aria-pressed', 'true');
+            } catch (e) {
+                detener();
+            }
+        });
+
+        // Cerrar el panel corta cualquier dictado en curso.
+        closeBtn.addEventListener('click', detener);
+        if (backdrop) { backdrop.addEventListener('click', detener); }
+    })();
 })();
 </script>
