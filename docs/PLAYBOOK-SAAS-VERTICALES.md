@@ -651,6 +651,16 @@ Arquitectura de tres capas, verificada en Medisoft (jul-2026). Regla madre:
    La salida `--json` es el contrato de autocorrección: cron → centinela →
    cluster nuevo a Claude (API o `claude -p`) → fix como PR → humano aprueba
    → merge marca resolver. Separar canal cli (tests) de web (real).
+8. **tools/observatorio del asistente IA** (mismo patrón que el centinela,
+   aplicado a calidad): requiere que el chat registre cada pregunta con
+   fuente reglas|ia|fallback (tabla mensajes, semana 1). El observatorio
+   agrupa las caídas en fallback por firma de TOKENS (minúsculas, sin
+   acentos/números/muletillas, únicos y ordenados → redacciones distintas
+   del mismo tema caen juntas) + estado atendida/ignorada; REGRESIÓN = se
+   le enseñó y sigue cayendo. La enseñanza SIEMPRE entra por el camino
+   determinista estándar, nunca auto-modificando prompts en caliente.
+   GOTCHA: fechar el estado con el reloj de la BD (created_at es de MySQL;
+   mezclar relojes PHP/BD abre ventana de falsas regresiones).
 
 ```markdown
 # [MARCA] — SaaS para [GIRO]

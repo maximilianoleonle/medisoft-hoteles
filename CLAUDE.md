@@ -25,6 +25,7 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 
 - `src/app/controllers/` → `XController.php`; ruta `/seccion/accion` → `SeccionController::accion()`; vistas en `src/app/views/<seccion>/`.
 - `src/app/models/` modelos · `src/app/services/` servicios (AnticipoService, etc.) · `src/app/helpers/functions.php` = helpers globales (archivo gigante: leer quirúrgico con Grep, jamás completo).
+- Config global (permisos.php del RBAC, etc.) vive en `src/config/`, NO en `src/app/config/`.
 - `src/app/views/partials/` componentes compartidos: `filtros.php` (barras filtro boutique), `confirm.php` (msConfirm), `back_arrow.php`, `view_topbar.php` (inyectado desde header.php a TODAS las vistas), `section_subnav.php`.
 - Layout: `src/app/views/layout/` (header.php, footer.php, sidebar.php).
 - CSS: `src/public_html/css/` (tailwind.css generado, dark-theme.css, cupertino.css) · JS: `src/public_html/js/` (app.js, sidebar-rail.js, instant-nav.js, modal-sidebar-fix.js).
@@ -40,6 +41,7 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 - Migraciones: `php src/tools/migrate.php` (SQL en `migrations/` de la RAÍZ del repo, ~100 archivos; `src/database/migrations/` es un directorio muerto). GOTCHA: tras cualquier migración que cambie esquema, regenerar `src/database/schema.sql` (los tests recrean `medisoft_test` desde ahí; si queda viejo, la suite llena el log de `Unknown column`): `docker exec medisoft_hoteles_db mysqldump --no-data --skip-comments --ignore-table=medisoft_hoteles_import.vista_caja_actual -umedisoft_user -pmedisoft_pass medisoft_hoteles_import | sed 's/ AUTO_INCREMENT=[0-9]*//' > src/database/schema.sql`.
 - Tests en paralelo NO: dos corridas simultáneas se pisan (`run.php` hace DROP/CREATE de `medisoft_test` → deadlocks, `1146 table doesn't exist`, duplicados de semilla fantasma). Si fallan raro, revisar `SHOW PROCESSLIST` por otra conexión a `medisoft_test` antes de depurar.
 - **Centinela de errores**: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/centinela.php` — agrupa errores de logs por firma con estado persistente (NUEVA/REGRESIÓN gritan, conocidas callan; exit 1 = actuar). `resolver <firma> "nota"` al arreglar un bug, `ignorar <firma>` para ruido; `--json` = contrato para autocorrección futura con IA. Canal cli suele ser tests, no la BD real.
+- **Observatorio del Copiloto**: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/observatorio_copiloto.php` — salud reglas/ia/fallback + preguntas caídas en fallback agrupadas por tema (firma de tokens sin orden/muletillas); `atendida <firma> "nota"` al enseñarle algo, `ignorar` para saludos/ruido; REGRESIÓN = se le enseñó y sigue cayendo; `--json` = contrato de automatización. GOTCHA: al fechar estado usar reloj de la BD, no PHP (relojes difieren 6h).
 - Crons de referencia en `src/tools/cron_*.php` (night audit, ical, copiloto, cobros saas…).
 
 ## Invariantes — NO ROMPER
