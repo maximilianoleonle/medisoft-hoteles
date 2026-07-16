@@ -65,6 +65,7 @@ Documentos hermanos (misma regla de alimentación, se leen **bajo demanda**):
 ## Componentes reutilizables (no reinventar)
 
 - Toast/confirm: `msToast` + `msConfirm` (modal PC / sheet móvil) + `msPageState` · Modales: `window.msModal` (animación+skeleton, footer.php).
+- Validación de forms (app.js): todo POST guardado recibe el recuadro genérico `.ms-form-error-summary` + anti-doble-submit + borrador. Opt-outs por atributo: `data-form-guard="off"` (apaga TODO), `data-ms-no-summary="1"` (solo suprime el recuadro, útil si el form ya avisa por su cuenta — ej. wizard de check-in que usa `mostrarMensaje`→`msToast`), `data-no-unsaved-warning`, `data-no-draft`.
 - Inputs de dinero: `data-money-format="true"` (MedisoftMoneyInput ya vive en app.js ~2204-2335).
 - Filtros de listados: partial `filtros.php` (.msf-*) · Badges de novedad sidebar: helper `sidebar_novedades()`.
 - Push PWA: cadena completa con ruteo por rol (ver PwaPushController); iOS requiere instalación.

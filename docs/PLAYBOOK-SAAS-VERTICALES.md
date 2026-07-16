@@ -347,6 +347,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
 | P13 | CSS compilado en el navegador (Tailwind Play CDN) | Tailwind PRECOMPILADO en build (Vite lo da gratis en Laravel). El compilador en cliente cuesta cientos de ms por página en cada carga, peor en móvil, y obliga a `unsafe-eval` en la CSP. GOTCHA pagado: los `content` globs JAMÁS deben tocar archivos vendoreados con líneas gigantes (fuentes CID de TCPDF: 1.5MB, líneas de 1.1M chars) — el extractor pasa de segundos a 5+ MINUTOS y parece colgado. Ante un build lento: bisect por glob con `--content` |
 | P14 | Llamar helpers con firmas inventadas (`current_user('id')`) | PHP no truena por argumentos extra: el helper ignora el argumento, devuelve el array completo y el bug aparece hasta la DB como `'Array' for column usuario_registro_id` (rompió Iniciar/Programar mantenimiento en Medisoft). Para el id del usuario SIEMPRE el helper dedicado (`user_id()`); en Laravel, `auth()->id()`. Y los errores SQL crudos JAMÁS llegan al toast: loguear completo, mostrar mensaje genérico |
 | P15 | Estilos de un modal/bottom-sheet scopeados bajo un wrapper (`.vista .sheet{…}`) cuando el nodo del sheet puede quedar FUERA de ese wrapper en el DOM | Es la causa REAL de "hoja/modal en blanco en móvil" (pagado en el bottom-sheet de /habitaciones, jul 2026): el bloque entero de reglas (posición fija, `bottom:0`, y el clon del contenido en flujo) vivía bajo `.habitaciones-view`, pero el markup del sheet quedaba fuera de ese contenedor → ninguna regla aplicaba, el sheet no se anclaba al viewport y el contenido clonado conservaba su `position:absolute; top:100%`, empujándose ~una pantalla abajo (fuera de vista) → BLANCO. Reglas: (a) el sheet/modal NO debe depender de un ancestro-wrapper para sus estilos base — o se scopean con su propia clase raíz, o se garantiza en JS que viva dentro del wrapper al abrir (`if (sheet.parentElement !== wrapper) wrapper.appendChild(sheet)`); (b) mover un `position:fixed` dentro de un wrapper es seguro SOLO si ese wrapper no crea bloque-contenedor (sin `transform`/`filter`/`contain`/`will-change`). GOTCHA de diagnóstico que ahorró horas: cuando el bug NO reproduce en escritorio/Chromium (aunque cargues TODAS las hojas y el tema), instrumenta el dispositivo REAL con un panel `position:fixed;z-index:max` que vuelque rects/offsetTop/ancestros al abrir; una sola captura del usuario da la causa exacta. No asumir "es de iOS" sin ese dato — la primera hipótesis (`-webkit-overflow-scrolling:touch`) fue errónea y no costó nada verificarla mal |
+| P16 | Dump de esquema para tests que se actualiza "a mano" (o nunca) | Pagado jul 2026: 13 errores/día de `Unknown column 'activo_id'` porque los tests recreaban la BD de prueba desde un `schema.sql` congelado meses atrás de las migraciones — el bug ni existía en la app real, solo en la BD de tests. En Laravel `RefreshDatabase` corre las MIGRACIONES (nunca un dump); si algún test usa dump/squash, su regeneración es un comando del repo y el CI compara dump vs migraciones. Bonus pagado el mismo día: dos suites de tests corriendo EN PARALELO contra la misma BD de prueba (dos sesiones/PCs) producen fallas fantasma (deadlocks, `1146 table doesn't exist`, semillas duplicadas) — ante fallas absurdas, primero `SHOW PROCESSLIST` |
 
 ---
 
@@ -632,6 +633,14 @@ Arquitectura de tres capas, verificada en Medisoft (jul-2026). Regla madre:
 6. **Poda mensual**: pase de consolidación sobre los tres .md (fusionar
    duplicados, borrar lo obsoleto). Sin poda, el sistema engorda hasta costar
    más de lo que ahorra.
+7. **tools/centinela.php** (vigilancia): requiere logs estructurados JSON con
+   nivel/ruta/origen/contexto (montarlos en semana 1). Agrupa errores por
+   FIRMA (mensaje normalizado: números y literales → placeholders) con estado
+   persistente: NUEVA y REGRESIÓN (resuelta que volvió) gritan con exit 1;
+   conocidas/ignoradas callan. Ciclo: bug arreglado → `resolver <firma>`.
+   La salida `--json` es el contrato de autocorrección: cron → centinela →
+   cluster nuevo a Claude (API o `claude -p`) → fix como PR → humano aprueba
+   → merge marca resolver. Separar canal cli (tests) de web (real).
 
 ```markdown
 # [MARCA] — SaaS para [GIRO]
