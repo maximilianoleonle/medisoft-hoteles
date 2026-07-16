@@ -39,10 +39,10 @@ class ForecastController extends Controller {
         $temporadas = $temporadaModel->delHotel($hotelId);
         $eventos = array_merge(
             array_map(static function ($t) {
-                return ['desde' => $t['desde'], 'hasta' => $t['hasta'], 'nombre' => $t['nombre'], 'intensidad' => $t['intensidad']];
+                return ['tipo' => 'temporada', 'desde' => $t['desde'], 'hasta' => $t['hasta'], 'nombre' => $t['nombre'], 'intensidad' => $t['intensidad']];
             }, $temporadaModel->enRango($hoy, $tope90, $hotelId)),
             array_map(static function ($f) {
-                return $f + ['intensidad' => 'alta'];
+                return $f + ['tipo' => 'festivo', 'intensidad' => 'alta'];
             }, festivos_mx_en_rango($hoy, $tope90))
         );
         usort($eventos, static function ($a, $b) {

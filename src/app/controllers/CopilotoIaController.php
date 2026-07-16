@@ -130,9 +130,11 @@ class CopilotoIaController extends Controller {
             }
 
             $verbo = $sugerencia['accion'] === 'subir' ? 'subir' : 'bajar';
-            $registro = $tarifaModel->create([
+            $nombreAjuste = 'Copiloto: ' . $verbo . ' tarifa ' . rtrim(rtrim(number_format($pct, 1), '0'), '.') . '%';
+            // Model::create devuelve el ID insertado (no la fila).
+            $registroId = $tarifaModel->create([
                 'hotel_id' => $hotelId,
-                'nombre' => 'Copiloto: ' . $verbo . ' tarifa ' . rtrim(rtrim(number_format($pct, 1), '0'), '.') . '%',
+                'nombre' => $nombreAjuste,
                 'descripcion' => (string) $sugerencia['motivo'],
                 'tipo_incremento' => 'porcentaje',
                 'clase' => $sugerencia['accion'] === 'subir' ? 'incremento' : 'descuento',
@@ -151,7 +153,7 @@ class CopilotoIaController extends Controller {
                 'snapshot_tarifa' => $snapTarifa,
             ]);
 
-            if (!$registro) {
+            if (!$registroId) {
                 View::renderJSON(['success' => false, 'message' => 'No se pudo crear el ajuste. Intenta de nuevo.'], 500);
             }
 
@@ -162,8 +164,8 @@ class CopilotoIaController extends Controller {
 
             View::renderJSON([
                 'success' => true,
-                'id' => (int) ($registro['id'] ?? 0),
-                'nombre' => (string) ($registro['nombre'] ?? ''),
+                'id' => (int) $registroId,
+                'nombre' => $nombreAjuste,
                 'url_tarifas' => url('configuracion/tarifas'),
                 'message' => 'Ajuste creado. Las cotizaciones de esas fechas ya lo aplican.',
             ], 200);

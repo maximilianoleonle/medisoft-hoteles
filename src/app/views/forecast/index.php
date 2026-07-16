@@ -496,7 +496,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
 
             <?php
             $festivos90 = array_values(array_filter($eventos, static function ($e) {
-                return !isset($e['id']); // los festivos calculados no traen id
+                return ($e['tipo'] ?? '') === 'festivo';
             }));
             ?>
             <?php if (!empty($festivos90)): ?>
