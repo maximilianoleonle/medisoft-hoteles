@@ -279,6 +279,8 @@ class CopilotoService
             'accion:cupon_ok' => 'Cupon creado',
             'accion:pago' => 'Pagar a proveedor (propuesta)',
             'accion:pago_ok' => 'Pago a proveedor registrado',
+            'accion:reserva_link' => 'Reservacion armada (formulario prellenado)',
+            'accion:reserva_ocupada' => 'Reservacion: habitacion ocupada',
             'resumen_dia' => '📋 Resumen del dia',
         ];
         return $fijas[$intent] ?? ucfirst(str_replace(['_', ':'], ' ', $intent));
@@ -356,7 +358,8 @@ class CopilotoService
             ?? $this->detectarAccionGasto($norm, $hotelId)
             ?? $this->detectarAccionPagoProveedor($norm, $hotelId)
             ?? $this->detectarAccionCupon($norm, $hotelId)
-            ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto);
+            ?? $this->detectarAccionLimpieza($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionReservacion($norm, $hotelId, $contexto);
         if ($accion !== null) {
             $this->registrar($hotelId, $usuarioId, $pregunta, 'reglas', $accion['intent'], 0, 0);
             return $accion['respuesta'] + ['success' => true, 'fuente' => 'reglas', 'intent' => $accion['intent']];
@@ -2514,6 +2517,225 @@ class CopilotoService
         return $base . '-' . date('His');
     }
 
+    /**
+     * Detecta "reservale la 204 a Juan del 20 al 22 de agosto" y arma el
+     * FORMULARIO PRELLENADO (no crea nada). Deliberadamente NO es una accion
+     * POST: crear una reservacion involucra precio, tarifas y anticipo, y
+     * eso vive en la pantalla de crear (que ya acepta preseleccion por URL).
+     * El copiloto aporta lo que si sabe: entender la frase, verificar que la
+     * habitacion este libre esas noches y encontrar al huesped.
+     */
+    private function detectarAccionReservacion(string $norm, int $hotelId, ?array $contexto = null): ?array
+    {
+        // "como hago/creo una reservacion" es ayuda, no orden: FAQ la atiende.
+        if (strpos($norm, 'como ') !== false || strpos($norm, 'limpi') !== false) {
+            return null;
+        }
+
+        $fechas = self::parsearFechasReserva($norm);
+        $imperativo = (bool) preg_match('/\b(reservale|reservame|apartale|apartame|aparta)\b/', $norm);
+        $verboConFechas = preg_match('/\b(reserva|agenda|agendale|crea|creame|haz|hazme)\b/', $norm)
+            && preg_match('/\breserva(cion)?\b/', $norm) && $fechas !== null;
+        // "¿tiene reserva Garcia?" trae el sustantivo pero ni imperativo ni
+        // fechas: no es nuestra y debe caer a la busqueda de huesped.
+        if (!$imperativo && !$verboConFechas) {
+            return null;
+        }
+
+        // Sin gate de permiso a proposito: esto es un ENLACE al formulario de
+        // crear, y esa pantalla no exige permiso adicional (solo sesion del
+        // hotel). Gatear aqui mas fuerte que la pantalla rompe con los roles
+        // legacy (can_legacy no conoce reservaciones.*).
+
+        if ($fechas === null) {
+            return ['intent' => 'accion:reserva_sin_fechas', 'respuesta' => [
+                'texto' => "No identifique las fechas. Dimelo asi: \"reservale la 204 a Juan del 20 al 22 de agosto\" o \"aparta la 204 manana por 2 noches\".",
+                'enlace' => null,
+            ]];
+        }
+
+        $noches = max(1, (int) round((strtotime($fechas['salida']) - strtotime($fechas['entrada'])) / 86400));
+        $rangoTexto = 'del ' . date('d/m', strtotime($fechas['entrada'])) . ' al ' . date('d/m', strtotime($fechas['salida']))
+            . ' (' . $noches . ' noche' . ($noches === 1 ? '' : 's') . ')';
+
+        $hab = $this->buscarHabitacionEnTexto($norm, $hotelId);
+        if ($hab === null && $contexto !== null && ($contexto['tipo'] ?? '') === 'habitacion') {
+            $hab = $this->habitacionPorId($hotelId, (int) $contexto['id']);
+        }
+
+        // Disponibilidad real (reservas Y mantenimientos), el mismo motor de
+        // la pantalla. Ocupada = link SIN habitacion para elegir otra ahi.
+        $habLibre = null;
+        if ($hab !== null) {
+            try {
+                require_once __DIR__ . '/../models/Reservacion.php';
+                $habLibre = (bool) (new Reservacion())->verificarDisponibilidadMultiple([(int) $hab['id']], $fechas['entrada'], $fechas['salida']);
+            } catch (Throwable $e) {
+                error_log('Copiloto: error disponibilidad reserva: ' . $e->getMessage());
+                $habLibre = null;
+            }
+        }
+
+        $huesped = $this->buscarHuespedParaReserva($norm, $hotelId);
+
+        $params = ['fecha_entrada=' . $fechas['entrada'], 'fecha_salida=' . $fechas['salida'], 'preseleccion=1'];
+        if ($hab !== null && $habLibre === true) {
+            $params[] = 'habitacion_id=' . (int) $hab['id'];
+        }
+        if ($huesped !== null && isset($huesped['id'])) {
+            $params[] = 'huesped_id=' . (int) $huesped['id'];
+        }
+        $url = 'reservaciones/crear?' . implode('&', $params);
+
+        if ($hab !== null && $habLibre === false) {
+            return ['intent' => 'accion:reserva_ocupada', 'respuesta' => [
+                'texto' => "La habitacion **{$hab['numero']}** NO esta libre {$rangoTexto}: tiene una reserva o mantenimiento que se cruza. "
+                    . 'Te dejo el formulario con las fechas puestas para que elijas otra habitacion ahi (te muestra solo las disponibles).',
+                'enlace' => null,
+                'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
+            ]];
+        }
+
+        $piezas = [];
+        if ($hab !== null) {
+            $piezas[] = 'habitacion **' . $hab['numero'] . '**' . ($habLibre === true ? ' (libre esas noches ✔)' : '');
+        }
+        $piezas[] = $rangoTexto;
+        if ($huesped !== null && isset($huesped['id'])) {
+            $piezas[] = 'para **' . $huesped['nombre'] . '** (ya en tus huespedes)';
+        } elseif ($huesped !== null && isset($huesped['varios'])) {
+            $piezas[] = 'el nombre casa con varios huespedes: eligelo en el formulario';
+        }
+
+        return ['intent' => 'accion:reserva_link', 'respuesta' => [
+            'texto' => 'Te dejo la reservacion armada: ' . implode(', ', $piezas) . '. '
+                . 'Abre el formulario, revisa el precio que calcula el sistema y guardala ahi; el cobro o anticipo se hace en esa pantalla, como siempre.',
+            'enlace' => null,
+            'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
+        ]];
+    }
+
+    /**
+     * Parser puro (sin BD) de fechas de estancia dictadas. Espera texto
+     * normalizado; $hoy inyectable para tests. Entiende:
+     *  - "del 20 al 22 (de agosto)": rango; sin mes usa el actual y si ya
+     *    paso se corre al mes siguiente; con mes nombrado ya pasado, al año
+     *    siguiente (una estancia no puede nacer en el pasado).
+     *  - "el 15 de agosto (por 3 noches)": entrada + noches (default 1).
+     *  - "hoy/manana/pasado manana (por N noches)".
+     * Devuelve ['entrada' => Y-m-d, 'salida' => Y-m-d] o null.
+     */
+    public static function parsearFechasReserva(string $norm, ?string $hoy = null): ?array
+    {
+        $hoy = $hoy ?: date('Y-m-d');
+        $meses = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7,
+            'agosto' => 8, 'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
+
+        $noches = 1;
+        if (preg_match('/\b(\d{1,2})\s+noches?\b/', $norm, $m)) {
+            $noches = max(1, min(30, (int) $m[1]));
+        }
+
+        $reMes = '(' . implode('|', array_keys($meses)) . ')';
+
+        // "del 20 al 22 (de agosto)"
+        if (preg_match('/\bdel?\s+(\d{1,2})\s+al\s+(\d{1,2})(?:\s+de\s+' . $reMes . ')?/', $norm, $m)) {
+            $d1 = (int) $m[1];
+            $d2 = (int) $m[2];
+            if ($d1 >= $d2) {
+                return null;
+            }
+            $conMes = isset($m[3]) && $m[3] !== '';
+            $mes = $conMes ? $meses[$m[3]] : (int) date('n', strtotime($hoy));
+            $anio = (int) date('Y', strtotime($hoy));
+            if (!checkdate($mes, $d1, $anio) || !checkdate($mes, $d2, $anio)) {
+                return null;
+            }
+            $entrada = sprintf('%04d-%02d-%02d', $anio, $mes, $d1);
+            if ($entrada < $hoy) {
+                // Pasado: mes nombrado -> +1 año; mes implicito -> mes siguiente.
+                if ($conMes) {
+                    $entrada = date('Y-m-d', strtotime($entrada . ' +1 year'));
+                } else {
+                    $base = strtotime(sprintf('%04d-%02d-01', $anio, $mes) . ' +1 month');
+                    $mes = (int) date('n', $base);
+                    $anio = (int) date('Y', $base);
+                    if (!checkdate($mes, $d1, $anio) || !checkdate($mes, $d2, $anio)) {
+                        return null;
+                    }
+                    $entrada = sprintf('%04d-%02d-%02d', $anio, $mes, $d1);
+                }
+            }
+            return ['entrada' => $entrada, 'salida' => substr($entrada, 0, 8) . sprintf('%02d', $d2)];
+        }
+
+        // "el 15 de agosto (por N noches)"
+        if (preg_match('/\bel\s+(\d{1,2})\s+de\s+' . $reMes . '\b/', $norm, $m)) {
+            $d = (int) $m[1];
+            $mes = $meses[$m[2]];
+            $anio = (int) date('Y', strtotime($hoy));
+            if (!checkdate($mes, $d, $anio)) {
+                return null;
+            }
+            $entrada = sprintf('%04d-%02d-%02d', $anio, $mes, $d);
+            if ($entrada < $hoy) {
+                $entrada = date('Y-m-d', strtotime($entrada . ' +1 year'));
+            }
+            return ['entrada' => $entrada, 'salida' => date('Y-m-d', strtotime($entrada . " +{$noches} days"))];
+        }
+
+        // "hoy / manana / pasado manana (por N noches)"
+        if (strpos($norm, 'pasado manana') !== false) {
+            $entrada = date('Y-m-d', strtotime($hoy . ' +2 days'));
+        } elseif (preg_match('/\bmanana\b/', $norm)) {
+            $entrada = date('Y-m-d', strtotime($hoy . ' +1 day'));
+        } elseif (preg_match('/\bhoy\b/', $norm)) {
+            $entrada = $hoy;
+        } else {
+            return null;
+        }
+
+        return ['entrada' => $entrada, 'salida' => date('Y-m-d', strtotime($entrada . " +{$noches} days"))];
+    }
+
+    /**
+     * Extrae el posible nombre de huesped de la frase ("a Juan Perez", "para
+     * Maria") y lo busca en el catalogo de huespedes del hotel. Devuelve
+     * ['id','nombre'], ['varios' => true] o null (se captura en la pantalla).
+     */
+    private function buscarHuespedParaReserva(string $norm, int $hotelId): ?array
+    {
+        if (!preg_match('/\b(?:a|para)\s+([a-z][a-z ]{2,50}?)(?=\s+(?:del|el|los|la|las|un|una|hoy|manana|por|en|de|\d)|$)/', $norm, $m)) {
+            return null;
+        }
+        $nombre = trim((string) preg_replace('/\s+(?:la|las|el|los|de|del|señor|señora|sr|sra)\s*$/', '', trim($m[1])));
+        if (mb_strlen($nombre) < 3 || in_array($nombre, ['alguien', 'huesped', 'cliente', 'nombre'], true)) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, nombre_completo FROM huespedes
+                 WHERE hotel_id = ? AND nombre_completo LIKE ?
+                 ORDER BY id DESC LIMIT 3"
+            );
+            $stmt->execute([$hotelId, '%' . addcslashes($nombre, "%_\\") . '%']);
+            $filas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            error_log('Copiloto: error huesped para reserva: ' . $e->getMessage());
+            return null;
+        }
+
+        if (count($filas) === 1) {
+            return ['id' => (int) $filas[0]['id'], 'nombre' => trim((string) $filas[0]['nombre_completo'])];
+        }
+        if (count($filas) > 1) {
+            return ['varios' => true];
+        }
+
+        return null;
+    }
+
     /** Estado actual de la habitacion (scope de hotel) o '' si no se pudo leer. */
     private function estadoHabitacion(int $hotelId, int $habitacionId): string
     {
@@ -4386,7 +4608,7 @@ class CopilotoService
             . "• \"¿como voy de caja?\" o \"¿hay checkouts vencidos?\"\n"
             . "• \"¿cuales fueron las ganancias del mes pasado?\" o \"¿voy mejor o peor que el mes pasado?\"\n"
             . "• \"¿como nos fue el jueves?\" o \"¿cuanto vendi ayer?\"\n"
-            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\", \"crea un cupon de 10% para agosto\", \"pagale 500 al proveedor Garcia\"\n"
+            . "• o pideme una accion: \"registra un gasto de 450 de plomeria\", \"bloquea la 204 por pintura\", \"desbloquea la 204\", \"programa limpieza de la 204\", \"crea un cupon de 10% para agosto\", \"pagale 500 al proveedor Garcia\", \"reservale la 204 a Juan del 20 al 22\"\n"
             . "• o preguntame como hacer algo: un corte, un ingreso, un check-in, un cupon...";
     }
 

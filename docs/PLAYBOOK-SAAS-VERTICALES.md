@@ -267,6 +267,15 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
       y verificar disponibilidad (AGOSTO10 → AGOSTO10-2); el UNIQUE de la
       tabla es el candado final. Un mes referido que ya pasó se corre al año
       siguiente (una vigencia no puede nacer vencida).
+    - La transacción compleja del giro (reservación/cita/orden: precio,
+      tarifas, anticipo) NO se crea por chat: el chat entiende la frase,
+      valida lo que sí sabe (disponibilidad real con el motor de la
+      pantalla, entidad existente) y entrega el FORMULARIO PRELLENADO por
+      URL (la pantalla de crear debe aceptar preselección por query). Si el
+      recurso está ocupado se avisa y el link va sin recurso para elegir
+      otro ahí. Ojo con el gate: un enlace no debe exigir MÁS permiso que
+      la pantalla a la que apunta (con roles legacy, un can() extra bloquea
+      a todos en silencio).
     - Pagos a deuda por chat (CxP): siempre la cuenta MAS ANTIGUA del
       acreedor (vence primero gana) diciéndolo y nombrando cuántas más hay;
       sin monto dictado se propone SALDAR; monto > saldo se frena al

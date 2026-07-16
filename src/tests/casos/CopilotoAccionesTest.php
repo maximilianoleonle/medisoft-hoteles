@@ -46,6 +46,10 @@ $db->query("INSERT INTO cuentas_por_pagar (hotel_id, proveedor_id, folio, fecha_
 $db->query("INSERT INTO proveedores (hotel_id, nombre, activo) VALUES (?, 'Maria Materiales', 1)", [$hotelId]);
 $db->query("INSERT INTO trabajadores (hotel_id, nombre_completo, estado) VALUES (?, 'Maria Lopez', 'activo')", [$hotelId]);
 
+// Huesped conocido para el prellenado de reservacion.
+$db->query("INSERT INTO huespedes (hotel_id, nombre_completo, created_at) VALUES (?, 'Juan Perez', NOW())", [$hotelId]);
+$huespedJuanId = (int) $db->lastInsertId();
+
 $servicio = new CopilotoService();
 
 // ── Gasto sin caja abierta: se frena en la propuesta ──
@@ -240,6 +244,46 @@ t_ok(empty($r['accion']), 'nombre compartido: sin payload de accion');
 // ── "paga la nomina" no es un pago a proveedor ──
 $r = $servicio->responder($hotelId, 'paga la nomina', $usuarioId);
 t_ok(strpos((string) ($r['intent'] ?? ''), 'accion:pago') !== 0, 'paga la nomina: no se confunde con proveedor');
+
+// ── Reservacion por chat: formulario prellenado (no crea nada) ──
+$fr = CopilotoService::parsearFechasReserva('del 20 al 22 de diciembre');
+$r = $servicio->responder($hotelId, 'reservale la 204 a juan perez del 20 al 22 de diciembre', $usuarioId);
+t_eq('accion:reserva_link', $r['intent'] ?? null, 'reserva: arma el enlace');
+t_ok(empty($r['accion']), 'reserva: NO es accion POST (no crea nada)');
+$url = (string) ($r['acciones'][0]['url'] ?? '');
+t_ok(strpos($url, 'reservaciones/crear?') === 0, 'reserva: apunta al formulario de crear');
+t_ok(strpos($url, 'fecha_entrada=' . $fr['entrada']) !== false, 'reserva: entrada prellenada');
+t_ok(strpos($url, 'fecha_salida=' . $fr['salida']) !== false, 'reserva: salida prellenada');
+t_ok(strpos($url, 'habitacion_id=' . $habitacionId) !== false, 'reserva: habitacion libre prellenada');
+t_ok(strpos($url, 'huesped_id=' . $huespedJuanId) !== false, 'reserva: huesped encontrado y prellenado');
+$reservasAntes = (int) $db->query("SELECT COUNT(*) c FROM reservaciones WHERE hotel_id = ?", [$hotelId])->fetch()['c'];
+t_eq(0, $reservasAntes, 'reserva: cero reservaciones creadas por el chat');
+
+// ── Habitacion ocupada esas noches: fechas si, habitacion no ──
+$db->query("INSERT INTO huespedes (hotel_id, nombre_completo, created_at) VALUES (?, 'Ocupante Previo', NOW())", [$hotelId]);
+$otroHuesped = (int) $db->lastInsertId();
+$db->query("INSERT INTO reservaciones (hotel_id, huesped_id, fecha_entrada, fecha_salida, precio_total, estado, created_at)
+            VALUES (?, ?, ?, ?, 1800, 'confirmada', NOW())", [$hotelId, $otroHuesped, $fr['entrada'], $fr['salida']]);
+$reservaOcupante = (int) $db->lastInsertId();
+$db->query("INSERT INTO reservacion_habitaciones (hotel_id, reservacion_id, habitacion_id, precio)
+            VALUES (?, ?, ?, 900)", [$hotelId, $reservaOcupante, $habitacionId]);
+$r = $servicio->responder($hotelId, 'reservale la 204 a juan perez del 20 al 22 de diciembre', $usuarioId);
+t_eq('accion:reserva_ocupada', $r['intent'] ?? null, 'reserva ocupada: avisa el cruce');
+$url = (string) ($r['acciones'][0]['url'] ?? '');
+t_ok(strpos($url, 'fecha_entrada=') !== false, 'reserva ocupada: conserva las fechas');
+t_ok(strpos($url, 'habitacion_id=') === false, 'reserva ocupada: sin habitacion preseleccionada');
+
+// ── Sin fechas: guia ──
+$r = $servicio->responder($hotelId, 'reservale la 204 a juan perez', $usuarioId);
+t_eq('accion:reserva_sin_fechas', $r['intent'] ?? null, 'reserva sin fechas: pide las fechas');
+
+// ── "¿tiene reserva juan?" sigue siendo busqueda, no accion ──
+$r = $servicio->responder($hotelId, 'tiene reserva juan perez?', $usuarioId);
+t_eq('busca:huesped', $r['intent'] ?? null, 'pregunta de reserva: sigue cayendo a busqueda de huesped');
+
+// ── "como hago una reservacion" sigue siendo FAQ ──
+$r = $servicio->responder($hotelId, 'como hago una reservacion', $usuarioId);
+t_ok(strpos((string) ($r['intent'] ?? ''), 'accion:reserva') !== 0, 'como hago: no se confunde con la accion');
 
 // ── Hotel sin el bloque promociones: la accion ni se propone ──
 $db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel Sin Promos', 'sin-promos', 1, NOW())");
