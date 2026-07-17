@@ -135,6 +135,36 @@ class CopilotoController extends Controller {
     }
 
     /**
+     * Feedback 👍/👎 del usuario sobre una respuesta del copiloto. Solo
+     * marca la fila del LOG (scope de hotel); re-votar actualiza.
+     */
+    public function feedbackAction() {
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false], 405);
+        }
+
+        $this->validateCSRF();
+
+        $hotelId = (int) obtenerHotelIdActualCompat();
+
+        if (!$this->permitirSolicitud($hotelId)) {
+            View::renderJSON(['success' => false], 429);
+        }
+
+        $mid = (int) $this->getPost('mid', 0);
+        $util = (string) $this->getPost('util', '') === '1';
+
+        try {
+            $ok = (new CopilotoService())->marcarFeedback($hotelId, $mid, $util, user_id());
+        } catch (Throwable $e) {
+            error_log('Copiloto: error feedback: ' . $e->getMessage());
+            $ok = false;
+        }
+
+        View::renderJSON(['success' => $ok], $ok ? 200 : 400);
+    }
+
+    /**
      * Panel de valor del copiloto (GET /copiloto/valor): uso real del
      * asistente para gerencia. Solo lectura sobre el log existente.
      */

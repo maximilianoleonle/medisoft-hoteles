@@ -10,6 +10,7 @@ if (!function_exists('hotel_menu_module_enabled') || !hotel_menu_module_enabled(
 $copilotoToken = function_exists('csrf_token') ? csrf_token() : '';
 $copilotoUrl = function_exists('url') ? url('copiloto/preguntar') : '/copiloto/preguntar';
 $copilotoUrlAccion = function_exists('url') ? url('copiloto/accion') : '/copiloto/accion';
+$copilotoUrlFeedback = function_exists('url') ? url('copiloto/feedback') : '/copiloto/feedback';
 
 // Nombre white-label del asistente (config copiloto.nombre por hotel).
 require_once __DIR__ . '/../../services/CopilotoService.php';
@@ -332,6 +333,14 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-del:hover { color: #B4232A; transform: scale(1.12); }
 @media (hover: none) { .cop-del { opacity: .55; } }
 html[data-theme="dark"] .cop-del { background: #211F1A; border-color: rgba(239,233,220,.22); color: #A8A193; }
+/* Feedback 👍/👎 discreto al pie de cada respuesta */
+.cop-fb { display: inline-flex; gap: 2px; margin-left: 8px; vertical-align: middle; }
+.cop-fb-btn { border: none; background: transparent; cursor: pointer; font-size: .78rem; line-height: 1; padding: 2px 3px; border-radius: 6px; opacity: .3; filter: grayscale(1); transition: opacity .18s ease, transform .16s ease, filter .18s ease, background .18s ease; }
+.cop-msg.bot:hover .cop-fb-btn, .cop-fb-btn:focus-visible { opacity: .7; }
+.cop-fb-btn:hover { opacity: 1; filter: none; transform: scale(1.15); }
+.cop-fb-btn.activa { opacity: 1; filter: none; background: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, transparent); }
+.cop-fb.votado .cop-fb-btn:not(.activa) { opacity: .18; }
+@media (hover: none) { .cop-fb-btn { opacity: .5; } }
 .cop-msg.bot { align-self: flex-start; transform-origin: bottom left; background: #fff; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #EBE7DC); color: #2A3242; border-bottom-left-radius: 5px; box-shadow: 0 6px 18px -13px rgba(20,28,45,.28); }
 .cop-fuente { display: inline-block; margin-top: 6px; font-size: .68rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
 .cop-fuente.reglas { background: rgba(22,163,74,.12); color: #15803D; }
@@ -533,16 +542,30 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     body.cop-abierto #cop-backdrop { opacity: 1; visibility: visible; transition: opacity .3s ease, visibility 0s; }
 
     /* Centrar el panel (emerge con muelle desde el centro) y ocultar el FAB
-       de esquina para enfocarse en el copiloto. */
-    #cop-panel {
+       de esquina para enfocarse en el copiloto. La selectora repite
+       body.has-hotel-bottom-nav para ganarle a la regla de ≤1024px (que le
+       impone bottom + max-height corto y lo dejaba diminuto). Alto fijo
+       generoso (~78dvh) con aire alrededor: grande sin comerse la pantalla. */
+    #cop-panel,
+    body.has-hotel-bottom-nav #cop-panel {
         left: 50%; right: auto; top: 50%; bottom: auto;
-        width: min(420px, calc(100vw - 28px));
-        max-height: min(76dvh, calc(100dvh - 96px));
+        width: min(430px, calc(100vw - 32px));
+        height: min(78dvh, calc(100dvh - 120px));
+        max-height: min(78dvh, calc(100dvh - 120px));
         transform-origin: center;
         transform: translate(-50%, calc(-50% + 14px)) scale(.94);
     }
     #cop-panel.abierto { transform: translate(-50%, -50%) scale(1); }
     body.cop-abierto #cop-fab { display: none; }
+
+    /* Tipografía cómoda de dedo, sin gritar. El input va a 16px exactos
+       para que iOS no haga zoom al enfocar. */
+    .cop-msg { font-size: .92rem; max-width: 90%; }
+    .cop-chip { font-size: .84rem; padding: 7px 13px; }
+    .cop-accion { font-size: .84rem; padding: 7px 13px; }
+    .cop-foot input { min-height: 46px; font-size: 16px; }
+    .cop-foot button { min-height: 46px; }
+    .cop-mic { width: 46px; min-height: 46px; }
 }
 /* ── Con un modal abierto, el copiloto se retira en móvil ──
    La clase ms-modal-abierto la pone/quita modal-sidebar-fix.js al detectar
@@ -699,6 +722,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     var closeBtn = document.getElementById('cop-close');
     var URL = <?= json_encode($copilotoUrl) ?>;
     var URL_ACCION = <?= json_encode($copilotoUrlAccion) ?>;
+    var URL_FEEDBACK = <?= json_encode($copilotoUrlFeedback) ?>;
     var TOKEN = <?= json_encode($copilotoToken) ?>;
     var SECCIONES = <?= json_encode($copSecciones, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     var RUTA = <?= json_encode($copRuta, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
@@ -916,9 +940,40 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             });
             html += '</div>';
         }
+        // Feedback 👍/👎 sobre esta respuesta (solo cuando el servidor manda
+        // el ancla del log). Discreto: fantasma hasta pasar el mouse.
+        if (data.mid) {
+            html += '<span class="cop-fb" data-mid="' + parseInt(data.mid, 10) + '">' +
+                '<button type="button" class="cop-fb-btn" data-v="1" aria-label="Me sirvió" title="Me sirvió">👍</button>' +
+                '<button type="button" class="cop-fb-btn" data-v="0" aria-label="No me sirvió" title="No me sirvió">👎</button>' +
+            '</span>';
+        }
         burbuja.classList.remove('cop-loading');
         burbuja.innerHTML = '<span class="cop-reveal">' + html + '</span>';
         body.scrollTop = body.scrollHeight;
+    }
+
+    // Envia el voto y marca el estado en la burbuja (re-votar permitido).
+    function enviarFeedback(btn) {
+        var caja = btn.closest('.cop-fb');
+        if (!caja) { return; }
+        var datos = new URLSearchParams();
+        datos.append('csrf_token', TOKEN);
+        datos.append('mid', caja.getAttribute('data-mid') || '0');
+        datos.append('util', btn.getAttribute('data-v') === '1' ? '1' : '0');
+        fetch(URL_FEEDBACK, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-CSRF-Token': TOKEN },
+            body: datos.toString()
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) { return; }
+                caja.querySelectorAll('.cop-fb-btn').forEach(function (b) { b.classList.remove('activa'); });
+                btn.classList.add('activa');
+                caja.classList.add('votado');
+            })
+            .catch(function () { /* voto perdido: sin drama */ });
     }
 
     // Mini-grafica en CSS puro a partir de {tipo: 'columnas'|'barras', items:
@@ -1085,6 +1140,8 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     body.addEventListener('click', function (e) {
         var del = e.target.closest('.cop-del');
         if (del) { eliminarPregunta(del); return; }
+        var fb = e.target.closest('.cop-fb-btn');
+        if (fb) { enviarFeedback(fb); return; }
         var nav = e.target.closest('.cop-cat-nav');
         if (nav) { catNavegar(parseInt(nav.getAttribute('data-dir'), 10) || 1); return; }
         var chip = e.target.closest('.cop-chip');

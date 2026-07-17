@@ -384,6 +384,8 @@ CREATE TABLE `copiloto_mensajes` (
   `intent` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `tokens_entrada` int NOT NULL DEFAULT '0',
   `tokens_salida` int NOT NULL DEFAULT '0',
+  `util` tinyint(1) DEFAULT NULL,
+  `feedback_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_copiloto_hotel_fecha` (`hotel_id`,`created_at`),

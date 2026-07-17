@@ -22,6 +22,10 @@ $fallback = (int) ($fuentes['fallback'] ?? 0);
 $pctReglas = $total > 0 ? (int) round($reglas * 100 / $total) : 0;
 $accionesOk = (int) ($uso['acciones_ok'] ?? 0);
 $avisos = (int) ($uso['briefings'] ?? 0) + (int) ($uso['alertas'] ?? 0);
+$fbSi = (int) ($uso['feedback']['si'] ?? 0);
+$fbNo = (int) ($uso['feedback']['no'] ?? 0);
+$fbTotal = $fbSi + $fbNo;
+$fbPct = $fbTotal > 0 ? (int) round($fbSi * 100 / $fbTotal) : null;
 $usuarios = (int) ($uso['usuarios'] ?? 0);
 $serie = (array) ($uso['serie'] ?? []);
 $top = (array) ($uso['top'] ?? []);
@@ -203,6 +207,11 @@ html[data-theme="dark"] .cpv-barra:hover::after { background: #26231D; }
                 <div class="cpv-tile-label">Avisos proactivos</div>
                 <div class="cpv-tile-value"><?= $cpvNum($avisos) ?></div>
                 <div class="cpv-tile-hint"><?= $cpvNum((int) ($uso['briefings'] ?? 0)) ?> briefing(s) y <?= $cpvNum((int) ($uso['alertas'] ?? 0)) ?> alerta(s) push</div>
+            </div>
+            <div class="cpv-tile">
+                <div class="cpv-tile-label">Respuestas útiles (👍)</div>
+                <div class="cpv-tile-value"><?= $fbPct === null ? '—' : $fbPct . '%' ?></div>
+                <div class="cpv-tile-hint"><?= $fbTotal === 0 ? 'Aún sin calificaciones del equipo' : $cpvNum($fbSi) . ' 👍 · ' . $cpvNum($fbNo) . ' 👎 — los 👎 son lo que hay que enseñarle' ?></div>
             </div>
         </section>
 

@@ -276,9 +276,11 @@ $router->post('/nomina/recibos/{id:[0-9]+}/cancelar', ['controller' => 'Nomina',
 
 // Copiloto Medisoft (bloque copiloto: asistente hibrido, solo lectura)
 $router->post('/copiloto/preguntar', ['controller' => 'Copiloto', 'action' => 'preguntar']);
-// Accion confirmada del copiloto (SOLO limpieza/tareas operativas; el servicio
-// valida el permiso del rol y jamas toca dinero)
+// Accion confirmada del copiloto (limpieza/mantenimiento/gasto/cupon/pago;
+// el servicio revalida permiso y bloques por tipo)
 $router->post('/copiloto/accion', ['controller' => 'Copiloto', 'action' => 'accion']);
+// Feedback 👍/👎 sobre una respuesta (marca la fila del log, scope de hotel)
+$router->post('/copiloto/feedback', ['controller' => 'Copiloto', 'action' => 'feedback']);
 // Panel de valor del copiloto (gerencia): uso real del asistente
 $router->get('/copiloto/valor', ['controller' => 'Copiloto', 'action' => 'valor']);
 

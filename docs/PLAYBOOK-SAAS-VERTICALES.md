@@ -375,6 +375,14 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - GOTCHA de la prueba de humo: el router determinista atrapa las
       palabras clave del giro ("caja") antes de llegar a la IA — la
       pregunta de prueba debe esquivar los intents.
+21. **El loop de calidad del asistente: 👍/👎 anclado al LOG** (jul 2026).
+    Cada respuesta terminal viaja con el id de su registro (mid); el voto
+    es un UPDATE con scope de tenant sobre esa fila (re-votar actualiza,
+    mismo voto = éxito idempotente para el widget). Sin mid no hay botones
+    (propuestas de acción y pasos de wizard no se votan: aún no responden
+    nada). El % útil vive en el panel de valor y los 👎 son el backLOG de
+    enseñanza literal — junto con el observatorio de fallbacks, el uso
+    diario se convierte en la lista de qué enseñarle al asistente.
 
 ---
 

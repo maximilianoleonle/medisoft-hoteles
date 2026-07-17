@@ -73,6 +73,8 @@ class CopilotoService
 
     private $db;
     private $pdo;
+    /** Id del ultimo mensaje registrado en el log (ancla del feedback 👍/👎). */
+    private $ultimoMensajeId = 0;
 
     public function __construct(?Database $db = null)
     {
@@ -156,6 +158,7 @@ class CopilotoService
             'top' => [],
             'briefings' => 0,
             'alertas' => 0,
+            'feedback' => ['si' => 0, 'no' => 0],
         ];
 
         try {
@@ -191,6 +194,16 @@ class CopilotoService
             );
             $stmt->execute([$hotelId, $desde]);
             $out['acciones_ok'] = (int) $stmt->fetchColumn();
+
+            // Feedback 👍/👎 del periodo (los 👎 son el backlog de enseñanza).
+            $stmt = $this->pdo->prepare(
+                "SELECT util, COUNT(*) n FROM copiloto_mensajes
+                 WHERE hotel_id = ? AND created_at >= ? AND util IS NOT NULL GROUP BY util"
+            );
+            $stmt->execute([$hotelId, $desde]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fb) {
+                $out['feedback'][((int) $fb['util']) === 1 ? 'si' : 'no'] = (int) $fb['n'];
+            }
 
             // Serie diaria de los ultimos 14 dias (con ceros para dias sin uso).
             $serieDesde = date('Y-m-d 00:00:00', strtotime('-13 days'));
@@ -391,6 +404,10 @@ class CopilotoService
             return $r;
         }
         $r['sugerencias'] = $this->sugerenciasParaRespuesta($intent, $hotelId);
+        // Ancla del feedback 👍/👎: el id del registro de ESTA respuesta.
+        if ($this->ultimoMensajeId > 0) {
+            $r['mid'] = $this->ultimoMensajeId;
+        }
         return $r;
     }
 
@@ -5780,7 +5797,12 @@ class CopilotoService
         return preg_replace('/\s+/', ' ', $texto);
     }
 
-    private function registrar(int $hotelId, ?int $usuarioId, string $pregunta, string $fuente, ?string $intent, int $tin, int $tout): void
+    /**
+     * Registra el mensaje en el log y devuelve su id (0 si fallo). El id del
+     * ultimo registro queda en $ultimoMensajeId para que conSugerencias()
+     * lo adjunte como 'mid' (ancla del feedback 👍/👎 del widget).
+     */
+    private function registrar(int $hotelId, ?int $usuarioId, string $pregunta, string $fuente, ?string $intent, int $tin, int $tout): int
     {
         try {
             $this->pdo->prepare(
@@ -5788,8 +5810,39 @@ class CopilotoService
                     (hotel_id, usuario_id, pregunta, fuente, intent, tokens_entrada, tokens_salida, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
             )->execute([$hotelId, $usuarioId, mb_substr($pregunta, 0, 500), $fuente, $intent, $tin, $tout]);
+            $this->ultimoMensajeId = (int) $this->pdo->lastInsertId();
+            return $this->ultimoMensajeId;
         } catch (Throwable $e) {
             error_log('Copiloto: no se pudo registrar mensaje: ' . $e->getMessage());
+            $this->ultimoMensajeId = 0;
+            return 0;
+        }
+    }
+
+    /**
+     * Guarda el 👍/👎 del usuario sobre una respuesta (fila del log, scope de
+     * hotel). Re-votar actualiza. Devuelve false si la fila no es del hotel.
+     */
+    public function marcarFeedback(int $hotelId, int $mensajeId, bool $util, ?int $usuarioId = null): bool
+    {
+        if ($mensajeId <= 0 || $hotelId <= 0) {
+            return false;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                "UPDATE copiloto_mensajes SET util = ?, feedback_at = NOW() WHERE id = ? AND hotel_id = ?"
+            );
+            $stmt->execute([$util ? 1 : 0, $mensajeId, $hotelId]);
+            if ($stmt->rowCount() > 0) {
+                return true;
+            }
+            // Mismo voto repetido: rowCount 0 pero la fila existe y es nuestra.
+            $chk = $this->pdo->prepare("SELECT 1 FROM copiloto_mensajes WHERE id = ? AND hotel_id = ? LIMIT 1");
+            $chk->execute([$mensajeId, $hotelId]);
+            return (bool) $chk->fetchColumn();
+        } catch (Throwable $e) {
+            error_log('Copiloto: no se pudo guardar feedback: ' . $e->getMessage());
+            return false;
         }
     }
 }
