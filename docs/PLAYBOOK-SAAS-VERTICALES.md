@@ -111,6 +111,18 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     - **Exclusiones canónicas del prerender**: pantallas de dinero/estado
       vivo (caja), pantallas cuya visita apaga avisos (notificaciones),
       logout. Recarga forzada en `pageshow persisted` para las de dinero.
+12. **Áreas operables además de la unidad rentable** (probado en hoteles,
+    jul 2026): la unidad que factura (habitación/consultorio/bahía) no es lo
+    único que se opera — alberca, lobby, quirófano, patio también se limpian,
+    se mantienen y se cierran. Receta: entidad `areas_<giro>` con estado
+    espejo de la unidad principal (sin el estado "ocupada/rentada") + FK
+    `area_id` NULLABLE en las tablas operativas existentes (tareas,
+    mantenimientos, activos) reusando los MISMOS motores/servicios con el id
+    principal en NULL — cero módulos nuevos, cero permisos nuevos (vive
+    dentro del módulo de la unidad principal; claves de permiso nuevas
+    rompen roles legacy), subnav compartida en la misma sección. El detalle
+    del área hereda los contratos de la unidad (personal obligatorio en
+    limpieza, mantenimiento→gasto).
     - **Guardas de efectos secundarios**: TODO GET con efecto (marcar leído,
       registrar visita, archivar) verifica `Sec-Purpose`/`Purpose` y responde
       503 a peticiones especulativas (helper `is_speculative_request()`).
