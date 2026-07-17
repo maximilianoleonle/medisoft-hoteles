@@ -181,6 +181,134 @@ class MantenimientoService
     }
 
     /**
+     * Inicia mantenimiento de un AREA (bloque habitaciones y areas): mismo
+     * registro en mantenimientos_habitaciones pero con area_id y habitacion
+     * NULL. Sin conflicto de reservas: las areas no se reservan.
+     */
+    public function iniciarParaAreaHotel(int $hotelId, int $areaId, string $tipo, string $prioridad, string $motivo, ?int $usuarioId = null): array
+    {
+        $motivo = trim($motivo);
+        if (!in_array($tipo, array_keys(Mantenimiento::getTipos()), true)) {
+            throw new InvalidArgumentException('Debe seleccionar un tipo de mantenimiento valido');
+        }
+        if (!in_array($prioridad, array_keys(Mantenimiento::getPrioridades()), true)) {
+            throw new InvalidArgumentException('Debe seleccionar una prioridad valida');
+        }
+        if ($motivo === '') {
+            throw new InvalidArgumentException('El motivo es obligatorio');
+        }
+
+        $area = $this->area($hotelId, $areaId);
+        if (!$area) {
+            throw new RuntimeException('Area no encontrada para el hotel actual.');
+        }
+        if ((string) ($area['estado'] ?? '') === 'mantenimiento') {
+            throw new RuntimeException('El area ya esta en mantenimiento');
+        }
+
+        $mantenimientoId = 0;
+        $this->db->safeBeginTransaction();
+        try {
+            $stmtActivo = $this->db->query(
+                "SELECT COUNT(*) FROM mantenimientos_habitaciones
+                 WHERE area_id = ? AND hotel_id = ? AND estado = 'en_proceso'",
+                [$areaId, $hotelId]
+            );
+            if ($stmtActivo && (int) $stmtActivo->fetchColumn() > 0) {
+                throw new RuntimeException('El area ya tiene un mantenimiento en proceso');
+            }
+
+            $this->db->query(
+                "UPDATE areas_hotel SET estado = 'mantenimiento', updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ?",
+                [$areaId, $hotelId]
+            );
+            $stmtInsert = $this->db->query(
+                "INSERT INTO mantenimientos_habitaciones
+                    (hotel_id, area_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')",
+                [$hotelId, $areaId, $tipo, $prioridad, $motivo, $usuarioId]
+            );
+            if (!$stmtInsert) {
+                throw new RuntimeException('No se pudo registrar el mantenimiento del area.');
+            }
+            $mantenimientoId = (int) $this->db->lastInsertId();
+            $this->db->commit();
+        } catch (Throwable $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Throwable $e2) {
+                // sin transaccion activa: nada que revertir
+            }
+            if ($e instanceof PDOException) {
+                error_log('Mantenimiento: error BD al iniciar en area: ' . $e->getMessage());
+                throw new RuntimeException('No se pudo procesar el mantenimiento. Intenta de nuevo.');
+            }
+            throw $e;
+        }
+
+        return [
+            'ok' => true,
+            'area' => $area,
+            'mantenimiento_id' => $mantenimientoId,
+        ];
+    }
+
+    /** Finaliza el mantenimiento en proceso del area y la deja disponible. */
+    public function finalizarParaAreaHotel(int $hotelId, int $areaId, ?int $usuarioId = null): array
+    {
+        $area = $this->area($hotelId, $areaId);
+        if (!$area) {
+            throw new RuntimeException('Area no encontrada para el hotel actual.');
+        }
+        if ((string) ($area['estado'] ?? '') !== 'mantenimiento') {
+            throw new RuntimeException('Solo se puede finalizar mantenimiento de un area en mantenimiento');
+        }
+
+        $this->db->safeBeginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE areas_hotel SET estado = 'disponible', updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ?",
+                [$areaId, $hotelId]
+            );
+            $this->db->query(
+                "UPDATE mantenimientos_habitaciones
+                 SET estado = 'completado', fecha_fin = NOW()
+                 WHERE area_id = ? AND hotel_id = ? AND estado = 'en_proceso'",
+                [$areaId, $hotelId]
+            );
+            $this->db->commit();
+        } catch (Throwable $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Throwable $e2) {
+            }
+            if ($e instanceof PDOException) {
+                error_log('Mantenimiento: error BD al finalizar en area: ' . $e->getMessage());
+                throw new RuntimeException('No se pudo procesar el mantenimiento. Intenta de nuevo.');
+            }
+            throw $e;
+        }
+
+        return ['ok' => true, 'area' => $area];
+    }
+
+    private function area(int $hotelId, int $areaId): ?array
+    {
+        try {
+            $stmt = $this->db->query(
+                "SELECT id, nombre, estado FROM areas_hotel WHERE id = ? AND hotel_id = ? AND activa = 1 LIMIT 1",
+                [$areaId, $hotelId]
+            );
+            $row = $stmt ? $stmt->fetch() : null;
+            return $row ?: null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * Reservaciones activas que se cruzan con la ventana de mantenimiento
      * (misma consulta que usaba el controlador, con hotel explicito).
      */

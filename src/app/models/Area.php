@@ -175,6 +175,46 @@ class Area extends Model {
     }
 
     /**
+     * Historial operativo del area: limpiezas (tareas_operativas) y
+     * mantenimientos, lo mas reciente primero.
+     */
+    public function historial(int $areaId, ?int $hotelId = null, int $limite = 15): array {
+        $hotelId = $hotelId ?: (int)$this->hotelIdActual();
+        if ($areaId <= 0 || $hotelId <= 0) {
+            return ['limpiezas' => [], 'mantenimientos' => []];
+        }
+
+        $limite = max(1, min(50, $limite));
+
+        $stmt = $this->db->query(
+            "SELECT t.id, t.titulo, t.estado, t.fecha_programada, t.fecha_cierre,
+                    t.notas_cierre, t.created_at
+             FROM tareas_operativas t
+             WHERE t.hotel_id = ?
+               AND t.area_id = ?
+               AND t.categoria = 'limpieza'
+             ORDER BY t.id DESC
+             LIMIT {$limite}",
+            [$hotelId, $areaId]
+        );
+        $limpiezas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT m.id, m.tipo_mantenimiento, m.motivo, m.prioridad, m.estado,
+                    m.fecha_inicio, m.fecha_fin, m.costo, m.proveedor
+             FROM mantenimientos_habitaciones m
+             WHERE m.hotel_id = ?
+               AND m.area_id = ?
+             ORDER BY m.id DESC
+             LIMIT {$limite}",
+            [$hotelId, $areaId]
+        );
+        $mantenimientos = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        return ['limpiezas' => $limpiezas, 'mantenimientos' => $mantenimientos];
+    }
+
+    /**
      * Crea o actualiza un area con datos ya validados por el controlador.
      */
     public function guardar(array $datos, ?int $id = null) {

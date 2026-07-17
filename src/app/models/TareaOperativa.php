@@ -1521,6 +1521,241 @@ class TareaOperativa extends Model
         }
     }
 
+    public function buscarTareaActivaLimpiezaPorAreaHotel(int $hotelId, int $areaId): ?array
+    {
+        if ($hotelId <= 0 || $areaId <= 0 || !$this->tablaDisponible()) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.id, t.hotel_id, t.categoria, t.titulo, t.prioridad, t.estado,
+                    t.area_id, t.trabajador_id, t.fecha_programada, t.created_at
+             FROM tareas_operativas t
+             WHERE t.hotel_id = ?
+               AND t.area_id = ?
+               AND t.categoria = 'limpieza'
+               AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
+             ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente'),
+                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) ASC,
+                      t.id ASC
+             LIMIT 1",
+            [$hotelId, $areaId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
+    /**
+     * Manda un AREA a limpieza de forma atomica (bloque habitaciones y areas):
+     * candado sobre el area, estado -> 'limpieza' y tarea con area_id. El
+     * origen queda 'manual' a proposito: el enum de origen no conoce 'area' y
+     * un valor invalido no truena en MySQL (gotcha de enums).
+     */
+    public function iniciarLimpiezaAreaParaHotel(int $hotelId, int $areaId, ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0 || $areaId <= 0) {
+            throw new InvalidArgumentException('Area no valida para iniciar limpieza.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT id, nombre, estado
+                 FROM areas_hotel
+                 WHERE id = ? AND hotel_id = ? AND activa = 1
+                 LIMIT 1
+                 FOR UPDATE",
+                [$areaId, $hotelId]
+            );
+            $area = $stmt ? $stmt->fetch() : null;
+            if (!$area) {
+                throw new RuntimeException('Area no encontrada para el hotel actual.');
+            }
+            if ((string)($area['estado'] ?? '') !== 'disponible') {
+                throw new RuntimeException('Solo un area disponible puede mandarse a limpieza.');
+            }
+
+            $duplicado = $this->db->query(
+                "SELECT id
+                 FROM tareas_operativas
+                 WHERE hotel_id = ?
+                   AND area_id = ?
+                   AND categoria = 'limpieza'
+                   AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                 ORDER BY id ASC
+                 LIMIT 1
+                 FOR UPDATE",
+                [$hotelId, $areaId]
+            );
+            if ($duplicado && $duplicado->fetch()) {
+                throw new RuntimeException('Ya existe una tarea activa de limpieza para esta area.');
+            }
+
+            $this->db->query(
+                "UPDATE areas_hotel SET estado = 'limpieza', updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ?",
+                [$areaId, $hotelId]
+            );
+
+            $titulo = $this->limitarTexto('', 160, 'Limpieza area ' . (string)($area['nombre'] ?? $areaId));
+            $stmt = $this->db->query(
+                "INSERT INTO tareas_operativas
+                    (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                     area_id, fecha_programada, creada_por_usuario_id, origen, created_at)
+                 VALUES
+                    (?, 'limpieza', ?, 'Limpieza del area solicitada desde Habitaciones y areas.', 'media', 'pendiente',
+                     ?, NOW(), ?, 'manual', NOW())",
+                [$hotelId, $titulo, $areaId, $usuarioId]
+            );
+            if (!$stmt) {
+                throw new RuntimeException('No se pudo insertar la tarea de limpieza del area.');
+            }
+
+            $tareaId = (int)$this->db->lastInsertId();
+            $this->registrarEvento(
+                $hotelId,
+                $tareaId,
+                'creada',
+                null,
+                'pendiente',
+                'Area "' . (string)($area['nombre'] ?? $areaId) . '" enviada a limpieza.',
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Marca un AREA como limpia registrando quien limpio (mismo contrato de
+     * personal que las habitaciones: lista de trabajadores o vacia = sin
+     * registrar). Atomico: cierra (o crea cerrada) la tarea con area_id y
+     * regresa el area a 'disponible'.
+     */
+    public function completarLimpiezaConPersonalAreaParaHotel(int $hotelId, int $areaId, array $trabajadorIdsRaw, ?int $usuarioId = null): bool
+    {
+        if ($hotelId <= 0 || $areaId <= 0 || !$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            return false;
+        }
+
+        $trabajadores = $this->validarTrabajadoresHotel($trabajadorIdsRaw, $hotelId);
+        $this->asegurarSoporteTrabajadoresMultiples($trabajadores);
+        $lider = !empty($trabajadores) ? (int)$trabajadores[0]['id'] : null;
+        $nota = !empty($trabajadores)
+            ? 'Limpieza realizada por: ' . $this->nombresTrabajadores($trabajadores) . '.'
+            : 'Limpieza cerrada sin registrar personal.';
+
+        $tarea = $this->buscarTareaActivaLimpiezaPorAreaHotel($hotelId, $areaId);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            if ($tarea && !empty($tarea['id'])) {
+                $tareaId = (int)$tarea['id'];
+                $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+
+                $stmt = $this->db->query(
+                    "UPDATE tareas_operativas
+                     SET trabajador_id = ?,
+                         asignada_por_usuario_id = CASE WHEN ? IS NULL THEN NULL ELSE ? END,
+                         estado = 'completada',
+                         fecha_inicio = COALESCE(fecha_inicio, NOW()),
+                         fecha_cierre = NOW(),
+                         cerrada_por_usuario_id = ?,
+                         notas_cierre = ?,
+                         updated_at = NOW()
+                     WHERE id = ?
+                       AND hotel_id = ?
+                       AND estado IN ('pendiente', 'asignada', 'en_proceso')",
+                    [$lider, $lider, $usuarioId, $usuarioId, $nota, $tareaId, $hotelId]
+                );
+
+                if (!$stmt || $stmt->rowCount() !== 1) {
+                    throw new RuntimeException('No se pudo completar la tarea de limpieza del area.');
+                }
+
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'completada',
+                    $estadoAnterior,
+                    'completada',
+                    'Area marcada como limpia. ' . $nota,
+                    $usuarioId
+                );
+            } else {
+                $stmtArea = $this->db->query(
+                    "SELECT nombre FROM areas_hotel WHERE id = ? AND hotel_id = ? LIMIT 1",
+                    [$areaId, $hotelId]
+                );
+                $areaRow = $stmtArea ? $stmtArea->fetch() : null;
+                $nombreArea = (string)($areaRow['nombre'] ?? $areaId);
+
+                $stmt = $this->db->query(
+                    "INSERT INTO tareas_operativas
+                        (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                         area_id, trabajador_id, fecha_programada, fecha_inicio, fecha_cierre,
+                         creada_por_usuario_id, asignada_por_usuario_id, cerrada_por_usuario_id,
+                         notas_cierre, origen, created_at)
+                     VALUES
+                        (?, 'limpieza', ?, 'Registro generado al marcar el area como limpia.', 'media', 'completada',
+                         ?, ?, NOW(), NOW(), NOW(),
+                         ?, ?, ?,
+                         ?, 'manual', NOW())",
+                    [
+                        $hotelId,
+                        $this->limitarTexto('', 160, 'Limpieza area ' . $nombreArea),
+                        $areaId,
+                        $lider,
+                        $usuarioId,
+                        ($lider !== null ? $usuarioId : null),
+                        $usuarioId,
+                        $nota,
+                    ]
+                );
+
+                if (!$stmt) {
+                    throw new RuntimeException('No se pudo registrar la limpieza completada del area.');
+                }
+
+                $tareaId = (int)$this->db->lastInsertId();
+                $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
+                $this->registrarEvento(
+                    $hotelId,
+                    $tareaId,
+                    'completada',
+                    null,
+                    'completada',
+                    'Area marcada como limpia. ' . $nota,
+                    $usuarioId
+                );
+            }
+
+            $this->db->query(
+                "UPDATE areas_hotel SET estado = 'disponible', updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ? AND estado = 'limpieza'",
+                [$areaId, $hotelId]
+            );
+
+            $this->db->safeCommit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     /**
      * Programa (o reprograma) la limpieza de una habitacion para una fecha dada,
      * con el personal que se encargara. Funciona con la habitacion en cualquier

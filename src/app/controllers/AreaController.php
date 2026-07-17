@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../models/Area.php';
+require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 
 /**
@@ -11,10 +12,12 @@ require_once __DIR__ . '/../helpers/hotel_config.php';
  */
 class AreaController extends Controller {
     private $areaModel;
+    private $tareaModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->areaModel = new Area();
+        $this->tareaModel = new TareaOperativa();
     }
 
     protected function before() {
@@ -104,6 +107,241 @@ class AreaController extends Controller {
         }
 
         $this->redirect('areas');
+    }
+
+    /**
+     * GET /areas/{id} — detalle del area: acciones operativas + historial.
+     */
+    public function verAction() {
+        $hotelId = $this->hotelIdActual();
+        $id = (int)($this->route_params['id'] ?? 0);
+        $area = $this->areaModel->obtenerPorId($id, $hotelId);
+
+        if (!$area) {
+            set_mensaje('Área no encontrada', 'error');
+            $this->redirect('areas');
+            return;
+        }
+
+        $trabajadores = [];
+        try {
+            if ($this->tareaModel->tablaDisponible()) {
+                $trabajadores = $this->tareaModel->trabajadoresActivosOpciones($hotelId);
+            }
+        } catch (Throwable $e) {
+            error_log('Areas: no se pudo cargar personal de limpieza: ' . $e->getMessage());
+        }
+
+        View::renderTemplate('areas/ver', [
+            'title' => (string)$area['nombre'] . ' - ' . current_hotel_display_name(),
+            'area' => $area,
+            'tipos' => Area::catalogoTipos(),
+            'historial' => $this->areaModel->historial($id, $hotelId),
+            'personal_limpieza' => $trabajadores,
+            'tipos_mantenimiento' => class_exists('Mantenimiento') ? Mantenimiento::getTipos() : [],
+            'prioridades_mantenimiento' => class_exists('Mantenimiento') ? Mantenimiento::getPrioridades() : [],
+            'puede_mantenimiento' => function_exists('can') ? can('habitaciones.mantenimiento') : true,
+            'puede_gestionar' => function_exists('can') ? can('habitaciones.edit') : true,
+        ]);
+    }
+
+    /**
+     * POST /areas/{id}/limpieza — accion 'iniciar' (area -> limpieza + tarea)
+     * o 'completar' (contrato de personal de habitaciones: personal_confirmado
+     * / trabajador_ids[] / sin_personal). Sin gate extra: paridad con el
+     * cambiar-estado de habitaciones (auth + modulo).
+     */
+    public function limpiezaAction() {
+        if (!$this->isPost()) {
+            $this->redirect('areas');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $hotelId = $this->hotelIdActual();
+        $id = (int)($this->route_params['id'] ?? 0);
+        $accion = trim((string)$this->getPost('accion'));
+        $area = $this->areaModel->obtenerPorId($id, $hotelId);
+
+        if (!$area) {
+            set_mensaje('Área no encontrada', 'error');
+            $this->redirect('areas');
+            return;
+        }
+
+        try {
+            if ($accion === 'iniciar') {
+                $this->tareaModel->iniciarLimpiezaAreaParaHotel($hotelId, $id, user_id());
+                set_mensaje('Área enviada a limpieza', 'success');
+            } elseif ($accion === 'completar') {
+                if ((string)($area['estado'] ?? '') !== 'limpieza') {
+                    set_mensaje('El área no está en limpieza', 'error');
+                    $this->redirect('areas/' . $id);
+                    return;
+                }
+
+                $personal = $this->personalLimpiezaPost();
+                $errorPersonal = $this->validarPersonalLimpiezaPost($personal);
+                if ($errorPersonal !== null) {
+                    set_mensaje($errorPersonal, 'error');
+                    $this->redirect('areas/' . $id);
+                    return;
+                }
+
+                $completada = false;
+                try {
+                    $completada = $this->tareaModel->completarLimpiezaConPersonalAreaParaHotel($hotelId, $id, $personal['ids'], user_id());
+                } catch (Throwable $e) {
+                    error_log('Areas: completar limpieza area #' . $id . ': ' . $e->getMessage());
+                }
+                if (!$completada) {
+                    // Fail-open como habitaciones: sin base de tareas, al menos
+                    // se libera el area.
+                    $this->areaModel->cambiarEstado($id, 'disponible', $hotelId);
+                }
+                set_mensaje('Área marcada como limpia', 'success');
+            } else {
+                set_mensaje('Acción de limpieza no válida', 'error');
+            }
+        } catch (Throwable $e) {
+            set_mensaje('Error: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect('areas/' . $id);
+    }
+
+    /**
+     * POST /areas/{id}/mantenimiento — accion 'iniciar' | 'finalizar' via
+     * MantenimientoService (mismo motor que habitaciones, con area_id).
+     */
+    public function mantenimientoAction() {
+        if (!$this->isPost()) {
+            $this->redirect('areas');
+            return;
+        }
+
+        $this->validateCSRF();
+        $this->requirePermission('habitaciones.mantenimiento');
+
+        $hotelId = $this->hotelIdActual();
+        $id = (int)($this->route_params['id'] ?? 0);
+        $accion = trim((string)$this->getPost('accion'));
+
+        if (!in_array($accion, ['iniciar', 'finalizar'], true)) {
+            set_mensaje('Acción de mantenimiento no válida', 'error');
+            $this->redirect('areas/' . $id);
+            return;
+        }
+
+        require_once __DIR__ . '/../services/MantenimientoService.php';
+        $servicio = new MantenimientoService();
+
+        try {
+            if ($accion === 'iniciar') {
+                $servicio->iniciarParaAreaHotel(
+                    $hotelId,
+                    $id,
+                    trim((string)$this->getPost('tipo_mantenimiento')),
+                    trim((string)$this->getPost('prioridad', 'media')),
+                    trim((string)$this->getPost('motivo')),
+                    user_id()
+                );
+                set_mensaje('Mantenimiento del área iniciado correctamente', 'success');
+            } else {
+                $servicio->finalizarParaAreaHotel($hotelId, $id, user_id());
+                set_mensaje('Mantenimiento del área finalizado correctamente', 'success');
+            }
+        } catch (Exception $e) {
+            set_mensaje('Error al procesar mantenimiento: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect('areas/' . $id);
+    }
+
+    /**
+     * POST /areas/{id}/cerrar — cierra un area disponible o reabre una
+     * cerrada. En limpieza/mantenimiento no se puede cerrar.
+     */
+    public function cerrarAction() {
+        if (!$this->isPost()) {
+            $this->redirect('areas');
+            return;
+        }
+
+        $this->validateCSRF();
+        $this->requirePermission('habitaciones.mantenimiento');
+
+        $hotelId = $this->hotelIdActual();
+        $id = (int)($this->route_params['id'] ?? 0);
+        $area = $this->areaModel->obtenerPorId($id, $hotelId);
+
+        if (!$area) {
+            set_mensaje('Área no encontrada', 'error');
+            $this->redirect('areas');
+            return;
+        }
+
+        $estado = (string)($area['estado'] ?? '');
+        if ($estado === 'disponible') {
+            $this->areaModel->cambiarEstado($id, 'cerrada', $hotelId);
+            set_mensaje('Área cerrada al público', 'success');
+        } elseif ($estado === 'cerrada') {
+            $this->areaModel->cambiarEstado($id, 'disponible', $hotelId);
+            set_mensaje('Área reabierta', 'success');
+        } else {
+            set_mensaje('No se puede cerrar un área en limpieza o mantenimiento', 'error');
+        }
+
+        $this->redirect('areas/' . $id);
+    }
+
+    /**
+     * Contrato de personal de limpieza (mismo del selector de habitaciones):
+     * personal_confirmado=1 activa la validacion, trabajador_ids[] o
+     * sin_personal=1 como eleccion explicita.
+     */
+    private function personalLimpiezaPost(): array {
+        $ids = [];
+        $raw = $_POST['trabajador_ids'] ?? [];
+        if (is_array($raw)) {
+            foreach ($raw as $valor) {
+                $valor = (int)$valor;
+                if ($valor > 0) {
+                    $ids[$valor] = $valor;
+                }
+            }
+        }
+
+        return [
+            'confirmado' => (string)($_POST['personal_confirmado'] ?? '') === '1',
+            'sin_personal' => (string)($_POST['sin_personal'] ?? '') === '1',
+            'ids' => array_values($ids),
+        ];
+    }
+
+    private function validarPersonalLimpiezaPost(array $personalPost): ?string {
+        if (!$personalPost['confirmado']) {
+            return null;
+        }
+
+        if (!$personalPost['sin_personal'] && empty($personalPost['ids'])) {
+            return 'Indica quién hizo la limpieza o marca "Sin registrar personal".';
+        }
+
+        if (!empty($personalPost['ids']) && $this->tareaModel && $this->tareaModel->tablaDisponible()) {
+            $activos = [];
+            foreach ($this->tareaModel->trabajadoresActivosOpciones($this->hotelIdActual()) as $t) {
+                $activos[(int)$t['id']] = true;
+            }
+            foreach ($personalPost['ids'] as $tid) {
+                if (!isset($activos[$tid])) {
+                    return 'Uno de los trabajadores seleccionados ya no está activo en el hotel.';
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

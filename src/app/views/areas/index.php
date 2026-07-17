@@ -239,8 +239,11 @@ include APP_PATH . '/views/partials/section_subnav.php';
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
-                            <?php if ($puedeGestionar): ?>
                             <div class="ars-item-acts">
+                                <a class="ars-mini" href="<?= url('areas/' . (int)$a['id']) ?>">
+                                    <i class="fas fa-arrow-up-right-from-square"></i> Ver y operar
+                                </a>
+                                <?php if ($puedeGestionar): ?>
                                 <button type="button" class="ars-mini"
                                         onclick='arsEditar(<?= json_encode([
                                             'id' => (int)$a['id'],
@@ -258,8 +261,8 @@ include APP_PATH . '/views/partials/section_subnav.php';
                                         <?= $estaActiva ? 'Pausar' : 'Reactivar' ?>
                                     </button>
                                 </form>
+                                <?php endif; ?>
                             </div>
-                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
