@@ -63,12 +63,14 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 1. `/areas` (subnav Habitaciones · Áreas; sidebar dice "Habitaciones y áreas"). **Verificado en navegador (jul-2026)**: alta inline "Nueva área" (nombre+tipo catálogo+piso+descripción) → tarjeta con chip Disponible y KPIs por estado; Editar rellena el mismo form (hidden id); Pausar/Reactivar togglea `activa` (tarjeta opaca + chip "Pausada"). Nombre duplicado en el hotel debe rechazarse con mensaje digno.
 2. Gates: ver = módulo `habitaciones`; gestionar = `can('habitaciones.edit')` (gerente/admin vía `habitaciones.all`; recepcionista NO ve botones de gestión — ⬜ confirmar con sesión recepcionista).
 3. **Acciones por área (`/areas/{id}`, "Ver y operar")** — verificado en navegador (jul-2026): (a) Mandar a limpieza → chip "En limpieza" + tarea Pendiente en historial; (b) Marcar limpia SIN seleccionar personal ni "Sin registrar" → RECHAZADO (estado no cambia); (c) con trabajador → Disponible + tarea Completada + nota "Limpieza realizada por: X." + fila en `tarea_trabajadores`; (d) Reportar mantenimiento (motivo+tipo+prioridad) → "En mantenimiento" + registro `en_proceso` con `area_id` y `habitacion_id NULL`; (e) Finalizar → Disponible + completado con fecha_fin; (f) Cerrar → "Cerrada" (única acción Reabrir) → Reabrir → Disponible. Verificar filas por PDO en `tareas_operativas`/`mantenimientos_habitaciones` con `area_id`.
-4. GOTCHA de QA en el pane: si `screenshot` se cuelga (pasó incluso en portrait) verificar por `get_page_text` + asserts JS; si un clic físico no dispara `onclick`, usar `dispatchEvent(new MouseEvent('click'))` o `requestSubmit()` vía javascript_tool.
+4. **Mapa digital (`/mapa`, pestaña Mapa del subnav)** — verificado en navegador (jul-2026): KPIs serif (disponibles/ocupadas/limpieza/mantenimiento/cerradas) que cuadran con la suma de habitaciones+áreas; secciones por piso (piso 0 = "Planta baja", áreas sin piso = "Exterior"); ficha de habitación enlaza a `habitaciones/{id}` y la de área a `areas/{id}`; dots con pulso SOLO en estados vivos (limpieza/mantenimiento); en móvil 390px la grid da 4 columnas sin overflow horizontal.
+5. GOTCHA de QA en el pane: si `screenshot` se cuelga (pasó incluso en portrait) verificar por `get_page_text` + asserts JS; si un clic físico no dispara `onclick`, usar `dispatchEvent(new MouseEvent('click'))` o `requestSubmit()` vía javascript_tool.
 
 ## Limpieza / camaristas
 
 1. Marcar habitación como limpia → debe EXIGIR quién limpió (personal obligatorio, contrato `personal_confirmado`/`trabajador_ids`/`sin_personal`).
 2. Programar limpieza con fecha+personal → verificar fila en `tareas_operativas`.
+3. **Modal sobre header en /habitaciones (≥768px)** — al abrir cualquier modal de la vista (limpieza, vista rápida…) el header candy sticky debe quedar DEBAJO del backdrop (difuminado como el resto), nunca flotando encima del modal. Verificado por asserts JS (jul-2026): `body.ms-modal-abierto` baja `#mainHeader` a z-index 0 + pointer-events none y restaura al cerrar. ⬜ confirmar visual en navegador real (el pane congelado no corre el fade del modal).
 
 ## Mantenimiento Plus
 

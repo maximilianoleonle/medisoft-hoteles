@@ -32,6 +32,7 @@ if ($subnavSection === 'nomina') {
     $subnavAria = 'Secciones de Nómina';
 } elseif ($subnavSection === 'habitaciones') {
     $subnavTabs = [
+        'mapa'         => ['url' => url('mapa'),         'icono' => 'fa-map',              'label' => 'Mapa'],
         'habitaciones' => ['url' => url('habitaciones'), 'icono' => 'fa-bed',              'label' => 'Habitaciones'],
         'areas'        => ['url' => url('areas'),        'icono' => 'fa-map-location-dot', 'label' => 'Áreas'],
     ];

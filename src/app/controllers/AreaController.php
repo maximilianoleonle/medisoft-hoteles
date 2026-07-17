@@ -110,6 +110,48 @@ class AreaController extends Controller {
     }
 
     /**
+     * GET /mapa — mapa digital del hotel: habitaciones + areas por piso con
+     * su estado en vivo. Solo lectura; cada ficha enlaza a su detalle.
+     */
+    public function mapaAction() {
+        $hotelId = $this->hotelIdActual();
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT id, numero, tipo, piso, estado
+             FROM habitaciones
+             WHERE hotel_id = ? AND COALESCE(activa, 1) = 1
+             ORDER BY piso ASC, CAST(numero AS UNSIGNED), numero",
+            [$hotelId]
+        );
+        $habitaciones = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $areas = $this->areaModel->listar($hotelId, true);
+
+        $conteo = ['disponible' => 0, 'ocupada' => 0, 'limpieza' => 0, 'mantenimiento' => 0, 'cerrada' => 0];
+        foreach ($habitaciones as $h) {
+            $e = (string)($h['estado'] ?? '');
+            if (isset($conteo[$e])) {
+                $conteo[$e]++;
+            }
+        }
+        foreach ($areas as $a) {
+            $e = (string)($a['estado'] ?? '');
+            if (isset($conteo[$e])) {
+                $conteo[$e]++;
+            }
+        }
+
+        View::renderTemplate('areas/mapa', [
+            'title' => 'Mapa del hotel - ' . current_hotel_display_name(),
+            'habitaciones' => $habitaciones,
+            'areas' => $areas,
+            'conteo' => $conteo,
+            'tipos_area' => Area::catalogoTipos(),
+        ]);
+    }
+
+    /**
      * GET /areas/{id} — detalle del area: acciones operativas + historial.
      */
     public function verAction() {
