@@ -2929,7 +2929,8 @@ class CopilotoService
     private static function flujoReservaVacio(): array
     {
         return ['t' => 'reserva', 'paso' => '', 'fe' => '', 'fs' => '', 'hab_id' => 0, 'hab_num' => '',
-            'hab_skip' => 0, 'huesped_id' => 0, 'nombre' => '', 'nom_skip' => 0, 'nuevo' => 0, 'nvo_dir' => 0, 'tel' => '', 'tel_ok' => 0];
+            'hab_skip' => 0, 'huesped_id' => 0, 'nombre' => '', 'nom_pend' => '', 'nom_skip' => 0,
+            'nuevo' => 0, 'nvo_dir' => 0, 'reg' => 0, 'tel' => '', 'tel_ok' => 0];
     }
 
     /**
@@ -2948,7 +2949,7 @@ class CopilotoService
             return null;
         }
         $paso = (string) ($crudo['paso'] ?? '');
-        if (!in_array($paso, ['fechas', 'habitacion', 'nombre', 'telefono'], true)) {
+        if (!in_array($paso, ['fechas', 'habitacion', 'tipo_huesped', 'nombre', 'telefono'], true)) {
             return null;
         }
 
@@ -2968,8 +2969,9 @@ class CopilotoService
         $f['hab_num'] = mb_substr(trim((string) ($crudo['hab_num'] ?? '')), 0, 20);
         $f['huesped_id'] = max(0, (int) ($crudo['huesped_id'] ?? 0));
         $f['nombre'] = mb_substr(trim((string) ($crudo['nombre'] ?? '')), 0, 60);
+        $f['nom_pend'] = mb_substr(trim((string) ($crudo['nom_pend'] ?? '')), 0, 60);
         $f['tel'] = mb_substr(preg_replace('/[^\d+ -]/', '', (string) ($crudo['tel'] ?? '')), 0, 20);
-        foreach (['hab_skip', 'nom_skip', 'nuevo', 'nvo_dir', 'tel_ok'] as $k) {
+        foreach (['hab_skip', 'nom_skip', 'nuevo', 'nvo_dir', 'reg', 'tel_ok'] as $k) {
             $f[$k] = ((int) ($crudo[$k] ?? 0)) === 1 ? 1 : 0;
         }
 
@@ -2986,7 +2988,9 @@ class CopilotoService
             return 'habitacion';
         }
         if ($f['huesped_id'] === 0 && $f['nombre'] === '' && $f['nom_skip'] === 0) {
-            return 'nombre';
+            // Primero se pregunta SI es nuevo o registrado; ya con esa
+            // eleccion (reg/nvo_dir) se pide el nombre en el tono correcto.
+            return ($f['reg'] === 0 && $f['nvo_dir'] === 0) ? 'tipo_huesped' : 'nombre';
         }
         if ($f['nuevo'] === 1 && $f['tel_ok'] === 0) {
             return 'telefono';
@@ -3002,25 +3006,49 @@ class CopilotoService
      */
     private function preguntaFlujoReserva(array $f, string $prefacio = '', int $hotelId = 0): array
     {
+        if ($f['nvo_dir'] === 1) {
+            $preguntaNombre = 'Va, lo registro como huesped nuevo 🆕 ¿Como se llama?';
+        } elseif ($f['nom_pend'] !== '') {
+            $preguntaNombre = '¿Me das otro nombre, o registro a **' . ucwords($f['nom_pend']) . '** como huesped nuevo?';
+        } elseif ($f['reg'] === 1) {
+            $preguntaNombre = 'Perfecto ✅ ¿A nombre de quien esta registrado? Escribeme el nombre y lo busco.';
+        } else {
+            $preguntaNombre = '¿A nombre de quien va? Escribeme el nombre del huesped.';
+        }
+
         $preguntas = [
             'fechas' => '¿Para que fechas? Dime por ejemplo "del 20 al 22 de agosto" o "el 15 de agosto por 3 noches", o toca una opcion.',
             'habitacion' => $this->preguntaHabitacion($hotelId),
-            'nombre' => $f['nvo_dir'] === 1
-                ? 'Va, lo registro como huesped nuevo 🆕 ¿Como se llama?'
-                : '¿A nombre de quien va? Escribeme el nombre del huesped.',
+            'tipo_huesped' => '¿El huesped ya esta registrado contigo, o es nuevo?',
+            'nombre' => $preguntaNombre,
             'telefono' => ($f['nvo_dir'] === 1
                     ? 'Perfecto.'
-                    : 'No encuentro a **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** en tus huespedes; lo registro como nuevo.')
+                    : 'Va: **' . ($f['nombre'] !== '' ? ucwords($f['nombre']) : 'ese huesped') . '** queda como huesped nuevo.')
                 . ' ¿Cual es su telefono?',
         ];
 
         $cancelar = ['✕ Cancelar', 'cancelar', 0];
+        $formulario = ['📝 Capturarlo en el formulario', 'sin nombre', 0];
+        if ($f['nvo_dir'] === 1) {
+            $opcionesNombre = [$cancelar];
+        } elseif ($f['nom_pend'] !== '') {
+            $opcionesNombre = [['🆕 Registrarlo como nuevo', 'registralo como nuevo', 0], $formulario, $cancelar];
+        } elseif ($f['reg'] === 1) {
+            $opcionesNombre = [$formulario, $cancelar];
+        } else {
+            $opcionesNombre = [['🆕 Huesped no registrado', 'es un huesped nuevo', 0], $formulario, $cancelar];
+        }
+
         $opciones = [
             'fechas' => [['Hoy', 'hoy', 0], ['Mañana', 'manana', 0], ['📅 Del … al …', 'del  al  de ', 1], $cancelar],
             'habitacion' => $this->opcionesHabitacion($hotelId, $cancelar),
-            'nombre' => $f['nvo_dir'] === 1
-                ? [$cancelar]
-                : [['🆕 Huesped no registrado', 'es un huesped nuevo', 0], ['📝 Capturarlo en el formulario', 'sin nombre', 0], $cancelar],
+            'tipo_huesped' => [
+                ['✅ Ya registrado', 'ya esta registrado', 0],
+                ['🆕 Huesped nuevo', 'es un huesped nuevo', 0],
+                $formulario,
+                $cancelar,
+            ],
+            'nombre' => $opcionesNombre,
             'telefono' => [['Sin telefono', 'sin telefono', 0], $cancelar],
         ];
 
@@ -3113,9 +3141,38 @@ class CopilotoService
                 $prefacio = 'Te aparto la **' . $porTipo['numero'] . '** (' . $porTipo['tipo_label'] . ') ✔.';
                 break;
 
+            case 'tipo_huesped':
+                if (preg_match('/\b(sin nombre|en el formulario|luego|despues|omite)\b/', $norm)) {
+                    $f['nom_skip'] = 1;
+                    break;
+                }
+                // Cuidado con el orden: "no registrado" tambien dice "registrado".
+                if (preg_match('/\b(nuevo|no registrado|no esta registrado|aun no|todavia no)\b/', $norm)) {
+                    $f['nvo_dir'] = 1;
+                    break;
+                }
+                if (preg_match('/\b(registrado|registrada|existente|ya lo tengo|ya esta)\b/', $norm)) {
+                    $f['reg'] = 1;
+                    break;
+                }
+                // Escribio el nombre directo sin elegir: se acepta como
+                // respuesta del paso nombre (buscar; si no esta, es nuevo).
+                $f['paso'] = 'nombre';
+                return $this->continuarFlujoReserva($hotelId, $norm, $f);
+
             case 'nombre':
                 if (preg_match('/\b(sin nombre|luego|en el formulario|despues|omite)\b/', $norm)) {
                     $f['nom_skip'] = 1;
+                    break;
+                }
+                // "Registralo como nuevo" tras un "ya registrado" que no
+                // aparecio: usa el nombre que quedo pendiente. Va ANTES del
+                // detector de "nuevo" (comparten palabras).
+                if ($f['nom_pend'] !== '' && preg_match('/\b(registralo|registrarlo|dalo de alta|como nuevo|nuevo)\b/', $norm)) {
+                    $f['nombre'] = $f['nom_pend'];
+                    $f['nom_pend'] = '';
+                    $f['reg'] = 0;
+                    $f['nuevo'] = 1;
                     break;
                 }
                 // "Huesped no registrado" (chip o dictado): el siguiente nombre
@@ -3138,9 +3195,15 @@ class CopilotoService
                 if (isset($res['id'])) {
                     $f['huesped_id'] = (int) $res['id'];
                     $f['nombre'] = (string) $res['nombre'];
+                    $f['nom_pend'] = '';
                     $prefacio = 'Encontre a **' . $res['nombre'] . '** en tus huespedes ✔.';
                 } elseif (isset($res['varios'])) {
                     return ['intent' => 'flujo:reserva_nombre_varios', 'respuesta' => $this->preguntaFlujoReserva($f, 'Hay varios huespedes que casan: **' . implode('**, **', $res['varios']) . '**. Dimelo con el nombre completo.', $hotelId)];
+                } elseif ($f['reg'] === 1) {
+                    // Dijo "ya registrado" pero no aparece: no se adivina.
+                    // Se ofrece darlo de alta con ese nombre o corregirlo.
+                    $f['nom_pend'] = $nombre;
+                    return ['intent' => 'flujo:reserva_nombre_noesta', 'respuesta' => $this->preguntaFlujoReserva($f, 'No encuentro a **' . ucwords($nombre) . '** en tus huespedes.', $hotelId)];
                 } else {
                     $f['nombre'] = $nombre;
                     $f['nuevo'] = 1;

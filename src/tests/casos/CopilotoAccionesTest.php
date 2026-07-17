@@ -312,27 +312,47 @@ $r = $servicio->responder($hotelId, 'una doble', $usuarioId, '', '', null, json_
 t_eq('flujo:reserva_hab_tipo_ocupado', $r['intent'] ?? null, 'flujo: tipo sin habitacion libre re-pregunta');
 $fl = $r['flujo'];
 
-// ── "cualquiera" salta la habitacion -> pide nombre ──
+// ── "cualquiera" salta la habitacion -> pregunta ¿registrado o nuevo? ──
 $r = $servicio->responder($hotelId, 'cualquiera', $usuarioId, '', '', null, json_encode($fl));
-t_eq('flujo:reserva_nombre', $r['intent'] ?? null, 'flujo: pide el nombre');
+t_eq('flujo:reserva_tipo_huesped', $r['intent'] ?? null, 'flujo: pregunta si es registrado o nuevo');
 $fl = $r['flujo'];
 $labels = array_column($r['sugerencias'] ?? [], 0);
-t_ok(in_array('🆕 Huesped no registrado', $labels, true), 'flujo nombre: chip de huesped no registrado');
+t_ok(in_array('✅ Ya registrado', $labels, true), 'tipo huesped: chip de registrado');
+t_ok(in_array('🆕 Huesped nuevo', $labels, true), 'tipo huesped: chip de nuevo');
 
-// ── Rama "huesped no registrado" (chip): el nombre va DIRECTO al alta ──
-$r2 = $servicio->responder($hotelId, 'es un huesped nuevo', $usuarioId, '', '', null, json_encode($fl));
-t_eq('flujo:reserva_nombre_nuevo', $r2['intent'] ?? null, 'nvo_dir: reconoce la intencion de alta');
-t_eq(1, $r2['flujo']['nvo_dir'] ?? 0, 'nvo_dir: flag activo y sobrevive el saneador');
+// ── Rama REGISTRADO + el nombre existe: busca y cierra con su id ──
+$r2 = $servicio->responder($hotelId, 'ya esta registrado', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_nombre', $r2['intent'] ?? null, 'registrado: pasa a pedir el nombre');
+t_eq(1, $r2['flujo']['reg'] ?? 0, 'registrado: flag activo y sobrevive el saneador');
 $r2 = $servicio->responder($hotelId, 'juan perez', $usuarioId, '', '', null, json_encode($r2['flujo']));
-t_eq('flujo:reserva_telefono', $r2['intent'] ?? null, 'nvo_dir: aunque el nombre exista, va directo al alta');
-t_eq(1, $r2['flujo']['nuevo'] ?? 0, 'nvo_dir: marcado nuevo sin buscar el catalogo');
+t_eq('accion:reserva_link', $r2['intent'] ?? null, 'registrado existente: cierra directo');
+t_ok(strpos((string) ($r2['acciones'][0]['url'] ?? ''), 'huesped_id=' . $huespedJuanId) !== false, 'registrado existente: enlace con su id');
+
+// ── Rama REGISTRADO pero NO aparece: ofrece darlo de alta con ese nombre ──
+$r3 = $servicio->responder($hotelId, 'ya esta registrado', $usuarioId, '', '', null, json_encode($fl));
+$r3 = $servicio->responder($hotelId, 'rodrigo montano', $usuarioId, '', '', null, json_encode($r3['flujo']));
+t_eq('flujo:reserva_nombre_noesta', $r3['intent'] ?? null, 'registrado inexistente: avisa que no esta');
+t_ok(in_array('🆕 Registrarlo como nuevo', array_column($r3['sugerencias'] ?? [], 0), true), 'registrado inexistente: chip de darlo de alta');
+$r3 = $servicio->responder($hotelId, 'registralo como nuevo', $usuarioId, '', '', null, json_encode($r3['flujo']));
+t_eq('flujo:reserva_telefono', $r3['intent'] ?? null, 'registralo como nuevo: pasa al telefono');
+t_eq('rodrigo montano', $r3['flujo']['nombre'] ?? null, 'registralo como nuevo: conserva el nombre pendiente');
+t_eq(1, $r3['flujo']['nuevo'] ?? 0, 'registralo como nuevo: marcado nuevo');
+
+// ── Rama NUEVO desde la pregunta: el nombre va DIRECTO al alta ──
+$r4 = $servicio->responder($hotelId, 'es un huesped nuevo', $usuarioId, '', '', null, json_encode($fl));
+t_eq('flujo:reserva_nombre', $r4['intent'] ?? null, 'nvo_dir: pasa a pedir el nombre en tono de alta');
+t_eq(1, $r4['flujo']['nvo_dir'] ?? 0, 'nvo_dir: flag activo y sobrevive el saneador');
+$r4 = $servicio->responder($hotelId, 'juan perez', $usuarioId, '', '', null, json_encode($r4['flujo']));
+t_eq('flujo:reserva_telefono', $r4['intent'] ?? null, 'nvo_dir: aunque el nombre exista, va directo al alta');
+t_eq(1, $r4['flujo']['nuevo'] ?? 0, 'nvo_dir: marcado nuevo sin buscar el catalogo');
 
 // ── Pregunta de datos a MEDIA captura: se responde y el flujo sigue vivo ──
 $r = $servicio->responder($hotelId, 'cuanto tengo en caja?', $usuarioId, '', '', null, json_encode($fl));
 t_eq('caja', $r['intent'] ?? null, 'flujo: una pregunta de caja se responde normal');
 t_ok(empty($r['flujo_fin']), 'flujo: la pregunta no mata la captura');
 
-// ── Nombre no registrado -> pide telefono y marca nuevo ──
+// ── Nombre escrito DIRECTO en la pregunta registrado/nuevo: se acepta ──
+// (delegacion al paso nombre: no esta en el catalogo -> nuevo -> telefono)
 $r = $servicio->responder($hotelId, 'pedro ramirez', $usuarioId, '', '', null, json_encode($fl));
 t_eq('flujo:reserva_telefono', $r['intent'] ?? null, 'flujo: huesped nuevo pide telefono');
 $fl = $r['flujo'];
