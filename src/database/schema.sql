@@ -9,6 +9,32 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+DROP TABLE IF EXISTS `activos_hotel`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `activos_hotel` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `nombre` varchar(160) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ubicacion` varchar(160) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `habitacion_id` int DEFAULT NULL,
+  `area_id` int DEFAULT NULL,
+  `periodicidad_dias` int NOT NULL DEFAULT '180',
+  `ultimo_servicio` date DEFAULT NULL,
+  `proximo_servicio` date DEFAULT NULL,
+  `notas` text COLLATE utf8mb4_unicode_ci,
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_activos_hotel_proximo` (`hotel_id`,`activo`,`proximo_servicio`),
+  KEY `idx_activos_habitacion` (`habitacion_id`),
+  KEY `idx_activos_area` (`area_id`),
+  CONSTRAINT `fk_activos_area` FOREIGN KEY (`area_id`) REFERENCES `areas_hotel` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_activos_hotel_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_activos_hotel_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Activos del hotel con mantenimiento preventivo programable';
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `alertas_inventario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -34,6 +60,28 @@ CREATE TABLE `alertas_inventario` (
   CONSTRAINT `alertas_inventario_ibfk_2` FOREIGN KEY (`usuario_lectura_id`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `areas_hotel`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `areas_hotel` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `nombre` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tipo` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'otra',
+  `piso` int DEFAULT NULL,
+  `descripcion` text COLLATE utf8mb4_unicode_ci,
+  `estado` enum('disponible','limpieza','mantenimiento','cerrada') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'disponible',
+  `foto_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `activa` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_areas_hotel_nombre` (`hotel_id`,`nombre`),
+  KEY `idx_areas_hotel_estado` (`hotel_id`,`estado`),
+  KEY `idx_areas_hotel_activa` (`hotel_id`,`activa`),
+  CONSTRAINT `fk_areas_hotel_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Areas del hotel (alberca, lobby...) con limpieza y mantenimiento';
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `auditoria_eventos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -53,7 +101,7 @@ CREATE TABLE `auditoria_eventos` (
   KEY `idx_auditoria_hotel_modulo` (`hotel_id`,`modulo`,`created_at`),
   KEY `idx_auditoria_hotel_usuario` (`hotel_id`,`usuario_id`,`created_at`),
   CONSTRAINT `fk_auditoria_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cajas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -69,7 +117,7 @@ CREATE TABLE `cajas` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_cajas_hotel_id` (`hotel_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `categorias_movimientos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -90,7 +138,7 @@ CREATE TABLE `categorias_movimientos` (
   KEY `idx_activa` (`activa`),
   KEY `idx_categorias_movimientos_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_categorias_movimientos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `categorias_producto`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -104,7 +152,7 @@ CREATE TABLE `categorias_producto` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `checkin_digital_links`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -131,7 +179,7 @@ CREATE TABLE `checkin_digital_links` (
   CONSTRAINT `fk_checkin_creador` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_checkin_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_checkin_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `compra_detalles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -158,7 +206,7 @@ CREATE TABLE `compra_detalles` (
   CONSTRAINT `fk_compra_detalles_producto` FOREIGN KEY (`producto_id`) REFERENCES `inventario_productos` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_compra_detalles_cantidad_positiva` CHECK ((`cantidad` > 0)),
   CONSTRAINT `chk_compra_detalles_importes_no_negativos` CHECK (((`costo_unitario` >= 0) and (`subtotal` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `compras`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -199,7 +247,7 @@ CREATE TABLE `compras` (
   CONSTRAINT `fk_compras_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_compras_recepcion_estado` CHECK ((((`estado` = _latin1'recibida') and (`fecha_recepcion` is not null)) or (`estado` <> _latin1'recibida'))),
   CONSTRAINT `chk_compras_totales_no_negativos` CHECK (((`subtotal` >= 0) and (`impuestos` >= 0) and (`total` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `configuracion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -212,7 +260,7 @@ CREATE TABLE `configuracion` (
   `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `clave` (`clave`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `control_llaves`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -247,7 +295,7 @@ CREATE TABLE `control_llaves` (
   KEY `fk_recibida_por` (`recibida_por_id`),
   CONSTRAINT `fk_entregada_por` FOREIGN KEY (`entregada_por_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_recibida_por` FOREIGN KEY (`recibida_por_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `control_remotos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -277,7 +325,7 @@ CREATE TABLE `control_remotos` (
   CONSTRAINT `fk_remoto_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`),
   CONSTRAINT `fk_remoto_recibida_usuario` FOREIGN KEY (`recibida_por_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_remoto_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `control_remotos_backup`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -322,7 +370,7 @@ CREATE TABLE `copiloto_ia_generaciones` (
   KEY `fk_ia_gen_usuario` (`usuario_id`),
   CONSTRAINT `fk_ia_gen_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ia_gen_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `copiloto_mensajes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -343,7 +391,7 @@ CREATE TABLE `copiloto_mensajes` (
   KEY `fk_copiloto_usuario` (`usuario_id`),
   CONSTRAINT `fk_copiloto_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_copiloto_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cortes_caja`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -377,7 +425,7 @@ CREATE TABLE `cortes_caja` (
   KEY `idx_estado` (`estado`),
   KEY `idx_fecha` (`fecha_apertura`,`fecha_cierre`),
   KEY `idx_cortes_caja_hotel_id` (`hotel_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cuentas_por_cobrar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -423,7 +471,7 @@ CREATE TABLE `cuentas_por_cobrar` (
   CONSTRAINT `fk_cxc_solicitud_factura` FOREIGN KEY (`solicitud_factura_id`) REFERENCES `solicitudes_factura` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_cxc_importes_no_negativos` CHECK (((`total` >= 0) and (`saldo` >= 0))),
   CONSTRAINT `chk_cxc_saldo_no_mayor_total` CHECK ((`saldo` <= `total`))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cuentas_por_cobrar_movimientos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -448,7 +496,7 @@ CREATE TABLE `cuentas_por_cobrar_movimientos` (
   CONSTRAINT `fk_cxc_mov_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_cxc_mov_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_cxc_mov_importes_no_negativos` CHECK (((`monto` >= 0) and (`saldo_anterior` >= 0) and (`saldo_posterior` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cuentas_por_pagar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -489,7 +537,7 @@ CREATE TABLE `cuentas_por_pagar` (
   CONSTRAINT `fk_cxp_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_cxp_importes_no_negativos` CHECK (((`subtotal` >= 0) and (`impuestos` >= 0) and (`total` >= 0) and (`saldo` >= 0))),
   CONSTRAINT `chk_cxp_saldo_no_mayor_total` CHECK ((`saldo` <= `total`))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cuentas_por_pagar_movimientos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -514,7 +562,7 @@ CREATE TABLE `cuentas_por_pagar_movimientos` (
   CONSTRAINT `fk_cxp_mov_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_cxp_mov_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_cxp_mov_importes_no_negativos` CHECK (((`monto` >= 0) and (`saldo_anterior` >= 0) and (`saldo_posterior` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `denominaciones_efectivo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -527,7 +575,7 @@ CREATE TABLE `denominaciones_efectivo` (
   `subtotal` decimal(10,2) GENERATED ALWAYS AS ((`denominacion` * `cantidad`)) STORED,
   PRIMARY KEY (`id`),
   KEY `corte_id` (`corte_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `documento_entidades`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -549,7 +597,7 @@ CREATE TABLE `documento_entidades` (
   CONSTRAINT `fk_documento_entidades_documento` FOREIGN KEY (`documento_id`) REFERENCES `documentos` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_documento_entidades_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_documento_entidades_entidad_id` CHECK ((`entidad_id` > 0))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `documento_tipos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -571,7 +619,7 @@ CREATE TABLE `documento_tipos` (
   KEY `idx_documento_tipos_activo` (`activo`),
   CONSTRAINT `fk_documento_tipos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_documento_tipos_max_size` CHECK (((`max_size_mb` is null) or (`max_size_mb` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `documentos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -603,7 +651,35 @@ CREATE TABLE `documentos` (
   CONSTRAINT `fk_documentos_tipo` FOREIGN KEY (`documento_tipo_id`) REFERENCES `documento_tipos` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_documentos_usuario` FOREIGN KEY (`subido_por_usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_documentos_size_bytes` CHECK ((`size_bytes` > 0))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `guardian_hallazgos_estado`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `guardian_hallazgos_estado` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `clave` varchar(120) NOT NULL,
+  `codigo_regla` varchar(40) NOT NULL,
+  `usuario_id` int DEFAULT NULL,
+  `severidad` enum('alta','media') NOT NULL DEFAULT 'media',
+  `titulo` varchar(200) NOT NULL,
+  `resumen` varchar(500) DEFAULT NULL,
+  `casos_conteo` int NOT NULL DEFAULT '0',
+  `detalle_json` mediumtext,
+  `estado` enum('nuevo','revisado','resuelto') NOT NULL DEFAULT 'nuevo',
+  `detectado_en` date NOT NULL,
+  `ultima_vez_en` date NOT NULL,
+  `revisado_por` int DEFAULT NULL,
+  `revisado_en` datetime DEFAULT NULL,
+  `notificado_en` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_guardian_hallazgo` (`hotel_id`,`clave`),
+  KEY `idx_guardian_hotel_estado` (`hotel_id`,`estado`,`ultima_vez_en`),
+  KEY `idx_guardian_usuario` (`hotel_id`,`usuario_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `habitacion_imagenes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -622,7 +698,7 @@ CREATE TABLE `habitacion_imagenes` (
   KEY `idx_habitacion` (`habitacion_id`),
   KEY `idx_habitacion_imagenes_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_habitacion_imagenes_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `habitaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -655,7 +731,7 @@ CREATE TABLE `habitaciones` (
   KEY `idx_habitaciones_hotel_id` (`hotel_id`),
   KEY `idx_habitaciones_hotel_estado` (`hotel_id`,`estado`),
   CONSTRAINT `fk_habitaciones_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `historial_llaves`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -678,7 +754,7 @@ CREATE TABLE `historial_llaves` (
   CONSTRAINT `fk_hist_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_hist_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_hist_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `historial_remotos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -746,7 +822,7 @@ CREATE TABLE `hotel_branding` (
   UNIQUE KEY `uq_hotel_branding_hotel` (`hotel_id`),
   KEY `idx_hotel_branding_activo` (`activo`),
   CONSTRAINT `fk_hotel_branding_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `hotel_configuracion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -769,7 +845,7 @@ CREATE TABLE `hotel_configuracion` (
   KEY `idx_hotel_configuracion_grupo` (`hotel_id`,`grupo`),
   KEY `idx_hotel_configuracion_feature` (`hotel_id`,`es_feature_flag`,`activo`),
   CONSTRAINT `fk_hotel_configuracion_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `hotel_modulos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -797,7 +873,7 @@ CREATE TABLE `hotel_modulos` (
   CONSTRAINT `fk_hotel_modulos_enabled_by` FOREIGN KEY (`enabled_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_hotel_modulos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_hotel_modulos_modulo` FOREIGN KEY (`modulo_id`) REFERENCES `modulos` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `hotel_pasarela_credenciales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -816,7 +892,7 @@ CREATE TABLE `hotel_pasarela_credenciales` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pasarela_hotel` (`hotel_id`),
   CONSTRAINT `fk_pasarela_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `hotel_usuarios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -841,7 +917,7 @@ CREATE TABLE `hotel_usuarios` (
   CONSTRAINT `fk_hotel_usuarios_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_hotel_usuarios_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_hotel_usuarios_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `hotel_whatsapp_credenciales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -892,7 +968,7 @@ CREATE TABLE `hoteles` (
   KEY `idx_hoteles_activo` (`activo`),
   KEY `idx_hoteles_plan_id` (`plan_id`),
   CONSTRAINT `fk_hoteles_plan` FOREIGN KEY (`plan_id`) REFERENCES `planes` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `huesped_vehiculos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -916,7 +992,7 @@ CREATE TABLE `huesped_vehiculos` (
   KEY `idx_estacionamiento` (`estacionamiento`),
   KEY `idx_huesped_vehiculos_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_huesped_vehiculos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `huesped_vehiculos_orfanos_archivo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -942,7 +1018,7 @@ CREATE TABLE `huesped_vehiculos_orfanos_archivo` (
   UNIQUE KEY `uk_hvoa_vehiculo_migration` (`vehiculo_id`,`migration_name`),
   KEY `idx_hvoa_huesped_id` (`huesped_id`),
   KEY `idx_hvoa_placas` (`placas`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `huespedes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -969,7 +1045,7 @@ CREATE TABLE `huespedes` (
   KEY `idx_huespedes_hotel_id` (`hotel_id`),
   KEY `idx_huespedes_hotel_nombre` (`hotel_id`,`nombre_completo`),
   CONSTRAINT `fk_huespedes_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `huespedes_vehiculos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1009,7 +1085,7 @@ CREATE TABLE `ia_resumenes` (
   KEY `fk_ia_resumenes_usuario` (`generado_por`),
   CONSTRAINT `fk_ia_resumenes_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ia_resumenes_usuario` FOREIGN KEY (`generado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ical_bloqueos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1033,7 +1109,7 @@ CREATE TABLE `ical_bloqueos` (
   CONSTRAINT `fk_ical_bloqueos_feed` FOREIGN KEY (`feed_id`) REFERENCES `ical_feeds` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ical_bloqueos_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ical_bloqueos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ical_feeds`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1056,7 +1132,7 @@ CREATE TABLE `ical_feeds` (
   KEY `idx_ical_feeds_habitacion` (`habitacion_id`),
   CONSTRAINT `fk_ical_feeds_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ical_feeds_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `incrementos_tarifas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1094,7 +1170,7 @@ CREATE TABLE `incrementos_tarifas` (
   CONSTRAINT `incrementos_tarifas_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
   CONSTRAINT `incrementos_tarifas_chk_1` CHECK (json_valid(`tipos_habitacion`)),
   CONSTRAINT `incrementos_tarifas_chk_2` CHECK (json_valid(`habitaciones`))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Control de incrementos de tarifas temporales y permanentes';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Control de incrementos de tarifas temporales y permanentes';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `inventario_categorias`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1110,7 +1186,7 @@ CREATE TABLE `inventario_categorias` (
   PRIMARY KEY (`id`),
   KEY `idx_inventario_categorias_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_inventario_categorias_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `inventario_config_habitacion`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1129,7 +1205,7 @@ CREATE TABLE `inventario_config_habitacion` (
   KEY `idx_inventario_config_habitacion_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_inventario_config_habitacion_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `inventario_config_habitacion_ibfk_1` FOREIGN KEY (`producto_id`) REFERENCES `inventario_productos` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `inventario_habitacion_config`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1143,7 +1219,7 @@ CREATE TABLE `inventario_habitacion_config` (
   PRIMARY KEY (`id`),
   KEY `habitacion_id` (`habitacion_id`),
   KEY `producto_id` (`producto_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `inventario_movimientos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1192,7 +1268,7 @@ CREATE TABLE `inventario_productos` (
   KEY `idx_inventario_productos_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_categoria` FOREIGN KEY (`categoria_id`) REFERENCES `inventario_categorias` (`id`),
   CONSTRAINT `fk_inventario_productos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `lealtad_cupones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1215,7 +1291,7 @@ CREATE TABLE `lealtad_cupones` (
   CONSTRAINT `fk_lealtad_cupon` FOREIGN KEY (`cupon_id`) REFERENCES `motor_cupones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_lealtad_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_lealtad_huesped` FOREIGN KEY (`huesped_id`) REFERENCES `huespedes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `login_intentos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1235,7 +1311,7 @@ CREATE TABLE `login_intentos` (
   UNIQUE KEY `uq_login_intentos_clave` (`clave`),
   KEY `idx_login_intentos_ultimo_intento` (`ultimo_intento`),
   KEY `idx_login_intentos_ip` (`ip`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `logs_acceso`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1253,7 +1329,7 @@ CREATE TABLE `logs_acceso` (
   KEY `idx_tipo` (`tipo`),
   KEY `idx_usuario` (`usuario_id`),
   KEY `idx_fecha` (`created_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `logs_auditoria`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1278,7 +1354,25 @@ CREATE TABLE `logs_auditoria` (
   KEY `idx_logs_auditoria_accion` (`accion`),
   CONSTRAINT `fk_logs_auditoria_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_logs_auditoria_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `mantenimiento_fotos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mantenimiento_fotos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `mantenimiento_id` int NOT NULL,
+  `ruta` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `momento` enum('reporte','resuelto') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'reporte',
+  `subido_por` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_mant_fotos_hotel_mant` (`hotel_id`,`mantenimiento_id`,`momento`),
+  KEY `fk_mantenimiento_fotos_mantenimiento` (`mantenimiento_id`),
+  CONSTRAINT `fk_mantenimiento_fotos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_mantenimiento_fotos_mantenimiento` FOREIGN KEY (`mantenimiento_id`) REFERENCES `mantenimientos_habitaciones` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Evidencia fotografica antes/despues por mantenimiento';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mantenimientos_habitaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1286,7 +1380,9 @@ DROP TABLE IF EXISTS `mantenimientos_habitaciones`;
 CREATE TABLE `mantenimientos_habitaciones` (
   `id` int NOT NULL AUTO_INCREMENT,
   `hotel_id` int DEFAULT NULL,
-  `habitacion_id` int NOT NULL,
+  `habitacion_id` int DEFAULT NULL,
+  `activo_id` int DEFAULT NULL,
+  `area_id` int DEFAULT NULL,
   `tipo_mantenimiento` enum('preventivo','correctivo','emergencia','limpieza_profunda') COLLATE utf8mb4_unicode_ci NOT NULL,
   `motivo` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `descripcion` text COLLATE utf8mb4_unicode_ci,
@@ -1299,6 +1395,11 @@ CREATE TABLE `mantenimientos_habitaciones` (
   `estado` enum('en_proceso','completado','cancelado','programado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'en_proceso',
   `realizado_por` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `costo` decimal(10,2) DEFAULT NULL,
+  `costo_estimado` decimal(10,2) DEFAULT NULL,
+  `proveedor` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `nota_costo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `gasto_movimiento_id` int DEFAULT NULL,
+  `gasto_registrado_en` datetime DEFAULT NULL,
   `observaciones` text COLLATE utf8mb4_unicode_ci,
   `usuario_registro_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1311,8 +1412,15 @@ CREATE TABLE `mantenimientos_habitaciones` (
   KEY `idx_programado` (`programado`,`fecha_programada`,`fecha_programada_fin`,`estado`),
   KEY `idx_habitacion_programado` (`habitacion_id`,`programado`,`estado`),
   KEY `idx_mantenimientos_habitaciones_hotel_id` (`hotel_id`),
+  KEY `idx_mant_gasto_movimiento` (`gasto_movimiento_id`),
+  KEY `idx_mant_activo` (`hotel_id`,`activo_id`),
+  KEY `fk_mantenimientos_activo` (`activo_id`),
+  KEY `idx_mant_area` (`hotel_id`,`area_id`),
+  KEY `fk_mantenimientos_area` (`area_id`),
+  CONSTRAINT `fk_mantenimientos_activo` FOREIGN KEY (`activo_id`) REFERENCES `activos_hotel` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_mantenimientos_area` FOREIGN KEY (`area_id`) REFERENCES `areas_hotel` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_mantenimientos_habitaciones_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Registro histórico de mantenimientos realizados a las habitaciones';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Registro histórico de mantenimientos realizados a las habitaciones';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `mensajes_whatsapp`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1340,7 +1448,7 @@ CREATE TABLE `mensajes_whatsapp` (
   CONSTRAINT `fk_mensajes_wa_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_mensajes_wa_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_mensajes_wa_usuario` FOREIGN KEY (`enviado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1354,7 +1462,7 @@ CREATE TABLE `migrations` (
   `ejecutada_en` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_migrations_nombre` (`nombre`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `modulos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1377,7 +1485,7 @@ CREATE TABLE `modulos` (
   UNIQUE KEY `uk_modulos_clave` (`clave`),
   KEY `idx_modulos_activo_global` (`activo_global`),
   KEY `idx_modulos_categoria` (`categoria`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `motor_cupones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1402,7 +1510,7 @@ CREATE TABLE `motor_cupones` (
   KEY `fk_motor_cupones_creador` (`creado_por`),
   CONSTRAINT `fk_motor_cupones_creador` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_motor_cupones_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `motor_extras`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1445,7 +1553,7 @@ CREATE TABLE `motor_holds` (
   KEY `fk_motor_holds_pago` (`pago_online_id`),
   CONSTRAINT `fk_motor_holds_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_motor_holds_pago` FOREIGN KEY (`pago_online_id`) REFERENCES `motor_pagos_online` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `motor_pagos_online`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1476,7 +1584,7 @@ CREATE TABLE `motor_pagos_online` (
   CONSTRAINT `fk_motor_pagos_conciliador` FOREIGN KEY (`conciliado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_motor_pagos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_motor_pagos_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `movimientos_caja`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1514,7 +1622,7 @@ CREATE TABLE `movimientos_caja` (
   KEY `idx_movimientos_caja_hotel_id` (`hotel_id`),
   KEY `idx_movimientos_hotel_tipo_created` (`hotel_id`,`tipo`,`created_at`),
   KEY `idx_movimientos_hotel_created` (`hotel_id`,`created_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `movimientos_inventario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1545,7 +1653,7 @@ CREATE TABLE `movimientos_inventario` (
   CONSTRAINT `movimientos_inventario_ibfk_2` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`),
   CONSTRAINT `movimientos_inventario_ibfk_3` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`),
   CONSTRAINT `movimientos_inventario_ibfk_4` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `night_audit_cierres`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1605,7 +1713,7 @@ CREATE TABLE `nomina_conceptos` (
   CONSTRAINT `fk_nomina_conceptos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_nomina_conceptos_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_nomina_conceptos_monto` CHECK (((`monto_default` is null) or (`monto_default` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_departamentos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1629,7 +1737,7 @@ CREATE TABLE `nomina_departamentos` (
   CONSTRAINT `fk_nomina_departamentos_created_by` FOREIGN KEY (`created_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_nomina_departamentos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_nomina_departamentos_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_grupos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1658,7 +1766,7 @@ CREATE TABLE `nomina_grupos` (
   CONSTRAINT `fk_nomina_grupos_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_nomina_grupos_dia_corte` CHECK (((`dia_corte` is null) or (`dia_corte` between 1 and 31))),
   CONSTRAINT `chk_nomina_grupos_dia_pago` CHECK (((`dia_pago` is null) or (`dia_pago` between 1 and 31)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_incidencias`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1697,7 +1805,7 @@ CREATE TABLE `nomina_incidencias` (
   CONSTRAINT `fk_nomina_incidencias_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_nomina_incidencias_cantidad` CHECK (((`cantidad` is null) or (`cantidad` > 0))),
   CONSTRAINT `chk_nomina_incidencias_monto` CHECK (((`monto` is null) or (`monto` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_periodo_conceptos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1730,7 +1838,7 @@ CREATE TABLE `nomina_periodo_conceptos` (
   CONSTRAINT `fk_nomina_periodo_conceptos_periodo` FOREIGN KEY (`periodo_id`) REFERENCES `trabajador_nomina_periodos` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_nomina_periodo_conceptos_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `chk_nomina_periodo_conceptos_monto` CHECK ((`monto` >= 0))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_puestos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1759,7 +1867,7 @@ CREATE TABLE `nomina_puestos` (
   CONSTRAINT `fk_nomina_puestos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_nomina_puestos_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_nomina_puestos_salario` CHECK (((`salario_sugerido` is null) or (`salario_sugerido` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_recibos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1837,7 +1945,7 @@ CREATE TABLE `nomina_reglas_legales` (
   CONSTRAINT `fk_nomina_reglas_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `chk_nomina_reglas_rango` CHECK (((`vigente_hasta` is null) or (`vigente_hasta` >= `vigente_desde`))),
   CONSTRAINT `chk_nomina_reglas_valor` CHECK (((`valor` is null) or (`valor` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `nomina_reglas_legales_eventos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1879,7 +1987,7 @@ CREATE TABLE `nomina_tipos_contrato` (
   CONSTRAINT `fk_nomina_tipos_contrato_created_by` FOREIGN KEY (`created_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_nomina_tipos_contrato_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_nomina_tipos_contrato_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `notificaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1911,7 +2019,7 @@ CREATE TABLE `notificaciones` (
   KEY `idx_notificaciones_hotel_modulo_created` (`hotel_id`,`modulo`,`created_at`),
   KEY `idx_notificaciones_hotel_severidad_created` (`hotel_id`,`severidad`,`created_at`),
   KEY `idx_notificaciones_usuario_estado` (`usuario_id`,`estado`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `operaciones_sync`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1947,7 +2055,7 @@ CREATE TABLE `plan_modulos` (
   KEY `idx_plan_modulos_incluido` (`incluido`),
   CONSTRAINT `fk_plan_modulos_modulo` FOREIGN KEY (`modulo_id`) REFERENCES `modulos` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_plan_modulos_plan` FOREIGN KEY (`plan_id`) REFERENCES `planes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `planes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1968,7 +2076,7 @@ CREATE TABLE `planes` (
   UNIQUE KEY `uk_planes_clave` (`clave`),
   KEY `idx_planes_activo` (`activo`),
   KEY `idx_planes_orden` (`orden`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -1990,7 +2098,7 @@ CREATE TABLE `productos` (
   KEY `categoria_id` (`categoria_id`),
   KEY `idx_descuento_auto` (`descuento_automatico`),
   CONSTRAINT `productos_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias_producto` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `proveedores`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2022,7 +2130,7 @@ CREATE TABLE `proveedores` (
   CONSTRAINT `fk_proveedores_created_by` FOREIGN KEY (`created_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_proveedores_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_proveedores_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `push_subscriptions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2060,7 +2168,7 @@ CREATE TABLE `pwa_push_subscriptions` (
   UNIQUE KEY `uq_pwa_push_hotel_endpoint` (`hotel_id`,`endpoint_hash`),
   KEY `idx_pwa_push_hotel_activo` (`hotel_id`,`activo`),
   KEY `idx_pwa_push_usuario_activo` (`usuario_id`,`activo`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `remember_tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2078,7 +2186,7 @@ CREATE TABLE `remember_tokens` (
   KEY `idx_expires` (`expires_at`),
   KEY `idx_remember_tokens_hotel` (`hotel_id`),
   CONSTRAINT `fk_remember_tokens_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reporte_link_envios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2098,7 +2206,7 @@ CREATE TABLE `reporte_link_envios` (
   KEY `idx_reporte_link_envios_link_created` (`reporte_link_id`,`created_at`),
   KEY `idx_reporte_link_envios_hotel_created` (`hotel_id`,`created_at`),
   KEY `idx_reporte_link_envios_estado` (`estado`,`created_at`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reporte_links`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2129,7 +2237,7 @@ CREATE TABLE `reporte_links` (
   KEY `idx_reporte_links_hotel_created` (`hotel_id`,`created_at`),
   KEY `idx_reporte_links_hotel_estado` (`hotel_id`,`estado`,`expira_en`),
   KEY `idx_reporte_links_expira_estado` (`estado`,`expira_en`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reputacion_encuestas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2160,7 +2268,7 @@ CREATE TABLE `reputacion_encuestas` (
   CONSTRAINT `fk_reputacion_creador` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_reputacion_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_reputacion_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reservacion_abonos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2185,7 +2293,7 @@ CREATE TABLE `reservacion_abonos` (
   KEY `idx_usuario` (`usuario_id`),
   KEY `idx_corte` (`corte_id`),
   KEY `idx_reservacion_abonos_hotel_id` (`hotel_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Abonos parciales por noche de una reservación';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Abonos parciales por noche de una reservación';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reservacion_habitaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2201,7 +2309,7 @@ CREATE TABLE `reservacion_habitaciones` (
   KEY `reservacion_id` (`reservacion_id`),
   KEY `habitacion_id` (`habitacion_id`),
   KEY `idx_reservacion_habitaciones_hotel_id` (`hotel_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reservacion_notas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2220,7 +2328,7 @@ CREATE TABLE `reservacion_notas` (
   KEY `idx_reservacion_notas_hotel_id` (`hotel_id`),
   CONSTRAINT `reservacion_notas_ibfk_1` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE,
   CONSTRAINT `reservacion_notas_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reservacion_pagos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2239,7 +2347,7 @@ CREATE TABLE `reservacion_pagos` (
   KEY `idx_metodo_pago` (`metodo_pago`),
   KEY `idx_fecha` (`created_at`),
   KEY `idx_reservacion_pagos_hotel_id` (`hotel_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Detalle de pagos mixtos por reservación';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Detalle de pagos mixtos por reservación';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `reservaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2276,7 +2384,7 @@ CREATE TABLE `reservaciones` (
   KEY `idx_reservaciones_hotel_entrada` (`hotel_id`,`fecha_entrada`),
   KEY `idx_reservaciones_hotel_salida` (`hotel_id`,`fecha_salida`),
   KEY `idx_reservaciones_hotel_estado` (`hotel_id`,`estado`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2296,7 +2404,7 @@ CREATE TABLE `roles` (
   UNIQUE KEY `uk_roles_hotel_clave` (`hotel_id`,`clave`),
   KEY `idx_roles_hotel_activo` (`hotel_id`,`activo`),
   CONSTRAINT `fk_roles_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `saas_admins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2314,7 +2422,7 @@ CREATE TABLE `saas_admins` (
   KEY `idx_saas_admins_activo` (`activo`),
   KEY `idx_saas_admins_rol` (`rol`),
   CONSTRAINT `fk_saas_admins_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `saas_cobros`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2342,6 +2450,15 @@ CREATE TABLE `saas_cobros` (
   KEY `idx_saas_cobros_vence` (`estado`,`vence_at`),
   CONSTRAINT `fk_saas_cobros_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `schema_migrations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `schema_migrations` (
+  `archivo` varchar(255) NOT NULL,
+  `aplicada_en` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`archivo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `solicitudes_factura`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2378,7 +2495,7 @@ CREATE TABLE `solicitudes_factura` (
   KEY `idx_solicitudes_factura_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_solicitud_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_solicitud_usuario` FOREIGN KEY (`usuario_registro_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `sync_queue`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2421,7 +2538,7 @@ CREATE TABLE `tarea_eventos` (
   CONSTRAINT `fk_tarea_eventos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_tarea_eventos_tarea` FOREIGN KEY (`tarea_id`) REFERENCES `tareas_operativas` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_tarea_eventos_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tarea_trabajadores`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2443,7 +2560,7 @@ CREATE TABLE `tarea_trabajadores` (
   CONSTRAINT `fk_tt_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_tt_tarea` FOREIGN KEY (`tarea_id`) REFERENCES `tareas_operativas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_tt_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tareas_operativas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2457,6 +2574,7 @@ CREATE TABLE `tareas_operativas` (
   `prioridad` enum('baja','media','alta','urgente') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'media',
   `estado` enum('pendiente','asignada','en_proceso','completada','cancelada') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',
   `habitacion_id` int DEFAULT NULL,
+  `area_id` int DEFAULT NULL,
   `reservacion_id` int DEFAULT NULL,
   `huesped_id` int DEFAULT NULL,
   `trabajador_id` int DEFAULT NULL,
@@ -2487,6 +2605,8 @@ CREATE TABLE `tareas_operativas` (
   KEY `idx_tareas_asignada_por` (`asignada_por_usuario_id`),
   KEY `idx_tareas_cerrada_por` (`cerrada_por_usuario_id`),
   KEY `idx_tareas_cancelada_por` (`cancelada_por_usuario_id`),
+  KEY `idx_tareas_area` (`area_id`),
+  CONSTRAINT `fk_tareas_area` FOREIGN KEY (`area_id`) REFERENCES `areas_hotel` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tareas_operativas_asignada_por` FOREIGN KEY (`asignada_por_usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tareas_operativas_cancelada_por` FOREIGN KEY (`cancelada_por_usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tareas_operativas_cerrada_por` FOREIGN KEY (`cerrada_por_usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -2497,7 +2617,7 @@ CREATE TABLE `tareas_operativas` (
   CONSTRAINT `fk_tareas_operativas_mantenimiento` FOREIGN KEY (`mantenimiento_id`) REFERENCES `mantenimientos_habitaciones` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tareas_operativas_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_tareas_operativas_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tarifas_temporada`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2556,7 +2676,7 @@ CREATE TABLE `tipos_habitacion` (
   KEY `idx_orden` (`orden`),
   KEY `idx_tipos_habitacion_hotel_id` (`hotel_id`),
   CONSTRAINT `fk_tipos_habitacion_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Catálogo de tipos de habitación del hotel';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Catálogo de tipos de habitación del hotel';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_anticipos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2619,7 +2739,7 @@ CREATE TABLE `trabajador_asistencias` (
   CONSTRAINT `fk_trabajador_asistencias_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajador_asistencias_horas` CHECK (((`horas` is null) or (`horas` >= 0))),
   CONSTRAINT `chk_trabajador_asistencias_horas_extra` CHECK (((`horas_extra` is null) or (`horas_extra` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_documentos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2691,7 +2811,7 @@ CREATE TABLE `trabajador_nomina_periodo_detalles` (
   CONSTRAINT `fk_trabajador_nomina_detalles_periodo` FOREIGN KEY (`periodo_id`) REFERENCES `trabajador_nomina_periodos` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_trabajador_nomina_detalles_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajador_nomina_detalles_contadores` CHECK (((`conceptos_count` >= 0) and (`anticipos_count` >= 0) and (`prestamos_count` >= 0) and (`pagos_caja_count` >= 0) and (`pagos_caja_pagados` >= 0) and (`pagos_caja_revertidos` >= 0) and (`pendiente_pago_sugerido` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_nomina_periodo_eventos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2713,7 +2833,7 @@ CREATE TABLE `trabajador_nomina_periodo_eventos` (
   CONSTRAINT `fk_trabajador_nomina_eventos_created_by` FOREIGN KEY (`created_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_trabajador_nomina_eventos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_trabajador_nomina_eventos_periodo` FOREIGN KEY (`periodo_id`) REFERENCES `trabajador_nomina_periodos` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_nomina_periodos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2763,7 +2883,7 @@ CREATE TABLE `trabajador_nomina_periodos` (
   CONSTRAINT `fk_trabajador_nomina_periodos_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajador_nomina_periodos_rango` CHECK ((`fecha_fin` >= `fecha_inicio`)),
   CONSTRAINT `chk_trabajador_nomina_periodos_totales` CHECK (((`trabajadores_total` >= 0) and (`bruto_total` >= 0) and (`deducciones_total` >= 0) and (`pagos_caja_aplicados_total` >= 0) and (`reversiones_detectadas_total` >= 0) and (`pendiente_pago_total` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_pagos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2797,7 +2917,7 @@ CREATE TABLE `trabajador_pagos` (
   CONSTRAINT `fk_trabajador_pagos_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_trabajador_pagos_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajador_pagos_monto` CHECK ((`monto` >= 0))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_pagos_caja`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2846,7 +2966,7 @@ CREATE TABLE `trabajador_pagos_caja` (
   CONSTRAINT `fk_trabajador_pagos_caja_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajador_pagos_caja_monto` CHECK ((`monto` > 0)),
   CONSTRAINT `chk_trabajador_pagos_caja_periodo` CHECK (((`periodo_inicio` is null) or (`periodo_fin` is null) or (`periodo_fin` >= `periodo_inicio`)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajador_prestamos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2908,7 +3028,7 @@ CREATE TABLE `trabajador_salarios` (
   CONSTRAINT `fk_trabajador_salarios_trabajador` FOREIGN KEY (`trabajador_id`) REFERENCES `trabajadores` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `chk_trabajador_salarios_rango` CHECK (((`vigente_hasta` is null) or (`vigente_hasta` >= `vigente_desde`))),
   CONSTRAINT `chk_trabajador_salarios_salario` CHECK ((`salario` >= 0))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `trabajadores`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2956,7 +3076,7 @@ CREATE TABLE `trabajadores` (
   CONSTRAINT `fk_trabajadores_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_trabajadores_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `chk_trabajadores_salario_base` CHECK (((`salario_base` is null) or (`salario_base` >= 0)))
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `usuario_preferencias_nav`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2974,7 +3094,7 @@ CREATE TABLE `usuario_preferencias_nav` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_pref_nav` (`hotel_id`,`usuario_id`,`tipo`,`ruta`),
   KEY `idx_pref_nav_lectura` (`hotel_id`,`usuario_id`,`tipo`,`ultima_visita`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `usuarios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -2997,41 +3117,8 @@ CREATE TABLE `usuarios` (
   KEY `idx_usuario` (`nombre_usuario`),
   KEY `idx_rol` (`rol`),
   KEY `idx_activo` (`activo`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `vista_caja_actual`;
-/*!50001 DROP VIEW IF EXISTS `vista_caja_actual`*/;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `vista_caja_actual` AS SELECT 
- 1 AS `caja_id`,
- 1 AS `caja_nombre`,
- 1 AS `corte_id`,
- 1 AS `fecha_apertura`,
- 1 AS `monto_inicial`,
- 1 AS `usuario_apertura_id`,
- 1 AS `usuario_apertura`,
- 1 AS `total_ingresos_efectivo`,
- 1 AS `total_ingresos_tarjeta`,
- 1 AS `total_ingresos_transferencia`,
- 1 AS `total_gastos_efectivo`,
- 1 AS `total_gastos_tarjeta`,
- 1 AS `total_gastos_transferencia`,
- 1 AS `efectivo_en_caja`*/;
-SET character_set_client = @saved_cs_client;
-/*!50001 DROP VIEW IF EXISTS `vista_caja_actual`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = latin1 */;
-/*!50001 SET character_set_results     = latin1 */;
-/*!50001 SET collation_connection      = latin1_swedish_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-
-/*!50001 VIEW `vista_caja_actual` AS select `c`.`id` AS `caja_id`,`c`.`nombre` AS `caja_nombre`,`cc`.`id` AS `corte_id`,`cc`.`fecha_apertura` AS `fecha_apertura`,`cc`.`monto_inicial` AS `monto_inicial`,`cc`.`usuario_apertura_id` AS `usuario_apertura_id`,`u`.`nombre_completo` AS `usuario_apertura`,coalesce(sum((case when ((`mc`.`tipo` = 'ingreso') and (`mc`.`metodo_pago` = 'efectivo')) then `mc`.`monto` else 0 end)),0) AS `total_ingresos_efectivo`,coalesce(sum((case when ((`mc`.`tipo` = 'ingreso') and (`mc`.`metodo_pago` = 'tarjeta')) then `mc`.`monto` else 0 end)),0) AS `total_ingresos_tarjeta`,coalesce(sum((case when ((`mc`.`tipo` = 'ingreso') and (`mc`.`metodo_pago` = 'transferencia')) then `mc`.`monto` else 0 end)),0) AS `total_ingresos_transferencia`,coalesce(sum((case when ((`mc`.`tipo` = 'gasto') and (`mc`.`metodo_pago` = 'efectivo')) then `mc`.`monto` else 0 end)),0) AS `total_gastos_efectivo`,coalesce(sum((case when ((`mc`.`tipo` = 'gasto') and (`mc`.`metodo_pago` = 'tarjeta')) then `mc`.`monto` else 0 end)),0) AS `total_gastos_tarjeta`,coalesce(sum((case when ((`mc`.`tipo` = 'gasto') and (`mc`.`metodo_pago` = 'transferencia')) then `mc`.`monto` else 0 end)),0) AS `total_gastos_transferencia`,((`cc`.`monto_inicial` + coalesce(sum((case when ((`mc`.`tipo` = 'ingreso') and (`mc`.`metodo_pago` = 'efectivo')) then `mc`.`monto` else 0 end)),0)) - coalesce(sum((case when ((`mc`.`tipo` = 'gasto') and (`mc`.`metodo_pago` = 'efectivo')) then `mc`.`monto` else 0 end)),0)) AS `efectivo_en_caja` from (((`cajas` `c` left join `cortes_caja` `cc` on(((`c`.`id` = `cc`.`caja_id`) and (`cc`.`estado` = 'abierto')))) left join `movimientos_caja` `mc` on((`mc`.`corte_id` = `cc`.`id`))) left join `usuarios` `u` on((`cc`.`usuario_apertura_id` = `u`.`id`))) where (`c`.`activa` = 1) group by `c`.`id`,`c`.`nombre`,`cc`.`id`,`cc`.`fecha_apertura`,`cc`.`monto_inicial`,`cc`.`usuario_apertura_id`,`u`.`nombre_completo` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
