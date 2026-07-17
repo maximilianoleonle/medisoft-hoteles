@@ -85,6 +85,7 @@ if ($subnavSection === 'nomina') {
     <?php foreach ($subnavTabs as $subnavKey => $subnavTab): $subnavEsActiva = ($subnavKey === $subnavActive); ?>
     <a href="<?= $subnavTab['url'] ?>"
        class="ms-subnav-tab ms-pressable <?= $subnavEsActiva ? 'is-active' : '' ?>"
+       data-prefetch
        <?= $subnavEsActiva ? 'aria-current="page"' : '' ?>>
         <i class="fas <?= $subnavTab['icono'] ?>"></i> <?= $subnavTab['label'] ?>
     </a>

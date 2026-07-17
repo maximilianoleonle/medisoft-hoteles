@@ -152,6 +152,8 @@
             { not: { href_matches: '*logout*' } },
             { not: { href_matches: '*/caja*' } },
             { not: { href_matches: '*/habitaciones*' } },
+            { not: { href_matches: '*/areas*' } },
+            { not: { href_matches: '*/mapa*' } },
             { not: { href_matches: '*/notificaciones*' } },
             { not: { selector_matches: SKIP_SELECTOR } }
           ]

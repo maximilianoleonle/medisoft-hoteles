@@ -2366,13 +2366,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .estado-ocupada_fecha .estado-icon::after{box-shadow:0 0 8px var(--state-occupied) !important;}
 </style>
 <div class="habitaciones-view">
-    <div class="container mx-auto px-4 pt-3">
-        <?php
-        $subnav_section = 'habitaciones';
-        $subnav_active = 'habitaciones';
-        include APP_PATH . '/views/partials/section_subnav.php';
-        ?>
-    </div>
     <!-- Header desktop original -->
     <div class="modern-header" id="mainHeader">
         <div class="container mx-auto px-4 py-3">
@@ -2410,6 +2403,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php endif; ?>
                 </div>
             </div>
+            <?php
+            // Subnav de seccion DENTRO del header glass: mismo cromado que
+            // /areas y /mapa para que el cambio de pestana se sienta continuo.
+            $subnav_section = 'habitaciones';
+            $subnav_active = 'habitaciones';
+            include APP_PATH . '/views/partials/section_subnav.php';
+            ?>
+            <style>.habitaciones-view .modern-header .ms-subnav{margin:10px 0 0;}</style>
         </div>
     </div>
 
@@ -17085,6 +17086,17 @@ document.addEventListener('DOMContentLoaded', function() {
   .habitaciones-view .modern-header .p-2.rounded-lg::after,
   .habitaciones-view .modern-header p::before{ animation:none!important; }
   .habitaciones-view .modern-header .btn-modern.btn-brand::after{ display:none!important; }
+}
+
+/* Con un modal abierto (body.ms-modal-abierto, publicado por modal-sidebar-fix.js)
+   el header baja de z-index para que el backdrop del modal lo cubra igual que al
+   resto del contenido (mismo patrón que la sidebar). Necesario porque los modales
+   de esta vista viven DENTRO del .container (position:relative; z-index:1): su
+   z-index alto queda atrapado en ese contexto de apilamiento y cualquier elemento
+   externo con z>1 — este header sticky (z-index:40) — les pintaba encima. */
+body.ms-modal-abierto .habitaciones-view .modern-header{
+  z-index:0!important;
+  pointer-events:none!important;
 }
 </style>
 
