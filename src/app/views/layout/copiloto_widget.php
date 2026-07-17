@@ -984,6 +984,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         datos.append('tipo', accion.tipo);
         datos.append('habitacion_id', accion.habitacion_id || '');
         datos.append('fecha', accion.fecha || '');
+        if (accion.area_id) { datos.append('area_id', accion.area_id); }
         if (accion.trabajador_id) { datos.append('trabajador_id', accion.trabajador_id); }
         if (accion.motivo) { datos.append('motivo', accion.motivo); }
         if (accion.monto) { datos.append('monto', accion.monto); }
@@ -1019,7 +1020,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                         crear_cupon: ['Cupón creado', 'Ya está activo en el motor de reservas. 🎟️'],
                         pagar_proveedor: ['Pago registrado', 'El egreso quedó en la caja y el saldo se actualizó. 🤝'],
                         finalizar_reserva: ['Huésped listo', 'Quedó registrado; abre el formulario para terminar. 🛎️'],
-                        asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️']
+                        asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️'],
+                        cerrar_area: ['Área cerrada', 'Queda fuera de servicio hasta que la reabras. 🚧'],
+                        reabrir_area: ['Área reabierta', 'Vuelve a estar disponible. ✅']
                     };
                     var toast = toastPorTipo[accion.tipo] || ['Limpieza programada', 'La tarea quedó en el tablero de limpieza. 🗓️'];
                     window.msToast('success', toast[0], toast[1]);

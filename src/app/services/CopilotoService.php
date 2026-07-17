@@ -421,6 +421,10 @@ class CopilotoService
             'accion:bloqueo' => 'Bloquear habitacion (propuesta)',
             'accion:desbloqueo' => 'Liberar habitacion (propuesta)',
             'accion:desbloqueo_ok' => 'Habitacion liberada',
+            'accion:cerrar_area' => 'Cerrar area (propuesta)',
+            'accion:cerrar_area_ok' => 'Area cerrada',
+            'accion:reabrir_area' => 'Reabrir area (propuesta)',
+            'accion:reabrir_area_ok' => 'Area reabierta',
             'accion:gasto' => 'Registrar gasto (propuesta)',
             'accion:gasto_ok' => 'Gasto registrado en caja',
             'accion:cupon' => 'Crear cupon (propuesta)',
@@ -518,6 +522,7 @@ class CopilotoService
         //      cobros y cortes jamas. Asignar va primero: sus verbos son mas
         //      especificos.
         $accion = $this->detectarAccionAsignar($norm, $hotelId, $contexto)
+            ?? $this->detectarAccionArea($norm, $hotelId)
             ?? $this->detectarAccionFinalizarMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionMantenimiento($norm, $hotelId, $contexto)
             ?? $this->detectarAccionGasto($norm, $hotelId)
@@ -1882,6 +1887,136 @@ class CopilotoService
                 'confirm_ok' => 'Asignar',
             ],
         ]];
+    }
+
+    /**
+     * Detecta "cierra la alberca" / "reabre el jardin" sobre las AREAS del
+     * hotel (bloque habitaciones y areas) y arma la PROPUESTA de cerrar o
+     * reabrir. Solo reclama la frase si un area real del hotel aparece en el
+     * texto: si no hay match devuelve null y la cadena sigue igual que antes
+     * (bloqueos de habitacion, cortes de caja, etc.).
+     */
+    private function detectarAccionArea(string $norm, int $hotelId): ?array
+    {
+        $esCerrar = (bool) preg_match('/\b(cierra|cerrar|cierrame|clausura|clausurar)\b/', $norm);
+        $esReabrir = (bool) preg_match('/\b(reabre|reabrir|abre|abrir|habilita|habilitar)\b/', $norm);
+        if (!$esCerrar && !$esReabrir) {
+            return null;
+        }
+
+        $area = $this->buscarAreaEnTexto($norm, $hotelId);
+        if ($area === null) {
+            return null;
+        }
+
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['intent' => 'accion:area_perm', 'respuesta' => [
+                'texto' => 'Tu rol no tiene permiso para cerrar o reabrir areas. Pidele el acceso a tu gerente.',
+                'enlace' => null,
+            ]];
+        }
+
+        $estado = (string) $area['estado'];
+
+        if ($esCerrar) {
+            if ($estado === 'cerrada') {
+                return ['intent' => 'accion:cerrar_area_ya', 'respuesta' => [
+                    'texto' => "**{$area['nombre']}** ya esta cerrada. Para habilitarla de nuevo dime \"reabre {$area['nombre']}\".",
+                    'enlace' => ['url' => 'areas/' . $area['id'], 'texto' => 'Ver el area'],
+                ]];
+            }
+            if ($estado !== 'disponible') {
+                $motivoEstado = $estado === 'limpieza' ? 'esta en limpieza' : 'esta en mantenimiento';
+                return ['intent' => 'accion:cerrar_area_estado', 'respuesta' => [
+                    'texto' => "No puedo cerrar **{$area['nombre']}**: {$motivoEstado}. Termina eso primero desde su ficha.",
+                    'enlace' => ['url' => 'areas/' . $area['id'], 'texto' => 'Abrir la ficha'],
+                ]];
+            }
+            return ['intent' => 'accion:cerrar_area', 'respuesta' => [
+                'texto' => "Puedo **cerrar** el area **{$area['nombre']}** (deja de estar disponible hasta que la reabras). "
+                    . "Para revertirlo dime \"reabre {$area['nombre']}\". Confirmalo y queda hecho.",
+                'enlace' => null,
+                'accion' => [
+                    'tipo' => 'cerrar_area',
+                    'area_id' => (int) $area['id'],
+                    'confirm_titulo' => '¿Cerrar el area?',
+                    'confirm_msg' => "{$area['nombre']} queda cerrada al publico hasta que la reabras.",
+                    'confirm_ok' => 'Cerrar',
+                ],
+            ]];
+        }
+
+        if ($estado !== 'cerrada') {
+            return ['intent' => 'accion:reabrir_area_estado', 'respuesta' => [
+                'texto' => "**{$area['nombre']}** no esta cerrada (su estado es {$estado}); no hay nada que reabrir.",
+                'enlace' => ['url' => 'areas/' . $area['id'], 'texto' => 'Ver el area'],
+            ]];
+        }
+
+        return ['intent' => 'accion:reabrir_area', 'respuesta' => [
+            'texto' => "Puedo **reabrir** el area **{$area['nombre']}** (vuelve a quedar disponible). Confirmalo y queda hecho.",
+            'enlace' => null,
+            'accion' => [
+                'tipo' => 'reabrir_area',
+                'area_id' => (int) $area['id'],
+                'confirm_titulo' => '¿Reabrir el area?',
+                'confirm_msg' => "{$area['nombre']} vuelve a quedar disponible.",
+                'confirm_ok' => 'Reabrir',
+            ],
+        ]];
+    }
+
+    /**
+     * Busca un AREA activa del hotel mencionada en el texto: por nombre
+     * completo, por palabras significativas del nombre (>=4 letras) o por su
+     * tipo (alberca, lobby...). Devuelve null si nada matchea (la frase no es
+     * de areas) o si la tabla no existe (migracion pendiente).
+     */
+    private function buscarAreaEnTexto(string $texto, int $hotelId): ?array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT id, nombre, tipo, estado FROM areas_hotel WHERE hotel_id = ? AND activa = 1 LIMIT 100"
+            );
+            $stmt->execute([$hotelId]);
+            $areas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return null;
+        }
+
+        $mejor = null;
+        $mejorScore = 0;
+        foreach ($areas as $a) {
+            $nombreNorm = $this->normalizar((string) $a['nombre']);
+            $score = 0;
+            if ($nombreNorm !== '' && strpos($texto, $nombreNorm) !== false) {
+                $score = 100;
+            } else {
+                foreach (preg_split('/\s+/', $nombreNorm) as $palabra) {
+                    if (mb_strlen($palabra) >= 4 && preg_match('/\b' . preg_quote($palabra, '/') . '\b/u', $texto)) {
+                        $score += 10;
+                    }
+                }
+                $tipoNorm = str_replace('_', ' ', $this->normalizar((string) $a['tipo']));
+                if ($tipoNorm !== '' && $tipoNorm !== 'otra' && preg_match('/\b' . preg_quote($tipoNorm, '/') . '\b/u', $texto)) {
+                    $score += 5;
+                }
+            }
+            if ($score > $mejorScore) {
+                $mejorScore = $score;
+                $mejor = $a;
+            }
+        }
+
+        if ($mejor === null || $mejorScore <= 0) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $mejor['id'],
+            'nombre' => (string) $mejor['nombre'],
+            'estado' => (string) $mejor['estado'],
+        ];
     }
 
     /**
@@ -3463,6 +3598,58 @@ class CopilotoService
         return ['tipo_label' => $labelMatch, 'sin_libre' => true];
     }
 
+    /**
+     * Cierra o reabre un area confirmada desde el chat: mismo motor y mismas
+     * reglas que la pantalla del area (solo disponible->cerrada y
+     * cerrada->disponible; revalida permiso, la confirmacion es UX).
+     */
+    private function ejecutarCierreArea(int $hotelId, array $params, ?int $usuarioId, bool $reabrir): array
+    {
+        if (function_exists('can') && !can('habitaciones.mantenimiento')) {
+            return ['success' => false, 'texto' => 'Tu rol no tiene permiso para cerrar o reabrir areas.', 'fuente' => 'reglas'];
+        }
+
+        $areaId = (int) ($params['area_id'] ?? 0);
+        $logRef = $reabrir ? 'reabrir_area' : 'cerrar_area';
+
+        require_once __DIR__ . '/../models/Area.php';
+        $areaModel = new Area();
+        $area = $areaModel->obtenerPorId($areaId, $hotelId);
+
+        if (!$area || (int) ($area['activa'] ?? 1) !== 1) {
+            $this->registrar($hotelId, $usuarioId, "[accion {$logRef} area {$areaId}]", 'reglas', "accion:{$logRef}_error", 0, 0);
+            return ['success' => false, 'texto' => 'No encontre esa area en este hotel.', 'fuente' => 'reglas'];
+        }
+
+        $estado = (string) ($area['estado'] ?? '');
+        if (!$reabrir && $estado !== 'disponible') {
+            $this->registrar($hotelId, $usuarioId, "[accion {$logRef} area {$areaId}]", 'reglas', "accion:{$logRef}_error", 0, 0);
+            return ['success' => false, 'texto' => "No se pudo cerrar: el area ya no esta disponible (estado: {$estado}).", 'fuente' => 'reglas'];
+        }
+        if ($reabrir && $estado !== 'cerrada') {
+            $this->registrar($hotelId, $usuarioId, "[accion {$logRef} area {$areaId}]", 'reglas', "accion:{$logRef}_error", 0, 0);
+            return ['success' => false, 'texto' => "No se pudo reabrir: el area no esta cerrada (estado: {$estado}).", 'fuente' => 'reglas'];
+        }
+
+        if (!$areaModel->cambiarEstado($areaId, $reabrir ? 'disponible' : 'cerrada', $hotelId)) {
+            $this->registrar($hotelId, $usuarioId, "[accion {$logRef} area {$areaId}]", 'reglas', "accion:{$logRef}_error", 0, 0);
+            return ['success' => false, 'texto' => 'No se pudo completar la accion. Intenta de nuevo.', 'fuente' => 'reglas'];
+        }
+
+        $this->registrar($hotelId, $usuarioId, "[accion {$logRef} area {$areaId}]", 'reglas', "accion:{$logRef}_ok", 0, 0);
+
+        $nombre = (string) $area['nombre'];
+        return [
+            'success' => true,
+            'texto' => $reabrir
+                ? "Listo ✅ **{$nombre}** quedo reabierta y disponible de nuevo."
+                : "Listo ✅ **{$nombre}** quedo cerrada. Para habilitarla dime \"reabre {$nombre}\".",
+            'fuente' => 'reglas',
+            'enlace' => null,
+            'acciones' => [['label' => 'Ver el area', 'url' => 'areas/' . $areaId]],
+        ];
+    }
+
     private function habitacionPorId(int $hotelId, int $habitacionId): ?array
     {
         try {
@@ -3502,6 +3689,9 @@ class CopilotoService
         }
         if ($tipo === 'finalizar_reserva') {
             return $this->ejecutarFinalizarReserva($hotelId, $params, $usuarioId);
+        }
+        if ($tipo === 'cerrar_area' || $tipo === 'reabrir_area') {
+            return $this->ejecutarCierreArea($hotelId, $params, $usuarioId, $tipo === 'reabrir_area');
         }
 
         if (!in_array($tipo, ['programar_limpieza', 'asignar_limpieza'], true)) {

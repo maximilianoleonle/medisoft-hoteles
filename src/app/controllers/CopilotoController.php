@@ -93,6 +93,8 @@ class CopilotoController extends Controller {
         $tipo = (string) $this->getPost('tipo', '');
         $params = [
             'habitacion_id' => (int) $this->getPost('habitacion_id', 0),
+            // Solo para cerrar_area / reabrir_area (bloque habitaciones y areas).
+            'area_id' => (int) $this->getPost('area_id', 0),
             'fecha' => mb_substr((string) $this->getPost('fecha', ''), 0, 10),
             'trabajador_id' => (int) $this->getPost('trabajador_id', 0),
             'motivo' => mb_substr(trim((string) $this->getPost('motivo', '')), 0, 300),

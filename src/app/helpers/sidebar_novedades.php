@@ -177,6 +177,27 @@ if (!function_exists('sidebar_novedades')) {
         $count('reservaciones', 'reservaciones', "estado = 'confirmada' AND fecha_entrada <= CURDATE()", []);
         // Habitaciones fuera de servicio (mantenimiento).
         $count('habitaciones', 'habitaciones', "estado = 'mantenimiento' AND COALESCE(activa, 1) = 1", []);
+        // Areas que piden accion (limpieza o mantenimiento) suman a la misma
+        // burbuja: la seccion del sidebar es "Habitaciones y areas".
+        if (_sidebar_novedades_tabla_existe($db, 'areas_hotel')) {
+            try {
+                $stmt = $db->query(
+                    "SELECT COUNT(*) AS n FROM areas_hotel
+                     WHERE hotel_id = ? AND activa = 1 AND estado IN ('limpieza', 'mantenimiento')",
+                    [$hotelId]
+                );
+                $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+                $n = (int) ($row['n'] ?? 0);
+                if ($n > 0) {
+                    $map['habitaciones'] = [
+                        'count' => $n + (int) ($map['habitaciones']['count'] ?? 0),
+                        'tono' => 'count',
+                    ];
+                }
+            } catch (Throwable $e) {
+                // La burbuja simplemente no suma areas.
+            }
+        }
         // Limpieza: habitaciones por asear.
         $count('camarista', 'habitaciones', "estado = 'limpieza' AND COALESCE(activa, 1) = 1", []);
         // Tareas operativas activas.
