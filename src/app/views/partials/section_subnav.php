@@ -4,10 +4,11 @@
  * orden, en todas las vistas de Personal y de Nómina.
  *
  * Uso (antes del include):
- *   $subnav_section = 'personal' | 'nomina';
+ *   $subnav_section = 'personal' | 'nomina' | 'habitaciones';
  *   $subnav_active  = 'equipo'|'pagos'|'informes'   (personal)
  *                     ('prenomina' se acepta pero ya no pinta pestana: superficie movida a Nomina)
  *                     'inicio'|'incidencias'|'periodos'|'empleados'|'catalogos'|'ajustes' (nomina)
+ *                     'habitaciones'|'areas' (habitaciones y areas)
  *   include APP_PATH . '/views/partials/section_subnav.php';
  *
  * Solo navegación de sección: las acciones contextuales (exportar, filtros,
@@ -29,6 +30,12 @@ if ($subnavSection === 'nomina') {
         $subnavTabs['ajustes'] = ['url' => url('nomina/configuracion'), 'icono' => 'fa-sliders', 'label' => 'Ajustes'];
     }
     $subnavAria = 'Secciones de Nómina';
+} elseif ($subnavSection === 'habitaciones') {
+    $subnavTabs = [
+        'habitaciones' => ['url' => url('habitaciones'), 'icono' => 'fa-bed',              'label' => 'Habitaciones'],
+        'areas'        => ['url' => url('areas'),        'icono' => 'fa-map-location-dot', 'label' => 'Áreas'],
+    ];
+    $subnavAria = 'Secciones de Habitaciones y áreas';
 } else {
     // Nota: la pestaña "Pre-nómina" se retiró de aquí a proposito. El calculo y
     // cierre de periodos vive ahora en el modulo Nomina (sidebar > Nomina). La

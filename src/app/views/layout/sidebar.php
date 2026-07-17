@@ -423,7 +423,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <i class="fas fa-bed"></i>
                     <?= $sidebarBadge('habitaciones', $sidebarActiveHabitaciones) ?>
                 </div>
-                <span class="nav-text">Habitaciones</span>
+                <span class="nav-text">Habitaciones y áreas</span>
             </a>
             <?php endif; ?>
 

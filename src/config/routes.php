@@ -554,6 +554,11 @@ $router->post('/habitaciones/liberar-multiples', ['controller' => 'Habitacion', 
 // $router->get('/habitaciones/{id:[0-9]+}/imagen', ['controller' => 'Habitacion', 'action' => 'verImagen']);
 $router->get('/habitaciones/{id:[0-9]+}/historial', ['controller' => 'Habitacion', 'action' => 'historial']);
 
+// Areas del hotel (bloque habitaciones y areas): alberca, lobby, jardin...
+$router->get('/areas', ['controller' => 'Area', 'action' => 'index']);
+$router->post('/areas/guardar', ['controller' => 'Area', 'action' => 'guardar']);
+$router->post('/areas/{id:[0-9]+}/toggle', ['controller' => 'Area', 'action' => 'toggle']);
+
 // GestiÃ³n de HuÃ©spedes
 $router->get('/huespedes', ['controller' => 'Huesped', 'action' => 'index']);
 $router->get('/huespedes/create', ['controller' => 'Huesped', 'action' => 'crear']);

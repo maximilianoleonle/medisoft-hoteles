@@ -58,6 +58,13 @@ Cada flujo que se verifique de verdad deja aquí sus pasos exactos. Los ⬜ son 
 10. **Catálogo y sugerencias** — verificado en navegador (jul-2026): el saludo muestra el catálogo paginado (flechas ‹ › ciclan páginas, dots, "Tus frecuentes" primero en Los Cedros, "Acciones rápidas"/"Dinero"/"Tus bloques" según bloques); un chip plantilla ("💸 Registrar un gasto") RELLENA el input con la orden a medias y enfoca (no envía); tras responder "¿cómo voy de caja?" aparecen 3 sugerencias del tema dinero. Caso negativo por test: propuestas de acción no traen sugerencias.
 11. **Respuestas posibles del wizard (chips)** — verificado en navegador (jul-2026): cada paso muestra sus opciones tocables — fechas: Hoy/Mañana/Del…al…/Cancelar; habitación: los TIPOS reales del hotel (Sencilla/Doble/Cuádruple en Los Cedros, aparta una libre del tipo) + Cualquiera; nombre: "🆕 Huésped no registrado" (→ "Va, lo registro como nuevo ¿cómo se llama?", el nombre va directo al alta sin buscar catálogo) + "📝 Capturarlo en el formulario"; teléfono: "Sin teléfono". Cancelar por chip corta el flujo. GOTCHA: el widget recorta sugerencias con slice — el tope debe ser ≥5 o el chip Cancelar desaparece.
 
+## Áreas del hotel (habitaciones y áreas)
+
+1. `/areas` (subnav Habitaciones · Áreas; sidebar dice "Habitaciones y áreas"). **Verificado en navegador (jul-2026)**: alta inline "Nueva área" (nombre+tipo catálogo+piso+descripción) → tarjeta con chip Disponible y KPIs por estado; Editar rellena el mismo form (hidden id); Pausar/Reactivar togglea `activa` (tarjeta opaca + chip "Pausada"). Nombre duplicado en el hotel debe rechazarse con mensaje digno.
+2. Gates: ver = módulo `habitaciones`; gestionar = `can('habitaciones.edit')` (gerente/admin vía `habitaciones.all`; recepcionista NO ve botones de gestión — ⬜ confirmar con sesión recepcionista).
+3. ⬜ F3: acciones de limpieza (contrato `personal_confirmado`/`trabajador_ids`) y mantenimiento (`habitacion_id NULL` + `area_id`) desde la tarjeta/detalle del área.
+4. GOTCHA de QA en el pane: si `screenshot` se cuelga (pasó incluso en portrait) verificar por `get_page_text` + asserts JS; si un clic físico no dispara `onclick`, usar `dispatchEvent(new MouseEvent('click'))` o `requestSubmit()` vía javascript_tool.
+
 ## Limpieza / camaristas
 
 1. Marcar habitación como limpia → debe EXIGIR quién limpió (personal obligatorio, contrato `personal_confirmado`/`trabajador_ids`/`sin_personal`).

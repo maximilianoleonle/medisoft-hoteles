@@ -2366,6 +2366,13 @@ document.addEventListener('DOMContentLoaded', function() {
 .estado-ocupada_fecha .estado-icon::after{box-shadow:0 0 8px var(--state-occupied) !important;}
 </style>
 <div class="habitaciones-view">
+    <div class="container mx-auto px-4 pt-3">
+        <?php
+        $subnav_section = 'habitaciones';
+        $subnav_active = 'habitaciones';
+        include APP_PATH . '/views/partials/section_subnav.php';
+        ?>
+    </div>
     <!-- Header desktop original -->
     <div class="modern-header" id="mainHeader">
         <div class="container mx-auto px-4 py-3">
