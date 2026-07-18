@@ -105,8 +105,18 @@ Como se revierte si rompe algo:
 Decision del mentor/jefe:
 
 - [ ] Aprobado
-- [ ] Aprobado con alcance reducido
+- [x] Aprobado con alcance reducido  <!-- Maximiliano, 2026-07-18 -->
 - [ ] Rechazado por riesgo operativo
+
+### Alcance reducido aprobado (2026-07-18)
+
+Se autoriza SOLO la fase de bajo riesgo (paso 2 del orden, acotado a lecturas):
+gates de servidor en operaciones de reservaciones **inequivocamente no
+monetarias**, cerrado por defecto, con compatibilidad legacy + roles RBAC
+personalizados, proteccion cross-hotel y 403 correcto para HTML y JSON. Toda
+accion que combine reservaciones con anticipos, devoluciones, caja, check-in,
+check-out, cancelacion o correccion de pagos queda FUERA y solo se documenta
+para la siguiente fase (requiere autorizacion monetaria explicita aparte).
 
 ## Matriz resumida propuesta
 
@@ -132,10 +142,53 @@ escritura.
 
 ## Orden de implementacion
 
-1. Compatibilidad legacy y pruebas de presets/roles personalizados.
-2. Reservaciones sin dinero y denegacion por defecto.
-3. Check-in/check-out y cobro condicional.
-4. Anticipos, ajustes, cancelaciones y devoluciones.
-5. Huespedes y documentos.
-6. API con respuesta JSON 403 y busqueda global filtrada por permiso.
+1. Compatibilidad legacy y pruebas de presets/roles personalizados. **HECHO** (auth.php `legacy_preset_permissions`, `LegacyRbacCompatTest`).
+2. Reservaciones sin dinero y denegacion por defecto. **HECHO (parcial: lecturas)** — ver "Estado de gates" abajo.
+3. Check-in/check-out y cobro condicional. PENDIENTE (autorizacion monetaria).
+4. Anticipos, ajustes, cancelaciones y devoluciones. PENDIENTE (autorizacion monetaria).
+5. Huespedes y documentos. PENDIENTE.
+6. API con respuesta JSON 403 y busqueda global filtrada por permiso. PENDIENTE.
+
+## Estado de gates de ReservacionController (2026-07-18)
+
+Helper opt-in nuevo: `require_permission_or_403($permiso)` (auth.php) — 403 REAL
+(pagina `errors/403` en HTML, JSON 403 en AJAX), cerrado por defecto, resuelve
+por `can()` (rol configurable o fallback legacy por preset). NO altera los 53
+call-sites de `require_permission()` existentes.
+
+### Gateadas en esta fase (lectura, `reservaciones.view`, no monetarias)
+
+| Accion | Ruta | Cross-hotel |
+|---|---|---|
+| `indexAction` | GET /reservaciones | lista scoped por hotel en el modelo |
+| `verAction` | GET /reservaciones/ver/{id} | `obtenerPorId` filtra por hotel_id (404 si ajeno) |
+| `calendarioAction` | GET /reservaciones/calendario | data scoped por hotel |
+| `habitacionesApiAction` | GET /reservaciones/.../habitaciones (JSON) | valida hotel_id explicito (404) |
+| `obtenerNotasAction` | GET notas (JSON) | + verificacion de propiedad via `obtenerPorId` (404) |
+
+### NO gateadas (frontera monetaria / combinada — SIGUIENTE FASE, requieren autorizacion)
+
+Requieren `reservaciones.*` + un permiso monetario, y la denegacion debe ocurrir
+ANTES de la primera escritura/transaccion:
+
+- **Crear/editar**: `crearAction`, `guardarAction` (puede registrar anticipo),
+  `editarHabitacionesAction`, `actualizarHabitacionesAction`, `editarEstanciaAction`,
+  `modificarDiasAction` / `verificarModificarDiasAction` / `topeModificarDiasAction`
+  (cambian precio) → `reservaciones.create/edit` (+ `caja.*` si mueven dinero).
+- **Check-in/out**: `checkInAction`, `checkInTardioAction`, `procesarCheckInTardioAction`,
+  `verificarCheckInAction`, `checkOutAction`, `checkOutRapidoAction`, `checkOutParcialAction`
+  → `habitaciones.checkin/checkout` (+ `caja.cobros` si cobran).
+- **Dinero directo**: `registrarAnticipoAction`, `revertirAnticipoAction`,
+  `cambiarMetodoPagoAction` → `caja.cobros` / `caja.ajustes`.
+- **Cancelacion/no-show**: `cancelarAction`, `noShowAction` → `reservaciones.cancelar`
+  (+ `caja.ajustes` si devuelven).
+- **Notas (escritura)**: `agregarNotaAction` → `reservaciones.edit` (no monetaria pero
+  es escritura; se difiere para tratarla junto con el resto de edicion).
+- **Exportaciones**: `exportarPDFAction`, `exportarExcelAction` (ya con
+  `require_hotel_module('exportaciones')`) → sumar `reservaciones.view` + `reportes.export`
+  (cambia capacidad del recepcionista → decision aparte).
+- **Cotizacion PDF**: `cotizacionReservacionPdfAction`, `cotizacionPdfAction` — reciben
+  un `anticipo` por POST (solo display, sin mover dinero); se difieren por prudencia.
+- **Llaves**: `entregarLlaveAction`/`recibirLlaveAction` (+ variantes remotas, ya con
+  modulo `llaves_remotos`) → `llaves.control` (concern distinto, no reservaciones.view).
 
