@@ -16,7 +16,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
 .nomina-inc-page {
     --nom-brand: var(--brand-primary, #1B2746);
     --nom-gold: var(--brand-accent, #BD9441);
-    --nom-surface: var(--brand-surface, #F6F2EA);
+    --nom-surface: var(--brand-surface, #F5F5F7);
     --nom-text: var(--brand-text, #232323);
     --nom-muted: var(--brand-muted, #6d675e);
     --nom-border: var(--brand-border, #e3dccd);

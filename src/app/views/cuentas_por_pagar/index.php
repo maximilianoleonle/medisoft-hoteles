@@ -48,10 +48,10 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
     --cx-gold-soft: color-mix(in srgb, var(--cx-gold) 15%, #FFFFFF);
     --cx-gold-line: color-mix(in srgb, var(--cx-gold) 42%, #E4D4B0);
     --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 72%, #000);
-    --cx-ivory: #F6F2EA;
-    --cx-ivory-2: #FBF8F2;
+    --cx-ivory: #F5F5F7;
+    --cx-ivory-2: #FAFAFC;
     --cx-surface: #FFFFFF;
-    --cx-surface-warm: #FCFAF5;
+    --cx-surface-warm: #F5F5F7;
     --cx-border: color-mix(in srgb, var(--cx-brand) 7%, #E7E1D4);
     --cx-ring: color-mix(in srgb, var(--cx-gold) 32%, transparent);
     --cx-text: #171717;
@@ -66,9 +66,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
     min-height: 100%;
     color: var(--cx-text);
     font-family: var(--cx-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cx-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cx-ivory-2), var(--cx-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

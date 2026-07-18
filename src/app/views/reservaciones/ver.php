@@ -888,10 +888,10 @@ $noches = $rdNoches;
     --rd-accent: var(--brand-accent, #BD9441);
     --rd-accent-dark: color-mix(in srgb, var(--rd-accent) 72%, #3E2E14);
     --rd-accent-soft: color-mix(in srgb, var(--rd-accent) 10%, #FDFBF7);
-    --rd-ivory: color-mix(in srgb, var(--rd-accent) 7%, #F8F5ED);
-    --rd-ivory-2: color-mix(in srgb, var(--rd-accent) 4%, #FFFCF7);
+    --rd-ivory: color-mix(in srgb, var(--rd-accent) 7%, #F5F5F7);
+    --rd-ivory-2: color-mix(in srgb, var(--rd-accent) 4%, #FAFAFC);
     --rd-surface: color-mix(in srgb, var(--rd-accent) 2%, #FDFBF7);
-    --rd-surface-warm: color-mix(in srgb, var(--rd-accent) 5%, #FFFCF7);
+    --rd-surface-warm: color-mix(in srgb, var(--rd-accent) 5%, #FAFAFC);
     --rd-line: color-mix(in srgb, var(--rd-brand) 12%, #E7DDCA);
     --rd-line-soft: color-mix(in srgb, var(--rd-brand) 7%, #EFE8DA);
     --rd-text: #172033;
@@ -903,9 +903,7 @@ $noches = $rdNoches;
     --rd-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rd-sans: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     min-height: 100vh;
-    background:
-        repeating-linear-gradient(135deg, color-mix(in srgb, var(--rd-accent) 3%, transparent) 0 1px, transparent 1px 24px),
-        linear-gradient(180deg, var(--rd-ivory-2), var(--rd-ivory) 58%, #F6F0E8) !important;
+    
     color: var(--rd-text);
     font-family: var(--rd-sans);
 }
@@ -1200,7 +1198,7 @@ $noches = $rdNoches;
     border: 1px solid color-mix(in srgb, var(--rd-accent) 34%, var(--rd-line));
     border-radius: 16px;
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--rd-accent) 16%, #FDFBF7), color-mix(in srgb, var(--rd-accent) 8%, #FFFCF7)) !important;
+        linear-gradient(135deg, color-mix(in srgb, var(--rd-accent) 16%, #FDFBF7), color-mix(in srgb, var(--rd-accent) 8%, #FAFAFC)) !important;
     color: var(--rd-brand);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78), 0 14px 28px -24px color-mix(in srgb, var(--rd-accent) 48%, transparent);
     font-size: clamp(1.45rem, 3vw, 2rem);
@@ -5711,7 +5709,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
 ?>
 <div id="modalCheckIn" class="modal-overlay rv-checkin-modal" style="display: none;" data-checkin-step="1">
     <div class="modal-content rv-checkin-shell" role="dialog" aria-modal="true" aria-labelledby="rvCheckinTitle">
-        <form id="formCheckInModal" method="POST" action="" class="rv-checkin-form">
+        <form id="formCheckInModal" method="POST" action="" class="rv-checkin-form" data-ms-no-summary="1">
             <?= csrf_field() ?>
             <input type="hidden" name="permitir_saldo_pendiente" id="permitir_saldo_pendiente" value="0">
             <input type="hidden" name="checkin_return_to" id="checkin_return_to" value="<?= htmlspecialchars((string)($_GET['checkin_return_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
@@ -5779,125 +5777,115 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                 </section>
 
                 <section class="form-group rv-payment-section rv-checkin-stage" data-checkin-stage="2" aria-labelledby="rvPagoTitle" aria-hidden="true">
-                    <h4 id="rvPagoTitle"><i class="fas fa-wallet"></i> Metodos de pago</h4>
-                    <p class="rv-payment-hint">Registra lo que el huesped paga hoy. Si falta una parte, activa la opcion para dejarla como cuenta pendiente.</p>
+                    <h4 id="rvPagoTitle"><i class="fas fa-wallet"></i> Cobro de hoy</h4>
 
-                    <div class="rv-payment-shortcuts" aria-label="Atajos de pago">
-                        <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapido('efectivo')">
-                            <i class="fas fa-money-bill-wave"></i>
-                            Efectivo exacto
-                        </button>
-                        <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapido('tarjeta')">
-                            <i class="fas fa-credit-card"></i>
-                            Tarjeta exacta
-                        </button>
-                        <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapido('transferencia')">
-                            <i class="fas fa-university"></i>
-                            Transferencia exacta
-                        </button>
-                        <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapido()">
-                            <i class="fas fa-exchange-alt"></i>
-                            Mitad y mitad
-                        </button>
-                        <button type="button" class="rv-money-shortcut is-cash-transfer" onclick="dividirPagoEfectivoTransferencia()">
-                            <i class="fas fa-university"></i>
-                            Efectivo + transferencia
-                        </button>
+                    <!-- Meta de cobro: medidor vivo de lo que ya esta cubierto vs lo que falta. -->
+                    <div id="checkinGoal" class="rv-pay-goal" aria-live="polite">
+                        <div class="rv-goal-top">
+                            <span class="rv-goal-label">Por cobrar</span>
+                            <strong id="checkinLedgerTotal" class="rv-goal-amount">$0.00</strong>
+                        </div>
+                        <div class="rv-goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <i id="checkinGoalBar" style="width:0%"></i>
+                        </div>
+                        <div class="rv-goal-foot">
+                            <span id="checkinGoalStatus" class="rv-goal-status"><i class="fas fa-circle-notch"></i> Elige como paga el huesped</span>
+                            <span class="rv-goal-remain"><span id="checkinGoalRemainLabel">Falta</span> <strong id="checkinQuedaPendiente">$0.00</strong></span>
+                        </div>
+                        <span id="checkinPagoHoy" hidden></span>
+                    </div>
+
+                    <!-- Fichas de metodo: un toque selecciona el metodo y le asigna lo que falta. -->
+                    <div id="metodosPagoContainer" class="rv-method-tiles">
+                        <label class="metodo-pago-item rv-tile rv-pay-cash">
+                            <input type="checkbox" id="check_efectivo" onchange="toggleMetodoPago('efectivo')">
+                            <span class="rv-tile-icon"><i class="fas fa-money-bill-wave"></i></span>
+                            <span class="rv-tile-name">Efectivo</span>
+                            <span class="rv-tile-amount" id="tile_amount_efectivo">Tocar</span>
+                            <span class="rv-tile-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        </label>
+
+                        <label class="metodo-pago-item rv-tile rv-pay-card">
+                            <input type="checkbox" id="check_tarjeta" onchange="toggleMetodoPago('tarjeta')">
+                            <span class="rv-tile-icon"><i class="fas fa-credit-card"></i></span>
+                            <span class="rv-tile-name">Tarjeta</span>
+                            <span class="rv-tile-amount" id="tile_amount_tarjeta">Tocar</span>
+                            <span class="rv-tile-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        </label>
+
+                        <label class="metodo-pago-item rv-tile rv-pay-transfer">
+                            <input type="checkbox" id="check_transferencia" onchange="toggleMetodoPago('transferencia')">
+                            <span class="rv-tile-icon"><i class="fas fa-university"></i></span>
+                            <span class="rv-tile-name">Transferencia</span>
+                            <span class="rv-tile-amount" id="tile_amount_transferencia">Tocar</span>
+                            <span class="rv-tile-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        </label>
+                    </div>
+
+                    <div class="rv-method-details">
+                        <div id="panel_efectivo" class="hidden rv-pay-panel rv-pay-cash">
+                            <div class="rv-panel-head"><i class="fas fa-money-bill-wave"></i> Efectivo</div>
+                            <div class="rv-input-grid">
+                                <div>
+                                    <label id="label_monto_efectivo">Monto a cobrar en efectivo</label>
+                                    <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly oninput="calcularTotales()" onchange="calcularTotales()">
+                                </div>
+                                <div>
+                                    <label id="label_recibido_efectivo">Dinero recibido</label>
+                                    <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" oninput="calcularCambio()" onchange="calcularCambio()" onkeyup="calcularCambio()" placeholder="0.00">
+                                    <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Pagó justo</button>
+                                </div>
+                            </div>
+                            <div class="rv-change-pill">Cambio <strong id="cambio_efectivo">$0.00</strong></div>
+                        </div>
+
+                        <div id="panel_tarjeta" class="hidden rv-pay-panel rv-pay-card">
+                            <div class="rv-panel-head"><i class="fas fa-credit-card"></i> Tarjeta</div>
+                            <div class="rv-card-type">
+                                <label class="rv-radio-chip" id="label_credito">
+                                    <input type="radio" name="tipo_tarjeta" value="credito">
+                                    <i class="fas fa-credit-card"></i> Crédito
+                                </label>
+                                <label class="rv-radio-chip" id="label_debito">
+                                    <input type="radio" name="tipo_tarjeta" value="debito">
+                                    <i class="fas fa-money-check-alt"></i> Débito
+                                </label>
+                            </div>
+                            <div class="rv-input-grid">
+                                <div>
+                                    <label id="label_monto_tarjeta">Monto con tarjeta</label>
+                                    <input type="number" name="monto_tarjeta" id="monto_tarjeta" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
+                                </div>
+                                <div>
+                                    <label>Referencia</label>
+                                    <input type="text" name="referencia_tarjeta" placeholder="Últimos 4 dígitos">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="panel_transferencia" class="hidden rv-pay-panel rv-pay-transfer">
+                            <div class="rv-panel-head"><i class="fas fa-university"></i> Transferencia</div>
+                            <div class="rv-input-grid">
+                                <div>
+                                    <label id="label_monto_transferencia">Monto por transferencia</label>
+                                    <input type="number" name="monto_transferencia" id="monto_transferencia" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
+                                </div>
+                                <div>
+                                    <label>Referencia</label>
+                                    <input type="text" name="referencia_transferencia" placeholder="Número de operación">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <label class="rv-pending-option" for="check_saldo_pendiente">
                         <input type="checkbox" id="check_saldo_pendiente" onchange="toggleSaldoPendienteCheckIn()">
                         <span class="rv-pending-option__icon"><i class="fas fa-clock"></i></span>
                         <span>
-                            <strong>Dejar saldo pendiente</strong>
-                            <small>Permite continuar el check-in con pago parcial. Lo que falte aparecera en Cuentas por cobrar.</small>
+                            <strong>El huésped paga solo una parte hoy</strong>
+                            <small>El check-in continúa y lo que falte queda registrado en Cuentas por cobrar.</small>
                         </span>
                     </label>
-
-                    <div id="checkinPendingPreview" class="rv-pending-preview" hidden aria-live="polite">
-                        <div>
-                            <span>Pago de hoy</span>
-                            <strong id="checkinPagoHoy">$0.00</strong>
-                        </div>
-                        <div>
-                            <span>Quedara pendiente</span>
-                            <strong id="checkinQuedaPendiente">$0.00</strong>
-                        </div>
-                    </div>
-
-                    <div id="metodosPagoContainer" class="rv-pay-methods">
-                        <div class="metodo-pago-item rv-pay-option rv-pay-cash">
-                            <label>
-                                <input type="checkbox" id="check_efectivo" onchange="toggleMetodoPago('efectivo')">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Efectivo</span>
-                            </label>
-                            <div id="panel_efectivo" class="hidden rv-pay-panel">
-                                <div class="rv-input-grid">
-                                    <div>
-                                        <label id="label_monto_efectivo">Monto a cobrar en efectivo</label>
-                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly oninput="calcularTotales()" onchange="calcularTotales()">
-                                    </div>
-                                    <div>
-                                        <label id="label_recibido_efectivo">Dinero recibido</label>
-                                        <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" oninput="calcularCambio()" onchange="calcularCambio()" onkeyup="calcularCambio()" placeholder="0.00">
-                                        <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Recibi exacto</button>
-                                    </div>
-                                </div>
-                                <div class="rv-change-pill">Cambio <strong id="cambio_efectivo">$0.00</strong></div>
-                            </div>
-                        </div>
-
-                        <div class="metodo-pago-item rv-pay-option rv-pay-card">
-                            <label>
-                                <input type="checkbox" id="check_tarjeta" onchange="toggleMetodoPago('tarjeta')">
-                                <i class="fas fa-credit-card"></i>
-                                <span>Tarjeta</span>
-                            </label>
-                            <div id="panel_tarjeta" class="hidden rv-pay-panel">
-                                <div class="rv-card-type">
-                                    <label class="rv-radio-chip" id="label_credito" onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_debito').style.borderColor='#BFDBFE'; document.getElementById('label_debito').style.background='white';">
-                                        <input type="radio" name="tipo_tarjeta" value="credito">
-                                        <i class="fas fa-credit-card"></i> Credito
-                                    </label>
-                                    <label class="rv-radio-chip" id="label_debito" onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_credito').style.borderColor='#BFDBFE'; document.getElementById('label_credito').style.background='white';">
-                                        <input type="radio" name="tipo_tarjeta" value="debito">
-                                        <i class="fas fa-money-check-alt"></i> Debito
-                                    </label>
-                                </div>
-                                <div class="rv-input-grid">
-                                    <div>
-                                        <label id="label_monto_tarjeta">Monto con tarjeta</label>
-                                        <input type="number" name="monto_tarjeta" id="monto_tarjeta" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
-                                    </div>
-                                    <div>
-                                        <label>Referencia</label>
-                                        <input type="text" name="referencia_tarjeta" placeholder="Ultimos 4 digitos">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="metodo-pago-item rv-pay-option rv-pay-transfer">
-                            <label>
-                                <input type="checkbox" id="check_transferencia" onchange="toggleMetodoPago('transferencia')">
-                                <i class="fas fa-university"></i>
-                                <span>Transferencia</span>
-                            </label>
-                            <div id="panel_transferencia" class="hidden rv-pay-panel">
-                                <div class="rv-input-grid">
-                                    <div>
-                                        <label id="label_monto_transferencia">Monto por transferencia</label>
-                                        <input type="number" name="monto_transferencia" id="monto_transferencia" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
-                                    </div>
-                                    <div>
-                                        <label>Referencia</label>
-                                        <input type="text" name="referencia_transferencia" placeholder="Numero de operacion">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </section>
 
                 <section class="rv-invoice-section rv-checkin-stage" data-checkin-stage="3" aria-labelledby="rvFacturaTitle" aria-hidden="true">
@@ -7225,7 +7213,42 @@ function resetearFacturaTardio() {
 const SALDO_RESERVACION_CHECKIN = <?= json_encode(floatval($resumenPagos['saldo'] ?? ($reservacion['precio_total'] ?? 0))) ?>;
 const TOTAL_RESERVACION_CHECKIN = <?= json_encode(floatval($reservacion['precio_total'] ?? 0)) ?>;
 
+<?php
+// Habitaciones de la reservación que aún no están listas físicamente
+// (en limpieza o mantenimiento): el check-in pide confirmación primero.
+$checkinHabsNoListas = [];
+foreach (($habitaciones ?? []) as $habCk) {
+    if (in_array(($habCk['estado'] ?? ''), ['limpieza', 'mantenimiento'], true)) {
+        $checkinHabsNoListas[] = ['numero' => (string) $habCk['numero'], 'estado' => $habCk['estado']];
+    }
+}
+?>
+const CHECKIN_HABS_NO_LISTAS = <?= json_encode($checkinHabsNoListas, JSON_UNESCAPED_UNICODE) ?>;
+
 function abrirModalCheckIn(id, total) {
+    // Aviso confirmable (no candado): habitación aún en limpieza/mantenimiento.
+    // Caso típico: la camarista ya terminó pero no la marcó lista.
+    if (!abrirModalCheckIn._estadoOk && CHECKIN_HABS_NO_LISTAS.length) {
+        const lista = CHECKIN_HABS_NO_LISTAS.map(h => 'Hab. ' + h.numero + ' (' + (h.estado === 'limpieza' ? 'en limpieza' : 'en mantenimiento') + ')').join(', ');
+        const msgNoLista = lista + ' todavía no está marcada como lista. ¿Confirmas que ya se puede entregar al huésped?';
+        if (typeof msConfirm === 'function') {
+            msConfirm({
+                type: 'warning',
+                title: 'Habitación no marcada como lista',
+                msg: msgNoLista,
+                confirmLabel: 'Sí, hacer check-in'
+            }).then(function(ok) {
+                if (ok) {
+                    abrirModalCheckIn._estadoOk = true;
+                    abrirModalCheckIn(id, total);
+                }
+            });
+            return;
+        }
+        if (!window.confirm(msgNoLista)) return;
+        abrirModalCheckIn._estadoOk = true;
+    }
+
     // Cobrar el SALDO pendiente (descontando anticipos), no el total bruto.
     const saldoACobrar = (typeof SALDO_RESERVACION_CHECKIN === 'number' && SALDO_RESERVACION_CHECKIN >= 0)
         ? SALDO_RESERVACION_CHECKIN
@@ -7492,23 +7515,77 @@ function setCheckInText(id, text) {
     if (element) element.textContent = text;
 }
 
+// Escribe el monto asignado a cada ficha (o "Tocar" si el metodo no esta elegido).
+function pintarMontoFichaCheckIn(metodo) {
+    const el = document.getElementById('tile_amount_' + metodo);
+    if (!el) return;
+    const check = document.getElementById('check_' + metodo);
+    const montoInput = document.getElementById('monto_' + metodo);
+    if (check && check.checked) {
+        el.textContent = formatMoney(montoInput ? moneyValue(montoInput) : 0);
+    } else {
+        el.textContent = 'Tocar';
+    }
+}
+
 function actualizarVistaSaldoPendienteCheckIn(totalPagado = null) {
     const activo = isSaldoPendienteCheckInActivo();
     const pagoHoy = totalPagado === null ? calcularTotalPagado() : totalPagado;
     const pendiente = Math.max(0, totalReservacion - pagoHoy);
-    const preview = document.getElementById('checkinPendingPreview');
 
     setCheckInText('label_monto_efectivo', activo ? 'Pago de hoy en efectivo' : 'Monto a cobrar en efectivo');
     setCheckInText('label_recibido_efectivo', activo ? 'Dinero recibido hoy' : 'Dinero recibido');
     setCheckInText('label_monto_tarjeta', activo ? 'Pago de hoy con tarjeta' : 'Monto con tarjeta');
     setCheckInText('label_monto_transferencia', activo ? 'Pago de hoy por transferencia' : 'Monto por transferencia');
 
+    // Monto por ficha (terminal de cobro).
+    ['efectivo', 'tarjeta', 'transferencia'].forEach(pintarMontoFichaCheckIn);
+
+    // Marcador vivo: barra + estado + restante.
+    setCheckInText('checkinLedgerTotal', formatMoney(totalReservacion));
     setCheckInText('checkinPagoHoy', formatMoney(pagoHoy));
     setCheckInText('checkinQuedaPendiente', formatMoney(pendiente));
 
-    if (preview) {
-        preview.hidden = !activo;
-        preview.style.display = activo ? 'grid' : 'none';
+    const total = Number(totalReservacion || 0);
+    const cubierto = pendiente <= 0.01 && total > 0.01;
+    const hayPago = pagoHoy > 0.01;
+    const pct = total > 0.01 ? Math.min(100, Math.max(0, (pagoHoy / total) * 100)) : (cubierto ? 100 : 0);
+
+    const bar = document.getElementById('checkinGoalBar');
+    if (bar) {
+        bar.style.width = pct.toFixed(1) + '%';
+        const track = bar.parentElement;
+        if (track) track.setAttribute('aria-valuenow', String(Math.round(pct)));
+    }
+
+    let statusIcon = 'fa-circle-notch';
+    let statusText = 'Elige cómo paga el huésped';
+    let remainLabel = 'Falta';
+    if (cubierto) {
+        statusIcon = 'fa-circle-check';
+        statusText = 'Cobro completo';
+    } else if (activo && hayPago) {
+        statusIcon = 'fa-clock';
+        statusText = 'Se cobra una parte hoy';
+        remainLabel = 'Queda pendiente';
+    } else if (hayPago) {
+        statusIcon = 'fa-circle-notch';
+        statusText = 'Falta cubrir el total';
+        remainLabel = 'Falta';
+    }
+
+    const statusEl = document.getElementById('checkinGoalStatus');
+    if (statusEl) statusEl.innerHTML = '<i class="fas ' + statusIcon + '"></i> ' + statusText;
+    setCheckInText('checkinGoalRemainLabel', remainLabel);
+
+    // Con el total cubierto no hay restante que mostrar: el estado ya lo dice.
+    const remainEl = document.querySelector('#checkinGoal .rv-goal-remain');
+    if (remainEl) remainEl.style.display = cubierto ? 'none' : '';
+
+    const goal = document.getElementById('checkinGoal');
+    if (goal) {
+        goal.classList.toggle('is-covered', cubierto);
+        goal.classList.toggle('is-pending-ok', !cubierto && activo && hayPago);
     }
 }
 
@@ -7561,16 +7638,25 @@ function ajustarEfectivoPendienteDesdeRecibido() {
 function toggleSaldoPendienteCheckIn() {
     const activo = isSaldoPendienteCheckInActivo();
     const montoEfectivo = document.getElementById('monto_efectivo');
-    const checkEfectivo = document.getElementById('check_efectivo');
     const recibidoEfectivo = document.getElementById('recibido_efectivo');
-    if (montoEfectivo) {
-        montoEfectivo.readOnly = !activo;
-        delete montoEfectivo.dataset.saldoPendienteManual;
-        if (activo && checkEfectivo && checkEfectivo.checked) {
-            const recibido = moneyValue(recibidoEfectivo);
-            setMoneyValue(montoEfectivo, Math.max(0, Math.min(recibido, totalReservacion)));
+
+    if (activo) {
+        // Activar pago parcial: si lo capturado ya cubre el total, parte de cero
+        // para registrar solo lo que el huésped entrega hoy (evita quedar en el
+        // estado contradictorio "Cobro completo" + "paga solo una parte").
+        if (calcularTotalPagado() >= totalReservacion - 0.01) {
+            ['efectivo', 'tarjeta', 'transferencia'].forEach(function(m) {
+                const mi = document.getElementById('monto_' + m);
+                if (mi) { mi.value = ''; delete mi.dataset.saldoPendienteManual; }
+            });
+            if (recibidoEfectivo) recibidoEfectivo.value = '';
         }
+        if (montoEfectivo) montoEfectivo.readOnly = false;
+    } else if (montoEfectivo) {
+        montoEfectivo.readOnly = true;
+        delete montoEfectivo.dataset.saldoPendienteManual;
     }
+
     setSaldoPendienteCheckInHidden(activo);
     actualizarVistaSaldoPendienteCheckIn();
     calcularTotales({ preserveCash: activo });
@@ -7612,7 +7698,16 @@ function toggleMetodoPago(metodo) {
                 }
             }
         } else {
+            if (moneyValue(montoInput) <= 0) {
+                const restante = Math.max(0, totalReservacion - calcularTotalPagado());
+                if (restante > 0) {
+                    setMoneyValue(montoInput, restante);
+                }
+            }
             montoInput.focus();
+            if (typeof montoInput.select === 'function') {
+                montoInput.select();
+            }
         }
     } else {
         panel.classList.add('hidden');
@@ -7691,28 +7786,6 @@ function getSelectedCheckInPaymentMethods() {
         const checkbox = document.getElementById('check_' + metodo);
         return checkbox && checkbox.checked;
     });
-}
-
-function aplicarPagoRapido(metodo) {
-    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodo)) {
-        return;
-    }
-
-    resetearFormularioPago();
-    setCheckInPaymentChecked(metodo, true, false);
-    setMoneyValue('monto_' + metodo, totalReservacion);
-
-    if (metodo === 'efectivo') {
-        setMoneyValue('recibido_efectivo', totalReservacion);
-    }
-
-    calcularTotales();
-
-    if (metodo === 'efectivo') {
-        calcularCambio();
-    }
-
-    mostrarMensaje('Pago exacto aplicado.', 'success');
 }
 
 function marcarEfectivoExacto() {
@@ -7857,6 +7930,20 @@ function calcularTotales(options = {}) {
     const btnConfirmar = document.getElementById('btnConfirmarCheckIn');
     const resumenRestante = document.getElementById('resumenRestante');
     const haySaldoPendiente = diferencia > 0.01;
+
+    // Cobro completo (o pago justo): "paga solo una parte" ya no aplica y se
+    // apaga sola, en vez de quedar marcada contradiciendo "Cobro completo".
+    if (!haySaldoPendiente && diferencia >= -0.01) {
+        const pendCheck = document.getElementById('check_saldo_pendiente');
+        if (pendCheck && pendCheck.checked) {
+            pendCheck.checked = false;
+            if (montoEfectivoInput) {
+                montoEfectivoInput.readOnly = true;
+                delete montoEfectivoInput.dataset.saldoPendienteManual;
+            }
+            actualizarVistaSaldoPendienteCheckIn(totalPagadoFinal);
+        }
+    }
 
     if (divRestante) divRestante.style.display = 'none';
     if (divCambio) divCambio.style.display = 'none';
@@ -10350,36 +10437,64 @@ document.addEventListener('DOMContentLoaded', function () {
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--rv-checkin-brand) 12%, transparent) !important;
 }
 
+/* Lista informativa de habitaciones: filas divididas, no fichas que parezcan botones. */
 #modalCheckIn .rv-room-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-#modalCheckIn .rv-room-card {
-    min-height: 96px;
-    display: grid;
-    place-items: center;
-    gap: 4px;
-    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     border: 1px solid var(--rv-checkin-line);
     border-radius: 14px;
     background: #FFFEFB;
-    text-align: center;
+    overflow: hidden;
+}
+
+#modalCheckIn .rv-room-card {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "num badge" "type badge";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 1px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: left;
+}
+
+#modalCheckIn .rv-room-card + .rv-room-card {
+    border-top: 1px solid color-mix(in srgb, var(--rv-checkin-line) 62%, transparent);
 }
 
 #modalCheckIn .rv-room-card strong {
+    grid-area: num;
     color: var(--rv-checkin-ink);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 1.48rem;
-    font-weight: 600;
-    line-height: 1;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 #modalCheckIn .rv-room-card span {
+    grid-area: type;
     color: #63708A;
-    font-size: .78rem;
-    font-weight: 760;
+    font-size: .76rem;
+    font-weight: 620;
+}
+
+#modalCheckIn .rv-room-card em {
+    grid-area: badge;
+    justify-self: end;
+}
+
+#modalCheckIn .rv-room-card.rv-room-empty {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+    justify-items: center;
+    text-align: center;
+    padding: 16px 14px;
 }
 
 #modalCheckIn .rv-room-card em {
@@ -10387,7 +10502,6 @@ document.addEventListener('DOMContentLoaded', function () {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-top: 3px;
     padding: 0 10px;
     border-radius: 999px;
     background: color-mix(in srgb, #20A36A 12%, #F0FBF5);
@@ -10438,16 +10552,113 @@ document.addEventListener('DOMContentLoaded', function () {
     line-height: 1.42;
 }
 
-#modalCheckIn .rv-payment-shortcuts {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0 0 16px;
+/* Meta de cobro: medidor vivo. La barra se llena conforme se asigna dinero. */
+#modalCheckIn .rv-pay-goal {
+    margin: 0 0 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #FFFEFB, color-mix(in srgb, var(--rv-checkin-accent) 5%, #FFFEFB));
 }
 
-#modalCheckIn .rv-money-shortcut,
+#modalCheckIn .rv-goal-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#modalCheckIn .rv-goal-label {
+    color: #6F7890;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+#modalCheckIn .rv-goal-amount {
+    color: var(--rv-checkin-ink);
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+#modalCheckIn .rv-goal-bar {
+    height: 9px;
+    margin: 11px 0 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rv-checkin-line) 78%, #EBEEF2);
+    overflow: hidden;
+}
+
+#modalCheckIn .rv-goal-bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 70%, #C9A24A);
+    transition: width .3s cubic-bezier(.22,.61,.36,1), background .2s ease;
+}
+
+#modalCheckIn .rv-pay-goal.is-covered .rv-goal-bar > i {
+    background: #1BA56B;
+}
+
+#modalCheckIn .rv-pay-goal.is-pending-ok .rv-goal-bar > i {
+    background: #D97706;
+}
+
+#modalCheckIn .rv-goal-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#modalCheckIn .rv-goal-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #6E7890;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+#modalCheckIn .rv-goal-status i {
+    font-size: .82rem;
+    color: #A5AEBF;
+}
+
+#modalCheckIn .rv-goal-remain {
+    color: #6E7890;
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+#modalCheckIn .rv-goal-remain strong {
+    color: #B45309;
+    font-variant-numeric: tabular-nums;
+}
+
+#modalCheckIn .rv-pay-goal.is-covered .rv-goal-status {
+    color: #12855A;
+}
+
+#modalCheckIn .rv-pay-goal.is-covered .rv-goal-status i {
+    color: #1BA56B;
+}
+
+#modalCheckIn .rv-pay-goal.is-covered .rv-goal-remain,
+#modalCheckIn .rv-pay-goal.is-covered .rv-goal-remain strong {
+    color: #12855A;
+}
+
+#modalCheckIn .rv-pay-goal.is-pending-ok .rv-goal-remain strong {
+    color: #D97706;
+}
+
 #modalCheckIn .rv-money-mini {
     min-height: 32px;
     display: inline-flex;
@@ -10455,51 +10666,49 @@ document.addEventListener('DOMContentLoaded', function () {
     justify-content: center;
     gap: 7px;
     padding: 0 12px;
-    border: 1px solid color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-accent)) 24%, #E2D8C9);
+    border: 1px solid color-mix(in srgb, #19A367 26%, #E2D8C9);
     border-radius: 999px;
     background: rgba(255,255,255,.7);
-    color: color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-brand)) 78%, #27324A);
+    color: #12855A;
     font-size: .75rem;
     font-weight: 700;
     cursor: pointer;
     transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
-#modalCheckIn .rv-money-shortcut:hover,
 #modalCheckIn .rv-money-mini:hover {
     transform: translateY(-1px);
     background: #FFFEFB;
-    border-color: color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-accent)) 44%, #E2D8C9);
-    box-shadow: 0 12px 22px -20px color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-brand)) 72%, transparent);
+    border-color: color-mix(in srgb, #19A367 46%, #E2D8C9);
+    box-shadow: 0 12px 22px -20px color-mix(in srgb, #19A367 72%, transparent);
 }
 
-#modalCheckIn .rv-money-shortcut.is-cash { --rv-shortcut-color: #19A367; }
-#modalCheckIn .rv-money-shortcut.is-card { --rv-shortcut-color: #2C70E8; }
-#modalCheckIn .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7A52E1; }
-#modalCheckIn .rv-money-shortcut.is-split { --rv-shortcut-color: var(--rv-checkin-accent); }
-#modalCheckIn .rv-money-shortcut.is-cash-transfer { --rv-shortcut-color: #0F9F8F; }
-
+/* Caso especial: continuar con pago parcial (saldo pendiente). */
 #modalCheckIn .rv-pending-option {
     display: grid;
     grid-template-columns: auto auto minmax(0, 1fr);
     align-items: center;
     gap: 11px;
-    margin: 0 0 13px;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, #D97706 28%, var(--rv-checkin-line));
+    margin: 14px 0 0;
+    padding: 11px 12px;
+    border: 1px dashed color-mix(in srgb, #D97706 34%, var(--rv-checkin-line));
     border-radius: 14px;
-    background: #FFF8EA;
+    background: #FFFDF7;
     color: #7C4A12;
     cursor: pointer;
-    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    transition: border-color .16s ease, background .16s ease;
 }
 
 #modalCheckIn .rv-pending-option:hover,
 #modalCheckIn .rv-pending-option:focus-within {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, #D97706 50%, var(--rv-checkin-line));
+    border-color: color-mix(in srgb, #D97706 55%, var(--rv-checkin-line));
+    background: #FFF8EA;
+}
+
+#modalCheckIn .rv-pending-option:has(input:checked) {
+    border-style: solid;
+    border-color: color-mix(in srgb, #D97706 55%, var(--rv-checkin-line));
     background: #FFF5DC;
-    box-shadow: 0 14px 28px -26px rgba(217,119,6,.75);
 }
 
 #modalCheckIn .rv-pending-option input {
@@ -10523,7 +10732,7 @@ document.addEventListener('DOMContentLoaded', function () {
     display: block;
     color: #6B3B08;
     font-size: .84rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 #modalCheckIn .rv-pending-option small {
@@ -10531,40 +10740,8 @@ document.addEventListener('DOMContentLoaded', function () {
     margin-top: 2px;
     color: #8A5A18;
     font-size: .73rem;
-    font-weight: 720;
+    font-weight: 600;
     line-height: 1.35;
-}
-
-#modalCheckIn .rv-pending-preview {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin: -4px 0 13px;
-}
-
-#modalCheckIn .rv-pending-preview[hidden] {
-    display: none !important;
-}
-
-#modalCheckIn .rv-pending-preview > div {
-    min-height: 58px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, #D97706 24%, var(--rv-checkin-line));
-    border-radius: 12px;
-    background: #FFFDF7;
-}
-
-#modalCheckIn .rv-pending-preview span {
-    display: block;
-    margin-bottom: 4px;
-    color: #7C4A12;
-    font-size: .72rem;
-    font-weight: 820;
-}
-
-#modalCheckIn .rv-pending-preview strong {
-    color: #3E4656;
-    font-size: 1rem;
-    font-weight: 950;
 }
 
 #modalCheckInTardio .rv-payment-shortcuts {
@@ -10606,74 +10783,153 @@ document.addEventListener('DOMContentLoaded', function () {
 #modalCheckInTardio .rv-money-shortcut.is-split { --rv-shortcut-color: var(--brand-accent, #BD9441); }
 #modalCheckInTardio .rv-money-shortcut.is-cash-transfer { --rv-shortcut-color: #0F9F8F; }
 
-#modalCheckIn .rv-pay-methods {
-    display: grid !important;
-    align-items: start;
-    gap: 10px !important;
-}
-
-#modalCheckIn .rv-pay-option {
-    --rv-pay-color: var(--rv-checkin-brand);
-    overflow: hidden;
-    scroll-margin: 18px 0 104px;
-    border: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E1E7EE) !important;
-    border-radius: 14px !important;
-    background: #FFFEFB !important;
-    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
-}
-
-#modalCheckIn .rv-pay-option.is-open,
-#modalCheckIn .rv-pay-option:has(input[type="checkbox"]:checked) {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--rv-pay-color) 56%, #DDE4EC) !important;
-    background: color-mix(in srgb, var(--rv-pay-color) 6%, #FFFEFB) !important;
-    box-shadow: 0 16px 30px -26px color-mix(in srgb, var(--rv-pay-color) 74%, transparent);
-}
-
 #modalCheckIn .rv-pay-cash { --rv-pay-color: #1BA56B; }
 #modalCheckIn .rv-pay-card { --rv-pay-color: #2C70E8; }
 #modalCheckIn .rv-pay-transfer { --rv-pay-color: #824CE6; }
 
-#modalCheckIn .rv-pay-option > label {
-    width: 100% !important;
-    min-height: 48px;
-    margin: 0 !important;
+/* Fichas de metodo tipo terminal de cobro: un toque = seleccionado + monto asignado. */
+#modalCheckIn .rv-method-tiles {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 12px;
+}
+
+#modalCheckIn .rv-tile {
+    position: relative;
     display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    padding: 11px 14px !important;
-    color: var(--rv-checkin-ink) !important;
-    cursor: pointer !important;
-    font-size: .88rem !important;
-    font-weight: 950 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-}
-
-#modalCheckIn .rv-pay-option > label input {
-    width: 18px !important;
-    height: 18px !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 104px;
     margin: 0 !important;
-    accent-color: var(--rv-pay-color) !important;
+    padding: 14px 10px !important;
+    border: 1.5px solid color-mix(in srgb, var(--rv-pay-color) 17%, #E1E7EE) !important;
+    border-radius: 16px !important;
+    background: #FFFEFB !important;
+    color: var(--rv-checkin-ink) !important;
+    text-align: center;
+    cursor: pointer !important;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
-#modalCheckIn .rv-pay-option > label i {
-    width: 24px;
-    height: 24px;
+#modalCheckIn .rv-tile:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--rv-pay-color) 40%, #DDE4EC) !important;
+    box-shadow: 0 14px 28px -24px color-mix(in srgb, var(--rv-pay-color) 70%, transparent);
+}
+
+#modalCheckIn .rv-tile input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#modalCheckIn .rv-tile:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--rv-pay-color) 60%, transparent);
+    outline-offset: 2px;
+}
+
+#modalCheckIn .rv-tile-icon {
+    width: 40px;
+    height: 40px;
     display: grid;
     place-items: center;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--rv-pay-color) 11%, #F7FAFC);
-    color: var(--rv-pay-color) !important;
-    margin-right: 0 !important;
-    font-size: .75rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--rv-pay-color) 12%, #F5F8FB);
+    color: var(--rv-pay-color);
+    font-size: 1rem;
+    transition: background .16s ease, color .16s ease;
+}
+
+#modalCheckIn .rv-tile-name {
+    color: var(--rv-checkin-ink);
+    font-size: .84rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+#modalCheckIn .rv-tile-amount {
+    color: #98A1B2;
+    font-size: .74rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+#modalCheckIn .rv-tile-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--rv-pay-color);
+    color: #FFFEFB;
+    font-size: .62rem;
+    opacity: 0;
+    transform: scale(.5);
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+/* Estado seleccionado de la ficha. */
+#modalCheckIn .rv-tile:has(input:checked) {
+    border-color: var(--rv-pay-color) !important;
+    background: color-mix(in srgb, var(--rv-pay-color) 8%, #FFFEFB) !important;
+    box-shadow: 0 16px 30px -26px color-mix(in srgb, var(--rv-pay-color) 80%, transparent);
+}
+
+#modalCheckIn .rv-tile:has(input:checked) .rv-tile-icon {
+    background: var(--rv-pay-color);
+    color: #FFFEFB;
+}
+
+#modalCheckIn .rv-tile:has(input:checked) .rv-tile-amount {
+    color: var(--rv-pay-color);
+    font-weight: 800;
+}
+
+#modalCheckIn .rv-tile:has(input:checked) .rv-tile-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Detalles del metodo elegido, apilados bajo las fichas. */
+#modalCheckIn .rv-method-details {
+    display: grid;
+    gap: 10px;
+}
+
+#modalCheckIn .rv-method-details:not(:has(.rv-pay-panel:not(.hidden))) {
+    display: none;
 }
 
 #modalCheckIn .rv-pay-panel {
     margin-top: 0 !important;
-    padding: 10px 14px 12px;
-    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E1E7EE);
+    padding: 12px 14px 13px;
+    border: 1px solid color-mix(in srgb, var(--rv-pay-color) 22%, #E1E7EE);
+    border-radius: 14px;
     background: color-mix(in srgb, var(--rv-pay-color) 5%, #FFFEFB);
+}
+
+#modalCheckIn .rv-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    color: var(--rv-pay-color);
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+#modalCheckIn .rv-panel-head i {
+    font-size: .82rem;
 }
 
 #modalCheckIn .rv-input-grid,
@@ -10742,7 +10998,6 @@ document.addEventListener('DOMContentLoaded', function () {
 #modalCheckIn .rv-money-mini {
     width: 100%;
     margin-top: 7px;
-    --rv-shortcut-color: #19A367;
 }
 
 #modalCheckIn .rv-final-grid {
@@ -11083,10 +11338,9 @@ document.addEventListener('DOMContentLoaded', function () {
     #modalCheckIn .rv-checkin-stepper { min-height: 56px; }
     #modalCheckIn .rv-checkin-content { padding-block: 18px 82px; }
     #modalCheckIn .rv-total-card { min-height: 84px; padding: 16px; }
-    #modalCheckIn .rv-room-card { min-height: 84px; }
     #modalCheckIn .rv-payment-section,
     #modalCheckIn .rv-invoice-section { padding: 14px !important; }
-    #modalCheckIn .rv-pay-option > label { min-height: 44px; }
+    #modalCheckIn .rv-tile { min-height: 92px; }
     #modalCheckIn .rv-checkin-actions { padding-block: 12px !important; }
 }
 
@@ -11111,7 +11365,7 @@ document.addEventListener('DOMContentLoaded', function () {
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden !important;
     border-radius: 28px !important;
-    background: #F8F4EC !important;
+    background: #F5F5F7 !important;
     border: 1px solid rgba(255,255,255,.55);
     box-shadow: 0 38px 92px -34px rgba(4, 8, 18, .78), 0 0 0 1px rgba(255,255,255,.22) inset;
     animation: rvCheckInShow .32s cubic-bezier(.22, 1, .36, 1);
@@ -11634,7 +11888,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 #modalCheckInTardio #resumen_totales_tardio {
     display: block;
-    background: linear-gradient(135deg, #fff, #F6F2EA) !important;
+    background: linear-gradient(135deg, #fff, #F5F5F7) !important;
 }
 
 #modalCheckInTardio #resumen_totales_tardio.hidden {
@@ -11661,7 +11915,7 @@ document.addEventListener('DOMContentLoaded', function () {
     padding: 15px 20px 20px !important;
     margin: 0 !important;
     border-top: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1);
-    background: color-mix(in srgb, #F8F4EC 90%, transparent) !important;
+    background: color-mix(in srgb, #F5F5F7 90%, transparent) !important;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
@@ -11824,18 +12078,27 @@ document.addEventListener('DOMContentLoaded', function () {
         grid-template-columns: 1fr;
         padding: 14px;
     }
-    #modalCheckIn .rv-payment-shortcuts,
     #modalCheckInTardio .rv-payment-shortcuts {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #modalCheckIn .rv-tile {
+        min-height: 88px;
+        padding: 12px 8px !important;
+    }
+    #modalCheckIn .rv-tile-icon {
+        width: 34px;
+        height: 34px;
+    }
+    #modalCheckIn .rv-tile-name {
+        font-size: .78rem;
+    }
+    #modalCheckIn .rv-goal-amount {
+        font-size: 1.35rem;
     }
     #modalCheckIn .rv-checkin-arrival,
     #modalCheckIn .rv-input-grid,
     #modalCheckIn .rv-card-type,
-    #modalCheckIn .rv-invoice-grid,
-    #modalCheckIn #panel_efectivo > div:first-child,
-    #modalCheckIn #panel_tarjeta > div:first-child,
-    #modalCheckIn #panel_tarjeta > div:last-child,
-    #modalCheckIn #panel_transferencia > div:first-child {
+    #modalCheckIn .rv-invoice-grid {
         grid-template-columns: 1fr !important;
     }
     #modalCheckInTardio #panel_efectivo_tardio > div:first-child,
@@ -11865,7 +12128,7 @@ document.addEventListener('DOMContentLoaded', function () {
     --rv-checkin-brand: var(--brand-primary, #1B2746);
     --rv-checkin-accent: var(--brand-accent, #BD9441);
     --rv-checkin-line: color-mix(in srgb, var(--rv-checkin-brand) 10%, #E7DDD1);
-    --rv-checkin-soft: color-mix(in srgb, var(--rv-checkin-accent) 7%, #F8F4EC);
+    --rv-checkin-soft: color-mix(in srgb, var(--rv-checkin-accent) 7%, #F5F5F7);
     --rv-checkin-muted: #667085;
     padding: clamp(12px, 2.5vw, 28px);
     background:
@@ -11882,7 +12145,7 @@ document.addEventListener('DOMContentLoaded', function () {
     max-height: min(91dvh, 860px) !important;
     display: block !important;
     border-radius: 28px;
-    background: #F8F4EC;
+    background: #F5F5F7;
     border: 1px solid rgba(255, 255, 255, .54);
     box-shadow: 0 36px 90px -36px rgba(7, 10, 18, .78), 0 0 0 1px rgba(255,255,255,.28) inset;
 }
@@ -12003,7 +12266,7 @@ document.addEventListener('DOMContentLoaded', function () {
     grid-row: 1;
     min-height: 66px;
     padding: 0 22px;
-    background: color-mix(in srgb, var(--rv-checkin-accent) 4%, #F8F4EC);
+    background: color-mix(in srgb, var(--rv-checkin-accent) 4%, #F5F5F7);
     border-bottom: 1px solid var(--rv-checkin-line);
 }
 
@@ -12028,7 +12291,7 @@ document.addEventListener('DOMContentLoaded', function () {
     gap: 10px !important;
     padding: 15px 20px 20px !important;
     border-top: 1px solid var(--rv-checkin-line);
-    background: color-mix(in srgb, #F8F4EC 90%, transparent) !important;
+    background: color-mix(in srgb, #F5F5F7 90%, transparent) !important;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
@@ -12090,7 +12353,7 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 #modalCheckIn .rv-time-input,
-#modalCheckIn .rv-room-card,
+#modalCheckIn .rv-room-grid,
 #modalCheckIn .rv-pay-option,
 #modalCheckIn .rv-radio-chip,
 #modalCheckIn .rv-invoice-choice {
@@ -12125,7 +12388,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 #modalCheckIn .rv-checkin-summary {
     padding: 15px 16px !important;
-    background: linear-gradient(135deg, #FFFEFB, #F6F2EA);
+    background: linear-gradient(135deg, #FFFEFB, #F5F5F7);
 }
 
 #modalCheckIn .rv-checkin-summary h5 {

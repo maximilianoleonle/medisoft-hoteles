@@ -72,7 +72,7 @@ $momentos = [
 .mdet {
     --md-brand: var(--brand-primary, #1B2746);
     --md-gold: var(--brand-accent, #BD9441);
-    --md-ivory: #F6F2EA; --md-ivory-2: #FBF8F2;
+    --md-ivory: #F5F5F7; --md-ivory-2: #FAFAFC;
     --md-surface: #FFFFFF;
     --md-border: color-mix(in srgb, var(--md-brand) 7%, #E7E1D4);
     --md-text: color-mix(in srgb, var(--md-brand) 36%, #596474);
@@ -86,9 +86,7 @@ $momentos = [
     min-height: 100%;
     color: var(--md-text);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--md-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--md-ivory-2), var(--md-ivory));
+    
     padding: 16px 14px 90px;
 }
 .mdet .mdet-shell { max-width: 860px; margin: 0 auto; display: grid; gap: 14px; }
@@ -119,7 +117,7 @@ $momentos = [
 
 .mdet .mdet-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 @media (min-width: 640px) { .mdet .mdet-meta { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.mdet .mdet-meta-item { background: color-mix(in srgb, var(--md-brand) 3%, #FCFAF5); border: 1px solid var(--md-border); border-radius: 12px; padding: 9px 11px; }
+.mdet .mdet-meta-item { background: color-mix(in srgb, var(--md-brand) 3%, #F5F5F7); border: 1px solid var(--md-border); border-radius: 12px; padding: 9px 11px; }
 .mdet .mdet-meta-item small { display: block; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--md-muted); font-weight: 700; }
 .mdet .mdet-meta-item span { display: block; margin-top: 2px; font-size: .86rem; color: var(--md-heading); font-weight: 700; }
 
@@ -147,7 +145,7 @@ $momentos = [
 }
 .mdet .mdet-vacio {
     margin-top: 12px; padding: 14px; border: 1px dashed var(--md-border); border-radius: 12px;
-    font-size: .82rem; color: var(--md-muted); text-align: center; background: color-mix(in srgb, var(--md-brand) 2%, #FCFAF5);
+    font-size: .82rem; color: var(--md-muted); text-align: center; background: color-mix(in srgb, var(--md-brand) 2%, #F5F5F7);
 }
 
 .mdet .mdet-upload { margin-top: 12px; }
@@ -395,7 +393,7 @@ $momentos = [
                         </div>
 
                         <?php if (!empty($puede_caja)): ?>
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;background:color-mix(in srgb, var(--md-brand) 2%, #FCFAF5);">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--md-border);border-radius:11px;background:color-mix(in srgb, var(--md-brand) 2%, #F5F5F7);">
                                 <label style="display:inline-flex;align-items:center;gap:8px;font-size:.84rem;font-weight:700;color:var(--md-heading);cursor:pointer;">
                                     <input type="checkbox" name="registrar_gasto" value="1" checked>
                                     Registrar en gastos de caja

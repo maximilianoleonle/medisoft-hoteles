@@ -297,10 +297,10 @@ input.toggle-activo:checked ~ div {
     --tar-accent-dark: color-mix(in srgb, var(--tar-accent) 72%, #3F2E12);
     --tar-accent-soft: color-mix(in srgb, var(--tar-accent) 14%, #FFFFFF);
     --tar-accent-line: color-mix(in srgb, var(--tar-accent) 34%, #E8DDCA);
-    --tar-bg: #F6F2EA;
-    --tar-bg-2: #FBF8F2;
+    --tar-bg: #F5F5F7;
+    --tar-bg-2: #FAFAFC;
     --tar-surface: rgba(255,255,255,.96);
-    --tar-surface-warm: #FCFAF5;
+    --tar-surface-warm: #F5F5F7;
     --tar-border: color-mix(in srgb, var(--tar-brand) 11%, #E7E1D4);
     --tar-text: #1B2746;
     --tar-muted: #6C7689;
@@ -872,8 +872,8 @@ input.toggle-activo:checked ~ div {
     --tar-gold-soft: color-mix(in srgb, var(--tar-gold) 15%, #FFFFFF);
     --tar-gold-line: color-mix(in srgb, var(--tar-gold) 42%, #E4D4B0);
     --tar-gold-ink: color-mix(in srgb, var(--tar-gold) 72%, #000);
-    --tar-ivory: #F6F2EA;
-    --tar-ivory-2: #FBF8F2;
+    --tar-ivory: #F5F5F7;
+    --tar-ivory-2: #FAFAFC;
     --tar-heading: #111827;
     --tar-sky: #3E7CB1;
     --tar-teal: #2F7D72;
@@ -881,10 +881,7 @@ input.toggle-activo:checked ~ div {
     --tar-coral: #C66A5A;
     --tar-amber: #D0963A;
     padding: 1rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 60%),
-        radial-gradient(900px 360px at 22% 10%, color-mix(in srgb, var(--tar-teal) 6%, transparent), transparent 58%),
-        linear-gradient(180deg, var(--tar-ivory-2), var(--tar-ivory)) !important;
+    
 }
 
 .tarifa-index-page .tar-topbar,

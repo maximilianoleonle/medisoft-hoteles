@@ -41,9 +41,16 @@ if (!function_exists('proc_geo_percent')) {
     }
 }
 
+$porNacionalidad = $porNacionalidad ?? [];
+$totalExtranjeros = (int)array_sum(array_column($porNacionalidad, 'total_huespedes'));
+$ingresosExtranjeros = array_sum(array_column($porNacionalidad, 'ingresos_totales'));
+$topNacionalidades = array_slice($porNacionalidad, 0, 8);
+$nacLider = $porNacionalidad[0] ?? null;
+
 $totalHuespedes = array_sum(array_column($porEstado, 'total_huespedes'));
 $totalReservaciones = array_sum(array_column($porEstado, 'total_reservaciones'));
 $totalIngresos = array_sum(array_column($porEstado, 'ingresos_totales'));
+$porcentajeExtranjeros = $totalHuespedes > 0 ? round(($totalExtranjeros / $totalHuespedes) * 100, 1) : 0;
 $promedioEstancia = $totalReservaciones > 0 ? round($totalHuespedes / $totalReservaciones, 1) : 0;
 $ticketPromedio = $totalHuespedes > 0 ? $totalIngresos / $totalHuespedes : 0;
 $topEstado = $porEstado[0] ?? null;
@@ -1012,6 +1019,55 @@ foreach ($porEstado as $estadoDato) {
         height: 270px;
     }
 }
+
+.geo-intl-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, .82fr) minmax(0, 1.18fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.geo-intl-kpis {
+    display: grid;
+    gap: 12px;
+}
+
+.geo-intl-kpi {
+    padding: 15px;
+    border: 1px solid var(--geo-line-soft);
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--geo-accent) 12%, transparent), transparent 8rem),
+        color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
+}
+
+.geo-intl-kpi strong {
+    display: block;
+    margin-top: 7px;
+    color: var(--geo-primary);
+    font-size: 1.55rem;
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.geo-intl-kpi small {
+    display: block;
+    margin-top: 6px;
+    color: var(--geo-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.geo-intl-flag {
+    color: color-mix(in srgb, var(--geo-accent) 80%, var(--geo-primary));
+}
+
+@media (max-width: 900px) {
+    .geo-intl-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <div class="geo-report-view procedencia-view">
@@ -1303,6 +1359,65 @@ foreach ($porEstado as $estadoDato) {
             </article>
         </section>
 
+        <section class="geo-section" style="margin-bottom: 18px;">
+            <div class="geo-section-head">
+                <div>
+                    <span class="geo-section-kicker">Radar internacional</span>
+                    <h2>Procedencia internacional</h2>
+                </div>
+                <div class="geo-legend">
+                    <i class="fas fa-earth-americas geo-intl-flag"></i>
+                    <span><?= number_format($totalExtranjeros) ?> extranjeros · <?= $porcentajeExtranjeros ?>% del total</span>
+                </div>
+            </div>
+            <div class="geo-section-body">
+                <?php if (!empty($porNacionalidad)): ?>
+                    <div class="geo-intl-grid">
+                        <div class="geo-intl-kpis">
+                            <div class="geo-intl-kpi">
+                                <span class="geo-label">Huéspedes extranjeros</span>
+                                <strong><?= number_format($totalExtranjeros) ?></strong>
+                                <small><?= $porcentajeExtranjeros ?>% de los huéspedes ubicados</small>
+                            </div>
+                            <div class="geo-intl-kpi">
+                                <span class="geo-label">Nacionalidades</span>
+                                <strong><?= number_format(count($porNacionalidad)) ?></strong>
+                                <small>distintas en el periodo<?= $nacLider ? ' · lidera ' . proc_geo_safe($nacLider['nacionalidad'] ?? '') : '' ?></small>
+                            </div>
+                            <div class="geo-intl-kpi">
+                                <span class="geo-label">Ingresos de extranjeros</span>
+                                <strong><?= proc_geo_money($ingresosExtranjeros) ?></strong>
+                                <small><?= $totalExtranjeros > 0 ? proc_geo_money($ingresosExtranjeros / max($totalExtranjeros, 1)) . ' por huésped' : 'Sin datos' ?></small>
+                            </div>
+                        </div>
+
+                        <div class="geo-top-stack">
+                            <?php foreach ($topNacionalidades as $index => $nac): ?>
+                                <?php $porcentajeNac = proc_geo_percent($nac['total_huespedes'] ?? 0, $totalExtranjeros); ?>
+                                <article class="geo-rank-item">
+                                    <div class="geo-rank"><?= $index + 1 ?></div>
+                                    <div class="min-w-0">
+                                        <strong><?= proc_geo_safe($nac['nacionalidad'] ?? '') ?></strong>
+                                        <span><?= number_format($nac['total_huespedes'] ?? 0) ?> huéspedes · <?= number_format($nac['total_reservaciones'] ?? 0) ?> reservaciones · <?= proc_geo_money($nac['ingresos_totales'] ?? 0) ?></span>
+                                    </div>
+                                    <div class="geo-rank-value"><?= $porcentajeNac ?>%</div>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="geo-empty">
+                        <div>
+                            <i class="fas fa-earth-americas"></i>
+                            <p>Sin huéspedes extranjeros registrados en este periodo.</p>
+                            <p style="font-size: .8rem; margin-top: 6px;">
+                                Activa el campo <strong>Nacionalidad</strong> en Configuración → Registro de huéspedes para capturar la procedencia internacional.
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
 
     </main>
 </div>

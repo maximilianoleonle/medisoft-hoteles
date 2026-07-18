@@ -157,10 +157,10 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
     --vgf-gold-soft: color-mix(in srgb, var(--vgf-gold) 15%, #FFFFFF);
     --vgf-gold-line: color-mix(in srgb, var(--vgf-gold) 42%, #E4D4B0);
     --vgf-gold-ink: color-mix(in srgb, var(--vgf-gold) 58%, var(--vgf-brand));
-    --vgf-ivory: #F6F2EA;
-    --vgf-ivory-2: #FBF8F2;
+    --vgf-ivory: #F5F5F7;
+    --vgf-ivory-2: #FAFAFC;
     --vgf-surface: #FFFFFF;
-    --vgf-surface-warm: #FBF8F2;
+    --vgf-surface-warm: #FAFAFC;
     --vgf-border: color-mix(in srgb, var(--vgf-brand) 6%, #E9E1D6);
     --vgf-text: color-mix(in srgb, var(--vgf-brand) 46%, #707B8C);
     --vgf-muted: #8791A2;
@@ -185,9 +185,7 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
     color: var(--vgf-text);
     font-family: var(--vgf-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--vgf-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--vgf-ivory-2), var(--vgf-ivory));
+    
 }
 .vgf * { box-sizing: border-box; }
 .vgf-shell { display: grid; gap: 14px; width: 100%; max-width: 1040px; min-width: 0; margin: 0 auto; }

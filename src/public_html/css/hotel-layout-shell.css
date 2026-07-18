@@ -3,13 +3,13 @@ body.hotel-layout-scope {
     --hotel-primary: var(--brand-primary, #1B2746);
     --hotel-secondary: var(--brand-secondary, #0F172A);
     --hotel-accent: var(--brand-accent, #BD9441);
-    --hotel-bg: var(--brand-surface-soft, color-mix(in srgb, var(--hotel-accent) 9%, #F8F5ED));
-    --hotel-panel: var(--brand-surface, color-mix(in srgb, var(--hotel-accent) 2%, #FFFEFB));
+    --hotel-bg: var(--brand-system-background, var(--brand-surface-soft, color-mix(in srgb, var(--hotel-accent) 9%, #F5F5F7)));
+    --hotel-panel: var(--brand-surface, color-mix(in srgb, var(--hotel-accent) 2%, #FFFFFF));
     --hotel-text: var(--brand-text, var(--hotel-secondary));
     --hotel-muted: var(--brand-muted, color-mix(in srgb, var(--hotel-secondary) 54%, #94A3B8));
     --hotel-brand: var(--brand-action-bg, var(--hotel-primary));
     --hotel-brand-dark: var(--brand-action-bg-hover, var(--hotel-secondary));
-    --hotel-brand-soft: var(--brand-soft, color-mix(in srgb, var(--hotel-primary) 10%, #F8F5ED));
+    --hotel-brand-soft: var(--brand-soft, color-mix(in srgb, var(--hotel-primary) 10%, #F5F5F7));
     --hotel-border: var(--brand-border, color-mix(in srgb, var(--hotel-accent) 22%, #E7DEC9));
     --hotel-line: var(--brand-line, color-mix(in srgb, var(--hotel-accent) 32%, #E2D6BF));
     --hotel-gold: var(--hotel-accent);

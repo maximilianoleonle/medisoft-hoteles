@@ -95,13 +95,13 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     --lc-green-dark: color-mix(in srgb, var(--hotel-primary) 76%, var(--hotel-secondary));
     --lc-green-deep: color-mix(in srgb, var(--hotel-secondary) 76%, #2F3A2D);
     --lc-gold: var(--hotel-accent);
-    --lc-cream: color-mix(in srgb, var(--hotel-accent) 7%, #F7F4EE);
-    --lc-cream-mid: color-mix(in srgb, var(--hotel-primary) 7%, #EEE9DE);
+    --lc-cream: color-mix(in srgb, var(--hotel-accent) 6%, #F5F5F7);
+    --lc-cream-mid: #FAFAFC;
     --inv-mov-text: #344054;
-    --inv-mov-muted: color-mix(in srgb, var(--hotel-secondary) 42%, #7A8574);
-    --inv-mov-line: color-mix(in srgb, var(--hotel-primary) 16%, #DDE8D5);
-    --inv-mov-panel: #FFFEFB;
-    --inv-mov-soft: color-mix(in srgb, var(--hotel-primary) 6%, #F3F7F0);
+    --inv-mov-muted: color-mix(in srgb, var(--inv-mov-text) 52%, #94A3B8);
+    --inv-mov-line: color-mix(in srgb, var(--hotel-accent) 16%, #E6E8EB);
+    --inv-mov-panel: #FFFFFF;
+    --inv-mov-soft: #F5F5F7;
     --inv-mov-success: #10B981;
     --inv-mov-warning: #F59E0B;
     --inv-mov-danger: #EF4444;
@@ -117,9 +117,8 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-page {
     min-height: 100vh;
     background:
-        radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--hotel-primary) 13%, transparent), transparent 24rem),
-        radial-gradient(circle at 90% 5%, color-mix(in srgb, var(--hotel-accent) 14%, transparent), transparent 26rem),
-        linear-gradient(145deg, color-mix(in srgb, var(--hotel-primary) 7%, #EFF4EC) 0%, color-mix(in srgb, var(--hotel-primary) 5%, #E8EFE3) 45%, color-mix(in srgb, var(--hotel-accent) 7%, #F4F1EB) 100%);
+        radial-gradient(circle at 90% 5%, color-mix(in srgb, var(--hotel-accent) 7%, transparent), transparent 26rem),
+        linear-gradient(145deg, #F5F5F7 0%, #FAFAFC 55%, #FFFFFF 100%);
     color: var(--inv-mov-text);
     font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
@@ -168,9 +167,9 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    background: color-mix(in srgb, var(--hotel-primary) 13%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 13%, #FFFFFF);
     color: var(--lc-green);
-    border: 1px solid color-mix(in srgb, var(--hotel-primary) 20%, #DDE8D5);
+    border: 1px solid color-mix(in srgb, var(--hotel-primary) 20%, #E6E8EB);
 }
 
 .inv-mov-title-group h1 {
@@ -221,14 +220,14 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 }
 
 .inv-mov-btn.ghost {
-    background: #FFFEFB;
+    background: #FFFFFF;
     border-color: var(--inv-mov-line);
     color: var(--lc-green-deep);
 }
 
 .inv-mov-btn.primary {
     background: linear-gradient(135deg, var(--lc-green), var(--lc-green-dark));
-    color: #FFFEFB;
+    color: #FFFFFF;
     box-shadow: 0 12px 24px -18px color-mix(in srgb, var(--hotel-primary) 70%, transparent);
 }
 
@@ -288,7 +287,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--stat-color, var(--lc-green)) 11%, #FFFEFB);
+    background: color-mix(in srgb, var(--stat-color, var(--lc-green)) 11%, #FFFFFF);
     color: var(--stat-color, var(--lc-green));
 }
 
@@ -365,7 +364,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     align-items: end;
     padding: 14px;
     border-bottom: 1px solid var(--inv-mov-line);
-    background: linear-gradient(135deg, color-mix(in srgb, var(--hotel-primary) 4%, #FFFEFB), color-mix(in srgb, var(--hotel-accent) 5%, #F8F7F2));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--hotel-primary) 4%, #FFFFFF), color-mix(in srgb, var(--hotel-accent) 5%, #FAFAFC));
 }
 
 .inv-mov-field label {
@@ -382,7 +381,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     min-height: 38px;
     border: 1px solid color-mix(in srgb, var(--hotel-primary) 18%, #DADFE7);
     border-radius: 10px;
-    background: #FFFEFB;
+    background: #FFFFFF;
     color: var(--inv-mov-text);
     padding: 0 11px;
     font-size: .78rem;
@@ -392,7 +391,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-input:focus {
     outline: none;
     border-color: var(--lc-green);
-    background: #FFFEFB;
+    background: #FFFFFF;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--hotel-primary) 16%, transparent);
 }
 
@@ -401,7 +400,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     flex-wrap: wrap;
     gap: 8px;
     padding: 12px 14px 0;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--hotel-primary) 4%, #FFFEFB), color-mix(in srgb, var(--hotel-accent) 5%, #F8F7F2));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--hotel-primary) 4%, #FFFFFF), color-mix(in srgb, var(--hotel-accent) 5%, #FAFAFC));
 }
 
 .inv-mov-quick {
@@ -409,9 +408,9 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid color-mix(in srgb, var(--hotel-primary) 14%, #DDE8D5);
+    border: 1px solid color-mix(in srgb, var(--hotel-primary) 14%, #E6E8EB);
     border-radius: 999px;
-    background: #FFFEFB;
+    background: #FFFFFF;
     color: color-mix(in srgb, var(--hotel-secondary) 64%, #475467);
     padding: 0 10px;
     font-size: .72rem;
@@ -424,13 +423,13 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-quick:focus-visible {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--hotel-accent) 42%, var(--inv-mov-line));
-    background: color-mix(in srgb, var(--hotel-accent) 8%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-accent) 8%, #FFFFFF);
     outline: none;
 }
 
 .inv-mov-quick.is-active {
     border-color: color-mix(in srgb, var(--hotel-primary) 42%, var(--inv-mov-line));
-    background: color-mix(in srgb, var(--hotel-primary) 12%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 12%, #FFFFFF);
     color: color-mix(in srgb, var(--hotel-secondary) 78%, #344054);
 }
 
@@ -453,7 +452,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     text-align: left;
     text-transform: uppercase;
     border-bottom: 1px solid #EAF0E5;
-    background: #FFFEFB;
+    background: #FFFFFF;
 }
 
 .inv-mov-table td {
@@ -465,39 +464,39 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 }
 
 .inv-mov-table tr:hover td {
-    background: color-mix(in srgb, var(--hotel-primary) 5%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 5%, #FFFFFF);
 }
 
 .inv-mov-row.manual td {
-    background: color-mix(in srgb, var(--inv-mov-manual) 5%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual) 5%, #FFFFFF);
 }
 
 .inv-mov-row.manual.entrada td {
-    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 7%, #FFFFFF);
 }
 
 .inv-mov-row.manual.salida td {
-    background: color-mix(in srgb, var(--inv-mov-manual-salida) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-salida) 7%, #FFFFFF);
 }
 
 .inv-mov-row.manual.ajuste td {
-    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 7%, #FFFFFF);
 }
 
 .inv-mov-row.manual:hover td {
-    background: color-mix(in srgb, var(--inv-mov-manual) 9%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual) 9%, #FFFFFF);
 }
 
 .inv-mov-row.manual.entrada:hover td {
-    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 11%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 11%, #FFFFFF);
 }
 
 .inv-mov-row.manual.salida:hover td {
-    background: color-mix(in srgb, var(--inv-mov-manual-salida) 11%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-salida) 11%, #FFFFFF);
 }
 
 .inv-mov-row.manual.ajuste:hover td {
-    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 11%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 11%, #FFFFFF);
 }
 
 .inv-mov-row.manual .inv-mov-motivo {
@@ -520,7 +519,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    background: color-mix(in srgb, var(--hotel-primary) 10%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 10%, #FFFFFF);
     color: var(--lc-green);
 }
 
@@ -590,32 +589,32 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 
 .inv-mov-origin.manual {
     color: color-mix(in srgb, var(--inv-mov-manual) 60%, #5B3B00);
-    background: color-mix(in srgb, var(--inv-mov-manual) 11%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual) 11%, #FFFFFF);
     border: 1px solid color-mix(in srgb, var(--inv-mov-manual) 25%, #E7DEC9);
 }
 
 .inv-mov-origin.manual.entrada {
     color: color-mix(in srgb, var(--inv-mov-manual-entrada) 72%, #1F2937);
-    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 13%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 13%, #FFFFFF);
     border-color: color-mix(in srgb, var(--inv-mov-manual-entrada) 34%, #DADFE7);
 }
 
 .inv-mov-origin.manual.salida {
     color: color-mix(in srgb, var(--inv-mov-manual-salida) 76%, #1F2937);
-    background: color-mix(in srgb, var(--inv-mov-manual-salida) 12%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-salida) 12%, #FFFFFF);
     border-color: color-mix(in srgb, var(--inv-mov-manual-salida) 34%, #DADFE7);
 }
 
 .inv-mov-origin.manual.ajuste {
     color: color-mix(in srgb, var(--inv-mov-manual-ajuste) 72%, #1F2937);
-    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 12%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 12%, #FFFFFF);
     border-color: color-mix(in srgb, var(--inv-mov-manual-ajuste) 34%, #DADFE7);
 }
 
 .inv-mov-origin.automatico {
     color: color-mix(in srgb, var(--inv-mov-auto) 62%, #1D4ED8);
-    background: color-mix(in srgb, var(--inv-mov-auto) 10%, #FFFEFB);
-    border: 1px solid color-mix(in srgb, var(--inv-mov-auto) 22%, #DDE8D5);
+    background: color-mix(in srgb, var(--inv-mov-auto) 10%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--inv-mov-auto) 22%, #E6E8EB);
 }
 
 .inv-mov-origin-detail {
@@ -653,7 +652,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     gap: 6px;
     border: 1px solid #E0EBD8;
     border-radius: 999px;
-    background: #FFFEFB;
+    background: #FFFFFF;
     color: color-mix(in srgb, var(--hotel-secondary) 62%, #475467);
     padding: 0 9px;
     font-size: .7rem;
@@ -662,7 +661,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 }
 
 .inv-mov-context-link {
-    border-color: color-mix(in srgb, var(--hotel-accent) 34%, #DDE8D5);
+    border-color: color-mix(in srgb, var(--hotel-accent) 34%, #E6E8EB);
     color: color-mix(in srgb, var(--hotel-secondary) 74%, #344054);
     text-decoration-line: underline;
     text-decoration-color: color-mix(in srgb, var(--hotel-accent) 56%, transparent);
@@ -672,7 +671,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 
 .inv-mov-context-link:hover,
 .inv-mov-context-link:focus-visible {
-    background: color-mix(in srgb, var(--hotel-accent) 8%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-accent) 8%, #FFFFFF);
     outline: none;
 }
 
@@ -696,7 +695,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: color-mix(in srgb, var(--hotel-primary) 9%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 9%, #FFFFFF);
     color: var(--lc-green);
     margin-bottom: 12px;
 }
@@ -725,28 +724,28 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-card {
     border: 1px solid #E0EBD8;
     border-radius: 14px;
-    background: #FFFEFB;
+    background: #FFFFFF;
     padding: 12px;
 }
 
 .inv-mov-card.manual {
     border-color: color-mix(in srgb, var(--inv-mov-manual) 32%, #E0EBD8);
-    background: color-mix(in srgb, var(--inv-mov-manual) 6%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual) 6%, #FFFFFF);
 }
 
 .inv-mov-card.manual.entrada {
     border-color: color-mix(in srgb, var(--inv-mov-manual-entrada) 34%, #E0EBD8);
-    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-entrada) 7%, #FFFFFF);
 }
 
 .inv-mov-card.manual.salida {
     border-color: color-mix(in srgb, var(--inv-mov-manual-salida) 34%, #E0EBD8);
-    background: color-mix(in srgb, var(--inv-mov-manual-salida) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-salida) 7%, #FFFFFF);
 }
 
 .inv-mov-card.manual.ajuste {
     border-color: color-mix(in srgb, var(--inv-mov-manual-ajuste) 34%, #E0EBD8);
-    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 7%, #FFFEFB);
+    background: color-mix(in srgb, var(--inv-mov-manual-ajuste) 7%, #FFFFFF);
 }
 
 .inv-mov-card-top {
@@ -766,7 +765,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-card-kv {
     padding: 8px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--hotel-primary) 5%, #FFFEFB);
+    background: color-mix(in srgb, var(--hotel-primary) 5%, #FFFFFF);
 }
 
 .inv-mov-card-kv span {
@@ -819,9 +818,9 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #DDE8D5;
+    border: 1px solid #E6E8EB;
     border-radius: 10px;
-    background: #FFFEFB;
+    background: #FFFFFF;
     color: var(--lc-green-deep);
     padding: 0 10px;
     font-size: .76rem;
@@ -832,7 +831,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 .inv-mov-page-link.active {
     background: var(--lc-green);
     border-color: var(--lc-green);
-    color: #FFFEFB;
+    color: #FFFFFF;
 }
 
 .inv-mov-page-link.disabled {

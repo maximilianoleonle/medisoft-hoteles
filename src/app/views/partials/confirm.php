@@ -78,7 +78,7 @@
 .ms-cf-ov[data-type="info"] .ms-cf-modal{    --ms-c:#0E96B8; --ms-bg:#E2F2F6; }
 
 /* ── Estado de página completa ── */
-.ms-pagestate-modal{ position:fixed; inset:0; z-index:10004; background:#F6F2EA;
+.ms-pagestate-modal{ position:fixed; inset:0; z-index:10004; background:#F5F5F7;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; padding:40px 34px; animation:msPsIn .3s ease;
     font-family:'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }

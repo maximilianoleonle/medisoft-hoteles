@@ -81,6 +81,13 @@ class SaasAdminController extends Controller {
             error_log('No se pudieron sembrar roles del hotel nuevo ' . (int) $hotelId . ': ' . $e->getMessage());
         }
 
+        // Dejar lista la caja principal desde el alta (idempotente; no bloquea si falla).
+        try {
+            (new Caja())->ensureDefaultCajaForHotel((int) $hotelId);
+        } catch (Throwable $e) {
+            error_log('No se pudo asegurar la caja inicial del hotel nuevo ' . (int) $hotelId . ': ' . $e->getMessage());
+        }
+
         set_mensaje('Hotel creado en estado inactivo. Active el hotel cuando complete su configuracion.', 'success');
         $this->redirect('admin/saas/hoteles/' . (int) $hotelId);
     }

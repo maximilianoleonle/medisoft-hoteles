@@ -827,7 +827,7 @@ $balance_es_positivo = $balance_total >= 0;
     --cash-glow: color-mix(in srgb, var(--cash-accent) 28%, transparent);
     background:
         linear-gradient(90deg, color-mix(in srgb, var(--cash-primary) 5%, transparent) 0 1px, transparent 1px 28px),
-        linear-gradient(180deg, color-mix(in srgb, var(--cash-accent) 7%, #FCFAF5), var(--cash-bg) 44%, #F8F4EC);
+        linear-gradient(180deg, color-mix(in srgb, var(--cash-accent) 7%, #F5F5F7), var(--cash-bg) 44%, #F5F5F7);
 }
 
 .cash-shell {

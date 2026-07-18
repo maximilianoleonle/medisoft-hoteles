@@ -89,17 +89,15 @@ $salarioEnNomina = !empty($salarioEnNomina) && $nominaActivaForm;
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
     --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
-    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
-    --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
+    --wk-ivory: #F5F5F7; --wk-ivory-2: #FAFAFC;
+    --wk-surface: #FFFFFF; --wk-surface-warm: #F5F5F7;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
     --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
     --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

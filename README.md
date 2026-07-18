@@ -18,7 +18,7 @@ Entorno local profesional para desarrollo de sistema hotelero en PHP puro + MySQ
 
 ## Base de datos local
 
-- Base de datos: medisoft_hoteles
+- Base de datos: la indicada por `DB_NAME` en `.env` (por ejemplo, `medisoft_hoteles_import` en el entorno local actual)
 - Usuario: medisoft_user
 - Contraseña local: medisoft_pass
 - Root password local: root_pass
@@ -42,6 +42,16 @@ docker compose down
 Ver logs:
 
 docker compose logs -f
+
+Instalar las herramientas de calidad:
+
+composer install
+
+Ejecutar el análisis estático de PHPStan:
+
+composer analyse
+
+La configuración inicial analiza `src/core` y `src/app/services` en nivel 0. El baseline permite adoptar reglas más estrictas progresivamente sin aceptar errores nuevos.
 
 ## Accesos
 

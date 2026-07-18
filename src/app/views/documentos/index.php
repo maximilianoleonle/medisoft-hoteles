@@ -97,10 +97,10 @@ $visibles = count($documentos);
     --dc-gold-soft: color-mix(in srgb, var(--dc-gold) 15%, #FFFFFF);
     --dc-gold-line: color-mix(in srgb, var(--dc-gold) 42%, #E4D4B0);
     --dc-gold-ink: color-mix(in srgb, var(--dc-gold) 58%, var(--dc-brand));
-    --dc-ivory: #F6F2EA;
-    --dc-ivory-2: #FBF8F2;
+    --dc-ivory: #F5F5F7;
+    --dc-ivory-2: #FAFAFC;
     --dc-surface: #FFFFFF;
-    --dc-surface-warm: #FCFAF5;
+    --dc-surface-warm: #F5F5F7;
     --dc-border: color-mix(in srgb, var(--dc-brand) 6%, #E9E1D6);
     --dc-ring: color-mix(in srgb, var(--dc-gold) 32%, transparent);
     --dc-text: color-mix(in srgb, var(--dc-brand) 46%, #707B8C);
@@ -115,9 +115,7 @@ $visibles = count($documentos);
     min-height: 100%;
     color: var(--dc-text);
     font-family: var(--dc-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--dc-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--dc-ivory-2), var(--dc-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -463,7 +461,7 @@ $visibles = count($documentos);
         border-radius: 14px;
         padding: 0 10px;
         font-size: 16px;
-        background: #FFFCF7;
+        background: #FAFAFC;
         color: var(--dc-mobile-text);
         font-weight: 560;
         border-color: color-mix(in srgb, var(--dc-brand) 10%, var(--dc-border));

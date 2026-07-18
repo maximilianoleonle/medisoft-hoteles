@@ -164,7 +164,11 @@ if ($vtbExacta !== null && strpos($vtbRuta, '/') === false) {
     align-items: center;
     gap: 12px;
     margin: 14px 24px 10px;
-    padding: 0;
+    /* Un poco de aire vertical: la flecha respira y, al fijarse, la barra de
+       vidrio no queda tan chata. Se aplica en reposo Y pegada (is-stuck solo
+       pisa el padding horizontal) → misma altura en ambos estados = sin salto
+       al pegarse. align-items:center mantiene la flecha centrada. */
+    padding: 5px 0;
     background: transparent;
     border: 0;
     position: sticky;
@@ -220,7 +224,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .ms-vtb.is-stuck {
     transition: transform .16s ease, background .16s ease;
 }
 .ms-vtb-back svg { width: 16px; height: 16px; }
-.ms-vtb-back:hover { background: var(--brand-soft, #F6F2EA); }
+.ms-vtb-back:hover { background: var(--brand-soft, #F5F5F7); }
 .ms-vtb-back:active { transform: scale(.92); }
 .ms-vtb-back:focus-visible {
     outline: 2px solid var(--brand-primary, #1B2746);

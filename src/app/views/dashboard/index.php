@@ -737,8 +737,8 @@ $m_bar_width = static function ($count) use ($habitaciones_total) {
     --dash-secondary: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
     --dash-accent: var(--brand-accent, #BD9441);
     --dash-on-brand: var(--brand-action-text, #FFFEFB);
-    --dash-ivory: color-mix(in srgb, var(--dash-accent) 9%, #F8F5ED);
-    --dash-ivory-2: color-mix(in srgb, var(--dash-accent) 6%, #FBF9F4);
+    --dash-ivory: color-mix(in srgb, var(--dash-accent) 9%, #F5F5F7);
+    --dash-ivory-2: color-mix(in srgb, var(--dash-accent) 6%, #FAFAFC);
     --dash-surface: color-mix(in srgb, var(--dash-accent) 2%, #FFFFFF);
     --dash-surface-warm: color-mix(in srgb, var(--dash-accent) 5%, #FFFFFF);
     --dash-line: color-mix(in srgb, var(--dash-accent) 22%, #E7DEC9);
@@ -1273,7 +1273,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     border-radius: 11px;
     flex: none;
     color: #6C7689;
-    background: var(--dash-ivory-2, #FBF8F2);
+    background: var(--dash-ivory-2, #FAFAFC);
     font-size: 15px;
     pointer-events: none;
 }

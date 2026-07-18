@@ -4,13 +4,6 @@
     </div>
 <?php endif; ?></body>
 
-<!-- Solo en el dashboard -->
-<!-- Solo cargar en el dashboard -->
-<?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
-<script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
-<script src="<?= function_exists('asset_version') ? asset_version('js/dashboard.js') : asset('js/dashboard.js') ?>"></script>
-<?php endif; ?>
-
 </main>
         </div>
     </div>

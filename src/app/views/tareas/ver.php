@@ -211,8 +211,8 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
     --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 78%, var(--tk-brand));
-    --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
-    --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
+    --tk-ivory: #F5F5F7; --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF; --tk-surface-warm: #F5F5F7;
     --tk-border: color-mix(in srgb, var(--tk-brand) 7%, #E7E1D4);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: color-mix(in srgb, var(--tk-brand) 36%, #596474);
@@ -227,9 +227,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
     --tk-info: #2F77E0; --tk-info-bg: #E6EFFC;
     --tk-proc: #0E8A8A; --tk-proc-bg: #E2F4F4;
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -237,9 +235,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail.tk-detail--case {
     --tk-view-accent: var(--tk-brand);
     --tk-view-soft: color-mix(in srgb, var(--tk-brand) 7%, #FFFFFF);
-    background:
-        radial-gradient(860px 360px at 8% -8%, color-mix(in srgb, var(--tk-brand) 10%, transparent), transparent 62%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 .tk-detail .tk-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .tk-detail .tk-back { display: inline-flex; align-items: center; gap: 8px; color: var(--tk-muted); text-decoration: none; font-weight: 700; font-size: .85rem; }
@@ -372,13 +368,16 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
                 <section class="tk-card">
                     <h2>Detalles</h2>
                     <dl class="tk-defs">
-                        <dt>Habitaci&oacute;n</dt>
+                        <dt>Ubicaci&oacute;n</dt>
                         <dd>
                             <?php if (!empty($tarea['habitacion_id'])): ?>
                                 <a href="<?= url('habitaciones/' . (int)$tarea['habitacion_id']) ?>">Hab. <?= tlm_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?></a>
                                 <span class="tk-faint">(<?= tlm_safe($tarea['habitacion_estado'] ?? '-') ?>)</span>
+                            <?php elseif (!empty($tarea['area_id'])): ?>
+                                <a href="<?= url('areas/' . (int)$tarea['area_id']) ?>"><?= tlm_safe($tarea['area_nombre'] ?? ('Área #' . (int)$tarea['area_id'])) ?></a>
+                                <span class="tk-faint">(<?= tlm_safe($tarea['area_estado'] ?? '-') ?>)</span>
                             <?php else: ?>
-                                <span class="tk-faint">Sin habitaci&oacute;n</span>
+                                <span class="tk-faint">Sin habitaci&oacute;n ni &aacute;rea</span>
                             <?php endif; ?>
                         </dd>
                         <dt>Trabajadores</dt>
@@ -532,7 +531,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
                                 <button class="tk-btn tk-btn-danger" type="submit"><i class="fas fa-ban"></i> Cancelar</button>
                             </form>
 
-                            <div class="tk-help">Estos cambios solo afectan la tarea. No cambian la habitaci&oacute;n ni tocan Caja.</div>
+                            <div class="tk-help">No tocan Caja. Si la tarea es de limpieza y est&aacute; ligada a una habitaci&oacute;n o &aacute;rea disponible, iniciar la manda a limpieza y completar/cancelar la libera.</div>
                         </div>
                     <?php endif; ?>
                 </section>

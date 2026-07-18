@@ -20,8 +20,8 @@
             --co-gold-soft: color-mix(in srgb, var(--co-gold) 15%, #FFFFFF);
             --co-gold-line: color-mix(in srgb, var(--co-gold) 42%, #E4D4B0);
             --co-gold-ink: color-mix(in srgb, var(--co-gold) 72%, #000);
-            --co-ivory: #F6F2EA; --co-ivory-2: #FBF8F2;
-            --co-surface: #FFFFFF; --co-surface-warm: #FCFAF5;
+            --co-ivory: #F5F5F7; --co-ivory-2: #FAFAFC;
+            --co-surface: #FFFFFF; --co-surface-warm: #F5F5F7;
             --co-border: color-mix(in srgb, var(--co-brand) 7%, #E7E1D4);
             --co-text: #171717; --co-muted: #667085; --co-heading: #111827;
             --co-success: #1E9E63; --co-success-bg: #E7F4EC;
@@ -48,9 +48,7 @@
             color: var(--co-text);
             padding: 24px;
             -webkit-font-smoothing: antialiased;
-            background:
-                radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--co-gold) 8%, transparent), transparent 60%),
-                linear-gradient(180deg, var(--co-ivory-2), var(--co-ivory));
+            
             min-height: 100vh;
         }
         .container { max-width: 1080px; margin: 0 auto; display: grid; gap: 14px; }

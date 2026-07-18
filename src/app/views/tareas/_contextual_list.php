@@ -66,7 +66,7 @@ $tlmCategoriaLabels = [
     --tkc-gold-soft: color-mix(in srgb, var(--tkc-gold) 15%, #FFFFFF);
     --tkc-gold-line: color-mix(in srgb, var(--tkc-gold) 42%, #E4D4B0);
     --tkc-gold-ink: color-mix(in srgb, var(--tkc-gold) 72%, #000);
-    --tkc-surface: #FFFFFF; --tkc-surface-warm: #FCFAF5;
+    --tkc-surface: #FFFFFF; --tkc-surface-warm: #F5F5F7;
     --tkc-border: color-mix(in srgb, var(--tkc-brand) 7%, #E7E1D4);
     --tkc-text: #171717; --tkc-muted: #667085; --tkc-heading: #111827;
     --tkc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -132,6 +132,8 @@ $tlmCategoriaLabels = [
                             <span>L&iacute;mite: <?= tlm_context_safe(tlm_context_date($tareaContextual['fecha_limite'] ?? null)) ?></span>
                             <?php if (!empty($tareaContextual['habitacion_numero'])): ?>
                                 <span>Hab. <?= tlm_context_safe($tareaContextual['habitacion_numero']) ?></span>
+                            <?php elseif (!empty($tareaContextual['area_nombre'])): ?>
+                                <span><?= tlm_context_safe($tareaContextual['area_nombre']) ?></span>
                             <?php endif; ?>
                             <?php if ($trabajadoresTexto !== ''): ?>
                                 <span><?= tlm_context_safe($trabajadoresTexto) ?></span>

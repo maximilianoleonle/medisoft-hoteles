@@ -568,14 +568,50 @@ function hotel_role_permissions($roleId) {
 }
 
 /**
+ * Permisos del PRESET homonimo de config/permisos.php para un rol-string
+ * legacy, o null si el config/preset no existe. PURO respecto a BD (solo lee
+ * el archivo de configuracion, con cache por request).
+ *
+ * Compat RBAC (Fase 3, 2026-07-17): los presets son la fuente de paridad de
+ * can() e incluyen modulos que el arreglo historico de can_legacy no conocia
+ * (reservaciones.*, documentos.*, tareas.*). Resolver el rol legacy contra su
+ * preset permite gatear esas acciones sin bloquear a los hotel_usuarios sin
+ * role_id (2 administradores y 1 gerente detectados en la auditoria).
+ */
+function legacy_preset_permissions($role) {
+    static $cache = [];
+
+    $role = (string) $role;
+    if (array_key_exists($role, $cache)) {
+        return $cache[$role];
+    }
+
+    $base = defined('CONFIG_PATH') ? CONFIG_PATH : __DIR__ . '/../../config';
+    $path = $base . '/permisos.php';
+    if (!is_readable($path)) {
+        return $cache[$role] = null;
+    }
+
+    $cfg = require $path;
+    $permisos = $cfg['presets'][$role]['permisos'] ?? null;
+
+    return $cache[$role] = (is_array($permisos) ? $permisos : null);
+}
+
+/**
  * Esquema de permisos legacy por rol-string. Fallback para sesiones/usuarios sin
- * rol configurable. Mantiene paridad con el comportamiento previo a los roles
- * configurables por hotel.
+ * rol configurable. Resuelve contra el preset homonimo (paridad con roles
+ * configurables); si el config no esta disponible, cae al arreglo historico.
  */
 function can_legacy($permission) {
     $role = user_role();
 
-    // Definir permisos por rol
+    $preset = legacy_preset_permissions($role);
+    if ($preset !== null) {
+        return permission_in_list($permission, $preset);
+    }
+
+    // Arreglo historico (solo si config/permisos.php no se pudo leer)
     $permissions = [
         'gerente' => [
             'usuarios.view', 'usuarios.create', 'usuarios.edit', 'usuarios.delete',

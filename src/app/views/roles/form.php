@@ -49,14 +49,14 @@ $esSistema = $rol ? !empty($rol['es_sistema']) : false;
 .rolf-view .rf-panel h2 { font-family: var(--rf-serif); font-size: 1.3rem; font-weight: 700; color: var(--rf-brand); margin-bottom: .25rem; }
 .rolf-view .rf-panel .rf-hint { color: var(--rf-muted); font-size: .8rem; margin-bottom: 1rem; }
 .rolf-view label.rf-flabel { display: block; font-size: .76rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--rf-muted); margin-bottom: .35rem; }
-.rolf-view .rf-input { width: 100%; padding: .65rem .8rem; border: 1px solid var(--rf-border); border-radius: 10px; font-size: .9rem; font-family: inherit; color: var(--rf-text); background: #FCFAF5; transition: border-color .16s ease, box-shadow .16s ease; }
+.rolf-view .rf-input { width: 100%; padding: .65rem .8rem; border: 1px solid var(--rf-border); border-radius: 10px; font-size: .9rem; font-family: inherit; color: var(--rf-text); background: #F5F5F7; transition: border-color .16s ease, box-shadow .16s ease; }
 .rolf-view .rf-input:focus { outline: none; border-color: var(--rf-accent); box-shadow: 0 0 0 3px var(--rf-accent-soft); }
 .rolf-view .rf-input[readonly] { background: #F1EFEA; color: var(--rf-muted); cursor: not-allowed; }
 .rolf-view .rf-field { margin-bottom: 1rem; }
 .rolf-view .rf-notice { display: flex; gap: .65rem; align-items: flex-start; padding: 14px 16px; border-radius: 12px; background: var(--rf-accent-soft); border: 1px solid color-mix(in srgb, var(--rf-accent) 28%, #FFF); color: var(--rf-accent-dark); font-size: .85rem; line-height: 1.5; }
 .rolf-view .rf-notice i { margin-top: 2px; }
 .rolf-view .rf-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-.rolf-view .rf-group { border: 1px solid var(--rf-border); border-radius: 14px; padding: 14px 15px; background: #FCFAF5; }
+.rolf-view .rf-group { border: 1px solid var(--rf-border); border-radius: 14px; padding: 14px 15px; background: #F5F5F7; }
 .rolf-view .rf-group.is-locked { opacity: .62; }
 .rolf-view .rf-ghead { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
 .rolf-view .rf-gtitle { font-weight: 700; font-size: .95rem; color: var(--rf-brand); }

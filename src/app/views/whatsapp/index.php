@@ -23,10 +23,10 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
     --wav-gold-soft: color-mix(in srgb, var(--wav-gold) 15%, #FFFFFF);
     --wav-gold-line: color-mix(in srgb, var(--wav-gold) 42%, #E4D4B0);
     --wav-gold-ink: color-mix(in srgb, var(--wav-gold) 58%, var(--wav-brand));
-    --wav-ivory: #F6F2EA;
-    --wav-ivory-2: #FBF8F2;
+    --wav-ivory: #F5F5F7;
+    --wav-ivory-2: #FAFAFC;
     --wav-surface: #FFFFFF;
-    --wav-surface-warm: #FCFAF5;
+    --wav-surface-warm: #F5F5F7;
     --wav-border: color-mix(in srgb, var(--wav-brand) 6%, #E9E1D6);
     --wav-ring: color-mix(in srgb, var(--wav-gold) 32%, transparent);
     --wav-text: color-mix(in srgb, var(--wav-brand) 46%, #707B8C);
@@ -47,9 +47,7 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
     color: var(--wav-text);
     font-family: var(--wav-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wav-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--wav-ivory-2), var(--wav-ivory));
+    
 }
 .wav * { box-sizing: border-box; }
 .wav-shell {

@@ -68,6 +68,11 @@ error_reporting(E_ALL);
 // Configurar zona horaria
 date_default_timezone_set('America/Mexico_City');
 
+// Detrás de un proxy confiable (Caddy), resolver IP real y esquema ANTES de
+// decidir cookies Secure. Sin TRUSTED_PROXIES en .env no cambia nada.
+require_once APP_PATH . '/helpers/proxy_confiable.php';
+ms_proxy_aplicar();
+
 // Iniciar sesion con cookies endurecidas
 $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);

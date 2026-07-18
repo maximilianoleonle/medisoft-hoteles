@@ -125,7 +125,9 @@ class TareaOperativa extends Model
                     t.origen,
                     t.created_at,
                     t.updated_at,
+                    t.area_id,
                     h.numero AS habitacion_numero,
+                    a.nombre AS area_nombre,
                     tr.nombre_completo AS trabajador_nombre,
 {$trabajadoresSelect},
                     m.motivo AS mantenimiento_motivo,
@@ -134,6 +136,9 @@ class TareaOperativa extends Model
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
                AND h.hotel_id = t.hotel_id
+             LEFT JOIN areas_hotel a
+                ON a.id = t.area_id
+               AND a.hotel_id = t.hotel_id
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
@@ -166,6 +171,8 @@ class TareaOperativa extends Model
             "SELECT t.*,
                     h.numero AS habitacion_numero,
                     h.estado AS habitacion_estado,
+                    a.nombre AS area_nombre,
+                    a.estado AS area_estado,
                     tr.nombre_completo AS trabajador_nombre,
                     tr.estado AS trabajador_estado,
                     m.tipo_mantenimiento,
@@ -179,6 +186,9 @@ class TareaOperativa extends Model
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
                AND h.hotel_id = t.hotel_id
+             LEFT JOIN areas_hotel a
+                ON a.id = t.area_id
+               AND a.hotel_id = t.hotel_id
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
@@ -237,6 +247,7 @@ class TareaOperativa extends Model
 
         $columnas = [
             'habitacion' => 't.habitacion_id',
+            'area' => 't.area_id',
             'trabajador' => 't.trabajador_id',
             'mantenimiento' => 't.mantenimiento_id',
         ];
@@ -267,13 +278,18 @@ class TareaOperativa extends Model
                     t.fecha_cierre,
                     t.origen,
                     t.created_at,
+                    t.area_id,
                     h.numero AS habitacion_numero,
+                    a.nombre AS area_nombre,
                     tr.nombre_completo AS trabajador_nombre,
 {$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
                AND h.hotel_id = t.hotel_id
+             LEFT JOIN areas_hotel a
+                ON a.id = t.area_id
+               AND a.hotel_id = t.hotel_id
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
@@ -616,13 +632,18 @@ class TareaOperativa extends Model
                     t.fecha_programada,
                     t.fecha_limite,
                     t.updated_at,
+                    t.area_id,
                     h.numero AS habitacion_numero,
+                    a.nombre AS area_nombre,
                     tr.nombre_completo AS trabajador_nombre,
 {$trabajadoresSelect}
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
                AND h.hotel_id = t.hotel_id
+             LEFT JOIN areas_hotel a
+                ON a.id = t.area_id
+               AND a.hotel_id = t.hotel_id
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
@@ -757,8 +778,10 @@ class TareaOperativa extends Model
                     t.origen,
                     t.created_at,
                     DATE(COALESCE(t.fecha_programada, t.fecha_limite, t.created_at)) AS fecha_agenda,
+                    t.area_id,
                     h.numero AS habitacion_numero,
                     h.estado AS habitacion_estado,
+                    a.nombre AS area_nombre,
                     tr.nombre_completo AS trabajador_nombre,
                     tr.rol_laboral AS trabajador_rol,
 {$trabajadoresSelect},
@@ -768,6 +791,9 @@ class TareaOperativa extends Model
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
                AND h.hotel_id = t.hotel_id
+             LEFT JOIN areas_hotel a
+                ON a.id = t.area_id
+               AND a.hotel_id = t.hotel_id
              LEFT JOIN trabajadores tr
                 ON tr.id = t.trabajador_id
                AND tr.hotel_id = t.hotel_id
@@ -829,6 +855,24 @@ class TareaOperativa extends Model
              WHERE hotel_id = ?
                AND COALESCE(activa, 1) = 1
              ORDER BY CAST(numero AS UNSIGNED), numero",
+            [$hotelId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function areasOpciones(int $hotelId): array
+    {
+        if ($hotelId <= 0 || !$this->tablaExiste('areas_hotel')) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id, nombre, estado
+             FROM areas_hotel
+             WHERE hotel_id = ?
+               AND activa = 1
+             ORDER BY nombre ASC, id ASC",
             [$hotelId]
         );
 
@@ -934,12 +978,12 @@ class TareaOperativa extends Model
         $stmt = $this->db->query(
             "INSERT INTO tareas_operativas
                 (hotel_id, categoria, titulo, descripcion, prioridad, estado,
-                 habitacion_id, trabajador_id, fecha_programada, fecha_limite,
+                 habitacion_id, area_id, trabajador_id, fecha_programada, fecha_limite,
                  creada_por_usuario_id, asignada_por_usuario_id,
                  origen, created_at)
              VALUES
                 (?, ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?,
+                 ?, ?, ?, ?, ?,
                  ?, ?,
                  'manual', NOW())",
             [
@@ -950,6 +994,7 @@ class TareaOperativa extends Model
                 $datos['prioridad'],
                 $estadoInicial,
                 $datos['habitacion_id'],
+                $datos['area_id'] ?? null,
                 $lider,
                 $datos['fecha_programada'],
                 $datos['fecha_limite'],
@@ -968,6 +1013,17 @@ class TareaOperativa extends Model
         if (!empty($trabajadores)) {
             $this->reemplazarTrabajadoresPivote($hotelId, $tareaId, $trabajadores, $usuarioId);
             $comentarioCreacion .= ' Asignada a: ' . $this->nombresTrabajadores($trabajadores) . '.';
+        }
+
+        $notaReflejo = $this->reflejarLimpiezaAlActivar(
+            $hotelId,
+            $datos['categoria'],
+            $datos['habitacion_id'],
+            $datos['area_id'] ?? null,
+            $datos['fecha_programada']
+        );
+        if ($notaReflejo !== '') {
+            $comentarioCreacion .= ' ' . $notaReflejo;
         }
 
         $this->registrarEvento(
@@ -1030,6 +1086,7 @@ class TareaOperativa extends Model
                      descripcion = ?,
                      prioridad = ?,
                      habitacion_id = ?,
+                     area_id = ?,
                      trabajador_id = ?,
                      fecha_programada = ?,
                      fecha_limite = ?,
@@ -1044,6 +1101,7 @@ class TareaOperativa extends Model
                     $datos['descripcion'],
                     $datos['prioridad'],
                     $datos['habitacion_id'],
+                    $datos['area_id'] ?? null,
                     $lider,
                     $datos['fecha_programada'],
                     $datos['fecha_limite'],
@@ -2143,13 +2201,39 @@ class TareaOperativa extends Model
                 throw new RuntimeException('No se pudo actualizar el estado de la tarea.');
             }
 
+            // Sincronizar la unidad vinculada (limpieza): iniciar la pone en
+            // limpieza; completar/cancelar la libera si no quedan tareas activas.
+            $notaReflejo = '';
+            if ($transicion['estado_nuevo'] === 'en_proceso') {
+                $notaReflejo = $this->reflejarLimpiezaAlActivar(
+                    $hotelId,
+                    (string)($tarea['categoria'] ?? 'general'),
+                    $tarea['habitacion_id'] ?? null,
+                    $tarea['area_id'] ?? null,
+                    null
+                );
+            } elseif (in_array($transicion['estado_nuevo'], ['completada', 'cancelada'], true)) {
+                $notaReflejo = $this->liberarLimpiezaAlCerrar(
+                    $hotelId,
+                    $id,
+                    (string)($tarea['categoria'] ?? 'general'),
+                    $tarea['habitacion_id'] ?? null,
+                    $tarea['area_id'] ?? null
+                );
+            }
+
+            $comentarioEvento = $comentario ?: $transicion['comentario'];
+            if ($notaReflejo !== '') {
+                $comentarioEvento = trim((string)$comentarioEvento . ' ' . $notaReflejo);
+            }
+
             $this->registrarEvento(
                 $hotelId,
                 $id,
                 $transicion['evento'],
                 $estadoAnterior,
                 $transicion['estado_nuevo'],
-                $comentario ?: $transicion['comentario'],
+                $comentarioEvento,
                 $usuarioId
             );
 
@@ -2189,6 +2273,14 @@ class TareaOperativa extends Model
             $this->validarHabitacionHotel($habitacionId, $hotelId);
         }
 
+        $areaId = $this->normalizarEnteroNullable($datos['area_id'] ?? null);
+        if ($areaId !== null && $habitacionId !== null) {
+            throw new InvalidArgumentException('Elige habitacion o area del hotel, no ambas.');
+        }
+        if ($areaId !== null) {
+            $this->validarAreaHotel($areaId, $hotelId);
+        }
+
         $fechaProgramada = $this->normalizarFechaHora($datos['fecha_programada'] ?? null);
         $fechaLimite = $this->normalizarFechaHora($datos['fecha_limite'] ?? null);
         if ($fechaProgramada !== null && $fechaLimite !== null && strtotime($fechaLimite) < strtotime($fechaProgramada)) {
@@ -2208,6 +2300,7 @@ class TareaOperativa extends Model
             'categoria' => $categoria,
             'prioridad' => $prioridad,
             'habitacion_id' => $habitacionId,
+            'area_id' => $areaId,
             'fecha_programada' => $fechaProgramada,
             'fecha_limite' => $fechaLimite,
             'trabajadores' => $trabajadores,
@@ -2277,6 +2370,137 @@ class TareaOperativa extends Model
 
         if ((int)($row['total'] ?? 0) !== 1) {
             throw new InvalidArgumentException('La habitacion seleccionada no pertenece al hotel actual.');
+        }
+    }
+
+    /**
+     * Refleja en la unidad vinculada una tarea de LIMPIEZA que arranca ahora
+     * (creacion sin fecha futura, o paso a en_proceso): habitacion/area
+     * 'disponible' pasa a 'limpieza', igual que los flujos de pantalla.
+     * Programadas a futuro u ocupadas/no disponibles no tocan estado.
+     * Debe correr DENTRO de la transaccion del caller (usa FOR UPDATE).
+     */
+    private function reflejarLimpiezaAlActivar(int $hotelId, string $categoria, $habitacionId, $areaId, ?string $fechaProgramada): string
+    {
+        $habitacionId = $habitacionId !== null ? (int)$habitacionId : null;
+        $areaId = $areaId !== null ? (int)$areaId : null;
+
+        if ($categoria !== 'limpieza' || ($habitacionId === null && $areaId === null)) {
+            return '';
+        }
+
+        if ($fechaProgramada !== null && strtotime($fechaProgramada) > time()) {
+            return '';
+        }
+
+        if ($habitacionId !== null) {
+            $stmt = $this->db->query(
+                "SELECT id, numero, estado
+                 FROM habitaciones
+                 WHERE id = ? AND hotel_id = ? AND COALESCE(activa, 1) = 1
+                 LIMIT 1
+                 FOR UPDATE",
+                [$habitacionId, $hotelId]
+            );
+            $habitacion = $stmt ? $stmt->fetch() : null;
+            if (!$habitacion || (string)($habitacion['estado'] ?? '') !== 'disponible') {
+                return '';
+            }
+
+            $this->db->query(
+                "UPDATE habitaciones SET estado = 'limpieza' WHERE id = ? AND hotel_id = ?",
+                [$habitacionId, $hotelId]
+            );
+
+            return 'Habitacion ' . (string)($habitacion['numero'] ?? $habitacionId) . ' puesta en limpieza.';
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id, nombre, estado
+             FROM areas_hotel
+             WHERE id = ? AND hotel_id = ? AND activa = 1
+             LIMIT 1
+             FOR UPDATE",
+            [$areaId, $hotelId]
+        );
+        $area = $stmt ? $stmt->fetch() : null;
+        if (!$area || (string)($area['estado'] ?? '') !== 'disponible') {
+            return '';
+        }
+
+        $this->db->query(
+            "UPDATE areas_hotel SET estado = 'limpieza', updated_at = NOW() WHERE id = ? AND hotel_id = ?",
+            [$areaId, $hotelId]
+        );
+
+        return 'Area "' . (string)($area['nombre'] ?? $areaId) . '" puesta en limpieza.';
+    }
+
+    /**
+     * Al completar/cancelar desde /tareas una LIMPIEZA vinculada, libera la
+     * habitacion/area (limpieza -> disponible) SOLO si no queda otra tarea
+     * activa de limpieza sobre esa unidad (espejo del "marcar limpia" de
+     * pantalla). Debe correr DENTRO de la transaccion del caller.
+     */
+    private function liberarLimpiezaAlCerrar(int $hotelId, int $tareaId, string $categoria, $habitacionId, $areaId): string
+    {
+        $habitacionId = $habitacionId !== null ? (int)$habitacionId : null;
+        $areaId = $areaId !== null ? (int)$areaId : null;
+
+        if ($categoria !== 'limpieza' || ($habitacionId === null && $areaId === null)) {
+            return '';
+        }
+
+        $columna = $habitacionId !== null ? 'habitacion_id' : 'area_id';
+        $unidadId = $habitacionId !== null ? $habitacionId : $areaId;
+
+        $stmt = $this->db->query(
+            "SELECT id
+             FROM tareas_operativas
+             WHERE hotel_id = ?
+               AND {$columna} = ?
+               AND categoria = 'limpieza'
+               AND estado IN ('pendiente', 'asignada', 'en_proceso')
+               AND id <> ?
+             LIMIT 1
+             FOR UPDATE",
+            [$hotelId, $unidadId, $tareaId]
+        );
+        if ($stmt && $stmt->fetch()) {
+            return '';
+        }
+
+        if ($habitacionId !== null) {
+            $stmt = $this->db->query(
+                "UPDATE habitaciones SET estado = 'disponible'
+                 WHERE id = ? AND hotel_id = ? AND estado = 'limpieza'",
+                [$habitacionId, $hotelId]
+            );
+            return ($stmt && $stmt->rowCount() === 1) ? 'Habitacion liberada: regresa a disponible.' : '';
+        }
+
+        $stmt = $this->db->query(
+            "UPDATE areas_hotel SET estado = 'disponible', updated_at = NOW()
+             WHERE id = ? AND hotel_id = ? AND estado = 'limpieza'",
+            [$areaId, $hotelId]
+        );
+        return ($stmt && $stmt->rowCount() === 1) ? 'Area liberada: regresa a disponible.' : '';
+    }
+
+    private function validarAreaHotel(int $areaId, int $hotelId): void
+    {
+        $stmt = $this->db->query(
+            "SELECT COUNT(*) AS total
+             FROM areas_hotel
+             WHERE id = ?
+               AND hotel_id = ?
+               AND activa = 1",
+            [$areaId, $hotelId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+
+        if ((int)($row['total'] ?? 0) !== 1) {
+            throw new InvalidArgumentException('El area seleccionada no pertenece al hotel actual.');
         }
     }
 

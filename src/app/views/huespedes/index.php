@@ -806,14 +806,14 @@ select.guest-control {
     --guest-brand: var(--brand-primary, #1B2746);
     --guest-brand-2: var(--brand-secondary, #0F172A);
     --guest-brand-dark: color-mix(in srgb, var(--guest-brand), #000 20%);
-    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 5%, #FBF8F2);
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 5%, #FAFAFC);
     --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 2%, #FFFFFF);
     --guest-gold: var(--brand-accent, #BD9441);
     --guest-gold-soft: color-mix(in srgb, var(--guest-gold) 15%, #FFFFFF);
     --guest-gold-line: color-mix(in srgb, var(--guest-gold) 42%, #E4D4B0);
     --guest-gold-ink: color-mix(in srgb, var(--guest-gold) 72%, #000);
-    --guest-ivory: #F6F2EA;  --guest-ivory-2: #FBF8F2;
-    --guest-surface: #FFFFFF; --guest-surface-warm: #FCFAF5;
+    --guest-ivory: #F5F5F7;  --guest-ivory-2: #FAFAFC;
+    --guest-surface: #FFFFFF; --guest-surface-warm: #F5F5F7;
     --guest-border: color-mix(in srgb, var(--guest-brand) 7%, #E7E1D4);
     --guest-ring: color-mix(in srgb, var(--guest-gold) 32%, transparent);
     --guest-text: #171717; --guest-muted: #667085; --guest-heading: #111827;
@@ -825,9 +825,7 @@ select.guest-control {
     --g-info:#2F77E0;    --g-info-bg:#E6EFFC;
     color: var(--guest-text) !important;
     font-family: var(--guest-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--guest-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--guest-ivory-2), var(--guest-ivory)) !important;
+    
 }
 
 /* ── Header limpio (sin banner de color) ── */

@@ -547,6 +547,27 @@ html[data-theme="dark"] .inv-page {
     --inv-auto-bg:    color-mix(in srgb, #6D5AE0 15%, #201F19);
 }
 
+/* Las tarjetas del layout MOVIL de inventario (≤639px) fijan blanco con
+   !important en varias reglas (@≤767px .78, base .86) que el remap de tokens
+   no alcanza -> en oscuro salian blancas. Se atan al surface del tema
+   (Cupertino #1C1C1E / Deleite #201F19). Specificity (0,3,1)+!important gana. */
+html[data-theme="dark"] .inv-page .producto-card-mobile {
+    background: var(--inv-surface) !important;
+    border-color: var(--inv-line) !important;
+}
+
+/* Filas de la tabla de productos (desktop): el bloque "documents-polish" las
+   fija en rgba(255,255,255,.86) !important y ni cupertino ni el remap de tokens
+   cubren `tbody tr` -> salian blancas en oscuro. Specificity (1,2,3) gana. */
+html[data-theme="dark"] .inv-page #tablaProductos tbody tr {
+    background: var(--inv-surface) !important;
+}
+html[data-theme="dark"] .inv-page .inv-tr:hover,
+html[data-theme="dark"] .inv-page .mov-row:hover,
+html[data-theme="dark"] .inv-page .producto-card-mobile:hover {
+    background: color-mix(in srgb, var(--inv-accent) 14%, var(--inv-surface)) !important;
+}
+
 /* Reportes (--report-*) */
 html[data-theme="dark"] .reportes-view {
     --report-surface: #201F19;

@@ -1041,6 +1041,107 @@ public function resumenPagosPorMetodo($reservacion_id) {
  * Intentar registrar pagos mixtos si la tabla existe
  */
 /**
+ * Validar que las habitaciones de la reservación estén en un estado que permita
+ * check-in (disponible o limpieza). Si no, lanza una excepción con un mensaje
+ * accionable: identifica qué reservación ocupa cada habitación y qué hacer.
+ */
+private function validarHabitacionesParaCheckIn($reservacion_id, $hotel_id, $db) {
+    $sql_validar = "SELECT h.id, h.numero, h.estado
+                    FROM habitaciones h
+                    INNER JOIN reservacion_habitaciones rh
+                        ON h.id = rh.habitacion_id
+                        AND h.hotel_id = rh.hotel_id
+                    WHERE rh.reservacion_id = ?
+                    AND rh.hotel_id = ?
+                    AND h.hotel_id = ?
+                    AND h.estado NOT IN ('disponible', 'limpieza')";
+
+    $stmt_validar = $db->query($sql_validar, [$reservacion_id, $hotel_id, $hotel_id]);
+    $habitaciones_problema = $stmt_validar ? $stmt_validar->fetchAll() : [];
+
+    if (empty($habitaciones_problema)) {
+        return;
+    }
+
+    $hoy = date('Y-m-d');
+    $detalles = [];
+    $ocupadas_por = []; // agrupa habitaciones por la reservación que las ocupa
+    $hay_checkout_pendiente = false;
+    $hay_mantenimiento = false;
+
+    foreach ($habitaciones_problema as $hab) {
+        if ($hab['estado'] === 'ocupada') {
+            $stmt_occ = $db->query(
+                "SELECT r.id, r.fecha_salida, hu.nombre_completo
+                 FROM reservacion_habitaciones rh
+                 INNER JOIN reservaciones r
+                     ON r.id = rh.reservacion_id
+                     AND r.hotel_id = rh.hotel_id
+                 LEFT JOIN huespedes hu ON hu.id = r.huesped_id
+                 WHERE rh.habitacion_id = ?
+                 AND rh.hotel_id = ?
+                 AND r.estado = 'checked_in'
+                 AND r.id != ?
+                 ORDER BY r.id DESC
+                 LIMIT 1",
+                [$hab['id'], $hotel_id, $reservacion_id]
+            );
+            $ocupante = $stmt_occ ? $stmt_occ->fetch() : null;
+
+            if ($ocupante) {
+                $res_id = (int)$ocupante['id'];
+                if (!isset($ocupadas_por[$res_id])) {
+                    $ocupadas_por[$res_id] = ['info' => $ocupante, 'habitaciones' => []];
+                }
+                $ocupadas_por[$res_id]['habitaciones'][] = $hab['numero'];
+            } else {
+                $detalles[] = "La habitación {$hab['numero']} está marcada como ocupada sin una reservación activa; libérala desde Habitaciones";
+            }
+        } elseif ($hab['estado'] === 'mantenimiento') {
+            $hay_mantenimiento = true;
+            $detalles[] = "La habitación {$hab['numero']} está en mantenimiento";
+        } else {
+            $detalles[] = "La habitación {$hab['numero']} está en estado '{$hab['estado']}'";
+        }
+    }
+
+    foreach ($ocupadas_por as $res_id => $grupo) {
+        $huesped = trim((string)($grupo['info']['nombre_completo'] ?? '')) ?: 'huésped sin nombre';
+        $lista_hab = implode(', ', $grupo['habitaciones']);
+        $texto = count($grupo['habitaciones']) > 1
+            ? "Las habitaciones {$lista_hab} están ocupadas"
+            : "La habitación {$lista_hab} está ocupada";
+        $texto .= " por la reservación #{$res_id} de {$huesped}";
+
+        $fecha_salida = substr((string)$grupo['info']['fecha_salida'], 0, 10);
+        if ($fecha_salida !== '' && $fecha_salida <= $hoy) {
+            $texto .= " (salida " . date('d/m/Y', strtotime($fecha_salida)) . ", check-out pendiente)";
+            $hay_checkout_pendiente = true;
+        } elseif ($fecha_salida !== '') {
+            $texto .= " (salida " . date('d/m/Y', strtotime($fecha_salida)) . ")";
+        }
+        $detalles[] = $texto;
+    }
+
+    $acciones = [];
+    if ($hay_checkout_pendiente) {
+        $acciones[] = count($ocupadas_por) > 1
+            ? 'haz el check-out de esas reservaciones para liberar las habitaciones'
+            : 'haz el check-out de esa reservación para liberar las habitaciones';
+    }
+    if ($hay_mantenimiento) {
+        $acciones[] = 'finaliza el mantenimiento';
+    }
+    $instruccion = !empty($acciones)
+        ? 'Para continuar, ' . implode(' y ', $acciones) . '.'
+        : 'Libera las habitaciones antes de continuar.';
+
+    throw new Exception(
+        'No se puede hacer check-in. ' . implode('. ', $detalles) . '. ' . $instruccion
+    );
+}
+
+/**
  * Hacer check-in con pagos mixtos - Versión final sin duplicados
  */
 public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibido = null, $cambio = null) {
@@ -1109,40 +1210,9 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
             throw new Exception("No se pudo actualizar el estado de la reservación");
         }
         
-        // ====== NUEVO: VALIDAR ESTADO DE HABITACIONES ANTES DEL CHECK-IN ======
-        // Verificar que ninguna habitación esté en un estado no válido (mantenimiento, ocupada, etc.)
-        $sql_validar = "SELECT h.numero, h.estado 
-                        FROM habitaciones h
-                        INNER JOIN reservacion_habitaciones rh
-                            ON h.id = rh.habitacion_id
-                            AND h.hotel_id = rh.hotel_id
-                        WHERE rh.reservacion_id = ?
-                        AND rh.hotel_id = ?
-                        AND h.hotel_id = ?
-                        AND h.estado NOT IN ('disponible', 'limpieza')";
-        
-        $stmt_validar = $db->query($sql_validar, [$id, $hotel_id, $hotel_id]);
-        $habitaciones_problema = $stmt_validar->fetchAll();
-        
-        if (!empty($habitaciones_problema)) {
-            $habitaciones_lista = [];
-            $estados_texto = [
-                'mantenimiento' => 'en mantenimiento',
-                'ocupada' => 'ocupada por otra reservación'
-            ];
-            
-            foreach ($habitaciones_problema as $hab) {
-                $estado_desc = $estados_texto[$hab['estado']] ?? $hab['estado'];
-                $habitaciones_lista[] = "Habitación {$hab['numero']} ({$estado_desc})";
-            }
-            
-            throw new Exception(
-                "No se puede hacer check-in. Las siguientes habitaciones no están disponibles: " . 
-                implode(', ', $habitaciones_lista) . 
-                ". Por favor, finalice el mantenimiento o libere las habitaciones antes de continuar."
-            );
-        }
-        
+        // ====== VALIDAR ESTADO DE HABITACIONES ANTES DEL CHECK-IN ======
+        $this->validarHabitacionesParaCheckIn($id, $hotel_id, $db);
+
         error_log("✅ Validación de estados OK - Todas las habitaciones disponibles para check-in");
         // ====== FIN VALIDACIÓN ======
         
@@ -1294,10 +1364,13 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
             $params[] = $excluir_reservacion_id;
         }
         
+        // Salida EFECTIVA: una reservación con pendiente (checkout vencido o confirmada
+        // pasada sin resolver) sigue ocupando la habitación HOY hasta que se resuelva.
+        $salidaEfectiva = "(CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END)";
         $sql .= " AND (
-                    (? BETWEEN r.fecha_entrada AND DATE_SUB(r.fecha_salida, INTERVAL 1 DAY))
-                    OR (? BETWEEN DATE_ADD(r.fecha_entrada, INTERVAL 1 DAY) AND r.fecha_salida)
-                    OR (r.fecha_entrada >= ? AND r.fecha_salida <= ?)
+                    (? BETWEEN r.fecha_entrada AND DATE_SUB($salidaEfectiva, INTERVAL 1 DAY))
+                    OR (? BETWEEN DATE_ADD(r.fecha_entrada, INTERVAL 1 DAY) AND $salidaEfectiva)
+                    OR (r.fecha_entrada >= ? AND $salidaEfectiva <= ?)
                 )";
         
         // Agregar parámetros de fechas
@@ -2243,7 +2316,7 @@ public function obtenerEstadisticasDashboard() {
             AND rh.hotel_id = ?
             AND r.hotel_id = ?
             AND r.estado IN ('confirmada', 'checked_in')
-            AND ? < r.fecha_salida
+            AND ? < (CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END)
             AND ? > r.fecha_entrada";
     
     $params = $habitaciones_ids;
@@ -2310,7 +2383,117 @@ public function obtenerEstadisticasDashboard() {
 
     return true;
 }
-    
+
+    /**
+     * Alertas operativas del hotel (fuente única, consumida por los index de
+     * reservaciones y habitaciones): check-ins pendientes (confirmada con entrada
+     * pasada sin resolver) y check-outs vencidos (checked_in con salida pasada).
+     */
+    public function alertasPendientesOperativas(int $hotel_id): array {
+        if ($hotel_id <= 0) {
+            return ['checkins' => [], 'checkouts' => [], 'llegadas_tardias' => []];
+        }
+
+        $sqlCheckins = "SELECT
+                        r.id,
+                        r.hotel_id,
+                        r.huesped_id,
+                        r.fecha_entrada,
+                        r.hora_llegada_estimada,
+                        r.precio_total,
+                        h.nombre_completo,
+                        h.telefono,
+                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                        DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
+                    FROM reservaciones r
+                    INNER JOIN huespedes h ON r.huesped_id = h.id
+                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                    WHERE r.hotel_id = ?
+                      AND r.estado = 'confirmada'
+                      AND r.fecha_entrada < CURDATE()
+                    GROUP BY r.id
+                    ORDER BY r.fecha_entrada
+                    LIMIT 10";
+
+        $sqlCheckouts = "SELECT
+                        r.id,
+                        r.hotel_id,
+                        r.huesped_id,
+                        r.fecha_salida,
+                        r.hora_entrada,
+                        r.precio_total,
+                        h.nombre_completo,
+                        h.telefono,
+                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                        DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
+                    FROM reservaciones r
+                    INNER JOIN huespedes h ON r.huesped_id = h.id
+                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                    WHERE r.hotel_id = ?
+                      AND r.estado = 'checked_in'
+                      AND r.fecha_salida < CURDATE()
+                    GROUP BY r.id
+                    ORDER BY r.fecha_salida
+                    LIMIT 10";
+
+        $stmtCheckins = $this->db->query($sqlCheckins, [$hotel_id]);
+        $stmtCheckouts = $this->db->query($sqlCheckouts, [$hotel_id]);
+
+        return [
+            'checkins' => $stmtCheckins ? ($stmtCheckins->fetchAll() ?: []) : [],
+            'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
+            'llegadas_tardias' => [],
+        ];
+    }
+
+    /**
+     * Pendientes que BLOQUEAN la disponibilidad de HOY, por habitación.
+     * Son las reservaciones cuya salida efectiva se extiende a mañana en los
+     * predicados de disponibilidad (checkout vencido / confirmada pasada sin
+     * resolver). Devuelve mapa habitacion_id => datos del pendiente; si una
+     * habitación tiene varios, gana el checkout vencido (huésped adentro).
+     */
+    public function pendientesPorHabitacion(?int $hotel_id = null): array {
+        $hotel_id = $hotel_id !== null ? $hotel_id : (int) $this->hotelIdActual();
+        if ($hotel_id <= 0) {
+            return [];
+        }
+
+        $sql = "SELECT
+                    rh.habitacion_id,
+                    r.id AS reservacion_id,
+                    CASE WHEN r.estado = 'checked_in' THEN 'checkout_vencido' ELSE 'checkin_pendiente' END AS tipo,
+                    h.nombre_completo AS huesped,
+                    CASE WHEN r.estado = 'checked_in'
+                         THEN DATEDIFF(CURDATE(), r.fecha_salida)
+                         ELSE DATEDIFF(CURDATE(), r.fecha_entrada) END AS dias_retraso
+                FROM reservaciones r
+                INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                WHERE r.hotel_id = ?
+                  AND r.estado IN ('confirmada', 'checked_in')
+                  AND r.fecha_salida < CURDATE()
+                ORDER BY (r.estado = 'checked_in') ASC";
+
+        $stmt = $this->db->query($sql, [$hotel_id]);
+        $filas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $mapa = [];
+        foreach ($filas as $fila) {
+            // El ORDER BY deja los checked_in al final: pisan a los confirmada.
+            $mapa[(int) $fila['habitacion_id']] = [
+                'tipo' => $fila['tipo'],
+                'reservacion_id' => (int) $fila['reservacion_id'],
+                'huesped' => $fila['huesped'],
+                'dias_retraso' => (int) $fila['dias_retraso'],
+            ];
+        }
+
+        return $mapa;
+    }
+
     /**
      * Calcular precio total (simplificado - sin variaciones)
      */
@@ -2466,6 +2649,7 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
                 h.numero,
                 h.tipo,
                 h.piso,
+                h.estado,
                 h.precio_base,
                 h.capacidad_personas,
                 h.camas_individuales,
@@ -3307,7 +3491,10 @@ public function paraCalendario($mes = null, $año = null) {
         
         try {
             $db->beginTransaction();
-            
+
+            // Validar que las habitaciones no estén ocupadas por otra reservación activa
+            $this->validarHabitacionesParaCheckIn($reservacion_id, $hotel_id, $db);
+
             // Preparar nota de check-in tardío
             $usuario_nombre = $_SESSION['user_name'] ?? $_SESSION['usuario_nombre'] ?? 'Sistema';
             $nota = "\n\n[CHECK-IN TARDÍO] " . date('Y-m-d H:i:s') . " - Por: " . $usuario_nombre;

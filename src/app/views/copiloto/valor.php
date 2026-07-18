@@ -49,10 +49,10 @@ $diasCortos = ['Mon' => 'lun', 'Tue' => 'mar', 'Wed' => 'mié', 'Thu' => 'jue', 
     --cpv-gold-soft: color-mix(in srgb, var(--cpv-gold) 15%, #FFFFFF);
     --cpv-gold-line: color-mix(in srgb, var(--cpv-gold) 42%, #E4D4B0);
     --cpv-gold-ink: color-mix(in srgb, var(--cpv-gold) 58%, var(--cpv-brand));
-    --cpv-ivory: #F6F2EA;
-    --cpv-ivory-2: #FBF8F2;
+    --cpv-ivory: #F5F5F7;
+    --cpv-ivory-2: #FAFAFC;
     --cpv-surface: rgba(255,255,255,.86);
-    --cpv-surface-warm: #FCFAF5;
+    --cpv-surface-warm: #F5F5F7;
     --cpv-border: color-mix(in srgb, var(--cpv-brand) 6%, #E9E1D6);
     --cpv-text: color-mix(in srgb, var(--cpv-brand) 46%, #707B8C);
     --cpv-muted: #8791A2;
@@ -67,9 +67,7 @@ $diasCortos = ['Mon' => 'lun', 'Tue' => 'mar', 'Wed' => 'mié', 'Thu' => 'jue', 
     color: var(--cpv-text);
     font-family: var(--cpv-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cpv-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cpv-ivory-2), var(--cpv-ivory));
+    
 }
 .cpv * { box-sizing: border-box; }
 .cpv-shell { display: grid; gap: 14px; width: 100%; max-width: 1120px; min-width: 0; margin: 0 auto; }

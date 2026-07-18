@@ -87,8 +87,8 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
     --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 58%, var(--wk-brand));
-    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
-    --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
+    --wk-ivory: #F5F5F7; --wk-ivory-2: #FAFAFC;
+    --wk-surface: #FFFFFF; --wk-surface-warm: #F5F5F7;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
     --wk-text: color-mix(in srgb, var(--wk-brand) 46%, #707B8C);
@@ -101,7 +101,7 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;
     --wk-danger: #B4392B; --wk-danger-bg: #F8EAE5;
     min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 450; line-height: 1.5;
-    background: radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%), linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

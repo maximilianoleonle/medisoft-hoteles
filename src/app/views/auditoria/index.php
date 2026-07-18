@@ -52,10 +52,10 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
     --au-gold-soft: color-mix(in srgb, var(--au-gold) 15%, #FFFFFF);
     --au-gold-line: color-mix(in srgb, var(--au-gold) 42%, #E4D4B0);
     --au-gold-ink: color-mix(in srgb, var(--au-gold) 58%, var(--au-brand));
-    --au-ivory: #F6F2EA;
-    --au-ivory-2: #FBF8F2;
+    --au-ivory: #F5F5F7;
+    --au-ivory-2: #FAFAFC;
     --au-surface: #FFFFFF;
-    --au-surface-warm: #FCFAF5;
+    --au-surface-warm: #F5F5F7;
     --au-border: color-mix(in srgb, var(--au-brand) 6%, #E9E1D6);
     --au-ring: color-mix(in srgb, var(--au-gold) 32%, transparent);
     --au-text: color-mix(in srgb, var(--au-brand) 46%, #707B8C);
@@ -70,9 +70,7 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
     min-height: 100%;
     color: var(--au-text);
     font-family: var(--au-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--au-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--au-ivory-2), var(--au-ivory));
+    
 }
 
 .audit-page .au-shell {

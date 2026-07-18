@@ -910,8 +910,10 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
 
 .hc-page[data-active-section="hc-readonly"] .hc-save-dock,
 .hc-page[data-active-section="hc-devices"] .hc-save-dock,
+.hc-page[data-active-section="hc-appearance"] .hc-save-dock,
 .hc-page[data-active-section="hc-readonly"] .hc-bottom-actions,
-.hc-page[data-active-section="hc-devices"] .hc-bottom-actions {
+.hc-page[data-active-section="hc-devices"] .hc-bottom-actions,
+.hc-page[data-active-section="hc-appearance"] .hc-bottom-actions {
     display: none;
 }
 
@@ -1652,6 +1654,50 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     font-variant-numeric: tabular-nums;
 }
 
+.hc-background-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.hc-background-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--hc-ink-soft);
+    font-size: .72rem;
+    font-weight: 650;
+}
+
+.hc-background-mode i {
+    color: var(--hc-accent);
+}
+
+.hc-background-default {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--hc-line);
+    border-radius: 9px;
+    background: var(--hc-paper, #FFFFFD);
+    color: var(--hc-brand-strong);
+    font-size: .72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.hc-background-default:hover {
+    border-color: color-mix(in srgb, var(--hc-accent) 42%, var(--hc-line));
+    background: color-mix(in srgb, var(--hc-accent) 7%, var(--hc-paper, #FFFFFD));
+}
+
+.hc-background-default:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--hc-accent) 24%, transparent);
+    outline-offset: 2px;
+}
+
 .hc-upload-row {
     display: grid;
     grid-template-columns: 54px minmax(0, 1fr);
@@ -1821,7 +1867,7 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
 }
 
 .hc-tema-thumb--deleite {
-    background: #F8F5ED;
+    background: #F5F5F7;
 }
 
 .hc-tema-thumb--deleite .hc-tema-thumb-rail {
@@ -3121,6 +3167,7 @@ html {
     --preview-primary: var(--hc-brand);
     --preview-secondary: var(--hc-brand-strong);
     --preview-accent: var(--hc-accent);
+    --preview-background: #F5F5F7;
     --preview-primary-soft: color-mix(in srgb, var(--preview-primary) 9%, var(--hc-paper, #FFF));
     --preview-accent-soft: color-mix(in srgb, var(--preview-accent) 12%, var(--hc-paper, #FFF));
     --preview-line: color-mix(in srgb, var(--preview-primary) 16%, #e7ded2);
@@ -3412,7 +3459,7 @@ html {
     grid-template-rows: auto 1fr;
     background:
         radial-gradient(circle at 98% 0%, color-mix(in srgb, var(--preview-accent) 14%, transparent), transparent 9rem),
-        color-mix(in srgb, var(--preview-accent) 5%, #fbfaf6);
+        var(--preview-background);
 }
 
 .hc-preview-topbar {
@@ -4145,19 +4192,19 @@ html {
     --hc-gold-bg: color-mix(in srgb, var(--hc-accent) 16%, var(--hc-paper, #FFFDF6));
     --hc-gold-line: color-mix(in srgb, var(--hc-accent) 34%, var(--hc-line));
     --hc-gold-soft: color-mix(in srgb, var(--hc-accent) 55%, var(--hc-on-brand));
-    --hc-bg: #F6F2EA;
-    --hc-bg-deep: #F1EBDF;
+    --hc-bg: #F5F5F7;
+    --hc-bg-deep: #EBEBEF;
     --hc-surface: var(--hc-paper, #FFFFFF);
-    --hc-surface-muted: color-mix(in srgb, var(--hc-accent) 4%, var(--hc-paper, #FEFCF7));
+    --hc-surface-muted: #F5F6F8;
     --hc-ink: var(--hc-ink-mix, #1B2746);
     --hc-ink-soft: #3E4A66;
     --hc-ink-faint: #6C7689;
-    --hc-line: #ECE5D8;
-    --hc-line-strong: #E0D7C6;
+    --hc-line: #E4E4E9;
+    --hc-line-strong: #D5D6DC;
     --hc-success: #1E9E63;
     --hc-success-bg: #E7F4EC;
     --hc-shadow: 0 2px 8px rgba(27,39,70,.045), 0 12px 28px rgba(27,39,70,.055);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--hc-bg) 40%, var(--hc-paper, #FBF8F2)), var(--hc-bg) 60%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hc-bg) 40%, var(--hc-paper, #FAFAFC)), var(--hc-bg) 60%);
 }
 
 html[data-theme="dark"] .hc-page {
@@ -4268,6 +4315,55 @@ html[data-theme="dark"] .hc-page {
 }
 
 .hc-page .hc-nav-foot { color: var(--hc-ink-faint); }
+
+/* ── Riel VERTICAL (sidebar) como el mockup: las 12 secciones a la vista ── */
+.hc-page .hc-layout {
+    grid-template-columns: 248px minmax(0, 1fr);
+    align-items: start;
+    gap: 22px;
+}
+
+.hc-page .hc-nav-card {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    padding: 12px;
+}
+
+.hc-page .hc-nav {
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+    overflow: visible;
+}
+
+.hc-page .hc-nav .hc-nav-link {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 10px 12px;
+    scroll-snap-align: none;
+}
+
+@media (max-width: 1080px) {
+    .hc-page .hc-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+    .hc-page .hc-nav-card {
+        position: static;
+    }
+    .hc-page .hc-nav {
+        flex-direction: row;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .hc-page .hc-nav .hc-nav-link {
+        width: auto;
+        flex: 0 0 auto;
+    }
+}
 
 /* ── Encabezados de panel: serif + chip dorado ── */
 .hc-page .hc-panel.is-active { animation: hcPin .24s ease; }
@@ -4479,10 +4575,323 @@ html[data-theme="dark"] .hc-page {
     background: var(--hc-surface);
 }
 
+/* Centro de configuración: navegación agrupada y entrada guiada. */
+.hc-page .hc-layout {
+    grid-template-columns: 286px minmax(0, 1fr);
+}
+
+.hc-page .hc-nav-card {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hc-line-strong) transparent;
+}
+
+.hc-nav-tools {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 4px 4px 14px;
+    border-bottom: 1px solid var(--hc-line);
+}
+
+.hc-nav-tools > label {
+    color: var(--hc-ink);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.hc-nav-search-wrap {
+    position: relative;
+}
+
+.hc-nav-search-wrap > i {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    color: var(--hc-ink-faint);
+    font-size: .78rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.hc-page .hc-nav-search-wrap input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 34px 10px 36px;
+    border: 1px solid var(--hc-line-strong);
+    border-radius: 12px;
+    background: var(--hc-surface-muted);
+    color: var(--hc-ink);
+    font-size: .82rem;
+}
+
+.hc-page .hc-nav-search-wrap input::placeholder {
+    color: var(--hc-ink-faint);
+}
+
+.hc-page .hc-nav-search-wrap input:focus {
+    border-color: color-mix(in srgb, var(--hc-brand) 46%, var(--hc-line));
+    outline: 0;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hc-brand) 12%, transparent);
+}
+
+.hc-nav-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 10px;
+    color: var(--hc-ink-faint);
+    font-size: .68rem;
+    line-height: 1.35;
+}
+
+.hc-nav-summary span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hc-page .hc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hc-nav-group[hidden],
+.hc-nav-link[hidden],
+.hc-nav-empty[hidden] {
+    display: none !important;
+}
+
+.hc-nav-group-title {
+    margin: 0 8px 6px;
+    color: var(--hc-ink-faint);
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.hc-nav-group-list {
+    display: grid;
+    gap: 4px;
+}
+
+.hc-page .hc-nav .hc-nav-link {
+    min-height: 50px;
+    padding: 8px 10px;
+}
+
+.hc-page .hc-nav .hc-nav-link[aria-selected="true"] {
+    box-shadow: 0 10px 20px -16px color-mix(in srgb, var(--hc-brand) 80%, #111827),
+                inset 0 0 0 1px color-mix(in srgb, var(--hc-on-brand) 18%, transparent);
+}
+
+.hc-nav-empty {
+    margin-top: 4px;
+    padding: 18px 12px;
+    border: 1px dashed var(--hc-line-strong);
+    border-radius: 12px;
+    color: var(--hc-ink-faint);
+    font-size: .78rem;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.hc-nav-empty i {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--hc-accent);
+}
+
+.hc-config-map {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--hc-line);
+}
+
+.hc-config-map-head h3 {
+    margin: 4px 0 0;
+    color: var(--hc-ink);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.hc-config-map-head p:last-child {
+    max-width: 66ch;
+    margin: 6px 0 0;
+    color: var(--hc-ink-faint);
+    font-size: .82rem;
+    line-height: 1.5;
+}
+
+.hc-config-map-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.hc-config-map-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 88px;
+    padding: 14px;
+    border: 1px solid var(--hc-line);
+    border-radius: 14px;
+    background: var(--hc-surface);
+    color: var(--hc-ink);
+    text-decoration: none;
+    transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+
+.hc-config-map-card:hover {
+    border-color: color-mix(in srgb, var(--hc-brand) 30%, var(--hc-line));
+    background: var(--hc-surface-muted);
+    transform: translateY(-1px);
+}
+
+.hc-config-map-card:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--hc-brand) 22%, transparent);
+    outline-offset: 2px;
+}
+
+.hc-config-map-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--hc-gold-bg);
+    color: var(--hc-accent);
+}
+
+.hc-config-map-card strong,
+.hc-config-map-card small {
+    display: block;
+}
+
+.hc-config-map-card strong {
+    font-size: .84rem;
+    line-height: 1.3;
+}
+
+.hc-config-map-card small {
+    margin-top: 3px;
+    color: var(--hc-ink-faint);
+    font-size: .73rem;
+    line-height: 1.4;
+}
+
+.hc-config-map-card > .fa-arrow-right {
+    color: var(--hc-ink-faint);
+    font-size: .72rem;
+}
+
+@media (max-width: 1080px) {
+    .hc-page .hc-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hc-page .hc-nav-card {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .hc-nav-tools {
+        grid-template-columns: minmax(220px, 420px) minmax(0, 1fr);
+        align-items: end;
+    }
+
+    .hc-nav-tools > label {
+        grid-column: 1;
+    }
+
+    .hc-nav-search-wrap {
+        grid-column: 1;
+    }
+
+    .hc-nav-summary {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-content: center;
+        justify-content: flex-end;
+    }
+
+    .hc-page .hc-nav {
+        flex-direction: row;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scroll-snap-type: x proximity;
+    }
+
+    .hc-nav-group,
+    .hc-nav-group-list {
+        display: contents;
+    }
+
+    .hc-nav-group-title {
+        display: none;
+    }
+
+    .hc-page .hc-nav .hc-nav-link {
+        width: auto;
+        min-width: 178px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+}
+
+@media (max-width: 720px) {
+    .hc-nav-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-nav-tools > label,
+    .hc-nav-search-wrap,
+    .hc-nav-summary {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .hc-nav-summary {
+        justify-content: space-between;
+    }
+
+    .hc-nav-summary span:last-child {
+        display: none;
+    }
+
+    .hc-config-map-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-config-map-card {
+        min-height: 82px;
+    }
+}
+
+@media (max-width: 1360px) {
+    .hc-brand-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-brand-preview {
+        position: static;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .hc-page .hc-panel.is-active { animation: none; }
     .hc-page .hc-switch .hc-switch-ui,
-    .hc-page .hc-switch .hc-switch-ui::after { transition: none; }
+    .hc-page .hc-switch .hc-switch-ui::after,
+    .hc-config-map-card { transition: none; }
 }
 </style>
 
@@ -4496,10 +4905,10 @@ html[data-theme="dark"] .hc-page {
                         <i class="fas fa-sliders-h"></i>
                     </div>
                     <div class="hc-title-copy">
-                        <p class="hc-eyebrow">Operacion hotelera</p>
-                        <h1 id="config-page-title" class="hc-title">Configuracion del hotel</h1>
+                        <p class="hc-eyebrow">Centro de control</p>
+                        <h1 id="config-page-title" class="hc-title">Configuración del hotel</h1>
                         <p class="hc-subtitle">
-                            Administra operacion, catalogos, marca y dispositivos desde una vista clara para este hotel.
+                            Encuentra un ajuste, revisa solo la sección que necesitas y guarda todos los cambios cuando termines.
                         </p>
 
                         <div class="hc-top-meta" aria-label="Contexto del hotel">
@@ -4566,62 +4975,105 @@ html[data-theme="dark"] .hc-page {
                     </div>
                 </div>
 
-                <nav class="hc-nav" aria-label="Pantallas de configuracion">
-                    <a href="#hc-readonly" class="hc-nav-link is-active" aria-current="page">
-                        <i class="fas fa-clipboard-check"></i>
-                        <strong>Vista general <span>Valores leidos</span></strong>
-                    </a>
-                    <a href="#hc-appearance" class="hc-nav-link">
-                        <i class="fas fa-circle-half-stroke"></i>
-                        <strong>Apariencia <span>Tema de color</span></strong>
-                    </a>
-                    <?php if (!empty($configGroupedHotelSettings)): ?>
-                        <a href="#hc-settings" class="hc-nav-link">
-                            <i class="fas fa-sliders-h"></i>
-                            <strong>Ajustes <span>Operacion y textos</span></strong>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($configNotificationSettingDefinitions)): ?>
-                        <a href="#hc-notifications" class="hc-nav-link">
-                            <i class="fas fa-bell"></i>
-                            <strong>Notificaciones <span>Reglas y umbrales</span></strong>
-                        </a>
-                    <?php endif; ?>
-                    <a href="#hc-guest-fields" class="hc-nav-link">
-                        <i class="fas fa-user-check"></i>
-                        <strong>Huespedes <span>Campos requeridos</span></strong>
-                    </a>
-                    <a href="#hc-rooms" class="hc-nav-link">
-                        <i class="fas fa-bed"></i>
-                        <strong>Habitaciones <span>Tipos y amenidades</span></strong>
-                    </a>
-                    <a href="#hc-owners" class="hc-nav-link">
-                        <i class="fas fa-user-tie"></i>
-                        <strong>Propietarios <span>Distribucion</span></strong>
-                    </a>
-                    <a href="#hc-catalogs" class="hc-nav-link">
-                        <i class="fas fa-layer-group"></i>
-                        <strong>Catalogos <span>Listas auxiliares</span></strong>
-                    </a>
-                    <a href="#hc-brand" class="hc-nav-link">
-                        <i class="fas fa-palette"></i>
-                        <strong>Marca <span>Identidad visual</span></strong>
-                    </a>
-                    <?php if (!empty($configFooterNavCatalog)): ?>
-                    <a href="#hc-footer-nav" class="hc-nav-link">
-                        <i class="fas fa-grip"></i>
-                        <strong>Barra inferior <span>Atajos de la app</span></strong>
-                    </a>
-                    <?php endif; ?>
-                    <a href="#hc-system" class="hc-nav-link">
-                        <i class="fas fa-server"></i>
-                        <strong>Sistema <span>Sesion y respaldos</span></strong>
-                    </a>
-                    <a href="#hc-devices" class="hc-nav-link">
-                        <i class="fas fa-mobile-screen-button"></i>
-                        <strong>Dispositivos <span>Push PWA</span></strong>
-                    </a>
+                <div class="hc-nav-tools">
+                    <label for="hc-nav-search">Encontrar una configuración</label>
+                    <div class="hc-nav-search-wrap">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search"
+                               id="hc-nav-search"
+                               placeholder="Ej. marca o habitaciones"
+                               autocomplete="off">
+                    </div>
+                    <div class="hc-nav-summary">
+                        <span><strong data-hc-nav-count>0</strong> secciones disponibles</span>
+                        <span><i class="fas fa-layer-group" aria-hidden="true"></i> Los cambios se guardan juntos</span>
+                    </div>
+                </div>
+
+                <nav class="hc-nav" aria-label="Pantallas de configuracion" role="tablist" aria-orientation="vertical">
+                    <div class="hc-nav-group" data-hc-nav-group role="presentation">
+                        <p class="hc-nav-group-title">Empezar</p>
+                        <div class="hc-nav-group-list" role="presentation">
+                            <a href="#hc-readonly" id="hc-tab-readonly" class="hc-nav-link is-active" role="tab" aria-controls="hc-readonly" aria-selected="true" tabindex="0" data-hc-search="resumen general valores actuales hotel">
+                                <i class="fas fa-clipboard-check"></i>
+                                <strong>Vista general <span>Lo importante del hotel</span></strong>
+                            </a>
+                            <a href="#hc-appearance" id="hc-tab-appearance" class="hc-nav-link" role="tab" aria-controls="hc-appearance" aria-selected="false" tabindex="-1" data-hc-search="apariencia tema color claro oscuro dispositivo vibracion">
+                                <i class="fas fa-circle-half-stroke"></i>
+                                <strong>Apariencia <span>Tema de este dispositivo</span></strong>
+                            </a>
+                            <?php if (!empty($configGroupedHotelSettings)): ?>
+                                <a href="#hc-settings" id="hc-tab-settings" class="hc-nav-link" role="tab" aria-controls="hc-settings" aria-selected="false" tabindex="-1" data-hc-search="ajustes operacion contacto horarios documentos reservaciones reportes textos pwa">
+                                    <i class="fas fa-sliders-h"></i>
+                                    <strong>Ajustes generales <span>Operación, contacto y textos</span></strong>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($configNotificationSettingDefinitions)): ?>
+                                <a href="#hc-notifications" id="hc-tab-notifications" class="hc-nav-link" role="tab" aria-controls="hc-notifications" aria-selected="false" tabindex="-1" data-hc-search="notificaciones alertas avisos reglas umbrales push">
+                                    <i class="fas fa-bell"></i>
+                                    <strong>Notificaciones <span>Alertas, reglas y umbrales</span></strong>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="hc-nav-group" data-hc-nav-group role="presentation">
+                        <p class="hc-nav-group-title">Operación</p>
+                        <div class="hc-nav-group-list" role="presentation">
+                            <a href="#hc-guest-fields" id="hc-tab-guest-fields" class="hc-nav-link" role="tab" aria-controls="hc-guest-fields" aria-selected="false" tabindex="-1" data-hc-search="huespedes campos requeridos identificacion vehiculos check in registro">
+                                <i class="fas fa-user-check"></i>
+                                <strong>Huéspedes <span>Datos que se solicitan</span></strong>
+                            </a>
+                            <a href="#hc-rooms" id="hc-tab-rooms" class="hc-nav-link" role="tab" aria-controls="hc-rooms" aria-selected="false" tabindex="-1" data-hc-search="habitaciones tipos pisos amenidades cuartos">
+                                <i class="fas fa-bed"></i>
+                                <strong>Habitaciones <span>Tipos, pisos y amenidades</span></strong>
+                            </a>
+                            <a href="#hc-owners" id="hc-tab-owners" class="hc-nav-link" role="tab" aria-controls="hc-owners" aria-selected="false" tabindex="-1" data-hc-search="propietarios dueños distribucion reglas asignacion habitaciones">
+                                <i class="fas fa-user-tie"></i>
+                                <strong>Propietarios <span>Distribución y asignaciones</span></strong>
+                            </a>
+                            <a href="#hc-catalogs" id="hc-tab-catalogs" class="hc-nav-link" role="tab" aria-controls="hc-catalogs" aria-selected="false" tabindex="-1" data-hc-search="catalogos listas zonas estacionamientos unidades auxiliares">
+                                <i class="fas fa-layer-group"></i>
+                                <strong>Catálogos <span>Zonas, estacionamiento y unidades</span></strong>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="hc-nav-group" data-hc-nav-group role="presentation">
+                        <p class="hc-nav-group-title">Experiencia digital</p>
+                        <div class="hc-nav-group-list" role="presentation">
+                            <a href="#hc-brand" id="hc-tab-brand" class="hc-nav-link" role="tab" aria-controls="hc-brand" aria-selected="false" tabindex="-1" data-hc-search="marca identidad logo colores login iconos pwa">
+                                <i class="fas fa-palette"></i>
+                                <strong>Marca <span>Logo, colores y acceso</span></strong>
+                            </a>
+                            <?php if (!empty($configFooterNavCatalog)): ?>
+                                <a href="#hc-footer-nav" id="hc-tab-footer-nav" class="hc-nav-link" role="tab" aria-controls="hc-footer-nav" aria-selected="false" tabindex="-1" data-hc-search="barra inferior atajos aplicacion app navegacion movil">
+                                    <i class="fas fa-grip"></i>
+                                    <strong>Barra inferior <span>Atajos de la aplicación</span></strong>
+                                </a>
+                            <?php endif; ?>
+                            <a href="#hc-devices" id="hc-tab-devices" class="hc-nav-link" role="tab" aria-controls="hc-devices" aria-selected="false" tabindex="-1" data-hc-search="dispositivos equipos push pwa avisos revocar notificaciones">
+                                <i class="fas fa-mobile-screen-button"></i>
+                                <strong>Dispositivos <span>Equipos con avisos Push</span></strong>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="hc-nav-group" data-hc-nav-group role="presentation">
+                        <p class="hc-nav-group-title">Administración técnica</p>
+                        <div class="hc-nav-group-list" role="presentation">
+                            <a href="#hc-system" id="hc-tab-system" class="hc-nav-link" role="tab" aria-controls="hc-system" aria-selected="false" tabindex="-1" data-hc-search="sistema sesion estancia respaldos backup frecuencia retencion">
+                                <i class="fas fa-server"></i>
+                                <strong>Sistema <span>Sesión y respaldos</span></strong>
+                            </a>
+                        </div>
+                    </div>
                 </nav>
+
+                <div class="hc-nav-empty" data-hc-nav-empty hidden role="status">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    No encontramos una sección con ese término.
+                </div>
 
                 <div class="hc-nav-foot">
                     <span><i class="fas fa-lock"></i> La vista general es solo lectura.</span>
@@ -4630,16 +5082,16 @@ html[data-theme="dark"] .hc-page {
             </aside>
 
             <div class="hc-main">
-                <section id="hc-readonly" class="hc-panel is-active" data-hc-section aria-labelledby="hc-readonly-title">
+                <section id="hc-readonly" class="hc-panel is-active" data-hc-section role="tabpanel" aria-labelledby="hc-tab-readonly" tabindex="0">
                     <div class="hc-panel-header">
                         <div>
                             <p class="hc-section-kicker">Solo lectura</p>
                             <h2 id="hc-readonly-title" class="hc-panel-title">
                                 <span class="hc-section-mark"><i class="fas fa-clipboard-check"></i></span>
-                                Resumen operativo del hotel
+                                Resumen del hotel
                             </h2>
                             <p class="hc-panel-copy">
-                                Valores actuales del hotel. Este bloque no modifica ni envia datos.
+                                Revisa la información base y entra directamente al tipo de configuración que necesitas.
                             </p>
                         </div>
                         <span class="hc-badge">
@@ -4662,9 +5114,54 @@ html[data-theme="dark"] .hc-page {
                             </article>
                         <?php endforeach; ?>
                     </div>
+
+                    <div class="hc-config-map" aria-labelledby="hc-config-map-title">
+                        <div class="hc-config-map-head">
+                            <div>
+                                <p class="hc-section-kicker">Accesos rápidos</p>
+                                <h3 id="hc-config-map-title">¿Qué quieres configurar?</h3>
+                                <p>Elige el resultado que buscas; te llevamos directamente al apartado correcto.</p>
+                            </div>
+                        </div>
+
+                        <div class="hc-config-map-grid">
+                            <a href="<?= !empty($configGroupedHotelSettings) ? '#hc-settings' : '#hc-guest-fields' ?>" class="hc-config-map-card" data-hc-section-trigger>
+                                <span class="hc-config-map-icon"><i class="fas fa-sliders-h" aria-hidden="true"></i></span>
+                                <span>
+                                    <strong>Operación diaria</strong>
+                                    <small>Horarios, contacto, documentos y reglas generales.</small>
+                                </span>
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                            <a href="#hc-guest-fields" class="hc-config-map-card" data-hc-section-trigger>
+                                <span class="hc-config-map-icon"><i class="fas fa-bed" aria-hidden="true"></i></span>
+                                <span>
+                                    <strong>Huéspedes y habitaciones</strong>
+                                    <small>Datos solicitados, tipos, pisos y amenidades.</small>
+                                </span>
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                            <a href="#hc-brand" class="hc-config-map-card" data-hc-section-trigger>
+                                <span class="hc-config-map-icon"><i class="fas fa-palette" aria-hidden="true"></i></span>
+                                <span>
+                                    <strong>Marca y aplicación</strong>
+                                    <small>Logo, colores, acceso y navegación de la app.</small>
+                                </span>
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                            <a href="#hc-system" class="hc-config-map-card" data-hc-section-trigger>
+                                <span class="hc-config-map-icon"><i class="fas fa-server" aria-hidden="true"></i></span>
+                                <span>
+                                    <strong>Sistema y dispositivos</strong>
+                                    <small>Sesión, respaldos y equipos con avisos Push.</small>
+                                </span>
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </div>
                 </section>
 
-                <section id="hc-appearance" class="hc-panel" data-hc-section aria-labelledby="hc-appearance-title">
+                <section id="hc-appearance" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-appearance" tabindex="0" hidden>
                     <div class="hc-panel-header">
                         <div>
                             <p class="hc-section-kicker">Preferencia de este dispositivo</p>
@@ -4738,7 +5235,7 @@ html[data-theme="dark"] .hc-page {
                     </section>
 
                     <?php if (!empty($configGroupedHotelSettings)): ?>
-                        <section id="hc-settings" class="hc-panel" data-hc-section aria-labelledby="hc-settings-title">
+                        <section id="hc-settings" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-settings" tabindex="0" hidden>
                             <div class="hc-panel-header">
                                 <div>
                                     <p class="hc-section-kicker">Editable por hotel</p>
@@ -4782,7 +5279,7 @@ html[data-theme="dark"] .hc-page {
                     <?php endif; ?>
 
                     <?php if (!empty($configNotificationSettingDefinitions)): ?>
-                        <section id="hc-notifications" class="hc-panel" data-hc-section aria-labelledby="hc-notifications-title">
+                        <section id="hc-notifications" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-notifications" tabindex="0" hidden>
                             <div class="hc-panel-header">
                                 <div>
                                     <p class="hc-section-kicker">Centro de notificaciones</p>
@@ -4827,7 +5324,7 @@ html[data-theme="dark"] .hc-page {
                         </section>
                     <?php endif; ?>
 
-                    <section id="hc-guest-fields" class="hc-panel" data-hc-section aria-labelledby="hc-guest-fields-title">
+                    <section id="hc-guest-fields" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-guest-fields" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Registro de huespedes</p>
@@ -4937,7 +5434,7 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </section>
 
-                    <section id="hc-rooms" class="hc-panel" data-hc-section aria-labelledby="hc-rooms-title">
+                    <section id="hc-rooms" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-rooms" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Habitaciones</p>
@@ -5155,7 +5652,7 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </section>
 
-                    <section id="hc-owners" class="hc-panel" data-hc-section aria-labelledby="hc-owners-title">
+                    <section id="hc-owners" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-owners" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Distribucion</p>
@@ -5464,7 +5961,7 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </section>
 
-                    <section id="hc-catalogs" class="hc-panel" data-hc-section aria-labelledby="hc-catalogs-title">
+                    <section id="hc-catalogs" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-catalogs" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Listas auxiliares</p>
@@ -5681,7 +6178,7 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </section>
 
-                    <section id="hc-brand" class="hc-panel" data-hc-section aria-labelledby="hc-brand-title">
+                    <section id="hc-brand" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-brand" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Marca del hotel</p>
@@ -5714,6 +6211,10 @@ html[data-theme="dark"] .hc-page {
                         $brandingAccent = function_exists('hotel_branding_hex')
                             ? hotel_branding_hex($configBranding['color_accent'] ?? null, '#BD9441')
                             : ($configBranding['color_accent'] ?? '#BD9441');
+                        $brandingBackground = function_exists('hotel_branding_hex')
+                            ? hotel_branding_hex($hotelBackgroundColor ?? null, '#F5F5F7')
+                            : ($hotelBackgroundColor ?? '#F5F5F7');
+                        $brandingBackgroundMode = !empty($hotelBackgroundStored) ? 'custom' : 'default';
                         $configTemaOpciones = class_exists('HotelBranding')
                             ? HotelBranding::temasDisponibles()
                             : ['deleite' => 'Deleite Sereno'];
@@ -5746,7 +6247,7 @@ html[data-theme="dark"] .hc-page {
                                    data-default-name="<?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?>"
                                    data-sidebar-style="<?= htmlspecialchars((string) ($configBranding['sidebar_style'] ?? 'default'), ENT_QUOTES, 'UTF-8') ?>"
                                    data-login-style="<?= htmlspecialchars((string) ($configBranding['login_style'] ?? 'default'), ENT_QUOTES, 'UTF-8') ?>"
-                                   style="--preview-primary: <?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?>; --preview-secondary: <?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?>; --preview-accent: <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>;">
+                                   style="--preview-primary: <?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?>; --preview-secondary: <?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?>; --preview-accent: <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>; --preview-background: <?= htmlspecialchars((string) $brandingBackground, ENT_QUOTES, 'UTF-8') ?>;">
                                 <div class="hc-preview-head">
                                     <div>
                                         <span class="hc-preview-kicker">Vista previa del sistema</span>
@@ -5888,6 +6389,10 @@ html[data-theme="dark"] .hc-page {
                                         <span class="hc-preview-swatch-dot" data-brand-swatch="accent" style="background: <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>"></span>
                                         <span><strong>Acento</strong><code data-brand-preview-code="accent"><?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></code></span>
                                     </span>
+                                    <span class="hc-preview-swatch">
+                                        <span class="hc-preview-swatch-dot" data-brand-swatch="background" style="background: <?= htmlspecialchars((string) $brandingBackground, ENT_QUOTES, 'UTF-8') ?>"></span>
+                                        <span><strong>Fondo</strong><code data-brand-preview-code="background"><?= htmlspecialchars((string) $brandingBackground, ENT_QUOTES, 'UTF-8') ?></code></span>
+                                    </span>
                                 </div>
 
                                 <div class="hc-preview-contrast" data-brand-contrast aria-label="Revision de contraste de la vista previa">
@@ -5983,6 +6488,33 @@ html[data-theme="dark"] .hc-page {
                                                value="<?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="hc-color-code" data-brand-preview-code="accent"><?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
+                                </div>
+
+                                <div class="hc-field">
+                                    <label for="branding_background_color">Fondo del sistema</label>
+                                    <input type="hidden"
+                                           id="branding_background_mode"
+                                           name="hotel_appearance[background_mode]"
+                                           value="<?= htmlspecialchars($brandingBackgroundMode, ENT_QUOTES, 'UTF-8') ?>"
+                                           data-brand-input="background-mode">
+                                    <div class="hc-color-input">
+                                        <input type="color"
+                                               id="branding_background_color"
+                                               name="hotel_appearance[background_color]"
+                                               value="<?= htmlspecialchars((string) $brandingBackground, ENT_QUOTES, 'UTF-8') ?>"
+                                               data-brand-input="background">
+                                        <span class="hc-color-code" data-brand-preview-code="background"><?= htmlspecialchars((string) $brandingBackground, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+                                    <div class="hc-background-meta">
+                                        <span class="hc-background-mode" data-background-mode-label>
+                                            <i class="fas fa-circle-half-stroke" aria-hidden="true"></i>
+                                            <span data-background-mode-text><?= $brandingBackgroundMode === 'custom' ? 'Personalizado para este hotel' : 'Predeterminado del tema' ?></span>
+                                        </span>
+                                        <button type="button" class="hc-background-default" data-background-default>
+                                            Usar fondo del tema
+                                        </button>
+                                    </div>
+                                    <p class="hc-field-hint">Se aplica al lienzo de todas las vistas operativas en modo claro. El Panel SaaS y las superficies internas conservan su propia identidad.</p>
                                 </div>
 
                                  <div class="hc-field">
@@ -6130,7 +6662,7 @@ html[data-theme="dark"] .hc-page {
                     </section>
 
                     <?php if (!empty($configFooterNavCatalog)): ?>
-                    <section id="hc-footer-nav" class="hc-panel" data-hc-section aria-labelledby="hc-footer-nav-title">
+                    <section id="hc-footer-nav" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-footer-nav" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">App del hotel</p>
@@ -6538,7 +7070,7 @@ html[data-theme="dark"] .hc-page {
                     </script>
                     <?php endif; ?>
 
-                    <section id="hc-system" class="hc-panel" data-hc-section aria-labelledby="hc-system-title">
+                    <section id="hc-system" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-system" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
                                 <p class="hc-section-kicker">Compatibilidad</p>
@@ -6699,7 +7231,7 @@ html[data-theme="dark"] .hc-page {
                     </section>
                 </form>
 
-                <section id="hc-devices" class="hc-panel" data-hc-section aria-labelledby="hc-devices-title">
+                <section id="hc-devices" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-devices" tabindex="0" hidden>
                     <div class="hc-panel-header">
                         <div>
                             <p class="hc-section-kicker">PWA Push</p>
@@ -7083,6 +7615,8 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         primary: document.querySelector('[data-brand-input="primary"]'),
         secondary: document.querySelector('[data-brand-input="secondary"]'),
         accent: document.querySelector('[data-brand-input="accent"]'),
+        background: document.querySelector('[data-brand-input="background"]'),
+        backgroundMode: document.querySelector('[data-brand-input="background-mode"]'),
         sidebar: document.querySelector('[data-brand-input="sidebar"]'),
         login: document.querySelector('[data-brand-input="login"]'),
         tema: document.querySelector('[data-brand-input="tema"]')
@@ -7091,12 +7625,15 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
     const fileInputs = Array.from(document.querySelectorAll('[data-brand-file]'));
     const resetButton = preview.querySelector('[data-brand-reset]');
     const dirtyLabel = preview.querySelector('[data-brand-dirty-label]');
+    const backgroundDefaultButton = document.querySelector('[data-background-default]');
+    const backgroundModeText = document.querySelector('[data-background-mode-text]');
     const initialValues = new Map(trackedFields.map(field => [field, field.value]));
 
     const colorLabels = {
         primary: 'principal',
         secondary: 'secundario',
-        accent: 'acento'
+        accent: 'acento',
+        background: 'fondo'
     };
 
     const sidebarLabels = {
@@ -7287,6 +7824,14 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         const primary = normalizeHex(fields.primary?.value, '#1B2746');
         const secondary = normalizeHex(fields.secondary?.value, '#0F172A');
         const accent = normalizeHex(fields.accent?.value, '#BD9441');
+        const tema = fields.tema?.value || 'deleite';
+        const backgroundMode = fields.backgroundMode?.value === 'custom' ? 'custom' : 'default';
+        const defaultBackground = tema === 'cupertino'
+            ? '#F5F5F7'
+            : mixHex(accent, '#F8F5ED', 8);
+        const background = backgroundMode === 'custom'
+            ? normalizeHex(fields.background?.value, defaultBackground)
+            : defaultBackground;
         const visualName = String(fields.name?.value || preview.dataset.defaultName || 'Hotel').trim()
             || preview.dataset.defaultName
             || 'Hotel';
@@ -7296,6 +7841,7 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         preview.style.setProperty('--preview-primary', primary);
         preview.style.setProperty('--preview-secondary', secondary);
         preview.style.setProperty('--preview-accent', accent);
+        preview.style.setProperty('--preview-background', background);
         preview.style.setProperty('--preview-primary-soft', mixHex(primary, '#FFFEFB', 10));
         preview.style.setProperty('--preview-accent-soft', mixHex(accent, '#FFFEFB', 13));
         preview.style.setProperty('--preview-line', mixHex(primary, '#E7DED2', 16));
@@ -7304,11 +7850,21 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         preview.dataset.sidebarStyle = sidebarStyle;
         preview.dataset.loginStyle = loginStyle;
 
+        if (fields.background && fields.background.value !== background) {
+            fields.background.value = background;
+        }
+
+        if (backgroundModeText) {
+            backgroundModeText.textContent = backgroundMode === 'custom'
+                ? 'Personalizado para este hotel'
+                : 'Predeterminado del tema';
+        }
+
         setText('[data-brand-preview-text="name"]', visualName);
         setText('[data-brand-preview-text="sidebar-style"]', sidebarLabels[sidebarStyle] || 'Menu default');
         setText('[data-brand-preview-text="login-style"]', loginLabels[loginStyle] || 'Login default');
 
-        Object.entries({ primary, secondary, accent }).forEach(([key, value]) => {
+        Object.entries({ primary, secondary, accent, background }).forEach(([key, value]) => {
             document.querySelectorAll(`[data-brand-preview-code="${key}"]`).forEach(target => {
                 target.textContent = value;
             });
@@ -7323,9 +7879,25 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
     };
 
     trackedFields.forEach(field => {
-        field.addEventListener('input', updatePreview);
-        field.addEventListener('change', updatePreview);
+        const syncField = function() {
+            if (field === fields.background && fields.backgroundMode) {
+                fields.backgroundMode.value = 'custom';
+            }
+            updatePreview();
+        };
+
+        field.addEventListener('input', syncField);
+        field.addEventListener('change', syncField);
     });
+
+    if (backgroundDefaultButton) {
+        backgroundDefaultButton.addEventListener('click', () => {
+            if (fields.backgroundMode) {
+                fields.backgroundMode.value = 'default';
+            }
+            updatePreview();
+        });
+    }
 
     fileInputs.forEach(input => {
         input.addEventListener('change', () => {
@@ -7598,14 +8170,111 @@ if (identityPolicyPanel) {
     syncIdentitySummary();
 }
 
-const navLinks = Array.from(document.querySelectorAll('.hc-nav-link'));
-const sectionById = new Map(navLinks.map(link => [link.getAttribute('href')?.replace('#', ''), link]));
-const observedSections = Array.from(document.querySelectorAll('[data-hc-section]'));
+const navLinks = Array.from(document.querySelectorAll('.hc-nav-link[role="tab"]'));
+const observedSections = Array.from(document.querySelectorAll('[data-hc-section][role="tabpanel"]'));
+const sectionById = new Map(navLinks.map(link => [link.getAttribute('aria-controls'), link]));
+const configPage = document.querySelector('.hc-page');
+const configScrollContainer = configPage?.closest('.main-content');
+const configNav = document.querySelector('.hc-nav');
+const configNavSearch = document.getElementById('hc-nav-search');
+const configNavCount = document.querySelector('[data-hc-nav-count]');
+const configNavEmpty = document.querySelector('[data-hc-nav-empty]');
+const configNavGroups = Array.from(document.querySelectorAll('[data-hc-nav-group]'));
+const configSectionStorageKey = 'hotel-config-section:' + window.location.pathname;
+
+const configSectionIdFromHash = function() {
+    let sectionId = window.location.hash ? window.location.hash.slice(1) : '';
+    try {
+        sectionId = decodeURIComponent(sectionId);
+    } catch (error) {}
+    return sectionById.has(sectionId) ? sectionId : '';
+};
+
+const configStoredSectionId = function() {
+    try {
+        const sectionId = window.sessionStorage.getItem(configSectionStorageKey) || '';
+        return sectionById.has(sectionId) ? sectionId : '';
+    } catch (error) {
+        return '';
+    }
+};
+
+const rememberConfigSection = function(sectionId) {
+    try {
+        window.sessionStorage.setItem(configSectionStorageKey, sectionId);
+    } catch (error) {}
+};
+
+const updateConfigSectionUrl = function(sectionId, replace = false) {
+    const nextUrl = window.location.pathname + window.location.search + '#' + encodeURIComponent(sectionId);
+    if (window.history && window.history.pushState) {
+        window.history[replace ? 'replaceState' : 'pushState']({ configSection: sectionId }, '', nextUrl);
+        return;
+    }
+    window.location.hash = sectionId;
+};
+
+const updateConfigNavOrientation = function() {
+    if (!configNav) {
+        return;
+    }
+    configNav.setAttribute('aria-orientation', window.matchMedia('(max-width: 1080px)').matches ? 'horizontal' : 'vertical');
+};
+
+const filterConfigNavigation = function() {
+    const query = (configNavSearch?.value || '').trim().toLocaleLowerCase('es-MX');
+    let visibleCount = 0;
+
+    navLinks.forEach(link => {
+        const content = ((link.dataset.hcSearch || '') + ' ' + (link.textContent || '')).toLocaleLowerCase('es-MX');
+        const isVisible = query === '' || content.includes(query);
+        link.hidden = !isVisible;
+        if (isVisible) {
+            visibleCount += 1;
+        }
+    });
+
+    configNavGroups.forEach(group => {
+        group.hidden = !group.querySelector('.hc-nav-link:not([hidden])');
+    });
+
+    if (configNavCount) {
+        configNavCount.textContent = String(visibleCount);
+    }
+    if (configNavEmpty) {
+        configNavEmpty.hidden = visibleCount !== 0;
+    }
+};
+
+const clearConfigNavigationSearch = function() {
+    if (!configNavSearch || configNavSearch.value === '') {
+        return;
+    }
+    configNavSearch.value = '';
+    filterConfigNavigation();
+};
+
+const resetConfigScrollPosition = function() {
+    const applyScrollReset = function() {
+        if (configScrollContainer) {
+            configScrollContainer.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+
+    applyScrollReset();
+    window.requestAnimationFrame(() => {
+        applyScrollReset();
+        window.requestAnimationFrame(applyScrollReset);
+    });
+    window.setTimeout(applyScrollReset, 80);
+};
 
 const activateConfigSection = function(sectionId, options = {}) {
     const targetSection = document.getElementById(sectionId);
+    const activeLink = sectionById.get(sectionId);
 
-    if (!targetSection) {
+    if (!targetSection || !activeLink) {
         return;
     }
 
@@ -7616,39 +8285,103 @@ const activateConfigSection = function(sectionId, options = {}) {
     });
 
     navLinks.forEach(link => {
-        const isActive = link.getAttribute('href') === '#' + sectionId;
+        const isActive = link === activeLink;
         link.classList.toggle('is-active', isActive);
-        if (isActive) {
-            link.setAttribute('aria-current', 'page');
-            link.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        } else {
-            link.removeAttribute('aria-current');
-        }
+        link.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        link.setAttribute('tabindex', isActive ? '0' : '-1');
     });
 
-    const page = document.querySelector('.hc-page');
-    if (page) {
-        page.dataset.activeSection = sectionId;
+    if (configPage) {
+        configPage.dataset.activeSection = sectionId;
     }
 
-    if (options.focus) {
-        targetSection.querySelector('input, textarea, select, button, a')?.focus({ preventScroll: true });
+    rememberConfigSection(sectionId);
+    if (options.updateUrl) {
+        updateConfigSectionUrl(sectionId, !!options.replaceUrl);
+    }
+    if (options.clearSearch) {
+        clearConfigNavigationSearch();
+    }
+    if (options.resetScroll) {
+        resetConfigScrollPosition();
+    }
+
+    activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (options.focusPanel) {
+        targetSection.focus({ preventScroll: true });
     }
 };
 
-if (observedSections.length > 0) {
-    const initialSection = window.location.hash && sectionById.has(window.location.hash.replace('#', ''))
-        ? window.location.hash.replace('#', '')
-        : (observedSections[0]?.id || 'hc-readonly');
+if (observedSections.length > 0 && navLinks.length > 0) {
+    const initialSection = configSectionIdFromHash() || configStoredSectionId() || observedSections[0]?.id || 'hc-readonly';
+    activateConfigSection(initialSection, { updateUrl: true, replaceUrl: true, resetScroll: true });
+    filterConfigNavigation();
+    updateConfigNavOrientation();
 
-    activateConfigSection(initialSection);
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const sectionId = this.getAttribute('href')?.replace('#', '');
-            activateConfigSection(sectionId);
+    navLinks.forEach((link, index) => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            activateConfigSection(this.getAttribute('aria-controls'), { updateUrl: true, resetScroll: true });
         });
+
+        link.addEventListener('keydown', function(event) {
+            let nextIndex = null;
+            if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (index + 1) % navLinks.length;
+            if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (index - 1 + navLinks.length) % navLinks.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = navLinks.length - 1;
+            if (nextIndex === null) return;
+
+            event.preventDefault();
+            clearConfigNavigationSearch();
+            navLinks[nextIndex].focus();
+            activateConfigSection(navLinks[nextIndex].getAttribute('aria-controls'), { updateUrl: true, resetScroll: true });
+        });
+    });
+
+    document.querySelectorAll('[data-hc-section-trigger]').forEach(trigger => {
+        trigger.addEventListener('click', function(event) {
+            const sectionId = (this.getAttribute('href') || '').replace(/^#/, '');
+            if (!sectionById.has(sectionId)) {
+                return;
+            }
+            event.preventDefault();
+            activateConfigSection(sectionId, { updateUrl: true, clearSearch: true, focusPanel: true, resetScroll: true });
+        });
+    });
+
+    window.addEventListener('popstate', () => {
+        activateConfigSection(configSectionIdFromHash() || 'hc-readonly', { resetScroll: true });
+    });
+    window.addEventListener('hashchange', () => {
+        activateConfigSection(configSectionIdFromHash() || 'hc-readonly', { resetScroll: true });
+    });
+    window.addEventListener('resize', updateConfigNavOrientation);
+
+    if (window.location.hash) {
+        window.addEventListener('load', resetConfigScrollPosition, { once: true });
+    }
+}
+
+if (configNavSearch) {
+    configNavSearch.addEventListener('input', filterConfigNavigation);
+    configNavSearch.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            clearConfigNavigationSearch();
+            this.focus();
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            const firstMatch = navLinks.find(link => !link.hidden);
+            if (!firstMatch) {
+                return;
+            }
+            event.preventDefault();
+            activateConfigSection(firstMatch.getAttribute('aria-controls'), { updateUrl: true, clearSearch: true, resetScroll: true });
+            firstMatch.focus();
+        }
     });
 }
 

@@ -86,8 +86,8 @@ $prioridadLabels = [
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
     --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 58%, var(--tk-brand));
-    --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
-    --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
+    --tk-ivory: #F5F5F7; --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF; --tk-surface-warm: #F5F5F7;
     --tk-border: color-mix(in srgb, var(--tk-brand) 6%, #E9E1D6);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: color-mix(in srgb, var(--tk-brand) 46%, #707B8C);
@@ -104,10 +104,7 @@ $prioridadLabels = [
     --tk-view-soft: color-mix(in srgb, var(--tk-proc) 8%, #FFFFFF);
     --tk-view-ink: color-mix(in srgb, var(--tk-proc) 60%, var(--tk-brand));
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
-    background:
-        radial-gradient(780px 360px at 8% -6%, color-mix(in srgb, var(--tk-proc) 8%, transparent), transparent 62%),
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -479,10 +476,12 @@ $prioridadLabels = [
                                         <td>
                                             <?php if (!empty($tarea['habitacion_id'])): ?>
                                                 Hab. <?= tlm_report_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?><br>
+                                            <?php elseif (!empty($tarea['area_id'])): ?>
+                                                <?= tlm_report_safe($tarea['area_nombre'] ?? ('Área #' . (int)$tarea['area_id'])) ?><br>
                                             <?php endif; ?>
                                             <?php if ($trabajadoresTexto !== ''): ?>
                                                 <?= tlm_report_safe($trabajadoresTexto) ?>
-                                            <?php elseif (empty($tarea['habitacion_id'])): ?>
+                                            <?php elseif (empty($tarea['habitacion_id']) && empty($tarea['area_id'])): ?>
                                                 <span class="tk-sub" style="margin:0">Sin contexto</span>
                                             <?php endif; ?>
                                         </td>

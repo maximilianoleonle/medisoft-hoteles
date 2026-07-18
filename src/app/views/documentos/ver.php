@@ -106,10 +106,10 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
     --dc-gold-soft: color-mix(in srgb, var(--dc-gold) 15%, #FFFFFF);
     --dc-gold-line: color-mix(in srgb, var(--dc-gold) 42%, #E4D4B0);
     --dc-gold-ink: color-mix(in srgb, var(--dc-gold) 78%, var(--dc-brand));
-    --dc-ivory: #F6F2EA;
-    --dc-ivory-2: #FBF8F2;
+    --dc-ivory: #F5F5F7;
+    --dc-ivory-2: #FAFAFC;
     --dc-surface: #FFFFFF;
-    --dc-surface-warm: #FCFAF5;
+    --dc-surface-warm: #F5F5F7;
     --dc-border: color-mix(in srgb, var(--dc-brand) 7%, #E7E1D4);
     --dc-text: color-mix(in srgb, var(--dc-brand) 36%, #596474);
     --dc-text-soft: color-mix(in srgb, var(--dc-brand) 30%, #6C7788);
@@ -124,9 +124,7 @@ $docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '
     min-height: 100%;
     color: var(--dc-text);
     font-family: var(--dc-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--dc-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--dc-ivory-2), var(--dc-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

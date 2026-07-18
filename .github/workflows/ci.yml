@@ -6,6 +6,39 @@ on:
   pull_request:
 
 jobs:
+  quality:
+    name: Calidad estatica (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Instalar dependencias de calidad
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Analisis estatico
+        run: composer analyse
+
+      - name: Impedir archivos operativos versionados
+        run: |
+          forbidden_files="$(git ls-files -- 'src/storage/**' 'src/public_html/uploads/**' | awk '!/^src\/public_html\/uploads\/\.htaccess$/ && !/^src\/public_html\/uploads\/habitaciones\/defaults\//')"
+          if [ -n "$forbidden_files" ]; then
+            printf '%s\n' "Se encontraron archivos operativos versionados:" "$forbidden_files"
+            exit 1
+          fi
+
+      - name: Impedir endpoints QA/debug en el document root
+        run: |
+          qa_files="$(git ls-files -- 'src/public_html/**' 'src/public_html/*' | grep -E '(^|/)(qa_|__qa_|debug_|test_|prueba_)[^/]*\.(php|phtml|html?)$' || true)"
+          if [ -n "$qa_files" ]; then
+            printf '%s\n' "Endpoints QA/debug versionados en public_html (prohibido):" "$qa_files"
+            exit 1
+          fi
+
   lint:
     name: Lint PHP (sintaxis)
     runs-on: ubuntu-latest

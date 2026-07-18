@@ -48,6 +48,14 @@ $camLimpias   = count(array_filter($habitaciones, static function ($h) {
 $camCiclo     = $camLimpias + $porLimpiar;             // habitaciones dentro del ciclo limpio/sucio
 $camPct       = $camCiclo > 0 ? (int) round($camLimpias / $camCiclo * 100) : 100;
 $camTodoAlDia = ($porLimpiar === 0);
+
+// Areas del hotel (bloque habitaciones y areas): mismo tablero, mismo flujo de
+// limpieza. El controlador ya filtra a disponible/limpieza (lo que toca a
+// limpieza); mantenimiento/cerrada son de recepcion.
+$areas = $areas ?? [];
+$tiposArea = $tiposArea ?? [];
+$areasPorLimpiar = array_values(array_filter($areas, static function ($a) { return ($a['estado'] ?? '') === 'limpieza'; }));
+$areasListas     = array_values(array_filter($areas, static function ($a) { return ($a['estado'] ?? '') === 'disponible'; }));
 ?>
 
 <style>
@@ -67,7 +75,7 @@ $camTodoAlDia = ($porLimpiar === 0);
   --dx-success:#1E9E63; --dx-success-2:#17864F; --dx-success-soft:#E7F4EC;
   --dx-occ:#C2603C; --dx-occ-soft:#F8EAE1;
   --dx-slate:#64748B; --dx-slate-soft:#EEF1F4;
-  --dx-surface:#FFFFFF; --dx-surface-warm:#FCFAF5; --dx-ivory:#F6F2EA;
+  --dx-surface:#FFFFFF; --dx-surface-warm:#F5F5F7; --dx-ivory:#F5F5F7;
   --dx-line:#E7E1D4; --dx-line-cool:#D5E3F6; --dx-ink:#20293A; --dx-ink-soft:#5C6675; --dx-ink-faint:#8B94A3;
   --dx-radius:20px; --dx-radius-md:15px; --dx-radius-sm:11px;
   --dx-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -76,7 +84,7 @@ $camTodoAlDia = ($porLimpiar === 0);
   font-family: 'DM Sans','Outfit',system-ui,-apple-system,sans-serif; color: var(--dx-ink);
   background:
     radial-gradient(1100px 460px at 88% -12%, color-mix(in srgb, var(--dx-clean) 9%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--dx-clean-mist), #FBF8F2 300px) !important;
+    linear-gradient(180deg, var(--dx-clean-mist), #FAFAFC 300px) !important;
 }
 /* Contenido centrado y ancho (mismo tope que el index de habitaciones: max-w-7xl) */
 .cam-inner{ max-width: 1280px; margin: 0 auto; padding: 22px 16px 84px; }
@@ -488,13 +496,13 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
                     <div class="cam-foot">
                         <?php if ($camHayPersonal): ?>
                             <button type="button" class="cam-btn done js-cam-marcar"
-                                    data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                    data-hab-id="<?= $id ?>" data-hab-numero="Hab <?= $camSafe($hab['numero']) ?>"
                                     data-asignados="<?= $camSafe($asignadosCsv) ?>">
                                 <span class="cam-btn__shine" aria-hidden="true"></span>
                                 <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
                             </button>
                             <button type="button" class="cam-btn mini js-cam-prog"
-                                    data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                    data-hab-id="<?= $id ?>" data-hab-numero="Hab <?= $camSafe($hab['numero']) ?>"
                                     data-asignados="<?= $camSafe($asignadosCsv) ?>"
                                     data-fecha="<?= $camSafe($fechaProg !== '' ? $fechaProg : $camHoy) ?>">
                                 <i class="fas fa-user-plus" aria-hidden="true"></i><?= $asignadosNombres !== '' ? 'Cambiar personal' : 'Asignar personal' ?>
@@ -517,7 +525,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
                 <?php elseif ($estado === 'ocupada' && $camHayPersonal): ?>
                     <div class="cam-foot">
                         <button type="button" class="cam-btn mini js-cam-prog"
-                                data-hab-id="<?= $id ?>" data-hab-numero="<?= $camSafe($hab['numero']) ?>"
+                                data-hab-id="<?= $id ?>" data-hab-numero="Hab <?= $camSafe($hab['numero']) ?>"
                                 data-asignados="<?= $camSafe($asignadosCsv) ?>"
                                 data-fecha="<?= $camSafe($fechaProg !== '' ? $fechaProg : $camManana) ?>">
                             <i class="fas fa-calendar-plus" aria-hidden="true"></i><?= $fechaProgLabel !== '' ? 'Reprogramar limpieza' : 'Programar limpieza' ?>
@@ -544,7 +552,91 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
     </<?= $esDetails ? 'details' : 'section' ?>>
     <?php endforeach; ?>
 
-    <?php if (empty($habitaciones)): ?>
+    <?php
+    // ── Areas del hotel: mismas tarjetas, mismo modal de personal ──
+    $camAreaSecs = [
+        ['lista' => $areasPorLimpiar, 'estado' => 'limpieza',   'tag' => 'section', 'mod' => 'pend', 'ico' => 'fa-broom',        't' => 'Áreas por limpiar', 'hint' => 'Alberca, lobby, jardín... termina y toca “Ya quedó limpia”.'],
+        ['lista' => $areasListas,     'estado' => 'disponible', 'tag' => 'details', 'mod' => 'done', 'ico' => 'fa-circle-check', 't' => 'Áreas listas',      'hint' => 'Al día. Márcala por limpiar solo si se volvió a ensuciar.'],
+    ];
+    foreach ($camAreaSecs as $asec):
+        if (empty($asec['lista'])) { continue; }
+        $aEsDetails = $asec['tag'] === 'details';
+    ?>
+    <<?= $aEsDetails ? 'details' : 'section' ?> class="cam-section cam-section--<?= $asec['mod'] ?>"<?= $aEsDetails && empty($areasPorLimpiar) ? ' open' : '' ?>>
+        <<?= $aEsDetails ? 'summary' : 'div' ?> class="cam-section__head">
+            <span class="cam-section__ico"><i class="fas <?= $asec['ico'] ?>" aria-hidden="true"></i></span>
+            <div class="cam-section__meta">
+                <div class="cam-section__t"><?= $camSafe($asec['t']) ?><span class="cam-section__count"><?= count($asec['lista']) ?></span></div>
+                <div class="cam-section__hint"><?= $camSafe($asec['hint']) ?></div>
+            </div>
+            <?php if ($aEsDetails): ?><i class="fas fa-chevron-down cam-section__chev" aria-hidden="true"></i><?php endif; ?>
+        </<?= $aEsDetails ? 'summary' : 'div' ?>>
+        <div class="cam-grid">
+        <?php foreach ($asec['lista'] as $ar): ?>
+            <?php
+            $aid = (int) $ar['id'];
+            $aEstado = (string) $ar['estado'];
+            $tm = $tiposArea[$ar['tipo'] ?? 'otra'] ?? ['label' => 'Área', 'icono' => 'fa-location-dot'];
+            $aPiso = ($ar['piso'] === null || $ar['piso'] === '') ? 'Exterior / PB' : 'Piso ' . (int) $ar['piso'];
+            ?>
+            <div class="cam-card<?= $aEstado === 'limpieza' ? ' is-pend' : '' ?>">
+                <div class="cam-head">
+                    <div class="cam-num" style="font-size:1.2rem;line-height:1.2;word-break:break-word;"><?= $camSafe($ar['nombre']) ?></div>
+                    <div class="cam-tipo"><i class="fas <?= $camSafe($tm['icono']) ?>" aria-hidden="true"></i> <?= $camSafe($tm['label']) ?> · <?= $camSafe($aPiso) ?></div>
+                </div>
+
+                <?php if ($aEstado === 'limpieza'): ?>
+                    <span class="cam-badge b-pend"><i class="fas fa-broom" aria-hidden="true"></i>Por limpiar</span>
+                <?php else: ?>
+                    <span class="cam-badge b-done"><i class="fas fa-check" aria-hidden="true"></i>Limpia</span>
+                <?php endif; ?>
+
+                <?php if ($aEstado === 'limpieza'): ?>
+                    <div class="cam-foot">
+                        <?php if ($camHayPersonal): ?>
+                            <button type="button" class="cam-btn done js-cam-marcar"
+                                    data-hab-id="<?= $aid ?>" data-hab-numero="<?= $camSafe($ar['nombre']) ?>"
+                                    data-asignados="" data-action-base="<?= url('camarista/area/marcar') ?>">
+                                <span class="cam-btn__shine" aria-hidden="true"></span>
+                                <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
+                            </button>
+                        <?php else: ?>
+                            <form method="POST" action="<?= url('camarista/area/marcar/' . $aid) ?>"
+                                  data-ms-confirm data-ms-type="success" data-ms-icon="check"
+                                  data-ms-title="¿Ya quedó limpia?"
+                                  data-ms-msg="Confirma que <?= $camSafe($ar['nombre']) ?> quedó lista."
+                                  data-ms-ok="Sí, quedó limpia">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="estado" value="disponible">
+                                <button type="submit" class="cam-btn done">
+                                    <span class="cam-btn__shine" aria-hidden="true"></span>
+                                    <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="cam-foot">
+                        <form method="POST" action="<?= url('camarista/area/marcar/' . $aid) ?>"
+                              data-ms-confirm data-ms-type="info" data-ms-icon="info"
+                              data-ms-title="¿Marcar por limpiar?"
+                              data-ms-msg="<?= $camSafe($ar['nombre']) ?> pasará a la lista de áreas por limpiar."
+                              data-ms-ok="Sí, marcar">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="estado" value="limpieza">
+                            <button type="submit" class="cam-btn mini">
+                                <i class="fas fa-broom" aria-hidden="true"></i>Marcar por limpiar
+                            </button>
+                        </form>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
+        </div>
+    </<?= $aEsDetails ? 'details' : 'section' ?>>
+    <?php endforeach; ?>
+
+    <?php if (empty($habitaciones) && empty($areas)): ?>
         <div class="cam-empty">
             <i class="fas fa-broom" aria-hidden="true"></i>
             <p>No hay habitaciones activas para mostrar.</p>
@@ -557,7 +649,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
         <div class="cam-modal__panel">
             <div class="cam-modal__head">
                 <h2 id="camMarcarTitulo">¿Quién hizo la limpieza?</h2>
-                <p class="cam-modal__sub">Hab <span data-cam-numero></span> · elige a una o más personas.</p>
+                <p class="cam-modal__sub"><span data-cam-numero></span> · elige a una o más personas.</p>
                 <button type="button" class="cam-modal__close" data-cam-cerrar aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <form method="POST" action="" data-action-base="<?= url('camarista/marcar') ?>">
@@ -595,7 +687,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
         <div class="cam-modal__panel">
             <div class="cam-modal__head">
                 <h2 id="camProgTitulo">Programar limpieza</h2>
-                <p class="cam-modal__sub">Hab <span data-cam-numero></span> · elige fecha y quién se encargará.</p>
+                <p class="cam-modal__sub"><span data-cam-numero></span> · elige fecha y quién se encargará.</p>
                 <button type="button" class="cam-modal__close" data-cam-cerrar aria-label="Cerrar"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
             <form method="POST" action="" data-action-base="<?= url('camarista/programar') ?>">
@@ -635,7 +727,10 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
         function abrir(modal, datos) {
             if (!modal) return;
             var form = modal.querySelector('form');
-            form.action = form.getAttribute('data-action-base') + '/' + datos.habId;
+            // Habitaciones usan el data-action-base del form; las areas pasan el
+            // suyo por boton (endpoint /camarista/area/marcar).
+            var base = datos.actionBase || form.getAttribute('data-action-base');
+            form.action = base + '/' + datos.habId;
 
             modal.querySelectorAll('[data-cam-numero]').forEach(function (el) { el.textContent = datos.numero || ''; });
 
@@ -665,7 +760,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
 
         document.querySelectorAll('.js-cam-marcar').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                abrir(marcarModal, { habId: btn.getAttribute('data-hab-id'), numero: btn.getAttribute('data-hab-numero'), asignados: btn.getAttribute('data-asignados') });
+                abrir(marcarModal, { habId: btn.getAttribute('data-hab-id'), numero: btn.getAttribute('data-hab-numero'), asignados: btn.getAttribute('data-asignados'), actionBase: btn.getAttribute('data-action-base') });
             });
         });
 

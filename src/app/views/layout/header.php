@@ -9,6 +9,12 @@ $layoutOfflineHoteleroActivo = !$layoutEsPanelSaas
 $layoutBranding = (!$layoutEsPanelSaas && $layoutTieneContextoHotel && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
     : null;
+$layoutSystemBackgroundColor = (!$layoutEsPanelSaas && $layoutBranding && function_exists('hotel_branding_system_background'))
+    ? hotel_branding_system_background(
+        $layoutBranding,
+        function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null)
+    )
+    : null;
 /* Tema visual del negocio (multi-diseño). 'deleite' es el diseño fundador y no
    emite atributo ni CSS extra; cualquier otro tema agrega data-tema + su hoja. */
 $layoutTema = 'deleite';
@@ -911,6 +917,184 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dark-theme.css') : asset('css/dark-theme.css') ?>">
     <?php if ($layoutTemaCssHref): ?>
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version($layoutTemaCssHref) : asset($layoutTemaCssHref) ?>">
+    <?php endif; ?>
+    <?php if ($layoutSystemBackgroundColor): ?>
+    <style id="hotel-system-background">
+        :root {
+            --brand-system-background: <?= htmlspecialchars($layoutSystemBackgroundColor, ENT_QUOTES, 'UTF-8') ?>;
+        }
+
+        html:not([data-theme="dark"]) body.hotel-layout-scope {
+            /* El tema puede definir --hotel-bg con mayor especificidad. */
+            --hotel-bg: var(--brand-system-background) !important;
+            background: var(--brand-system-background) !important;
+        }
+
+        html:not([data-theme="dark"]) body.hotel-layout-scope .main-content {
+            background: var(--brand-system-background) !important;
+        }
+
+        /*
+         * Algunas vistas historicas pintan un lienzo de pagina propio encima
+         * de .main-content. Solo alcanzamos el contenedor raiz de la vista:
+         * las tarjetas, tablas, modales y superficies internas conservan sus
+         * colores semanticos.
+         */
+        html:not([data-theme="dark"]) body.hotel-layout-scope .main-content > :is(
+            [class*="-page"],
+            [class*="-view"],
+            [class~="min-h-screen"],
+            .dashboard-boutique,
+            .res-bookings,
+            .vista-reservacion,
+            .reservation-detail-v2,
+            .rdv3,
+            .habitaciones-view,
+            .hdv,
+            .vista-historial,
+            .page-container,
+            .op-daily,
+            .cj-page,
+            .usr-bg,
+            .inv-page,
+            .hc-page,
+            .invoice-desk,
+            .payroll-preview,
+            .workers-report,
+            .labor-cash-report,
+            .nomina-detalle,
+            .nomina-periodos,
+            .nomina-audit,
+            .nomina-exp,
+            .snapshot-pay-report,
+            .payroll-snapshot-report,
+            .mant-prog,
+            .mact,
+            .cpv,
+            .du,
+            .fc,
+            .cam,
+            .cnl,
+            .lea,
+            .rep,
+            .wav,
+            .mrv,
+            .iav,
+            .vgf,
+            .msj,
+            .na,
+            .hcal,
+            .arx
+        ) {
+            background: var(--brand-system-background) !important;
+        }
+
+        /* Las texturas del contenedor raiz tampoco deben cubrir el lienzo. */
+        html:not([data-theme="dark"]) body.hotel-layout-scope .main-content > :is(
+            [class*="-page"],
+            [class*="-view"],
+            [class~="min-h-screen"],
+            .dashboard-boutique,
+            .res-bookings,
+            .vista-reservacion,
+            .reservation-detail-v2,
+            .rdv3,
+            .habitaciones-view,
+            .hdv,
+            .vista-historial,
+            .page-container,
+            .op-daily,
+            .cj-page,
+            .usr-bg,
+            .inv-page,
+            .hc-page,
+            .invoice-desk,
+            .payroll-preview,
+            .workers-report,
+            .labor-cash-report,
+            .nomina-detalle,
+            .nomina-periodos,
+            .nomina-audit,
+            .nomina-exp,
+            .snapshot-pay-report,
+            .payroll-snapshot-report,
+            .mant-prog,
+            .mact,
+            .cpv,
+            .du,
+            .fc,
+            .cam,
+            .cnl,
+            .lea,
+            .rep,
+            .wav,
+            .mrv,
+            .iav,
+            .vgf,
+            .msj,
+            .na,
+            .hcal,
+            .arx
+        )::before,
+        html:not([data-theme="dark"]) body.hotel-layout-scope .main-content > :is(
+            [class*="-page"],
+            [class*="-view"],
+            [class~="min-h-screen"],
+            .dashboard-boutique,
+            .res-bookings,
+            .vista-reservacion,
+            .reservation-detail-v2,
+            .rdv3,
+            .habitaciones-view,
+            .hdv,
+            .vista-historial,
+            .page-container,
+            .op-daily,
+            .cj-page,
+            .usr-bg,
+            .inv-page,
+            .hc-page,
+            .invoice-desk,
+            .payroll-preview,
+            .workers-report,
+            .labor-cash-report,
+            .nomina-detalle,
+            .nomina-periodos,
+            .nomina-audit,
+            .nomina-exp,
+            .snapshot-pay-report,
+            .payroll-snapshot-report,
+            .mant-prog,
+            .mact,
+            .cpv,
+            .du,
+            .fc,
+            .cam,
+            .cnl,
+            .lea,
+            .rep,
+            .wav,
+            .mrv,
+            .iav,
+            .vgf,
+            .msj,
+            .na,
+            .hcal,
+            .arx
+        )::after {
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+
+        /* Configuracion usa cada seccion como un segundo lienzo de pagina. */
+        html:not([data-theme="dark"]) body.hotel-layout-scope .hc-panel[data-hc-section] {
+            background: var(--brand-system-background) !important;
+        }
+
+        html:not([data-theme="dark"]) body.hotel-layout-scope #psk {
+            background: var(--brand-system-background) !important;
+        }
+    </style>
     <?php endif; ?>
     <?php endif; ?>
 </head>

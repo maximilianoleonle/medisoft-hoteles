@@ -14,8 +14,8 @@
   --ax-primary: var(--brand-primary, #1B2746);
   --ax-secondary: var(--brand-secondary, #0F172A);
   --ax-accent: var(--brand-accent, #BD9441);
-  --ax-ivory:#F6F2EA; --ax-ivory-2:#FBF8F2;
-  --ax-surface:#FFFFFF; --ax-surface-warm:#FCFAF5;
+  --ax-ivory:#F5F5F7; --ax-ivory-2:#FAFAFC;
+  --ax-surface:#FFFFFF; --ax-surface-warm:#F5F5F7;
   --ax-line:#E7E1D4; --ax-line-soft:#F0EBE0;
   --ax-slate-700:#3E4A66; --ax-slate-500:#6C7689; --ax-slate-400:#9AA1B2;
   /* Estados (significado fijo, mismos hex que habitaciones) */
@@ -32,19 +32,15 @@
   min-height:100%;
   font-family:var(--ax-serif);
   color:var(--ax-slate-700);
-  background:
-    radial-gradient(1100px 460px at 85% -12%, color-mix(in srgb, var(--ax-accent) 9%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--ax-ivory-2), var(--ax-ivory));
+  
   padding-bottom:90px;
 }
 
-/* ── Header glass (calco de .modern-header de habitaciones) ── */
+/* ── Header (sin franja blanca: el título vive directo sobre el fondo de la vista) ── */
 .arx .arx-header{
-  background:color-mix(in srgb,#fff 86%,transparent);
-  backdrop-filter:blur(20px) saturate(1.3);
-  -webkit-backdrop-filter:blur(20px) saturate(1.3);
-  border-bottom:1px solid var(--ax-line);
-  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 26px -22px rgba(27,39,70,.6);
+  background:transparent;
+  border-bottom:none;
+  box-shadow:none;
   padding:.625rem 0 .55rem;
 }
 .arx .arx-header-shell{ max-width:80rem; margin:0 auto; padding:0 1rem; }

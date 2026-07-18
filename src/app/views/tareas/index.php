@@ -87,8 +87,8 @@ $visibles = count($tareas);
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
     --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 58%, var(--tk-brand));
-    --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
-    --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
+    --tk-ivory: #F5F5F7; --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF; --tk-surface-warm: #F5F5F7;
     --tk-border: color-mix(in srgb, var(--tk-brand) 6%, #E9E1D6);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: color-mix(in srgb, var(--tk-brand) 46%, #707B8C);
@@ -102,9 +102,7 @@ $visibles = count($tareas);
     --tk-info: #2F77E0; --tk-info-bg: #E6EFFC;
     --tk-proc: #0E8A8A; --tk-proc-bg: #E2F4F4;
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -525,7 +523,7 @@ $visibles = count($tareas);
         border-radius: 14px;
         padding: 0 10px;
         font-size: 16px;
-        background: #FFFCF7;
+        background: #FAFAFC;
         color: var(--tk-mobile-text);
         font-weight: 560;
         border-color: color-mix(in srgb, var(--tk-brand) 10%, var(--tk-border));
@@ -831,6 +829,8 @@ $visibles = count($tareas);
                                                 <?php endif; ?>
                                                 <?php if (!empty($tarea['habitacion_id'])): ?>
                                                     <div class="tk-sub"><i class="fas fa-door-closed"></i> Hab. <?= tlm_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?></div>
+                                                <?php elseif (!empty($tarea['area_id'])): ?>
+                                                    <div class="tk-sub"><i class="fas fa-location-dot"></i> <?= tlm_safe($tarea['area_nombre'] ?? ('Área #' . (int)$tarea['area_id'])) ?></div>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
@@ -873,6 +873,8 @@ $visibles = count($tareas);
                                         <?php endif; ?>
                                         <?php if (!empty($tarea['habitacion_id'])): ?>
                                             <span class="tk-prio is-baja"><i class="fas fa-door-closed"></i> Hab. <?= tlm_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?></span>
+                                        <?php elseif (!empty($tarea['area_id'])): ?>
+                                            <span class="tk-prio is-baja"><i class="fas fa-location-dot"></i> <?= tlm_safe($tarea['area_nombre'] ?? ('Área #' . (int)$tarea['area_id'])) ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="tk-mobile-foot">

@@ -126,6 +126,7 @@ class TareaController extends Controller
         $hotelId = $this->hotelIdActual();
 
         $habitaciones = $this->tareaModel->habitacionesOpciones($hotelId);
+        $areas = $this->tareaModel->areasOpciones($hotelId);
 
         $valores = [
             'categoria' => 'general',
@@ -143,6 +144,17 @@ class TareaController extends Controller
             }
         }
 
+        // Prefill opcional desde el detalle de un area: ?area_id=&categoria=
+        $areaIdQuery = (int)$this->getQuery('area_id', 0);
+        if ($areaIdQuery > 0 && empty($valores['habitacion_id'])) {
+            foreach ($areas as $areaRow) {
+                if ((int)($areaRow['id'] ?? 0) === $areaIdQuery) {
+                    $valores['area_id'] = $areaIdQuery;
+                    break;
+                }
+            }
+        }
+
         $categoriaQuery = trim((string)$this->getQuery('categoria', ''));
         if (in_array($categoriaQuery, ['limpieza', 'mantenimiento', 'general'], true)) {
             $valores['categoria'] = $categoriaQuery;
@@ -151,6 +163,7 @@ class TareaController extends Controller
         View::renderTemplate('tareas/form', [
             'title' => 'Nueva tarea operativa - ' . current_hotel_display_name(),
             'habitaciones' => $habitaciones,
+            'areas' => $areas,
             'trabajadores' => $this->tareaModel->trabajadoresActivosOpciones($hotelId),
             'valores' => $valores,
         ]);
@@ -269,6 +282,7 @@ class TareaController extends Controller
             'modo' => 'editar',
             'tarea' => $tarea,
             'habitaciones' => $this->tareaModel->habitacionesOpciones($hotelId),
+            'areas' => $this->tareaModel->areasOpciones($hotelId),
             'trabajadores' => $this->tareaModel->trabajadoresActivosOpciones($hotelId),
             'valores' => $this->valoresFormularioDesdeTarea($tarea, $trabajadoresAsignados),
         ]);
@@ -540,6 +554,8 @@ class TareaController extends Controller
                 $campo = 'prioridad';
             } elseif (strpos($lower, 'habitacion') !== false) {
                 $campo = 'habitacion_id';
+            } elseif (strpos($lower, 'area seleccionada') !== false || strpos($lower, 'area del hotel') !== false) {
+                $campo = 'area_id';
             } elseif (strpos($lower, 'fecha limite') !== false || strpos($lower, 'limite') !== false || strpos($lower, 'anterior') !== false) {
                 $campo = 'fecha_limite';
             } elseif (strpos($lower, 'fecha programada') !== false || strpos($lower, 'programada') !== false || strpos($lower, 'fecha') !== false) {
@@ -573,6 +589,7 @@ class TareaController extends Controller
             'categoria' => $this->getPost('categoria', 'general'),
             'prioridad' => $this->getPost('prioridad', 'media'),
             'habitacion_id' => $this->getPost('habitacion_id', null),
+            'area_id' => $this->getPost('area_id', null),
             'fecha_programada' => $this->getPost('fecha_programada', ''),
             'fecha_limite' => $this->getPost('fecha_limite', ''),
             'trabajador_ids' => $trabajadorIds,
@@ -612,6 +629,7 @@ class TareaController extends Controller
             'categoria' => $datos['categoria'] ?? 'general',
             'prioridad' => $datos['prioridad'] ?? 'media',
             'habitacion_id' => $datos['habitacion_id'] ?? null,
+            'area_id' => $datos['area_id'] ?? null,
             'fecha_programada' => $datos['fecha_programada'] ?? '',
             'fecha_limite' => $datos['fecha_limite'] ?? '',
             'trabajador_ids' => $trabajadorIds,
@@ -620,7 +638,7 @@ class TareaController extends Controller
 
     private function tareaExtraTieneContenido(array $datos): bool
     {
-        foreach (['titulo', 'descripcion', 'habitacion_id', 'fecha_programada', 'fecha_limite'] as $campo) {
+        foreach (['titulo', 'descripcion', 'habitacion_id', 'area_id', 'fecha_programada', 'fecha_limite'] as $campo) {
             if (trim((string)($datos[$campo] ?? '')) !== '') {
                 return true;
             }
@@ -661,6 +679,7 @@ class TareaController extends Controller
             'categoria' => (string)($tarea['categoria'] ?? 'general'),
             'prioridad' => (string)($tarea['prioridad'] ?? 'media'),
             'habitacion_id' => $tarea['habitacion_id'] ?? '',
+            'area_id' => $tarea['area_id'] ?? '',
             'fecha_programada' => $tarea['fecha_programada'] ?? '',
             'fecha_limite' => $tarea['fecha_limite'] ?? '',
             'trabajador_ids' => $trabajadorIds,

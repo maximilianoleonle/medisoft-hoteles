@@ -31,10 +31,10 @@ $msjVariables = '{huesped} {hotel} {fecha_llegada} {fecha_salida} {habitacion} {
     --msj-gold-soft: color-mix(in srgb, var(--msj-gold) 15%, #FFFFFF);
     --msj-gold-line: color-mix(in srgb, var(--msj-gold) 42%, #E4D4B0);
     --msj-gold-ink: color-mix(in srgb, var(--msj-gold) 58%, var(--msj-brand));
-    --msj-ivory: #F6F2EA;
-    --msj-ivory-2: #FBF8F2;
+    --msj-ivory: #F5F5F7;
+    --msj-ivory-2: #FAFAFC;
     --msj-surface: #FFFFFF;
-    --msj-surface-warm: #FCFAF5;
+    --msj-surface-warm: #F5F5F7;
     --msj-border: color-mix(in srgb, var(--msj-brand) 6%, #E9E1D6);
     --msj-ring: color-mix(in srgb, var(--msj-gold) 32%, transparent);
     --msj-text: color-mix(in srgb, var(--msj-brand) 46%, #707B8C);
@@ -54,9 +54,7 @@ $msjVariables = '{huesped} {hotel} {fecha_llegada} {fecha_salida} {habitacion} {
     color: var(--msj-text);
     font-family: var(--msj-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--msj-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--msj-ivory-2), var(--msj-ivory));
+    
 }
 .msj * { box-sizing: border-box; }
 .msj-shell { display: grid; gap: 14px; width: 100%; max-width: 860px; min-width: 0; margin: 0 auto; }

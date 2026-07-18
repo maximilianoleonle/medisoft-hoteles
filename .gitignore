@@ -37,14 +37,22 @@ temp/
 
 # Archivos locales sensibles o de diagnostico
 _local_quarantine_sensitive/
+/src/public_html/__qa_*.php
+/src/public_html/qa_*.php
+/src/public_html/debug_*.php
 
 # Fase 0.5 - artefactos locales y operativos
 backups/
 src/app/uploads/
 src/storage/documentos/
 src/storage/reportes/
-src/public_html/uploads/branding/
-src/public_html/uploads/temp/
+# Uploads generados por hoteles/usuarios: nunca versionarlos. Se conservan
+# solamente la proteccion Apache y las imagenes default propias de la app.
+/src/public_html/uploads/**
+!/src/public_html/uploads/.htaccess
+!/src/public_html/uploads/habitaciones/
+!/src/public_html/uploads/habitaciones/defaults/
+!/src/public_html/uploads/habitaciones/defaults/**
 *.sql
 *.sql.gz
 *.dump

@@ -2396,6 +2396,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>Nueva Reserva</span>
                     </a>
                     <?php if (can('habitaciones.create')): ?>
+                    <a href="<?= url('habitaciones/lote') ?>" title="Crear varias habitaciones a la vez (por piso y rango)" class="btn-modern btn-brand-outline">
+                        <i class="fas fa-layer-group text-sm"></i>
+                        <span>En lote</span>
+                    </a>
                     <a href="<?= url('habitaciones/create') ?>" title="Registrar una habitación nueva" class="btn-modern btn-brand-outline">
                         <span class="hidden sm:inline">Nueva</span>
                         <span>Habitaci&oacute;n</span>
@@ -2437,6 +2441,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Vista r&aacute;pida</span>
             </button>
             <?php if (can('habitaciones.create')): ?>
+            <a href="<?= url('habitaciones/lote') ?>"
+               title="Crear varias habitaciones a la vez (por piso y rango)"
+               class="hb-action-btn hb-action-btn--outline hb-action-btn--desktop-only">
+                <i class="fas fa-layer-group"></i>
+                <span>Crear en lote</span>
+            </a>
             <a href="<?= url('habitaciones/create') ?>"
                title="Registrar una habitación nueva"
                class="hb-action-btn hb-action-btn--outline hb-action-btn--desktop-only">
@@ -4035,29 +4045,207 @@ if ($tiene_doble_movimiento) {
             <?php endforeach; ?>
         </div>
 
-        <div id="hbNoResults" style="display:none; text-align:center; padding:44px 20px; background:#FBF8F2; border:1px dashed #E7E1D4; border-radius:16px; margin-top:4px;">
+<?php /* #hbNoResults = miss del filtro CLIENT-side (hay cuartos en el DOM). Solo se
+                 renderiza cuando existen habitaciones; si el hotel tiene CERO, el estado
+                 premium de abajo es el unico (antes se apilaban los dos, ver screenshot). */ ?>
+        <?php if (!empty($habitaciones)): ?>
+        <div id="hbNoResults" style="display:none; text-align:center; padding:44px 20px; background:#FAFAFC; border:1px dashed #E7E1D4; border-radius:16px; margin-top:4px;">
             <i class="fas fa-filter" style="font-size:1.5rem; color:var(--brand-accent,#BD9441);"></i>
             <div style="font-weight:700; color:var(--brand-primary,#1B2746); margin-top:10px;">Sin resultados</div>
             <div style="color:#6C7689; font-size:.85rem; margin-top:4px;">Ninguna habitación coincide con el filtro.</div>
         </div>
+        <?php endif; ?>
 
-        <!-- Mensaje si no hay habitaciones -->
-        <?php if (empty($habitaciones)): ?>
-            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-                <div class="max-w-md mx-auto">
-                    <div class="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-bed text-2xl text-gray-400"></i>
+        <!-- Estado vacio -->
+        <?php if (empty($habitaciones)):
+            $hbTotalReal = (int)($estadisticas['total'] ?? 0); // total del hotel SIN filtro
+            $hbPuedeCrear = can('habitaciones.create');
+        ?>
+            <?php if ($hbTotalReal === 0): ?>
+                <?php /* El hotel aun no tiene NINGUNA habitacion: onboarding, no "ajusta filtros". */ ?>
+                <div id="hbEmptyState" class="hb-empty-first" role="region" aria-label="Registrar primera habitación">
+                    <div class="hb-empty-first__glow" aria-hidden="true"></div>
+                    <div class="hb-empty-first__inner">
+                        <div class="hb-empty-first__badge" aria-hidden="true">
+                            <i class="fas fa-bed"></i>
+                            <span class="hb-empty-first__spark"><i class="fas fa-plus"></i></span>
+                        </div>
+                        <h3 class="hb-empty-first__title">Aún no hay habitaciones</h3>
+                        <p class="hb-empty-first__lead">Registra tu primera habitación para empezar a recibir huéspedes, asignar tarifas y controlar la ocupación desde este panel.</p>
+
+                        <?php if ($hbPuedeCrear): ?>
+                        <a href="<?= url('habitaciones/create') ?>" class="hb-empty-first__cta">
+                            <i class="fas fa-plus"></i>
+                            <span>Añadir primera habitación</span>
+                        </a>
+                        <a href="<?= url('habitaciones/lote') ?>" class="hb-empty-first__cta-alt">
+                            <i class="fas fa-layer-group"></i>
+                            <span>¿Vas a cargar muchas? Créalas en lote</span>
+                        </a>
+                        <?php else: ?>
+                        <p class="hb-empty-first__note"><i class="fas fa-lock"></i> Pídele a un administrador que registre las habitaciones del hotel.</p>
+                        <?php endif; ?>
+
+                        <ul class="hb-empty-first__hints" aria-hidden="true">
+                            <li><i class="fas fa-tag"></i> Tarifas por tipo</li>
+                            <li><i class="fas fa-broom"></i> Estados de limpieza</li>
+                            <li><i class="fas fa-calendar-check"></i> Reservaciones al día</li>
+                        </ul>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-700 mb-2">No se encontraron habitaciones</h3>
-                    <p class="text-gray-500 mb-4 text-sm">Ajusta los filtros de búsqueda o verifica los criterios.</p>
-                    <a href="<?= url('habitaciones') ?>"
-                       class="btn-modern btn-brand mx-auto">
+                </div>
+            <?php else: ?>
+                <?php /* Hay cuartos pero el filtro/busqueda del servidor no arrojo nada. */ ?>
+                <div id="hbEmptyState" class="hb-empty-filter">
+                    <div class="hb-empty-filter__icon"><i class="fas fa-filter"></i></div>
+                    <h3 class="hb-empty-filter__title">No se encontraron habitaciones</h3>
+                    <p class="hb-empty-filter__lead">Ajusta los filtros de búsqueda o verifica los criterios.</p>
+                    <a href="<?= url('habitaciones') ?>" class="hb-empty-filter__cta">
                         <i class="fas fa-redo"></i>
-                        Mostrar todas
+                        <span>Mostrar todas</span>
                     </a>
                 </div>
-            </div>
+            <?php endif; ?>
         <?php endif; ?>
+
+        <?php /* #hbNoResults trae fondo claro fijo (inline) que desentona en dark; se remapea
+                 a superficies del tema. Los estados hb-empty-* ya usan tokens --brand-* (dark
+                 los voltea solo), asi que aqui solo queda el override de hbNoResults. */ ?>
+        <style id="hb-emptystate-dark">
+            html[data-theme="dark"] #hbNoResults{
+                background: var(--brand-surface, #201F19) !important;
+                border-color: var(--brand-line, #403C31) !important;
+            }
+            html[data-theme="dark"] #hbNoResults div{ color: var(--brand-text, #EFE9DC) !important; }
+            html[data-theme="dark"] #hbNoResults div + div{ color: var(--brand-muted, #A69F8E) !important; }
+        </style>
+
+        <style id="hb-empty-first-styles">
+            .hb-empty-first{
+                position:relative; overflow:hidden; text-align:center;
+                padding:58px 24px 62px; margin-top:4px;
+                border-radius:22px;
+                background: var(--brand-surface, #FFFDF8);
+                border:1px solid var(--brand-line, #EDE7DA);
+                box-shadow:0 22px 48px -34px rgba(27,39,70,.42);
+            }
+            .hb-empty-first__glow{
+                position:absolute; inset:-40% 0 auto 0; height:70%;
+                background: radial-gradient(60% 100% at 50% 0%,
+                    color-mix(in srgb, var(--brand-accent, #BD9441) 16%, transparent) 0%,
+                    transparent 70%);
+                pointer-events:none;
+            }
+            .hb-empty-first__inner{ position:relative; z-index:1; max-width:460px; margin:0 auto; }
+            .hb-empty-first__badge{
+                position:relative; width:88px; height:88px; margin:0 auto 24px;
+                display:flex; align-items:center; justify-content:center;
+                border-radius:28px; font-size:2.05rem;
+                color: var(--brand-accent, #BD9441);
+                background: color-mix(in srgb, var(--brand-accent, #BD9441) 13%, var(--brand-surface, #fff));
+                border:1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 28%, transparent);
+                box-shadow:0 16px 30px -18px color-mix(in srgb, var(--brand-accent, #BD9441) 70%, transparent);
+                animation: hbEmptyFloat 5.5s ease-in-out infinite;
+            }
+            .hb-empty-first__spark{
+                position:absolute; right:-6px; bottom:-6px;
+                width:30px; height:30px; border-radius:50%;
+                display:flex; align-items:center; justify-content:center;
+                font-size:.72rem; color:#fff;
+                background: linear-gradient(135deg, var(--brand-primary, #1B2746), var(--brand-secondary, #0F172A));
+                border:2px solid var(--brand-surface, #fff);
+                box-shadow:0 6px 14px -6px rgba(27,39,70,.6);
+            }
+            @keyframes hbEmptyFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+            @media (prefers-reduced-motion: reduce){ .hb-empty-first__badge{ animation:none; } }
+            .hb-empty-first__title{
+                font-size:1.42rem; font-weight:700; letter-spacing:-.01em;
+                color: var(--brand-primary, #1B2746); margin:0 0 8px;
+            }
+            .hb-empty-first__lead{
+                font-size:.95rem; line-height:1.6; color: var(--brand-muted, #6C7689);
+                margin:0 auto 26px; max-width:410px;
+            }
+            .hb-empty-first__cta{
+                position:relative; overflow:hidden;
+                display:inline-flex; align-items:center; gap:10px;
+                padding:14px 28px; border-radius:14px;
+                font-weight:700; font-size:.96rem; text-decoration:none; color:#fff;
+                background: linear-gradient(135deg, var(--brand-primary, #1B2746), var(--brand-secondary, #0F172A));
+                box-shadow:0 16px 32px -16px color-mix(in srgb, var(--brand-primary, #1B2746) 72%, transparent);
+                transition: transform .18s ease, box-shadow .18s ease;
+            }
+            .hb-empty-first__cta:hover{
+                transform: translateY(-2px);
+                box-shadow:0 22px 40px -16px color-mix(in srgb, var(--brand-primary, #1B2746) 72%, transparent);
+            }
+            .hb-empty-first__cta::after{
+                content:''; position:absolute; inset:0;
+                background: linear-gradient(120deg, transparent 32%, rgba(255,255,255,.30) 50%, transparent 68%);
+                transform: translateX(-120%);
+            }
+            .hb-empty-first__cta:hover::after{ animation: hbEmptyShine .9s ease; }
+            @keyframes hbEmptyShine{ to{ transform: translateX(120%); } }
+            .hb-empty-first__cta-alt{
+                display:inline-flex; align-items:center; gap:8px;
+                margin-top:12px; padding:9px 18px; border-radius:12px;
+                font-weight:600; font-size:.86rem; text-decoration:none;
+                color: var(--brand-primary, #1B2746);
+                background: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, transparent);
+                border:1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent);
+                transition: background .18s ease;
+            }
+            .hb-empty-first__cta-alt:hover{ background: color-mix(in srgb, var(--brand-primary, #1B2746) 14%, transparent); }
+            .hb-empty-first__note{
+                display:inline-flex; align-items:center; gap:8px;
+                font-size:.9rem; color: var(--brand-muted, #6C7689);
+            }
+            .hb-empty-first__hints{
+                list-style:none; padding:0; margin:32px 0 0;
+                display:flex; flex-wrap:wrap; gap:10px 20px; justify-content:center;
+            }
+            .hb-empty-first__hints li{
+                display:inline-flex; align-items:center; gap:7px;
+                font-size:.8rem; color: var(--brand-muted, #8A8474);
+            }
+            .hb-empty-first__hints i{ color: var(--brand-accent, #BD9441); }
+
+            /* Estado de filtro sin coincidencias (hay cuartos, pero ninguno matchea) */
+            .hb-empty-filter{
+                text-align:center; padding:44px 22px; margin-top:4px;
+                border-radius:18px;
+                background: var(--brand-surface, #FAFAFC);
+                border:1px solid var(--brand-line, #EDE7DA);
+            }
+            .hb-empty-filter__icon{
+                width:60px; height:60px; margin:0 auto 14px;
+                display:flex; align-items:center; justify-content:center;
+                border-radius:18px; font-size:1.35rem;
+                color: var(--brand-accent, #BD9441);
+                background: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, var(--brand-surface, #fff));
+            }
+            .hb-empty-filter__title{
+                font-size:1.05rem; font-weight:700; color: var(--brand-primary, #1B2746); margin:0 0 4px;
+            }
+            .hb-empty-filter__lead{
+                font-size:.88rem; color: var(--brand-muted, #6C7689); margin:0 auto 18px; max-width:340px;
+            }
+            .hb-empty-filter__cta{
+                display:inline-flex; align-items:center; gap:8px;
+                padding:10px 20px; border-radius:12px;
+                font-weight:700; font-size:.88rem; text-decoration:none;
+                color: var(--brand-primary, #1B2746);
+                background: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, var(--brand-surface, #fff));
+                border:1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 18%, transparent);
+                transition: background .16s ease;
+            }
+            .hb-empty-filter__cta:hover{ background: color-mix(in srgb, var(--brand-primary, #1B2746) 14%, var(--brand-surface, #fff)); }
+
+            @media (max-width:640px){
+                .hb-empty-first{ padding:44px 18px 48px; border-radius:18px; }
+                .hb-empty-first__title{ font-size:1.22rem; }
+                .hb-empty-first__badge{ width:78px; height:78px; font-size:1.8rem; }
+            }
+        </style>
 
         <div id="hbMobileSheetBack" class="hb-mobile-sheet-back" onclick="hbCloseMobileRoomSheet()" aria-hidden="true"></div>
         <div id="hbMobileRoomSheet" class="hb-mobile-room-sheet" aria-hidden="true">
@@ -4867,7 +5055,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
   --lm-gold: var(--brand-accent, #BD9441);
   --lm-clean:#2F77E0; --lm-clean-deep:#1E5FBF; --lm-clean-bright:#5A9BF2;
   --lm-clean-soft:#E6EFFC; --lm-clean-mist:#F3F8FF;
-  --lm-surface:#FFFFFF; --lm-surface-warm:#FCFAF5;
+  --lm-surface:#FFFFFF; --lm-surface-warm:#F5F5F7;
   --lm-line:#E7E1D4; --lm-line-cool:#D5E3F6;
   --lm-ink:#20293A; --lm-ink-soft:#5C6675; --lm-ink-faint:#8B94A3;
   --lm-radius:24px; --lm-radius-md:15px; --lm-radius-sm:11px;
@@ -5451,8 +5639,8 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   --hb-primary: var(--brand-primary, #1B2746);
   --hb-secondary: var(--brand-secondary, #0F172A);
   --hb-accent: var(--brand-accent, #BD9441);
-  --hb-ivory:#F6F2EA; --hb-ivory-2:#FBF8F2;
-  --hb-surface:#FFFFFF; --hb-surface-warm:#FCFAF5;
+  --hb-ivory:#F5F5F7; --hb-ivory-2:#FAFAFC;
+  --hb-surface:#FFFFFF; --hb-surface-warm:#F5F5F7;
   --hb-line:#E7E1D4; --hb-line-soft:#F0EBE0;
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
   /* Estados (significado fijo) */
@@ -5471,9 +5659,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 
 /* ── Lienzo ── */
 .habitaciones-view{
-  background:
-    radial-gradient(1100px 460px at 85% -12%, color-mix(in srgb, var(--hb-accent) 9%, transparent), transparent 60%),
-    linear-gradient(180deg, var(--hb-ivory-2), var(--hb-ivory)) !important;
+  
 }
 .habitaciones-view::before{ display:none !important; }
 
@@ -5802,7 +5988,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   grid-template-columns:1fr 1fr;
   gap:10px;
   border-top:1px solid var(--hb-line,#E7DDCA);
-  background:var(--hb-surface-warm,#FFFCF7);
+  background:var(--hb-surface-warm,#FAFAFC);
 }
 .hb-swal-checkout .swal2-actions .swal2-styled{
   width:100%;
@@ -5828,7 +6014,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 24%,#E7DDCA)!important;
   border-radius:24px!important;
   overflow:hidden!important;
-  background:#FFFCF7!important;
+  background:#FAFAFC!important;
   box-shadow:0 32px 82px -28px rgba(12,18,32,.66)!important;
 }
 .hb-swal-checkin::before{
@@ -6014,7 +6200,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 24%,#E7DDCA)!important;
   border-radius:24px!important;
   overflow:hidden!important;
-  background:#FFFCF7!important;
+  background:#FAFAFC!important;
   box-shadow:0 32px 82px -28px rgba(12,18,32,.66)!important;
 }
 .hb-swal-client .swal2-title{
@@ -6061,7 +6247,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .hb-client-choice{
   display:grid;
   gap:0;
-  background:#FFFCF7;
+  background:#FAFAFC;
   text-align:left;
 }
 .hb-client-choice__head{
@@ -6692,9 +6878,7 @@ body.hb-modal-open{ overflow:hidden; }
 @media (max-width:640px){
   .habitaciones-view{
     min-height:100dvh;
-    background:
-      radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--brand-accent,#BD9441) 13%, transparent) 0 220px, transparent 221px),
-      linear-gradient(180deg, var(--hb-ivory) 0%, var(--hb-ivory-strong) 100%);
+    
   }
 
   .habitaciones-view .hb-page-header{ display:block!important; }
@@ -7547,7 +7731,7 @@ body.hb-modal-open{ overflow:hidden; }
   --hb-modal-soft:color-mix(in srgb,var(--hb-modal-primary) 7%,#FFFFFF);
   --hb-modal-softer:color-mix(in srgb,var(--hb-modal-primary) 4%,#FFFFFF);
   border:1px solid var(--hb-modal-line)!important;
-  background:linear-gradient(180deg,#FFFFFF,color-mix(in srgb,var(--hb-modal-primary) 3%,#FFFCF7))!important;
+  background:linear-gradient(180deg,#FFFFFF,color-mix(in srgb,var(--hb-modal-primary) 3%,#FAFAFC))!important;
   color:var(--hb-modal-ink)!important;
   box-shadow:0 34px 86px -30px color-mix(in srgb,var(--hb-modal-primary) 42%, rgba(12,18,32,.78))!important;
 }
@@ -9250,7 +9434,7 @@ body.hb-modal-open{ overflow:hidden; }
 .habitaciones-view .hb-filter-trigger{display:none;}
 @media (max-width:767px){
   .habitaciones-view{
-    background:radial-gradient(680px 260px at 88% -80px,color-mix(in srgb,var(--hb-accent) 13%,transparent),transparent 62%),linear-gradient(180deg,#FFFCF7 0%,#F7F1E8 100%)!important;
+    background:radial-gradient(680px 260px at 88% -80px,color-mix(in srgb,var(--hb-accent) 13%,transparent),transparent 62%),linear-gradient(180deg,#FAFAFC 0%,#F7F1E8 100%)!important;
   }
   .habitaciones-view .hb-page-header{ display:block!important; }
   .habitaciones-view .modern-header{
@@ -13234,8 +13418,8 @@ body.hb-modal-open{ overflow:hidden; }
         gap: 10px !important;
         padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--hb-surface, #FFFFFF) 88%, transparent), var(--hb-surface-warm, #F8F5ED) 18%),
-            var(--hb-surface-warm, #F8F5ED) !important;
+            linear-gradient(180deg, color-mix(in srgb, var(--hb-surface, #FFFFFF) 88%, transparent), var(--hb-surface-warm, #F5F5F7) 18%),
+            var(--hb-surface-warm, #F5F5F7) !important;
         box-shadow: 0 -12px 26px -24px rgba(18, 22, 34, .55);
     }
 
@@ -14003,7 +14187,7 @@ body.hb-lm-sidebar-under #sidebar.sidebar-main.sidebar-saas{
 }
 #modalLimpieza .lm-sk-bar{
   position:relative; overflow:hidden; border-radius:9px;
-  background:color-mix(in srgb, var(--lm-ink-faint, #8B94A3) 20%, var(--lm-surface-warm, #FCFAF5));
+  background:color-mix(in srgb, var(--lm-ink-faint, #8B94A3) 20%, var(--lm-surface-warm, #F5F5F7));
 }
 #modalLimpieza .lm-sk-head .lm-sk-bar{ background:rgba(255,255,255,.28); }
 #modalLimpieza .lm-sk-bar::after{
@@ -16161,10 +16345,48 @@ async function liberarHabitacion(id) {
     // Selector obligatorio: quién hizo la limpieza (una o más personas) o
     // la elección explícita "Sin registrar personal". No se puede omitir.
     let seleccion = { trabajadorIds: [], sinPersonal: false, omitido: true };
-    if (window.LimpiezaPersonal) {
+    const preseleccion = (HB_LIMPIEZA_ASIGNADAS[id] || HB_LIMPIEZA_ASIGNADAS[String(id)] || []).map(Number);
+
+    if (window.LimpiezaPersonal && preseleccion.length > 0) {
+        // Ya se asignó responsable al hacer check-out: confirmar de un clic en
+        // vez de pedir la selección otra vez (evita el doble trabajo).
+        const nombres = preseleccion
+            .map(pid => (HB_LIMPIEZA_PERSONAL.find(p => p.id === pid) || {}).nombre)
+            .filter(Boolean);
+
+        const confirmacion = await Swal.fire({
+            title: '¿Confirmar limpieza?',
+            html: nombres.length
+                ? `<p style="margin-bottom:8px;">La habitación quedará disponible.</p><p><strong>${nombres.join(', ')}</strong> quedó asignad${nombres.length > 1 ? 'os' : 'o'} a esta limpieza desde el check-out.</p>`
+                : '<p>La habitación quedará disponible.</p>',
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: '#059669',
+            denyButtonColor: '#2F77E0',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: '<i class="fas fa-check mr-2"></i>Sí, confirmar',
+            denyButtonText: 'Cambiar personal',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        });
+
+        if (confirmacion.isDismissed) return; // canceló
+
+        if (confirmacion.isConfirmed) {
+            seleccion = { trabajadorIds: preseleccion, sinPersonal: false };
+        } else if (confirmacion.isDenied) {
+            seleccion = await LimpiezaPersonal.elegir({
+                personal: HB_LIMPIEZA_PERSONAL,
+                preseleccion: preseleccion,
+                textoIntro: 'La habitación quedará disponible. Indica quién hizo la limpieza (puedes elegir a más de una persona).'
+            });
+            if (seleccion === null) return; // canceló
+        }
+    } else if (window.LimpiezaPersonal) {
         seleccion = await LimpiezaPersonal.elegir({
             personal: HB_LIMPIEZA_PERSONAL,
-            preseleccion: HB_LIMPIEZA_ASIGNADAS[id] || HB_LIMPIEZA_ASIGNADAS[String(id)] || null,
+            preseleccion: null,
             textoIntro: 'La habitación quedará disponible. Indica quién hizo la limpieza (puedes elegir a más de una persona).'
         });
         if (seleccion === null) return; // canceló

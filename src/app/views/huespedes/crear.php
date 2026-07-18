@@ -76,6 +76,12 @@ $gcOldExtra = function ($key, $default = '') {
 $gcRequiredMark = function ($key) use ($gcGuestFieldRequired) {
     return $gcGuestFieldRequired($key) ? ' <span class="gc-required">*</span>' : '';
 };
+// Distintivo por seccion: obligatoria (tiene campos requeridos) vs opcional.
+$gcSectionBadge = function (bool $required): string {
+    return $required
+        ? '<span class="gc-badge gc-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span>'
+        : '<span class="gc-badge gc-badge-opt"><i class="far fa-circle"></i> Opcional</span>';
+};
 $gcRenderGuestExtraField = function ($fieldKey, array $definition) use ($gcGuestFieldRequired, $gcOldExtra) {
     $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
     $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -223,8 +229,8 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     --gc-accent-dark: color-mix(in srgb, var(--gc-accent) 72%, #3F2E12);
     --gc-accent-soft: color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF);
     --gc-accent-line: color-mix(in srgb, var(--gc-accent) 32%, #E8DDCA);
-    --gc-ivory: color-mix(in srgb, var(--gc-accent) 8%, #F8F5ED);
-    --gc-ivory-2: color-mix(in srgb, var(--gc-accent) 5%, #FCFAF5);
+    --gc-ivory: color-mix(in srgb, var(--gc-accent) 8%, #F5F5F7);
+    --gc-ivory-2: color-mix(in srgb, var(--gc-accent) 5%, #F5F5F7);
     --gc-surface: color-mix(in srgb, var(--gc-accent) 2%, #FFFFFF);
     --gc-surface-warm: color-mix(in srgb, var(--gc-accent) 5%, #FFFFFF);
     --gc-line: color-mix(in srgb, var(--gc-accent) 20%, #E7DEC9);
@@ -240,9 +246,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     --gc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --gc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
-    background:
-        repeating-linear-gradient(135deg, color-mix(in srgb, var(--gc-accent) 3%, transparent) 0 1px, transparent 1px 22px),
-        linear-gradient(180deg, var(--gc-ivory-2), var(--gc-ivory) 58%, #F7F2EA);
+    
     color: var(--gc-text);
     font-family: var(--gc-sans);
     -webkit-font-smoothing: antialiased;
@@ -402,6 +406,13 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     min-width: 0;
 }
 
+/* Las secciones obligatorias suben arriba; Informacion personal SIEMPRE primera.
+   Se reordena por CSS (sin mover el DOM ni parpadeo); la linea de tiempo lo espeja
+   leyendo el mismo `order`. Detecta obligatoria por el distintivo .gc-badge-req. */
+main.gc-form > .gc-section { order: 2; }                    /* opcionales al final */
+main.gc-form > .gc-section:has(.gc-badge-req) { order: 1; } /* obligatorias arriba */
+main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion personal fija primera */
+
 .gc-section,
 .gc-side-card,
 .gc-actions {
@@ -461,6 +472,65 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     font-size: .72rem;
     font-weight: 600;
     overflow-wrap: anywhere;
+}
+
+/* Distintivo Obligatorio / Opcional por seccion + leyenda superior */
+.gc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.gc-badge i {
+    font-size: .56rem;
+}
+
+.gc-badge-req {
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--gc-brand), var(--gc-brand-2));
+    border: 1px solid color-mix(in srgb, var(--gc-brand) 40%, transparent);
+    box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--gc-brand) 70%, transparent);
+}
+
+.gc-badge-opt {
+    color: var(--gc-muted);
+    background: var(--gc-surface-warm);
+    border: 1px solid var(--gc-line);
+}
+
+.gc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px 18px;
+    margin: 0 0 16px;
+    padding: 12px 15px;
+    border: 1px solid var(--gc-line);
+    border-radius: 14px;
+    background: var(--gc-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--gc-brand-2) 4%, transparent);
+}
+
+.gc-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gc-muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.gc-legend-item .gc-required {
+    font-weight: 850;
 }
 
 .gc-section-body {
@@ -1160,9 +1230,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 /* Mobile compact workspace */
 @media (max-width: 700px) {
     .guest-create-page {
-        background:
-            repeating-linear-gradient(135deg, color-mix(in srgb, var(--gc-accent) 2%, transparent) 0 1px, transparent 1px 20px),
-            linear-gradient(180deg, var(--gc-ivory-2), var(--gc-ivory));
+        
     }
 
     .gc-wrap {
@@ -1285,6 +1353,24 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     .gc-note,
     .gc-side {
         display: none;
+    }
+
+    .gc-legend {
+        gap: 6px 12px;
+        margin-bottom: 9px;
+        padding: 9px 11px;
+        border-radius: 12px;
+    }
+
+    .gc-legend-item {
+        font-size: .66rem;
+        gap: 6px;
+    }
+
+    .gc-badge {
+        padding: 3px 8px;
+        font-size: .56rem;
+        letter-spacing: .04em;
     }
 
     .gc-section-body {
@@ -1499,6 +1585,88 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     }
 }
 
+.gc-foreign-block {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--gc-line);
+}
+
+.gc-foreign-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gc-foreign-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.gc-foreign-check {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    border: 1px solid var(--gc-line);
+    border-radius: 7px;
+    background: var(--gc-surface-warm);
+    color: transparent;
+    font-size: .68rem;
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.gc-foreign-toggle input:checked ~ .gc-foreign-check {
+    border-color: var(--gc-brand);
+    background: var(--gc-brand);
+    color: #FFFFFF;
+    transform: scale(1.03);
+}
+
+.gc-foreign-toggle input:focus-visible ~ .gc-foreign-check {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 26%, transparent);
+}
+
+.gc-foreign-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gc-foreign-copy strong {
+    color: #111827;
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.gc-foreign-copy small {
+    color: var(--gc-muted);
+    font-size: .74rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.gc-foreign-field {
+    overflow: hidden;
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: max-height .28s cubic-bezier(.22,1,.36,1), opacity .22s ease, transform .22s ease, margin-top .22s ease;
+}
+
+.gc-foreign-block.is-open .gc-foreign-field {
+    max-height: 160px;
+    margin-top: 12px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .guest-create-page *,
     .guest-create-page *::before,
@@ -1506,6 +1674,293 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
         transition: none !important;
         animation: none !important;
     }
+}
+
+/* ── Ruta del registro: linea de tiempo de recompensa ── */
+.gc-reward-count { color: var(--gc-muted); font-size: .78rem; font-weight: 750; }
+.gc-reward-count strong { color: #111827; font-size: 1.05rem; font-weight: 850; }
+
+.gc-reward-bar {
+    height: 8px;
+    margin-top: 8px;
+    border-radius: 999px;
+    background: var(--gc-surface-warm);
+    border: 1px solid var(--gc-line);
+    overflow: hidden;
+}
+
+.gc-reward-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    position: relative;
+    background: linear-gradient(90deg, var(--gc-brand), var(--gc-brand-2));
+    transition: width .55s cubic-bezier(.22, 1, .36, 1);
+}
+
+.gc-reward-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .5) 50%, transparent 70%);
+    transform: translateX(-120%);
+}
+
+.gc-reward-fill.is-shine::after { animation: gcShine .9s ease; }
+.gc-reward-bar--gold .gc-reward-fill { background: linear-gradient(90deg, var(--gc-accent), var(--gc-accent-dark)); }
+
+.gc-timeline {
+    list-style: none;
+    position: relative;
+    margin: 15px 0 0;
+    padding: 0 2px 0 0;
+    max-height: 56vh;
+    overflow-y: auto;
+}
+
+.gc-tl-item {
+    position: relative;
+    padding: 5px 0;
+    z-index: 1;
+}
+
+.gc-tl-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.gc-tl-sub {
+    list-style: none;
+    margin: 6px 0 2px 12px;
+    padding: 3px 0 2px 16px;
+    border-left: 2px solid var(--gc-line);
+    display: grid;
+    gap: 5px;
+    transition: border-color .25s ease;
+}
+
+.gc-tl-item.is-done .gc-tl-sub { border-left-color: color-mix(in srgb, var(--gc-brand) 32%, var(--gc-line)); }
+.gc-tl-item.is-opt.is-done .gc-tl-sub { border-left-color: color-mix(in srgb, var(--gc-accent) 42%, var(--gc-line)); }
+
+.gc-tl-subitem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gc-tl-subdot {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    border: 2px solid var(--gc-line);
+    background: var(--gc-surface);
+    transition: border-color .2s ease, background .2s ease;
+}
+
+.gc-tl-subitem.is-done .gc-tl-subdot { border-color: transparent; background: var(--gc-brand); }
+.gc-tl-item.is-opt .gc-tl-subitem.is-done .gc-tl-subdot { background: var(--gc-accent); }
+.gc-tl-subitem.pop .gc-tl-subdot { animation: gcPop .4s cubic-bezier(.22, 1, .36, 1); }
+
+.gc-tl-sublabel {
+    font-size: .72rem;
+    font-weight: 650;
+    color: var(--gc-muted);
+    line-height: 1.25;
+}
+
+.gc-tl-subitem.is-done .gc-tl-sublabel { color: #111827; }
+.gc-tl-star { color: var(--gc-danger); margin-left: 3px; font-weight: 850; }
+
+.gc-tl-dot {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid var(--gc-line);
+    background: var(--gc-surface);
+    color: transparent;
+    font-size: .58rem;
+    transition: border-color .25s ease, background .25s ease, color .25s ease, box-shadow .25s ease;
+}
+
+.gc-tl-item.is-active .gc-tl-dot {
+    border-color: var(--gc-accent);
+    box-shadow: 0 0 0 4px var(--gc-accent-soft);
+}
+
+.gc-tl-item.is-done .gc-tl-dot {
+    border-color: transparent;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--gc-brand), var(--gc-brand-2));
+}
+
+.gc-tl-item.is-opt.is-done .gc-tl-dot { background: linear-gradient(135deg, var(--gc-accent), var(--gc-accent-dark)); }
+
+.gc-tl-label {
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    color: var(--gc-muted);
+    font-size: .8rem;
+    font-weight: 750;
+    line-height: 1.25;
+    transition: color .2s ease;
+}
+
+.gc-tl-item.is-done .gc-tl-label { color: #111827; }
+.gc-tl-label:hover { color: var(--gc-accent-dark); }
+
+.gc-tl-tag {
+    margin-left: 6px;
+    font-size: .6rem;
+    font-weight: 850;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--gc-accent-dark);
+    opacity: .72;
+}
+
+.gc-tl-item.pop .gc-tl-dot { animation: gcPop .45s cubic-bezier(.22, 1, .36, 1); }
+@keyframes gcPop { 0% { transform: scale(1); } 42% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+.gc-reward-bonus {
+    margin-top: 15px;
+    padding-top: 13px;
+    border-top: 1px dashed var(--gc-line);
+}
+
+.gc-reward-bonus[hidden] { display: none; }
+
+.gc-bonus-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--gc-accent-dark);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .03em;
+}
+
+.gc-bonus-top i { margin-right: 5px; }
+
+.gc-bonus-note {
+    margin: 8px 0 0;
+    color: var(--gc-muted);
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.gc-reward-ready {
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 13px;
+    border-radius: 999px;
+    background: var(--gc-success-bg);
+    color: var(--gc-success);
+    font-size: .75rem;
+    font-weight: 850;
+    animation: gcReadyIn .4s cubic-bezier(.22, 1, .36, 1);
+}
+
+.gc-reward-ready[hidden] { display: none; }
+@keyframes gcReadyIn { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+
+.gc-reward.is-complete {
+    box-shadow: 0 0 0 1px var(--gc-accent-line), 0 16px 34px -20px color-mix(in srgb, var(--gc-brand) 45%, transparent);
+}
+
+.gc-spark {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    pointer-events: none;
+    color: var(--gc-accent);
+    font-size: .7rem;
+    display: grid;
+    place-items: center;
+    animation: gcSpark .75s ease forwards;
+}
+
+@keyframes gcSpark {
+    0% { opacity: 0; transform: scale(.4) rotate(0); }
+    40% { opacity: 1; transform: scale(1.2) rotate(90deg); }
+    100% { opacity: 0; transform: scale(.6) rotate(160deg); }
+}
+
+.gc-btn-primary { position: relative; overflow: hidden; }
+
+.gc-btn-primary.gc-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, .55) 50%, transparent 70%);
+    transform: translateX(-120%);
+    animation: gcShine .95s ease;
+}
+
+@keyframes gcShine { to { transform: translateX(120%); } }
+
+/* Cinta de progreso movil (el panel lateral se oculta en <=700px) */
+.gc-progress-mobile { display: none; }
+
+@media (max-width: 700px) {
+    .gc-progress-mobile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: sticky;
+        top: 6px;
+        z-index: 30;
+        margin: 0 0 10px;
+        padding: 8px 11px;
+        border: 1px solid var(--gc-line);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--gc-surface) 90%, transparent);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 20px -14px rgba(24, 33, 46, .5);
+    }
+
+    .gc-pm-bar {
+        flex: 1;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--gc-surface-warm);
+        border: 1px solid var(--gc-line);
+        overflow: hidden;
+    }
+
+    .gc-pm-bar span {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--gc-brand), var(--gc-brand-2));
+        transition: width .55s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .gc-pm-label {
+        font-size: .66rem;
+        font-weight: 850;
+        color: var(--gc-muted);
+        white-space: nowrap;
+    }
+
+    .gc-pm-label.is-ready { color: var(--gc-success); }
+    .gc-pm-label i { margin-right: 3px; }
 }
 </style>
 
@@ -1548,6 +2003,17 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
             </div>
         <?php endif; ?>
 
+        <div class="gc-legend" role="note" aria-label="Que campos son obligatorios">
+            <span class="gc-legend-item"><span class="gc-badge gc-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span> secciones que debes completar</span>
+            <span class="gc-legend-item"><span class="gc-badge gc-badge-opt"><i class="far fa-circle"></i> Opcional</span> puedes dejarlas en blanco</span>
+            <span class="gc-legend-item"><span class="gc-required">*</span> campo obligatorio dentro de la seccion</span>
+        </div>
+
+        <div class="gc-progress-mobile" id="gcProgressMobile" role="status" aria-live="polite">
+            <div class="gc-pm-bar"><span id="gcPmFill"></span></div>
+            <span class="gc-pm-label" id="gcPmLabel">0/0 campos</span>
+        </div>
+
         <form method="POST" action="<?= url('huespedes/store') . ($return_to ? '?return_to=' . urlencode($return_to) . $reservacion_rapida_params : '') ?>" class="gc-form" enctype="multipart/form-data">
             <?= csrf_field() ?>
 
@@ -1562,6 +2028,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Datos de contacto y nombre legal para el expediente.</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge(true) ?>
                         </div>
 
                         <div class="gc-section-body">
@@ -1628,6 +2095,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Opcional. Se aplica automaticamente al cotizar reservaciones de este huesped (ajustable en cada reservacion).</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge(false) ?>
                         </div>
                         <div class="gc-section-body">
                             <div class="gc-grid">
@@ -1658,7 +2126,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                     </section>
                     <?php endif; ?>
 
-                    <?php if ($gcGuestFieldVisible('procedencia_estado') || $gcGuestFieldVisible('procedencia_ciudad')): ?>
+                    <?php if ($gcGuestFieldVisible('procedencia_estado') || $gcGuestFieldVisible('procedencia_ciudad') || $gcGuestFieldVisible('nacionalidad')): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">
@@ -1668,6 +2136,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Origen del huesped para reportes y seguimiento.</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge($gcGuestFieldRequired('procedencia_estado') || $gcGuestFieldRequired('procedencia_ciudad') || $gcGuestFieldRequired('nacionalidad')) ?>
                         </div>
 
                         <div class="gc-section-body">
@@ -1706,16 +2175,62 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     </div>
                                 <?php endif; ?>
                             </div>
+
+                            <?php if ($gcGuestFieldVisible('nacionalidad')): ?>
+                                <?php
+                                    $gcNacValue = $gcOldExtra('nacionalidad');
+                                    $gcNacRequired = $gcGuestFieldRequired('nacionalidad');
+                                    $gcNacOpen = $gcNacRequired || $gcNacValue !== '';
+                                ?>
+                                <div class="gc-foreign-block<?= $gcNacOpen ? ' is-open' : '' ?>" data-foreign-block>
+                                    <?php if (!$gcNacRequired): ?>
+                                        <label class="gc-foreign-toggle">
+                                            <input type="checkbox" data-foreign-toggle <?= $gcNacOpen ? 'checked' : '' ?>>
+                                            <span class="gc-foreign-check"><i class="fas fa-check"></i></span>
+                                            <span class="gc-foreign-copy">
+                                                <strong>El huesped es extranjero</strong>
+                                                <small>Activalo para registrar su nacionalidad. Aparece en el reporte de procedencia internacional.</small>
+                                            </span>
+                                        </label>
+                                    <?php endif; ?>
+                                    <div class="gc-field gc-field-full gc-foreign-field" data-foreign-field>
+                                        <label class="gc-label">Nacionalidad<?= $gcNacRequired ? ' <span class="gc-required">*</span>' : '' ?></label>
+                                        <div class="gc-input-wrap">
+                                            <i class="fas fa-earth-americas"></i>
+                                            <input type="text"
+                                                   name="extras[nacionalidad]"
+                                                   value="<?= htmlspecialchars($gcNacValue, ENT_QUOTES, 'UTF-8') ?>"
+                                                   maxlength="80"
+                                                   placeholder="Estadounidense, canadiense, espanola..."
+                                                   class="gc-control has-icon"
+                                                   data-foreign-input
+                                                   <?= $gcNacRequired ? 'required' : '' ?>>
+                                        </div>
+                                        <?php if (form_error('extras[nacionalidad]')): ?>
+                                            <span class="gc-form-error"><?= form_error('extras[nacionalidad]') ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </section>
                     <?php endif; ?>
 
                     <?php
-                    $gcExtraGuestFields = array_filter($gcGuestVisibleFields('guest'), function ($definition) {
+                    $gcExtraGuestFields = array_filter($gcGuestVisibleFields('guest'), function ($definition, $key) {
+                        if ($key === 'nacionalidad') {
+                            return false; // se captura en la seccion Procedencia (bloque extranjero)
+                        }
                         return in_array(($definition['storage'] ?? 'column'), ['extra', 'document'], true);
-                    });
+                    }, ARRAY_FILTER_USE_BOTH);
                     ?>
                     <?php if (!empty($gcExtraGuestFields)): ?>
+                        <?php
+                        $gcExtraGuestRequired = false;
+                        foreach ($gcExtraGuestFields as $gcExtraKey => $gcExtraDef) {
+                            if ($gcGuestFieldRequired($gcExtraKey)) { $gcExtraGuestRequired = true; break; }
+                        }
+                        ?>
                         <section class="gc-section">
                             <div class="gc-section-head">
                                 <div class="gc-section-title-wrap">
@@ -1725,6 +2240,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                         <p class="gc-section-sub">Campos definidos por la configuracion de este hotel.</p>
                                     </div>
                                 </div>
+                                <?= $gcSectionBadge($gcExtraGuestRequired) ?>
                             </div>
 
                             <div class="gc-section-body">
@@ -1737,6 +2253,8 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                         </section>
                     <?php endif; ?>
 
+                    <?php /* Seccion de documentos solo si el hotel configuro visible el archivo de identificacion (unico campo documental de la politica). Sin documento visible => se esconde. */ ?>
+                    <?php if ($gcGuestFieldVisible('identificacion_archivo')): ?>
                     <?php
                     $gcInitialDocumentUploads = [];
                     if (!$gcGuestFieldVisible('identificacion_archivo')) {
@@ -1772,6 +2290,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Adjuntos opcionales vinculados al expediente desde el primer registro.</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge(false) ?>
                         </div>
 
                         <div class="gc-section-body">
@@ -1813,6 +2332,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                             </p>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <?php if (!empty($gcVehicleVisibleFields) && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('vehiculos'))): ?>
                     <section class="gc-section">
@@ -1824,6 +2344,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Autos asociados al huesped para control de estacionamiento.</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge(false) ?>
                         </div>
 
                         <div class="gc-section-body">
@@ -1871,6 +2392,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                     <p class="gc-section-sub">Observaciones utiles para recepcion y futuras reservaciones.</p>
                                 </div>
                             </div>
+                            <?= $gcSectionBadge($gcGuestFieldRequired('notas')) ?>
                         </div>
 
                         <div class="gc-section-body">
@@ -1889,16 +2411,23 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                 </main>
 
                 <aside class="gc-side">
-                    <div class="gc-side-card">
+                    <div class="gc-side-card gc-reward" id="gcReward">
                         <h3>
-                            <span class="gc-side-icon"><i class="fas fa-list-check"></i></span>
-                            Registro limpio
+                            <span class="gc-side-icon"><i class="fas fa-flag-checkered"></i></span>
+                            Ruta del registro
                         </h3>
-                        <div class="gc-check-list">
-                            <span><i class="fas fa-check-circle"></i> Nombre completo y telefono celular son la base del expediente.</span>
-                            <span><i class="fas fa-check-circle"></i> Los demas datos dependen de la configuracion del hotel.</span>
-                            <span><i class="fas fa-check-circle"></i> Vehiculos se pueden registrar solo si aplican.</span>
+                        <div class="gc-reward-count"><strong id="gcReqDone">0</strong> de <span id="gcReqTotal">0</span> campos obligatorios</div>
+                        <div class="gc-reward-bar"><span class="gc-reward-fill" id="gcReqFill"></span></div>
+                        <ol class="gc-timeline" id="gcTimeline"></ol>
+                        <div class="gc-reward-bonus" id="gcBonus" hidden>
+                            <div class="gc-bonus-top">
+                                <span><i class="fas fa-star"></i> Datos extra</span>
+                                <span id="gcBonusPct">0%</span>
+                            </div>
+                            <div class="gc-reward-bar gc-reward-bar--gold"><span class="gc-reward-fill" id="gcBonusFill"></span></div>
+                            <p class="gc-bonus-note">Cada dato ayuda a reconocer al huesped después.</p>
                         </div>
+                        <div class="gc-reward-ready" id="gcReadyPill" hidden><i class="fas fa-check-circle"></i> Listo para guardar</div>
                     </div>
 
                     <div class="gc-side-card">
@@ -2096,4 +2625,270 @@ document.querySelector('form').addEventListener('submit', function(e) {
 });
 
 sincronizarVehiculosOpcionales();
+
+// Bloque "huesped extranjero": el toggle revela y limpia el campo nacionalidad
+document.querySelectorAll('[data-foreign-block]').forEach(function(block) {
+    const toggle = block.querySelector('[data-foreign-toggle]');
+    const input = block.querySelector('[data-foreign-input]');
+    if (!toggle || !input) {
+        return; // campo obligatorio: siempre visible, sin toggle
+    }
+
+    function sync(clearWhenClosed) {
+        const abierto = toggle.checked;
+        block.classList.toggle('is-open', abierto);
+        if (!abierto && clearWhenClosed) {
+            input.value = '';
+        }
+        if (abierto) {
+            input.focus();
+        }
+    }
+
+    toggle.addEventListener('change', function() { sync(true); });
+});
+
+// ── Ruta del registro: linea de tiempo con subcampos + barra por campo ──
+// Progreso a nivel CAMPO: con solo poner el nombre la barra ya avanza. Cada
+// seccion muestra sus subcampos y su check se enciende al llenarlos.
+(function(){
+    var page = document.querySelector('.guest-create-page');
+    if (!page) return;
+    var formEl = page.querySelector('form') || page;
+
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var timelineEl = document.getElementById('gcTimeline');
+    var reqDoneEl  = document.getElementById('gcReqDone');
+    var reqTotalEl = document.getElementById('gcReqTotal');
+    var reqFillEl  = document.getElementById('gcReqFill');
+    var bonusWrap  = document.getElementById('gcBonus');
+    var bonusPctEl = document.getElementById('gcBonusPct');
+    var bonusFillEl= document.getElementById('gcBonusFill');
+    var readyPill  = document.getElementById('gcReadyPill');
+    var rewardCard = document.getElementById('gcReward');
+    var pmFill     = document.getElementById('gcPmFill');
+    var pmLabel    = document.getElementById('gcPmLabel');
+
+    function isFilled(c){
+        if (!c || !c.name || c.disabled) return false;
+        var t = c.type;
+        if (t === 'hidden' || t === 'button' || t === 'submit' || t === 'reset') return false;
+        if (c.name.indexOf('[estacionamiento]') !== -1) return false; // radio de estacionamiento viene marcado por defecto
+        if (t === 'radio' || t === 'checkbox') return !!c.checked && String(c.value || '').trim() !== '';
+        if (t === 'file') return !!(c.files && c.files.length);
+        return String(c.value || '').trim() !== '';
+    }
+    // Campos rastreables de una seccion (uno por control real que el usuario llena)
+    function trackable(sec){
+        return Array.prototype.slice.call(sec.querySelectorAll('input,select,textarea')).filter(function(c){
+            if (!c.name || c.disabled) return false;
+            var t = c.type;
+            if (t === 'hidden' || t === 'button' || t === 'submit' || t === 'reset') return false;
+            if (c.name.indexOf('[estacionamiento]') !== -1) return false;
+            return true;
+        });
+    }
+    function clean(txt){ return (txt || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim(); }
+    function fieldLabel(c){
+        var f = c.closest('.gc-field');
+        if (f){ var l = f.querySelector('.gc-label'); if (l) return clean(l.textContent); }
+        var doc = c.closest('.gc-doc-upload-card');
+        if (doc){ var h = doc.querySelector('h4'); if (h) return clean(h.textContent); }
+        // Sin .gc-field: buscar la .gc-label que precede al control (ej. Notas)
+        var el = c;
+        while (el && el !== formEl){
+            var p = el.previousElementSibling;
+            while (p){
+                if (p.classList && p.classList.contains('gc-label')) return clean(p.textContent);
+                var inner = p.querySelector && p.querySelector('.gc-label');
+                if (inner) return clean(inner.textContent);
+                p = p.previousElementSibling;
+            }
+            el = el.parentElement;
+        }
+        return clean(c.name);
+    }
+    function spark(li){
+        var s = document.createElement('span');
+        s.className = 'gc-spark';
+        s.innerHTML = '<i class="fas fa-star"></i>';
+        li.appendChild(s);
+        s.addEventListener('animationend', function(){ if (s.parentNode) s.remove(); });
+        setTimeout(function(){ if (s.parentNode) s.remove(); }, 1000);
+    }
+    function pop(el){ if (reduce) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+    function setBar(el, ratio){ if (el) el.style.width = (Math.max(0, Math.min(1, ratio)) * 100) + '%'; }
+
+    var sectionNodes = [];   // { sec, required, li, dot, subItems:[] }
+    var fields = [];         // { control, li, fieldReq, done }
+    var reqTotal = 0, optTotal = 0;
+
+    function build(){
+        if (!timelineEl) return;
+        timelineEl.innerHTML = '';
+        sectionNodes = [];
+        fields = [];
+
+        var sections = Array.prototype.slice.call(page.querySelectorAll('.gc-section')).filter(function(s){
+            return s.querySelector('h2') && s.querySelector('.gc-badge');
+        });
+        // Espejar el orden visual del formulario (CSS `order`): obligatorias arriba,
+        // Informacion personal primera. Array.sort es estable → conserva el orden de origen en empates.
+        sections.sort(function(a, b){
+            return (parseInt(getComputedStyle(a).order, 10) || 0) - (parseInt(getComputedStyle(b).order, 10) || 0);
+        });
+
+        sections.forEach(function(sec){
+            var required = !!sec.querySelector('.gc-badge-req');
+            var label = (sec.querySelector('h2').textContent || '').trim();
+
+            var li = document.createElement('li');
+            li.className = 'gc-tl-item' + (required ? '' : ' is-opt');
+
+            var row = document.createElement('div');
+            row.className = 'gc-tl-row';
+            var dot = document.createElement('span');
+            dot.className = 'gc-tl-dot';
+            dot.innerHTML = '<i class="fas fa-check"></i>';
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gc-tl-label';
+            btn.textContent = label;
+            if (!required){
+                var tag = document.createElement('span');
+                tag.className = 'gc-tl-tag';
+                tag.textContent = 'extra';
+                btn.appendChild(tag);
+            }
+            btn.addEventListener('click', function(){
+                sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+                var f = sec.querySelector('input,select,textarea');
+                if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+            });
+            row.appendChild(dot);
+            row.appendChild(btn);
+            li.appendChild(row);
+
+            var controls = trackable(sec);
+            var subItems = [];
+            if (controls.length){
+                var ul = document.createElement('ul');
+                ul.className = 'gc-tl-sub';
+                controls.forEach(function(c){
+                    var fieldReq = c.hasAttribute('required');
+                    var sub = document.createElement('li');
+                    sub.className = 'gc-tl-subitem';
+                    var sdot = document.createElement('span');
+                    sdot.className = 'gc-tl-subdot';
+                    var slabel = document.createElement('span');
+                    slabel.className = 'gc-tl-sublabel';
+                    slabel.textContent = fieldLabel(c);
+                    if (fieldReq){
+                        var star = document.createElement('span');
+                        star.className = 'gc-tl-star';
+                        star.textContent = '*';
+                        slabel.appendChild(star);
+                    }
+                    sub.appendChild(sdot);
+                    sub.appendChild(slabel);
+                    ul.appendChild(sub);
+                    var item = { control: c, li: sub, fieldReq: fieldReq, done: false };
+                    subItems.push(item);
+                    fields.push(item);
+                });
+                li.appendChild(ul);
+            }
+
+            timelineEl.appendChild(li);
+            sectionNodes.push({ sec: sec, required: required, li: li, dot: dot, subItems: subItems });
+        });
+
+        reqTotal = fields.filter(function(f){ return f.fieldReq; }).length;
+        optTotal = fields.length - reqTotal;
+        if (reqTotalEl) reqTotalEl.textContent = reqTotal;
+        if (bonusWrap) bonusWrap.hidden = optTotal === 0;
+    }
+
+    var prevReqDone = 0, prevAllReq = false;
+
+    function refresh(animate){
+        // Estado por campo
+        fields.forEach(function(f){
+            var d = isFilled(f.control);
+            if (d !== f.done){
+                f.done = d;
+                f.li.classList.toggle('is-done', d);
+                if (d && animate) pop(f.li);
+            }
+        });
+
+        // Estado por seccion (agregado de sus subcampos)
+        sectionNodes.forEach(function(n){
+            var reqSubs = n.subItems.filter(function(s){ return s.fieldReq; });
+            var complete;
+            if (n.required){
+                complete = reqSubs.length ? reqSubs.every(function(s){ return s.done; })
+                                          : n.subItems.length ? n.subItems.every(function(s){ return s.done; }) : false;
+            } else {
+                complete = n.subItems.length ? n.subItems.every(function(s){ return s.done; }) : false;
+            }
+            var wasDone = n.li.classList.contains('is-done');
+            n.li.classList.toggle('is-done', complete);
+            if (complete && !wasDone && animate){ pop(n.dot.parentNode); if (!n.required) spark(n.li); }
+            var anyFilled = n.subItems.some(function(s){ return s.done; });
+            var focused = n.sec.contains(document.activeElement);
+            n.li.classList.toggle('is-active', !complete && (focused || anyFilled));
+        });
+
+        var reqDone = fields.filter(function(f){ return f.fieldReq && f.done; }).length;
+        var optDone = fields.filter(function(f){ return !f.fieldReq && f.done; }).length;
+
+        if (reqDoneEl) reqDoneEl.textContent = reqDone;
+        setBar(reqFillEl, reqTotal ? reqDone / reqTotal : 0);
+        if (reqDone > prevReqDone && reqFillEl && !reduce){
+            reqFillEl.classList.remove('is-shine'); void reqFillEl.offsetWidth; reqFillEl.classList.add('is-shine');
+        }
+        prevReqDone = reqDone;
+
+        var optRatio = optTotal ? optDone / optTotal : 0;
+        setBar(bonusFillEl, optRatio);
+        if (bonusPctEl) bonusPctEl.textContent = Math.round(optRatio * 100) + '%';
+
+        var allReq = reqTotal > 0 && reqDone === reqTotal;
+        setBar(pmFill, reqTotal ? reqDone / reqTotal : 0);
+        if (pmLabel){
+            if (allReq){ pmLabel.classList.add('is-ready'); pmLabel.innerHTML = '<i class="fas fa-check-circle"></i> Listo para guardar'; }
+            else { pmLabel.classList.remove('is-ready'); pmLabel.textContent = reqDone + '/' + reqTotal + ' campos'; }
+        }
+        if (allReq !== prevAllReq){
+            if (readyPill) readyPill.hidden = !allReq;
+            if (rewardCard) rewardCard.classList.toggle('is-complete', allReq);
+            if (allReq && !reduce){
+                var b = formEl.querySelector('.gc-btn-primary');
+                if (b){ b.classList.remove('gc-shine'); void b.offsetWidth; b.classList.add('gc-shine'); }
+            }
+            prevAllReq = allReq;
+        }
+    }
+
+    build();
+    if (!fields.length && !sectionNodes.length) return;
+
+    formEl.addEventListener('input', function(){ refresh(true); }, true);
+    formEl.addEventListener('change', function(){ refresh(true); }, true);
+    formEl.addEventListener('focusin', function(){ refresh(false); });
+    formEl.addEventListener('focusout', function(){ setTimeout(function(){ refresh(false); }, 0); });
+
+    // Vehiculos se agregan/eliminan dinamicamente: reconstruir sus subcampos.
+    var vc = document.getElementById('vehiculos-container');
+    if (vc && window.MutationObserver){
+        var rebuildT;
+        new MutationObserver(function(){
+            clearTimeout(rebuildT);
+            rebuildT = setTimeout(function(){ build(); refresh(false); }, 60);
+        }).observe(vc, { childList: true, subtree: true });
+    }
+
+    refresh(false);
+})();
 </script>

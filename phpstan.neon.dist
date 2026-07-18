@@ -1,0 +1,40 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 0
+    paths:
+        - src/core
+        - src/app/services
+        - src/app/models
+    excludePaths:
+        - src/app/helpers/tcpdf/*
+        - src/app/libs/*
+        - src/public_html/vendor/*
+        - src/public_html/fdpdf/*
+        # Archivo LEGACY congelado (namespace App\* inexistente en esta app,
+        # inanalizable e incargable; se conserva solo como referencia).
+        - src/app/models/ConfiguracionInventario.php
+    # Helpers globales cargados en runtime por index.php: PHPStan solo los
+    # ESCANEA (descubre simbolos), no los analiza. Jamas scanDirectories sobre
+    # helpers/ completo (tcpdf tiene lineas de 1.1M chars).
+    scanFiles:
+        - src/app/helpers/auth.php
+        - src/app/helpers/auth_helpers.php
+        - src/app/helpers/branding.php
+        - src/app/helpers/cache.php
+        - src/app/helpers/errores.php
+        - src/app/helpers/festivos_mx.php
+        - src/app/helpers/footer_nav.php
+        - src/app/helpers/functions.php
+        - src/app/helpers/habitaciones.php
+        - src/app/helpers/hotel_config.php
+        - src/app/helpers/integracion_inventario.php
+        - src/app/helpers/inventario_helpers.php
+        - src/app/helpers/log.php
+        - src/app/helpers/modulos.php
+        - src/app/helpers/navegacion.php
+        - src/app/helpers/proxy_confiable.php
+        - src/app/helpers/pwa.php
+        - src/app/helpers/sidebar_novedades.php
+        - src/app/helpers/view_helpers.php

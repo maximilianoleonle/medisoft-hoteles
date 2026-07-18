@@ -1,17 +1,52 @@
 #!/bin/bash
-# Testeo funcional del sistema de bloques comerciales (hotel demo, id 2).
+# Testeo funcional del sistema de bloques comerciales.
 # Con sesion real: enciende/apaga bloques y verifica gates HTTP, menu y core.
+# Requiere variables de entorno; nunca versionar credenciales QA aqui.
 # Uso (host): bash tools/test_bloques_funcional.sh
-set -u
+set -uo pipefail
 
-BASE="http://localhost:8080"
-SLUG="hotel-demo-saas"
-HOTEL_ID=2
-JAR=$(mktemp)
+BASE="${QA_BASE_URL:-${APP_URL:-http://localhost:8080}}"
+SLUG="${QA_HOTEL_SLUG:-}"
+HOTEL_ID="${QA_HOTEL_ID:-}"
+QA_USER="${QA_BLOQUES_USER:-}"
+QA_PASS="${QA_BLOQUES_PASSWORD:-}"
+DB_CONTAINER="${QA_DB_CONTAINER:-medisoft_hoteles_db}"
+DB_NAME_VALUE="${DB_NAME:-}"
+DB_USER_VALUE="${DB_USER:-}"
+DB_PASS_VALUE="${DB_PASS:-}"
 FALLOS=0
+ESTADOS_ORIGINALES=""
+
+abortar() {
+  echo "ABORT: $1" >&2
+  exit 2
+}
+
+case "$BASE" in
+  http://localhost:*|https://localhost:*|http://127.0.0.1:*|https://127.0.0.1:*) ;;
+  *)
+    [ "${QA_ALLOW_REMOTE:-0}" = "1" ] || abortar "QA_BASE_URL debe ser local; para staging explicito usa QA_ALLOW_REMOTE=1"
+    ;;
+esac
+
+case "$HOTEL_ID" in
+  ''|*[!0-9]*) abortar "QA_HOTEL_ID debe ser un entero positivo" ;;
+esac
+
+[ -n "$SLUG" ] || abortar "falta QA_HOTEL_SLUG"
+[ -n "$QA_USER" ] || abortar "falta QA_BLOQUES_USER"
+[ -n "$QA_PASS" ] || abortar "falta QA_BLOQUES_PASSWORD"
+[ -n "$DB_NAME_VALUE" ] || abortar "falta DB_NAME"
+[ -n "$DB_USER_VALUE" ] || abortar "falta DB_USER"
+[ -n "$DB_PASS_VALUE" ] || abortar "falta DB_PASS"
+
+JAR=$(mktemp)
+LOGIN_HTML=$(mktemp)
 
 sql() {
-  docker exec medisoft_hoteles_db sh -c "mysql -umedisoft_user -pmedisoft_pass medisoft_hoteles_import -N -e \"$1\"" 2>/dev/null
+  docker exec -e MYSQL_PWD="$DB_PASS_VALUE" "$DB_CONTAINER" \
+    mysql --user="$DB_USER_VALUE" --batch --skip-column-names \
+    "$DB_NAME_VALUE" --execute="$1"
 }
 
 toggle() { # toggle <clave> <0|1>
@@ -31,17 +66,43 @@ check() { # check <nombre> <esperado> <obtenido>
   fi
 }
 
+restaurar() {
+  if [ -n "$ESTADOS_ORIGINALES" ]; then
+    while IFS='=' read -r clave activo; do
+      [ -n "$clave" ] && toggle "$clave" "$activo" >/dev/null 2>&1 || true
+    done <<EOF
+$ESTADOS_ORIGINALES
+EOF
+  fi
+  rm -f "$JAR" "$LOGIN_HTML"
+}
+
+trap restaurar EXIT
+
+sql "SELECT 1" >/dev/null || abortar "no se pudo conectar a la BD QA"
+
+# Guardar el estado exacto de las filas existentes y restaurarlo incluso si
+# curl, el login o una asercion fallan. El script ya no elimina/crea filas core.
+ESTADOS_ORIGINALES=$(sql "
+  SELECT CONCAT(m.clave, '=', hm.activo)
+  FROM modulos m
+  INNER JOIN hotel_modulos hm ON hm.modulo_id = m.id
+  WHERE hm.hotel_id = $HOTEL_ID
+    AND m.clave IN ('inventario','exportaciones','ia_ejecutiva','motor_reservas','caja')
+  ORDER BY m.clave
+") || abortar "no se pudieron guardar los estados originales de modulos"
+
 echo "=== Testeo funcional de bloques comerciales — Hotel Demo SaaS ==="
 echo
 
 # ── Login real con usuario QA ──
-curl -s -c "$JAR" "$BASE/h/$SLUG/login" -o /tmp/login.html
-CSRF=$(grep -o 'name="csrf_token" value="[^"]*"' /tmp/login.html | head -1 | sed 's/.*value="//;s/"//')
+curl -s -c "$JAR" "$BASE/h/$SLUG/login" -o "$LOGIN_HTML"
+CSRF=$(grep -o 'name="csrf_token" value="[^"]*"' "$LOGIN_HTML" | head -1 | sed 's/.*value="//;s/"//')
 if [ -z "$CSRF" ]; then echo "ABORT: no se pudo extraer CSRF del login"; exit 1; fi
 
 curl -s -b "$JAR" -c "$JAR" -X POST "$BASE/h/$SLUG/login/authenticate" \
-  --data-urlencode "nombre_usuario=qa_bloques" \
-  --data-urlencode "password=QaBloques2026!" \
+  --data-urlencode "nombre_usuario=$QA_USER" \
+  --data-urlencode "password=$QA_PASS" \
   --data-urlencode "csrf_token=$CSRF" -o /dev/null
 
 DASH=$(status_de "dashboard")
@@ -86,17 +147,15 @@ check "motor ON  -> pagina publica viva" "200" "$(curl -s -o /dev/null -w '%{htt
 
 echo
 echo "── Inmunidad de bloques CORE (es_core) ──"
-sql "DELETE FROM hotel_modulos WHERE hotel_id=$HOTEL_ID AND modulo_id=(SELECT id FROM modulos WHERE clave='caja');"
-check "caja SIN fila en hotel_modulos -> sigue accesible (core)" "200" "$(status_de caja)"
+toggle caja 0
+check "caja con activo=0 -> sigue accesible (core)" "200" "$(status_de caja)"
 check "reservaciones (core) accesible" "200" "$(status_de reservaciones)"
-sql "INSERT INTO hotel_modulos (hotel_id, modulo_id, activo, fuente, enabled_at, created_at, updated_at) SELECT $HOTEL_ID, id, 1, 'manual', NOW(), NOW(), NOW() FROM modulos WHERE clave='caja';"
 
 echo
 echo "── Cobro mensual refleja los bloques ──"
 COBRO=$(sql "SELECT CONCAT(COUNT(*), '|', COALESCE(SUM(COALESCE(hm.precio_override, m.precio_mensual)),0)) FROM modulos m INNER JOIN hotel_modulos hm ON hm.modulo_id=m.id AND hm.hotel_id=$HOTEL_ID WHERE m.activo_global=1 AND m.es_core=0 AND hm.activo=1;")
 echo "  INFO  bloques opcionales activos|suma mensual: $COBRO"
 
-rm -f "$JAR" /tmp/login.html
 echo
 if [ "$FALLOS" -eq 0 ]; then
   echo "=== RESULTADO: TODAS LAS PRUEBAS PASARON ==="

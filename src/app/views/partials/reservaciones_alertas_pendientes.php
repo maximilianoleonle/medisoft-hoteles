@@ -23,8 +23,8 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
   --hb-primary: var(--brand-primary, #1B2746);
   --hb-secondary: var(--brand-secondary, #0F172A);
   --hb-accent: var(--brand-accent, #BD9441);
-  --hb-ivory:#F6F2EA; --hb-ivory-2:#FBF8F2;
-  --hb-surface:#FFFFFF; --hb-surface-warm:#FCFAF5;
+  --hb-ivory:#F5F5F7; --hb-ivory-2:#FAFAFC;
+  --hb-surface:#FFFFFF; --hb-surface-warm:#F5F5F7;
   --hb-line:#E7E1D4; --hb-line-soft:#F0EBE0;
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
   --c-available:#1E9E63; --bg-available:#E7F4EC;

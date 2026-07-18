@@ -76,6 +76,11 @@ RewriteRule ^.*\.(zip|sql|bak|backup)$ - [F,L]
 # Se conservan en disco para revision, pero no deben ser navegables.
 RewriteRule ^(info|instalar_correccion|diagnostico_.*|fix_.*|test[-_].*|verificar-rutas|corregir_precios_reservaciones|limpiar_reservaciones_antiguas|CorreccionController|correccion_index)\.(php|html)$ - [F,L]
 
+# Bloquear endpoints temporales de QA/depuracion aunque existan en disco
+# (qa_*.php, __qa_*.php, debug_*.php en cualquier nivel). Defensa en
+# profundidad: el CI ademas impide versionarlos (Fase 0, 2026-07-17).
+RewriteRule (^|/)(qa_|__qa_|debug_)[^/]*\.(php|phtml|html?)$ - [F,L]
+
 RewriteCond %{REQUEST_URI} !^/manifest\.json$
 RewriteCond %{REQUEST_URI} !^/service-worker\.js$
 RewriteCond %{REQUEST_URI} !^/offline\.html$

@@ -1817,6 +1817,15 @@
     }
 
     function showValidationSummary(form, invalidField, detailMessage) {
+        // Formularios con su propio sistema de mensajes (ej. wizard de check-in)
+        // no usan el recuadro genérico: mostrarían feedback duplicado y fuera de
+        // contexto (valida campos de pasos aún no visibles). Ellos avisan solos.
+        if (form && (form.dataset.msNoSummary === '1' || form.matches('[data-ms-no-summary]'))) {
+            const existing = form.querySelector('.ms-form-error-summary');
+            if (existing) existing.remove();
+            return;
+        }
+
         let summary = form.querySelector('.ms-form-error-summary');
         if (!summary) {
             summary = document.createElement('div');

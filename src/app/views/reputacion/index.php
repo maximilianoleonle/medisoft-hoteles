@@ -65,10 +65,10 @@ $totalCheckouts = count($filas);
     --rep-gold-soft: color-mix(in srgb, var(--rep-gold) 15%, #FFFFFF);
     --rep-gold-line: color-mix(in srgb, var(--rep-gold) 42%, #E4D4B0);
     --rep-gold-ink: color-mix(in srgb, var(--rep-gold) 58%, var(--rep-brand));
-    --rep-ivory: #F6F2EA;
-    --rep-ivory-2: #FBF8F2;
+    --rep-ivory: #F5F5F7;
+    --rep-ivory-2: #FAFAFC;
     --rep-surface: #FFFFFF;
-    --rep-surface-warm: #FCFAF5;
+    --rep-surface-warm: #F5F5F7;
     --rep-border: color-mix(in srgb, var(--rep-brand) 6%, #E9E1D6);
     --rep-ring: color-mix(in srgb, var(--rep-gold) 32%, transparent);
     --rep-text: color-mix(in srgb, var(--rep-brand) 46%, #707B8C);
@@ -91,9 +91,7 @@ $totalCheckouts = count($filas);
     color: var(--rep-text);
     font-family: var(--rep-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--rep-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--rep-ivory-2), var(--rep-ivory));
+    
 }
 .rep * { box-sizing: border-box; }
 .rep-shell {

@@ -74,7 +74,7 @@ define('MSF_FILTROS_ASSETS', 1);
 .msf-bar {
     --msf-brand: var(--brand-primary, #1B2746);
     --msf-accent: var(--brand-accent, #BD9441);
-    --msf-surface: var(--brand-surface, #F6F2EA);
+    --msf-surface: var(--brand-surface, #F5F5F7);
     --msf-text: var(--brand-text, #232323);
     --msf-muted: var(--brand-muted, #6d675e);
     --msf-border: var(--brand-border, #e3dccd);

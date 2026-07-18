@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../models/TareaOperativa.php';
+require_once __DIR__ . '/../models/Area.php';
 
 /**
  * App de camarista (bloque camarista): tablero movil de limpieza.
@@ -7,16 +8,22 @@ require_once __DIR__ . '/../models/TareaOperativa.php';
  * solo alterna limpieza <-> disponible, nunca toca ocupada ni mantenimiento.
  * Ademas registra quien hizo cada limpieza y permite programar limpiezas
  * (fecha + personal) apoyandose en tareas operativas de categoria limpieza.
+ * Muestra tambien las AREAS del hotel (alberca, lobby...) con el mismo flujo:
+ * mandar a limpieza / marcar limpia con personal, reusando los motores
+ * *AreaParaHotel de TareaOperativa (bloque habitaciones y areas).
  */
 
 class CamaristaController extends Controller {
 
     /** @var TareaOperativa */
     private $tareaModel;
+    /** @var Area */
+    private $areaModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->tareaModel = new TareaOperativa();
+        $this->areaModel = new Area();
     }
 
     protected function before() {
@@ -151,6 +158,19 @@ class CamaristaController extends Controller {
             }
         }
 
+        // Areas del hotel (bloque habitaciones y areas): solo las que le tocan a
+        // limpieza (disponible/limpieza); mantenimiento/cerrada son de recepcion.
+        $areas = [];
+        try {
+            foreach ($this->areaModel->listar($hotelId, true) as $a) {
+                if (in_array((string) ($a['estado'] ?? ''), ['disponible', 'limpieza'], true)) {
+                    $areas[] = $a;
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('camarista: no se pudieron cargar areas: ' . $e->getMessage());
+        }
+
         View::renderTemplate('camarista/index', [
             'title' => 'Limpieza - ' . current_hotel_display_name(),
             'habitaciones' => $habitaciones,
@@ -159,7 +179,96 @@ class CamaristaController extends Controller {
             'horaSalida' => $horaSalida,
             'personal' => $personal,
             'tareasLimpieza' => $tareasPorHabitacion,
+            'areas' => $areas,
+            'tiposArea' => Area::catalogoTipos(),
         ]);
+    }
+
+    /**
+     * Alterna el estado de un AREA desde el tablero: limpieza <-> disponible,
+     * reusando los motores del bloque areas (misma regla de personal
+     * obligatorio al marcar limpia). POST /camarista/area/marcar/{id}
+     */
+    public function marcarAreaAction($areaId = null) {
+        if (!$this->isPost()) {
+            $this->redirect('camarista');
+        }
+
+        $this->validateCSRF();
+        $hotelId = (int) obtenerHotelIdActualCompat();
+        $areaId = (int) $areaId;
+        $nuevoEstado = (string) $this->getPost('estado', '');
+
+        if (!in_array($nuevoEstado, ['limpieza', 'disponible'], true)) {
+            set_mensaje('Accion no permitida desde el tablero de limpieza.', 'error');
+            $this->redirect('camarista');
+        }
+
+        $area = $this->areaModel->obtenerPorId($areaId, $hotelId);
+        if (!$area || (int) ($area['activa'] ?? 1) !== 1) {
+            set_mensaje('Area no encontrada.', 'error');
+            $this->redirect('camarista');
+        }
+
+        $estadoActual = (string) ($area['estado'] ?? '');
+        if (!in_array($estadoActual, ['limpieza', 'disponible'], true)) {
+            set_mensaje('Esa area esta ' . $estadoActual . '; recepcion debe liberarla primero.', 'error');
+            $this->redirect('camarista');
+        }
+
+        $usuarioId = function_exists('user_id') ? user_id() : null;
+
+        // Mandar a limpieza: reusa el motor que ademas crea la tarea.
+        if ($nuevoEstado === 'limpieza') {
+            try {
+                $this->tareaModel->iniciarLimpiezaAreaParaHotel($hotelId, $areaId, $usuarioId);
+                set_mensaje('Area marcada por limpiar.', 'success');
+            } catch (Throwable $e) {
+                set_mensaje($e->getMessage() ?: 'No se pudo marcar el area por limpiar.', 'error');
+            }
+            $this->redirect('camarista');
+        }
+
+        // Marcar limpia: quien limpio es obligatorio (mismo contrato que cuartos).
+        $sinPersonal = (string) $this->getPost('sin_personal', '') === '1';
+        $trabajadorIds = [];
+        $raw = $this->getPost('trabajador_ids', []);
+        if (is_array($raw)) {
+            foreach ($raw as $valor) {
+                $valor = (int) $valor;
+                if ($valor > 0) {
+                    $trabajadorIds[$valor] = $valor;
+                }
+            }
+        }
+        $trabajadorIds = array_values($trabajadorIds);
+
+        if (!$sinPersonal && empty($trabajadorIds) && !empty($this->personalActivo($hotelId))) {
+            set_mensaje('Indica quién hizo la limpieza o marca "Sin registrar personal".', 'error');
+            $this->redirect('camarista');
+        }
+
+        if ($estadoActual !== 'limpieza') {
+            set_mensaje('El area no esta en limpieza.', 'error');
+            $this->redirect('camarista');
+        }
+
+        try {
+            $this->tareaModel->completarLimpiezaConPersonalAreaParaHotel(
+                $hotelId,
+                $areaId,
+                $sinPersonal ? [] : $trabajadorIds,
+                $usuarioId
+            );
+            set_mensaje('Area marcada como limpia. ✨', 'success');
+        } catch (Throwable $e) {
+            error_log('camarista marcar limpia area #' . $areaId . ': ' . $e->getMessage());
+            // Fail-open como los cuartos: al menos liberar el area.
+            $this->areaModel->cambiarEstado($areaId, 'disponible', $hotelId);
+            set_mensaje('Area marcada como limpia. ✨', 'success');
+        }
+
+        $this->redirect('camarista');
     }
 
     public function marcarAction($habitacionId = null) {

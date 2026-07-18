@@ -2499,16 +2499,18 @@ public function mantenimientoAction() {
         $porEstado = $this->reporteModel->obtenerProcedenciaPorEstado($fecha_inicio, $fecha_fin);
         $porCiudad = $this->reporteModel->obtenerProcedenciaPorCiudad($fecha_inicio, $fecha_fin);
         $evolucionMensual = $this->reporteModel->obtenerEvolucionProcedencia($fecha_inicio, $fecha_fin);
-        
+        $porNacionalidad = $this->reporteModel->obtenerProcedenciaExtranjeros($fecha_inicio, $fecha_fin);
+
         // Top 10 estados
         $topEstados = array_slice($porEstado, 0, 10);
-        
+
         View::renderTemplate('reportes/procedencia', [
             'title' => 'Reporte de Procedencia de Huéspedes - ' . current_hotel_display_name(),
             'porEstado' => $porEstado,
             'topEstados' => $topEstados,
             'porCiudad' => $porCiudad,
             'evolucionMensual' => $evolucionMensual,
+            'porNacionalidad' => $porNacionalidad,
             'fecha_inicio' => $fecha_inicio,
             'fecha_fin' => $fecha_fin
         ]);

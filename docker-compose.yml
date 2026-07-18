@@ -15,7 +15,9 @@ services:
     container_name: medisoft_hoteles_app
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8080}:80"
+      # Solo loopback por defecto (Fase 2): nada del stack dev se expone a la
+      # LAN. Para habilitar acceso LAN deliberado: DEV_BIND=0.0.0.0 en .env.
+      - "${DEV_BIND:-127.0.0.1}:${APP_PORT:-8080}:80"
     volumes:
       - ./src:/var/www/html
       - ./docs:/var/www/docs:ro
@@ -57,7 +59,7 @@ services:
       - --slow-query-log-file=/var/lib/mysql/slow.log
       - --long-query-time=0.5
     ports:
-      - "${MYSQL_EXTERNAL_PORT:-3307}:3306"
+      - "${DEV_BIND:-127.0.0.1}:${MYSQL_EXTERNAL_PORT:-3307}:3306"
     environment:
       MYSQL_DATABASE: ${DB_NAME:-medisoft_hoteles}
       MYSQL_USER: ${DB_USER:-medisoft_user}
@@ -78,7 +80,7 @@ services:
     container_name: medisoft_hoteles_phpmyadmin
     restart: unless-stopped
     ports:
-      - "${PHPMYADMIN_PORT:-8081}:80"
+      - "${DEV_BIND:-127.0.0.1}:${PHPMYADMIN_PORT:-8081}:80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306

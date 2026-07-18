@@ -14,8 +14,9 @@
     --lc-cream-mid:    #EEE9DE;
 }
 
-/* Background */
-.inv-page { background: linear-gradient(145deg,#EFF4EC 0%,#E8EFE3 45%,#F4F1EB 100%); min-height:100vh; }
+/* Background: canvas neutro del sistema boutique (--inv-ivory), NO el verde
+   sage viejo. Los tokens los define el bloque #inventory-boutique más abajo. */
+.inv-page { background: linear-gradient(145deg, var(--inv-ivory,#F5F5F7) 0%, var(--inv-ivory-2,#FAFAFC) 55%, #FFFFFF 100%); min-height:100vh; }
 
 /* ── Top bar ─────────────────────────────── */
 .inv-topbar {
@@ -243,8 +244,8 @@
     --inv-brand: var(--brand-primary, #1B2746);
     --inv-brand-2: var(--brand-secondary, #0F172A);
     --inv-accent: var(--brand-accent, #BD9441);
-    --inv-ivory: color-mix(in srgb, var(--inv-accent) 8%, #F8F5ED);
-    --inv-ivory-2: color-mix(in srgb, var(--inv-accent) 6%, #FBF9F4);
+    --inv-ivory: color-mix(in srgb, var(--inv-accent) 8%, #F5F5F7);
+    --inv-ivory-2: color-mix(in srgb, var(--inv-accent) 6%, #FAFAFC);
     --inv-surface: color-mix(in srgb, var(--inv-accent) 2%, #FFFFFF);
     --inv-surface-warm: color-mix(in srgb, var(--inv-accent) 5%, #FFFFFF);
     --inv-line: color-mix(in srgb, var(--inv-accent) 24%, #E7DEC9);
@@ -264,9 +265,7 @@
     --inv-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --inv-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
-    background:
-        repeating-linear-gradient(135deg, color-mix(in srgb, var(--inv-accent) 3%, transparent) 0 1px, transparent 1px 22px),
-        linear-gradient(180deg, var(--inv-ivory-2), var(--inv-ivory) 56%, #F7F2EA) !important;
+
     color: var(--inv-brand-2);
     font-family: var(--inv-sans);
     -webkit-font-smoothing: antialiased;
@@ -1142,17 +1141,15 @@
     --inv-heading: #111827;
     --inv-body: #1F2937;
     --inv-muted: #667085;
-    --inv-ivory: color-mix(in srgb, var(--inv-accent) 4%, #F8F5ED);
-    --inv-ivory-2: color-mix(in srgb, var(--inv-accent) 3%, #FBF9F4);
+    --inv-ivory: color-mix(in srgb, var(--inv-accent) 4%, #F5F5F7);
+    --inv-ivory-2: color-mix(in srgb, var(--inv-accent) 3%, #FAFAFC);
     --inv-surface: #FFFFFF;
     --inv-surface-warm: color-mix(in srgb, var(--inv-accent) 3%, #FFFFFF);
     --inv-line: color-mix(in srgb, var(--inv-brand) 6%, #E7DEC9);
     --inv-line-soft: color-mix(in srgb, var(--inv-brand) 4%, #F0ECE2);
     --inv-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 14px 30px -24px rgba(17, 24, 39, .34);
     color: var(--inv-body);
-    background:
-        radial-gradient(960px 420px at 86% -10%, color-mix(in srgb, var(--inv-accent) 7%, transparent), transparent 62%),
-        linear-gradient(180deg, var(--inv-ivory-2), var(--inv-ivory) 58%, #F7F2EA) !important;
+
 }
 
 .inv-page .inv-topbar h1,
@@ -1308,10 +1305,10 @@
     --inv-heading: color-mix(in srgb, var(--inv-brand) 66%, #566172);
     --inv-body: color-mix(in srgb, var(--inv-brand) 46%, #707B8C);
     --inv-muted: #8791A2;
-    --inv-ivory: #F6F2EA;
-    --inv-ivory-2: #FBF8F2;
+    --inv-ivory: #F5F5F7;
+    --inv-ivory-2: #FAFAFC;
     --inv-surface: #FFFFFF;
-    --inv-surface-warm: #FCFAF5;
+    --inv-surface-warm: #F5F5F7;
     --inv-line: color-mix(in srgb, var(--inv-brand) 6%, #E9E1D6);
     --inv-line-soft: color-mix(in srgb, var(--inv-brand) 4%, #F3EEE6);
     --inv-accent-soft: color-mix(in srgb, var(--inv-accent) 10%, #FFFFFF);
@@ -1319,9 +1316,7 @@
     --inv-accent-ink: color-mix(in srgb, var(--inv-accent) 58%, var(--inv-brand));
     --inv-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22);
     color: var(--inv-body);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--inv-accent) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--inv-ivory-2), var(--inv-ivory)) !important;
+
 }
 
 .inv-page .font-bold,
@@ -1714,6 +1709,156 @@
     .inv-page *::after {
         transition: none !important;
         animation: none !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RE-DIMENSIÓN estilo /habitaciones/lote (aditivo, no reestructura):
+   shell centrado + hero con acento lateral + tarjetas boutique.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 1) Shell CENTRADO y contenido (revierte el full-bleed de arriba). */
+.inv-page .inv-topbar > div,
+.inv-page > .px-4 {
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* 2) Hero tipo lote: la fila título+acciones se vuelve una tarjeta con
+   acento lateral dorado (SOLO desktop; el móvil ya trae su hero propio). */
+@media (min-width: 768px) {
+    .inv-page .inv-topbar > div > .flex.flex-col {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 16px;
+        padding: 1.6rem 1.9rem 1.6rem 2.1rem !important;
+        border: 1px solid rgba(70, 78, 72, 0.12);
+        border-radius: 1.25rem;
+        background: rgba(255, 255, 255, 0.94) !important;
+        box-shadow: 0 22px 55px rgba(57, 49, 37, 0.10);
+        align-items: center !important;
+    }
+    .inv-page .inv-topbar > div > .flex.flex-col::before {
+        content: "";
+        position: absolute; left: 0; top: 0; bottom: 0; width: 7px;
+        background: color-mix(in srgb, var(--brand-accent, #b58b4a) 52%, #b58b4a);
+        pointer-events: none;
+    }
+}
+
+/* 3) Tarjetas y paneles al radio de lote. */
+.inv-page .stat-widget,
+.inv-page .inv-panel {
+    border-radius: 1.25rem !important;
+}
+
+/* 4) Modo oscuro del hero re-dimensionado. */
+@media (min-width: 768px) {
+    html[data-theme="dark"] .inv-page .inv-topbar > div > .flex.flex-col {
+        background: #1C1C1E !important;
+        border-color: #38383A;
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* 5) Acciones siempre visibles: se distribuyen y bajan de fila según el
+   ancho real disponible, sin carrusel ni etiquetas recortadas. */
+.inv-page .inv-action-grid {
+    display: flex !important;
+    width: min(100%, 720px) !important;
+    min-width: 0;
+    max-width: 100% !important;
+    flex-wrap: wrap !important;
+    align-items: stretch;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    scrollbar-width: none;
+}
+
+.inv-page .inv-action-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.inv-page .inv-action-grid .btn-inv {
+    flex: 1 1 128px !important;
+    width: auto !important;
+    min-width: min(128px, 100%) !important;
+    max-width: none !important;
+    min-height: 46px !important;
+    padding: 8px 11px !important;
+    gap: 7px !important;
+    border-radius: 12px !important;
+    font-size: .72rem !important;
+    line-height: 1.2 !important;
+    text-align: center;
+    white-space: normal !important;
+    scroll-snap-align: none !important;
+}
+
+.inv-page .inv-action-grid .btn-inv i {
+    flex: 0 0 auto;
+}
+
+.inv-page .inv-action-grid .btn-inv span {
+    display: inline-block;
+    min-width: 0;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+}
+
+@media (max-width: 480px) {
+    .inv-page .inv-action-grid .btn-inv {
+        flex-basis: calc(50% - 4px) !important;
+        min-height: 48px !important;
+        font-size: .7rem !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 1023px) {
+    .inv-page .inv-action-grid .btn-inv {
+        flex-basis: calc(33.333% - 6px) !important;
+    }
+}
+
+@media (min-width: 1280px) {
+    .inv-page .inv-action-grid .btn-inv {
+        flex-basis: calc(33.333% - 6px) !important;
+    }
+}
+
+/* En la cabecera clara del móvil se conservan los colores semánticos y el
+   contraste; las reglas globales del tema del hotel tienen mayor especificidad. */
+@media (max-width: 767px) {
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.primary {
+        color: #FFFFFF !important;
+        background: linear-gradient(135deg, var(--inv-accent), color-mix(in srgb, var(--inv-accent) 76%, #000)) !important;
+        border-color: transparent !important;
+    }
+
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.primary i {
+        color: #FFFFFF !important;
+    }
+
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.entrada,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.salida,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.movimientos,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.pdf {
+        color: color-mix(in srgb, var(--inv-action) 66%, var(--inv-body)) !important;
+        background: linear-gradient(135deg, color-mix(in srgb, var(--inv-action) 16%, #FFFFFF), color-mix(in srgb, var(--inv-action) 7%, #FFFFFF)) !important;
+        border-color: color-mix(in srgb, var(--inv-action) 30%, #FFFFFF) !important;
+    }
+
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.entrada i,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.salida i,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.movimientos i,
+    .hotel-layout-scope .inv-page .inv-action-grid .btn-inv.pdf i {
+        color: var(--inv-action) !important;
     }
 }
 </style>

@@ -656,7 +656,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     background:
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--brand-accent, #BD9441) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, #FBF8F2, #F6F2EA) !important;
+        linear-gradient(180deg, #FAFAFC, #F5F5F7) !important;
 }
 .ccx-page .ccx-title { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: var(--ccx-ink) !important; font-weight: 700 !important; font-size: clamp(2rem, 4vw, 2.9rem) !important; }
 .ccx-page .ccx-panel-head h2, .ccx-page .ccx-panel-head h3, .ccx-page .ccx-form-title { color: var(--ccx-ink) !important; font-weight: 700 !important; }
@@ -664,7 +664,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
 .ccx-page .ccx-stat strong { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: var(--ccx-ink) !important; }
 .ccx-page .ccx-total-row strong, .ccx-page .ccx-total-row output { color: var(--ccx-ink) !important; }
 .ccx-page .ccx-total-row.is-main output { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
-.ccx-page .ccx-input, .ccx-page .ccx-textarea { background: #FCFAF5 !important; border-color: var(--ccx-line) !important; }
+.ccx-page .ccx-input, .ccx-page .ccx-textarea { background: #F5F5F7 !important; border-color: var(--ccx-line) !important; }
 .ccx-page .ccx-input:focus, .ccx-page .ccx-textarea:focus { border-color: var(--brand-accent, #BD9441) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-accent, #BD9441) 26%, transparent) !important; }
 .ccx-page .ccx-btn.is-danger { background: linear-gradient(135deg, #B4392B, color-mix(in srgb, #B4392B 72%, #000)) !important; border-color: transparent !important; color: #fff !important; }
 .ccx-page .ccx-btn.is-danger:hover { color: #fff !important; }

@@ -126,9 +126,13 @@ $rangoActual              = $rangosHabitacion[$habitacionTipoFormulario] ?? ['mi
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
 .edit-hab-page {
-    --s-bg:#F1F5F9; --s-card:#fff; --s-border:#E2E8F0;
+    --s-bg:#F5F5F7; --s-card:#fff; --s-border:#E2E8F0;
     --s-ink:#0F172A; --s-muted:#64748B; --s-subtle:#94A3B8;
-    --s-indigo:#6366F1; --s-indigo-2:#4F46E5; --s-indigo-s:#EEF2FF;
+    /* Acento white-label: deriva del brand del hotel (verde/gold en Los Cedros);
+       indigo queda solo como fallback si el hotel no definió paleta. */
+    --s-indigo:var(--brand-primary,#6366F1);
+    --s-indigo-2:color-mix(in srgb, var(--brand-primary,#4F46E5) 86%, #000);
+    --s-indigo-s:var(--brand-soft,#EEF2FF);
     --s-green:#059669; --s-green-s:#ECFDF5;
     --s-red:#DC2626; --s-red-s:#FEF2F2;
     --s-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.07);
@@ -228,7 +232,7 @@ textarea.s-inp{height:auto;padding-top:10px;padding-bottom:10px;resize:vertical;
 .s-aside{position:sticky;top:18px;display:flex;flex-direction:column;gap:12px}
 /* Key card */
 .s-keycard{border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.16);background:linear-gradient(145deg,#1E293B,#0F172A)}
-.s-keycard-stripe{height:5px;background:linear-gradient(90deg,var(--s-indigo),#818CF8,var(--s-indigo-2))}
+.s-keycard-stripe{height:5px;background:linear-gradient(90deg,var(--s-indigo),color-mix(in srgb,var(--s-indigo) 60%,#fff),var(--s-indigo-2))}
 .s-keycard-body{padding:20px 18px 18px}
 .s-keycard-hotel{font-size:.6rem;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.4);margin-bottom:16px;display:block}
 .s-keycard-room-label{font-size:.58rem;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.4);display:block;margin-bottom:3px}

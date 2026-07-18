@@ -137,8 +137,8 @@ $rangosRapidos = [
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
     --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 72%, #000);
-    --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
-    --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
+    --tk-ivory: #F5F5F7; --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF; --tk-surface-warm: #F5F5F7;
     --tk-border: color-mix(in srgb, var(--tk-brand) 7%, #E7E1D4);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: #171717; --tk-muted: #667085; --tk-heading: #111827;
@@ -150,9 +150,7 @@ $rangosRapidos = [
     --tk-info: #2F77E0; --tk-info-bg: #E6EFFC;
     --tk-proc: #0E8A8A; --tk-proc-bg: #E2F4F4;
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -160,10 +158,7 @@ $rangosRapidos = [
 .tk-agenda.tk-agenda--calendar {
     --tk-view-accent: var(--tk-info);
     --tk-view-soft: color-mix(in srgb, var(--tk-info) 10%, #FFFFFF);
-    background:
-        linear-gradient(90deg, color-mix(in srgb, var(--tk-info) 5%, transparent) 0 1px, transparent 1px 100%),
-        radial-gradient(920px 420px at 88% -8%, color-mix(in srgb, var(--tk-info) 9%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
     background-size: 56px 100%, auto, auto;
 }
 .tk-agenda.tk-agenda--calendar .tk-title-lockup {
@@ -373,10 +368,12 @@ $rangosRapidos = [
                                                 <?php if (!empty($tarea['habitacion_id'])): ?>
                                                     <a class="tk-link" href="<?= url('habitaciones/' . (int)$tarea['habitacion_id']) ?>">Hab. <?= tlm_agenda_safe($tarea['habitacion_numero'] ?? (string)$tarea['habitacion_id']) ?></a>
                                                     <div class="tk-sub"><?= tlm_agenda_safe($tarea['habitacion_estado'] ?? null, '') ?></div>
+                                                <?php elseif (!empty($tarea['area_id'])): ?>
+                                                    <a class="tk-link" href="<?= url('areas/' . (int)$tarea['area_id']) ?>"><?= tlm_agenda_safe($tarea['area_nombre'] ?? ('Área #' . (int)$tarea['area_id'])) ?></a>
                                                 <?php endif; ?>
                                                 <?php if (!empty($tarea['mantenimiento_id'])): ?>
                                                     <div class="tk-sub">Mant. #<?= (int)$tarea['mantenimiento_id'] ?> <?= tlm_agenda_safe($tarea['tipo_mantenimiento'] ?? null, '') ?></div>
-                                                <?php elseif (empty($tarea['habitacion_id'])): ?>
+                                                <?php elseif (empty($tarea['habitacion_id']) && empty($tarea['area_id'])): ?>
                                                     <span class="tk-sub" style="margin:0">Sin contexto</span>
                                                 <?php endif; ?>
                                             </td>

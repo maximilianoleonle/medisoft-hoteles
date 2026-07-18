@@ -191,7 +191,7 @@ public function indexAction() {
     $reservacionModel = new Reservacion();
     $reservaciones_ocupadas = [];
     $fecha_consulta = date('Y-m-d');
-    
+
     // Procesar cada habitación
     foreach ($habitaciones as &$habitacion) {
         // Calcular precio con incrementos
@@ -302,68 +302,9 @@ public function indexAction() {
 }
 
 private function obtenerAlertasPendientesHabitaciones(int $hotelId): array {
-    if ($hotelId <= 0) {
-        return [
-            'checkins' => [],
-            'checkouts' => [],
-            'llegadas_tardias' => [],
-        ];
-    }
-
-    $db = Database::getInstance();
-
-    $sqlCheckins = "SELECT
-                    r.id,
-                    r.hotel_id,
-                    r.huesped_id,
-                    r.fecha_entrada,
-                    r.hora_llegada_estimada,
-                    r.precio_total,
-                    h.nombre_completo,
-                    h.telefono,
-                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
-                    DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
-                FROM reservaciones r
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                  AND r.estado = 'confirmada'
-                  AND r.fecha_entrada < CURDATE()
-                GROUP BY r.id
-                ORDER BY r.fecha_entrada
-                LIMIT 10";
-
-    $sqlCheckouts = "SELECT
-                    r.id,
-                    r.hotel_id,
-                    r.huesped_id,
-                    r.fecha_salida,
-                    r.hora_entrada,
-                    r.precio_total,
-                    h.nombre_completo,
-                    h.telefono,
-                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
-                    DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
-                FROM reservaciones r
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                  AND r.estado = 'checked_in'
-                  AND r.fecha_salida < CURDATE()
-                GROUP BY r.id
-                ORDER BY r.fecha_salida
-                LIMIT 10";
-
-    $stmtCheckins = $db->query($sqlCheckins, [$hotelId]);
-    $stmtCheckouts = $db->query($sqlCheckouts, [$hotelId]);
-
-    return [
-        'checkins' => $stmtCheckins ? ($stmtCheckins->fetchAll() ?: []) : [],
-        'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
-        'llegadas_tardias' => [],
-    ];
+    // Fuente única en el modelo (misma data que usa el index de reservaciones).
+    $reservacionModel = new Reservacion();
+    return $reservacionModel->alertasPendientesOperativas($hotelId);
 }
 
 private function anexarResumenTareasHabitaciones(int $hotelId, array $habitaciones): array {
@@ -953,6 +894,209 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
             $this->redirect('habitaciones/create');
         }
     }
+
+    /**
+     * Genera la lista de numeros de habitacion de un lote (piso + rango).
+     * PURA (sin BD): testeable en aislamiento. Lanza InvalidArgumentException
+     * ante un rango invalido para que el llamador lo traduzca a aviso de UI.
+     *
+     * @return string[] numeros en orden (prefijo + numero con relleno opcional)
+     */
+    public static function generarNumerosLote(string $prefijo, int $desde, int $hasta, int $ancho = 0, int $maxTotal = 500): array
+    {
+        $prefijo = trim($prefijo);
+
+        if ($desde < 0 || $hasta < 0) {
+            throw new InvalidArgumentException('El rango de numeracion no puede ser negativo.');
+        }
+        if ($hasta < $desde) {
+            throw new InvalidArgumentException('El numero final debe ser mayor o igual que el inicial.');
+        }
+
+        $total = $hasta - $desde + 1;
+        if ($total > $maxTotal) {
+            throw new InvalidArgumentException("El lote no puede exceder {$maxTotal} habitaciones por vez (pediste {$total}).");
+        }
+
+        $ancho = max(0, min(10, $ancho));
+
+        $numeros = [];
+        for ($n = $desde; $n <= $hasta; $n++) {
+            $cuerpo = $ancho > 0 ? str_pad((string) $n, $ancho, '0', STR_PAD_LEFT) : (string) $n;
+            $numero = $prefijo . $cuerpo;
+            if (strlen($numero) > 10) {
+                throw new InvalidArgumentException("El numero \"{$numero}\" excede 10 caracteres; acorta el prefijo o el relleno.");
+            }
+            $numeros[] = $numero;
+        }
+
+        return $numeros;
+    }
+
+    /**
+     * Formulario de alta masiva de habitaciones (piso + rango).
+     */
+    public function loteAction()
+    {
+        $this->requirePermission('habitaciones.create');
+
+        View::renderTemplate('habitaciones/lote', [
+            'title' => 'Crear habitaciones en lote - ' . current_hotel_display_name(),
+            'tipos' => $this->catalogoTiposHabitacion(),
+            'pisos' => $this->catalogoPisosHabitacion(),
+        ]);
+    }
+
+    /**
+     * Procesa el alta masiva: genera el rango, valida una sola vez y crea todo
+     * en UNA transaccion. Reactiva numeros dados de baja, omite los activos.
+     */
+    public function guardarLoteAction()
+    {
+        if (!$this->isPost()) {
+            $this->redirect('habitaciones');
+        }
+
+        $this->requirePermission('habitaciones.create');
+        $this->validateCSRF();
+
+        $tipoSolicitado = (string) $this->getPost('tipo');
+        $especiales = [];
+        $tipoAlmacenamiento = $this->normalizarTipoHabitacionParaAlmacenamiento($tipoSolicitado, $especiales);
+        $defaults = $this->defaultsCapacidadCamas($tipoSolicitado ?: $tipoAlmacenamiento);
+
+        $prefijo = trim((string) $this->getPost('prefijo'));
+        $desde = (int) $this->getPost('numero_desde');
+        $hasta = (int) $this->getPost('numero_hasta');
+        $ancho = (int) $this->getPost('ancho');
+
+        // Numeracion del lote (pura). Un rango invalido regresa al formulario.
+        try {
+            $numeros = self::generarNumerosLote($prefijo, $desde, $hasta, $ancho);
+        } catch (Throwable $e) {
+            save_old_input($_POST);
+            set_mensaje($e->getMessage(), 'error');
+            $this->redirect('habitaciones/lote');
+            return;
+        }
+
+        // Caracteristicas comunes al lote (sin custom ni fotos: eso es individual).
+        $caracteristicas = $this->construirDescripcionCaracteristicas(
+            $tipoSolicitado ?: $tipoAlmacenamiento,
+            $especiales,
+            ''
+        );
+        $caracteristicas = $this->agregarTipoCatalogoEnCaracteristicas(
+            $caracteristicas,
+            $tipoSolicitado,
+            $tipoAlmacenamiento
+        );
+
+        $baseData = [
+            'numero' => $numeros[0],
+            'tipo' => $tipoAlmacenamiento,
+            'capacidad_personas' => $this->normalizarEnteroHabitacion(
+                $this->getPost('capacidad_personas'),
+                $defaults['capacidad_personas'],
+                1,
+                30
+            ),
+            'camas_matrimoniales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_matrimoniales'),
+                $defaults['camas_matrimoniales'],
+                0,
+                20
+            ),
+            'camas_individuales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_individuales'),
+                $defaults['camas_individuales'],
+                0,
+                20
+            ),
+            'piso' => (int) $this->getPost('piso'),
+            'precio_base' => floatval($this->getPost('precio_base')),
+            'estado' => 'disponible',
+            'activa' => $this->getPost('activa') ? 1 : 0,
+            'caracteristicas' => $caracteristicas,
+            'hotel_id' => $this->hotelIdActual(),
+        ];
+
+        // Validar los atributos comunes una sola vez (mismas reglas que el alta individual).
+        $errores = $this->validarHabitacionConCatalogos($baseData);
+        if (!empty($errores)) {
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposHabitacion($errores));
+            set_mensaje(implode('<br>', $errores), 'error');
+            $this->redirect('habitaciones/lote');
+            return;
+        }
+
+        $db = Database::getInstance();
+        $creadas = 0;
+        $reactivadas = 0;
+        $omitidas = [];
+
+        try {
+            $db->beginTransaction();
+
+            foreach ($numeros as $numero) {
+                $dup = $this->buscarHabitacionPorNumero((string) $numero);
+
+                // Numero ya en uso por una habitacion activa: se salta (no se pisa).
+                if ($dup && (int) ($dup['activa'] ?? 0) === 1) {
+                    $omitidas[] = $numero;
+                    continue;
+                }
+
+                $data = $baseData;
+                $data['numero'] = $numero;
+
+                if ($dup) {
+                    // Reactivar una habitacion dada de baja con ese numero.
+                    $habitacion = $this->habitacionModel->update((int) $dup['id'], $data);
+                    $reactivadas++;
+                } else {
+                    $habitacion = $this->habitacionModel->create($data);
+                    $creadas++;
+                }
+
+                if (!$habitacion) {
+                    throw new Exception("No se pudo registrar la habitacion {$numero}.");
+                }
+
+                $this->crearControlLlave($habitacion['id']);
+            }
+
+            $db->commit();
+        } catch (Throwable $e) {
+            $db->rollBack();
+            set_mensaje('Error al crear el lote: ' . $this->mensajeErrorHabitacion($e), 'error');
+            save_old_input($_POST);
+            $this->redirect('habitaciones/lote');
+            return;
+        }
+
+        clear_old_input();
+
+        $partes = [];
+        if ($creadas > 0) {
+            $partes[] = "{$creadas} creada" . ($creadas === 1 ? '' : 's');
+        }
+        if ($reactivadas > 0) {
+            $partes[] = "{$reactivadas} reactivada" . ($reactivadas === 1 ? '' : 's');
+        }
+        if (!empty($omitidas)) {
+            $muestra = array_slice($omitidas, 0, 10);
+            $extra = count($omitidas) > 10 ? '…' : '';
+            $partes[] = count($omitidas) . ' omitida' . (count($omitidas) === 1 ? '' : 's')
+                . ' por ya existir (' . implode(', ', $muestra) . $extra . ')';
+        }
+
+        $mensaje = 'Lote procesado: ' . (empty($partes) ? 'sin cambios' : implode(' · ', $partes)) . '.';
+        set_mensaje($mensaje, ($creadas > 0 || $reactivadas > 0) ? 'success' : 'warning');
+        $this->redirect('habitaciones');
+    }
+
     /**
  * Historial completo de reservaciones de una habitación
  */

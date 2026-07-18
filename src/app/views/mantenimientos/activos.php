@@ -48,7 +48,7 @@ foreach ($activos as $a) {
 .mact {
     --ma-brand: var(--brand-primary, #1B2746);
     --ma-gold: var(--brand-accent, #BD9441);
-    --ma-ivory: #F6F2EA; --ma-ivory-2: #FBF8F2;
+    --ma-ivory: #F5F5F7; --ma-ivory-2: #FAFAFC;
     --ma-surface: #FFFFFF;
     --ma-border: color-mix(in srgb, var(--ma-brand) 7%, #E7E1D4);
     --ma-text: color-mix(in srgb, var(--ma-brand) 36%, #596474);
@@ -61,9 +61,7 @@ foreach ($activos as $a) {
     min-height: 100%;
     color: var(--ma-text);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--ma-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--ma-ivory-2), var(--ma-ivory));
+    
     padding: 16px 14px 90px;
 }
 .mact .mact-shell { max-width: 960px; margin: 0 auto; display: grid; gap: 14px; }
@@ -88,8 +86,8 @@ foreach ($activos as $a) {
 .mact .mact-grid { display: grid; gap: 10px; }
 @media (min-width: 700px) { .mact .mact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-.mact .mact-item { border: 1px solid var(--ma-border); border-radius: 14px; padding: 13px 14px; background: color-mix(in srgb, var(--ma-brand) 2%, #FCFAF5); }
-.mact .mact-item.is-vencido { border-color: color-mix(in srgb, var(--ma-danger) 40%, var(--ma-border)); background: color-mix(in srgb, var(--ma-danger) 4%, #FCFAF5); }
+.mact .mact-item { border: 1px solid var(--ma-border); border-radius: 14px; padding: 13px 14px; background: color-mix(in srgb, var(--ma-brand) 2%, #F5F5F7); }
+.mact .mact-item.is-vencido { border-color: color-mix(in srgb, var(--ma-danger) 40%, var(--ma-border)); background: color-mix(in srgb, var(--ma-danger) 4%, #F5F5F7); }
 .mact .mact-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .mact .mact-item-top strong { color: var(--ma-heading); font-size: .95rem; font-weight: 700; }
 .mact .mact-item-top small { display: block; margin-top: 1px; font-size: .75rem; color: var(--ma-muted); }

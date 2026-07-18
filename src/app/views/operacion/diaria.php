@@ -473,10 +473,10 @@ $estadoReservacionLabels = [
     --op-accent-soft: color-mix(in srgb, var(--op-accent) 15%, #FFFFFF);
     --op-accent-line: color-mix(in srgb, var(--op-accent) 42%, #E4D4B0);
     --op-accent-ink: color-mix(in srgb, var(--op-accent) 58%, var(--op-brand));
-    --op-ivory: #F6F2EA;
-    --op-ivory-2: #FBF8F2;
+    --op-ivory: #F5F5F7;
+    --op-ivory-2: #FAFAFC;
     --op-surface: #FFFFFF;
-    --op-surface-warm: #FCFAF5;
+    --op-surface-warm: #F5F5F7;
     --op-border: color-mix(in srgb, var(--op-brand) 6%, #E9E1D6);
     --op-ring: color-mix(in srgb, var(--op-accent) 32%, transparent);
     --op-text: color-mix(in srgb, var(--op-brand) 46%, #707B8C);
@@ -496,9 +496,7 @@ $estadoReservacionLabels = [
     padding: 18px 16px 42px;
     color: var(--op-text);
     font-family: var(--op-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--op-accent) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--op-ivory-2), var(--op-ivory));
+    
 }
 
 .op-daily-hero {

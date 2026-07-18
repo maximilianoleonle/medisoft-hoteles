@@ -192,7 +192,7 @@ if ($diferencia > 0) {
         --cut-brand-deep: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
         --cut-accent: var(--brand-accent, #BD9441);
         --cut-on-brand: var(--brand-action-text, #FFFEFB);
-        --cut-bg: var(--brand-surface-soft, color-mix(in srgb, var(--cut-accent) 8%, #F8F5ED));
+        --cut-bg: var(--brand-surface-soft, color-mix(in srgb, var(--cut-accent) 8%, #F5F5F7));
         --cut-paper: var(--brand-surface, #FFFEFB);
         --cut-soft: color-mix(in srgb, var(--cut-accent) 4%, #FFFFFF);
         --cut-line: var(--brand-border, color-mix(in srgb, var(--cut-accent) 24%, #E7DEC9));

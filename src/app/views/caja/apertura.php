@@ -58,8 +58,8 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
     --cj-gold-soft: color-mix(in srgb, var(--cj-gold) 15%, #FFFFFF);
     --cj-gold-line: color-mix(in srgb, var(--cj-gold) 42%, #E4D4B0);
     --cj-gold-ink: color-mix(in srgb, var(--cj-gold) 72%, #000);
-    --cj-ivory: #F6F2EA; --cj-ivory-2: #FBF8F2;
-    --cj-surface: #FFFFFF; --cj-surface-warm: #FCFAF5;
+    --cj-ivory: #F5F5F7; --cj-ivory-2: #FAFAFC;
+    --cj-surface: #FFFFFF; --cj-surface-warm: #F5F5F7;
     --cj-border: color-mix(in srgb, var(--cj-brand) 7%, #E7E1D4);
     --cj-ring: color-mix(in srgb, var(--cj-gold) 32%, transparent);
     --cj-text: #171717; --cj-muted: #667085; --cj-heading: #111827;
@@ -68,9 +68,7 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
     --cj-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
     color: var(--cj-text); font-family: var(--cj-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cj-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cj-ivory-2), var(--cj-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

@@ -19,7 +19,7 @@ if (file_exists(__DIR__ . '/../app/models/HuespedVehiculo.php')) {
  */
 function base_url($path = '') {
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'];
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $script = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
     $base_dir = rtrim(str_replace('\\', '/', dirname($script)), '/');
     $base = $protocol . '://' . $host . $base_dir;

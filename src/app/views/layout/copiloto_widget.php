@@ -402,7 +402,7 @@ html[data-theme="dark"] .cop-cat-nav { background: rgba(239,233,220,.08); color:
 html[data-theme="dark"] .cop-cat-dot { background: rgba(239,233,220,.22); }
 html[data-theme="dark"] .cop-cat-dot.activa { background: #EFE9DC; }
 .cop-foot { padding: 10px; border-top: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #EBE7DC); display: flex; gap: 8px; background: #fff; }
-.cop-foot input { flex: 1; min-height: 42px; border: 1px solid #D8D4C9; border-radius: 10px; padding: 0 12px; font-size: .9rem; background: #fff; color: #2A3242; transition: border-color .18s ease, box-shadow .2s ease, background .18s ease; }
+.cop-foot input { flex: 1; min-width: 0; min-height: 42px; border: 1px solid #D8D4C9; border-radius: 10px; padding: 0 12px; font-size: .9rem; background: #fff; color: #2A3242; transition: border-color .18s ease, box-shadow .2s ease, background .18s ease; }
 .cop-foot input::placeholder { color: #9AA1B0; }
 .cop-foot input:focus { outline: none; border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 55%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary, #1B2746) 14%, transparent); }
 .cop-foot button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--brand-primary, #1B2746), color-mix(in srgb, var(--brand-primary, #1B2746) 82%, #000)); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px -9px color-mix(in srgb, var(--brand-primary, #1B2746) 70%, transparent); transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, opacity .18s ease; }

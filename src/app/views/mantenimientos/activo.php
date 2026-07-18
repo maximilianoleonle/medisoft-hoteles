@@ -51,7 +51,7 @@ $estadoMeta = [
 .mah {
     --mh-brand: var(--brand-primary, #1B2746);
     --mh-gold: var(--brand-accent, #BD9441);
-    --mh-ivory: #F6F2EA; --mh-ivory-2: #FBF8F2;
+    --mh-ivory: #F5F5F7; --mh-ivory-2: #FAFAFC;
     --mh-border: color-mix(in srgb, var(--mh-brand) 7%, #E7E1D4);
     --mh-text: color-mix(in srgb, var(--mh-brand) 36%, #596474);
     --mh-muted: #828B99;
@@ -59,9 +59,7 @@ $estadoMeta = [
     min-height: 100%;
     color: var(--mh-text);
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--mh-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--mh-ivory-2), var(--mh-ivory));
+    
     padding: 16px 14px 90px;
 }
 .mah .mah-shell { max-width: 860px; margin: 0 auto; display: grid; gap: 14px; }
@@ -74,7 +72,7 @@ $estadoMeta = [
 .mah .mah-sub { margin: 3px 0 0; font-size: .8rem; color: var(--mh-muted); }
 .mah .mah-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
 @media (max-width: 560px) { .mah .mah-kpis { grid-template-columns: 1fr; } }
-.mah .mah-kpi { background: color-mix(in srgb, var(--mh-brand) 3%, #FCFAF5); border: 1px solid var(--mh-border); border-radius: 12px; padding: 11px 13px; }
+.mah .mah-kpi { background: color-mix(in srgb, var(--mh-brand) 3%, #F5F5F7); border: 1px solid var(--mh-border); border-radius: 12px; padding: 11px 13px; }
 .mah .mah-kpi small { display: block; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--mh-muted); font-weight: 700; }
 .mah .mah-kpi strong { display: block; margin-top: 3px; font-size: 1.05rem; color: var(--mh-heading); font-weight: 700; }
 .mah .mah-kpi.is-money strong { color: color-mix(in srgb, var(--mh-gold) 80%, var(--mh-brand)); }

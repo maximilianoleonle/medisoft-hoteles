@@ -566,7 +566,7 @@ if (!function_exists('usuario_form_error_attrs')) {
 .worker-page {
     --worker-brand: var(--brand-primary, #1B2746) !important;
     --worker-brand-dark: color-mix(in srgb, var(--worker-brand), #000 20%) !important;
-    --worker-brand-soft: color-mix(in srgb, var(--worker-brand) 4%, #FBF8F2) !important;
+    --worker-brand-soft: color-mix(in srgb, var(--worker-brand) 4%, #FAFAFC) !important;
     --worker-accent: var(--brand-accent, #BD9441) !important;
     --worker-border: color-mix(in srgb, var(--worker-brand) 7%, #E7E1D4) !important;
     --worker-ring: color-mix(in srgb, var(--brand-accent, #BD9441) 30%, transparent) !important;
@@ -576,13 +576,11 @@ if (!function_exists('usuario_form_error_attrs')) {
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
     --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
-    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2; --wk-heading: #111827;
+    --wk-ivory: #F5F5F7; --wk-ivory-2: #FAFAFC; --wk-heading: #111827;
     --wk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     min-height: 100%;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory)) !important;
+    
 }
 /* Header limpio (sin banner de color) */
 .worker-page .worker-hero { background: transparent !important; box-shadow: none !important; border-radius: 0 !important; padding: 2px 2px 6px !important; overflow: visible !important; }
@@ -600,7 +598,7 @@ if (!function_exists('usuario_form_error_attrs')) {
 .worker-page .worker-panel-icon { color: var(--wk-gold-ink) !important; background: var(--wk-gold-soft) !important; border-color: var(--wk-gold-line) !important; }
 .worker-page .worker-label { color: var(--worker-muted) !important; font-weight: 700 !important; }
 /* Inputs */
-.worker-page .worker-input { background: #FCFAF5 !important; border-color: var(--worker-border) !important; border-radius: 11px !important; font-weight: 600 !important; }
+.worker-page .worker-input { background: #F5F5F7 !important; border-color: var(--worker-border) !important; border-radius: 11px !important; font-weight: 600 !important; }
 .worker-page .worker-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px var(--worker-ring) !important; background: #fff !important; }
 .worker-page .worker-input.worker-input-error { border-color: #B4392B !important; background: #FFF7F6 !important; }
 /* Botón primario = oro */
@@ -608,7 +606,7 @@ if (!function_exists('usuario_form_error_attrs')) {
 .worker-page .worker-secondary-btn { background: #fff !important; border: 1px solid var(--worker-border) !important; color: var(--worker-muted) !important; }
 /* Preview + permisos */
 .worker-page .worker-preview-avatar { background: linear-gradient(145deg, var(--wk-gold-soft), #fff) !important; color: var(--wk-gold-ink) !important; border-color: var(--wk-gold-line) !important; }
-.worker-page .worker-preview-row, .worker-page .worker-permission, .worker-page .worker-note { background: #FCFAF5 !important; border-color: var(--worker-border) !important; }
+.worker-page .worker-preview-row, .worker-page .worker-permission, .worker-page .worker-note { background: #F5F5F7 !important; border-color: var(--worker-border) !important; }
 .worker-page .worker-permission i { color: var(--wk-gold-ink) !important; }
 </style>
 

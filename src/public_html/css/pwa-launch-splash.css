@@ -1,13 +1,13 @@
 html.pwa-launch-pending,
 html.pwa-launch-pending body {
-    background: #F8F5ED;
+    background: #F5F5F7;
 }
 
 .pwa-launch-splash {
     --pwa-launch-primary: var(--brand-primary, #1B2746);
     --pwa-launch-secondary: var(--brand-secondary, #0F172A);
     --pwa-launch-accent: var(--brand-accent, #BD9441);
-    --pwa-launch-bg: var(--brand-surface-soft, #F8F5ED);
+    --pwa-launch-bg: var(--brand-surface-soft, #F5F5F7);
     position: fixed;
     inset: 0;
     z-index: 100000;

@@ -113,7 +113,7 @@ if (!function_exists('tk_task_extra_workers')) {
 }
 
 if (!function_exists('tk_render_extra_task_section')) {
-    function tk_render_extra_task_section($index, array $datos, array $categorias, array $prioridades, array $habitaciones, array $trabajadores): void
+    function tk_render_extra_task_section($index, array $datos, array $categorias, array $prioridades, array $habitaciones, array $trabajadores, array $areas = []): void
     {
         $index = (string)$index;
         $indexSafe = preg_replace('/[^a-zA-Z0-9_-]/', '_', $index);
@@ -121,6 +121,7 @@ if (!function_exists('tk_render_extra_task_section')) {
         $categoria = tk_task_extra_value($datos, 'categoria', 'general');
         $prioridad = tk_task_extra_value($datos, 'prioridad', 'media');
         $habitacion = tk_task_extra_value($datos, 'habitacion_id', '');
+        $area = tk_task_extra_value($datos, 'area_id', '');
         $seleccionados = tk_task_extra_workers($datos);
         ?>
         <fieldset class="tk-extra-task" data-extra-task>
@@ -158,7 +159,7 @@ if (!function_exists('tk_render_extra_task_section')) {
 
                 <div>
                     <label for="habitacion_extra_<?= tlm_safe($indexSafe) ?>">Habitaci&oacute;n relacionada</label>
-                    <select class="tk-field" id="habitacion_extra_<?= tlm_safe($indexSafe) ?>" name="<?= tlm_safe($prefix) ?>[habitacion_id]">
+                    <select class="tk-field" id="habitacion_extra_<?= tlm_safe($indexSafe) ?>" name="<?= tlm_safe($prefix) ?>[habitacion_id]" data-tk-unidad="habitacion">
                         <option value="">Ninguna</option>
                         <?php foreach ($habitaciones as $habitacionRow): ?>
                             <?php $habitacionId = (int)($habitacionRow['id'] ?? 0); ?>
@@ -168,6 +169,21 @@ if (!function_exists('tk_render_extra_task_section')) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                <?php if (!empty($areas)): ?>
+                    <div>
+                        <label for="area_extra_<?= tlm_safe($indexSafe) ?>">&Aacute;rea relacionada</label>
+                        <select class="tk-field" id="area_extra_<?= tlm_safe($indexSafe) ?>" name="<?= tlm_safe($prefix) ?>[area_id]" data-tk-unidad="area">
+                            <option value="">Ninguna</option>
+                            <?php foreach ($areas as $areaRow): ?>
+                                <?php $areaRowId = (int)($areaRow['id'] ?? 0); ?>
+                                <option value="<?= $areaRowId ?>" <?= $area === (string)$areaRowId ? 'selected' : '' ?>>
+                                    <?= tlm_safe($areaRow['nombre'] ?? '') ?> - <?= tlm_safe($areaRow['estado'] ?? '-') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
 
                 <div>
                     <label for="fecha_programada_extra_<?= tlm_safe($indexSafe) ?>">Fecha programada</label>
@@ -227,6 +243,8 @@ if (!function_exists('tk_render_extra_task_section')) {
 $categoriaSeleccionada = (string)old('categoria', (string)($valores['categoria'] ?? 'general'));
 $prioridadSeleccionada = (string)old('prioridad', (string)($valores['prioridad'] ?? 'media'));
 $habitacionSeleccionada = (string)old('habitacion_id', (string)($valores['habitacion_id'] ?? ''));
+$areas = isset($areas) && is_array($areas) ? $areas : [];
+$areaSeleccionada = (string)old('area_id', (string)($valores['area_id'] ?? ''));
 $fechaProgramadaValor = old('fecha_programada', tk_form_datetime_local($valores['fecha_programada'] ?? ''));
 $fechaLimiteValor = old('fecha_limite', tk_form_datetime_local($valores['fecha_limite'] ?? ''));
 $tituloValor = old('titulo', (string)($valores['titulo'] ?? ''));
@@ -253,17 +271,15 @@ $prioridades = [
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
     --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 72%, #000);
-    --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
-    --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
+    --tk-ivory: #F5F5F7; --tk-ivory-2: #FAFAFC;
+    --tk-surface: #FFFFFF; --tk-surface-warm: #F5F5F7;
     --tk-border: color-mix(in srgb, var(--tk-brand) 7%, #E7E1D4);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
     --tk-text: #171717; --tk-muted: #667085; --tk-heading: #111827;
     --tk-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100%; color: var(--tk-text); font-family: var(--tk-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 
@@ -271,9 +287,7 @@ $prioridades = [
 .tk-form-page.tk-form-page--capture {
     --tk-view-accent: var(--tk-success, #1E9E63);
     --tk-view-soft: color-mix(in srgb, var(--tk-view-accent) 10%, #FFFFFF);
-    background:
-        radial-gradient(880px 360px at 92% -8%, color-mix(in srgb, var(--tk-view-accent) 9%, transparent), transparent 62%),
-        linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+    
 }
 .tk-form-page.tk-form-page--capture .tk-title-lockup {
     padding: 12px;
@@ -374,9 +388,7 @@ $prioridades = [
 @media (max-width: 720px) {
     .tk-form-page {
         padding: 18px 10px 26px !important;
-        background:
-            repeating-linear-gradient(135deg, color-mix(in srgb, var(--tk-gold) 3%, transparent) 0 1px, transparent 1px 22px),
-            linear-gradient(180deg, var(--tk-ivory-2), var(--tk-ivory));
+        
     }
 
     .tk-form-page .tk-shell {
@@ -597,7 +609,7 @@ $prioridades = [
 
                 <div>
                     <label for="habitacion_id">Habitaci&oacute;n relacionada</label>
-                    <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'habitacion_id') ?>" id="habitacion_id" name="habitacion_id"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'habitacion_id', 'ms-form-error-tarea_habitacion') ?>>
+                    <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'habitacion_id') ?>" id="habitacion_id" name="habitacion_id" data-tk-unidad="habitacion"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'habitacion_id', 'ms-form-error-tarea_habitacion') ?>>
                         <option value="">Ninguna</option>
                         <?php foreach ($habitaciones as $habitacion): ?>
                             <option value="<?= (int)($habitacion['id'] ?? 0) ?>" <?= $habitacionSeleccionada === (string)(int)($habitacion['id'] ?? 0) ? 'selected' : '' ?>>
@@ -610,6 +622,24 @@ $prioridades = [
                         <span id="ms-form-error-tarea_habitacion" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'habitacion_id') ?></span>
                     <?php endif; ?>
                 </div>
+
+                <?php if (!empty($areas)): ?>
+                    <div>
+                        <label for="area_id">&Aacute;rea relacionada</label>
+                        <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'area_id') ?>" id="area_id" name="area_id" data-tk-unidad="area"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'area_id', 'ms-form-error-tarea_area') ?>>
+                            <option value="">Ninguna</option>
+                            <?php foreach ($areas as $areaRow): ?>
+                                <option value="<?= (int)($areaRow['id'] ?? 0) ?>" <?= $areaSeleccionada === (string)(int)($areaRow['id'] ?? 0) ? 'selected' : '' ?>>
+                                    <?= tlm_safe($areaRow['nombre'] ?? '') ?> - <?= tlm_safe($areaRow['estado'] ?? '-') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="tk-help">Opcional. Para zonas del hotel (alberca, lobby&hellip;). Excluyente con habitaci&oacute;n.</div>
+                        <?php if (tk_create_form_error($tareaFormFieldErrors, 'area_id') !== ''): ?>
+                            <span id="ms-form-error-tarea_area" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'area_id') ?></span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
                 <div>
                     <label for="fecha_programada">Fecha programada</label>
@@ -684,7 +714,7 @@ $prioridades = [
 
                     <div class="tk-extra-list" data-extra-task-list>
                         <?php foreach ($tareasExtraOld as $extraIndex => $extraTask): ?>
-                            <?php tk_render_extra_task_section((string)$extraIndex, $extraTask, $categorias, $prioridades, $habitaciones, $trabajadores); ?>
+                            <?php tk_render_extra_task_section((string)$extraIndex, $extraTask, $categorias, $prioridades, $habitaciones, $trabajadores, $areas); ?>
                         <?php endforeach; ?>
                     </div>
 
@@ -695,7 +725,7 @@ $prioridades = [
                 </section>
 
                 <template id="tkExtraTaskTemplate">
-                    <?php tk_render_extra_task_section('__INDEX__', [], $categorias, $prioridades, $habitaciones, $trabajadores); ?>
+                    <?php tk_render_extra_task_section('__INDEX__', [], $categorias, $prioridades, $habitaciones, $trabajadores, $areas); ?>
                 </template>
             <?php endif; ?>
 
@@ -732,6 +762,21 @@ $prioridades = [
         field.dispatchEvent(new Event('input', { bubbles: true }));
         field.dispatchEvent(new Event('change', { bubbles: true }));
         field.focus({ preventScroll: true });
+    });
+
+    // Habitacion y area son excluyentes: elegir una limpia la otra (el
+    // servidor tambien lo valida). El par vive en el mismo .tk-grid.
+    document.addEventListener('change', function (event) {
+        const select = event.target.closest('select[data-tk-unidad]');
+        if (!select || select.value === '') return;
+
+        const grid = select.closest('.tk-grid');
+        if (!grid) return;
+
+        const otro = select.getAttribute('data-tk-unidad') === 'habitacion' ? 'area' : 'habitacion';
+        grid.querySelectorAll('select[data-tk-unidad="' + otro + '"]').forEach(function (par) {
+            if (par.value !== '') par.value = '';
+        });
     });
 })();
 </script>

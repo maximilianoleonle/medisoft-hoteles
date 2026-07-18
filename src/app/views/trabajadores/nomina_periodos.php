@@ -300,7 +300,7 @@ $previewNominaQuery = http_build_query([
     --period-brand: var(--brand-primary, #1B2746) !important;
     --period-accent: var(--brand-accent, #BD9441) !important;
     --period-line: color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #E7E1D4) !important;
-    --period-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #FCFAF5) !important;
+    --period-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #F5F5F7) !important;
     --wk-gold: var(--brand-accent, #BD9441);
     --wk-gold-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--brand-accent, #BD9441) 42%, #E4D4B0);
@@ -317,7 +317,7 @@ $previewNominaQuery = http_build_query([
     font-weight: 450;
     background:
         radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, #FBF8F2, #F6F2EA) !important;
+        linear-gradient(180deg, #FAFAFC, #F5F5F7) !important;
 }
 
 /* Hero claro (antes: banda oscura con degradado) */
@@ -353,14 +353,14 @@ $previewNominaQuery = http_build_query([
 .nomina-periodos .font-bold { font-weight: 620 !important; }
 .nomina-periodos .period-label, .nomina-periodos .period-filter-label { color: var(--pd-muted) !important; font-weight: 650 !important; }
 .nomina-periodos .period-filter-hint { color: var(--pd-muted) !important; font-weight: 500 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nomina-periodos .period-check { font-weight: 600 !important; color: var(--pd-text) !important; border-radius: 11px !important; background: #FCFAF5 !important; }
+.nomina-periodos .period-check { font-weight: 600 !important; color: var(--pd-text) !important; border-radius: 11px !important; background: #F5F5F7 !important; }
 .nomina-periodos .period-check input[type=checkbox] { accent-color: var(--wk-gold); }
 
 /* Calidez sobre los grises fríos de Tailwind que quedaban en el cuerpo */
 .nomina-periodos .text-slate-500, .nomina-periodos .text-slate-600 { color: var(--pd-muted) !important; }
 .nomina-periodos .border-slate-200 { border-color: var(--period-line) !important; }
-.nomina-periodos .bg-slate-50 { background: #FCFAF5 !important; }
-.nomina-periodos .period-panel > div.border-b { background: linear-gradient(180deg, color-mix(in srgb, #FCFAF5 82%, #fff), rgba(255,255,255,.92)); border-radius: 16px 16px 0 0; }
+.nomina-periodos .bg-slate-50 { background: #F5F5F7 !important; }
+.nomina-periodos .period-panel > div.border-b { background: linear-gradient(180deg, color-mix(in srgb, #F5F5F7 82%, #fff), rgba(255,255,255,.92)); border-radius: 16px 16px 0 0; }
 .nomina-periodos a.underline { color: var(--pd-heading); text-decoration-color: var(--wk-gold); text-underline-offset: 3px; }
 
 /* Estados vacíos con el chip dorado de la casa */
@@ -373,14 +373,14 @@ $previewNominaQuery = http_build_query([
 /* Superficies y radios serenos */
 .nomina-periodos .period-panel, .nomina-periodos .period-card, .nomina-periodos .period-stat { background: #FFFFFF !important; border-color: var(--period-line) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.3) !important; }
 .nomina-periodos .period-stat { border-radius: 14px !important; }
-.nomina-periodos .period-stat-soft { background: #FCFAF5 !important; }
+.nomina-periodos .period-stat-soft { background: #F5F5F7 !important; }
 .nomina-periodos .period-stat .text-2xl, .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { color: var(--pd-heading) !important; }
 .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; font-size: 1.25rem; }
 .nomina-periodos .period-stat .text-2xl { font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
 .nomina-periodos .period-card-active { border-color: var(--wk-gold-line) !important; box-shadow: 0 0 0 1px var(--wk-gold-line), 0 14px 32px -26px rgba(27,39,70,.32) !important; }
 
 /* Controles */
-.nomina-periodos .period-input { background: #FCFAF5 !important; border-color: var(--period-line) !important; border-radius: 11px !important; color: var(--pd-text) !important; font-weight: 560; transition: border-color .16s ease, box-shadow .16s ease; }
+.nomina-periodos .period-input { background: #F5F5F7 !important; border-color: var(--period-line) !important; border-radius: 11px !important; color: var(--pd-text) !important; font-weight: 560; transition: border-color .16s ease, box-shadow .16s ease; }
 .nomina-periodos .period-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px var(--pd-ring) !important; outline: none; }
 .nomina-periodos .period-btn {
     border-radius: 11px !important; background: rgba(255,255,255,.86) !important; border-color: var(--period-line) !important;
@@ -419,7 +419,7 @@ $previewNominaQuery = http_build_query([
 .nomina-periodos .period-table th { color: var(--pd-muted) !important; font-weight: 600 !important; }
 .nomina-periodos .period-table td { color: var(--pd-text); }
 .nomina-periodos .period-table tbody tr { transition: background .14s ease; }
-.nomina-periodos .period-table tbody tr:hover td { background: #FBF8F2 !important; }
+.nomina-periodos .period-table tbody tr:hover td { background: #FAFAFC !important; }
 
 /* Toggle segmentado Periodos | Calcular pre-nómina */
 .nomina-periodos .period-tabs-block { display: grid; gap: 7px; justify-items: start; }
@@ -432,7 +432,7 @@ $previewNominaQuery = http_build_query([
 }
 .nomina-periodos .period-tabs {
     display: flex; gap: 4px; padding: 5px; width: fit-content; max-width: 100%;
-    background: color-mix(in srgb, var(--period-brand) 5%, #FBF8F2);
+    background: color-mix(in srgb, var(--period-brand) 5%, #FAFAFC);
     border: 1px solid var(--period-line); border-radius: 15px;
 }
 .nomina-periodos .period-tab {

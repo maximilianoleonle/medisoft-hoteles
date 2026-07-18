@@ -15,8 +15,8 @@
     --sr-primary: var(--brand-action-bg, var(--brand-primary, #1B2746));
     --sr-secondary: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
     --sr-gold: var(--brand-accent, #BD9441);
-    --sr-ivory: color-mix(in srgb, var(--sr-gold) 9%, #F8F5ED);
-    --sr-ivory-2: color-mix(in srgb, var(--sr-gold) 6%, #FBF9F4);
+    --sr-ivory: color-mix(in srgb, var(--sr-gold) 9%, #F5F5F7);
+    --sr-ivory-2: color-mix(in srgb, var(--sr-gold) 6%, #FAFAFC);
     --sr-surface: color-mix(in srgb, var(--sr-gold) 2%, #FFFFFF);
     --sr-surface-warm: color-mix(in srgb, var(--sr-gold) 5%, #FFFFFF);
     --sr-line: color-mix(in srgb, var(--sr-gold) 22%, #E7DEC9);

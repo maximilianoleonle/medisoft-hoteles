@@ -73,7 +73,7 @@ body.page-dueno { padding-top: 0 !important; }
     --du-warn-texto: #8F6210;
     --du-error: #D64539;
     /* Base serena */
-    --du-surface: #FFFFFF; --du-warm: #FCFAF5; --du-ivory: #F6F2EA;
+    --du-surface: #FFFFFF; --du-warm: #F5F5F7; --du-ivory: #F5F5F7;
     --du-line: #E7E1D4; --du-ink: #20293A; --du-ink-soft: #5C6675; --du-ink-faint: #8B94A3;
     --du-radius: 22px; --du-radius-md: 15px;
     --du-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
@@ -84,9 +84,7 @@ body.page-dueno { padding-top: 0 !important; }
     font-size: 18px;
     line-height: 1.55;
     color: var(--du-ink);
-    background:
-        radial-gradient(900px 420px at 85% -10%, color-mix(in srgb, var(--du-brand) 7%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--du-ivory), #FBF8F2 320px);
+    
     padding: max(20px, env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom));
 }
 .du-col { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }

@@ -7697,16 +7697,14 @@ if (!is_file($routesPath)) {
         $apiCode = is_file($apiController) ? (string) file_get_contents($apiController) : '';
         $syncBody = hcMethodBody($apiCode, 'syncAction');
         if (
-            strpos($apiCode, 'SYNC_TIPOS_DINERO') !== false
-            && strpos($syncBody, 'validateCSRF') !== false
-            && strpos($syncBody, 'hotelIdActual') !== false
-            && strpos($syncBody, 'sync_temporarily_disabled') === false
+            strpos($syncBody, '423') !== false
+            && strpos($syncBody, 'sync_temporarily_disabled') !== false
         ) {
-            hcOk('/api/sync activo con CSRF + hotel explicito; pago_caja/gasto_caja rechazados (dinero online-only).');
+            hcOk('/api/sync permanece bloqueado con HTTP 423 y error sync_temporarily_disabled.');
         } else {
             hcError(
-                '/api/sync no cumple la politica de sincronizacion: CSRF + hotel explicito + rechazo de operaciones de dinero.',
-                'Restaurar syncAction segun politica 2026-07-02: validateCSRF, procesarLote con hotelIdActual y SYNC_TIPOS_DINERO rechazados.'
+                '/api/sync no cumple el bloqueo temporal obligatorio.',
+                'Restaurar syncAction con respuesta HTTP 423 y error sync_temporarily_disabled.'
             );
         }
     } else {

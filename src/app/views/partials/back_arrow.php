@@ -56,7 +56,7 @@ unset($back_arrow_href, $back_arrow_label, $back_arrow_class);
     .ms-back svg { width: 16px; height: 16px; }
     .ms-back:active {
         transform: scale(.92);
-        background: #F6F2EA;
+        background: #F5F5F7;
         color: #1B2746;
     }
     .ms-back:focus-visible {

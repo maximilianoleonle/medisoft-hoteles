@@ -52,10 +52,10 @@ foreach ($filas as $fila) {
     --cdi-gold-soft: color-mix(in srgb, var(--cdi-gold) 15%, #FFFFFF);
     --cdi-gold-line: color-mix(in srgb, var(--cdi-gold) 42%, #E4D4B0);
     --cdi-gold-ink: color-mix(in srgb, var(--cdi-gold) 58%, var(--cdi-brand));
-    --cdi-ivory: #F6F2EA;
-    --cdi-ivory-2: #FBF8F2;
+    --cdi-ivory: #F5F5F7;
+    --cdi-ivory-2: #FAFAFC;
     --cdi-surface: #FFFFFF;
-    --cdi-surface-warm: #FCFAF5;
+    --cdi-surface-warm: #F5F5F7;
     --cdi-border: color-mix(in srgb, var(--cdi-brand) 6%, #E9E1D6);
     --cdi-ring: color-mix(in srgb, var(--cdi-gold) 32%, transparent);
     --cdi-text: color-mix(in srgb, var(--cdi-brand) 46%, #707B8C);
@@ -72,9 +72,7 @@ foreach ($filas as $fila) {
     min-height: 100%;
     color: var(--cdi-text);
     font-family: var(--cdi-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cdi-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cdi-ivory-2), var(--cdi-ivory));
+    
 }
 
 .checkin-digital-page .cdi-shell {

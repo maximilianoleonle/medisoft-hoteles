@@ -35,10 +35,10 @@ foreach ($feeds as $feed) {
     --cnl-gold-soft: color-mix(in srgb, var(--cnl-gold) 15%, #FFFFFF);
     --cnl-gold-line: color-mix(in srgb, var(--cnl-gold) 42%, #E4D4B0);
     --cnl-gold-ink: color-mix(in srgb, var(--cnl-gold) 58%, var(--cnl-brand));
-    --cnl-ivory: #F6F2EA;
-    --cnl-ivory-2: #FBF8F2;
+    --cnl-ivory: #F5F5F7;
+    --cnl-ivory-2: #FAFAFC;
     --cnl-surface: #FFFFFF;
-    --cnl-surface-warm: #FCFAF5;
+    --cnl-surface-warm: #F5F5F7;
     --cnl-border: color-mix(in srgb, var(--cnl-brand) 6%, #E9E1D6);
     --cnl-ring: color-mix(in srgb, var(--cnl-gold) 32%, transparent);
     --cnl-text: color-mix(in srgb, var(--cnl-brand) 46%, #707B8C);
@@ -59,9 +59,7 @@ foreach ($feeds as $feed) {
     color: var(--cnl-text);
     font-family: var(--cnl-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cnl-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cnl-ivory-2), var(--cnl-ivory));
+    
 }
 .cnl * { box-sizing: border-box; }
 .cnl-shell {

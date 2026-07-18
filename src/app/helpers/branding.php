@@ -144,6 +144,39 @@ function hotel_branding_css_vars(array $branding = null) {
     return '<style id="hotel-branding-vars">:root{' . $css . '}</style>';
 }
 
+/**
+ * Lienzo predeterminado del sistema hotelero para el tema seleccionado.
+ * Se mantiene separado de las superficies de tarjetas y controles.
+ */
+function hotel_branding_default_system_background(?array $branding = null) {
+    $branding = $branding ?: hotel_branding();
+    $tema = strtolower(trim((string) ($branding['tema'] ?? 'deleite')));
+
+    if ($tema === 'cupertino') {
+        return '#F5F5F7';
+    }
+
+    $accent = hotel_branding_hex($branding['color_accent'] ?? null, '#BD9441');
+    return hotel_branding_mix($accent, '#F8F5ED', 8);
+}
+
+/**
+ * Resuelve el fondo configurable del sistema para un hotel. Un valor vacio
+ * conserva el fondo propio del tema, permitiendo cambiar de diseno sin fijar
+ * accidentalmente el neutral anterior.
+ */
+function hotel_branding_system_background(?array $branding = null, $hotelId = null) {
+    $branding = $branding ?: hotel_branding($hotelId ? (int) $hotelId : null);
+    $fallback = hotel_branding_default_system_background($branding);
+
+    if (!function_exists('hotel_config_get')) {
+        return $fallback;
+    }
+
+    $stored = hotel_config_get('apariencia.fondo_sistema', '', $hotelId);
+    return hotel_branding_hex($stored, $fallback);
+}
+
 function hotel_branding_hex($color, $fallback) {
     $color = trim((string) $color);
     return preg_match('/^#[0-9A-Fa-f]{6}$/', $color) ? strtoupper($color) : $fallback;

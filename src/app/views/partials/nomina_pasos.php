@@ -23,7 +23,7 @@ $npasos = [
 .ms-npasos {
     display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
     margin: 0 0 14px; padding: 10px 12px; border-radius: 12px;
-    background: color-mix(in srgb, var(--brand-surface, #F6F2EA) 55%, #ffffff);
+    background: color-mix(in srgb, var(--brand-surface, #F5F5F7) 55%, #ffffff);
     border: 1px solid var(--brand-border, #e3dccd);
     font-size: 12px; font-weight: 600;
 }

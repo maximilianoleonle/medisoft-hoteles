@@ -920,7 +920,38 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
         $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
-    
+
+    /**
+     * Obtener procedencia internacional (huespedes extranjeros) agrupada por nacionalidad.
+     * La nacionalidad se captura como campo extra activable y vive en datos_extra_json.
+     */
+    public function obtenerProcedenciaExtranjeros($fecha_inicio, $fecha_fin) {
+        $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
+
+        $nacionalidadExpr = "TRIM(JSON_UNQUOTE(JSON_EXTRACT(h.datos_extra_json, '$.nacionalidad')))";
+
+        $sql = "SELECT
+                {$nacionalidadExpr} as nacionalidad,
+                COUNT(DISTINCT h.id) as total_huespedes,
+                COUNT(DISTINCT r.id) as total_reservaciones,
+                SUM(r.precio_total) as ingresos_totales
+                FROM huespedes h
+                INNER JOIN reservaciones r ON h.id = r.huesped_id
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
+                AND r.estado NOT IN ('cancelada', 'no_show')
+                AND h.datos_extra_json IS NOT NULL
+                AND JSON_VALID(h.datos_extra_json)
+                AND {$nacionalidadExpr} IS NOT NULL
+                AND {$nacionalidadExpr} <> ''
+                GROUP BY nacionalidad
+                ORDER BY total_huespedes DESC";
+
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
     /**
      * Obtener rentabilidad de habitaciones
      */

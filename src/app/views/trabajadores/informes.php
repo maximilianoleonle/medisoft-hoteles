@@ -40,7 +40,7 @@ $infReportes = [
 .informes-page {
     --inf-brand: var(--brand-primary, #1B2746);
     --inf-gold: var(--brand-accent, #BD9441);
-    --inf-surface: var(--brand-surface, #F6F2EA);
+    --inf-surface: var(--brand-surface, #F5F5F7);
     --inf-text: var(--brand-text, #232323);
     --inf-muted: var(--brand-muted, #6d675e);
     --inf-border: var(--brand-border, #e3dccd);

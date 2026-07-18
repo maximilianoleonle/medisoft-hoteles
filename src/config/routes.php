@@ -318,6 +318,7 @@ $router->post('/canales/sincronizar', ['controller' => 'Canales', 'action' => 's
 $router->get('/camarista', ['controller' => 'Camarista', 'action' => 'index']);
 $router->post('/camarista/marcar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'marcar']);
 $router->post('/camarista/programar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'programar']);
+$router->post('/camarista/area/marcar/{id:[0-9]+}', ['controller' => 'Camarista', 'action' => 'marcarArea']);
 
 // WhatsApp del hotel (bloque whatsapp): conexion y toggles
 $router->get('/whatsapp', ['controller' => 'WhatsApp', 'action' => 'index']);
@@ -540,6 +541,8 @@ $router->get('/habitaciones', ['controller' => 'Habitacion', 'action' => 'index'
 $router->get('/habitaciones/disponibles', ['controller' => 'Habitacion', 'action' => 'disponibles']);
 $router->get('/habitaciones/create', ['controller' => 'Habitacion', 'action' => 'crear']);
 $router->post('/habitaciones/store', ['controller' => 'Habitacion', 'action' => 'guardar']);
+$router->get('/habitaciones/lote', ['controller' => 'Habitacion', 'action' => 'lote']);
+$router->post('/habitaciones/lote/guardar', ['controller' => 'Habitacion', 'action' => 'guardarLote']);
 $router->get('/habitaciones/{id:[0-9]+}', ['controller' => 'Habitacion', 'action' => 'ver']);
 $router->get('/habitaciones/{id:[0-9]+}/edit', ['controller' => 'Habitacion', 'action' => 'editar']);
 $router->post('/habitaciones/{id:[0-9]+}/update', ['controller' => 'Habitacion', 'action' => 'actualizar']);

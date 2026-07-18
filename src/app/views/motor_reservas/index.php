@@ -72,10 +72,10 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
     --mrv-gold-soft: color-mix(in srgb, var(--mrv-gold) 10%, #FFFFFF);
     --mrv-gold-line: color-mix(in srgb, var(--mrv-gold) 28%, #ECE1D1);
     --mrv-gold-ink: color-mix(in srgb, var(--mrv-gold) 58%, var(--mrv-brand));
-    --mrv-ivory: #F6F2EA;
-    --mrv-ivory-2: #FBF8F2;
+    --mrv-ivory: #F5F5F7;
+    --mrv-ivory-2: #FAFAFC;
     --mrv-surface: rgba(255,255,255,.86);
-    --mrv-surface-warm: #FCFAF5;
+    --mrv-surface-warm: #F5F5F7;
     --mrv-line: color-mix(in srgb, var(--mrv-brand) 6%, #E9E1D6);
     --mrv-ring: color-mix(in srgb, var(--mrv-gold) 32%, transparent);
     --mrv-text: color-mix(in srgb, var(--mrv-brand) 46%, #707B8C);
@@ -95,9 +95,7 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
     padding: 18px 16px 40px;
     color: var(--mrv-text);
     font-family: var(--mrv-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--mrv-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--mrv-ivory-2), var(--mrv-ivory));
+    
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 }

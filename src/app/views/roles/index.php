@@ -59,7 +59,7 @@ $resumenPermisos = static function ($permisosJson) {
 .roles-view .rv-meta { display: flex; flex-wrap: wrap; gap: .4rem .9rem; font-size: .78rem; color: var(--rv-muted); border-top: 1px solid var(--rv-border); padding-top: .65rem; }
 .roles-view .rv-meta b { color: var(--rv-text); font-weight: 700; }
 .roles-view .rv-actions { display: flex; gap: .5rem; margin-top: .25rem; }
-.roles-view .rv-abtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 38px; border-radius: 10px; font-size: .8rem; font-weight: 700; text-decoration: none; cursor: pointer; border: 1px solid var(--rv-border); background: #FCFAF5; color: var(--rv-text); transition: background .16s ease, border-color .16s ease, color .16s ease; }
+.roles-view .rv-abtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 38px; border-radius: 10px; font-size: .8rem; font-weight: 700; text-decoration: none; cursor: pointer; border: 1px solid var(--rv-border); background: #F5F5F7; color: var(--rv-text); transition: background .16s ease, border-color .16s ease, color .16s ease; }
 .roles-view .rv-abtn:hover { background: var(--rv-accent-soft); border-color: color-mix(in srgb, var(--rv-accent) 30%, var(--rv-border)); color: var(--rv-accent-dark); }
 .roles-view .rv-abtn.is-danger { color: #B42318; }
 .roles-view .rv-abtn.is-danger:hover { background: #FDECEC; border-color: #F3C6C2; color: #B42318; }

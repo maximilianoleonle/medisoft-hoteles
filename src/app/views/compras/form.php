@@ -72,10 +72,10 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
     --cp-gold-soft: color-mix(in srgb, var(--cp-gold) 15%, #FFFFFF);
     --cp-gold-line: color-mix(in srgb, var(--cp-gold) 42%, #E4D4B0);
     --cp-gold-ink: color-mix(in srgb, var(--cp-gold) 72%, #000);
-    --cp-ivory: #F6F2EA;
-    --cp-ivory-2: #FBF8F2;
+    --cp-ivory: #F5F5F7;
+    --cp-ivory-2: #FAFAFC;
     --cp-surface: #FFFFFF;
-    --cp-surface-warm: #FCFAF5;
+    --cp-surface-warm: #F5F5F7;
     --cp-border: color-mix(in srgb, var(--cp-brand) 7%, #E7E1D4);
     --cp-ring: color-mix(in srgb, var(--cp-gold) 32%, transparent);
     --cp-text: #171717;
@@ -88,9 +88,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
     min-height: 100%;
     color: var(--cp-text);
     font-family: var(--cp-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cp-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cp-ivory-2), var(--cp-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

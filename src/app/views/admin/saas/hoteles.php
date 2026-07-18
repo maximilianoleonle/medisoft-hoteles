@@ -24,6 +24,14 @@ $fmtFecha = function ($d): string {
     $ts = strtotime((string) $d);
     return $ts ? date('d/m/Y', $ts) : (string) $d;
 };
+$loginUrlHotel = function (array $hotel): ?string {
+    $slug = trim((string) ($hotel['slug'] ?? ''));
+    if (empty($hotel['activo']) || $slug === '' || !preg_match('/^[a-z0-9-]+$/', $slug)) {
+        return null;
+    }
+
+    return url('h/' . $slug . '/login');
+};
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -116,7 +124,10 @@ $fmtFecha = function ($d): string {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($hoteles as $hotel): ?>
-                            <?php [$estadoTexto, $estadoStyle] = $badgeEstado($hotel); ?>
+                            <?php
+                            [$estadoTexto, $estadoStyle] = $badgeEstado($hotel);
+                            $hotelLoginUrl = $loginUrlHotel($hotel);
+                            ?>
                             <tr class="transition hover:bg-slate-50/60">
                                 <td class="px-5 py-4 text-sm">
                                     <div class="font-semibold" style="color:var(--ms-text);"><?= htmlspecialchars($hotel['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
@@ -125,6 +136,18 @@ $fmtFecha = function ($d): string {
                                         <span aria-hidden="true">·</span>
                                         <span class="font-mono"><?= htmlspecialchars($hotel['slug'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
+                                    <?php if ($hotelLoginUrl): ?>
+                                        <div class="mt-2 max-w-xs text-xs leading-relaxed">
+                                            <span class="font-semibold" style="color:var(--ms-muted);">Login:</span>
+                                            <a href="<?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="ml-1 font-mono font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                               style="color:var(--ms-primary);--tw-ring-color:var(--ms-primary);overflow-wrap:anywhere;">
+                                                <?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-5 py-4 text-sm font-mono" style="color:var(--ms-text);"><?= htmlspecialchars(($hotel['codigo'] ?? '') ?: '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-5 py-4 text-sm">
@@ -148,16 +171,30 @@ $fmtFecha = function ($d): string {
                                 </td>
                                 <td class="px-5 py-4 text-sm" style="color:var(--ms-muted);"><?= htmlspecialchars($fmtFecha($hotel['created_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-5 py-4 text-sm text-right whitespace-nowrap">
-                                    <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id']) ?>"
-                                       class="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                                       style="background:var(--ms-primary);">
-                                        <i class="fas fa-eye text-[10px]"></i> Ver
-                                    </a>
-                                    <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>"
-                                       class="ml-2 inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-semibold transition hover:bg-slate-50"
-                                       style="border-color:var(--ms-border);color:var(--ms-text);">
-                                        <i class="fas fa-pencil text-[10px]"></i> Editar
-                                    </a>
+                                    <div class="inline-flex flex-col items-end gap-2">
+                                        <?php if ($hotelLoginUrl): ?>
+                                            <a href="<?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-px hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                               style="min-height:44px;background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
+                                                <i class="fas fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i>
+                                                Abrir login del hotel
+                                            </a>
+                                        <?php endif; ?>
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id']) ?>"
+                                               class="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-semibold transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                               style="min-height:44px;border-color:var(--ms-border);color:var(--ms-text);--tw-ring-color:var(--ms-primary);">
+                                                <i class="fas fa-eye text-[10px]" aria-hidden="true"></i> Ver
+                                            </a>
+                                            <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>"
+                                               class="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-semibold transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                               style="min-height:44px;border-color:var(--ms-border);color:var(--ms-text);--tw-ring-color:var(--ms-primary);">
+                                                <i class="fas fa-pencil text-[10px]" aria-hidden="true"></i> Editar
+                                            </a>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -176,7 +213,10 @@ $fmtFecha = function ($d): string {
             </div>
         <?php else: ?>
             <?php foreach ($hoteles as $hotel): ?>
-                <?php [$estadoTexto, $estadoStyle] = $badgeEstado($hotel); ?>
+                <?php
+                [$estadoTexto, $estadoStyle] = $badgeEstado($hotel);
+                $hotelLoginUrl = $loginUrlHotel($hotel);
+                ?>
                 <article class="rounded-lg border bg-white p-4 shadow-sm" style="border-color:var(--ms-border);">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -192,7 +232,7 @@ $fmtFecha = function ($d): string {
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs" style="min-height:0;">
                         <div>
                             <div class="font-semibold uppercase tracking-wider" style="color:var(--ms-muted);font-size:10px;">Código</div>
                             <div class="mt-0.5 font-mono" style="color:var(--ms-text);"><?= htmlspecialchars(($hotel['codigo'] ?? '') ?: '—', ENT_QUOTES, 'UTF-8') ?></div>
@@ -202,16 +242,36 @@ $fmtFecha = function ($d): string {
                             <div class="mt-0.5" style="color:var(--ms-text);"><?= htmlspecialchars(($hotel['moneda_codigo'] ?? '') ?: '—', ENT_QUOTES, 'UTF-8') ?></div>
                         </div>
                     </div>
-                    <div class="mt-4 flex gap-2">
+                    <?php if ($hotelLoginUrl): ?>
+                        <div class="mt-3 rounded-md border px-3 py-2.5" style="border-color:var(--ms-border);background:var(--ms-bg);">
+                            <div class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Login del hotel</div>
+                            <a href="<?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="mt-1 block font-mono text-xs font-medium leading-relaxed hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2"
+                               style="color:var(--ms-primary);--tw-ring-color:var(--ms-primary);overflow-wrap:anywhere;">
+                                <?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>
+                            </a>
+                        </div>
+                        <a href="<?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                           style="min-height:44px;background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
+                            <i class="fas fa-arrow-up-right-from-square text-xs" aria-hidden="true"></i>
+                            Abrir login del hotel
+                        </a>
+                    <?php endif; ?>
+                    <div class="mt-3 flex gap-2">
                         <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id']) ?>"
-                           class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                           style="background:var(--ms-primary);">
-                            <i class="fas fa-eye text-xs"></i> Ver
+                           class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                           style="min-height:44px;border-color:var(--ms-border);color:var(--ms-text);--tw-ring-color:var(--ms-primary);">
+                            <i class="fas fa-eye text-xs" aria-hidden="true"></i> Ver
                         </a>
                         <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>"
-                           class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold transition hover:bg-slate-50"
-                           style="border-color:var(--ms-border);color:var(--ms-text);">
-                            <i class="fas fa-pencil text-xs"></i> Editar
+                           class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                           style="min-height:44px;border-color:var(--ms-border);color:var(--ms-text);--tw-ring-color:var(--ms-primary);">
+                            <i class="fas fa-pencil text-xs" aria-hidden="true"></i> Editar
                         </a>
                     </div>
                 </article>

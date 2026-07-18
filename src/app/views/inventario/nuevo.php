@@ -21,639 +21,411 @@ if (!array_key_exists($unidadSeleccionada, $unidadesMedida)) {
 
 $categoriaSeleccionada = (string) old('categoria_id', '');
 $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
+$categorias = is_array($categorias ?? null) ? $categorias : [];
 ?>
 
-<!-- CSS crítico inline para prevenir FOUC -->
-<style>
-:root {
-    --hotel-brown: #6B4423;
-    --hotel-brown-dark: #5A3A1E;
-    --hotel-gold: #D4A574;
-}
-.nuevo-producto-view { opacity: 0; transition: opacity 0.3s ease; }
-.nuevo-producto-view.loaded { opacity: 1; }
-.inv-form-error {
-    display: block;
-    margin-top: 0.4rem;
-    color: #B42318;
-    font-size: 0.78rem;
-    font-weight: 700;
-    line-height: 1.35;
-}
+<!-- app/views/inventario/nuevo.php — sistema visual calcado de /habitaciones/lote -->
+<style id="inv-nuevo-redesign">
+    .lote-page {
+        --room-ink: #2d302f;
+        --room-muted: #68716d;
+        --room-line: rgba(55, 64, 60, 0.12);
+        --room-paper: rgba(255, 255, 255, 0.94);
+        --room-gold: color-mix(in srgb, var(--brand-accent, #b58b4a) 52%, #b58b4a);
+        --room-brown: color-mix(in srgb, var(--brand-primary, #765438) 24%, #6b5138);
+        --room-sky: #7c9bb3;
+        --room-sage: #7f987d;
+        min-height: 100dvh;
+        padding: clamp(1rem, 2.2vw, 2rem);
+        color: var(--room-ink);
+        background:
+            radial-gradient(circle at 6% 8%, rgba(181, 139, 74, 0.16), transparent 30rem),
+            radial-gradient(circle at 92% 12%, rgba(124, 155, 179, 0.18), transparent 28rem),
+            linear-gradient(135deg, #fbf7ef 0%, #f5f2ea 42%, #eef3f0 100%);
+    }
+    .lote-page > * { position: relative; z-index: 1; }
 
-.nuevo-producto-view {
-    --inv-brand: var(--brand-primary, #1B2746);
-    --inv-brand-2: var(--brand-secondary, #0F172A);
-    --inv-accent: var(--brand-accent, #BD9441);
-    --inv-accent-dark: color-mix(in srgb, var(--inv-accent) 72%, #3F2E12);
-    --inv-ivory: color-mix(in srgb, var(--inv-accent) 8%, #F8F5ED);
-    --inv-ivory-2: color-mix(in srgb, var(--inv-accent) 5%, #FCFAF5);
-    --inv-surface: color-mix(in srgb, var(--inv-accent) 2%, #FFFFFF);
-    --inv-surface-warm: color-mix(in srgb, var(--inv-accent) 5%, #FFFFFF);
-    --inv-line: color-mix(in srgb, var(--inv-accent) 20%, #E7DEC9);
-    --inv-muted: color-mix(in srgb, var(--inv-brand-2) 48%, #94A3B8);
-    background:
-        repeating-linear-gradient(135deg, color-mix(in srgb, var(--inv-accent) 3%, transparent) 0 1px, transparent 1px 22px),
-        linear-gradient(180deg, var(--inv-ivory-2), var(--inv-ivory) 58%, #F7F2EA) !important;
-    color: var(--inv-brand-2);
-    padding-top: 10px !important;
-    padding-bottom: 18px !important;
-}
+    .lote-shell { max-width: 1040px; margin: 0 auto; }
 
-.nuevo-producto-view > .bg-gradient-to-r {
-    width: min(100%, 1280px);
-    margin: 0 auto 10px;
-    padding: 0 16px;
-    background: transparent !important;
-    color: var(--inv-brand-2) !important;
-    box-shadow: none !important;
-}
-
-.nuevo-producto-view > .bg-gradient-to-r .container,
-.nuevo-producto-view > .container {
-    max-width: 1080px;
-}
-
-.nuevo-producto-view > .container {
-    padding: 0 16px 18px !important;
-}
-
-.nuevo-producto-view > .bg-gradient-to-r .container {
-    padding: 0 !important;
-}
-
-.nuevo-producto-view h1 {
-    color: var(--inv-brand-2);
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: clamp(1.75rem, 3vw, 2.35rem);
-    font-weight: 650;
-    line-height: .96;
-}
-
-.nuevo-producto-view h1 i {
-    width: 42px;
-    height: 42px;
-    display: inline-grid;
-    place-items: center;
-    border-radius: 14px;
-    background: linear-gradient(150deg, var(--inv-brand), var(--inv-brand-2));
-    color: #FFFFFF;
-    font-size: 1rem;
-    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--inv-brand) 58%, transparent);
-}
-
-.nuevo-producto-view > .bg-gradient-to-r a {
-    min-height: 36px;
-    border: 1px solid var(--inv-line);
-    border-radius: 13px;
-    background: var(--inv-surface) !important;
-    color: var(--inv-brand-2) !important;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--inv-brand-2) 4%, transparent);
-}
-
-.nuevo-producto-view form > .grid {
-    align-items: start;
-    gap: 14px !important;
-}
-
-.nuevo-producto-view form > .grid > div:first-child > .bg-white,
-.nuevo-producto-view form > .grid > div:last-child > .bg-white,
-.nuevo-producto-view form > .grid > div:last-child > .bg-blue-50 {
-    border: 1px solid var(--inv-line) !important;
-    border-radius: 18px !important;
-    background: var(--inv-surface) !important;
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--inv-brand-2) 4%, transparent), 0 14px 32px -24px color-mix(in srgb, var(--inv-brand-2) 34%, transparent) !important;
-}
-
-.nuevo-producto-view form > .grid > div:first-child > .bg-white {
-    padding: 18px !important;
-}
-
-.nuevo-producto-view form > .grid > div:last-child > .bg-white,
-.nuevo-producto-view form > .grid > div:last-child > .bg-blue-50 {
-    padding: 13px !important;
-    margin-bottom: 12px !important;
-}
-
-.nuevo-producto-view h2 {
-    margin-bottom: 12px !important;
-    font-size: 1rem !important;
-}
-
-.nuevo-producto-view h3 {
-    margin-bottom: 8px !important;
-    font-size: .84rem !important;
-}
-
-.nuevo-producto-view .grid[class*="md:grid-cols-2"],
-.nuevo-producto-view .grid[class*="md:grid-cols-3"] {
-    gap: 12px !important;
-    margin-bottom: 12px !important;
-}
-
-.nuevo-producto-view .mb-4 {
-    margin-bottom: 12px !important;
-}
-
-.nuevo-producto-view form > .grid > div:last-child [class*="px-4"][class*="py-3"] {
-    padding: 9px 12px !important;
-}
-
-.nuevo-producto-view h2,
-.nuevo-producto-view h3 {
-    color: var(--inv-brand-2);
-    letter-spacing: 0;
-}
-
-.nuevo-producto-view label {
-    color: color-mix(in srgb, var(--inv-brand-2) 72%, #64748B) !important;
-    font-weight: 800 !important;
-}
-
-.nuevo-producto-view input:not([type="checkbox"]),
-.nuevo-producto-view select,
-.nuevo-producto-view textarea {
-    min-height: 40px;
-    border-color: var(--inv-line) !important;
-    border-radius: 12px !important;
-    background: color-mix(in srgb, var(--inv-accent) 2%, #FFFEFB) !important;
-    color: var(--inv-brand-2);
-    font-size: .82rem;
-    font-weight: 650;
-}
-
-.nuevo-producto-view input:not([type="checkbox"]):focus,
-.nuevo-producto-view select:focus,
-.nuevo-producto-view textarea:focus {
-    border-color: color-mix(in srgb, var(--inv-accent) 72%, var(--inv-brand)) !important;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--inv-accent) 17%, transparent) !important;
-}
-
-.nuevo-producto-view textarea {
-    line-height: 1.32;
-}
-
-.nuevo-producto-view .bg-amber-50 {
-    border-color: color-mix(in srgb, var(--inv-accent) 24%, #E8DDCA) !important;
-    background: color-mix(in srgb, var(--inv-accent) 9%, #FFFFFF) !important;
-    padding: 12px !important;
-    margin-bottom: 12px !important;
-}
-
-.nuevo-producto-view .bg-amber-50 p {
-    line-height: 1.35;
-}
-
-.nuevo-producto-view .flex.gap-2.pt-2 {
-    padding-top: 12px !important;
-}
-
-.nuevo-producto-view button[type="submit"] {
-    background: linear-gradient(145deg, var(--inv-brand), var(--inv-brand-2)) !important;
-    box-shadow: 0 14px 28px -18px color-mix(in srgb, var(--inv-brand) 68%, transparent);
-}
-
-@media (max-width: 720px) {
-    .nuevo-producto-view {
-        padding-top: 10px !important;
-        padding-bottom: 14px !important;
+    .lote-breadcrumb a {
+        width: fit-content;
+        display: inline-flex; align-items: center; gap: .5rem;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid rgba(118, 84, 56, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--room-brown);
+        box-shadow: 0 12px 28px rgba(59, 46, 31, 0.08);
+        backdrop-filter: blur(12px);
+        font-size: .85rem; font-weight: 600; text-decoration: none;
     }
 
-    .nuevo-producto-view > .bg-gradient-to-r {
-        margin-bottom: 8px;
-        padding: 0 10px;
+    .lote-hero {
+        position: relative; overflow: hidden;
+        margin: 1rem 0 1.5rem;
+        padding: 1.75rem 1.9rem;
+        border: 1px solid rgba(70, 78, 72, 0.12);
+        border-radius: 1.25rem;
+        background: var(--room-paper);
+        box-shadow: 0 22px 55px rgba(57, 49, 37, 0.12);
+        backdrop-filter: blur(14px);
     }
-
-    .nuevo-producto-view > .bg-gradient-to-r .flex {
-        align-items: flex-start;
-        gap: 8px;
+    .lote-hero::before {
+        content: ""; position: absolute; inset: 0;
+        border-left: 7px solid var(--room-gold);
+        background: linear-gradient(110deg, rgba(255,255,255,.86), rgba(255,255,255,.55));
+        pointer-events: none;
     }
+    .lote-hero h1 { position: relative; font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 700; line-height: 1.05; }
+    .lote-hero p { position: relative; margin-top: .4rem; color: var(--room-muted); max-width: 60ch; }
 
-    .nuevo-producto-view h1 {
-        align-items: center;
-        gap: 8px;
-        font-size: 1.32rem !important;
-        line-height: .98;
-    }
-
-    .nuevo-producto-view h1 i {
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
-        font-size: .86rem;
-    }
-
-    .nuevo-producto-view > .bg-gradient-to-r a {
-        min-height: 34px;
-        padding: 0 8px;
-        border-radius: 11px;
-        font-size: .7rem;
-        line-height: 1.1;
-    }
-
-    .nuevo-producto-view > .container {
-        padding: 0 8px 14px !important;
-    }
-
-    .nuevo-producto-view form > .grid {
-        gap: 6px !important;
-    }
-
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white {
-        padding: 8px !important;
-        border-radius: 14px !important;
-        box-shadow: 0 10px 24px rgba(24, 33, 46, .07) !important;
-    }
-
-    .nuevo-producto-view form > .grid > div:last-child {
-        display: none;
-    }
-
-    .nuevo-producto-view h2 {
-        margin-bottom: 7px !important;
-        font-size: .82rem !important;
-        line-height: 1.1;
-    }
-
-    .nuevo-producto-view h2 i {
-        width: 26px;
-        height: 26px;
-        display: inline-grid;
-        place-items: center;
-        border-radius: 10px;
-        background: color-mix(in srgb, var(--inv-accent) 12%, #FFFDF8);
-        font-size: .72rem;
-    }
-
-    .nuevo-producto-view .grid[class*="md:grid-cols-2"],
-    .nuevo-producto-view .grid[class*="md:grid-cols-3"] {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px !important;
-        margin-bottom: 6px !important;
+    .lote-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+        gap: clamp(1rem, 2.3vw, 1.75rem);
         align-items: start;
-        grid-auto-rows: min-content;
     }
 
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white > .grid[class*="md:grid-cols-3"]:first-of-type {
-        grid-template-columns: 1fr;
-        gap: 8px !important;
+    .lote-card {
+        position: relative; overflow: hidden;
+        border: 1px solid rgba(70, 78, 72, 0.12);
+        border-radius: 1.25rem;
+        background: var(--room-paper);
+        box-shadow: 0 22px 55px rgba(57, 49, 37, 0.10);
+        backdrop-filter: blur(14px);
+    }
+    .lote-card::before {
+        content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+        background: var(--section-accent, var(--room-gold));
+    }
+    .lote-card__head {
+        display: flex; align-items: center; gap: .7rem;
+        padding: 1.1rem 1.4rem;
+        border-bottom: 1px solid var(--room-line);
+        background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(247,244,237,.72));
+    }
+    .lote-card__head i {
+        display: inline-grid; place-items: center;
+        width: 2.35rem; height: 2.35rem; border-radius: .9rem;
+        background: color-mix(in srgb, var(--section-accent, var(--room-gold)) 18%, white);
+        color: var(--section-accent, var(--room-gold));
+    }
+    .lote-card__head h2 { font-size: 1.05rem; font-weight: 700; }
+    .lote-card__body { padding: 1.4rem; display: flex; flex-direction: column; gap: 1.1rem; }
+
+    .lote-sec-basic { --section-accent: var(--room-gold); }
+    .lote-sec-range { --section-accent: var(--room-sky); }
+
+    .lote-field label { display: block; font-size: .8rem; font-weight: 600; color: #3f4743; margin-bottom: .4rem; }
+    .lote-field .req { color: #dc2626; }
+    .lote-row { display: grid; gap: 1rem; }
+    .lote-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .lote-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .lote-page input:not([type="checkbox"]), .lote-page select, .lote-page textarea {
+        width: 100%; padding: .7rem .85rem; border-radius: .8rem;
+        border: 1px solid rgba(71, 82, 76, 0.18);
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--room-ink); font-size: .95rem;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    .lote-page textarea { line-height: 1.4; resize: vertical; min-height: 4.2rem; }
+    .lote-page input:focus, .lote-page select:focus, .lote-page textarea:focus {
+        outline: none;
+        border-color: color-mix(in srgb, var(--room-brown) 62%, white);
+        box-shadow: 0 0 0 4px rgba(181, 139, 74, 0.16);
+    }
+    .lote-hint { font-size: .74rem; color: var(--room-muted); margin-top: .35rem; }
+
+    .lote-side { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 1rem; align-self: start; }
+
+    .lote-submit {
+        width: 100%; padding: .95rem 1.25rem; border: 0; border-radius: .9rem;
+        background: linear-gradient(135deg, #344139, var(--room-brown)); color: #fff;
+        font-weight: 700; font-size: .98rem; cursor: pointer;
+        box-shadow: 0 15px 30px rgba(73, 56, 39, 0.2);
+        display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .lote-submit:hover { transform: translateY(-1px); box-shadow: 0 18px 34px rgba(73, 56, 39, 0.26); }
+    .lote-cancel {
+        padding: .8rem 1.25rem; border-radius: .9rem;
+        border: 1px solid rgba(70, 78, 72, 0.16); background: rgba(255,255,255,.78);
+        color: #46504b; font-weight: 600; text-align: center; text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    }
+    .lote-cancel:hover { background: rgba(247, 244, 237, 0.9); }
+
+    /* ── Extras del alta de producto sobre el sistema lote ── */
+    .inv-actions { display: flex; gap: .65rem; margin-top: .2rem; }
+    .inv-actions .lote-submit { flex: 1; width: auto; }
+    .inv-actions .lote-cancel { flex: 0 0 auto; padding-inline: 1.4rem; }
+
+    .inv-price { position: relative; }
+    .inv-price .cur { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--room-gold); }
+    .inv-price input { padding-left: 1.9rem !important; }
+
+    .inv-note {
+        display: block; padding: .9rem 1rem; border-radius: .9rem;
+        border: 1px solid color-mix(in srgb, var(--room-gold) 30%, transparent);
+        background: color-mix(in srgb, var(--room-gold) 12%, var(--room-paper));
+    }
+    .inv-note label { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; margin: 0; }
+    .inv-note input[type="checkbox"] { margin-top: .2rem; width: 1.05rem; height: 1.05rem; flex: 0 0 auto; accent-color: var(--room-gold); }
+    .inv-note__title { font-size: .9rem; font-weight: 700; color: var(--room-ink); }
+    .inv-note p { margin-top: .25rem; font-size: .8rem; color: var(--room-muted); line-height: 1.4; }
+
+    .inv-help-item .t { font-size: .85rem; font-weight: 700; color: var(--room-ink); }
+    .inv-help-item .d { font-size: .8rem; color: var(--room-muted); margin-top: .1rem; }
+
+    .inv-cat-list { max-height: 340px; overflow: auto; display: flex; flex-direction: column; gap: .2rem; }
+    .inv-cat-item { padding: .6rem .7rem; border-radius: .7rem; }
+    .inv-cat-item:hover { background: color-mix(in srgb, var(--room-sky) 10%, transparent); }
+    .inv-cat-item .row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .inv-cat-item .name { font-size: .85rem; font-weight: 600; color: var(--room-ink); }
+    .inv-cat-item .id { font-size: .72rem; color: var(--room-muted); white-space: nowrap; }
+    .inv-cat-item .desc { font-size: .74rem; color: var(--room-muted); margin-top: .15rem; }
+    .inv-cat-empty { font-size: .82rem; color: var(--room-muted); }
+
+    .inv-form-error { display: block; margin-top: .4rem; color: #b42318; font-size: .76rem; font-weight: 700; line-height: 1.35; }
+
+    @media (max-width: 900px) {
+        .lote-grid { grid-template-columns: 1fr; }
+        .lote-side { position: relative; top: auto; }
+    }
+    @media (max-width: 560px) {
+        .lote-row.cols-3 { grid-template-columns: 1fr; }
+        .lote-page { padding: 1rem; }
     }
 
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white > .grid[class*="md:grid-cols-3"]:first-of-type [class*="md:col-span-2"] {
-        grid-column: auto;
+    /* ── Modo oscuro (theme-agnóstico: Deleite y Cupertino) ──
+       Paleta canónica: #1C1C1E elevado · #161617 hundido · #38383A bordes. */
+    html[data-theme="dark"] .lote-page {
+        --room-ink: #F5F5F7;
+        --room-muted: #98989D;
+        --room-line: rgba(255, 255, 255, 0.09);
+        --room-paper: #1C1C1E;
+        background:
+            radial-gradient(circle at 6% 8%, rgba(181, 139, 74, 0.10), transparent 30rem),
+            radial-gradient(circle at 92% 12%, rgba(124, 155, 179, 0.10), transparent 28rem),
+            linear-gradient(135deg, #161617 0%, #1a1a1c 55%, #141416 100%);
     }
-
-    .nuevo-producto-view [class*="md:col-span-2"] {
-        grid-column: 1 / -1;
+    html[data-theme="dark"] .lote-breadcrumb a {
+        background: #1C1C1E; border-color: #38383A; color: #E4C58C;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
     }
-
-    .nuevo-producto-view label {
-        margin-bottom: 3px !important;
-        font-size: .58rem !important;
-        line-height: 1.1;
+    html[data-theme="dark"] .lote-hero,
+    html[data-theme="dark"] .lote-card { box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5); }
+    html[data-theme="dark"] .lote-hero::before {
+        background: linear-gradient(110deg, rgba(28, 28, 30, 0.92), rgba(28, 28, 30, 0.6));
     }
-
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white .grid > div,
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white > .mb-4 {
-        min-height: 0 !important;
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
+    html[data-theme="dark"] .lote-card__head {
+        background: #161617; border-bottom-color: var(--room-line);
     }
-
-    .nuevo-producto-view input:not([type="checkbox"]),
-    .nuevo-producto-view select {
-        min-height: 44px;
-        padding: 7px 10px !important;
-        font-size: 13px;
-        line-height: 1.15;
+    html[data-theme="dark"] .lote-card__head i {
+        background: color-mix(in srgb, var(--section-accent, var(--room-gold)) 26%, #1C1C1E);
     }
-
-    .nuevo-producto-view select {
-        font-size: 12.5px;
-        text-overflow: ellipsis;
+    html[data-theme="dark"] .lote-field label { color: #D6D8D6; }
+    html[data-theme="dark"] .lote-page input:not([type="checkbox"]),
+    html[data-theme="dark"] .lote-page select,
+    html[data-theme="dark"] .lote-page textarea {
+        background: #1C1C1E; border-color: #38383A; color: #F5F5F7; box-shadow: none;
     }
-
-    .nuevo-producto-view textarea {
-        min-height: 68px;
-        padding: 8px 10px !important;
-        font-size: 13px;
-        line-height: 1.32;
+    html[data-theme="dark"] .inv-note {
+        border-color: color-mix(in srgb, var(--room-gold) 34%, transparent);
+        background: color-mix(in srgb, var(--room-gold) 14%, #1C1C1E);
     }
-
-    .nuevo-producto-view .relative span {
-        left: 0;
-        padding-left: 10px !important;
-        font-size: .78rem;
+    html[data-theme="dark"] .inv-cat-item:hover { background: rgba(124, 155, 179, 0.12); }
+    html[data-theme="dark"] .inv-form-error { color: #f4b4ab; }
+    html[data-theme="dark"] .lote-cancel {
+        background: #2C2C2E; border-color: #38383A; color: #F5F5F7;
     }
-
-    .nuevo-producto-view input[name="costo_unitario"] {
-        padding-left: 28px !important;
-    }
-
-    .nuevo-producto-view .bg-amber-50 {
-        margin-bottom: 7px !important;
-        padding: 8px !important;
-        border-radius: 12px !important;
-    }
-
-    .nuevo-producto-view .bg-amber-50 label {
-        align-items: flex-start;
-    }
-
-    .nuevo-producto-view .bg-amber-50 span {
-        font-size: .78rem;
-        line-height: 1.2;
-    }
-
-    .nuevo-producto-view .bg-amber-50 p {
-        margin-top: 2px !important;
-        font-size: .68rem !important;
-        line-height: 1.22;
-    }
-
-    .nuevo-producto-view .flex.gap-2.pt-2 {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
-        gap: 6px !important;
-        padding-top: 7px !important;
-    }
-
-    .nuevo-producto-view button[type="submit"],
-    .nuevo-producto-view .flex.gap-2.pt-2 a {
-        width: 100%;
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px !important;
-        padding: 0 10px !important;
-        font-size: .72rem;
-        line-height: 1.1;
-    }
-}
-
-@media (max-width: 380px) {
-    .nuevo-producto-view .grid[class*="md:grid-cols-2"],
-    .nuevo-producto-view .grid[class*="md:grid-cols-3"],
-    .nuevo-producto-view form > .grid > div:first-child > .bg-white > .grid,
-    .nuevo-producto-view .flex.gap-2.pt-2 {
-        grid-template-columns: 1fr;
-    }
-}
+    html[data-theme="dark"] .lote-cancel:hover { background: #38383A; }
 </style>
 
-<div class="nuevo-producto-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
-    <!-- Header Compacto -->
-    <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white shadow-xl">
-        <div class="container mx-auto px-6 py-3">
-            <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold flex items-center gap-2">
-                    <i class="fas fa-plus-circle"></i>
-                    Nuevo Producto
-                </h1>
-                <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline ms-back--glass'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                <a href="<?= back_url('inventario') ?>"
-                   class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2 ms-back-legacy">
-                    <i class="fas fa-arrow-left"></i>
-                    Volver
-                </a>
-            </div>
+<div class="lote-page">
+    <div class="lote-shell">
+        <div class="lote-breadcrumb">
+            <?php $back_arrow_href = back_url('inventario'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
+            <a href="<?= back_url('inventario') ?>" class="ms-back-legacy">
+                <i class="fas fa-arrow-left"></i> Volver a Inventario
+            </a>
         </div>
-    </div>
 
-    <div class="container mx-auto px-4 py-2 max-w-4xl">
+        <div class="lote-hero">
+            <h1>Nuevo producto</h1>
+            <p>Registra un artículo del inventario del hotel — código, categoría, stock y costo. El stock mínimo dispara las alertas de reposición.</p>
+        </div>
+
         <form method="POST" action="<?= url('inventario/guardar') ?>" id="formNuevoProducto">
             <?= csrf_field() ?>
 
-            <div class="grid lg:grid-cols-3 gap-3">
-                <!-- Formulario Principal (2 columnas) -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                            <i class="fas fa-box text-hotel-brown"></i>
-                            Información del Producto
-                        </h2>
-
-                        <!-- Código y Nombre -->
-                        <div class="grid md:grid-cols-3 gap-2 mb-2">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Código <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text"
-                                       name="codigo"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown uppercase"
-                                       placeholder="PAP001"
-                                       value="<?= old('codigo') ?>"
-                                       pattern="[A-Za-z0-9]{3,20}"
-                                       title="Solo letras y números, 3-20 caracteres"
-                                       required>
-                                <?php if (form_error('codigo')): ?>
-                                    <span class="inv-form-error"><?= form_error('codigo') ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Nombre <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text"
-                                       name="nombre"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                                       placeholder="Papel Higiénico"
-                                       value="<?= old('nombre') ?>"
-                                       required>
-                                <?php if (form_error('nombre')): ?>
-                                    <span class="inv-form-error"><?= form_error('nombre') ?></span>
-                                <?php endif; ?>
-                            </div>
+            <div class="lote-grid">
+                <!-- Columna principal -->
+                <div class="lote-main" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div class="lote-card lote-sec-basic">
+                        <div class="lote-card__head">
+                            <i class="fas fa-box"></i>
+                            <h2>Información del producto</h2>
                         </div>
-
-                        <!-- Categoría y Unidad -->
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Categoría <span class="text-red-500">*</span>
-                                </label>
-                                <select name="categoria_id"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                                        required>
-                                    <option value="">Seleccione categoría...</option>
-                                    <?php foreach ($categorias as $categoria): ?>
-                                        <option value="<?= $categoria['id'] ?>" <?= $categoriaSeleccionada === (string)$categoria['id'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($categoria['nombre']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <?php if (form_error('categoria_id')): ?>
-                                    <span class="inv-form-error"><?= form_error('categoria_id') ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Unidad de Medida
-                                </label>
-                                <select name="unidad_medida"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown">
-                                    <?php foreach ($unidadesMedida as $unidadKey => $unidadLabel): ?>
-                                        <?php $unidadKey = (string) $unidadKey; ?>
-                                        <option value="<?= htmlspecialchars($unidadKey, ENT_QUOTES, 'UTF-8') ?>" <?= $unidadSeleccionada === $unidadKey ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars((string) $unidadLabel, ENT_QUOTES, 'UTF-8') ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <?php if (form_error('unidad_medida')): ?>
-                                    <span class="inv-form-error"><?= form_error('unidad_medida') ?></span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <!-- Stock y Costo -->
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Stock Inicial <span class="text-red-500">*</span>
-                                </label>
-                                <input type="number"
-                                       name="stock_inicial"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                                       value="<?= old('stock_inicial', 0) ?>"
-                                       min="0"
-                                       required>
-                                <?php if (form_error('stock_inicial')): ?>
-                                    <span class="inv-form-error"><?= form_error('stock_inicial') ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Stock Mínimo <span class="text-red-500">*</span>
-                                </label>
-                                <input type="number"
-                                       name="stock_minimo"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                                       value="<?= old('stock_minimo', 10) ?>"
-                                       min="0"
-                                       required>
-                                <?php if (form_error('stock_minimo')): ?>
-                                    <span class="inv-form-error"><?= form_error('stock_minimo') ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Costo Unitario
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                    <input type="number"
-                                           name="costo_unitario"
-                                           class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                                           step="0.01"
-                                           min="0"
-                                           placeholder="0.00"
-                                           value="<?= old('costo_unitario') ?>">
+                        <div class="lote-card__body">
+                            <div class="lote-row" style="grid-template-columns:1fr 2fr;">
+                                <div class="lote-field">
+                                    <label>Código <span class="req">*</span></label>
+                                    <input type="text" name="codigo" value="<?= old('codigo') ?>"
+                                           placeholder="PAP001" pattern="[A-Za-z0-9]{3,20}"
+                                           title="Solo letras y números, 3-20 caracteres"
+                                           style="text-transform:uppercase;" required>
+                                    <?php if (form_error('codigo')): ?>
+                                        <span class="inv-form-error"><?= form_error('codigo') ?></span>
+                                    <?php endif; ?>
                                 </div>
-                                <?php if (form_error('costo_unitario')): ?>
-                                    <span class="inv-form-error"><?= form_error('costo_unitario') ?></span>
+                                <div class="lote-field">
+                                    <label>Nombre <span class="req">*</span></label>
+                                    <input type="text" name="nombre" value="<?= old('nombre') ?>"
+                                           placeholder="Papel higiénico" required>
+                                    <?php if (form_error('nombre')): ?>
+                                        <span class="inv-form-error"><?= form_error('nombre') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="lote-row cols-2">
+                                <div class="lote-field">
+                                    <label>Categoría <span class="req">*</span></label>
+                                    <select name="categoria_id" required>
+                                        <option value="">Seleccione categoría...</option>
+                                        <?php foreach ($categorias as $categoria): ?>
+                                            <option value="<?= $categoria['id'] ?>" <?= $categoriaSeleccionada === (string)$categoria['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($categoria['nombre']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php if (form_error('categoria_id')): ?>
+                                        <span class="inv-form-error"><?= form_error('categoria_id') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="lote-field">
+                                    <label>Unidad de medida</label>
+                                    <select name="unidad_medida">
+                                        <?php foreach ($unidadesMedida as $unidadKey => $unidadLabel): ?>
+                                            <?php $unidadKey = (string) $unidadKey; ?>
+                                            <option value="<?= htmlspecialchars($unidadKey, ENT_QUOTES, 'UTF-8') ?>" <?= $unidadSeleccionada === $unidadKey ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars((string) $unidadLabel, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php if (form_error('unidad_medida')): ?>
+                                        <span class="inv-form-error"><?= form_error('unidad_medida') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="lote-row cols-3">
+                                <div class="lote-field">
+                                    <label>Stock inicial <span class="req">*</span></label>
+                                    <input type="number" name="stock_inicial" value="<?= old('stock_inicial', 0) ?>" min="0" required>
+                                    <?php if (form_error('stock_inicial')): ?>
+                                        <span class="inv-form-error"><?= form_error('stock_inicial') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="lote-field">
+                                    <label>Stock mínimo <span class="req">*</span></label>
+                                    <input type="number" name="stock_minimo" value="<?= old('stock_minimo', 10) ?>" min="0" required>
+                                    <?php if (form_error('stock_minimo')): ?>
+                                        <span class="inv-form-error"><?= form_error('stock_minimo') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="lote-field">
+                                    <label>Costo unitario</label>
+                                    <div class="inv-price">
+                                        <span class="cur">$</span>
+                                        <input type="number" name="costo_unitario" value="<?= old('costo_unitario') ?>"
+                                               step="0.01" min="0" placeholder="0.00">
+                                    </div>
+                                    <?php if (form_error('costo_unitario')): ?>
+                                        <span class="inv-form-error"><?= form_error('costo_unitario') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="lote-field">
+                                <label>Descripción</label>
+                                <textarea name="descripcion" rows="2" placeholder="Detalles adicionales del producto..."><?= old('descripcion') ?></textarea>
+                                <?php if (form_error('descripcion')): ?>
+                                    <span class="inv-form-error"><?= form_error('descripcion') ?></span>
                                 <?php endif; ?>
                             </div>
-                        </div>
 
-                        <!-- Descripción -->
-                        <div class="mb-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Descripción
-                            </label>
-                            <textarea name="descripcion"
-                                      rows="2"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown resize-none"
-                                      placeholder="Detalles adicionales del producto..."><?= old('descripcion') ?></textarea>
-                            <?php if (form_error('descripcion')): ?>
-                                <span class="inv-form-error"><?= form_error('descripcion') ?></span>
-                            <?php endif; ?>
-                        </div>
+                            <div class="inv-note">
+                                <label>
+                                    <input type="checkbox" name="descuento_automatico" value="1" <?= $descuentoAutomaticoActivo ? 'checked' : '' ?>>
+                                    <div>
+                                        <span class="inv-note__title">Descuento automático en check-in</span>
+                                        <p>Active si este producto se descuenta automáticamente cuando un huésped hace check-in (papel higiénico, jabón, etc.).</p>
+                                    </div>
+                                </label>
+                            </div>
 
-                        <!-- Descuento Automático -->
-                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2">
-                            <label class="flex items-start cursor-pointer">
-                                <input type="checkbox"
-                                       name="descuento_automatico"
-                                       value="1"
-                                       <?= $descuentoAutomaticoActivo ? 'checked' : '' ?>
-                                       class="mt-1 mr-3">
-                                <div>
-                                    <span class="font-medium text-gray-900">Descuento Automático en Check-in</span>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        Active si este producto se descuenta automáticamente cuando un huésped hace check-in
-                                        (papel higiénico, jabón, etc.)
-                                    </p>
-                                </div>
-                            </label>
-                        </div>
-
-                        <!-- Botones de acción -->
-                        <div class="flex gap-2 pt-2 border-t">
-                            <button type="submit"
-                                    class="flex-1 bg-hotel-brown text-white px-4 py-2.5 rounded-lg hover:bg-hotel-brown-dark transition flex items-center justify-center gap-2 font-medium">
-                                <i class="fas fa-save"></i>
-                                Guardar Producto
-                            </button>
-                            <a href="<?= url('inventario') ?>"
-                               class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
-                                Cancelar
-                            </a>
+                            <div class="inv-actions">
+                                <button type="submit" class="lote-submit">
+                                    <i class="fas fa-save"></i>
+                                    <span>Guardar producto</span>
+                                </button>
+                                <a href="<?= url('inventario') ?>" class="lote-cancel">
+                                    <i class="fas fa-times"></i>
+                                    <span>Cancelar</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Panel de Ayuda (1 columna) -->
-                <div class="lg:col-span-1">
-                    <!-- Ayuda Rápida -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3">
-                        <h3 class="font-semibold text-blue-900 mb-2 flex items-center gap-2 text-sm">
-                            <i class="fas fa-info-circle"></i>
-                            Ayuda Rápida
-                        </h3>
-                        <div class="space-y-3 text-sm">
-                            <div>
-                                <p class="font-medium text-blue-900">Código único</p>
-                                <p class="text-blue-700">Ej: PAP001, JAB001, TOA001</p>
+                <!-- Columna lateral -->
+                <div class="lote-side">
+                    <div class="lote-card lote-sec-range">
+                        <div class="lote-card__head">
+                            <i class="fas fa-circle-info"></i>
+                            <h2>Ayuda rápida</h2>
+                        </div>
+                        <div class="lote-card__body">
+                            <div class="inv-help-item">
+                                <div class="t">Código único</div>
+                                <div class="d">Ej: PAP001, JAB001, TOA001</div>
                             </div>
-                            <div>
-                                <p class="font-medium text-blue-900">Stock mínimo</p>
-                                <p class="text-blue-700">Se alertará al llegar a este nivel</p>
+                            <div class="inv-help-item">
+                                <div class="t">Stock mínimo</div>
+                                <div class="d">Se alertará al llegar a este nivel</div>
                             </div>
-                            <div>
-                                <p class="font-medium text-blue-900">Descuento automático</p>
-                                <p class="text-blue-700">Solo para productos de cortesía</p>
+                            <div class="inv-help-item">
+                                <div class="t">Descuento automático</div>
+                                <div class="d">Solo para productos de cortesía</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Categorías disponibles -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div class="bg-gray-50 px-4 py-3 border-b">
-                            <h3 class="font-medium text-gray-900 text-sm flex items-center gap-2">
-                                <i class="fas fa-tags"></i>
-                                Categorías
-                            </h3>
+                    <div class="lote-card lote-sec-basic">
+                        <div class="lote-card__head">
+                            <i class="fas fa-tags"></i>
+                            <h2>Categorías</h2>
                         </div>
-                        <div class="max-h-64 overflow-y-auto">
-                            <?php foreach ($categorias as $categoria): ?>
-                                <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-medium text-gray-900">
-                                            <?= htmlspecialchars($categoria['nombre']) ?>
-                                        </span>
-                                        <span class="text-xs text-gray-500">
-                                            ID: <?= $categoria['id'] ?>
-                                        </span>
+                        <div class="lote-card__body">
+                            <div class="inv-cat-list">
+                                <?php foreach ($categorias as $categoria): ?>
+                                    <div class="inv-cat-item">
+                                        <div class="row">
+                                            <span class="name"><?= htmlspecialchars($categoria['nombre']) ?></span>
+                                            <span class="id">ID: <?= $categoria['id'] ?></span>
+                                        </div>
+                                        <?php if (!empty($categoria['descripcion'])): ?>
+                                            <div class="desc"><?= htmlspecialchars($categoria['descripcion']) ?></div>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php if (!empty($categoria['descripcion'])): ?>
-                                        <p class="text-xs text-gray-600 mt-1">
-                                            <?= htmlspecialchars($categoria['descripcion']) ?>
-                                        </p>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                                <?php if (empty($categorias)): ?>
+                                    <div class="inv-cat-empty">Aún no hay categorías. Créalas desde la configuración de inventario.</div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -663,14 +435,13 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
 </div>
 
 <script>
-// Auto-uppercase para el código - FUNCIÓN ORIGINAL
-document.querySelector('input[name="codigo"]').addEventListener('input', function() {
-    this.value = this.value.toUpperCase();
-});
-
-// Validación del formulario
-// Animación de carga
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('.nuevo-producto-view').classList.add('loaded');
+// Auto-mayúsculas para el código del producto.
+document.addEventListener('DOMContentLoaded', function () {
+    var codigo = document.querySelector('#formNuevoProducto input[name="codigo"]');
+    if (codigo) {
+        codigo.addEventListener('input', function () {
+            this.value = this.value.toUpperCase();
+        });
+    }
 });
 </script>

@@ -77,7 +77,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 .vista-reservacion {
     opacity: 0;
     transition: opacity 0.4s ease;
-    background: linear-gradient(145deg, #EFF4EC 0%, #E8EEE3 50%, #F4F1EC 100%);
+    background: linear-gradient(145deg, #F5F5F7 0%, #F0F1F3 50%, #FAFAFC 100%);
     min-height: 100vh;
 }
 .vista-reservacion.loaded { opacity: 1; }
@@ -175,8 +175,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
 /* ── Search box ──────────────────────────── */
 .buscador-habitaciones {
-    background: #F0F5ED;
-    border: 1px solid #D5E4CB;
+    background: #F5F5F7;
+    border: 1px solid #E6E8EB;
     border-radius: 10px;
     padding: 12px;
     margin-bottom: 20px;
@@ -185,10 +185,10 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 .input-busqueda {
     width: 100%;
     padding: 10px 40px 10px 12px;
-    border: 2px solid #C8D9BE;
+    border: 2px solid #D9DDE1;
     border-radius: 8px;
     font-size: 14px;
-    background: #FAFDF8;
+    background: #FFFFFF;
     color: #374151;
     transition: all 0.3s ease;
 }
@@ -574,8 +574,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     --rc-accent-dark: color-mix(in srgb, var(--rc-accent) 72%, #3F2E12);
     --rc-accent-soft: color-mix(in srgb, var(--rc-accent) 12%, #FFFFFF);
     --rc-accent-line: color-mix(in srgb, var(--rc-accent) 30%, #E8DDCA);
-    --rc-ivory: color-mix(in srgb, var(--rc-accent) 8%, #F8F5ED);
-    --rc-ivory-2: color-mix(in srgb, var(--rc-accent) 5%, #FCFAF5);
+    --rc-ivory: color-mix(in srgb, var(--rc-accent) 8%, #F5F5F7);
+    --rc-ivory-2: color-mix(in srgb, var(--rc-accent) 5%, #F5F5F7);
     --rc-surface: color-mix(in srgb, var(--rc-accent) 2%, #FFFFFF);
     --rc-surface-warm: color-mix(in srgb, var(--rc-accent) 5%, #FFFFFF);
     --rc-line: color-mix(in srgb, var(--rc-accent) 19%, #E7DEC9);
@@ -593,9 +593,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     --rc-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --rc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
-    background:
-        repeating-linear-gradient(135deg, color-mix(in srgb, var(--rc-accent) 3%, transparent) 0 1px, transparent 1px 22px),
-        linear-gradient(180deg, var(--rc-ivory-2), var(--rc-ivory) 58%, #F7F2EA);
+    
     color: var(--rc-text);
     font-family: var(--rc-sans);
     -webkit-font-smoothing: antialiased;
@@ -2218,9 +2216,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 /* Guest-create inspired mobile refresh */
 @media (max-width: 768px) {
     .vista-reservacion {
-        background:
-            repeating-linear-gradient(135deg, color-mix(in srgb, var(--rc-accent) 2%, transparent) 0 1px, transparent 1px 20px),
-            linear-gradient(180deg, var(--rc-ivory-2), var(--rc-ivory));
+        
     }
 
     .vista-reservacion > div:first-of-type > .px-5 {
@@ -2972,11 +2968,126 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     </div>
     <?php endif; ?>
 
+    <style id="res-progress-boutique">
+    /* ── Distintivos Obligatorio/Opcional en las cabeceras de panel ── */
+    .vista-reservacion .res-hd { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .vista-reservacion .res-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:.6rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; line-height:1; white-space:nowrap; flex:0 0 auto; }
+    .vista-reservacion .res-badge i { font-size:.54rem; }
+    .vista-reservacion .res-badge-req { background:#fff; color:#3D5234; box-shadow:0 2px 6px rgba(0,0,0,.14); }
+    .vista-reservacion .res-badge-opt { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.42); }
+
+    /* ── Leyenda ── */
+    .vista-reservacion .res-legend { display:flex; flex-wrap:wrap; align-items:center; gap:9px 18px; margin:0 0 18px; padding:12px 15px; border:1px solid #DDE8D5; border-radius:14px; background:#fff; box-shadow:0 1px 2px rgba(61,82,52,.05); }
+    .vista-reservacion .res-legend-item { display:inline-flex; align-items:center; gap:8px; color:#5b6b52; font-size:.76rem; font-weight:700; }
+    .vista-reservacion .res-legend .res-badge-req { background:linear-gradient(135deg,var(--lc-green,#5C7A4E),#3D5234); color:#fff; box-shadow:none; }
+    .vista-reservacion .res-legend .res-badge-opt { background:#F1F5EE; color:#5b6b52; border:1px solid #DDE8D5; }
+    .vista-reservacion .res-legend .res-req-star { color:#DC2626; font-weight:850; }
+
+    /* ── Ruta de la reservación (línea de tiempo de recompensa) ── */
+    .vista-reservacion .rwp-card { background:#fff; border:1px solid #DDE8D5; border-radius:1rem; box-shadow:0 1px 2px rgba(61,82,52,.05),0 14px 30px -24px rgba(61,82,52,.35); padding:16px; }
+    .vista-reservacion .rwp-card.is-complete { box-shadow:0 0 0 1px rgba(197,160,64,.5), 0 16px 34px -20px rgba(92,122,78,.5); }
+    .vista-reservacion .rwp-head { display:flex; align-items:center; gap:9px; margin-bottom:11px; }
+    .vista-reservacion .rwp-head i { color:var(--lc-gold-dark,#B08528); }
+    .vista-reservacion .rwp-head h3 { margin:0; color:#3D5234; font-size:.92rem; font-weight:800; }
+    .vista-reservacion .rwp-count { color:#7a8a70; font-size:.78rem; font-weight:700; }
+    .vista-reservacion .rwp-count strong { color:#3D5234; font-size:1.02rem; font-weight:850; }
+    .vista-reservacion .rwp-bar { height:8px; margin-top:8px; border-radius:999px; background:#EEF3EA; border:1px solid #DDE8D5; overflow:hidden; }
+    .vista-reservacion .rwp-fill { display:block; height:100%; width:0; border-radius:inherit; position:relative; background:linear-gradient(90deg,var(--lc-green,#5C7A4E),#3D5234); transition:width .55s cubic-bezier(.22,1,.36,1); }
+    .vista-reservacion .rwp-fill::after { content:''; position:absolute; inset:0; background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%); transform:translateX(-120%); }
+    .vista-reservacion .rwp-fill.is-shine::after { animation:rwpShine .9s ease; }
+    .vista-reservacion .rwp-bar--gold .rwp-fill { background:linear-gradient(90deg,#E0A93B,var(--lc-gold-dark,#B08528)); }
+
+    .vista-reservacion .rwp-steps { list-style:none; margin:14px 0 0; padding:0; display:grid; gap:2px; }
+    .vista-reservacion .rwp-step { position:relative; padding:4px 0; }
+    .vista-reservacion .rwp-step-row { display:flex; align-items:center; gap:10px; }
+    .vista-reservacion .rwp-dot { width:24px; height:24px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; border:2px solid #D6E0CE; background:#fff; color:transparent; font-size:.55rem; transition:border-color .25s ease, background .25s ease, color .25s ease, box-shadow .25s ease; }
+    .vista-reservacion .rwp-step.is-active .rwp-dot { border-color:var(--lc-green,#5C7A4E); box-shadow:0 0 0 4px rgba(92,122,78,.14); }
+    .vista-reservacion .rwp-step.is-done .rwp-dot { border-color:transparent; color:#fff; background:linear-gradient(135deg,var(--lc-green,#5C7A4E),#3D5234); }
+    .vista-reservacion .rwp-step.is-opt.is-done .rwp-dot { background:linear-gradient(135deg,#E0A93B,var(--lc-gold-dark,#B08528)); }
+    .vista-reservacion .rwp-label { background:none; border:0; padding:0; text-align:left; cursor:pointer; color:#7a8a70; font-size:.82rem; font-weight:750; transition:color .2s ease; }
+    .vista-reservacion .rwp-step.is-done .rwp-label { color:#3D5234; }
+    .vista-reservacion .rwp-label:hover { color:var(--lc-green,#5C7A4E); }
+    .vista-reservacion .rwp-tag { margin-left:6px; font-size:.58rem; font-weight:850; letter-spacing:.05em; text-transform:uppercase; color:var(--lc-gold-dark,#B08528); opacity:.8; }
+    .vista-reservacion .rwp-step.pop .rwp-dot { animation:rwpPop .45s cubic-bezier(.22,1,.36,1); }
+    @keyframes rwpPop { 0%{transform:scale(1);} 42%{transform:scale(1.3);} 100%{transform:scale(1);} }
+
+    .vista-reservacion .rwp-sub { list-style:none; margin:5px 0 2px 12px; padding:2px 0 2px 15px; border-left:2px solid #E4EBDE; display:grid; gap:4px; }
+    .vista-reservacion .rwp-step.is-done .rwp-sub { border-left-color:rgba(92,122,78,.4); }
+    .vista-reservacion .rwp-step.is-opt.is-done .rwp-sub { border-left-color:rgba(176,133,40,.45); }
+    .vista-reservacion .rwp-subitem { display:flex; align-items:center; gap:8px; }
+    .vista-reservacion .rwp-subdot { width:10px; height:10px; flex:0 0 auto; border-radius:50%; border:2px solid #D6E0CE; background:#fff; transition:border-color .2s ease, background .2s ease; }
+    .vista-reservacion .rwp-subitem.is-done .rwp-subdot { border-color:transparent; background:var(--lc-green,#5C7A4E); }
+    .vista-reservacion .rwp-step.is-opt .rwp-subitem.is-done .rwp-subdot { background:var(--lc-gold-dark,#B08528); }
+    .vista-reservacion .rwp-subitem.pop .rwp-subdot { animation:rwpPop .4s cubic-bezier(.22,1,.36,1); }
+    .vista-reservacion .rwp-sublabel { font-size:.72rem; font-weight:650; color:#8a9880; }
+    .vista-reservacion .rwp-subitem.is-done .rwp-sublabel { color:#3D5234; }
+    .vista-reservacion .rwp-star { color:#DC2626; margin-left:3px; font-weight:850; }
+
+    .vista-reservacion .rwp-bonus { margin-top:14px; padding-top:12px; border-top:1px dashed #DDE8D5; }
+    .vista-reservacion .rwp-bonus[hidden] { display:none; }
+    .vista-reservacion .rwp-bonus-top { display:flex; align-items:center; justify-content:space-between; color:var(--lc-gold-dark,#B08528); font-size:.72rem; font-weight:850; }
+    .vista-reservacion .rwp-bonus-top i { margin-right:5px; }
+    .vista-reservacion .rwp-bonus-note { margin:8px 0 0; color:#8a9880; font-size:.72rem; font-weight:600; line-height:1.4; }
+
+    .vista-reservacion .rwp-ready { margin-top:13px; display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border-radius:999px; background:#E9F4E4; color:#3D7A34; font-size:.75rem; font-weight:850; animation:rwpReadyIn .4s cubic-bezier(.22,1,.36,1); }
+    .vista-reservacion .rwp-ready[hidden] { display:none; }
+    @keyframes rwpReadyIn { from{opacity:0;transform:translateY(6px) scale(.96);} to{opacity:1;transform:none;} }
+
+    .vista-reservacion .rwp-spark { position:absolute; left:3px; top:11px; width:16px; height:16px; pointer-events:none; color:var(--lc-gold-dark,#B08528); font-size:.7rem; display:grid; place-items:center; animation:rwpSpark .75s ease forwards; }
+    @keyframes rwpSpark { 0%{opacity:0;transform:scale(.4) rotate(0);} 40%{opacity:1;transform:scale(1.2) rotate(90deg);} 100%{opacity:0;transform:scale(.6) rotate(160deg);} }
+
+    @keyframes rwpShine { to { transform:translateX(120%); } }
+    .vista-reservacion .btn-save { position:relative; overflow:hidden; }
+    .vista-reservacion .btn-save.rwp-shine::after { content:''; position:absolute; inset:0; background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%); transform:translateX(-120%); animation:rwpShine .95s ease; pointer-events:none; }
+
+    /* Barra de progreso en la barra flotante móvil */
+    .vista-reservacion .rf-progress { height:4px; background:rgba(92,122,78,.16); border-radius:999px; overflow:hidden; margin:0 0 9px; }
+    .vista-reservacion .rf-progress span { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--lc-green,#5C7A4E),#3D5234); transition:width .5s cubic-bezier(.22,1,.36,1); }
+
+    /* ── Habitación de cortesía: MÁS visible (revierte el aplanado neutro con !important de §1192) ── */
+    .vista-reservacion .seccion-cortesias {
+        margin-top:18px !important; padding:16px 16px 18px !important;
+        border:2px solid #F59E0B !important; border-radius:16px !important;
+        background:linear-gradient(180deg,#FFFBEB,#FEF3C7) !important;
+        box-shadow:0 12px 32px -14px rgba(217,119,6,.55) !important;
+        position:relative; overflow:hidden;
+        animation:rwpCortAttn 2.6s ease-in-out 1;
+    }
+    .vista-reservacion .seccion-cortesias::before {
+        content:''; position:absolute; inset:0; pointer-events:none;
+        background:radial-gradient(120% 80% at 0% 0%, rgba(245,158,11,.14), transparent 60%);
+    }
+    @keyframes rwpCortAttn { 0%{box-shadow:0 0 0 0 rgba(245,158,11,.55);} 55%{box-shadow:0 0 0 10px rgba(245,158,11,0);} 100%{box-shadow:0 12px 32px -14px rgba(217,119,6,.55);} }
+    .vista-reservacion .titulo-cortesias { display:flex; align-items:center; gap:11px; font-size:1.02rem; font-weight:850; color:#92400E !important; margin-bottom:4px; position:relative; }
+    .vista-reservacion .titulo-cortesias > i:first-child {
+        width:36px; height:36px; display:grid; place-items:center; border-radius:12px; flex:0 0 auto;
+        background:linear-gradient(135deg,#F59E0B,#D97706); color:#fff; font-size:1rem;
+        box-shadow:0 8px 16px -6px rgba(217,119,6,.7);
+    }
+    .vista-reservacion .cortesia-hint { margin:6px 0 12px; color:#92400E; font-size:.82rem; font-weight:600; line-height:1.45; position:relative; }
+    .vista-reservacion .cortesia-hint i { margin-right:5px; }
+
+    @media (prefers-reduced-motion: reduce){
+        .vista-reservacion .rwp-fill, .vista-reservacion .rf-progress span,
+        .vista-reservacion .rwp-dot, .vista-reservacion .rwp-subdot { transition:none !important; }
+        .vista-reservacion .rwp-step.pop .rwp-dot, .vista-reservacion .rwp-subitem.pop .rwp-subdot,
+        .vista-reservacion .rwp-spark, .vista-reservacion .btn-save.rwp-shine::after,
+        .vista-reservacion .rwp-fill.is-shine::after, .vista-reservacion .rwp-ready,
+        .vista-reservacion .seccion-cortesias { animation:none !important; }
+    }
+    </style>
+
     <!-- ── Main grid ── -->
     <div class="px-5 sm:px-7 py-5 pb-24 xl:pb-6">
         <form method="POST" action="<?= url('reservaciones/guardar') ?>" id="formReservacion" data-no-draft data-no-unsaved-warning data-no-submit-state>
             <?= csrf_field() ?>
             <input type="hidden" name="descuento_aplicado" id="descuento_aplicado" value="">
+
+            <div class="res-legend" role="note" aria-label="Que secciones son obligatorias">
+                <span class="res-legend-item"><span class="res-badge res-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span> lo necesario para guardar</span>
+                <span class="res-legend-item"><span class="res-badge res-badge-opt"><i class="far fa-circle"></i> Opcional</span> puedes dejarlo en blanco</span>
+                <span class="res-legend-item"><span class="res-req-star">*</span> campo obligatorio</span>
+            </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-4 gap-5">
 
@@ -2985,11 +3096,12 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
                     <!-- ── 1. Huésped ── -->
                     <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate res-guest-card">
-                        <div class="panel-hd-guest p-4">
+                        <div class="panel-hd-guest p-4 res-hd">
                             <h2 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-user opacity-80"></i>
                                 Información del Huésped
                             </h2>
+                            <span class="res-badge res-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span>
                         </div>
 
                         <div class="p-5">
@@ -3077,11 +3189,12 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
                     <!-- ── 2. Fechas ── -->
                     <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate">
-                        <div class="panel-hd-dates p-4">
+                        <div class="panel-hd-dates p-4 res-hd">
                             <h2 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-calendar opacity-80"></i>
                                 Fechas y Horario de Estadía
                             </h2>
+                            <span class="res-badge res-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span>
                         </div>
 
                         <div class="p-5">
@@ -3153,11 +3266,12 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
                     <!-- ── 3. Habitaciones ── -->
                     <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate">
-                        <div class="panel-hd-rooms p-4">
+                        <div class="panel-hd-rooms p-4 res-hd">
                             <h2 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-bed opacity-80"></i>
                                 Selección de Habitaciones
                             </h2>
+                            <span class="res-badge res-badge-req"><i class="fas fa-asterisk"></i> Obligatorio</span>
                         </div>
 
                         <div class="p-5">
@@ -3196,14 +3310,14 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                             <div id="seccionCortesias" class="seccion-cortesias hidden">
                                 <div class="titulo-cortesias">
                                     <i class="fas fa-gift"></i>
-                                    <span>Seleccione Habitaciones de Cortesía</span>
-                                    <span class="ml-auto text-white text-sm px-3 py-1 rounded-full font-bold" style="background:#92400E;">
-                                        Habitaciones de cortesía
+                                    <span>¿Regalar una habitación de cortesía?</span>
+                                    <span class="ml-auto text-white text-sm px-3 py-1 rounded-full font-bold" style="background:#92400E;white-space:nowrap;">
+                                        <i class="fas fa-star mr-1"></i>Gratis · $0
                                     </span>
                                 </div>
-                                <p class="text-sm mb-3" style="color:#92400E;">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Seleccione las habitaciones que serán de cortesía (precio $0):
+                                <p class="cortesia-hint">
+                                    <i class="fas fa-info-circle"></i>
+                                    Marca abajo las habitaciones que quieras dar <strong>sin costo</strong> (precio $0). Ideal para upgrades, clientes frecuentes o compensaciones. Es opcional.
                                 </p>
                                 <div id="listaCortesias" class="lista-cortesias"></div>
                             </div>
@@ -3212,11 +3326,12 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
                     <!-- ── 4. Notas ── -->
                     <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate">
-                        <div class="panel-hd-notes p-4">
+                        <div class="panel-hd-notes p-4 res-hd">
                             <h2 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-sticky-note opacity-80"></i>
                                 Notas y Observaciones
                             </h2>
+                            <span class="res-badge res-badge-opt"><i class="far fa-circle"></i> Opcional</span>
                         </div>
 
                         <div class="p-5">
@@ -3272,6 +3387,26 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
                 <!-- ════ Right column (1/4) ════ -->
                 <div class="xl:col-span-1 space-y-4 reservation-side-column">
+
+                    <!-- Ruta de la reservación (progreso con recompensa) -->
+                    <div class="rwp-card" id="rwpCard">
+                        <div class="rwp-head">
+                            <i class="fas fa-flag-checkered"></i>
+                            <h3>Ruta de la reservación</h3>
+                        </div>
+                        <div class="rwp-count"><strong id="rwpDone">0</strong> de <span id="rwpTotal">0</span> requisitos</div>
+                        <div class="rwp-bar"><span class="rwp-fill" id="rwpFill"></span></div>
+                        <ol class="rwp-steps" id="rwpSteps"></ol>
+                        <div class="rwp-bonus" id="rwpBonus" hidden>
+                            <div class="rwp-bonus-top">
+                                <span><i class="fas fa-star"></i> Extras</span>
+                                <span id="rwpBonusPct">0%</span>
+                            </div>
+                            <div class="rwp-bar rwp-bar--gold"><span class="rwp-fill" id="rwpBonusFill"></span></div>
+                            <p class="rwp-bonus-note">Notas y anticipo son opcionales, pero enriquecen la reservación.</p>
+                        </div>
+                        <div class="rwp-ready" id="rwpReady" hidden><i class="fas fa-check-circle"></i> Todo listo para guardar</div>
+                    </div>
 
                     <!-- Summary panel -->
                     <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden sticky top-5 reservation-summary-card">
@@ -3339,6 +3474,8 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
 <!-- ── Barra resumen móvil (slim, tipo checkout) ── -->
 <div class="resumen-flotante" id="resumenFlotante">
+    <!-- Progreso obligatorio -->
+    <div class="rf-progress" aria-hidden="true"><span id="rfProgFill"></span></div>
     <!-- Detalle expandible (oculto por defecto) -->
     <div class="rf-detail" id="rfDetail">
         <div id="resumenMovil">
@@ -3383,6 +3520,7 @@ $(document).ready(function() {
     let habitacionesOcupadas = [];
     let busquedaActiva = '';
     let huespedSeleccionadoActual = null;
+    const FECHA_HOY = '<?= date('Y-m-d') ?>'; // avisos de "en limpieza ahora" solo aplican si la entrada es HOY
     const HUESPED_PRESELECCIONADO = <?= json_encode($huesped_preseleccionado ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const ROOM_TYPE_LABELS = <?= json_encode($tiposHabitacionReservacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const TIENE_OLD_RESERVACION = <?= $reservacionTieneOldInput ? 'true' : 'false' ?>;
@@ -4147,6 +4285,8 @@ $(document).ready(function() {
                     </div>
                 `;
             } else if (ocupada) {
+                const pendiente = hab.info_ocupacion?.pendiente || null;
+                const pendienteLabel = pendiente === 'checkout_vencido' ? 'Check-out vencido' : 'Check-in sin resolver';
                 html += `
                     <div class="habitacion-card ocupada block relative">
                         <div class="rc-room-card rc-room-card--occupied relative overflow-hidden">
@@ -4157,7 +4297,9 @@ $(document).ready(function() {
                                 </div>
                                 <div class="rc-room-meta">
                                     <div class="rc-room-chips">
-                                        <span class="rc-room-chip rc-room-chip--occupied"><i class="fas fa-door-closed"></i>Ocupada</span>
+                                        ${pendiente
+                                            ? `<span class="rc-room-chip rc-room-chip--occupied"><i class="fas fa-exclamation-triangle"></i>${pendienteLabel}</span>`
+                                            : `<span class="rc-room-chip rc-room-chip--occupied"><i class="fas fa-door-closed"></i>Ocupada</span>`}
                                         ${tipoBadge}
                                         ${jacBadge}
                                         ${capacidadBadge}
@@ -4173,6 +4315,17 @@ $(document).ready(function() {
                             ${hab.info_ocupacion ? `
                                 <div class="rc-room-detail info-ocupacion">
                                     <div class="huesped-nombre"><i class="fas fa-user mr-1"></i>${hab.info_ocupacion.huesped_nombre || 'Huésped'}</div>
+                                    ${pendiente ? `
+                                        <div style="margin-top:4px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:6px 8px;">
+                                            <div style="color:#991b1b;font-weight:600;font-size:11px;">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>${pendiente === 'checkout_vencido' ? 'No ha hecho el check-out' : 'Reservación pasada sin resolver'}
+                                            </div>
+                                            <a href="<?= url('reservaciones/ver') ?>/${hab.info_ocupacion.reservacion_id}"
+                                               style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;color:#b91c1c;font-size:11px;font-weight:700;text-decoration:underline;text-underline-offset:2px;">
+                                                Resolver primero <i class="fas fa-arrow-right" style="font-size:9px;"></i>
+                                            </a>
+                                        </div>
+                                    ` : `
                                     <div class="fechas">${hab.info_ocupacion.estado === 'checked_in' ? '<span style="color:#16a34a;"><i class="fas fa-check-circle mr-1"></i>Check-in realizado</span>' : '<span style="color:#2563eb;"><i class="fas fa-calendar-check mr-1"></i>Reservada</span>'}</div>
                                     ${hab.info_ocupacion.noches_ocupadas && hab.info_ocupacion.fechas_ocupadas ? `
                                         <div style="margin-top:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:6px;">
@@ -4180,12 +4333,15 @@ $(document).ready(function() {
                                             ${hab.info_ocupacion.fechas_ocupadas.map(n => `<div style="color:#b91c1c;font-size:10px;">• Noche ${n.noche} (${n.fecha_formateada})</div>`).join('')}
                                         </div>
                                     ` : hab.info_ocupacion.fecha_salida ? `<div class="fechas mt-1"><i class="fas fa-sign-out-alt mr-1"></i>Sale: ${formatearFechaCorta(hab.info_ocupacion.fecha_salida)}</div>` : ''}
+                                    `}
                                 </div>
                             ` : ''}
                         </div>
                     </div>
                 `;
             } else {
+                // Aviso (no candado): en limpieza AHORA solo importa si la entrada es HOY.
+                const enLimpiezaHoy = hab.estado === 'limpieza' && $('#fecha_entrada').val() === FECHA_HOY;
                 html += `
                     <label class="habitacion-card disponible block relative ${checked ? 'selected' : ''} ${cortesia ? 'es-cortesia' : ''}">
                         <input type="checkbox"
@@ -4197,6 +4353,7 @@ $(document).ready(function() {
                                data-tipo-label="${escapeHtml(tipoLabel)}"
                                data-piso="${hab.piso}"
                                data-caracteristicas="${hab.caracteristicas || ''}"
+                               ${enLimpiezaHoy ? 'data-limpieza-hoy="1"' : ''}
                                class="sr-only habitacion-check"
                                ${checked ? 'checked' : ''}>
 
@@ -4213,6 +4370,7 @@ $(document).ready(function() {
                                         <span class="rc-room-chip ${cortesia ? 'rc-room-chip--courtesy' : 'rc-room-chip--available'}">
                                             <i class="fas ${cortesia ? 'fa-gift' : 'fa-door-open'}"></i>${cortesia ? 'Cortesía' : 'Disponible'}
                                         </span>
+                                        ${enLimpiezaHoy ? `<span class="rc-room-chip" style="background:#E6EFFC;color:#2F77E0;"><i class="fas fa-broom"></i>En limpieza ahora</span>` : ''}
                                         ${tipoBadge}
                                         ${jacBadge}
                                         ${capacidadBadge}
@@ -4262,6 +4420,30 @@ $(document).ready(function() {
 
         // Checkbox events
         $('.habitacion-check').on('change', function() {
+            // Habitación en limpieza AHORA con entrada HOY: confirmar antes de
+            // seleccionarla (aviso, no candado — se limpia antes del check-in).
+            if (this.checked && this.dataset.limpiezaHoy === '1' && this.dataset.limpiezaOk !== '1') {
+                const chk = this;
+                chk.checked = false;
+                const confirmarLimpieza = function() {
+                    chk.dataset.limpiezaOk = '1';
+                    chk.checked = true;
+                    $(chk).trigger('change');
+                };
+                const msgLimpieza = 'La habitación ' + chk.dataset.numero + ' se está limpiando en este momento. Normalmente estará lista antes de la llegada del huésped. ¿Quieres reservarla para hoy?';
+                if (typeof msConfirm === 'function') {
+                    msConfirm({
+                        type: 'warning',
+                        title: 'Habitación en limpieza',
+                        msg: msgLimpieza,
+                        confirmLabel: 'Sí, reservarla'
+                    }).then(function(ok) { if (ok) confirmarLimpieza(); });
+                } else if (window.confirm(msgLimpieza)) {
+                    confirmarLimpieza();
+                }
+                return;
+            }
+
             const card      = $(this).parent();
             const indicator = card.find('.w-4.h-4 i');
             const contador  = $('#contadorSeleccionadas');
@@ -4941,4 +5123,187 @@ window.toggleTipoTarjetaAnticipoInicial = function() {
 
 window.toggleTipoTarjetaAnticipoInicial();
 });
+</script>
+
+<!-- ── Ruta de la reservación: progreso con recompensa (vanilla, solo lee el DOM) ── -->
+<script>
+(function(){
+    var page = document.querySelector('.vista-reservacion') || document;
+    var formEl = document.getElementById('formReservacion');
+    var stepsEl = document.getElementById('rwpSteps');
+    if (!formEl || !stepsEl) return;
+
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reqDoneEl  = document.getElementById('rwpDone');
+    var reqTotalEl = document.getElementById('rwpTotal');
+    var reqFillEl  = document.getElementById('rwpFill');
+    var bonusWrap  = document.getElementById('rwpBonus');
+    var bonusPctEl = document.getElementById('rwpBonusPct');
+    var bonusFillEl= document.getElementById('rwpBonusFill');
+    var readyPill  = document.getElementById('rwpReady');
+    var rewardCard = document.getElementById('rwpCard');
+    var rfProgFill = document.getElementById('rfProgFill');
+    var btnGuardar = document.getElementById('btnGuardar');
+
+    function filled(sel){ var el = document.querySelector(sel); return !!(el && String(el.value || '').trim() !== ''); }
+    function roomsSelected(){
+        return document.querySelectorAll('input[name="habitaciones[]"]:checked, input[type="hidden"][name="habitaciones[]"]').length > 0;
+    }
+    function horaOk(){
+        var modo = (document.getElementById('hora_llegada_modo') || {}).value || '';
+        return modo === 'despues' || filled('#hora_llegada');
+    }
+    function panel(sel){ var h = document.querySelector(sel); return h ? h.parentElement : null; }
+
+    var STEPS = [
+        { label:'Huésped', required:true, anchor:panel('.panel-hd-guest'), focus:'#huesped_busqueda',
+          items:[ { label:'Huésped', req:true, get:function(){ return filled('[name="huesped_id"]'); } } ] },
+        { label:'Fechas', required:true, anchor:panel('.panel-hd-dates'), focus:'#fecha_entrada',
+          items:[ { label:'Entrada', req:true, get:function(){ return filled('#fecha_entrada'); } },
+                  { label:'Salida',  req:true, get:function(){ return filled('#fecha_salida'); } },
+                  { label:'Hora de llegada', req:true, get:horaOk } ] },
+        { label:'Habitación', required:true, anchor:panel('.panel-hd-rooms'), focus:'#buscarHabitacion',
+          items:[ { label:'Al menos una habitación', req:true, get:roomsSelected } ] },
+        { label:'Notas y extras', required:false, anchor:panel('.panel-hd-notes'), focus:'textarea[name="notas"]',
+          items:[ { label:'Comentarios', req:false, get:function(){ return filled('textarea[name="notas"]'); } },
+                  { label:'Anticipo',    req:false, get:function(){ return filled('input[name="anticipo_inicial"]'); } } ] }
+    ];
+
+    function spark(li){
+        if (reduce) return;
+        var s = document.createElement('span');
+        s.className = 'rwp-spark';
+        s.innerHTML = '<i class="fas fa-star"></i>';
+        li.appendChild(s);
+        s.addEventListener('animationend', function(){ if (s.parentNode) s.remove(); });
+        setTimeout(function(){ if (s.parentNode) s.remove(); }, 1000);
+    }
+    function pop(el){ if (reduce) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+    function setBar(el, ratio){ if (el) el.style.width = (Math.max(0, Math.min(1, ratio)) * 100) + '%'; }
+
+    var fields = [];  // { get, req, li, done }
+    var nodes = [];   // { step, li, dot, subItems }
+    var reqTotal = 0, optTotal = 0;
+
+    STEPS.forEach(function(step){
+        var li = document.createElement('li');
+        li.className = 'rwp-step' + (step.required ? '' : ' is-opt');
+
+        var row = document.createElement('div');
+        row.className = 'rwp-step-row';
+        var dot = document.createElement('span');
+        dot.className = 'rwp-dot';
+        dot.innerHTML = '<i class="fas fa-check"></i>';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rwp-label';
+        btn.textContent = step.label;
+        if (!step.required){ var tag = document.createElement('span'); tag.className = 'rwp-tag'; tag.textContent = 'extra'; btn.appendChild(tag); }
+        btn.addEventListener('click', function(){
+            if (step.anchor) step.anchor.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+            var f = step.focus && document.querySelector(step.focus);
+            if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+        });
+        row.appendChild(dot); row.appendChild(btn); li.appendChild(row);
+
+        var subItems = [];
+        var ul = document.createElement('ul');
+        ul.className = 'rwp-sub';
+        step.items.forEach(function(it){
+            var sub = document.createElement('li');
+            sub.className = 'rwp-subitem';
+            var sdot = document.createElement('span'); sdot.className = 'rwp-subdot';
+            var slabel = document.createElement('span'); slabel.className = 'rwp-sublabel'; slabel.textContent = it.label;
+            if (it.req){ var star = document.createElement('span'); star.className = 'rwp-star'; star.textContent = '*'; slabel.appendChild(star); }
+            sub.appendChild(sdot); sub.appendChild(slabel); ul.appendChild(sub);
+            var f = { get: it.get, req: it.req, li: sub, done: false };
+            subItems.push(f); fields.push(f);
+        });
+        li.appendChild(ul);
+
+        stepsEl.appendChild(li);
+        nodes.push({ step: step, li: li, dot: dot, subItems: subItems });
+    });
+
+    reqTotal = fields.filter(function(f){ return f.req; }).length;
+    optTotal = fields.length - reqTotal;
+    if (reqTotalEl) reqTotalEl.textContent = reqTotal;
+    if (bonusWrap) bonusWrap.hidden = optTotal === 0;
+
+    var prevReqDone = 0, prevReady = false;
+
+    function refresh(animate){
+        fields.forEach(function(f){
+            var d = !!f.get();
+            if (d !== f.done){
+                f.done = d;
+                f.li.classList.toggle('is-done', d);
+                if (d && animate) pop(f.li);
+            }
+        });
+
+        nodes.forEach(function(n){
+            var reqSubs = n.subItems.filter(function(s){ return s.req; });
+            var complete;
+            if (n.step.required){
+                complete = reqSubs.length ? reqSubs.every(function(s){ return s.done; })
+                                          : n.subItems.every(function(s){ return s.done; });
+            } else {
+                complete = n.subItems.length ? n.subItems.every(function(s){ return s.done; }) : false;
+            }
+            var was = n.li.classList.contains('is-done');
+            n.li.classList.toggle('is-done', complete);
+            if (complete && !was && animate){ pop(n.dot.parentNode); if (!n.step.required) spark(n.li); }
+            var anyFilled = n.subItems.some(function(s){ return s.done; });
+            var focused = n.step.anchor && n.step.anchor.contains(document.activeElement);
+            n.li.classList.toggle('is-active', !complete && (focused || anyFilled));
+        });
+
+        var reqDone = fields.filter(function(f){ return f.req && f.done; }).length;
+        var optDone = fields.filter(function(f){ return !f.req && f.done; }).length;
+
+        if (reqDoneEl) reqDoneEl.textContent = reqDone;
+        setBar(reqFillEl, reqTotal ? reqDone / reqTotal : 0);
+        setBar(rfProgFill, reqTotal ? reqDone / reqTotal : 0);
+        if (reqDone > prevReqDone && reqFillEl && !reduce){
+            reqFillEl.classList.remove('is-shine'); void reqFillEl.offsetWidth; reqFillEl.classList.add('is-shine');
+        }
+        prevReqDone = reqDone;
+
+        var optRatio = optTotal ? optDone / optTotal : 0;
+        setBar(bonusFillEl, optRatio);
+        if (bonusPctEl) bonusPctEl.textContent = Math.round(optRatio * 100) + '%';
+
+        // "Listo" = la propia validación del formulario (btnGuardar habilitado)
+        var ready = btnGuardar ? !btnGuardar.disabled : (reqTotal > 0 && reqDone === reqTotal);
+        if (ready !== prevReady){
+            if (readyPill) readyPill.hidden = !ready;
+            if (rewardCard) rewardCard.classList.toggle('is-complete', ready);
+            if (ready && !reduce){
+                ['btnGuardar', 'btnGuardarMovil'].forEach(function(id){
+                    var b = document.getElementById(id);
+                    if (b){ b.classList.remove('rwp-shine'); void b.offsetWidth; b.classList.add('rwp-shine'); }
+                });
+            }
+            prevReady = ready;
+        }
+    }
+
+    formEl.addEventListener('input', function(){ refresh(true); }, true);
+    formEl.addEventListener('change', function(){ refresh(true); }, true);
+    formEl.addEventListener('click', function(){ setTimeout(function(){ refresh(false); }, 0); }, true);
+    formEl.addEventListener('focusin', function(){ refresh(false); });
+
+    // El estado de habitaciones/hora se refleja en el botón Guardar (validación jQuery)
+    if (btnGuardar && window.MutationObserver){
+        new MutationObserver(function(){ refresh(false); }).observe(btnGuardar, { attributes: true, attributeFilter: ['disabled'] });
+    }
+    var cont = document.getElementById('contenedorHabitaciones');
+    if (cont && window.MutationObserver){
+        var t;
+        new MutationObserver(function(){ clearTimeout(t); t = setTimeout(function(){ refresh(false); }, 80); }).observe(cont, { childList: true, subtree: true });
+    }
+
+    refresh(false);
+})();
 </script>

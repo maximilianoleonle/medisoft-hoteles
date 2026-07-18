@@ -325,15 +325,15 @@ input:checked + .toggle-slider:before {
     --tar-brand: var(--brand-primary, #1B2746);
     --tar-brand-2: var(--brand-secondary, #0F172A);
     --tar-brand-dark: color-mix(in srgb, var(--tar-brand), #000 20%);
-    --tar-brand-soft: color-mix(in srgb, var(--tar-brand) 5%, #FBF8F2);
+    --tar-brand-soft: color-mix(in srgb, var(--tar-brand) 5%, #FAFAFC);
     --tar-gold: var(--brand-accent, #BD9441);
     --tar-gold-soft: color-mix(in srgb, var(--tar-gold) 15%, #FFFFFF);
     --tar-gold-line: color-mix(in srgb, var(--tar-gold) 42%, #E4D4B0);
     --tar-gold-ink: color-mix(in srgb, var(--tar-gold) 72%, #000);
-    --tar-ivory: #F6F2EA;
-    --tar-ivory-2: #FBF8F2;
+    --tar-ivory: #F5F5F7;
+    --tar-ivory-2: #FAFAFC;
     --tar-surface: #FFFFFF;
-    --tar-surface-warm: #FCFAF5;
+    --tar-surface-warm: #F5F5F7;
     --tar-border: color-mix(in srgb, var(--tar-brand) 7%, #E7E1D4);
     --tar-ring: color-mix(in srgb, var(--tar-gold) 32%, transparent);
     --tar-text: #171717;
@@ -348,10 +348,7 @@ input:checked + .toggle-slider:before {
     --tar-amber: #D0963A;
     --tar-serif: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--tar-text);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 60%),
-        radial-gradient(900px 360px at 22% 10%, color-mix(in srgb, var(--tar-teal) 6%, transparent), transparent 58%),
-        linear-gradient(180deg, var(--tar-ivory-2), var(--tar-ivory)) !important;
+    
 }
 
 .tarifa-create-page .tarifa-container {

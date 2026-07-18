@@ -35,10 +35,10 @@ $descuentoTexto = rtrim(rtrim(number_format((float) $config['descuento_pct'], 2)
     --lea-gold-soft: color-mix(in srgb, var(--lea-gold) 15%, #FFFFFF);
     --lea-gold-line: color-mix(in srgb, var(--lea-gold) 42%, #E4D4B0);
     --lea-gold-ink: color-mix(in srgb, var(--lea-gold) 58%, var(--lea-brand));
-    --lea-ivory: #F6F2EA;
-    --lea-ivory-2: #FBF8F2;
+    --lea-ivory: #F5F5F7;
+    --lea-ivory-2: #FAFAFC;
     --lea-surface: #FFFFFF;
-    --lea-surface-warm: #FCFAF5;
+    --lea-surface-warm: #F5F5F7;
     --lea-border: color-mix(in srgb, var(--lea-brand) 6%, #E9E1D6);
     --lea-ring: color-mix(in srgb, var(--lea-gold) 32%, transparent);
     --lea-text: color-mix(in srgb, var(--lea-brand) 46%, #707B8C);
@@ -57,9 +57,7 @@ $descuentoTexto = rtrim(rtrim(number_format((float) $config['descuento_pct'], 2)
     color: var(--lea-text);
     font-family: var(--lea-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--lea-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--lea-ivory-2), var(--lea-ivory));
+    
 }
 .lea * { box-sizing: border-box; }
 .lea-shell { display: grid; gap: 14px; width: 100%; max-width: 1120px; min-width: 0; margin: 0 auto; }

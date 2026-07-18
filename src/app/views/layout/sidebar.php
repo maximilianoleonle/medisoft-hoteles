@@ -204,7 +204,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
-        background: #FBF8F2 !important;
+        background: #FAFAFC !important;
         z-index: 900 !important;
         pointer-events: none !important;
     }
@@ -1465,7 +1465,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         z-index: 900 !important;
         width: 100vw !important;
         max-width: 100vw !important;
-        background: #FBF8F2 !important;
+        background: #FAFAFC !important;
         border-right: 0 !important;
         box-shadow: none !important;
         padding: 8px 12px 0 !important;
@@ -1686,7 +1686,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         border-radius: 10px !important;
         display: grid !important;
         place-items: center !important;
-        background: var(--ms-mm-ib, #FBF8F2) !important;
+        background: var(--ms-mm-ib, #FAFAFC) !important;
         color: var(--ms-mm-ic, #6C7689) !important;
         flex: none;
         margin: 0 !important;

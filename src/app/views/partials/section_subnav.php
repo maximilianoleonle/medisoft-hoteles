@@ -59,7 +59,7 @@ if ($subnavSection === 'nomina') {
     --msnav-text: var(--brand-text, #232323);
     --msnav-muted: var(--brand-muted, #6d675e);
     --msnav-border: var(--brand-border, #e3dccd);
-    --msnav-card: color-mix(in srgb, var(--brand-surface, #F6F2EA) 55%, #ffffff);
+    --msnav-card: color-mix(in srgb, var(--brand-surface, #F5F5F7) 55%, #ffffff);
     display: flex; flex-wrap: wrap; gap: 8px;
     margin: 2px 0 18px;
 }
@@ -75,13 +75,25 @@ if ($subnavSection === 'nomina') {
 .ms-subnav .ms-subnav-tab:hover { border-color: var(--msnav-gold); transform: translateY(-1px); color: var(--msnav-text); }
 .ms-subnav .ms-subnav-tab.is-active { background: var(--msnav-brand); border-color: var(--msnav-brand); color: #fff; }
 .ms-subnav .ms-subnav-tab.is-active i { color: rgba(255,255,255,.82); }
+/* Subnav embebida en un header de marca (Habitaciones/Áreas/Mapa): con el
+   activo de relleno de marca se fundía con el header y no parecía un botón.
+   Aquí el seleccionado es una píldora blanca elevada, con texto e ícono de la
+   marca y una barra de acento inferior: se lee claramente como botón activo
+   y resalta sobre cualquier color de marca del header. */
+.ms-subnav--onbrand .ms-subnav-tab { box-shadow: 0 1px 2px rgba(0,0,0,.10); }
+.ms-subnav--onbrand .ms-subnav-tab.is-active {
+    background: #fff; color: var(--msnav-brand); border-color: #fff; font-weight: 700;
+    box-shadow: 0 8px 20px -8px rgba(0,0,0,.42), inset 0 -3px 0 var(--msnav-brand);
+}
+.ms-subnav--onbrand .ms-subnav-tab.is-active i { color: var(--msnav-brand); }
+.ms-subnav--onbrand .ms-subnav-tab.is-active:hover { border-color: #fff; transform: none; }
 @media (max-width: 768px) {
     .ms-subnav { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
     .ms-subnav::-webkit-scrollbar { display: none; }
 }
 </style>
 <?php endif; ?>
-<nav class="ms-subnav" aria-label="<?= htmlspecialchars($subnavAria) ?>">
+<nav class="ms-subnav<?= $subnavSection === 'habitaciones' ? ' ms-subnav--onbrand' : '' ?>" aria-label="<?= htmlspecialchars($subnavAria) ?>">
     <?php foreach ($subnavTabs as $subnavKey => $subnavTab): $subnavEsActiva = ($subnavKey === $subnavActive); ?>
     <a href="<?= $subnavTab['url'] ?>"
        class="ms-subnav-tab ms-pressable <?= $subnavEsActiva ? 'is-active' : '' ?>"

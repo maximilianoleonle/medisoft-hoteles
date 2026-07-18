@@ -220,7 +220,10 @@ public function todasConOcupacionAction() {
                           r.hora_entrada,
                           h.nombre_completo as huesped_nombre,
                           h.telefono as huesped_telefono,
-                          h.procedencia_estado
+                          h.procedencia_estado,
+                          CASE WHEN r.fecha_salida >= CURDATE() THEN NULL
+                               WHEN r.estado = 'checked_in' THEN 'checkout_vencido'
+                               ELSE 'checkin_pendiente' END as pendiente_tipo
                           FROM reservacion_habitaciones rh
                           INNER JOIN reservaciones r ON rh.reservacion_id = r.id
                             AND rh.hotel_id = r.hotel_id
@@ -232,14 +235,19 @@ public function todasConOcupacionAction() {
                           AND hab_scope.hotel_id = ?
                           AND r.estado IN ('confirmada', 'checked_in')
                           AND NOT (
-                              r.fecha_salida <= ? OR r.fecha_entrada >= ?
+                              (CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END) <= ?
+                              OR r.fecha_entrada >= ?
                           )";
         
+        // Los pendientes al final: si una habitación tiene ocupación normal Y un
+        // pendiente sin resolver, el mapa (último gana) explica el pendiente.
+        $sql_ocupacion .= " ORDER BY (pendiente_tipo IS NOT NULL) ASC";
+
         $params = [$hotel_id, $hotel_id, $hotel_id, $fecha_entrada, $fecha_salida];
-        
+
         $stmt = $db->query($sql_ocupacion, $params);
         $ocupaciones = $stmt->fetchAll();
-        
+
         // Crear un mapa de ocupaciones por habitación_id
         $ocupacion_map = [];
         foreach ($ocupaciones as $ocupacion) {
@@ -314,6 +322,7 @@ public function todasConOcupacionAction() {
                 $habitacion['info_ocupacion'] = [
                     'reservacion_id' => $ocupacion['reservacion_id'],
                     'estado' => $ocupacion['estado'],
+                    'pendiente' => $ocupacion['pendiente_tipo'] ?? null,
                     'huesped_nombre' => $ocupacion['huesped_nombre'],
                     'huesped_telefono' => $ocupacion['huesped_telefono'],
                     'procedencia' => $ocupacion['procedencia_estado'],
@@ -1194,62 +1203,13 @@ public function vehiculosHuespedAction() {
     }
 
     /**
-     * Sincroniza operaciones capturadas offline (IndexedDB → Sync::procesarLote).
-     *
-     * Política (2026-07-08, reemplaza a la de 2026-07-02): los cobros y gastos
-     * SÍ se sincronizan offline, pero con candados en Sync::registrarMovimientoCaja:
-     * se rechazan si el corte de caja cambió desde la captura, y la descripción
-     * queda marcada como "capturado offline" para auditoría.
+     * Mantiene deshabilitada temporalmente la sincronización de operaciones offline.
      */
-    private const SYNC_MAX_OPERACIONES = 200;
-
     public function syncAction() {
-        if (!$this->isPost()) {
-            View::renderJSON(['success' => false, 'message' => 'Metodo no permitido. Usa POST.'], 405);
-            return;
-        }
-
-        // Defensa CSRF para sync (fase 7): header custom en vez de token de sesión.
-        // Un sitio externo no puede enviar X-Requested-With cross-origin sin pasar
-        // por un preflight CORS (que este servidor no autoriza), así que exigirlo
-        // equivale a la protección del token. El token de sesión NO sirve aquí:
-        // las pantallas cacheadas offline traen el token viejo y, cuando el
-        // remember-token renueva la sesión, el sync quedaba bloqueado con 403
-        // para siempre (la cola nunca se vaciaba).
-        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest') {
-            View::renderJSON(['success' => false, 'message' => 'Solicitud no valida.'], 403);
-            return;
-        }
-
-        $body = json_decode(file_get_contents('php://input') ?: '', true);
-        $operaciones = is_array($body['operaciones'] ?? null) ? $body['operaciones'] : [];
-
-        if (empty($operaciones)) {
-            View::renderJSON(['success' => true, 'exitosas' => [], 'fallidas' => []]);
-            return;
-        }
-        if (count($operaciones) > self::SYNC_MAX_OPERACIONES) {
-            View::renderJSON([
-                'success' => false,
-                'message' => 'Lote demasiado grande (max ' . self::SYNC_MAX_OPERACIONES . ' operaciones).',
-            ], 400);
-            return;
-        }
-
-        try {
-            require_once __DIR__ . '/../models/Sync.php';
-            $sync = new Sync();
-            $resultado = $sync->procesarLote($operaciones, user_id(), $this->hotelIdActual());
-
-            View::renderJSON([
-                'success' => true,
-                'exitosas' => $resultado['exitosas'],
-                'fallidas' => $resultado['fallidas'],
-            ]);
-        } catch (Throwable $e) {
-            error_log('[API sync] ' . $e->getMessage());
-            View::renderJSON(['success' => false, 'message' => 'Error interno al sincronizar'], 500);
-        }
+        View::renderJSON([
+            'success' => false,
+            'error' => 'sync_temporarily_disabled',
+        ], 423);
     }
 
     public function buscarHuespedesAction() {
@@ -1541,8 +1501,8 @@ public function vehiculosHuespedAction() {
                     AND h.hotel_id = ?
                     AND r.hotel_id = ?
                     AND r.estado IN ('confirmada', 'checked_in')
-                    AND ((r.fecha_entrada <= ? AND r.fecha_salida >= ?)
-                    OR (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
+                    AND ((r.fecha_entrada <= ? AND (CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END) >= ?)
+                    OR (r.fecha_entrada <= ? AND (CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END) >= ?)
                     OR (r.fecha_entrada >= ? AND r.fecha_salida <= ?))";
             
             $params = [

@@ -42,15 +42,15 @@ $visibles = count($proveedores);
     --pv-brand: var(--brand-primary, #1B2746);
     --pv-brand-2: var(--brand-secondary, #0F172A);
     --pv-brand-dark: color-mix(in srgb, var(--pv-brand), #000 20%);
-    --pv-brand-soft: color-mix(in srgb, var(--pv-brand) 5%, #FBF8F2);
+    --pv-brand-soft: color-mix(in srgb, var(--pv-brand) 5%, #FAFAFC);
     --pv-gold: var(--brand-accent, #BD9441);
     --pv-gold-soft: color-mix(in srgb, var(--pv-gold) 15%, #FFFFFF);
     --pv-gold-line: color-mix(in srgb, var(--pv-gold) 42%, #E4D4B0);
     --pv-gold-ink: color-mix(in srgb, var(--pv-gold) 72%, #000);
-    --pv-ivory: #F6F2EA;
-    --pv-ivory-2: #FBF8F2;
+    --pv-ivory: #F5F5F7;
+    --pv-ivory-2: #FAFAFC;
     --pv-surface: #FFFFFF;
-    --pv-surface-warm: #FCFAF5;
+    --pv-surface-warm: #F5F5F7;
     --pv-border: color-mix(in srgb, var(--pv-brand) 7%, #E7E1D4);
     --pv-ring: color-mix(in srgb, var(--pv-gold) 32%, transparent);
     --pv-text: #171717;
@@ -67,9 +67,7 @@ $visibles = count($proveedores);
     min-height: 100%;
     color: var(--pv-text);
     font-family: var(--pv-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--pv-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--pv-ivory-2), var(--pv-ivory));
+    
 }
 @import url('<?= asset('vendor/fonts/marca.css') ?>');
 

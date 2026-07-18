@@ -137,10 +137,10 @@ $severidadLabels = [
     --cfin-accent-soft: color-mix(in srgb, var(--cfin-accent) 15%, #FFFFFF);
     --cfin-accent-line: color-mix(in srgb, var(--cfin-accent) 42%, #E4D4B0);
     --cfin-accent-ink: color-mix(in srgb, var(--cfin-accent) 58%, var(--cfin-brand));
-    --cfin-ivory: #F6F2EA;
-    --cfin-ivory-2: #FBF8F2;
+    --cfin-ivory: #F5F5F7;
+    --cfin-ivory-2: #FAFAFC;
     --cfin-surface: #FFFFFF;
-    --cfin-surface-warm: #FCFAF5;
+    --cfin-surface-warm: #F5F5F7;
     --cfin-border: color-mix(in srgb, var(--cfin-brand) 6%, #E9E1D6);
     --cfin-ring: color-mix(in srgb, var(--cfin-accent) 32%, transparent);
     --cfin-text: color-mix(in srgb, var(--cfin-brand) 46%, #707B8C);
@@ -160,9 +160,6 @@ $severidadLabels = [
     padding: 18px 16px 42px;
     color: var(--cfin-text);
     font-family: var(--cfin-sans);
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cfin-accent) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--cfin-ivory-2), var(--cfin-ivory));
 }
 
 .cfin-hero {

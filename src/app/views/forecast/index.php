@@ -62,10 +62,10 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     --fc-gold-soft: color-mix(in srgb, var(--fc-gold) 15%, #FFFFFF);
     --fc-gold-line: color-mix(in srgb, var(--fc-gold) 42%, #E4D4B0);
     --fc-gold-ink: color-mix(in srgb, var(--fc-gold) 58%, var(--fc-brand));
-    --fc-ivory: #F6F2EA;
-    --fc-ivory-2: #FBF8F2;
+    --fc-ivory: #F5F5F7;
+    --fc-ivory-2: #FAFAFC;
     --fc-surface: #FFFFFF;
-    --fc-surface-warm: #FCFAF5;
+    --fc-surface-warm: #F5F5F7;
     --fc-border: color-mix(in srgb, var(--fc-brand) 6%, #E9E1D6);
     --fc-ring: color-mix(in srgb, var(--fc-gold) 32%, transparent);
     --fc-text: color-mix(in srgb, var(--fc-brand) 46%, #707B8C);
@@ -84,9 +84,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
     color: var(--fc-text);
     font-family: var(--fc-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--fc-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--fc-ivory-2), var(--fc-ivory));
+    
 }
 .fc * { box-sizing: border-box; }
 .fc-shell { display: grid; gap: 14px; width: 100%; max-width: 1120px; min-width: 0; margin: 0 auto; }

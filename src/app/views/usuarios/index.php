@@ -175,10 +175,10 @@ if (!function_exists('usr_sin_rol_configurable')) {
     --user-accent-dark: color-mix(in srgb, var(--user-accent) 72%, #3F2E12);
     --user-accent-soft: color-mix(in srgb, var(--user-accent) 14%, #FFFFFF);
     --user-accent-line: color-mix(in srgb, var(--user-accent) 34%, #E8DDCA);
-    --user-bg: #F6F2EA;
-    --user-bg-2: #FBF8F2;
+    --user-bg: #F5F5F7;
+    --user-bg-2: #FAFAFC;
     --user-surface: rgba(255,255,255,.96);
-    --user-surface-warm: #FCFAF5;
+    --user-surface-warm: #F5F5F7;
     --user-border: color-mix(in srgb, var(--user-brand) 11%, #E7E1D4);
     --user-text: #1B2746;
     --user-muted: #6C7689;
@@ -192,6 +192,90 @@ if (!function_exists('usr_sin_rol_configurable')) {
     --user-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--user-text);
     font-family: var(--user-sans);
+}
+
+/* ── Modo oscuro ──────────────────────────────────────────────────────
+   Los tokens --user-* de arriba son claros FIJOS y alimentan directo el
+   badge de conteo (accent-soft = 86% blanco → círculo blanco), los botones
+   de acción (surface-warm ≈ blanco), la caja del ícono y los bordes; el
+   tema oscuro (cupertino.css/dark-theme.css) oscurece los paneles pero NO
+   estos tokens. Se remapean a las superficies del tema (los --brand-* ya se
+   voltean) para que dejen de verse como bloques blancos. White-label: los
+   acentos (badges de rol/estado, avatar) siguen derivando del hotel. */
+html[data-theme="dark"] .usuarios-view {
+    --user-bg: var(--brand-surface-soft, #191813);
+    --user-bg-2: color-mix(in srgb, #FFFFFF 5%, var(--brand-surface, #201F19));
+    --user-surface: var(--brand-surface, #201F19);
+    --user-surface-warm: color-mix(in srgb, #FFFFFF 5%, var(--brand-surface, #201F19));
+    --user-border: var(--brand-border, #38383A);
+    --user-text: var(--brand-text, #EFE9DC);
+    --user-muted: var(--brand-muted, #A69F8E);
+    --user-accent-soft: color-mix(in srgb, var(--user-accent) 22%, var(--brand-surface, #201F19));
+    --user-accent-line: color-mix(in srgb, var(--user-accent) 42%, var(--brand-border, #38383A));
+    --user-success-soft: color-mix(in srgb, var(--user-success) 22%, var(--brand-surface, #201F19));
+    --user-danger-soft: color-mix(in srgb, var(--user-danger) 22%, var(--brand-surface, #201F19));
+    --user-info-soft: color-mix(in srgb, var(--user-info) 22%, var(--brand-surface, #201F19));
+}
+/* El badge de conteo pinta el texto con accent-dark (oscuro): sobre el chip
+   tintado en oscuro debe ir claro para leerse. */
+html[data-theme="dark"] .usuarios-view .usr-panel-hd > span {
+    color: var(--brand-text, #EFE9DC) !important;
+}
+/* Ícono del encabezado: en claro va con el verde/marca; sobre la caja oscura
+   queda muy apagado → se aclara mezclándolo con blanco (conserva el matiz). */
+html[data-theme="dark"] .usuarios-view .usr-panel-hd > div:first-child > div,
+html[data-theme="dark"] .usuarios-view .usr-panel-hd > div:first-child > div i {
+    color: color-mix(in srgb, var(--user-brand) 45%, #FFFFFF) !important;
+}
+
+/* Badges semánticos (rol/estado): en claro tienen fondos casi blancos fijos que
+   se ven lavados en oscuro. Se tintan oscuro + texto claro CONSERVANDO el matiz
+   (morado=admin, azul=recepción, verde=activo/limpieza, ámbar=mant., rojo=cont.). */
+html[data-theme="dark"] .usuarios-view .rol-admin,
+html[data-theme="dark"] .usuarios-view .rol-gerente,
+html[data-theme="dark"] .usuarios-view .rol-administrador {
+    background: color-mix(in srgb, #8B5CF6 20%, var(--brand-surface, #1C1C1E)) !important;
+    color: #CBBBF3 !important;
+    border-color: color-mix(in srgb, #8B5CF6 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .rol-recepcion,
+html[data-theme="dark"] .usuarios-view .rol-recepcionista {
+    background: color-mix(in srgb, #3B82F6 20%, var(--brand-surface, #1C1C1E)) !important;
+    color: #A8CBF5 !important;
+    border-color: color-mix(in srgb, #3B82F6 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .rol-limpieza {
+    background: color-mix(in srgb, #16A46A 20%, var(--brand-surface, #1C1C1E)) !important;
+    color: #8FD9B4 !important;
+    border-color: color-mix(in srgb, #16A46A 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .rol-mantenimiento {
+    background: color-mix(in srgb, #D9920A 22%, var(--brand-surface, #1C1C1E)) !important;
+    color: #EAC178 !important;
+    border-color: color-mix(in srgb, #D9920A 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .rol-contador {
+    background: color-mix(in srgb, #E5544B 20%, var(--brand-surface, #1C1C1E)) !important;
+    color: #F1A9A2 !important;
+    border-color: color-mix(in srgb, #E5544B 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .status-on {
+    background: color-mix(in srgb, #16A46A 20%, var(--brand-surface, #1C1C1E)) !important;
+    color: #8FD9B4 !important;
+    border-color: color-mix(in srgb, #16A46A 40%, var(--brand-border, #38383A)) !important;
+}
+html[data-theme="dark"] .usuarios-view .status-off {
+    background: color-mix(in srgb, #FFFFFF 6%, var(--brand-surface, #1C1C1E)) !important;
+    color: var(--brand-muted, #A69F8E) !important;
+    border-color: var(--brand-border, #38383A) !important;
+}
+
+/* Avatares de fila: en claro usan tintes pastel por posición (2n/3n/4n/5n) que
+   brillan en oscuro; se unifican al degradado de marca (como el avatar base). */
+html[data-theme="dark"] .usuarios-view .usr-tr .usr-avatar {
+    background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+    color: #FFFFFF !important;
+    border-color: transparent !important;
 }
 
 .usr-bg {
@@ -636,7 +720,7 @@ if (!function_exists('usr_sin_rol_configurable')) {
     --user-heading: var(--brand-text, #111827);
     --user-text: var(--brand-text, #1F2937);
     --user-muted: var(--brand-muted, #667085);
-    --user-bg: #F8F5ED;
+    --user-bg: #F5F5F7;
     --user-bg-2: #FBFAF6;
     --user-surface: #FFFFFF;
     --user-surface-warm: color-mix(in srgb, var(--user-accent) 3%, #FFFFFF);

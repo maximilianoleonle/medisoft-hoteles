@@ -230,7 +230,7 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                      WHERE hab_scope.hotel_id = ?
                      AND r.estado IN ('confirmada', 'checked_in')
                      AND ? > r.fecha_entrada
-                     AND ? < r.fecha_salida";
+                     AND ? < (CASE WHEN r.fecha_salida < CURDATE() THEN DATE_ADD(CURDATE(), INTERVAL 1 DAY) ELSE r.fecha_salida END)";
     
     $params = [$hotelId, $fecha_salida, $fecha_entrada];
     

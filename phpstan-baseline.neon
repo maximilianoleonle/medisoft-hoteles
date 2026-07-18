@@ -1,0 +1,127 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Instantiated class App\\Models\\Inventario not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/models/InventarioReportes.php
+
+		-
+			message: '#^Call to an undefined method Reporte\:\:generarPDFEstancia\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Call to an undefined method Reporte\:\:generarPDFHabitacionesRentables\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Call to an undefined method Reporte\:\:generarPDFOcupacion\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Call to an undefined method Reporte\:\:generarPDFProcedencia\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Call to an undefined method Reporte\:\:generarPDFRankingEstados\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/models/Reporte.php
+
+		-
+			message: '#^Access to an undefined property Reservacion\:\:\$reservacionModel\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/app/models/Reservacion.php
+
+		-
+			message: '#^Call to an undefined method Reservacion\:\:getQuery\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/app/models/Reservacion.php
+
+		-
+			message: '#^Undefined variable\: \$nota_cancelacion$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/app/models/Reservacion.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/NominaReciboService.php
+
+		-
+			message: '#^Instantiated class TCPDF not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:aviso\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:dato\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:detalleCaja\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:detalleConceptos\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:header\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:metric\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:resumen\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:sectionTitle\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php
+
+		-
+			message: '#^Parameter \$pdf of method TrabajadorReciboLaboralPdfService\:\:tabla\(\) has invalid type TCPDF\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/app/services/TrabajadorReciboLaboralPdfService.php

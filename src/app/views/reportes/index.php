@@ -24,8 +24,8 @@ if ($repRol !== '') {
     --rp-gold-line: color-mix(in srgb, var(--rp-gold) 32%, #F0E7D6);
     --rp-gold-bg: color-mix(in srgb, var(--rp-gold) 14%, #FFFDF7);
     /* Superficies serenas */
-    --rp-ivory: #F6F2EA;
-    --rp-ivory-2: #FBF8F2;
+    --rp-ivory: #F5F5F7;
+    --rp-ivory-2: #FAFAFC;
     --rp-surface: #FFFFFF;
     --rp-line: #ECE5D8;
     /* Tinta */
@@ -48,7 +48,7 @@ if ($repRol !== '') {
 
 .reportes-view.rep-bg {
     min-height: 100vh;
-    background: linear-gradient(180deg, var(--rp-ivory-2), var(--rp-ivory) 62%);
+    
 }
 
 .rp-hic svg, .rp-tag svg, .rp-ic svg, .rp-list svg, .rp-btn svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

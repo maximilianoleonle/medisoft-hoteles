@@ -122,7 +122,14 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     dentro del módulo de la unidad principal; claves de permiso nuevas
     rompen roles legacy), subnav compartida en la misma sección. El detalle
     del área hereda los contratos de la unidad (personal obligatorio en
-    limpieza, mantenimiento→gasto).
+    limpieza, mantenimiento→gasto). Extensión probada (jul 2026): el módulo
+    genérico de tareas vincula unidad O área (excluyentes) y las tareas de
+    limpieza SINCRONIZAN estado en ambos sentidos — crear "para ahora"/iniciar
+    pone la unidad disponible en limpieza, completar/cancelar la libera solo
+    si no queda otra tarea activa (FOR UPDATE dentro de la transacción);
+    programadas a futuro y unidades ocupadas no tocan estado; las tareas de
+    mantenimiento solo vinculan (el bloqueo real es del motor de
+    mantenimiento, que registra costo→gasto).
     - **Guardas de efectos secundarios**: TODO GET con efecto (marcar leído,
       registrar visita, archivar) verifica `Sec-Purpose`/`Purpose` y responde
       503 a peticiones especulativas (helper `is_speculative_request()`).
@@ -383,6 +390,128 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     nada). El % útil vive en el panel de valor y los 👎 son el backLOG de
     enseñanza literal — junto con el observatorio de fallbacks, el uso
     diario se convierte en la lista de qué enseñarle al asistente.
+22. **Alta MASIVA de la unidad rentable = onboarding vendible (día 1).**
+    Dar de alta un tenant frente al cliente muere si su unidad principal
+    (habitación/consultorio/bahía/mesa) se captura una por una: 100 cuartos =
+    100 formularios. Receta (probada en /habitaciones/lote de Medisoft, jul
+    2026, transferible a cualquier giro): pantalla de generador por **atributo
+    común + rango** — el usuario define UNA vez los datos que se repiten (tipo,
+    precio, piso/zona) y un rango de identificadores (`101`–`120`, prefijo y
+    relleno de ceros opcionales); el servidor genera todo en UNA transacción.
+    Puntos clave: (a) **reusar el validador y los defaults del alta individual**
+    (capacidad/camas se HEREDAN del tipo — cero recaptura); (b) numeración en
+    un **helper PURO estático** con test propio (rango invertido, tope por lote,
+    id > límite de columna, negativos) — el generador de strings no toca BD;
+    (c) **idempotencia amable**: id ya activo se OMITE (no se pisa), id dado de
+    baja se REACTIVA (misma lógica que el alta individual), y el resumen dice
+    "N creadas · M reactivadas · K omitidas (lista)"; (d) **preview en vivo**
+    client-side (chips + conteo + botón que refleja el total) que valida el
+    mismo tope y longitud antes de enviar; (e) tope duro por lote (~500) contra
+    abuso; (f) sin fotos ni campos artesanales en el lote (eso es edición
+    individual después) — es justo lo que lo vuelve rápido. El acceso vive junto
+    a "Nuevo" y, sobre todo, en el estado vacío de onboarding ("¿Vas a cargar
+    muchas? Créalas en lote").
+23. **Formulario de captura del cliente = catálogo de campos ACTIVABLE por
+    tenant, con dos storages.** El registro del cliente final (huésped/paciente/
+    cliente) no se hardcodea: nace de un catálogo central de campos con policy
+    por tenant (visible/obligatorio) editable desde configuración. Dos storages
+    (probado en huéspedes de Medisoft, jul 2026): **columna real** (dato de alto
+    valor que se filtra/reporta/ordena mucho — nombre, teléfono, estado) y
+    **extra en JSON** (`datos_extra_json`) capturado por un colector GENÉRICO por
+    key → **un campo extra nuevo NO toca el controller de guardado ni el
+    schema**, solo el catálogo. Regla de decisión: si el reporte necesita
+    `GROUP BY` frecuente sobre el campo → columna; si es un dato de expediente de
+    baja cardinalidad de consulta → extra (y el reporte puntual lo lee con
+    `JSON_EXTRACT(datos_extra_json,'$.clave')`, que MySQL 8 agrega sin problema).
+    Extensión probada: campo **nacionalidad** activable + su reporte de
+    **procedencia internacional** (nacional vs extranjero + top nacionalidades)
+    nacieron SIN migración ni cambio de controller — solo catálogo + una query
+    JSON + un panel. El campo condicional ("solo si es extranjero") se resuelve
+    con un toggle client-only que revela y LIMPIA el input al desmarcar (no
+    guardar basura para el que no aplica); si el tenant lo marca obligatorio, se
+    muestra sin toggle. GOTCHA transferible: la clase Database del framework casero
+    puede no conectar en CLI (lee env del front controller) → los scripts one-off
+    de verificación usan PDO crudo con el `require config/database.php`.
+    UX del alta (probado en huéspedes/crear, jul 2026): el recepcionista necesita
+    leer de un vistazo qué es obligatorio → cada sección lleva un distintivo
+    **Obligatorio** (relleno de marca) / **Opcional** (contorno tenue) calculado
+    del policy (`required` de sus campos) + una leyenda arriba que explica los dos
+    chips y el `*`. Y las secciones de captura documental (adjuntos al alta) se
+    RENDERIZAN SOLO si el tenant configuró visible su campo documental
+    (`storage:'document'`, ej. `identificacion_archivo`) — sin documento visible,
+    la sección entera se esconde (no muestres uploaders genéricos que el tenant no
+    pidió). **Anti-tedio del formulario = línea de tiempo de recompensa** (probado
+    en huéspedes/crear, jul 2026): un panel con un nodo por sección que despliega sus
+    SUBCAMPOS (cada uno con su check que se enciende al llenarlo), con DOS pistas
+    honestas para no presionar lo opcional. Clave de UX: el progreso es por CAMPO,
+    no por sección → con solo escribir el nombre la barra ya avanza (llenar 1 de N
+    campos obligatorios = 1/N), que es lo que da ganas de seguir. Pista principal =
+    barra "X de Y campos obligatorios" (cuenta los controles con `[required]`), y al
+    100% dispara la recompensa SUTIL: brillo que barre el botón Guardar + pill "Listo
+    para guardar" + glow del panel, sin confeti. Pista bonus = campos opcionales que
+    suman a un medidor dorado aparte ("Datos extra X%") con chispa al completar una
+    sección opcional, JAMÁS en rojo ni bloqueante. Implementación sin tocar controller:
+    el JS lee secciones y subcampos del DOM (label del subcampo = su `.gc-label`, o la
+    `.gc-label` que precede si no hay `.gc-field` —ej. Notas—, o el `<h4>` de la tarjeta
+    de documento); "campo lleno" excluye radios con valor por defecto (ej. estacionamiento)
+    para no marcar falsos positivos; la sección se marca completa cuando sus `[required]`
+    están llenos (obligatoria) o todos sus campos llenos (opcional). Secciones dinámicas
+    (vehículos +/−) se reconstruyen con un MutationObserver debounced. Respeta
+    `prefers-reduced-motion`; en móvil el panel lateral se oculta → una cinta sticky
+    delgada (barra + "X/Y campos") lleva la misma recompensa. Orden: lo OBLIGATORIO
+    sube arriba sin tocar el DOM ni parpadeo, con CSS `order` + `:has(.gc-badge-req)`
+    (opcionales `order:2`, obligatorias `order:1`, y `:first-child` fija la sección
+    base —Información personal— en `order:0`); la línea de tiempo lo espeja ordenando
+    sus nodos por `getComputedStyle(sec).order` (Array.sort estable conserva empates).
+    Portable a formularios "no-campo" (ej. reservaciones/crear, jul 2026): cuando un
+    requisito no es un `<input>` normal (selección de habitaciones = clases/inputs
+    ocultos que maneja jQuery), el tracker define los pasos a mano con getters al DOM
+    (huésped/fechas/habitación/hora) y usa como señal de "listo" la MISMA que ya calcula
+    el formulario (`!#btnGuardar.disabled`), observándola con un MutationObserver del
+    atributo `disabled` — así la recompensa nunca desincroniza de la validación real.
+    GOTCHA de un restyle previo: una pasada boutique/Cupertino puede haber APLANADO a
+    neutro con `!important` una sección que el negocio quiere destacada (la de
+    "habitación de cortesía/gratis" quedó en superficie warm neutra por un
+    `.vista-reservacion .seccion-cortesias{border/background/... !important}`); para
+    re-enfatizarla hay que ganar con `!important` propio y más abajo en el cascade.
+
+24. **Proxy confiable antes de producción (probado jul 2026).** Todo vertical
+    que despliegue detrás de Caddy/Nginx necesita el helper de proxy confiable
+    DESDE EL DÍA 1: funciones puras que solo honran `X-Forwarded-For/-Proto`
+    si `REMOTE_ADDR` cae en `TRUSTED_PROXIES` (.env, IPs/CIDRs), aplicadas en
+    el bootstrap ANTES de configurar cookies. Sin esto, detrás del proxy las
+    cookies salen sin `Secure`, no hay HSTS y el rate-limit de login castiga a
+    la IP del proxy (= a todos los clientes a la vez). Regla del resolver:
+    tomar el salto DERECHO no confiable del XFF (lo spoofeado queda a la
+    izquierda); si TODA la cadena es confiable, el salto válido más lejano.
+    Copiar `helpers/proxy_confiable.php` + `ProxyConfiableTest` del repo
+    hotelero. GOTCHA: Caddy v2 ya descarta el XFF del cliente por default (lo
+    reemplaza con la IP real) — el resolver igual debe defenderse solo.
+
+25. **Endpoints QA jamás en el document root (pagado jul 2026).** Los
+    endpoints temporales de sesión QA son bypass total de login si se olvidan.
+    Defensa en 3 capas, copiable a cualquier vertical: (a) `.htaccess` devuelve
+    403 a `(qa_|__qa_|debug_)*.php` aunque existan en disco; (b) `.gitignore`
+    los excluye; (c) el CI falla si `git ls-files` encuentra alguno en
+    public_html. Los QA de navegador usan nombres fuera del patrón
+    (`tmp_*.php`) y se borran al terminar. Dev además publica app/BD/phpMyAdmin
+    SOLO en 127.0.0.1 (`DEV_BIND` para LAN deliberada).
+
+26. **Candado de "salida efectiva" en disponibilidad (verificado jul 2026).**
+    En cualquier vertical con recursos reservables por rango de fechas
+    (habitaciones, jaulas, bahías de taller), un pendiente sin resolver del
+    pasado (check-out vencido con el cliente adentro, cita/llegada pasada sin
+    resolver) NO debe dejar el recurso reservable HOY aunque las fechas ya no
+    solapen. Patrón: en TODOS los predicados de solapamiento, la fecha de fin
+    se reemplaza por `CASE WHEN fin < CURDATE() THEN CURDATE()+1 ELSE fin END`
+    (el pendiente "ocupa" hasta mañana mientras exista); resolver el pendiente
+    (checkout/cancelar/no-show) libera solo, y las fechas futuras jamás se
+    bloquean. Dos niveles de fricción: candado duro en servidor para
+    pendientes con cliente adentro; aviso confirmable (msConfirm) para estados
+    transitorios (limpieza) solo cuando el inicio es HOY. La UI no oculta el
+    recurso: lo muestra con el motivo y botón "Resolver primero" hacia la
+    operación pendiente. Tests: la suite fija fechas leyendo `CURDATE()` de la
+    MISMA conexión (los relojes PHP/BD difieren).
 
 ---
 

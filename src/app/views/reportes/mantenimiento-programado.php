@@ -185,7 +185,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
     align-items:center;
     padding:18px 20px;
     border-bottom:1px solid var(--mp-line);
-    background:linear-gradient(90deg,#fffdfa,#f8f5ed);
+    background:linear-gradient(90deg,#fffdfa,#F5F5F7);
 }
 .mant-prog-panel-title{margin:0;color:#111827;font-size:1.12rem;font-weight:950;line-height:1.15}
 .mant-prog-panel-subtitle{margin:5px 0 0;color:var(--mp-muted);font-size:.86rem;font-weight:750;line-height:1.35}

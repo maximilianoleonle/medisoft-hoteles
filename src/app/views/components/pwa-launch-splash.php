@@ -15,7 +15,7 @@ $pwaLaunchLogo = $pwaLaunchLogo ?: (function_exists('hotel_branding_default_logo
 $pwaLaunchPrimary = '#1B2746';
 $pwaLaunchSecondary = '#0F172A';
 $pwaLaunchAccent = '#BD9441';
-$pwaLaunchSurface = '#F8F5ED';
+$pwaLaunchSurface = '#F5F5F7';
 
 if (is_array($pwaLaunchBranding) && function_exists('hotel_branding_hex')) {
     $pwaLaunchPrimary = hotel_branding_hex($pwaLaunchBranding['color_primary'] ?? null, $pwaLaunchPrimary);
@@ -24,7 +24,7 @@ if (is_array($pwaLaunchBranding) && function_exists('hotel_branding_hex')) {
 }
 
 if (function_exists('hotel_branding_mix')) {
-    $pwaLaunchSurface = hotel_branding_mix($pwaLaunchAccent, '#F8F5ED', 8);
+    $pwaLaunchSurface = hotel_branding_mix($pwaLaunchAccent, '#F5F5F7', 8);
 }
 
 $pwaLaunchStyle = sprintf(

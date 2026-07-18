@@ -116,7 +116,7 @@ if (!function_exists('cj_finance_sentence')) {
     --cj-navy:   var(--brand-action-bg,  #1B2746);
     --cj-navy2:  var(--brand-action-bg-hover, #111B38);
     --cj-gold:   var(--brand-accent, #B0883F);
-    --cj-ivory:  color-mix(in srgb, var(--cj-gold) 6%, #F7F4EC);
+    --cj-ivory:  color-mix(in srgb, var(--cj-gold) 6%, #F5F5F7);
     --cj-surface:#FFFFFF;
     --cj-line:   color-mix(in srgb, var(--cj-navy) 10%, #DDD6C4);
     --cj-text:   var(--brand-text, #1F2937);
@@ -137,9 +137,7 @@ if (!function_exists('cj_finance_sentence')) {
 /* ── Page shell ── */
 .cj-page {
     min-height:100vh;
-    background:
-        radial-gradient(900px 500px at 90% -4%, color-mix(in srgb, var(--cj-gold) 9%, transparent), transparent 64%),
-        linear-gradient(180deg, var(--cj-ivory), #F2EDE0 60%, #E9E0CC);
+    
     font-family:var(--cj-sans);
     color:var(--cj-text);
     -webkit-font-smoothing:antialiased;
@@ -385,8 +383,21 @@ if (!function_exists('cj_finance_sentence')) {
     border:1px solid var(--cj-line);
     background:color-mix(in srgb, var(--cj-gold) 3%, var(--cj-surface));
     display:flex; flex-direction:column; gap:6px;
+    min-width:0;
 }
-.cj-kpi-label { font-size:.68rem; font-weight:700; color:var(--cj-muted); text-transform:uppercase; letter-spacing:.06em; }
+.cj-kpi-label {
+    display:block;
+    max-width:100%;
+    min-width:0;
+    font-size:.68rem;
+    font-weight:700;
+    line-height:1.25;
+    color:var(--cj-muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    white-space:normal;
+    overflow-wrap:anywhere;
+}
 .cj-kpi-value {
     font-family:var(--cj-sans);
     font-size:1.5rem; font-weight:700;
@@ -854,6 +865,8 @@ if (!function_exists('cj_finance_sentence')) {
     }
     .cj-card-body { padding:16px; }
     .cj-kpis      { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .cj-kpi       { padding:14px; }
+    .cj-kpi-value { font-size:1.25rem; letter-spacing:-.01em; }
     .cj-cats      { grid-template-columns:1fr; }
     .cj-shortcuts { grid-template-columns:1fr; }
     .cj-cut-divider {
@@ -879,6 +892,10 @@ if (!function_exists('cj_finance_sentence')) {
     #modalIngreso .cash-modal-grid, #modalGasto .cash-modal-grid { grid-template-columns:1fr; }
     #modalIngreso .cash-modal-actions, #modalGasto .cash-modal-actions { margin-inline:-16px; padding:14px 16px 16px; }
     #modalIngreso .cash-modal-btn, #modalGasto .cash-modal-btn { flex:1; }
+}
+
+@media (max-width:374px) {
+    .cj-kpis { grid-template-columns:1fr; }
 }
 
 /* ══ Deleite Sereno: entrada del modal + skeleton de carga ══ */
@@ -1151,7 +1168,7 @@ $cash_methods = [
                                 </strong>
                             </div>
                             <div class="cj-kpi">
-                                <span class="cj-kpi-label">Devuelto/cancelado</span>
+                                <span class="cj-kpi-label">Devuelto/<wbr>cancelado</span>
                                 <strong class="cj-kpi-value is-expense">-$<?= number_format($cash_reversos_total, 2) ?></strong>
                             </div>
                             <div class="cj-kpi">

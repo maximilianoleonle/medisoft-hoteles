@@ -1785,7 +1785,7 @@ textarea.ge-control {
                     </section>
                     <?php endif; ?>
 
-                    <?php if ($geGuestFieldVisible('procedencia_estado') || $geGuestFieldVisible('procedencia_ciudad')): ?>
+                    <?php if ($geGuestFieldVisible('procedencia_estado') || $geGuestFieldVisible('procedencia_ciudad') || $geGuestFieldVisible('nacionalidad')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
@@ -1839,6 +1839,28 @@ textarea.ge-control {
                                     <?= $geRenderHiddenColumn('procedencia_ciudad', $huesped['procedencia_ciudad'] ?? '') ?>
                                 <?php endif; ?>
                             </div>
+
+                            <?php if ($geGuestFieldVisible('nacionalidad')): ?>
+                                <?php
+                                    $geNacStored = is_scalar($guestExtraValues['nacionalidad'] ?? null) ? (string)$guestExtraValues['nacionalidad'] : '';
+                                    $geNacValue = $geOldExtra('nacionalidad', $geNacStored);
+                                    $geNacRequired = $geGuestFieldRequired('nacionalidad');
+                                ?>
+                                <div class="ge-field ge-field-full" style="margin-top: 14px;">
+                                    <label class="ge-label" for="ge_nacionalidad">Nacionalidad<?= $geNacRequired ? ' <span class="ge-required">*</span>' : '' ?></label>
+                                    <input type="text"
+                                           id="ge_nacionalidad"
+                                           name="extras[nacionalidad]"
+                                           value="<?= htmlspecialchars($geNacValue, ENT_QUOTES, 'UTF-8') ?>"
+                                           maxlength="80"
+                                           placeholder="Solo si el huesped es extranjero (estadounidense, canadiense...)"
+                                           class="ge-control"
+                                           <?= $geNacRequired ? 'required' : '' ?>>
+                                    <?php if (form_error('extras[nacionalidad]')): ?>
+                                        <span class="ge-form-error"><?= form_error('extras[nacionalidad]') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </section>
                     <?php else: ?>
@@ -1847,9 +1869,12 @@ textarea.ge-control {
                     <?php endif; ?>
 
                     <?php
-                    $geExtraGuestFields = array_filter($geGuestVisibleFields('guest'), function ($definition) {
+                    $geExtraGuestFields = array_filter($geGuestVisibleFields('guest'), function ($definition, $key) {
+                        if ($key === 'nacionalidad') {
+                            return false; // se captura en la seccion Procedencia
+                        }
                         return in_array(($definition['storage'] ?? 'column'), ['extra', 'document'], true);
-                    });
+                    }, ARRAY_FILTER_USE_BOTH);
                     ?>
                     <?php if (!empty($geExtraGuestFields)): ?>
                         <section class="ge-panel">

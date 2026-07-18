@@ -2590,68 +2590,8 @@ public function indexAction() {
 }
 
 private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
-    if ($hotelId <= 0) {
-        return [
-            'checkins' => [],
-            'checkouts' => [],
-            'llegadas_tardias' => [],
-        ];
-    }
-
-    $db = Database::getInstance();
-
-    $sqlCheckins = "SELECT
-                    r.id,
-                    r.hotel_id,
-                    r.huesped_id,
-                    r.fecha_entrada,
-                    r.hora_llegada_estimada,
-                    r.precio_total,
-                    h.nombre_completo,
-                    h.telefono,
-                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
-                    DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
-                FROM reservaciones r
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                  AND r.estado = 'confirmada'
-                  AND r.fecha_entrada < CURDATE()
-                GROUP BY r.id
-                ORDER BY r.fecha_entrada
-                LIMIT 10";
-
-    $sqlCheckouts = "SELECT
-                    r.id,
-                    r.hotel_id,
-                    r.huesped_id,
-                    r.fecha_salida,
-                    r.hora_entrada,
-                    r.precio_total,
-                    h.nombre_completo,
-                    h.telefono,
-                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
-                    DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
-                FROM reservaciones r
-                INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                  AND r.estado = 'checked_in'
-                  AND r.fecha_salida < CURDATE()
-                GROUP BY r.id
-                ORDER BY r.fecha_salida
-                LIMIT 10";
-
-    $stmtCheckins = $db->query($sqlCheckins, [$hotelId]);
-    $stmtCheckouts = $db->query($sqlCheckouts, [$hotelId]);
-
-    return [
-        'checkins' => $stmtCheckins ? ($stmtCheckins->fetchAll() ?: []) : [],
-        'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
-        'llegadas_tardias' => [],
-    ];
+    // Fuente única en el modelo (misma data que usa el index de habitaciones).
+    return $this->reservacionModel->alertasPendientesOperativas($hotelId);
 }
     // ========== AGREGAR ESTOS MÉTODOS EN ReservacionController.php DESPUÉS DEL MÉTODO guardarAction() ==========
 

@@ -1921,6 +1921,242 @@ html[data-theme="dark"][data-tema="cupertino"] .rdv3-empty {
     box-shadow: none !important;
 }
 
+/* ── §24e. Modal de check-in de ver.php (#modalCheckIn) en acabado Cupertino
+   (owner 2026-07-16): el pase base no tocó este modal, así que conservaba el
+   cuerpo crema del Deleite (#F8F4EC / #FFFEFB) y los acentos dorados —"el
+   fondo color feo". Aquí se aplana TODO el modal a la superficie Apple: lienzo
+   gris perla, tarjetas blancas, hilos #E8E8ED/#D2D2D7, tinta #1D1D1F. Se
+   conservan los colores SEMÁNTICOS (verde dinero, azul tarjeta, ámbar
+   pendiente, rojo error) y la identidad de marca (barra lateral + acentos de
+   selección). Selector con html[data-tema]+#id para ganar a las reglas base
+   con !important. Revertir: tema del hotel a 'deleite'. ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn.rv-checkin-modal {
+    --rv-checkin-ink: #1D1D1F;
+    --rv-checkin-muted: #6E6E73;
+    --rv-checkin-line: #E8E8ED;
+    --rv-checkin-soft: #F5F5F7;
+}
+
+/* Concha: cuerpo gris perla plano (era crema), hilo y sombra Apple */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-shell {
+    background: #F5F5F7 !important;
+    border: 1px solid #E8E8ED !important;
+    box-shadow: 0 36px 90px -38px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .6) inset !important;
+}
+
+/* Glow dorado de la barra lateral → tinte de marca (sin oro) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-topbar::after {
+    background: color-mix(in srgb, var(--rv-checkin-brand) 30%, transparent) !important;
+    opacity: .5 !important;
+}
+
+/* Stepper: banda blanca, círculos con hilo neutro (los estados vivos quedan) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-stepper {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid #E8E8ED !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-step span {
+    border: 1px solid #D2D2D7 !important;
+    background: #FFFFFF !important;
+    color: #6E6E73 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-line {
+    background: #D2D2D7 !important;
+}
+
+/* Botón cerrar: blanco con hilo Apple */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-close {
+    border: 1px solid #D2D2D7 !important;
+    background: #FFFFFF !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-close:hover {
+    background: #F5F5F7 !important;
+    border-color: #C7C7CC !important;
+}
+
+/* Paneles de etapa/resumen: tarjeta blanca sobre perla */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-stage,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-summary {
+    border: 1px solid #E8E8ED !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-stage-arrival {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* "Total a cobrar": era losa dorada → tarjeta blanca con hilo Apple, tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-total-card {
+    border: 1px solid #E8E8ED !important;
+    background: linear-gradient(180deg, #FFFFFF, #FAFAFC) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 8px 22px -18px rgba(0, 0, 0, .3) !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-kicker {
+    color: #6E6E73 !important;
+}
+
+/* Píldora de fechas: frosted blanca con tinta (era dorada) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-date-pill {
+    border: 1px solid #E8E8ED !important;
+    background: rgba(255, 255, 255, .8) !important;
+    color: #1D1D1F !important;
+}
+
+/* Campos de entrada y hora: blanco con hilo Apple */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-time-input,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn input[type="time"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn input[type="number"],
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn input[type="text"] {
+    border: 1px solid #D2D2D7 !important;
+    background: #FFFFFF !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-time-input input[type="time"] {
+    border: 0 !important;
+    background: transparent !important;
+}
+
+/* Lista de habitaciones, ledger, opciones de pago, chips: fondo blanco.
+   Gana a la regla base agrupada que fuerza #FFFEFB !important. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-room-grid,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-pay-ledger,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-pay-option,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-radio-chip,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-invoice-choice,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-actions,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-btn-cancel {
+    background: #FFFFFF !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-room-grid,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-pay-ledger {
+    border-color: #E8E8ED !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-checkin-actions {
+    border-top: 1px solid #E8E8ED !important;
+}
+
+/* Botones dividir cobro / mini: hilo Apple (era #E2D8C9 cálido) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-split-btn {
+    border: 1px solid #D2D2D7 !important;
+}
+
+/* Filas de resumen: separador Apple (era ámbar/crema) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-summary-row {
+    border-top: 1px solid #E8E8ED !important;
+}
+
+/* Factura "No": estado elegido neutro (era dorado) */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn #label_factura_no.is-selected,
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn #label_factura_no:has(input:checked) {
+    border-color: #C7C7CC !important;
+    background: #F5F5F7 !important;
+    box-shadow: 0 13px 24px -22px rgba(0, 0, 0, .4) !important;
+}
+
+/* Puntos de progreso: marca en vez de oro */
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-step-dots span {
+    background: #D2D2D7 !important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) #modalCheckIn .rv-step-dots span.is-active {
+    background: var(--rv-checkin-brand) !important;
+}
+
+/* ── §24e (oscuro). Mismo modal en Apple dark: grafito, tarjetas #1C1C1E ── */
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn.rv-checkin-modal {
+    --rv-checkin-ink: #F5F5F7;
+    --rv-checkin-muted: #98989D;
+    --rv-checkin-line: #38383A;
+    --rv-checkin-soft: #2C2C2E;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-shell {
+    background: #161617 !important;
+    border: 1px solid #38383A !important;
+    box-shadow: 0 40px 90px -36px rgba(0, 0, 0, .8) !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-stepper {
+    background: #1C1C1E !important;
+    border-bottom: 1px solid #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-step span {
+    border: 1px solid #48484A !important;
+    background: #2C2C2E !important;
+    color: #98989D !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-line {
+    background: #48484A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-close {
+    border: 1px solid #48484A !important;
+    background: #2C2C2E !important;
+    color: #C7C7CC !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-stage,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-summary {
+    border: 1px solid #38383A !important;
+    background: #1C1C1E !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-stage-arrival {
+    border: 0 !important;
+    background: transparent !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-total-card {
+    border: 1px solid #38383A !important;
+    background: linear-gradient(180deg, #232325, #1A1A1C) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-kicker { color: #98989D !important; }
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-date-pill {
+    border: 1px solid #38383A !important;
+    background: #2C2C2E !important;
+    color: #F5F5F7 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-time-input,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn input[type="time"],
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn input[type="number"],
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn input[type="text"] {
+    border: 1px solid #48484A !important;
+    background: #2C2C2E !important;
+    color: #F5F5F7 !important;
+    color-scheme: dark;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-time-input input[type="time"] {
+    border: 0 !important;
+    background: transparent !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-room-grid,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-pay-ledger,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-pay-option,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-radio-chip,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-invoice-choice,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-actions,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-btn-cancel {
+    background: #1C1C1E !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-room-grid,
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-pay-ledger {
+    border-color: #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-btn-cancel {
+    border: 1px solid #48484A !important;
+    color: #D1D1D6 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-checkin-actions {
+    border-top: 1px solid #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-split-btn {
+    border: 1px solid #48484A !important;
+    color: #D1D1D6 !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-summary-row {
+    border-top: 1px solid #38383A !important;
+}
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-step-dots span { background: #48484A !important; }
+html[data-theme="dark"][data-tema="cupertino"] #modalCheckIn .rv-step-dots span.is-active {
+    background: color-mix(in srgb, var(--rv-checkin-brand) 40%, #F5F5F7) !important;
+}
+
 /* ═══ 38. CUATRO MÓDULOS ESTÁNDAR: documentos (.docs-page --dc-*),
    notificaciones (.ntx-page --ntx-*), CxC (.cxc-page --cx-*) e
    inventario (.inv-page --inv-*) ════════════════════════════════════ */

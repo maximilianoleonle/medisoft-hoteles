@@ -77,6 +77,20 @@ class ConfiguracionController extends Controller {
         $hotelSettings = $this->aplicarFallbackLegacyHotelSettings($hotelSettings, $config['hotel']);
         $hotelId = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
         $pwaPushDevices = $this->obtenerDispositivosPwaPush((int)$hotelId);
+        $hotelBranding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
+        $hotelBackgroundStored = function_exists('hotel_config_get')
+            ? trim((string) hotel_config_get('apariencia.fondo_sistema', '', $hotelId))
+            : '';
+
+        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $hotelBackgroundStored)) {
+            $hotelBackgroundStored = '';
+        } else {
+            $hotelBackgroundStored = strtoupper($hotelBackgroundStored);
+        }
+
+        $hotelBackgroundColor = function_exists('hotel_branding_system_background')
+            ? hotel_branding_system_background($hotelBranding, $hotelId)
+            : ($hotelBackgroundStored !== '' ? $hotelBackgroundStored : '#F5F5F7');
         
         // CAMBIAR View::render por View::renderTemplate
         View::renderTemplate('configuracion/index', [
@@ -84,7 +98,9 @@ class ConfiguracionController extends Controller {
             'config' => $config,
             'hotelSettingDefinitions' => $hotelSettingDefinitions,
             'hotelSettings' => $hotelSettings,
-            'hotelBranding' => function_exists('current_hotel_branding') ? current_hotel_branding() : [],
+            'hotelBranding' => $hotelBranding,
+            'hotelBackgroundColor' => $hotelBackgroundColor,
+            'hotelBackgroundStored' => $hotelBackgroundStored,
             'roomTypeCatalog' => function_exists('hotel_room_catalog_type_rows') ? hotel_room_catalog_type_rows($hotelId, true) : [],
             'roomFloorCatalog' => function_exists('hotel_room_catalog_floor_rows') ? hotel_room_catalog_floor_rows($hotelId, true) : [],
             'roomAmenityCatalog' => function_exists('hotel_room_catalog_amenity_rows') ? hotel_room_catalog_amenity_rows($hotelId, true) : [],
@@ -221,6 +237,29 @@ class ConfiguracionController extends Controller {
             }
         }
 
+        $appearanceValues = null;
+        $appearancePayload = $_POST['hotel_appearance'] ?? null;
+
+        if (is_array($appearancePayload)) {
+            $backgroundMode = trim((string) ($appearancePayload['background_mode'] ?? 'default'));
+            $backgroundColor = strtoupper(trim((string) ($appearancePayload['background_color'] ?? '')));
+
+            if (!in_array($backgroundMode, ['default', 'custom'], true)) {
+                $backgroundMode = 'default';
+            }
+
+            if ($backgroundMode === 'custom' && !preg_match('/^#[0-9A-F]{6}$/', $backgroundColor)) {
+                set_mensaje('El fondo del sistema debe usar un color HEX valido.', 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $appearanceValues = [
+                'background_mode' => $backgroundMode,
+                'background_color' => $backgroundMode === 'custom' ? $backgroundColor : '',
+            ];
+        }
+
         $db = null;
 
         try {
@@ -284,6 +323,16 @@ class ConfiguracionController extends Controller {
 
             if (is_array($footerNavValues) && function_exists('hotel_footer_nav_save')) {
                 hotel_footer_nav_save($footerNavValues);
+            }
+
+            if (is_array($appearanceValues) && function_exists('hotel_config_save_value')) {
+                hotel_config_save_value(
+                    'apariencia.fondo_sistema',
+                    $appearanceValues['background_color'],
+                    'string',
+                    'apariencia',
+                    'Color de fondo global de las vistas operativas del hotel en modo claro.'
+                );
             }
 
             if (is_array($brandingValues) && !empty($brandingContext['id'])) {

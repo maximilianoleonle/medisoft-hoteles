@@ -71,10 +71,10 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
     --iav-gold-soft: color-mix(in srgb, var(--iav-gold) 15%, #FFFFFF);
     --iav-gold-line: color-mix(in srgb, var(--iav-gold) 42%, #E4D4B0);
     --iav-gold-ink: color-mix(in srgb, var(--iav-gold) 58%, var(--iav-brand));
-    --iav-ivory: #F6F2EA;
-    --iav-ivory-2: #FBF8F2;
+    --iav-ivory: #F5F5F7;
+    --iav-ivory-2: #FAFAFC;
     --iav-surface: #FFFFFF;
-    --iav-surface-warm: #FCFAF5;
+    --iav-surface-warm: #F5F5F7;
     --iav-border: color-mix(in srgb, var(--iav-brand) 6%, #E9E1D6);
     --iav-ring: color-mix(in srgb, var(--iav-gold) 32%, transparent);
     --iav-text: color-mix(in srgb, var(--iav-brand) 46%, #707B8C);
@@ -95,9 +95,7 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
     color: var(--iav-text);
     font-family: var(--iav-sans);
     font-size: .92rem;
-    background:
-        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--iav-gold) 8%, transparent), transparent 60%),
-        linear-gradient(180deg, var(--iav-ivory-2), var(--iav-ivory));
+    
 }
 .iav * { box-sizing: border-box; }
 .iav-shell {
