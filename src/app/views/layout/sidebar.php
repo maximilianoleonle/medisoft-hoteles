@@ -18,6 +18,7 @@ $mostrarCuentasPorPagar = $mostrarCompras;
 $mostrarDocumentos = $menuModuloActivo('documentos');
 $mostrarTareas = $menuModuloActivo('tareas');
 $mostrarMantenimientoPlus = $menuModuloActivo('mantenimiento_plus');
+$mostrarLavanderia = $menuModuloActivo('lavanderia');
 $mostrarFacturacion = $menuModuloActivo('facturacion');
 $mostrarCuentasPorCobrar = $menuModuloActivo('cuentas_cobrar');
 $mostrarReportes = $menuModuloActivo('reportes');
@@ -56,7 +57,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
-$mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimientoPlus || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
+$mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimientoPlus || $mostrarLavanderia || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarMensajes || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
@@ -93,6 +94,7 @@ $sidebarActiveFacturacion = $sidebarPathStarts('facturacion');
 $sidebarActiveCuentasPorPagar = $sidebarPathStarts('cuentas-por-pagar');
 $sidebarActiveTareas = $sidebarPathStarts('tareas');
 $sidebarActiveMantenimientos = $sidebarPathStarts('mantenimientos');
+$sidebarActiveLavanderia = $sidebarPathStarts('lavanderia');
 $sidebarActiveInventario = $sidebarPathStarts('inventario');
 $sidebarActiveCompras = $sidebarPathStarts('compras');
 $sidebarActiveProveedores = $sidebarPathStarts('proveedores');
@@ -556,6 +558,17 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <?= $sidebarBadge('mantenimientos/activos', $sidebarActiveMantenimientos) ?>
                 </div>
                 <span class="nav-text">Mantenimiento</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarLavanderia): ?>
+            <a href="<?= url('lavanderia') ?>"
+               class="nav-item <?= $sidebarActiveLavanderia ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-shirt"></i>
+                    <?= $sidebarBadge('lavanderia', $sidebarActiveLavanderia) ?>
+                </div>
+                <span class="nav-text">Lavandería</span>
             </a>
             <?php endif; ?>
 

@@ -631,7 +631,31 @@ firmados · Motor público de venta (pagos Stripe, cupones, holds) · Check-in/
 pre-registro digital público · Encuestas de reputación · Lealtad · Sync iCal ·
 Copiloto IA (Anthropic, revendible) · Cierre diario (night audit) · Auditoría
 + vigilancia financiera · Guardián (patrones de comportamiento por usuario) ·
-Health/backups/offsite.
+Lavandería (insumo con ciclo + servicio cobrable) · Health/backups/offsite.
+
+**Receta portada — Lavandería (jul-2026, vale para TODO giro con "insumo que
+sale sucio y vuelve limpio" + "servicio por partidas cobrado al momento":
+hoteles/blancos, veterinarias/instrumental esterilizable, talleres/overol y
+franelas, spas/toallas):** tres piezas en un solo bloque cobrable: (1)
+catálogo del insumo con STOCK POR ESTADO (limpio/sucio/en proceso) mutado
+SOLO bajo FOR UPDATE + ledger inmutable de movimientos (compra/uso/baja/
+envio/retorno/merma) — el estado agregado se lee de columnas, la historia del
+ledger; (2) ciclo por LOTE (interno o proveedor externo): crear mueve
+sucio→proceso validando contra la fila bloqueada, recibir captura "cuántas
+volvieron" y la diferencia ES la merma (dato que vende: "este año se te
+perdieron N piezas"), cancelar devuelve todo; locks de insumos SIEMPRE
+ordenados por id (deadlock imposible entre lotes concurrentes); costo real
+del externo cae a gastos por el flujo de caja existente (patrón Mantenimiento
+Plus: referencia LAVLOTE-{id}, FOR UPDATE + gasto_movimiento_id IS NULL, caja
+cerrada = "por registrar"); (3) pedidos del cliente final por PARTIDAS con
+precio congelado + catálogo de precios por tenant (datalist que autollena),
+máquina de estados con candado optimista (WHERE estado=anterior) y cobro
+como INGRESO directo de caja (ref LAV-{id}, idempotente). LECCIÓN CARA
+evitada en diseño: el cargo del servicio JAMÁS entra por el motor de saldo
+del servicio principal (anticipos rechaza si saldo=0; una CxC ligada a la
+reserva CONTAMINA el saldo del hospedaje y el cliente sale debiendo) — el
+vínculo a la estancia se guarda solo como referencia en la tabla del módulo
+y el dinero viaja aparte con su propia categoría lazy.
 
 **Receta portada — el Guardián (jul-2026, vale para TODO giro con caja):**
 dos motores read-only separados (integridad de libros + patrones de

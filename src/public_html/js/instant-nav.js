@@ -154,6 +154,7 @@
             { not: { href_matches: '*/habitaciones*' } },
             { not: { href_matches: '*/areas*' } },
             { not: { href_matches: '*/mapa*' } },
+            { not: { href_matches: '*/lavanderia*' } },
             { not: { href_matches: '*/notificaciones*' } },
             { not: { selector_matches: SKIP_SELECTOR } }
           ]

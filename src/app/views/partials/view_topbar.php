@@ -76,6 +76,7 @@ if (function_exists('nav_pantallas_catalogo')) {
 // Secciones sin entrada propia en el catálogo
 $vtbExtras = [
     'roles'          => 'Roles y permisos',
+    'lavanderia'     => 'Lavandería',
     'lealtad'        => 'Huésped frecuente',
     'forecast'       => 'Forecast',
     'night-audit'    => 'Night Audit',

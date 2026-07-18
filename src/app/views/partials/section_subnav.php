@@ -37,6 +37,13 @@ if ($subnavSection === 'nomina') {
         'areas'        => ['url' => url('areas'),        'icono' => 'fa-map-location-dot', 'label' => 'Áreas'],
     ];
     $subnavAria = 'Secciones de Habitaciones y áreas';
+} elseif ($subnavSection === 'lavanderia') {
+    $subnavTabs = [
+        'panel'   => ['url' => url('lavanderia'),           'icono' => 'fa-shirt',         'label' => 'Blancos'],
+        'lotes'   => ['url' => url('lavanderia/lotes'),     'icono' => 'fa-arrows-spin',   'label' => 'Ciclos de lavado'],
+        'pedidos' => ['url' => url('lavanderia/pedidos'),   'icono' => 'fa-basket-shopping', 'label' => 'Pedidos'],
+    ];
+    $subnavAria = 'Secciones de Lavandería';
 } else {
     // Nota: la pestaña "Pre-nómina" se retiró de aquí a proposito. El calculo y
     // cierre de periodos vive ahora en el modulo Nomina (sidebar > Nomina). La

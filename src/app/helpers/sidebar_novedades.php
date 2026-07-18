@@ -202,6 +202,8 @@ if (!function_exists('sidebar_novedades')) {
         $count('camarista', 'habitaciones', "estado = 'limpieza' AND COALESCE(activa, 1) = 1", []);
         // Tareas operativas activas.
         $count('tareas', 'tareas_operativas', "estado IN ('pendiente', 'asignada', 'en_proceso')", []);
+        // Lavanderia: pedidos de huesped activos (recibidos, en proceso o listos por entregar).
+        $count('lavanderia', 'lavanderia_pedidos', "estado IN ('recibido', 'en_proceso', 'listo')", []);
         // Mantenimiento preventivo por atender: activos vencidos o por vencer
         // en 7 dias (bloque mantenimiento_plus; sin tabla no hay burbuja).
         $count('mantenimientos/activos', 'activos_hotel', "activo = 1 AND proximo_servicio IS NOT NULL AND proximo_servicio <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)", []);

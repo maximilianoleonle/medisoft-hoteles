@@ -498,6 +498,27 @@ $router->post('/mantenimientos/activos/guardar', ['controller' => 'Mantenimiento
 $router->post('/mantenimientos/activos/{id:[0-9]+}/toggle', ['controller' => 'Mantenimiento', 'action' => 'toggleActivo']);
 $router->post('/mantenimientos/activos/generar', ['controller' => 'Mantenimiento', 'action' => 'generarPreventivos']);
 
+// Lavanderia (bloque lavanderia): blancos con stock por estado, ciclos de lavado por lote y pedidos de huesped.
+$router->get('/lavanderia', ['controller' => 'Lavanderia', 'action' => 'index']);
+$router->post('/lavanderia/blancos/guardar', ['controller' => 'Lavanderia', 'action' => 'blancoGuardar']);
+$router->post('/lavanderia/blancos/movimiento', ['controller' => 'Lavanderia', 'action' => 'blancoMovimiento']);
+$router->post('/lavanderia/blancos/{id:[0-9]+}/toggle', ['controller' => 'Lavanderia', 'action' => 'blancoToggle']);
+$router->get('/lavanderia/lotes', ['controller' => 'Lavanderia', 'action' => 'lotes']);
+$router->get('/lavanderia/lotes/nuevo', ['controller' => 'Lavanderia', 'action' => 'loteNuevo']);
+$router->post('/lavanderia/lotes/guardar', ['controller' => 'Lavanderia', 'action' => 'loteGuardar']);
+$router->post('/lavanderia/lotes/{id:[0-9]+}/recibir', ['controller' => 'Lavanderia', 'action' => 'loteRecibir']);
+$router->post('/lavanderia/lotes/{id:[0-9]+}/cancelar', ['controller' => 'Lavanderia', 'action' => 'loteCancelar']);
+$router->post('/lavanderia/lotes/{id:[0-9]+}/gasto', ['controller' => 'Lavanderia', 'action' => 'loteGasto']);
+$router->get('/lavanderia/lotes/{id:[0-9]+}', ['controller' => 'Lavanderia', 'action' => 'loteVer']);
+$router->get('/lavanderia/pedidos', ['controller' => 'Lavanderia', 'action' => 'pedidos']);
+$router->get('/lavanderia/pedidos/nuevo', ['controller' => 'Lavanderia', 'action' => 'pedidoNuevo']);
+$router->post('/lavanderia/pedidos/guardar', ['controller' => 'Lavanderia', 'action' => 'pedidoGuardar']);
+$router->post('/lavanderia/pedidos/{id:[0-9]+}/estado', ['controller' => 'Lavanderia', 'action' => 'pedidoEstado']);
+$router->post('/lavanderia/pedidos/{id:[0-9]+}/cobrar', ['controller' => 'Lavanderia', 'action' => 'pedidoCobrar']);
+$router->get('/lavanderia/pedidos/{id:[0-9]+}', ['controller' => 'Lavanderia', 'action' => 'pedidoVer']);
+$router->post('/lavanderia/servicios/guardar', ['controller' => 'Lavanderia', 'action' => 'servicioGuardar']);
+$router->post('/lavanderia/servicios/{id:[0-9]+}/toggle', ['controller' => 'Lavanderia', 'action' => 'servicioToggle']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);
