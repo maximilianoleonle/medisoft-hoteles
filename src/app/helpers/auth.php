@@ -743,6 +743,49 @@ function require_permission($permission) {
 }
 
 /**
+ * Denegar acceso con 403 REAL (Fase RBAC no monetaria, 2026-07-18).
+ *
+ * A diferencia del patron historico de require_permission() — que en HTML
+ * REDIRIGE al home con un flash — esta funcion responde un 403 explicito:
+ *  - Peticion AJAX/JSON  -> HTTP 403 con cuerpo JSON.
+ *  - Navegacion HTML     -> HTTP 403 + pagina errors/403 (white-label).
+ * Nunca es un exito silencioso ni un redirect que se confunda con "ok".
+ */
+function deny_access_403($mensaje = 'No tiene permiso para acceder a esta sección') {
+    if (function_exists('is_ajax') && is_ajax()) {
+        json_response(['success' => false, 'message' => $mensaje], 403);
+    }
+
+    http_response_code(403);
+
+    if (class_exists('View')) {
+        View::render('errors/403', ['title' => 'Acceso denegado', 'mensaje' => $mensaje]);
+    } else {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $mensaje;
+    }
+
+    exit;
+}
+
+/**
+ * Requerir un permiso devolviendo 403 REAL (HTML y JSON), cerrado por defecto.
+ *
+ * Igual que require_permission() en la resolucion (can() -> rol configurable o
+ * fallback legacy por preset), pero deniega con 403 explicito en vez de
+ * redirigir. Usada por los gates de LECTURA no monetaria de reservaciones
+ * (index/ver/calendario/notas/disponibilidad). No sustituye a
+ * require_permission() en los 53 call-sites existentes: es opt-in.
+ */
+function require_permission_or_403($permission, $mensaje = null) {
+    require_auth();
+
+    if (!can($permission)) {
+        deny_access_403($mensaje ?? 'No tiene permiso para ver esta sección');
+    }
+}
+
+/**
  * Login del usuario
  */
 function login($user_id, $remember = false, $hotel = null) {

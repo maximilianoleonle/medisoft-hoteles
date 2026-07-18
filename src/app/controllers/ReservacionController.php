@@ -943,8 +943,12 @@ class ReservacionController extends Controller {
 
 
 public function habitacionesApiAction() {
+    // Gate RBAC no monetario (cerrado por defecto): consulta de habitaciones de
+    // una reservacion (JSON). AJAX -> 403 JSON. Cross-hotel ya validado abajo.
+    require_permission_or_403('reservaciones.view');
+
     header('Content-Type: application/json');
-    
+
     $id = (int)($this->route_params['id'] ?? 0);
     
     try {
@@ -1335,17 +1339,30 @@ private function procesarRecogidaRemotosCheckOutParcial($reservacion_id, $habita
  * Obtener notas de una reservación (AJAX)
  */
 public function obtenerNotasAction() {
+    // Gate RBAC no monetario (cerrado por defecto): leer notas de una reservacion.
+    require_permission_or_403('reservaciones.view');
+
     $reservacion_id = intval($this->getQuery('reservacion_id'));
-    
+
     if (!$reservacion_id) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'ID de reservación inválido']);
         exit;
     }
-    
+
+    // Proteccion cross-hotel: obtenerPorId ya filtra por hotel_id de la sesion,
+    // asi que una reservacion de otro hotel no revela sus notas (404 limpio).
+    $duenaDelHotel = $this->reservacionModel->obtenerPorId($reservacion_id);
+    if (!$duenaDelHotel) {
+        http_response_code(404);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Reservación no encontrada']);
+        exit;
+    }
+
     require_once __DIR__ . '/../models/ReservacionNota.php';
     $notaModel = new ReservacionNota();
-    
+
     $notas = $notaModel->obtenerPorReservacion($reservacion_id);
     
     header('Content-Type: application/json');
@@ -2551,6 +2568,9 @@ private function obtenerProximasReservacionesIndex($buscar = null, $desde = null
 }
 
 public function indexAction() {
+    // Gate RBAC no monetario (cerrado por defecto): ver la lista de reservaciones.
+    require_permission_or_403('reservaciones.view');
+
     $buscar = $this->getQuery('buscar');
     $fecha = $this->getQuery('fecha', date('Y-m-d'));
     
@@ -2895,8 +2915,12 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
      * Ver detalle de reservación
      */
     public function verAction() {
+        // Gate RBAC no monetario (cerrado por defecto): ver el detalle de una
+        // reservacion. El cross-hotel ya lo cubre obtenerPorId (scoped por hotel_id).
+        require_permission_or_403('reservaciones.view');
+
         $id = $this->route_params['id'] ?? 0;
-        
+
         $reservacion = $this->reservacionModel->obtenerPorId($id);
         
         if (!$reservacion) {
@@ -5396,6 +5420,9 @@ public function checkOutRapidoAction() {
     }
 }
     public function calendarioAction() {
+        // Gate RBAC no monetario (cerrado por defecto): calendario de reservaciones.
+        require_permission_or_403('reservaciones.view');
+
         $mes = intval($this->getQuery('mes', date('m')));
         $año = intval($this->getQuery('año', date('Y')));
         
