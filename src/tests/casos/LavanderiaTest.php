@@ -235,6 +235,30 @@ $pedido = $pedidoModel->obtenerPorId($pedidoId, $hotelId);
 t_eq('entregado', (string) $pedido['estado'], 'pedido entregado');
 t_ok(!empty($pedido['entregado_en']), 'entregado_en queda sellado');
 
+/* ── 7b. Cobro de pedido VINCULADO a reserva: el movimiento de caja va SIN
+ *        reservacion_id (en movimientos_caja ese campo es CONTABLE:
+ *        Reservacion::cancelar devolveria el cobro de lavanderia). ───────── */
+
+$db->query("UPDATE reservaciones SET estado = 'checked_in' WHERE id = ? AND hotel_id = ?", [$reservaConfirmadaId, $hotelId]);
+$pedidoLigadoId = $pedidoModel->crear($hotelId, [
+    'reservacion_id' => $reservaConfirmadaId,
+], [
+    ['descripcion' => 'Blusa lavada', 'cantidad' => 2, 'precio' => 50.00],
+], $usuarioId);
+t_ok($pedidoLigadoId > 0, 'pedido ligado a reserva en casa creado');
+
+$pedidoLigado = $pedidoModel->obtenerPorId($pedidoLigadoId, $hotelId);
+t_eq($reservaConfirmadaId, (int) $pedidoLigado['reservacion_id'], 'el pedido guarda su vinculo a la reserva');
+
+$cobroLigado = $refCobro->invoke($controller, $pedidoLigadoId, $hotelId, 'efectivo');
+t_ok(!empty($cobroLigado['success']), 'cobro del pedido ligado registrado');
+
+$movLigado = $db->query(
+    "SELECT reservacion_id FROM movimientos_caja WHERE hotel_id = ? AND referencia = ?",
+    [$hotelId, 'LAV-' . $pedidoLigadoId]
+)->fetch();
+t_ok($movLigado !== false && $movLigado['reservacion_id'] === null, 'el movimiento LAV- va SIN reservacion_id (no contamina cancelacion/facturacion/corte del hospedaje)');
+
 /* ── 8. Gasto del lote externo: idempotente ────────────────────────────── */
 
 $gasto = $refGasto->invoke($controller, $loteId, $hotelId, 'efectivo');

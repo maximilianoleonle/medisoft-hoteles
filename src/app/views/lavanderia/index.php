@@ -245,10 +245,13 @@ $tipoLedgerMeta = [
                             <button type="button" class="lvx-mini"
                                     onclick='lvxEditar(<?= json_encode([
                                         'id' => (int)$b['id'],
-                                        'nombre' => (string)$b['nombre'],
+                                        // La BD guarda el texto ya escapado (sanitize global de
+                                        // post()): al precargar el form se DESescapa o cada
+                                        // guardado apilaria una capa mas (&amp;amp;...).
+                                        'nombre' => html_entity_decode((string)$b['nombre'], ENT_QUOTES, 'UTF-8'),
                                         'categoria' => (string)($b['categoria'] ?? 'otro'),
                                         'stock_minimo' => (int)($b['stock_minimo'] ?? 0),
-                                        'notas' => (string)($b['notas'] ?? ''),
+                                        'notas' => html_entity_decode((string)($b['notas'] ?? ''), ENT_QUOTES, 'UTF-8'),
                                     ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>)'>
                                 <i class="fas fa-pen"></i> Editar
                             </button>

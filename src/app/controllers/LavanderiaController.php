@@ -221,9 +221,12 @@ class LavanderiaController extends Controller {
 
         try {
             $loteId = $this->loteModel->crear($hotelId, $tipo, $proveedor, $notas, $cantidades, $this->usuarioIdActual());
+            clear_old_input();
             set_mensaje('Lote #' . $loteId . ' enviado a lavar.', 'success');
             $this->redirect('lavanderia/lotes/' . $loteId);
         } catch (Throwable $e) {
+            // Repoblado: que un rechazo del servidor no tire lo tecleado.
+            save_old_input($_POST);
             set_mensaje($e->getMessage(), 'error');
             $this->redirect('lavanderia/lotes/nuevo');
         }
@@ -407,9 +410,12 @@ class LavanderiaController extends Controller {
                 'notas' => (string)$this->getPost('notas', ''),
             ], $items, $this->usuarioIdActual());
 
+            clear_old_input();
             set_mensaje('Pedido #' . $pedidoId . ' registrado.', 'success');
             $this->redirect('lavanderia/pedidos/' . $pedidoId);
         } catch (Throwable $e) {
+            // Repoblado: que un rechazo del servidor no tire las partidas.
+            save_old_input($_POST);
             set_mensaje($e->getMessage(), 'error');
             $this->redirect('lavanderia/pedidos/nuevo');
         }
@@ -570,6 +576,12 @@ class LavanderiaController extends Controller {
             $habitacion = trim((string)($pedido['habitacion_etiqueta'] ?? ''));
 
             $movimientoModel = new MovimientoCaja();
+            // OJO: reservacion_id JAMAS viaja al movimiento de caja. En
+            // movimientos_caja ese campo es CONTABLE, no informativo:
+            // Reservacion::cancelar() devuelve TODOS los ingresos ligados,
+            // Facturacion lo lista como pago del hospedaje y el corte lo
+            // clasifica como hospedaje. La trazabilidad del pedido vive en
+            // lavanderia_pedidos.reservacion_id + referencia LAV-{id}.
             $resultado = $movimientoModel->registrarMovimiento([
                 'tipo' => 'ingreso',
                 'categoria_id' => $categoriaId,
@@ -578,7 +590,6 @@ class LavanderiaController extends Controller {
                 'monto' => $total,
                 'metodo_pago' => $metodoPago,
                 'referencia' => 'LAV-' . $id,
-                'reservacion_id' => !empty($pedido['reservacion_id']) ? (int)$pedido['reservacion_id'] : null,
             ]);
 
             if (empty($resultado['success'])) {

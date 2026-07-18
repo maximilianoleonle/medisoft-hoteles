@@ -15,6 +15,13 @@ if (!function_exists('lvx_safe')) {
 
 $blancos = $blancos ?? [];
 $hayBlancos = !empty($hay_blancos);
+
+// Repoblado tras rechazo del servidor (save_old_input en el controller).
+$lavOldTipo = old('tipo', 'interno');
+$lavOldCantidades = $_SESSION['old_input']['cantidades'] ?? [];
+if (!is_array($lavOldCantidades)) {
+    $lavOldCantidades = [];
+}
 ?>
 
 <style id="lav-lote-redesign">
@@ -298,23 +305,23 @@ $hayBlancos = !empty($hay_blancos);
                                 <label>¿Quién lava? <span class="req">*</span></label>
                                 <div class="lav-tipo">
                                     <span style="position:relative;">
-                                        <input type="radio" name="tipo" value="interno" id="lavTipoInterno" checked onchange="lavTipoCambio()">
+                                        <input type="radio" name="tipo" value="interno" id="lavTipoInterno" <?= $lavOldTipo !== 'externo' ? 'checked' : '' ?> onchange="lavTipoCambio()">
                                         <label for="lavTipoInterno"><i class="fas fa-house"></i> Lavado interno</label>
                                     </span>
                                     <span style="position:relative;">
-                                        <input type="radio" name="tipo" value="externo" id="lavTipoExterno" onchange="lavTipoCambio()">
+                                        <input type="radio" name="tipo" value="externo" id="lavTipoExterno" <?= $lavOldTipo === 'externo' ? 'checked' : '' ?> onchange="lavTipoCambio()">
                                         <label for="lavTipoExterno"><i class="fas fa-truck"></i> Servicio externo</label>
                                     </span>
                                 </div>
                             </div>
                             <div class="lote-field" id="lavProveedorWrap" style="display:none;">
                                 <label>Proveedor <span class="req">*</span></label>
-                                <input type="text" name="proveedor" id="lavProveedor" maxlength="160" placeholder="Lavandería El Cisne…">
+                                <input type="text" name="proveedor" id="lavProveedor" maxlength="160" placeholder="Lavandería El Cisne…" value="<?= old('proveedor') ?>">
                                 <p class="lote-hint">El costo real se captura al RECIBIR el lote y se registra como gasto en Caja.</p>
                             </div>
                             <div class="lote-field">
                                 <label>Notas (opcional)</label>
-                                <input type="text" name="notas" maxlength="500" placeholder="Instrucciones, urgencias…">
+                                <input type="text" name="notas" maxlength="500" placeholder="Instrucciones, urgencias…" value="<?= old('notas') ?>">
                             </div>
                         </div>
                     </div>
@@ -330,10 +337,12 @@ $hayBlancos = !empty($hay_blancos);
                                         <small><?= (int)$b['stock_limpio'] ?> limpias en stock</small>
                                     </div>
                                     <span class="lav-item__max"><?= (int)$b['stock_sucio'] ?> sucias</span>
+                                    <?php $lavOldCant = (int)($lavOldCantidades[(int)$b['id']] ?? 0); ?>
                                     <input type="number"
                                            name="cantidades[<?= (int)$b['id'] ?>]"
                                            min="0" max="<?= (int)$b['stock_sucio'] ?>"
                                            placeholder="0"
+                                           <?= $lavOldCant > 0 ? 'value="' . min($lavOldCant, (int)$b['stock_sucio']) . '"' : '' ?>
                                            data-lav-nombre="<?= lvx_safe($b['nombre']) ?>"
                                            oninput="lavPreview()">
                                 </div>

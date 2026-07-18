@@ -5412,6 +5412,11 @@ class CopilotoService
                     'nombre' => ['type' => 'string', 'description' => 'Nombre o parte del nombre del huesped'],
                 ], 'required' => ['nombre']],
             ],
+            [
+                'name' => 'estado_lavanderia',
+                'description' => 'Estado actual de la lavanderia del hotel: stock de blancos (limpias/sucias/en lavado), blancos bajo minimo, lotes de lavado en proceso y pedidos de huesped activos o por cobrar. Usala para "¿como va la lavanderia?", "¿cuantas toallas limpias hay?" o "¿hay pedidos por entregar?".',
+                'input_schema' => ['type' => 'object', 'properties' => new stdClass(), 'required' => []],
+            ],
         ];
     }
 
@@ -5422,8 +5427,77 @@ class CopilotoService
      */
     public function ejecutarHerramientaIa(int $hotelId, string $nombre, array $input): string
     {
-        if (!in_array($nombre, ['dinero_entre_fechas', 'reservaciones_entre_fechas', 'disponibilidad_entre_fechas', 'buscar_huesped'], true)) {
+        if (!in_array($nombre, ['dinero_entre_fechas', 'reservaciones_entre_fechas', 'disponibilidad_entre_fechas', 'buscar_huesped', 'estado_lavanderia'], true)) {
             return 'Herramienta desconocida.';
+        }
+
+        if ($nombre === 'estado_lavanderia') {
+            if (function_exists('hotel_has_module') && !hotel_has_module('lavanderia', $hotelId)) {
+                return 'Este hotel no tiene activo el modulo de Lavanderia.';
+            }
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT COALESCE(SUM(stock_limpio), 0) limpio, COALESCE(SUM(stock_sucio), 0) sucio,
+                            COALESCE(SUM(stock_proceso), 0) proceso, COUNT(*) blancos,
+                            COALESCE(SUM(CASE WHEN stock_minimo > 0 AND stock_limpio < stock_minimo THEN 1 ELSE 0 END), 0) bajo_minimo
+                     FROM lavanderia_blancos WHERE hotel_id = ? AND activo = 1"
+                );
+                $stmt->execute([$hotelId]);
+                $s = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+                if ((int) ($s['blancos'] ?? 0) === 0) {
+                    return 'La lavanderia esta activa pero aun no hay blancos registrados (seccion Lavanderia > Nuevo blanco).';
+                }
+
+                $out = 'Blancos: ' . (int) $s['limpio'] . ' piezas limpias, ' . (int) $s['sucio'] . ' por lavar, '
+                    . (int) $s['proceso'] . ' en lavado.';
+
+                if ((int) $s['bajo_minimo'] > 0) {
+                    $st2 = $this->pdo->prepare(
+                        "SELECT nombre, stock_limpio, stock_minimo FROM lavanderia_blancos
+                         WHERE hotel_id = ? AND activo = 1 AND stock_minimo > 0 AND stock_limpio < stock_minimo
+                         ORDER BY (stock_minimo - stock_limpio) DESC LIMIT 3"
+                    );
+                    $st2->execute([$hotelId]);
+                    $bajos = [];
+                    foreach ($st2->fetchAll(PDO::FETCH_ASSOC) as $b) {
+                        $bajos[] = $b['nombre'] . ' (' . (int) $b['stock_limpio'] . ' de ' . (int) $b['stock_minimo'] . ' minimas)';
+                    }
+                    $out .= ' BAJO MINIMO: ' . implode(', ', $bajos) . '.';
+                }
+
+                $st3 = $this->pdo->prepare(
+                    "SELECT COUNT(*) n, COALESCE(SUM(piezas_enviadas), 0) piezas FROM lavanderia_lotes
+                     WHERE hotel_id = ? AND estado = 'en_proceso'"
+                );
+                $st3->execute([$hotelId]);
+                $l = $st3->fetch(PDO::FETCH_ASSOC) ?: [];
+                if ((int) ($l['n'] ?? 0) > 0) {
+                    $out .= ' Lotes en proceso: ' . (int) $l['n'] . ' (' . (int) $l['piezas'] . ' piezas fuera).';
+                }
+
+                $st4 = $this->pdo->prepare(
+                    "SELECT COALESCE(SUM(CASE WHEN estado IN ('recibido', 'en_proceso', 'listo') THEN 1 ELSE 0 END), 0) activos,
+                            COALESCE(SUM(CASE WHEN estado = 'listo' THEN 1 ELSE 0 END), 0) listos,
+                            COALESCE(SUM(CASE WHEN estado <> 'cancelado' AND total > 0 AND cobro_movimiento_id IS NULL THEN total ELSE 0 END), 0) por_cobrar
+                     FROM lavanderia_pedidos WHERE hotel_id = ?"
+                );
+                $st4->execute([$hotelId]);
+                $p = $st4->fetch(PDO::FETCH_ASSOC) ?: [];
+                if ((int) ($p['activos'] ?? 0) > 0 || (float) ($p['por_cobrar'] ?? 0) > 0) {
+                    $out .= ' Pedidos de huesped: ' . (int) $p['activos'] . ' activo(s)'
+                        . ((int) $p['listos'] > 0 ? ', ' . (int) $p['listos'] . ' listo(s) por entregar' : '')
+                        . ((float) $p['por_cobrar'] > 0 ? ', $' . number_format((float) $p['por_cobrar'], 2) . ' por cobrar' : '')
+                        . '.';
+                } else {
+                    $out .= ' Sin pedidos de huesped activos.';
+                }
+
+                return $out;
+            } catch (Throwable $e) {
+                error_log('Copiloto: herramienta estado_lavanderia: ' . $e->getMessage());
+                return 'No se pudo consultar.';
+            }
         }
 
         if ($nombre === 'buscar_huesped') {
@@ -5572,7 +5646,7 @@ class CopilotoService
             . "\n- Si hay mensajes previos, usalos para entender a que se refiere el usuario (\"¿y eso por que?\", \"¿y manana?\"),"
             . ' pero las cifras validas son SOLO las de los datos en vivo actuales: un numero del historial puede estar viejo.'
             . "\n- Tienes HERRAMIENTAS para consultar datos reales del hotel (dinero por rango de fechas, reservaciones,"
-            . ' disponibilidad, huespedes). Usalas cuando la pregunta pida cifras de un periodo o dato que NO este en los datos'
+            . ' disponibilidad, huespedes, estado de la lavanderia). Usalas cuando la pregunta pida cifras de un periodo o dato que NO este en los datos'
             . ' en vivo, en vez de decir que no lo tienes. Lo que la herramienta devuelva es LA cifra; si devuelve error o vacio, dilo tal cual.'
             . "\n- Montos con formato \$1,234.56.";
 

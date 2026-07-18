@@ -15,6 +15,26 @@ if (!function_exists('lvx_safe')) {
 
 $reservaciones = $reservaciones ?? [];
 $servicios = $servicios ?? [];
+
+// Repoblado tras rechazo del servidor (save_old_input en el controller):
+// campos escalares via old(); las partidas dinamicas se reconstruyen aqui
+// como filas ya renderizadas (el JS las enlaza en el arranque).
+$lavOldVinculo = old('vinculo', '');
+$lavOldReservacion = (int)($_SESSION['old_input']['reservacion_id'] ?? 0);
+$lavOldItems = [];
+$lavOldDesc = $_SESSION['old_input']['item_descripcion'] ?? [];
+if (is_array($lavOldDesc)) {
+    $lavOldCantArr = $_SESSION['old_input']['item_cantidad'] ?? [];
+    $lavOldPrecioArr = $_SESSION['old_input']['item_precio'] ?? [];
+    foreach ($lavOldDesc as $i => $lavOldD) {
+        $lavOldD = trim((string)$lavOldD);
+        $lavOldC = (int)($lavOldCantArr[$i] ?? 1);
+        $lavOldP = trim((string)($lavOldPrecioArr[$i] ?? ''));
+        if ($lavOldD !== '' || $lavOldP !== '') {
+            $lavOldItems[] = ['descripcion' => $lavOldD, 'cantidad' => max(1, $lavOldC), 'precio' => $lavOldP];
+        }
+    }
+}
 ?>
 
 <style id="lav-pedido-redesign">
@@ -223,13 +243,14 @@ $servicios = $servicios ?? [];
                         <div class="lote-card__head"><i class="fas fa-user"></i><h2>¿De quién es la ropa?</h2></div>
                         <div class="lote-card__body">
                             <div class="lote-field">
+                                <?php $lavVinculoHuesped = !empty($reservaciones) && $lavOldVinculo !== 'externo'; ?>
                                 <div class="lav-tipo">
                                     <span style="position:relative;">
-                                        <input type="radio" name="vinculo" value="huesped" id="lavVinHuesped" <?= !empty($reservaciones) ? 'checked' : 'disabled' ?> onchange="lavVinculoCambio()">
+                                        <input type="radio" name="vinculo" value="huesped" id="lavVinHuesped" <?= empty($reservaciones) ? 'disabled' : ($lavVinculoHuesped ? 'checked' : '') ?> onchange="lavVinculoCambio()">
                                         <label for="lavVinHuesped" <?= empty($reservaciones) ? 'style="opacity:.5;cursor:not-allowed;"' : '' ?>><i class="fas fa-bed"></i> Huésped en casa</label>
                                     </span>
                                     <span style="position:relative;">
-                                        <input type="radio" name="vinculo" value="externo" id="lavVinExterno" <?= empty($reservaciones) ? 'checked' : '' ?> onchange="lavVinculoCambio()">
+                                        <input type="radio" name="vinculo" value="externo" id="lavVinExterno" <?= $lavVinculoHuesped ? '' : 'checked' ?> onchange="lavVinculoCambio()">
                                         <label for="lavVinExterno"><i class="fas fa-person-walking"></i> Cliente externo</label>
                                     </span>
                                 </div>
@@ -241,7 +262,7 @@ $servicios = $servicios ?? [];
                                 <label>Huésped <span class="req">*</span></label>
                                 <select name="reservacion_id" id="lavReservacion">
                                     <?php foreach ($reservaciones as $r): ?>
-                                        <option value="<?= (int)$r['id'] ?>">
+                                        <option value="<?= (int)$r['id'] ?>" <?= $lavOldReservacion === (int)$r['id'] ? 'selected' : '' ?>>
                                             <?= lvx_safe($r['huesped']) ?><?= !empty($r['habitaciones']) ? ' — hab. ' . lvx_safe($r['habitaciones']) : '' ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -250,11 +271,11 @@ $servicios = $servicios ?? [];
                             </div>
                             <div class="lote-field" id="lavWrapExterno" style="display:none;">
                                 <label>Nombre del cliente <span class="req">*</span></label>
-                                <input type="text" name="cliente_nombre" id="lavCliente" maxlength="160" placeholder="Nombre y apellido…">
+                                <input type="text" name="cliente_nombre" id="lavCliente" maxlength="160" placeholder="Nombre y apellido…" value="<?= old('cliente_nombre') ?>">
                             </div>
                             <div class="lote-field">
                                 <label>Notas (opcional)</label>
-                                <input type="text" name="notas" maxlength="500" placeholder="Mancha difícil, urgente para mañana…">
+                                <input type="text" name="notas" maxlength="500" placeholder="Mancha difícil, urgente para mañana…" value="<?= old('notas') ?>">
                             </div>
                         </div>
                     </div>
@@ -265,7 +286,16 @@ $servicios = $servicios ?? [];
                             <div class="lav-row-head">
                                 <span>Prenda / servicio</span><span>Cant.</span><span>Precio</span><span></span>
                             </div>
-                            <div class="lav-rows" id="lavRows"></div>
+                            <div class="lav-rows" id="lavRows">
+                                <?php foreach ($lavOldItems as $lavOldItem): ?>
+                                <div class="lav-row">
+                                    <input type="text" name="item_descripcion[]" maxlength="160" list="lavServicios" placeholder="Camisa, pantalón, tintorería…" autocomplete="off" value="<?= lvx_safe($lavOldItem['descripcion']) ?>">
+                                    <input type="number" name="item_cantidad[]" min="1" max="999" value="<?= (int)$lavOldItem['cantidad'] ?>">
+                                    <input type="text" name="item_precio[]" inputmode="decimal" data-money-format="true" placeholder="0.00" value="<?= lvx_safe($lavOldItem['precio']) ?>">
+                                    <button type="button" class="lav-row-quitar" title="Quitar prenda"><i class="fas fa-times"></i></button>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
                             <button type="button" class="lav-agregar" onclick="lavAgregarFila()">
                                 <i class="fas fa-plus"></i> Agregar prenda
                             </button>
@@ -314,6 +344,28 @@ $servicios = $servicios ?? [];
         precios[(opt.value || '').toLowerCase()] = opt.getAttribute('data-precio') || '';
     });
 
+    function lavEnlazarFila(row) {
+        var desc = row.querySelector('input[name="item_descripcion[]"]');
+        if (desc) {
+            desc.addEventListener('change', function () {
+                var precio = precios[(desc.value || '').toLowerCase()];
+                var inp = row.querySelector('input[name="item_precio[]"]');
+                if (precio && inp && !inp.value) { inp.value = precio; }
+                lavRecalcular();
+            });
+        }
+        row.querySelectorAll('input').forEach(function (inp) {
+            inp.addEventListener('input', lavRecalcular);
+        });
+        var quitar = row.querySelector('.lav-row-quitar');
+        if (quitar) {
+            quitar.addEventListener('click', function () {
+                row.remove();
+                lavRecalcular();
+            });
+        }
+    }
+
     window.lavAgregarFila = function (foco) {
         var rows = document.getElementById('lavRows');
         if (!rows) return;
@@ -322,24 +374,15 @@ $servicios = $servicios ?? [];
         row.innerHTML =
             '<input type="text" name="item_descripcion[]" maxlength="160" list="lavServicios" placeholder="Camisa, pantalón, tintorería…" autocomplete="off">' +
             '<input type="number" name="item_cantidad[]" min="1" max="999" value="1">' +
-            '<input type="text" name="item_precio[]" inputmode="decimal" placeholder="0.00">' +
+            '<input type="text" name="item_precio[]" inputmode="decimal" data-money-format="true" placeholder="0.00">' +
             '<button type="button" class="lav-row-quitar" title="Quitar prenda"><i class="fas fa-times"></i></button>';
         rows.appendChild(row);
-
+        // El init de arranque solo cubre nodos presentes en DOMContentLoaded.
+        if (window.MedisoftMoneyInput && typeof window.MedisoftMoneyInput.init === 'function') {
+            window.MedisoftMoneyInput.init(row);
+        }
+        lavEnlazarFila(row);
         var desc = row.querySelector('input[name="item_descripcion[]"]');
-        desc.addEventListener('change', function () {
-            var precio = precios[(desc.value || '').toLowerCase()];
-            var inp = row.querySelector('input[name="item_precio[]"]');
-            if (precio && inp && !inp.value) { inp.value = precio; }
-            lavRecalcular();
-        });
-        row.querySelectorAll('input').forEach(function (inp) {
-            inp.addEventListener('input', lavRecalcular);
-        });
-        row.querySelector('.lav-row-quitar').addEventListener('click', function () {
-            row.remove();
-            lavRecalcular();
-        });
         if (foco !== false && desc) { desc.focus(); }
         lavRecalcular();
     };
@@ -382,7 +425,15 @@ $servicios = $servicios ?? [];
 
     document.addEventListener('DOMContentLoaded', function () {
         lavVinculoCambio();
-        lavAgregarFila(false);
+        // Filas repobladas por el servidor (old input): solo se enlazan; si
+        // no hay ninguna, arranca con una vacia.
+        var existentes = document.querySelectorAll('#lavRows .lav-row');
+        if (existentes.length > 0) {
+            existentes.forEach(lavEnlazarFila);
+            lavRecalcular();
+        } else {
+            lavAgregarFila(false);
+        }
     });
 })();
 </script>

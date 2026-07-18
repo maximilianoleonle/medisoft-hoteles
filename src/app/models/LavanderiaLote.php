@@ -253,6 +253,9 @@ class LavanderiaLote extends Model {
             if (empty($items)) {
                 throw new RuntimeException('El lote no tiene partidas.');
             }
+            // Mismo orden de locks que crear() (blanco_id ascendente): sin
+            // esto, un crear() concurrente con blancos traslapados deadlockea.
+            usort($items, static fn($a, $b) => (int)$a['blanco_id'] <=> (int)$b['blanco_id']);
 
             $totalRecibidas = 0;
             $totalMerma = 0;
@@ -319,7 +322,9 @@ class LavanderiaLote extends Model {
                 throw new RuntimeException('Solo se puede cancelar un lote en proceso.');
             }
 
-            foreach ($this->items($loteId, $hotelId) as $item) {
+            $items = $this->items($loteId, $hotelId);
+            usort($items, static fn($a, $b) => (int)$a['blanco_id'] <=> (int)$b['blanco_id']);
+            foreach ($items as $item) {
                 $blancoModel->devolverASucioEnTransaccion($hotelId, (int)$item['blanco_id'], (int)$item['cantidad_enviada'], $loteId, $usuarioId);
             }
 

@@ -43,8 +43,8 @@ Verificado E2E en navegador ✅ 2026-07-18 (Los Cedros, sesión gerente; claro Y
 5. `/lavanderia/pedidos` → "Precios": alta "Camisa lavada y planchada $45.50". `/lavanderia/pedidos/nuevo`: radio Huésped en casa lista reservaciones `checked_in` (huésped — hab.); el datalist autollena el precio del catálogo; total en vivo — verificado ($256.50, 4 piezas).
 6. Detalle del pedido: timeline Recibido→En proceso→Listo→Entregado; "Empezar a lavar" y **Cobrar $X** (msConfirm) → verificar por PDO: ingreso ref `LAV-N` en corte abierto **y el hospedaje INTACTO** (`reservacion_pagos`/`reservacion_abonos` de la reserva vinculada sin cambios, cero CxC) — verificado (invariante crítico: el vínculo a reserva es solo informativo).
 7. Cancelar pedido cobrado → rechazado con mensaje de devolución por Caja (suite). Doble cobro / doble gasto → un solo movimiento (suite).
-8. ⬜ Repetir flujo con rol recepcionista (view+operar+cobrar, sin `lavanderia.all`) cuando se pruebe la matriz de roles.
-9. Pendiente conocido (baja): los forms boutique no repueblan lo tecleado si el servidor rechaza (validación client-side lo hace raro); patrón save_old_input queda para una iteración.
+8. Rol recepcionista (view+operar+cobrar sin `lavanderia.all`) — verificado por curl jul-18: `/lavanderia` 200 con botones de operar visibles y detalle de pedido accesible (role_id 29 con backfill).
+9. Repoblado tras rechazo del servidor — verificado E2E jul-18: partida inválida forzada (cantidad 0 saltando el min) → redirect a /pedidos/nuevo con cliente, vínculo y AMBAS filas dinámicas repobladas (cantidad normalizada a 1) y total en vivo recalculado; el éxito limpia el borrador (form virgen en la siguiente visita). Mismo patrón en /lotes/nuevo (tipo, proveedor, notas y cantidades topadas al stock).
 
 ## Huéspedes: campo nacionalidad + reporte de procedencia internacional
 

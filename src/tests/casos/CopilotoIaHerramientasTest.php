@@ -94,6 +94,41 @@ t_ok(strpos($out, $futIni) !== false, 'huesped: reserva vigente/proxima listada'
 t_ok(strpos($servicio->ejecutarHerramientaIa($hotelId, 'buscar_huesped', ['nombre' => 'fantasma']), 'ningun huesped') !== false, 'huesped: no encontrado avisa');
 t_ok(strpos($servicio->ejecutarHerramientaIa($hotelB, 'buscar_huesped', ['nombre' => 'laura']), 'ningun huesped') !== false, 'huesped: invisible desde otro hotel');
 
+// ── Estado de lavanderia ──
+// Sin blancos, avisa donde empezar (el modulo no esta activo en la BD de
+// prueba: hotel_has_module sin filas activas de hotel_modulos deja pasar
+// solo si el helper no gatea; se siembra el modulo activo para el hotel A).
+$db->query("INSERT INTO modulos (clave, nombre, categoria, activo_global, orden) VALUES ('lavanderia', 'Lavanderia', 'operacion', 1, 110)
+            ON DUPLICATE KEY UPDATE activo_global = 1");
+$moduloLavId = (int) $db->query("SELECT id FROM modulos WHERE clave = 'lavanderia'")->fetch()['id'];
+$db->query("INSERT INTO hotel_modulos (hotel_id, modulo_id, activo, fuente, created_at) VALUES (?, ?, 1, 'manual', NOW())
+            ON DUPLICATE KEY UPDATE activo = 1", [$hotelId, $moduloLavId]);
+if (function_exists('ms_cache_forget')) {
+    ms_cache_forget('modulos_hotel_' . $hotelId);
+}
+
+$out = $servicio->ejecutarHerramientaIa($hotelId, 'estado_lavanderia', []);
+t_ok(strpos($out, 'no hay blancos') !== false, 'lavanderia: sin blancos invita a registrarlos');
+
+$db->query("INSERT INTO lavanderia_blancos (hotel_id, nombre, categoria, stock_limpio, stock_sucio, stock_proceso, stock_minimo, activo, created_at)
+            VALUES (?, 'Toalla de baño', 'bano', 2, 5, 3, 6, 1, NOW())", [$hotelId]);
+$db->query("INSERT INTO lavanderia_lotes (hotel_id, tipo, estado, piezas_enviadas, created_at)
+            VALUES (?, 'externo', 'en_proceso', 3, NOW())", [$hotelId]);
+$db->query("INSERT INTO lavanderia_pedidos (hotel_id, cliente_nombre, estado, total, created_at)
+            VALUES (?, 'Cliente Tools', 'listo', 180.50, NOW())", [$hotelId]);
+// Ruido del hotel B que NO debe contarse.
+$db->query("INSERT INTO lavanderia_blancos (hotel_id, nombre, categoria, stock_limpio, activo, created_at)
+            VALUES (?, 'Sabana ajena', 'cama', 99, 1, NOW())", [$hotelB]);
+
+$out = $servicio->ejecutarHerramientaIa($hotelId, 'estado_lavanderia', []);
+t_ok(strpos($out, '2 piezas limpias') !== false, 'lavanderia: stock limpio del hotel (sin el ajeno)');
+t_ok(strpos($out, '5 por lavar') !== false, 'lavanderia: stock sucio');
+t_ok(strpos($out, 'BAJO MINIMO') !== false && strpos($out, 'Toalla de baño') !== false, 'lavanderia: alerta bajo minimo con nombre');
+t_ok(strpos($out, 'Lotes en proceso: 1') !== false, 'lavanderia: lote en proceso contado');
+t_ok(strpos($out, '1 listo(s) por entregar') !== false, 'lavanderia: pedido listo por entregar');
+t_ok(strpos($out, '$180.50 por cobrar') !== false, 'lavanderia: monto por cobrar');
+t_ok(strpos($out, '99') === false, 'lavanderia: el stock del hotel ajeno NO se cuela');
+
 // ── Herramienta desconocida ──
 t_eq('Herramienta desconocida.', $servicio->ejecutarHerramientaIa($hotelId, 'borrar_todo', []), 'herramienta desconocida: rechazada');
 

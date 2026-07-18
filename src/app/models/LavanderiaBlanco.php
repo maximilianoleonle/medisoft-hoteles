@@ -93,15 +93,18 @@ class LavanderiaBlanco extends Model {
             return $base;
         }
 
+        // "En lavado" suma TODOS los blancos (pausar uno con piezas fuera no
+        // debe descuadrar el KPI contra los lotes en proceso); el resto de
+        // indicadores solo consideran blancos activos.
         $stmt = $this->db->query(
             "SELECT
-                COALESCE(SUM(stock_limpio), 0) AS limpio,
-                COALESCE(SUM(stock_sucio), 0) AS sucio,
+                COALESCE(SUM(CASE WHEN activo = 1 THEN stock_limpio ELSE 0 END), 0) AS limpio,
+                COALESCE(SUM(CASE WHEN activo = 1 THEN stock_sucio ELSE 0 END), 0) AS sucio,
                 COALESCE(SUM(stock_proceso), 0) AS proceso,
-                COALESCE(SUM(CASE WHEN stock_minimo > 0 AND stock_limpio < stock_minimo THEN 1 ELSE 0 END), 0) AS bajo_minimo,
-                COUNT(*) AS blancos
+                COALESCE(SUM(CASE WHEN activo = 1 AND stock_minimo > 0 AND stock_limpio < stock_minimo THEN 1 ELSE 0 END), 0) AS bajo_minimo,
+                COALESCE(SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END), 0) AS blancos
              FROM {$this->table}
-             WHERE hotel_id = ? AND activo = 1",
+             WHERE hotel_id = ?",
             [$hotelId]
         );
         $row = $stmt ? $stmt->fetch() : null;
@@ -166,23 +169,38 @@ class LavanderiaBlanco extends Model {
         }
 
         $stockInicial = max(0, (int)($datos['stock_limpio'] ?? 0));
-        $nuevoId = (int)$this->create([
-            'hotel_id' => $hotelId,
-            'nombre' => $nombre,
-            'categoria' => $categoria,
-            'stock_limpio' => $stockInicial,
-            'stock_sucio' => 0,
-            'stock_proceso' => 0,
-            'stock_minimo' => $stockMinimo,
-            'activo' => 1,
-            'notas' => $notas,
-        ]);
 
-        if ($nuevoId > 0 && $stockInicial > 0) {
-            $this->insertarMovimiento($hotelId, $nuevoId, 'compra', $stockInicial, null, (int)($datos['usuario_id'] ?? 0) ?: null, 'Stock inicial al dar de alta');
+        // Alta + movimiento de stock inicial en UNA transaccion: sin blanco
+        // sin ledger ni ledger sin blanco.
+        $this->db->safeBeginTransaction();
+        try {
+            $nuevoId = (int)$this->create([
+                'hotel_id' => $hotelId,
+                'nombre' => $nombre,
+                'categoria' => $categoria,
+                'stock_limpio' => $stockInicial,
+                'stock_sucio' => 0,
+                'stock_proceso' => 0,
+                'stock_minimo' => $stockMinimo,
+                'activo' => 1,
+                'notas' => $notas,
+            ]);
+            if ($nuevoId <= 0) {
+                throw new RuntimeException('No se pudo crear el blanco.');
+            }
+
+            if ($stockInicial > 0) {
+                $this->insertarMovimiento($hotelId, $nuevoId, 'compra', $stockInicial, null, (int)($datos['usuario_id'] ?? 0) ?: null, 'Stock inicial al dar de alta');
+            }
+
+            $this->db->safeCommit();
+            return $nuevoId;
+        } catch (Throwable $e) {
+            if ($this->db->enTransaccion()) {
+                $this->db->safeRollBack();
+            }
+            throw $e;
         }
-
-        return $nuevoId;
     }
 
     public function toggle(int $id, ?int $hotelId = null): bool {
@@ -196,7 +214,7 @@ class LavanderiaBlanco extends Model {
              WHERE id = ? AND hotel_id = ?",
             [$id, $hotelId]
         );
-        return (bool)$stmt;
+        return $stmt && $stmt->rowCount() === 1;
     }
 
     /**
