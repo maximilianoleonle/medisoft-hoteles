@@ -8,9 +8,12 @@ require_once __DIR__ . '/../../core/Database.php';
  * Contador de intentos fallidos de login persistido en DB (tabla
  * login_intentos), no reiniciable con una cookie/sesion nueva.
  *
- * Dos alcances por cada fallo:
+ * Tres alcances por cada fallo:
  *  - Especifico: ip + usuario + hotel_slug → 5 intentos / bloqueo 15 min
  *    (misma UX que el contador de sesion que reemplaza).
+ *  - Por CUENTA: nombre_usuario sin IP → 15 intentos / bloqueo 30 min. Frena
+ *    brute force DISTRIBUIDO: sin este alcance, cada IP nueva del pool
+ *    reiniciaba el contador contra la misma cuenta y el limite jamas saltaba.
  *  - Global por IP: 20 intentos / bloqueo 15 min, frena credential stuffing
  *    contra muchos usuarios desde la misma IP.
  *
@@ -22,9 +25,23 @@ require_once __DIR__ . '/../../core/Database.php';
 class LoginRateLimiter
 {
     private const MAX_INTENTOS_ESPECIFICO = 5;
+    /**
+     * Tope por CUENTA (independiente de la IP): 15 fallos en la ventana de 15
+     * min bloquean la cuenta 30 min. Es 3x el tope especifico a proposito: un
+     * usuario legitimo que olvida su contrasena falla desde SU IP y lo frena
+     * el alcance especifico en 5 (el contador de cuenta apenas llega a 5);
+     * para disparar este tope se necesitan fallos desde 3+ IPs distintas en
+     * 15 minutos — patron de ataque distribuido, no de olvido humano.
+     */
+    private const MAX_INTENTOS_USUARIO = 15;
     private const MAX_INTENTOS_IP = 20;
     private const VENTANA_SEGUNDOS = 900;
     private const BLOQUEO_SEGUNDOS = 900;
+    /**
+     * Backoff del bloqueo de cuenta: 30 min (2x el bloqueo base). Acota un
+     * stuffing distribuido a ~15 conjeturas por ciclo de ~45 min por cuenta.
+     */
+    private const BLOQUEO_USUARIO_SEGUNDOS = 1800;
     private const RETENCION_SEGUNDOS = 86400;
 
     private $pdo;
@@ -56,10 +73,11 @@ class LoginRateLimiter
             $stmt = $this->pdo->prepare(
                 'SELECT MAX(TIMESTAMPDIFF(SECOND, NOW(), bloqueado_hasta)) AS restante
                  FROM login_intentos
-                 WHERE clave IN (?, ?) AND bloqueado_hasta > NOW()'
+                 WHERE clave IN (?, ?, ?) AND bloqueado_hasta > NOW()'
             );
             $stmt->execute([
                 $this->claveEspecifica($ip, $nombreUsuario, $hotelSlug),
+                $this->claveUsuario($nombreUsuario),
                 $this->claveIp($ip),
             ]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -71,8 +89,10 @@ class LoginRateLimiter
     }
 
     /**
-     * Registra un intento fallido en ambos alcances.
-     * Devuelve ['bloqueado' => bool, 'restantes' => int] del alcance especifico.
+     * Registra un intento fallido en los tres alcances.
+     * Devuelve ['bloqueado' => bool, 'restantes' => int]; 'restantes' es del
+     * alcance especifico (mensaje de UX) y 'bloqueado' se enciende si el
+     * especifico O el de cuenta alcanzaron su maximo.
      */
     public function registrarFallo(string $ip, string $nombreUsuario, ?string $hotelSlug): array
     {
@@ -88,11 +108,20 @@ class LoginRateLimiter
                 $hotelSlug,
                 self::MAX_INTENTOS_ESPECIFICO
             );
+            $intentosUsuario = $this->incrementar(
+                $this->claveUsuario($nombreUsuario),
+                $ip,
+                $nombreUsuario,
+                null,
+                self::MAX_INTENTOS_USUARIO,
+                self::BLOQUEO_USUARIO_SEGUNDOS
+            );
             $this->incrementar($this->claveIp($ip), $ip, null, null, self::MAX_INTENTOS_IP);
             $this->limpiarViejos();
 
             return [
-                'bloqueado' => $intentosEspecifico >= self::MAX_INTENTOS_ESPECIFICO,
+                'bloqueado' => $intentosEspecifico >= self::MAX_INTENTOS_ESPECIFICO
+                    || $intentosUsuario >= self::MAX_INTENTOS_USUARIO,
                 'restantes' => max(0, self::MAX_INTENTOS_ESPECIFICO - $intentosEspecifico),
             ];
         } catch (Throwable $e) {
@@ -102,8 +131,9 @@ class LoginRateLimiter
     }
 
     /**
-     * Login exitoso: limpia el contador especifico (el global por IP se
-     * conserva — un stuffing con un acierto no debe resetear la ventana).
+     * Login exitoso: limpia el contador especifico. Los contadores de cuenta
+     * y global por IP se CONSERVAN — un stuffing con un acierto no debe
+     * resetear la ventana; el de cuenta expira solo a los 15 min sin fallos.
      */
     public function registrarExito(string $ip, string $nombreUsuario, ?string $hotelSlug): void
     {
@@ -126,7 +156,7 @@ class LoginRateLimiter
      * no, y fija bloqueado_hasta al alcanzar el maximo. Devuelve los intentos
      * acumulados tras el incremento.
      */
-    private function incrementar(string $clave, string $ip, ?string $nombreUsuario, ?string $hotelSlug, int $maximo): int
+    private function incrementar(string $clave, string $ip, ?string $nombreUsuario, ?string $hotelSlug, int $maximo, int $bloqueoSegundos = self::BLOQUEO_SEGUNDOS): int
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO login_intentos (clave, ip, nombre_usuario, hotel_slug, intentos, bloqueado_hasta, ultimo_intento)
@@ -136,7 +166,7 @@ class LoginRateLimiter
                 -- Las asignaciones se evaluan en orden: aqui intentos YA tiene el valor nuevo.
                 bloqueado_hasta = IF(
                     intentos >= ' . $maximo . ',
-                    NOW() + INTERVAL ' . self::BLOQUEO_SEGUNDOS . ' SECOND,
+                    NOW() + INTERVAL ' . $bloqueoSegundos . ' SECOND,
                     bloqueado_hasta
                 ),
                 ultimo_intento = NOW()'
@@ -172,6 +202,17 @@ class LoginRateLimiter
     private function claveEspecifica(string $ip, string $nombreUsuario, ?string $hotelSlug): string
     {
         return hash('sha256', 'esp|' . $ip . '|' . mb_strtolower(trim($nombreUsuario)) . '|' . (string)$hotelSlug);
+    }
+
+    /**
+     * Clave por CUENTA, independiente de la IP: un pool de IPs distintas ya
+     * no reinicia el contador contra el mismo usuario. Sin hotel_slug a
+     * proposito: la misma cuenta atacada via /login y via /h/{slug}/login
+     * comparte contador.
+     */
+    private function claveUsuario(string $nombreUsuario): string
+    {
+        return hash('sha256', 'usuario|' . mb_strtolower(trim($nombreUsuario)));
     }
 
     private function claveIp(string $ip): string
