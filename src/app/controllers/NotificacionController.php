@@ -218,7 +218,8 @@ class NotificacionController extends Controller {
         }
 
         set_mensaje($ok ? $mensajeExito : 'No se pudo actualizar la notificacion.', $ok ? 'success' : 'error');
-        $this->redirect($_SERVER['HTTP_REFERER'] ?? 'notificaciones');
+        // Solo se regresa al Referer si es de este mismo host (anti open redirect).
+        $this->redirectBackSeguro('notificaciones');
     }
 
     private function seArchivaAlAbrir(array $notificacion): bool {

@@ -187,13 +187,58 @@ class Router {
             set_mensaje('Tu sesión de seguridad expiró. Vuelve a intentarlo.', 'error');
         }
 
-        $volverA = $_SERVER['HTTP_REFERER'] ?? null;
-        $destino = ($volverA && strpos($volverA, ($_SERVER['HTTP_HOST'] ?? '')) !== false)
-            ? $volverA
-            : (function_exists('url') ? url('dashboard') : '/');
+        // Solo se regresa al Referer si es de este mismo host (anti open redirect):
+        // el check por substring anterior era bypasseable (evil.com/?x=host).
+        $destino = $this->refererInternoSeguro() ?? (function_exists('url') ? url('dashboard') : '/');
 
         header('Location: ' . $destino, true, 303);
         exit;
+    }
+
+    /**
+     * Deriva del HTTP_REFERER un destino interno seguro (mismo host y puerto que
+     * HTTP_HOST; esquema y host SIEMPRE los propios) o null si el Referer es
+     * externo, malformado o ausente. Calco del helper de core/Controller.php.
+     */
+    private function refererInternoSeguro() {
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        $hostHeader = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+        if ($referer === '' || $hostHeader === '' || preg_match('/[\r\n]/', $referer . $hostHeader)) {
+            return null;
+        }
+
+        $partes = parse_url($referer);
+        if (!is_array($partes) || empty($partes['host'])) {
+            return null;
+        }
+
+        $esquemaReferer = strtolower((string) ($partes['scheme'] ?? ''));
+        if (!in_array($esquemaReferer, ['http', 'https'], true)) {
+            return null;
+        }
+
+        $hostActual = parse_url('http://' . $hostHeader);
+        if (!is_array($hostActual) || empty($hostActual['host'])
+            || strcasecmp((string) $partes['host'], (string) $hostActual['host']) !== 0) {
+            return null;
+        }
+
+        $esquemaActual = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+        $puertoActual = (int) ($hostActual['port'] ?? ($esquemaActual === 'https' ? 443 : 80));
+        $puertoReferer = (int) ($partes['port'] ?? ($esquemaReferer === 'https' ? 443 : 80));
+
+        if ($puertoActual !== $puertoReferer) {
+            return null;
+        }
+
+        $ruta = (string) ($partes['path'] ?? '/');
+        if ($ruta === '' || $ruta[0] !== '/') {
+            $ruta = '/' . $ruta;
+        }
+
+        return $esquemaActual . '://' . $hostHeader . $ruta
+            . (isset($partes['query']) ? '?' . $partes['query'] : '');
     }
 
     /**
