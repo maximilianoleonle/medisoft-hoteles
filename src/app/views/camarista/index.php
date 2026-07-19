@@ -8,6 +8,7 @@ $salidasHoy = $salidasHoy ?? [];
 $ocupacion = $ocupacion ?? [];
 $personal = $personal ?? [];
 $tareasLimpieza = $tareasLimpieza ?? [];
+$tareasLimpiezaAreas = $tareasLimpiezaAreas ?? [];
 
 // Hora de salida estándar del hotel (HH:MM); vacía si no aplica.
 $horaSalidaFmt = trim((string) ($horaSalida ?? ''));
@@ -223,6 +224,8 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
 .cam-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cam-chip--staff{ background:var(--dx-clean-soft); color:var(--dx-clean-deep); }
 .cam-chip--staff i{ color:var(--dx-clean); }
+.cam-chip--unassigned{ background:var(--dx-slate-soft); color:var(--dx-slate); }
+.cam-chip--unassigned i{ color:var(--dx-slate); }
 .cam-chip--fecha{ background:#FBF3E2; color:#8A6A1F; }
 .cam-chip--fecha i{ color:var(--dx-gold); }
 .cam-chip--salida{ background:var(--dx-occ-soft); color:var(--dx-occ); }
@@ -231,7 +234,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
 /* ── Acciones de tarjeta ── */
 .cam-foot{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
 .cam-foot form{ margin:0; }
-.cam-btn.mini{ min-height:40px; font-size:.82rem; background:transparent; color:var(--dx-ink-soft);
+.cam-btn.mini{ min-height:44px; font-size:.82rem; background:transparent; color:var(--dx-ink-soft);
   border:1.5px dashed var(--dx-line); }
 .cam-btn.mini:hover{ color:var(--dx-clean-deep); border-color:var(--dx-clean); background:var(--dx-clean-mist); }
 
@@ -578,6 +581,9 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
             $aEstado = (string) $ar['estado'];
             $tm = $tiposArea[$ar['tipo'] ?? 'otra'] ?? ['label' => 'Área', 'icono' => 'fa-location-dot'];
             $aPiso = ($ar['piso'] === null || $ar['piso'] === '') ? 'Exterior / PB' : 'Piso ' . (int) $ar['piso'];
+            $aTarea = $tareasLimpiezaAreas[$aid] ?? null;
+            $aAsignadosCsv = $aTarea ? implode(',', $aTarea['trabajador_ids']) : '';
+            $aAsignadosNombres = $aTarea ? trim((string) $aTarea['trabajador_nombres']) : '';
             ?>
             <div class="cam-card<?= $aEstado === 'limpieza' ? ' is-pend' : '' ?>">
                 <div class="cam-head">
@@ -591,12 +597,28 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
                     <span class="cam-badge b-done"><i class="fas fa-check" aria-hidden="true"></i>Limpia</span>
                 <?php endif; ?>
 
+                <?php if ($aEstado === 'limpieza' && $aTarea): ?>
+                    <div class="cam-meta" aria-label="Asignación de limpieza">
+                        <?php if ($aAsignadosNombres !== ''): ?>
+                            <span class="cam-chip cam-chip--staff" title="Asignada a <?= $camSafe($aAsignadosNombres) ?>">
+                                <i class="fas fa-user-check" aria-hidden="true"></i>
+                                <span>Asignada a <?= $camSafe($aAsignadosNombres) ?></span>
+                            </span>
+                        <?php else: ?>
+                            <span class="cam-chip cam-chip--unassigned">
+                                <i class="fas fa-user-slash" aria-hidden="true"></i>
+                                <span>Sin personal asignado</span>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
                 <?php if ($aEstado === 'limpieza'): ?>
                     <div class="cam-foot">
                         <?php if ($camHayPersonal): ?>
                             <button type="button" class="cam-btn done js-cam-marcar"
                                     data-hab-id="<?= $aid ?>" data-hab-numero="<?= $camSafe($ar['nombre']) ?>"
-                                    data-asignados="" data-action-base="<?= url('camarista/area/marcar') ?>">
+                                    data-asignados="<?= $camSafe($aAsignadosCsv) ?>" data-action-base="<?= url('camarista/area/marcar') ?>">
                                 <span class="cam-btn__shine" aria-hidden="true"></span>
                                 <i class="fas fa-check" aria-hidden="true"></i>Ya quedó limpia
                             </button>

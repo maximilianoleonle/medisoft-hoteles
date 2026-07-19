@@ -352,10 +352,64 @@ function current_hotel_role_clave() {
 }
 
 /**
+ * ¿El dashboard operativo le sirve al rol actual? Lo es para direccion,
+ * recepcion y cualquier rol con vista de reservas/caja/reportes/huespedes o de
+ * configuracion/usuarios. Un rol acotado (p. ej. camarista) no lo ve: aterriza
+ * directo en su pantalla de trabajo (ver primary_landing_route).
+ */
+function nav_puede_ver_dashboard() {
+    if (function_exists('current_hotel_user_role')
+        && in_array(current_hotel_user_role(), ['gerente', 'administrador', 'propietario'], true)) {
+        return true;
+    }
+
+    return can_any([
+        'reservaciones.view', 'caja.view', 'reportes.view',
+        'huespedes.view', 'configuracion.view', 'usuarios.view',
+    ]);
+}
+
+/**
+ * Primera pantalla de trabajo accesible para un rol acotado, por orden de
+ * prioridad. Cada candidata exige su modulo activo Y alguno de sus permisos
+ * (any-of). Devuelve la ruta o null si ninguna aplica (el llamador cae a
+ * 'dashboard', que siempre carga). Evita bucles: solo devuelve rutas cargables.
+ */
+function primary_landing_route() {
+    $candidatas = [
+        ['camarista',             'camarista',          ['camarista.view', 'tareas.view']],
+        ['tareas',                'tareas',             ['tareas.view']],
+        ['mantenimientos/activos','mantenimiento_plus', ['tareas.view', 'habitaciones.mantenimiento']],
+        ['habitaciones',          'habitaciones',       ['habitaciones.view']],
+        ['reservaciones',         'reservaciones',      ['reservaciones.view']],
+        ['huespedes',             'huespedes',          ['huespedes.view']],
+        ['caja',                  'caja',               ['caja.view']],
+        ['inventario',            'inventario',         ['inventarios.view']],
+        ['documentos',            'documentos',         ['documentos.view']],
+        ['reportes',              'reportes',           ['reportes.view']],
+    ];
+
+    foreach ($candidatas as $candidata) {
+        [$ruta, $modulo, $permisos] = $candidata;
+
+        if (function_exists('hotel_menu_module_enabled') && !hotel_menu_module_enabled($modulo)) {
+            continue;
+        }
+
+        if (can_any($permisos)) {
+            return $ruta;
+        }
+    }
+
+    return null;
+}
+
+/**
  * Ruta "hogar" del usuario actual. Los usuarios con rol Dueno (remoto)
- * aterrizan en el Modo Dueno (/dueno) y nunca ven el dashboard completo;
- * el resto conserva el dashboard. Exige modulo activo + permiso para no
- * mandar a nadie a una pantalla que lo rebotaria (evita bucles de redirect).
+ * aterrizan en el Modo Dueno (/dueno) y nunca ven el dashboard completo. Un rol
+ * acotado (camarista y afines) sin utilidad en el dashboard aterriza en su
+ * pantalla de trabajo; el resto conserva el dashboard. Exige modulo activo +
+ * permiso para no mandar a nadie a una pantalla que lo rebotaria (evita bucles).
  */
 function home_route_for_current_user() {
     if (has_hotel_context()
@@ -363,6 +417,13 @@ function home_route_for_current_user() {
         && function_exists('hotel_has_module') && hotel_has_module('modo_dueno')
         && can('dueno.view')) {
         return 'dueno';
+    }
+
+    if (has_hotel_context() && !nav_puede_ver_dashboard()) {
+        $ruta = primary_landing_route();
+        if ($ruta !== null) {
+            return $ruta;
+        }
     }
 
     return 'dashboard';
@@ -537,6 +598,21 @@ function permission_in_list($permission, array $permisos) {
 
     if (in_array($modulo . '.*', $permisos, true)) {
         return true;
+    }
+
+    return false;
+}
+
+/**
+ * ¿El usuario tiene AL MENOS UNO de los permisos dados? (any-of / OR). Util para
+ * pantallas que varios permisos distintos pueden abrir (p. ej. Limpieza la abre
+ * camarista.view o tareas.view). Con la lista vacia devuelve false.
+ */
+function can_any(array $permissions) {
+    foreach ($permissions as $permission) {
+        if (can($permission)) {
+            return true;
+        }
     }
 
     return false;

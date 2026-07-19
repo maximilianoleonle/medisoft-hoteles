@@ -294,8 +294,8 @@ $rangosRapidos = [
                             </a>
                         <?php endforeach; ?>
                     </div>
-                    <input class="tk-control tk-control-date" type="date" name="desde" aria-label="Desde" value="<?= tlm_agenda_safe($filtros['desde'] ?? date('Y-m-01'), date('Y-m-01')) ?>">
-                    <input class="tk-control tk-control-date" type="date" name="hasta" aria-label="Hasta" value="<?= tlm_agenda_safe($filtros['hasta'] ?? date('Y-m-t'), date('Y-m-t')) ?>">
+                    <input class="tk-control tk-control-date" type="date" name="desde" aria-label="Desde" value="<?= tlm_agenda_safe($filtros['desde'] ?? $hoy, $hoy) ?>">
+                    <input class="tk-control tk-control-date" type="date" name="hasta" aria-label="Hasta" value="<?= tlm_agenda_safe($filtros['hasta'] ?? $hoy, $hoy) ?>">
                     <select class="tk-control tk-control-worker" name="trabajador_id" aria-label="Trabajador">
                         <option value="todos">Todos los trabajadores</option>
                         <?php foreach ($trabajadores as $trabajador): ?>

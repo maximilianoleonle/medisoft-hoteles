@@ -67,11 +67,15 @@ class DashboardController extends Controller {
     protected function before() {
         $this->requireAuth();
 
-        // El rol Dueno (remoto) vive en el Modo Dueno: jamas ve el dashboard
-        // operativo completo. home_route ya valida modulo + permiso, asi que
-        // este redirect no puede formar bucle.
-        if (function_exists('home_route_for_current_user') && home_route_for_current_user() === 'dueno') {
-            $this->redirect('dueno');
+        // Roles acotados (Dueno remoto, camarista y afines) no ven el dashboard
+        // operativo: se les manda a su pantalla de trabajo. home_route ya valida
+        // modulo + permiso y solo devuelve rutas cargables, asi que este redirect
+        // no puede formar bucle.
+        if (function_exists('home_route_for_current_user')) {
+            $home = home_route_for_current_user();
+            if ($home !== 'dashboard') {
+                $this->redirect($home);
+            }
         }
 
         require_hotel_module('dashboard');
