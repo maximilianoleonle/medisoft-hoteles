@@ -30,9 +30,11 @@ class ConfiguracionController extends Controller {
     }
 
     private function puedeGestionarConfiguracionHotel() {
-        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-
-        return is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true);
+        // RBAC intra-hotel: mismo permiso que gatea la entrada del menu
+        // (config/navegacion.php -> 'configuracion.view'), resuelto por el rol
+        // del usuario EN ESTE hotel. El gate anterior usaba is_gerente()
+        // (usuarios.rol GLOBAL, ajeno al hotel actual).
+        return can('configuracion.view');
     }
     
     /**
@@ -127,7 +129,10 @@ class ConfiguracionController extends Controller {
         if (!$this->isPost()) {
             $this->redirect('configuracion');
         }
-        
+
+        // Escritura: exige el permiso de edicion (configuracion.view solo lee).
+        require_permission_or_403('configuracion.edit');
+
         $this->validateCSRF();
 
         $hotelConfigValues = [];

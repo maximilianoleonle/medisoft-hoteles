@@ -1,14 +1,16 @@
 <?php
 /**
- * Fase RBAC no monetaria (2026-07-18): gates de servidor en las LECTURAS de
- * reservaciones, cerrados por defecto.
+ * Fase RBAC con autorizacion monetaria (aprobada 2026-07-19): gates de servidor
+ * en las LECTURAS y en las ESCRITURAS monetarias/combinadas de reservaciones,
+ * cerrados por defecto.
  *
  * Dos capas de verificacion, ambas sin BD:
  *  1) Matriz de permisos: quien pasa el gate `reservaciones.view` (resuelto por
- *     preset) y que ese permiso NO concede acciones monetarias (frontera).
- *  2) Caracterizacion estatica: el gate `require_permission_or_403('reservaciones.view')`
- *     esta presente en las acciones de LECTURA y AUSENTE en las monetarias/
- *     combinadas (no se gatearon en esta fase, por diseño).
+ *     preset) y que ese permiso NO concede por si solo acciones monetarias.
+ *  2) Caracterizacion estatica: los gates estan presentes tanto en las acciones
+ *     de LECTURA (reservaciones.view) como en las de ESCRITURA, cada una con su
+ *     permiso (habitaciones.checkin/checkout, caja.cobros, reservaciones.create/
+ *     edit, o el any-of cancelar/edit para cancelaciones y no-show).
  */
 
 require_once __DIR__ . '/../bootstrap.php';
@@ -82,18 +84,33 @@ foreach ($gateadas as $accion) {
         "$accion tiene el gate reservaciones.view");
 }
 
-// Acciones monetarias/combinadas: NO deben llevar el gate nuevo en esta fase
-// (se gatean en la fase siguiente, con sus permisos monetarios).
-$noGateadasAun = [
-    'checkInAction', 'checkOutAction', 'checkOutRapidoAction', 'registrarAnticipoAction',
-    'revertirAnticipoAction', 'cancelarAction', 'noShowAction', 'cambiarMetodoPagoAction',
-    'guardarAction', 'checkOutParcialAction', 'modificarDiasAction',
+// Acciones de ESCRITURA monetarias/combinadas: ahora gateadas (autorizacion
+// monetaria aprobada 2026-07-19), cada una con su permiso especifico.
+$gatesEscritura = [
+    'checkInAction'           => "require_permission_or_403('habitaciones.checkin'",
+    'checkOutAction'          => "require_permission_or_403('habitaciones.checkout'",
+    'checkOutRapidoAction'    => "require_permission_or_403('habitaciones.checkout'",
+    'checkOutParcialAction'   => "require_permission_or_403('habitaciones.checkout'",
+    'registrarAnticipoAction' => "require_permission_or_403('caja.cobros'",
+    'revertirAnticipoAction'  => "require_permission_or_403('caja.cobros'",
+    'cambiarMetodoPagoAction' => "require_permission_or_403('caja.cobros'",
+    'guardarAction'           => "require_permission_or_403('reservaciones.create'",
+    'modificarDiasAction'     => "require_permission_or_403('reservaciones.edit'",
 ];
-foreach ($noGateadasAun as $accion) {
+foreach ($gatesEscritura as $accion => $gate) {
     $cuerpo = t_cuerpo_accion($src, $accion);
     t_ok($cuerpo !== '', "accion $accion existe");
-    t_ok(strpos($cuerpo, 'require_permission_or_403') === false,
-        "$accion NO se gateo en esta fase (frontera monetaria intacta)");
+    t_ok(strpos($cuerpo, $gate) !== false, "$accion gateada ({$gate}')");
+}
+
+// Cancelacion / no-show: gate any-of (reservaciones.cancelar ∨ .edit) + 403,
+// porque el preset de recepcionista trae .edit pero no .cancelar.
+foreach (['cancelarAction', 'noShowAction'] as $accion) {
+    $cuerpo = t_cuerpo_accion($src, $accion);
+    t_ok($cuerpo !== '', "accion $accion existe");
+    t_ok(strpos($cuerpo, "can_any(['reservaciones.cancelar', 'reservaciones.edit'])") !== false
+        && strpos($cuerpo, 'deny_access_403') !== false,
+        "$accion gateada con any-of cancelar/edit + 403");
 }
 
 t_fin();

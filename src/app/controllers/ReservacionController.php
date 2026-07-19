@@ -1072,8 +1072,11 @@ private function procesarRecogidaRemotosCheckOut($reservacion_id) {
  * Check-out parcial - Liberar solo algunas habitaciones
  */
 public function checkOutParcialAction() {
+    // Gate RBAC de escritura: mismo permiso que el check-out completo.
+    require_permission_or_403('habitaciones.checkout', 'No tiene permiso para registrar check-out');
+
     $id = $this->route_params['id'] ?? 0;
-    
+
     if (!$this->isPost()) {
         // Si es AJAX, devolver JSON
         if ($this->isAjax()) {
@@ -2806,6 +2809,9 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
      * Actualizar habitaciones de una reservación
      */
     public function actualizarHabitacionesAction() {
+        // Gate RBAC de escritura: cambiar habitaciones/precio de la reservación.
+        require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
         if (!$this->isPost()) {
             $this->redirect('reservaciones');
             return;
@@ -3159,6 +3165,11 @@ try {
  */
 public function entregarLlaveAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: control de llaves (recepcionista tiene
+    // llaves.control; gerencia/admin entran por habitaciones.all→checkin).
+    if (!can_any(['llaves.control', 'habitaciones.checkin'])) {
+        deny_access_403('No tiene permiso para controlar llaves');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3209,6 +3220,10 @@ public function entregarLlaveAction() {
  */
 public function recibirLlaveAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: control de llaves (par de entregarLlaveAction).
+    if (!can_any(['llaves.control', 'habitaciones.checkout'])) {
+        deny_access_403('No tiene permiso para controlar llaves');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3260,6 +3275,10 @@ public function recibirLlaveAction() {
  */
 public function entregarRemotoAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: mismo criterio que entregarLlaveAction.
+    if (!can_any(['llaves.control', 'habitaciones.checkin'])) {
+        deny_access_403('No tiene permiso para controlar llaves y remotos');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3327,6 +3346,10 @@ public function entregarRemotoAction() {
  */
 public function entregarRemotosMultiplesAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: mismo criterio que entregarLlaveAction.
+    if (!can_any(['llaves.control', 'habitaciones.checkin'])) {
+        deny_access_403('No tiene permiso para controlar llaves y remotos');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3417,6 +3440,10 @@ public function entregarRemotosMultiplesAction() {
  */
 public function recibirRemotosMultiplesAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: mismo criterio que recibirLlaveAction.
+    if (!can_any(['llaves.control', 'habitaciones.checkout'])) {
+        deny_access_403('No tiene permiso para controlar llaves y remotos');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3490,6 +3517,10 @@ public function recibirRemotosMultiplesAction() {
  */
 public function recibirRemotoAction() {
     require_hotel_module('llaves_remotos');
+    // Gate RBAC de escritura: mismo criterio que recibirLlaveAction.
+    if (!can_any(['llaves.control', 'habitaciones.checkout'])) {
+        deny_access_403('No tiene permiso para controlar llaves y remotos');
+    }
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -3584,6 +3615,10 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
      * Proceso de check-in usando el método del modelo
      */
     public function checkInAction() {
+        // Gate RBAC de escritura: check-in cobra dinero (permiso existente
+        // habitaciones.checkin; gerencia/admin entran por habitaciones.all).
+        require_permission_or_403('habitaciones.checkin', 'No tiene permiso para registrar check-in');
+
         $id = $this->route_params['id'] ?? 0;
         $checkInOk = false;
         $checkInReturnTo = $this->normalizarRetornoCheckIn($this->getPost('checkin_return_to', ''));
@@ -3811,8 +3846,12 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
      * Proceso de check-out usando el método del modelo
      */
     public function checkOutAction() {
+    // Gate RBAC de escritura: registrar check-out (permiso existente
+    // habitaciones.checkout; gerencia/admin entran por habitaciones.all).
+    require_permission_or_403('habitaciones.checkout', 'No tiene permiso para registrar check-out');
+
     $id = $this->route_params['id'] ?? 0;
-    
+
     if (!$this->isPost()) {
         $this->redirect('reservaciones/ver/' . $id);
         return;
@@ -4071,6 +4110,10 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
      * Registrar un anticipo/abono real de la reservación (movimiento de Caja + abono).
      */
     public function registrarAnticipoAction() {
+        // Gate RBAC de escritura: cobro de dinero por caja (caja.cobros lo
+        // tienen recepcionista, administrador y gerente en sus presets).
+        require_permission_or_403('caja.cobros', 'No tiene permiso para registrar cobros');
+
         $id = (int)($this->route_params['id'] ?? 0);
         if (!$this->isPost()) {
             $this->redirect('reservaciones/ver/' . $id);
@@ -4160,6 +4203,10 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
     // Sin gate de modulo: revertir un anticipo ya cobrado es correccion de dinero
     // y debe seguir disponible aunque el hotel apague el bloque 'anticipos'.
     public function revertirAnticipoAction() {
+        // Gate RBAC de escritura: revertir un cobro es movimiento de dinero
+        // (mismo criterio que CxC: quien cobra puede revertir; caja.cobros).
+        require_permission_or_403('caja.cobros', 'No tiene permiso para revertir cobros');
+
         $id = (int)($this->route_params['id'] ?? 0);
         if (!$this->isPost()) {
             $this->redirect('reservaciones/ver/' . $id);
@@ -4230,6 +4277,15 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
 
     public function cancelarAction() {
     $id = $this->route_params['id'] ?? 0;
+
+    // Gate RBAC de escritura: cancelar. La clave fina es reservaciones.cancelar
+    // (gerencia/admin la cubren vía reservaciones.all); se acepta también
+    // reservaciones.edit porque el preset de recepcionista NO incluye .cancelar
+    // y recepción opera las cancelaciones hoy. Endurecer a solo .cancelar es
+    // decisión de política, no de este fix.
+    if (!can_any(['reservaciones.cancelar', 'reservaciones.edit'])) {
+        deny_access_403('No tiene permiso para cancelar reservaciones');
+    }
 
     if (!$this->isPost()) {
         $this->redirect('reservaciones/ver/' . $id);
@@ -4368,6 +4424,12 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
  */
 public function noShowAction() {
     $id = $this->route_params['id'] ?? 0;
+
+    // Gate RBAC de escritura: no-show retiene el anticipo (mismo criterio que
+    // cancelarAction: reservaciones.cancelar, o reservaciones.edit para recepción).
+    if (!can_any(['reservaciones.cancelar', 'reservaciones.edit'])) {
+        deny_access_403('No tiene permiso para marcar no-show');
+    }
 
     if (!$this->isPost()) {
         $this->redirect('reservaciones/ver/' . $id);
@@ -4518,6 +4580,10 @@ private function validarCancelacion($reservacion) {
      * Guardar nueva reservación
      */
     public function guardarAction() {
+    // Gate RBAC de escritura: crear reservaciones (preset recepcionista lo
+    // incluye; gerencia/admin entran por reservaciones.all).
+    require_permission_or_403('reservaciones.create', 'No tiene permiso para crear reservaciones');
+
     if (!$this->isPost()) {
         $this->redirect('reservaciones');
         return;
@@ -5303,8 +5369,11 @@ $cortesias_ids = $this->getPost('cortesias', []);
  * Check-out rápido (para llamadas AJAX desde index de habitaciones)
  */
 public function checkOutRapidoAction() {
+    // Gate RBAC de escritura: mismo permiso que el check-out completo.
+    require_permission_or_403('habitaciones.checkout', 'No tiene permiso para registrar check-out');
+
     $id = $this->route_params['id'] ?? 0;
-    
+
     if (!$this->isPost()) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
@@ -5532,6 +5601,10 @@ public function checkOutRapidoAction() {
      * Procesar check-in tardío (POST)
      */
     public function procesarCheckInTardioAction() {
+        // Gate RBAC de escritura: check-in tardío/express también cobra
+        // (mismo permiso que checkInAction).
+        require_permission_or_403('habitaciones.checkin', 'No tiene permiso para registrar check-in');
+
         if (!$this->isPost()) {
             $this->redirect('/reservaciones');
         }
@@ -5901,8 +5974,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
      * Cambiar método de pago de una reservación (AJAX)
      */
     public function cambiarMetodoPagoAction() {
+        // Gate RBAC de escritura: reescribe movimientos de caja (caja.cobros).
+        require_permission_or_403('caja.cobros', 'No tiene permiso para modificar cobros');
+
         $id = $this->route_params['id'] ?? 0;
-        
+
         header('Content-Type: application/json');
         
         if (!$this->isPost()) {
@@ -5934,6 +6010,20 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             }
             
             $pagos = $input['pagos'];
+
+            // Validar método contra el enum real (mismo whitelist que el loop
+            // fijo de checkInAction y MovimientoCaja::validarMovimiento). En
+            // MySQL no estricto un valor inválido quedaría '' en
+            // movimientos_caja.metodo_pago y el arqueo lo descartaría en
+            // silencio. Se RECHAZA, no se corrige.
+            $metodos_validos = ['efectivo', 'tarjeta', 'transferencia'];
+            foreach ($pagos as $pago) {
+                if (!is_array($pago) || !in_array($pago['metodo'] ?? '', $metodos_validos, true)) {
+                    echo json_encode(['success' => false, 'message' => 'Método de pago inválido']);
+                    exit;
+                }
+            }
+
             $total = floatval($input['total'] ?? $reservacion['precio_total']);
             
             // Validar que los montos cuadren
@@ -5977,7 +6067,20 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             }
             
             $this->db->beginTransaction();
-            
+
+            // Candado anti-TOCTOU (patrón MovimientoCaja::registrarMovimiento /
+            // Caja::cerrarCaja): bloquear el corte FOR UPDATE y revalidar que
+            // siga abierto antes de reescribir movimientos, para no insertar en
+            // un corte que se está cerrando en paralelo (arqueo ya congelado).
+            $stmt_lock = $this->db->prepare(
+                "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE"
+            );
+            $stmt_lock->execute([$corteActual['id'], $hotel_id]);
+            $corte_lock = $stmt_lock->fetch(PDO::FETCH_ASSOC);
+            if (!$corte_lock || ($corte_lock['estado'] ?? '') !== 'abierto') {
+                throw new Exception('La caja se cerró: recarga antes de cambiar el método de pago');
+            }
+
             // 1. Actualizar método de pago en reservaciones
             $sql = "UPDATE reservaciones SET metodo_pago = ? WHERE id = ? AND hotel_id = ?";
             $stmt = $this->db->prepare($sql);
@@ -6383,6 +6486,10 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
      * Aplicar el cambio de días de la reservación (AJAX)
      */
     public function modificarDiasAction() {
+        // Gate RBAC de escritura: editar la estancia (reservaciones.edit, que
+        // recepcionista tiene; gerencia/admin entran por reservaciones.all).
+        require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
         header('Content-Type: application/json');
 
         $reservacion_id      = intval($this->getPost('reservacion_id'));
@@ -6518,6 +6625,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                         $db->rollBack();
                     }
                     echo json_encode(['success' => false, 'mensaje' => 'El corte abierto no pertenece al hotel actual.']);
+                    return;
+                }
+
+                // Candado anti-TOCTOU (patrón MovimientoCaja::registrarMovimiento):
+                // bloquear el corte FOR UPDATE y revalidar que siga abierto antes
+                // de registrar la devolución en movimientos_caja.
+                $stmt_lock = $db->query(
+                    "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE",
+                    [$corteActual['id'], $hotel_id]
+                );
+                $corte_lock = $stmt_lock ? $stmt_lock->fetch() : null;
+                if (!$corte_lock || ($corte_lock['estado'] ?? '') !== 'abierto') {
+                    if ($db->enTransaccion()) {
+                        $db->rollBack();
+                    }
+                    echo json_encode(['success' => false, 'mensaje' => 'La caja se cerró: recarga antes de modificar los días.']);
                     return;
                 }
 

@@ -27,6 +27,13 @@ class HabitacionController extends Controller {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('habitaciones');
+
+        // Permiso base del modulo: mismo contrato que el menu
+        // (config/navegacion.php -> 'habitaciones.view'). Las acciones de
+        // escritura ya exigen su permiso propio (create/edit/delete/
+        // mantenimiento) accion por accion; no se duplican aqui.
+        require_permission_or_403('habitaciones.view');
+
         return true;
     }
 

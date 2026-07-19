@@ -27,6 +27,11 @@ class DocumentoController extends Controller
 
         $this->requireModuloRelacionado();
 
+        // Permiso base del centro documental (PII/expedientes): mismo contrato
+        // que el menu (config/navegacion.php -> 'documentos.view'). Las
+        // escrituras (metadata/estado) exigen ademas 'documentos.all'.
+        require_permission_or_403('documentos.view');
+
         return true;
     }
 
@@ -122,6 +127,10 @@ class DocumentoController extends Controller
             $this->redirect('documentos');
             return;
         }
+
+        // Editar metadata: control total del modulo (documentos.view solo lee;
+        // no existe clave documentos.edit en el catalogo de permisos).
+        require_permission_or_403('documentos.all');
 
         $this->validateCSRF();
 
@@ -337,6 +346,9 @@ class DocumentoController extends Controller
             $this->redirect('documentos');
             return;
         }
+
+        // Archivar/restaurar/eliminar: control total del modulo.
+        require_permission_or_403('documentos.all');
 
         $this->validateCSRF();
 

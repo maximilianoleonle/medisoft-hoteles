@@ -1147,7 +1147,17 @@ private function validarHabitacionesParaCheckIn($reservacion_id, $hotel_id, $db)
 public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibido = null, $cambio = null) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
-    
+
+    // Validar método de pago contra el enum real ANTES de tocar la BD (mismo
+    // whitelist de MovimientoCaja::validarMovimiento). En MySQL no estricto un
+    // valor fuera del enum quedaría '' en movimientos_caja.metodo_pago y el
+    // arqueo lo descartaría en silencio. Se RECHAZA, no se corrige.
+    foreach ($pagos as $pago) {
+        if (!is_array($pago) || !in_array($pago['metodo'] ?? '', ['efectivo', 'tarjeta', 'transferencia'], true)) {
+            throw new Exception("Método de pago inválido");
+        }
+    }
+
     try {
         $db->beginTransaction();
         
@@ -1162,7 +1172,20 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
             throw new Exception("El corte abierto no pertenece al hotel actual");
         }
-        
+
+        // Candado anti-TOCTOU (patrón MovimientoCaja::registrarMovimiento):
+        // bloquear el corte FOR UPDATE dentro de la transacción y revalidar que
+        // siga abierto, para que ningún pago caiga en un corte que se está
+        // cerrando en paralelo (arqueo ya congelado = descuadre).
+        $stmt_lock = $db->query(
+            "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE",
+            [$corteActual['id'], $hotel_id]
+        );
+        $corte_lock = $stmt_lock ? $stmt_lock->fetch() : null;
+        if (!$corte_lock || ($corte_lock['estado'] ?? '') !== 'abierto') {
+            throw new Exception("La caja se cerró: recarga antes de registrar el check-in");
+        }
+
         // Obtener datos de la reservación
         $stmt_reservacion = $db->query(
             "SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ?",
@@ -2804,13 +2827,25 @@ public function checkOut($reservacion_id, $hora_salida = null) {
     try {
         $db->beginTransaction();
         
-        // 1. Obtener información de la reservación antes de cancelar
+        // 1. Obtener información de la reservación antes de cancelar,
+        //    BLOQUEÁNDOLA (FOR UPDATE) para serializar cancelaciones
+        //    concurrentes: sin el candado, dos requests podían leer el mismo
+        //    estado a la vez y emitir la devolución dos veces.
         $hotel_id = $this->hotelIdActual();
-        $reservacion = $this->obtenerPorId($id);
-        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+        $stmt_res = $db->query(
+            "SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ? FOR UPDATE",
+            [$id, $hotel_id]
+        );
+        $reservacion = $stmt_res ? $stmt_res->fetch() : null;
+        if (!$reservacion) {
             throw new Exception("Reservación no encontrada");
         }
-        
+
+        // Idempotencia: si ya está cancelada, abortar SIN volver a devolver dinero.
+        if (($reservacion['estado'] ?? '') === 'cancelada') {
+            throw new Exception("Esta reservación ya está cancelada");
+        }
+
         error_log("=== INICIO CANCELACIÓN RESERVACIÓN #$id ===");
         error_log("Estado actual: " . $reservacion['estado']);
         
@@ -2837,7 +2872,20 @@ public function checkOut($reservacion_id, $hora_salida = null) {
             if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 throw new Exception("El corte abierto no pertenece al hotel actual.");
             }
-            
+
+            // Candado anti-TOCTOU (patrón MovimientoCaja::registrarMovimiento):
+            // bloquear el corte FOR UPDATE y revalidar que siga abierto para que
+            // los egresos de devolución no caigan en un corte que se está
+            // cerrando en paralelo (arqueo ya congelado = descuadre).
+            $stmt_lock = $db->query(
+                "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE",
+                [$corteActual['id'], $hotel_id]
+            );
+            $corte_lock = $stmt_lock ? $stmt_lock->fetch() : null;
+            if (!$corte_lock || ($corte_lock['estado'] ?? '') !== 'abierto') {
+                throw new Exception("La caja se cerró: recarga antes de cancelar la reservación.");
+            }
+
             // Buscar TODOS los movimientos de ingreso de esta reservación
             $sql = "SELECT id, hotel_id, monto, metodo_pago, categoria_id, descripcion, corte_id
                     FROM movimientos_caja 
@@ -3058,15 +3106,19 @@ public function checkOut($reservacion_id, $hora_salida = null) {
             }
         }
         
-        $sql = "UPDATE reservaciones 
+        // Guarda de estado: solo transiciona si AÚN no está cancelada. Junto con
+        // el FOR UPDATE inicial, garantiza que una segunda cancelación aborte
+        // (rollback) sin duplicar las devoluciones ya insertadas arriba.
+        $sql = "UPDATE reservaciones
                 SET estado = 'cancelada',
                     notas = CONCAT(IFNULL(notas, ''), ?)
                 WHERE id = ?
-                AND hotel_id = ?";
-        
+                AND hotel_id = ?
+                AND estado <> 'cancelada'";
+
         $stmt = $db->query($sql, [$nota_cancelacion, $id, $hotel_id]);
-        
-        if (!$stmt || $stmt->rowCount() == 0) {
+
+        if (!$stmt || $stmt->rowCount() != 1) {
             throw new Exception("No se pudo actualizar el estado de la reservación");
         }
         
@@ -3563,7 +3615,16 @@ public function paraCalendario($mes = null, $año = null) {
     public function checkInCheckOutExpress($reservacion_id, $pagos = [], $notas_adicionales = null) {
         $verificacion = $this->verificarEstadoCheckIn($reservacion_id);
         $hotel_id = $this->hotelIdActual();
-        
+
+        // Validar método de pago contra el enum real (mismo whitelist de
+        // MovimientoCaja::validarMovimiento): en el flujo express el método
+        // puede venir directo del POST. Se RECHAZA, no se corrige.
+        foreach ($pagos as $pago) {
+            if (!is_array($pago) || !in_array($pago['metodo'] ?? '', ['efectivo', 'tarjeta', 'transferencia'], true)) {
+                throw new Exception('Método de pago inválido');
+            }
+        }
+
         if (!$verificacion['puede_checkin']) {
             throw new Exception($verificacion['motivo']);
         }
@@ -3608,11 +3669,27 @@ public function paraCalendario($mes = null, $año = null) {
             if (!empty($pagos) && $reservacion['precio_total'] > 0) {
                 $cajaModel = new Caja();
                 $corteActual = $cajaModel->obtenerCorteActual();
-                
+
                 if (!$corteActual) {
                     throw new Exception("Debe abrir la caja para registrar los pagos");
                 }
-                
+
+                if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    throw new Exception("El corte abierto no pertenece al hotel actual");
+                }
+
+                // Candado anti-TOCTOU (patrón MovimientoCaja::registrarMovimiento):
+                // bloquear el corte FOR UPDATE y revalidar que siga abierto antes
+                // de insertar los pagos express.
+                $stmt_lock = $db->query(
+                    "SELECT estado FROM cortes_caja WHERE id = ? AND hotel_id = ? FOR UPDATE",
+                    [$corteActual['id'], $hotel_id]
+                );
+                $corte_lock = $stmt_lock ? $stmt_lock->fetch() : null;
+                if (!$corte_lock || ($corte_lock['estado'] ?? '') !== 'abierto') {
+                    throw new Exception("La caja se cerró: recarga antes de registrar los pagos");
+                }
+
                 $usuario_id = user_id();
                 
                 // Obtener categoria_id de Hospedaje

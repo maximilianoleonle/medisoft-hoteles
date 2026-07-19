@@ -104,7 +104,7 @@ Como se revierte si rompe algo:
 
 Decision del mentor/jefe:
 
-- [ ] Aprobado
+- [x] Aprobado  <!-- Maximiliano, 2026-07-19: autorizacion monetaria explicita; ver "Ampliacion aprobada" abajo -->
 - [x] Aprobado con alcance reducido  <!-- Maximiliano, 2026-07-18 -->
 - [ ] Rechazado por riesgo operativo
 
@@ -117,6 +117,41 @@ personalizados, proteccion cross-hotel y 403 correcto para HTML y JSON. Toda
 accion que combine reservaciones con anticipos, devoluciones, caja, check-in,
 check-out, cancelacion o correccion de pagos queda FUERA y solo se documenta
 para la siguiente fase (requiere autorizacion monetaria explicita aparte).
+
+### Ampliacion aprobada (2026-07-19): autorizacion monetaria explicita
+
+A raiz de una auditoria de seguridad (4 agentes), Maximiliano autoriza cerrar la
+frontera monetaria: se GATEAN todas las escrituras de reservaciones + los modulos
+con PII y la administracion por rol del hotel. Enforcement = espejo del filtrado
+de menu (jamas exige mas permiso que la pantalla que apunta). Mapeo aplicado:
+
+- **Escrituras de reservaciones** (ReservacionController): `guardarAction`→
+  `reservaciones.create`; `modificarDiasAction`/`actualizarHabitacionesAction`→
+  `reservaciones.edit`; `checkInAction`/`procesarCheckInTardioAction`→
+  `habitaciones.checkin`; `checkOutAction`/`checkOutRapidoAction`/
+  `checkOutParcialAction`→`habitaciones.checkout`; `registrarAnticipoAction`/
+  `revertirAnticipoAction`/`cambiarMetodoPagoAction`→`caja.cobros`; `cancelarAction`/
+  `noShowAction`→ any-of `reservaciones.cancelar` ∨ `reservaciones.edit` (recepcion
+  trae `.edit` pero no `.cancelar`); llaves/remotos→ any-of `llaves.control` ∨
+  `habitaciones.checkin/checkout`. Lecturas GET de escritura (`editar*`, notas) NO
+  se gatearon (se mantiene el alcance de lecturas reducido).
+- **Rol GLOBAL → rol del hotel**: `UsuarioController`/`ConfiguracionController`/
+  `TarifasController` dejan de usar `is_gerente()/is_admin()` (leen `usuarios.rol`
+  global) y pasan a `can()`/`require_permission_or_403()` (`usuarios.view/create/
+  edit`, `configuracion.view/edit`, `tarifas.view/edit`).
+- **Modulos con PII**: gate base en `HuespedController` (`huespedes.view` + create/
+  edit), `DocumentoController` (`documentos.view` + `documentos.all`),
+  `ProveedorController` (`proveedores.view`), `AreaController`/`HabitacionController`
+  (`habitaciones.view`).
+
+Cambios de comportamiento a vigilar (verificados contra presets): recepcion
+conserva TODA su operacion (crear/editar/cancelar via `.edit`, check-in/out via
+`habitaciones.*`, cobros/anticipos via `caja.cobros`, llaves via `llaves.control`);
+camarista/dueno_remoto → 403 en escrituras; **administrador del hotel pierde
+`/configuracion` y `/configuracion/tarifas`** (su preset no trae `configuracion.*`
+ni `tarifas.*` — el menu ya se los ocultaba; para devolverselos, ampliar su preset
+en `config/permisos.php` + `Rol::sembrarPresetsParaHotel`). Suite
+`ReservacionGatesRbacTest` actualizada al nuevo contrato (50 asserts, verde).
 
 ## Matriz resumida propuesta
 
@@ -143,11 +178,11 @@ escritura.
 ## Orden de implementacion
 
 1. Compatibilidad legacy y pruebas de presets/roles personalizados. **HECHO** (auth.php `legacy_preset_permissions`, `LegacyRbacCompatTest`).
-2. Reservaciones sin dinero y denegacion por defecto. **HECHO (parcial: lecturas)** — ver "Estado de gates" abajo.
-3. Check-in/check-out y cobro condicional. PENDIENTE (autorizacion monetaria).
-4. Anticipos, ajustes, cancelaciones y devoluciones. PENDIENTE (autorizacion monetaria).
-5. Huespedes y documentos. PENDIENTE.
-6. API con respuesta JSON 403 y busqueda global filtrada por permiso. PENDIENTE.
+2. Reservaciones sin dinero y denegacion por defecto. **HECHO** (lecturas, 2026-07-18).
+3. Check-in/check-out y cobro condicional. **HECHO** (2026-07-19, autorizacion monetaria — ver "Ampliacion aprobada").
+4. Anticipos, ajustes, cancelaciones y devoluciones. **HECHO** (2026-07-19, `caja.cobros` / cancelar∨edit).
+5. Huespedes y documentos. **HECHO** (2026-07-19, gate base `huespedes.view`/`documentos.view` + `.all`).
+6. API con respuesta JSON 403 y busqueda global filtrada por permiso. PENDIENTE (busqueda global; el API de reservaciones ya responde 403 JSON).
 
 ## Estado de gates de ReservacionController (2026-07-18)
 
@@ -166,7 +201,11 @@ call-sites de `require_permission()` existentes.
 | `habitacionesApiAction` | GET /reservaciones/.../habitaciones (JSON) | valida hotel_id explicito (404) |
 | `obtenerNotasAction` | GET notas (JSON) | + verificacion de propiedad via `obtenerPorId` (404) |
 
-### NO gateadas (frontera monetaria / combinada — SIGUIENTE FASE, requieren autorizacion)
+### Frontera monetaria / combinada — GATEADA el 2026-07-19 (ver "Ampliacion aprobada")
+
+> Actualizado 2026-07-19: estas acciones YA se gatean con su permiso (mapeo en la
+> seccion "Ampliacion aprobada" y verificado en `ReservacionGatesRbacTest`). El
+> inventario original se conserva abajo como referencia del alcance.
 
 Requieren `reservaciones.*` + un permiso monetario, y la denegacion debe ocurrir
 ANTES de la primera escritura/transaccion:

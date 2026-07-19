@@ -26,6 +26,10 @@ class ProveedorController extends Controller {
             require_hotel_module('compras');
         }
 
+        // Permiso base del modulo: mismo contrato que el menu
+        // (config/navegacion.php -> 'proveedores.view').
+        require_permission_or_403('proveedores.view');
+
         return true;
     }
 

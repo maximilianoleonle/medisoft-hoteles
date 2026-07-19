@@ -18,13 +18,13 @@ class TarifasController extends Controller {
     
     protected function before() {
         $this->requireAuth();
-        
-        // Solo gerente y administrador pueden gestionar tarifas
-        if (!is_gerente() && !is_admin()) {
-            set_mensaje('No tiene permisos para gestionar tarifas', 'error');
-            $this->redirect('dashboard');
-            return false;
-        }
+
+        // RBAC intra-hotel: mismo permiso que gatea la entrada del menu
+        // (config/navegacion.php -> 'tarifas.view'), resuelto por el rol del
+        // usuario EN ESTE hotel. El gate anterior (is_gerente()/is_admin())
+        // leia usuarios.rol GLOBAL, ajeno al hotel actual. Las acciones de
+        // escritura exigen ademas 'tarifas.edit'.
+        require_permission_or_403('tarifas.view');
 
         return true;
     }
@@ -251,6 +251,7 @@ class TarifasController extends Controller {
     }
     
     private function procesarCreacion() {
+        require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
         
         try {
@@ -385,6 +386,7 @@ class TarifasController extends Controller {
     }
     
     private function procesarEdicion($id) {
+        require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
         
         try {
@@ -515,7 +517,8 @@ class TarifasController extends Controller {
         if (!$this->isAjax() || !$this->isPost()) {
             $this->redirect('configuracion/tarifas');
         }
-        
+
+        require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
         
         $id = $this->getPost('id');
@@ -545,7 +548,8 @@ class TarifasController extends Controller {
         if (!$this->isAjax() || !$this->isPost()) {
             $this->redirect('configuracion/tarifas');
         }
-        
+
+        require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
         
         $id = $this->getPost('id');
