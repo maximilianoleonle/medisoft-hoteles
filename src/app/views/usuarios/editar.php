@@ -752,6 +752,13 @@ if (!function_exists('usuario_form_error_attrs')) {
                                                    disabled
                                                    class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'rol') ?>"<?= usuario_form_error_attrs($usuarioFieldErrors, 'rol', 'ms-form-error-usuario_rol') ?>>
                                             <input type="hidden" name="rol" value="<?= htmlspecialchars($usuarioRol, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?php // Auto-edición con roles configurables: el selector va deshabilitado
+                                            // (no puedes cambiar tu propio rol), pero el controlador exige un role_id
+                                            // válido igual. Se reenvía el role_id ACTUAL como hidden para que la
+                                            // asignación resuelva y no bloquee guardar contraseña/datos. ?>
+                                            <?php if (!empty($rolesHotel) && !empty($usuarioRoleId)): ?>
+                                            <input type="hidden" name="role_id" value="<?= htmlspecialchars((string) $usuarioRoleId, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?php endif; ?>
                                         </div>
                                         <?php if (usuario_form_error($usuarioFieldErrors, 'rol') !== ''): ?>
                                             <span id="ms-form-error-usuario_rol" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'rol') ?></span>
