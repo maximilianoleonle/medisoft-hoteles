@@ -148,6 +148,16 @@ return [
                 'lavanderia.all'    => ['label' => 'Control total de lavanderia', 'tipo' => 'wildcard'],
             ],
         ],
+        'camarista' => [
+            'label' => 'Limpieza (camarista)',
+            'modulo' => 'camarista',
+            'permisos' => [
+                // Acceso al tablero movil de limpieza. Otorgar SOLO este permiso
+                // (sin tareas ni habitaciones) crea un rol camarista que ve
+                // unicamente la pantalla de Limpieza y aterriza en ella.
+                'camarista.view' => ['label' => 'Ver el tablero de limpieza', 'tipo' => 'acceso'],
+            ],
+        ],
         'reportes' => [
             'label' => 'Reportes',
             'modulo' => 'reportes',

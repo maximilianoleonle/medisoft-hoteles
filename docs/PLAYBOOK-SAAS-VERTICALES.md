@@ -513,6 +513,46 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     operación pendiente. Tests: la suite fija fechas leyendo `CURDATE()` de la
     MISMA conexión (los relojes PHP/BD difieren).
 
+27. **Menú y aterrizaje por permiso del rol (verificado jul 2026).** Un rol
+    acotado (camarista, mesero, técnico) debe ver en el menú SOLO sus pantallas
+    y aterrizar en su herramienta, no en un dashboard que no le sirve. Patrón
+    de tres piezas, todas white-label: (a) **catálogo único de pantallas** con
+    metadata `modulo`+`permiso`(+`roles`) evaluados en OR, fuente de verdad del
+    buscador/accesos Y espejo de la sidebar — cada pantalla operativa se gatea
+    por su `permiso` (`can()`), no solo por módulo contratado; `permiso` acepta
+    lista any-of (`can_any()`). (b) **aterrizaje por rol**: `home_route()`
+    manda a los roles acotados a su primera pantalla accesible por prioridad
+    (`primary_landing_route()`), un predicado `puede_ver_dashboard()` decide si
+    ven el panel, y el controlador del dashboard rebota; como todos los
+    redirects de permiso/módulo ya pasan por `home_route()`, arreglarlo ahí fija
+    login, permiso-denegado y módulo-denegado de un golpe. (c) **permiso propio
+    para el rol estrella** (p.ej. `camarista.view`) en el catálogo de permisos,
+    para poder crear "solo esa pantalla" sin migración (la pantalla se abre con
+    `can_any(permiso_propio, permiso_amplio)` para que los roles sembrados la
+    conserven). TRAMPA cara: los gates de gerencia van por el rol DEL HOTEL
+    (rol-string o permiso), nunca por `is_gerente()/is_admin()` que leen el rol
+    GLOBAL del usuario (en multihotel un operativo puede tener rol global alto en
+    otra propiedad y filtrarse pantallas). GOTCHA: si los roles personalizados
+    comparten un ENUM legacy de compatibilidad, el gate por rol-string no los
+    distingue → lo acotable va por permiso. Es visibilidad de menú, NO control de
+    seguridad: los gates de servidor por acción van aparte.
+
+28. **Enforcement de servidor de RBAC = espejo del menú (verificado jul 2026).**
+    El filtrado de menú (§27) es SOLO visibilidad; sin gates de servidor las URLs
+    cargan igual por POST directo. Al cerrar el ciclo: cada acción mutante lleva
+    `require_permission_or_403('<perm>')` (o `can_any([...])+deny_access_403()`
+    para any-of) como PRIMERA instrucción, con el MISMO permiso que la filtra en
+    el menú (jamás exige más). Regla de oro para no romper operación: mapear cada
+    acción al permiso FINO que el rol operativo YA tiene en su preset (verificar
+    contra el catálogo de permisos ANTES de gatear); si el preset del rol estrella
+    no trae la clave fina (recepción no trae `.cancelar`), usar any-of con la que
+    sí trae (`.edit`). Reemplazar TODO `is_gerente()/is_admin()` en gates por
+    `can()` (leen el rol GLOBAL del usuario → fuga cross-hotel). Cobrar la frontera
+    monetaria por fases con autorización explícita del dueño; un test de
+    caracterización que liste qué acciones están gateadas evita regresiones y
+    documenta el contrato. GOTCHA de verificación: simular el rol acotado exige un
+    `role_id` real, no el rol-string de un usuario con rol global alto.
+
 ---
 
 ## §4. LO PROHIBIDO (errores pagados una vez; no se pagan dos)

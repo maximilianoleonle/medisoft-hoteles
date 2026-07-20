@@ -7,7 +7,17 @@ require_once __DIR__ . '/../services/AuditService.php';
  */
 
 class AuthController extends Controller {
-    
+
+    /**
+     * Hash bcrypt VALIDO de un valor aleatorio descartado (mismo algoritmo y
+     * costo que PASSWORD_DEFAULT en esta instalacion). Cuando el usuario NO
+     * existe, se verifica la contrasena contra este hash de todas formas para
+     * que la respuesta tarde lo mismo que con un usuario real (anti
+     * enumeracion de usuarios por temporizacion). Jamas autentica: el
+     * resultado se ignora y el flujo sigue como fallo.
+     */
+    private const HASH_DUMMY = '$2y$10$lckN3R/JNp5Tyy8ReL4ZMu.ZMZgO/u7Z6Mlq.FkaQFkcyKw8QYihu';
+
     /**
      * Mostrar formulario de login
      */
@@ -110,6 +120,7 @@ class AuthController extends Controller {
         $this->validateCSRF();
 
         $ip = get_client_ip();
+        $this->advertirProxySinConfigurar();
         $nombre_usuario = trim($this->getPost('nombre_usuario', ''));
         $password = $this->getPost('password', '');
         $remember = $this->getPost('remember') ? true : false;
@@ -136,6 +147,10 @@ class AuthController extends Controller {
         );
 
         $usuario = $stmt->fetch();
+        if (!$usuario) {
+            // Igualar tiempos cuando el usuario no existe (anti enumeracion).
+            password_verify($password, self::HASH_DUMMY);
+        }
         $credencialesValidas = $usuario && password_verify($password, $usuario['password']);
         $hotelUsuario = $credencialesValidas
             ? $this->resolverHotelUsuarioActivo((int) $hotel['hotel_id'], (int) $usuario['id'])
@@ -195,6 +210,7 @@ class AuthController extends Controller {
         // SEC-001: rate limit persistido en DB (ip+usuario, mas tope global
         // por IP), no reiniciable con una cookie/sesion nueva.
         $ip = get_client_ip();
+        $this->advertirProxySinConfigurar();
         require_once __DIR__ . '/../services/LoginRateLimiter.php';
         $rateLimiter = new LoginRateLimiter();
         $segundos = $rateLimiter->segundosBloqueado($ip, $nombre_usuario, null);
@@ -211,6 +227,11 @@ class AuthController extends Controller {
         );
 
         $usuario = $stmt->fetch();
+
+        if (!$usuario) {
+            // Igualar tiempos cuando el usuario no existe (anti enumeracion).
+            password_verify($password, self::HASH_DUMMY);
+        }
 
         // Verificar si existe el usuario y la contraseña es correcta
         if ($usuario && password_verify($password, $usuario['password'])) {
@@ -366,6 +387,24 @@ class AuthController extends Controller {
         $hotelUsuario = $stmt->fetch();
 
         return $hotelUsuario ?: null;
+    }
+
+    /**
+     * H2: si llega X-Forwarded-For pero TRUSTED_PROXIES esta vacio, PHP ve la
+     * IP del proxy para TODO el trafico → el rate-limit de login colapsa a
+     * una sola IP (bloqueable por cualquiera) y login_intentos/auditoria
+     * registran la IP equivocada. Advertencia NO fatal en error_log, emitida
+     * solo en intentos de login (no en cada request). No altera el flujo.
+     */
+    private function advertirProxySinConfigurar() {
+        try {
+            $confiables = trim((string) (getenv('TRUSTED_PROXIES') ?: ''));
+            if ($confiables === '' && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                error_log('[Auth] ADVERTENCIA: llego X-Forwarded-For pero TRUSTED_PROXIES esta vacio; el rate-limit y la auditoria de login estan usando la IP del proxy para todos los clientes. Configurar TRUSTED_PROXIES en .env (ver .env.example).');
+            }
+        } catch (Throwable $e) {
+            // Nunca debe romper el login.
+        }
     }
 
     private function logLogin($user_id, $success, $username = null) {

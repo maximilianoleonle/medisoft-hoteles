@@ -134,6 +134,70 @@ abstract class Controller {
         header('Location: ' . url($url), true, 303);
         exit;
     }
+
+    /**
+     * Redirigir de vuelta al HTTP_REFERER SOLO si pertenece a este mismo
+     * host; cualquier Referer externo, malformado o ausente cae a la ruta
+     * interna $fallback. Cierra el open redirect via Referer (auditoria):
+     * el destino se RECONSTRUYE con el esquema y host propios y del Referer
+     * solo se conserva path + query.
+     */
+    protected function redirectBackSeguro($fallback) {
+        $destino = $this->refererInternoSeguro();
+
+        if ($destino !== null) {
+            header('Location: ' . $destino, true, 303);
+            exit;
+        }
+
+        $this->redirect($fallback);
+    }
+
+    /**
+     * Deriva del HTTP_REFERER un destino interno seguro (mismo host y puerto
+     * que HTTP_HOST; esquema y host SIEMPRE los propios) o null si el
+     * Referer es externo, malformado o ausente.
+     */
+    private function refererInternoSeguro() {
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        $hostHeader = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+        if ($referer === '' || $hostHeader === '' || preg_match('/[\r\n]/', $referer . $hostHeader)) {
+            return null;
+        }
+
+        $partes = parse_url($referer);
+        if (!is_array($partes) || empty($partes['host'])) {
+            return null;
+        }
+
+        $esquemaReferer = strtolower((string) ($partes['scheme'] ?? ''));
+        if (!in_array($esquemaReferer, ['http', 'https'], true)) {
+            return null;
+        }
+
+        $hostActual = parse_url('http://' . $hostHeader);
+        if (!is_array($hostActual) || empty($hostActual['host'])
+            || strcasecmp((string) $partes['host'], (string) $hostActual['host']) !== 0) {
+            return null;
+        }
+
+        $esquemaActual = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+        $puertoActual = (int) ($hostActual['port'] ?? ($esquemaActual === 'https' ? 443 : 80));
+        $puertoReferer = (int) ($partes['port'] ?? ($esquemaReferer === 'https' ? 443 : 80));
+
+        if ($puertoActual !== $puertoReferer) {
+            return null;
+        }
+
+        $ruta = (string) ($partes['path'] ?? '/');
+        if ($ruta === '' || $ruta[0] !== '/') {
+            $ruta = '/' . $ruta;
+        }
+
+        return $esquemaActual . '://' . $hostHeader . $ruta
+            . (isset($partes['query']) ? '?' . $partes['query'] : '');
+    }
     
     /**
      * Verificar si es una petición POST
@@ -193,7 +257,8 @@ abstract class Controller {
                     ], 403);
                 } else {
                     set_mensaje('Token de seguridad inválido. Por favor, intente nuevamente.', 'error');
-                    $this->redirect($_SERVER['HTTP_REFERER'] ?? 'dashboard');
+                    // Solo se regresa al Referer si es de este mismo host (anti open redirect).
+                    $this->redirectBackSeguro('dashboard');
                 }
             }
         }

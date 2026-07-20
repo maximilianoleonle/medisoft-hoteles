@@ -551,6 +551,12 @@ class HuespedController extends Controller {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('huespedes');
+
+        // Permiso base del modulo (PII de huespedes): mismo contrato que el
+        // menu (config/navegacion.php -> 'huespedes.view'). Las acciones de
+        // escritura exigen ademas huespedes.create / huespedes.edit.
+        require_permission_or_403('huespedes.view');
+
         return true;
     }
     
@@ -610,73 +616,6 @@ class HuespedController extends Controller {
     ]);
 }
 
-public function debugMovimientosAction() {
-    $db = Database::getInstance();
-    
-    echo "<h3>Debug de Movimientos</h3>";
-    
-    // 1. Verificar total de movimientos
-    $sql = "SELECT COUNT(*) as total FROM movimientos_inventario";
-    $stmt = $db->query($sql);
-    $total = $stmt->fetch();
-    echo "<p><strong>Total de movimientos:</strong> " . $total['total'] . "</p>";
-    
-    // 2. Verificar tablas relacionadas
-    echo "<h4>Verificando tablas relacionadas:</h4>";
-    
-    // Verificar inventario_productos
-    $sql = "SELECT COUNT(*) as total FROM inventario_productos";
-    $stmt = $db->query($sql);
-    $result = $stmt->fetch();
-    echo "<p>inventario_productos: " . $result['total'] . " registros</p>";
-    
-    // Verificar usuarios
-    $sql = "SELECT COUNT(*) as total FROM usuarios";
-    $stmt = $db->query($sql);
-    $result = $stmt->fetch();
-    echo "<p>usuarios: " . $result['total'] . " registros</p>";
-    
-    // Verificar habitaciones
-    $sql = "SELECT COUNT(*) as total FROM habitaciones";
-    $stmt = $db->query($sql);
-    $result = $stmt->fetch();
-    echo "<p>habitaciones: " . $result['total'] . " registros</p>";
-    
-    // 3. Probar JOIN simple con productos
-    echo "<h4>Probando JOIN con productos:</h4>";
-    $sql = "SELECT m.id, m.tipo_movimiento, m.cantidad, p.nombre as producto_nombre
-            FROM movimientos_inventario m
-            LEFT JOIN inventario_productos p ON m.producto_id = p.id
-            LIMIT 3";
-    
-    try {
-        $stmt = $db->query($sql);
-        if ($stmt) {
-            $results = $stmt->fetchAll();
-            echo "<pre>";
-            print_r($results);
-            echo "</pre>";
-        } else {
-            echo "<p style='color:red;'>Error en JOIN con productos</p>";
-        }
-    } catch (Exception $e) {
-        echo "<p style='color:red;'>Excepción: " . $e->getMessage() . "</p>";
-    }
-    
-    // 4. Llamar al método del modelo
-    echo "<h4>Probando método getMovimientosDetallados():</h4>";
-    try {
-        $movimientos = $this->movimientoModel->getMovimientosDetallados(5);
-        echo "<pre>";
-        print_r($movimientos);
-        echo "</pre>";
-    } catch (Exception $e) {
-        echo "<p style='color:red;'>Error en getMovimientosDetallados: " . $e->getMessage() . "</p>";
-    }
-    
-    die();
-}
-
 /**
  * Actualizar vehículo (AJAX)
  */
@@ -692,7 +631,8 @@ public function actualizarVehiculoAction() {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
         return;
     }
-    
+
+    require_permission_or_403('huespedes.edit');
     $this->validateCSRF();
     
     $vehiculo_id = intval($this->getPost('vehiculo_id'));
@@ -798,7 +738,8 @@ public function actualizarAction() {
     if (!$this->isPost()) {
         $this->redirect('huespedes');
     }
-    
+
+    require_permission_or_403('huespedes.edit');
     $this->validateCSRF();
     
     $id = $this->route_params['id'] ?? 0;
@@ -887,6 +828,7 @@ public function actualizarAction() {
             return;
         }
 
+        require_permission_or_403('huespedes.edit');
         $this->validateCSRF();
 
         $id = (int)($this->route_params['id'] ?? 0);
@@ -1033,6 +975,8 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
      * Mostrar formulario para crear huésped
      */
     public function crearAction() {
+        require_permission_or_403('huespedes.create');
+
         View::renderTemplate('huespedes/crear', [
             'title' => 'Nuevo Huésped - ' . current_hotel_display_name(),
             'estados' => Huesped::getEstados(),
@@ -1045,7 +989,8 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
     if (!$this->isAjax() || !$this->isPost()) {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
     }
-    
+
+    require_permission_or_403('huespedes.edit');
     $this->validateCSRF();
     
     $huesped_id = intval($this->getPost('huesped_id'));
@@ -1116,6 +1061,8 @@ public function eliminarVehiculoAction() {
         View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
         return;
     }
+
+    require_permission_or_403('huespedes.edit');
 
     try {
         $this->validateCSRF();
@@ -1349,7 +1296,8 @@ public function guardarAction() {
     if (!$this->isPost()) {
         $this->redirect('huespedes');
     }
-    
+
+    require_permission_or_403('huespedes.create');
     $this->validateCSRF();
     
     // Obtener return_to directamente
@@ -1538,9 +1486,11 @@ if ($return_to == 'reservacion') {
      * Mostrar formulario para editar huésped
      */
     public function editarAction() {
+        require_permission_or_403('huespedes.edit');
+
         $id = $this->route_params['id'] ?? 0;
         $hotelId = $this->hotelIdActual();
-        
+
         $huesped = $this->huespedModel->findForHotel($id, $hotelId);
         
         if (!$huesped) {

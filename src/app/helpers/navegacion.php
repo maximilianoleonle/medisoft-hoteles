@@ -70,9 +70,15 @@ function nav_pantalla_visible(array $pantalla) {
         return true;
     }
 
-    // permiso y roles se evaluan en OR (igual que sidebar.php)
-    if ($permiso !== null && function_exists('can') && can($permiso)) {
-        return true;
+    // permiso y roles se evaluan en OR (igual que sidebar.php). 'permiso' puede
+    // ser un string o una lista any-of (basta cumplir uno), p. ej. Limpieza:
+    // ['camarista.view', 'tareas.view'].
+    if ($permiso !== null && function_exists('can')) {
+        foreach ((is_array($permiso) ? $permiso : [$permiso]) as $permisoUno) {
+            if (can($permisoUno)) {
+                return true;
+            }
+        }
     }
 
     if ($roles !== null) {

@@ -73,8 +73,8 @@ class UsuarioController extends Controller {
             'title' => 'Gestión de Usuarios',
             'usuarios' => $usuarios,
             'esGestionHotel' => (bool) $hotelId,
-            'puedeCrearUsuarios' => $this->puedeGestionarUsuariosHotel(),
-            'puedeEditarUsuarios' => $this->puedeGestionarUsuariosHotel(),
+            'puedeCrearUsuarios' => can('usuarios.create'),
+            'puedeEditarUsuarios' => can('usuarios.edit'),
             'usaRolesConfigurables' => $usaRolesConfigurables,
             'rolesAsignados' => $rolesAsignados
         ]);
@@ -84,6 +84,8 @@ class UsuarioController extends Controller {
      * Mostrar formulario de creación
      */
     public function crearAction() {
+        require_permission_or_403('usuarios.create');
+
         $hotelId = $this->hotelIdActual();
 
         View::renderTemplate('usuarios/crear', [
@@ -100,6 +102,8 @@ class UsuarioController extends Controller {
         if (!$this->isPost()) {
             $this->redirect('usuarios');
         }
+
+        require_permission_or_403('usuarios.create');
 
         // Validar CSRF
         $this->validateCSRF();
@@ -177,6 +181,8 @@ class UsuarioController extends Controller {
      * Mostrar formulario de edición
      */
     public function editarAction($id) {
+        require_permission_or_403('usuarios.edit');
+
         $hotelId = $this->hotelIdActual();
         $usuario = $hotelId
             ? $this->usuarioModel->findTrabajadorHotel($hotelId, $id)
@@ -216,6 +222,8 @@ class UsuarioController extends Controller {
         if (!$this->isPost()) {
             $this->redirect('usuarios');
         }
+
+        require_permission_or_403('usuarios.edit');
 
         // Validar CSRF
         $this->validateCSRF();
@@ -322,6 +330,10 @@ class UsuarioController extends Controller {
         if (!$this->isPost()) {
             $this->redirect('usuarios');
         }
+
+        // Activar/desactivar es reversible: se mapea a usuarios.edit (paridad
+        // con el administrador del preset, que no tiene usuarios.delete).
+        require_permission_or_403('usuarios.edit');
 
         // Validar CSRF
         $this->validateCSRF();
@@ -597,9 +609,11 @@ class UsuarioController extends Controller {
     }
 
     private function puedeGestionarUsuariosHotel() {
-        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-
-        return is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true);
+        // RBAC intra-hotel: exige el permiso real del modulo resuelto por el
+        // rol del usuario EN ESTE hotel (can() -> role_id de hotel_usuarios o
+        // preset legacy). El gate anterior usaba is_gerente() (usuarios.rol
+        // GLOBAL): un gerente de OTRO hotel podia administrar usuarios aqui.
+        return can('usuarios.view');
     }
 
     /**

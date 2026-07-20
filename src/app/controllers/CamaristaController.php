@@ -137,24 +137,35 @@ class CamaristaController extends Controller {
             ? (string) hotel_config_get('operacion.checkout_hora', '12:00', $hotelId)
             : '12:00';
 
-        // Personal activo + limpieza activa por cuarto (asignados / programadas).
+        // Personal activo + limpieza activa por cuarto o area (asignados / programadas).
+        // La misma tarea que alimenta Habitaciones debe alimentar tambien las
+        // tarjetas de Areas para que el equipo vea a quien le corresponde.
         $personal = $this->personalActivo($hotelId);
         $tareasPorHabitacion = [];
-        if (!empty($personal)) {
+        $tareasPorArea = [];
+        if ($this->tareasDisponibles()) {
             foreach ($this->tareaModel->listarPorHotel($hotelId, ['categoria' => 'limpieza'], 300) as $tarea) {
                 $habId = (int) ($tarea['habitacion_id'] ?? 0);
+                $areaId = (int) ($tarea['area_id'] ?? 0);
                 $estado = (string) ($tarea['estado'] ?? '');
-                if ($habId <= 0 || !in_array($estado, ['pendiente', 'asignada', 'en_proceso'], true) || isset($tareasPorHabitacion[$habId])) {
+                if (!in_array($estado, ['pendiente', 'asignada', 'en_proceso'], true)) {
                     continue;
                 }
 
-                $tareasPorHabitacion[$habId] = [
+                $resumenTarea = [
                     'id' => (int) $tarea['id'],
                     'estado' => $estado,
                     'fecha_programada' => (string) ($tarea['fecha_programada'] ?? ''),
                     'trabajador_ids' => array_values(array_filter(array_map('intval', explode(',', (string) ($tarea['trabajadores_ids'] ?? ''))))),
                     'trabajador_nombres' => (string) ($tarea['trabajadores_nombres'] ?? ''),
                 ];
+
+                if ($habId > 0 && !isset($tareasPorHabitacion[$habId])) {
+                    $tareasPorHabitacion[$habId] = $resumenTarea;
+                }
+                if ($areaId > 0 && !isset($tareasPorArea[$areaId])) {
+                    $tareasPorArea[$areaId] = $resumenTarea;
+                }
             }
         }
 
@@ -179,6 +190,7 @@ class CamaristaController extends Controller {
             'horaSalida' => $horaSalida,
             'personal' => $personal,
             'tareasLimpieza' => $tareasPorHabitacion,
+            'tareasLimpiezaAreas' => $tareasPorArea,
             'areas' => $areas,
             'tiposArea' => Area::catalogoTipos(),
         ]);

@@ -22,6 +22,27 @@ Barrido autenticado de módulos sin navegador — 1 minuto, detecta 5xx y rutas 
 3. Comparar `wc -l` del log `storage/logs/app-YYYY-MM-DD.log` antes/después: no debe crecer.
 4. ⬜ Repetir el barrido con rol recepcionista y dueno_qa cuando los gates de autorización (plan operativo) estén activos.
 
+## Menú y aterrizaje por permiso del rol (sidebar filtrada) — verificado ✅ 2026-07-18
+
+Objetivo: comprobar que un rol acotado ve en la sidebar SOLO sus pantallas y aterriza en su herramienta, sin dev-login. La sidebar/`config/navegacion.php` filtran por `módulo activo Y can(permiso)`.
+
+1. **Sembrar un rol de prueba** por PDO en el contenedor (Database NO conecta en CLI → PDO crudo con `require config/database.php`; DB = `medisoft_hoteles_import`). Ej. rol `camarista_qa` en hotel 1 con `permisos_json=["camarista.view"]`, `es_sistema=0`, `activo=1`. Anotar el `id`.
+2. **Endpoint temporal de sesión** en `src/public_html/tmp_<algo>.php` (nombre fuera de `qa_*/__qa_*/debug_*` que dan 403 por .htaccess): `session_set_cookie_params([...'path'=>'/'...])` + `session_start()` + sembrar `$_SESSION` (`user_id=43`, `hotel_id=1`, `hotel_slug='los-cedros'`, `hotel_usuario=['id'=>34,'rol'=>'recepcionista','role_id'=><ID>]`, `unset($_SESSION['user'])`), luego `header('Location: /dashboard')`. **Borrarlo al terminar** (verificar con `git status`) y **borrar el rol de prueba** (DELETE si `hotel_usuarios.role_id` no lo referencia). ⚠️ un rol personalizado guarda `hu.rol='recepcionista'`: para simularlo, ese es el ENUM correcto; `can()` resuelve por `role_id`.
+3. Navegar al endpoint (`?to=/dashboard`) y **enumerar la sidebar por JS** (el `screenshot` del pane se cuelga; usar `javascript_tool`):
+   `Array.from(document.querySelectorAll('.sidebar-nav .nav-item .nav-text')).map(t=>t.textContent.trim())`
+   y `location.pathname`. Recargar con `?nc=N` si el bfcache del .htaccess sirve versión vieja.
+4. **Asserts** (verificados jul-18): rol `camarista.view`-solo → sidebar = **["Limpieza"]**, y `/dashboard` REBOTA a **`/camarista`** (`home_route_for_current_user` → `primary_landing_route`). Recepción (role_id sembrado 29) → Habitaciones/Reservas/Huéspedes/Check-in/Caja/Tareas/Limpieza/Mantenimiento/Documentos, aterriza en dashboard. Gerente (15) → menú completo (35 ítems, 7 secciones). GOTCHA verificado: la cuenta QA (`usuarios.id=43`) tiene rol GLOBAL 'gerente' → sirve para cazar fugas por `is_gerente()/is_admin()` (deben gatear por rol del hotel, no global).
+5. Es visibilidad de MENÚ; el enforcement de servidor YA existe desde 2026-07-19 (receta abajo).
+
+## Gates de servidor RBAC (enforcement) — verificado ✅ 2026-07-19
+
+Objetivo: comprobar que un gate `require_permission_or_403`/`can_any` devuelve 403 REAL a un rol acotado y NO rompe al rol operativo, sin dev-login.
+
+1. **Endpoint temporal de sesión** en `src/public_html/tmp_<algo>.php` (fuera de `qa_*/__qa_*/debug_*`): clona los `session_set_cookie_params` de `index.php` (path '/', httponly, samesite Lax, secure=false en dev) + `session_start()`, siembra `$_SESSION` (`user_id=43`, `hotel_id=1`, `hotel_slug='los-cedros'`, `hotel_usuario=['id'=>34,'rol'=>'recepcionista','role_id'=>N]`, `unset($_SESSION['user'])`). **Borrarlo al terminar** (verificar `git status`).
+2. ⚠️ El `role_id` es OBLIGATORIO para un test fiel: `can()` sin `role_id` cae a `can_legacy()`→`user_role()` (rol GLOBAL) y el user 43 es gerente global → NO restringe (ver CEMENTERIO). Usa un `role_id` de rol acotado REAL del hotel.
+3. Con curl + cookie jar dentro del contenedor (`http://localhost`): sembrar por `?role_id=N` y pedir la pantalla gateada. Asserts verificados en Los Cedros: role_id=**33** "Limpieza" (sin `reservaciones.view`/`huespedes.view`) → `/reservaciones` y `/huespedes` = **403** (`<title>403 - Acceso denegado`); role_id=**29** recepción → **200** con contenido. Gerente (legacy, sin role_id) arranca sin fatales.
+4. Escrituras (`/reservaciones/cancelar/{id}` etc.) son POST-only: un GET da 404 (NO es el gate). Para el 403 de escritura, POST con CSRF o confiar en la caracterización estática de `ReservacionGatesRbacTest` (50 asserts).
+
 ## Reservaciones (crear → anticipo → check-in → checkout)
 
 1. `/reservaciones` → botón crear (form activo: `crear.php`, jQuery).

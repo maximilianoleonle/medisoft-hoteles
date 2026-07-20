@@ -4,56 +4,72 @@ $menuModuloActivo = function ($clave) {
 };
 
 $menuModulosSinConfigurar = function_exists('hotel_menu_modules_unconfigured') && hotel_menu_modules_unconfigured();
-$mostrarDashboard = $menuModuloActivo('dashboard');
-$mostrarOperacionDiaria = $menuModuloActivo('tablero_ejecutivo');
-$mostrarForecast = $menuModuloActivo('forecast');
-$mostrarHabitaciones = $menuModuloActivo('habitaciones');
-$mostrarReservaciones = $menuModuloActivo('reservaciones');
-$mostrarHuespedes = $menuModuloActivo('huespedes');
-$mostrarCaja = $menuModuloActivo('caja');
-$mostrarInventario = $menuModuloActivo('inventario');
-$mostrarCompras = $menuModuloActivo('compras');
-$mostrarProveedores = $mostrarCompras;
-$mostrarCuentasPorPagar = $mostrarCompras;
-$mostrarDocumentos = $menuModuloActivo('documentos');
-$mostrarTareas = $menuModuloActivo('tareas');
-$mostrarMantenimientoPlus = $menuModuloActivo('mantenimiento_plus');
-$mostrarLavanderia = $menuModuloActivo('lavanderia');
-$mostrarFacturacion = $menuModuloActivo('facturacion');
-$mostrarCuentasPorCobrar = $menuModuloActivo('cuentas_cobrar');
-$mostrarReportes = $menuModuloActivo('reportes');
+// Rol del hotel y puerta de permiso por pantalla. Un rol acotado (p. ej.
+// camarista) solo ve en el menu los modulos de alguno de cuyos permisos
+// dispone; direccion/recepcion conservan su alcance. Es visibilidad de MENU,
+// no el control de seguridad (los gates de servidor son aparte). GOTCHA: un rol
+// personalizado guarda el ENUM 'recepcionista', asi que $sidebarEsGestion (por
+// rol-string) SOLO cubre gerente/administrador reales; lo demas va por permiso.
+$sidebarRolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+$sidebarEsGestion = in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$puede = static function (string ...$perms) : bool {
+    if (!function_exists('can')) { return true; }
+    foreach ($perms as $perm) { if (can($perm)) { return true; } }
+    return false;
+};
+
+$mostrarDashboard = $menuModuloActivo('dashboard') && (function_exists('nav_puede_ver_dashboard') ? nav_puede_ver_dashboard() : true);
+$mostrarOperacionDiaria = $menuModuloActivo('tablero_ejecutivo') && $sidebarEsGestion;
+$mostrarForecast = $menuModuloActivo('forecast') && $sidebarEsGestion;
+$mostrarHabitaciones = $menuModuloActivo('habitaciones') && $puede('habitaciones.view');
+$mostrarReservaciones = $menuModuloActivo('reservaciones') && $puede('reservaciones.view');
+$mostrarHuespedes = $menuModuloActivo('huespedes') && $puede('huespedes.view');
+$mostrarCaja = $menuModuloActivo('caja') && $puede('caja.view');
+$mostrarInventario = $menuModuloActivo('inventario') && $puede('inventarios.view');
+$mostrarCompras = $menuModuloActivo('compras') && $puede('compras.view');
+$mostrarProveedores = $menuModuloActivo('compras') && $puede('proveedores.view');
+$mostrarCuentasPorPagar = $menuModuloActivo('compras') && $puede('cuentas_por_pagar.view');
+$mostrarDocumentos = $menuModuloActivo('documentos') && $puede('documentos.view');
+$mostrarTareas = $menuModuloActivo('tareas') && $puede('tareas.view');
+$mostrarMantenimientoPlus = $menuModuloActivo('mantenimiento_plus') && $puede('tareas.view', 'habitaciones.mantenimiento');
+$mostrarLavanderia = $menuModuloActivo('lavanderia') && $puede('lavanderia.view');
+$mostrarFacturacion = $menuModuloActivo('facturacion') && $puede('facturacion.view');
+$mostrarCuentasPorCobrar = $menuModuloActivo('cuentas_cobrar') && $puede('cuentas_por_cobrar.view');
+$mostrarReportes = $menuModuloActivo('reportes') && $puede('reportes.view');
 $mostrarUsuariosModulo = $menuModuloActivo('usuarios');
 $mostrarConfiguracionModulo = $menuModuloActivo('configuracion');
 $mostrarTarifasModulo = $menuModuloActivo('tarifas_dinamicas') || $menuModuloActivo('tarifas');
-$sidebarRolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-$sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$sidebarPuedeTarifas = is_gerente() || is_admin() || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$sidebarPuedeUsuarios = can('usuarios.view') || $sidebarEsGestion;
+$sidebarPuedeConfiguracion = can('configuracion.view') || $sidebarEsGestion;
+// Tarifas: gatear por señales del HOTEL (permiso o rol del hotel), nunca por
+// is_gerente()/is_admin() (leen usuarios.rol GLOBAL, ajeno al hotel actual: un
+// camarista cuyo usuario tenga rol global 'gerente' NO debe ver Tarifas).
+$sidebarPuedeTarifas = $puede('tarifas.view', 'tarifas.edit') || $sidebarEsGestion;
 $mostrarFinanzas = $mostrarCaja || $mostrarCuentasPorCobrar || $mostrarFacturacion || $mostrarCuentasPorPagar;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarPersonal = $menuModuloActivo('personal') && $sidebarPuedeUsuarios;
-$mostrarNomina = $menuModuloActivo('nomina_avanzada') && (can('nomina.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true));
+$mostrarNomina = $menuModuloActivo('nomina_avanzada') && (can('nomina.view') || $sidebarEsGestion);
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
-$mostrarAuditoria = $menuModuloActivo('auditoria') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarMotorReservas = $menuModuloActivo('motor_reservas') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$mostrarAuditoria = $menuModuloActivo('auditoria') && $sidebarEsGestion;
+$mostrarMotorReservas = $menuModuloActivo('motor_reservas') && $sidebarEsGestion;
+$mostrarIaEjecutiva = $menuModuloActivo('ia_ejecutiva') && $sidebarEsGestion;
 // Guardian (vigilancia financiera): gating temporal en ia_ejecutiva (al monetizar, usar su
 // propio modulo) + permiso guardian.view: el informe nombra usuarios, solo direccion lo ve.
 $mostrarVigilanciaFinanciera = $mostrarIaEjecutiva && function_exists('can') && can('guardian.view');
 // Panel de valor del copiloto: uso real del asistente, solo gerencia.
-$mostrarCopilotoPanel = $menuModuloActivo('copiloto') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarWhatsApp = $menuModuloActivo('whatsapp') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-// Mensajes (canal_whatsapp) lo opera recepcion: visible para todo rol del hotel.
-$mostrarMensajes = $menuModuloActivo('canal_whatsapp');
-$mostrarCheckinDigital = $menuModuloActivo('checkin_digital');
-$mostrarCanales = $menuModuloActivo('canales_ical') && in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
-$mostrarCamarista = $menuModuloActivo('camarista');
-$mostrarReputacion = $menuModuloActivo('reputacion');
-$mostrarNightAudit = $menuModuloActivo('night_audit');
-$mostrarLealtad = $menuModuloActivo('lealtad');
+$mostrarCopilotoPanel = $menuModuloActivo('copiloto') && $sidebarEsGestion;
+$mostrarWhatsApp = $menuModuloActivo('whatsapp') && $sidebarEsGestion;
+// Mensajes (canal_whatsapp) lo opera quien atiende reservas (recepcion/gerencia).
+$mostrarMensajes = $menuModuloActivo('canal_whatsapp') && $puede('reservaciones.view');
+$mostrarCheckinDigital = $menuModuloActivo('checkin_digital') && $puede('reservaciones.view');
+$mostrarCanales = $menuModuloActivo('canales_ical') && $sidebarEsGestion;
+$mostrarCamarista = $menuModuloActivo('camarista') && $puede('camarista.view', 'tareas.view');
+$mostrarReputacion = $menuModuloActivo('reputacion') && ($puede('reputacion.view') || $sidebarEsGestion);
+$mostrarNightAudit = $menuModuloActivo('night_audit') && $sidebarEsGestion;
+$mostrarLealtad = $menuModuloActivo('lealtad') && $sidebarEsGestion;
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
@@ -268,7 +284,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         </div>
         <?php else: ?>
         <div class="hotel-boutique-brand" aria-label="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
-            <a href="<?= url('dashboard') ?>" class="hotel-boutique-home" aria-label="Ir al dashboard">
+            <a href="<?= url(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard') ?>" class="hotel-boutique-home" aria-label="Ir al inicio">
                 <div class="hotel-boutique-mark">
                     <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
                 </div>
@@ -368,6 +384,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 ];
             }, $navPantallasBusqueda), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?: '[]' ?>;
         </script>
+        <?php if ($mostrarDashboard || $mostrarOperacionDiaria || $mostrarForecast): ?>
         <div class="nav-section hotel-nav-section hotel-dashboard-section">
             <div class="nav-section-title ms-mm-only">
                 <span>INICIO</span>
@@ -403,6 +420,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <?php endif; ?>
 
         </div>
+        <?php endif; ?>
 
         <?php if ($menuModulosSinConfigurar): ?>
         <div class="nav-section hotel-nav-section">

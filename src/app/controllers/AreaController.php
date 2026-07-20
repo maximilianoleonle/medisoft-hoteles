@@ -23,6 +23,13 @@ class AreaController extends Controller {
     protected function before() {
         $this->requireAuth();
         require_hotel_module('habitaciones');
+
+        // Las areas viven DENTRO del modulo habitaciones (mismos gates, sin
+        // claves areas.* por el gotcha can_legacy): permiso base del menu
+        // (config/navegacion.php -> 'habitaciones.view'). Las escrituras ya
+        // exigen 'habitaciones.edit' accion por accion.
+        require_permission_or_403('habitaciones.view');
+
         return true;
     }
 

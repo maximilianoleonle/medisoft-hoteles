@@ -150,6 +150,13 @@ class IcalCanalesService
             return ['success' => false, 'message' => 'La URL del calendario no es valida. Copia el link iCal (.ics) de la plataforma.'];
         }
 
+        // Anti-SSRF: el host debe resolver a IP publica (nada de loopback,
+        // rangos privados, link-local ni metadatos de nube). La descarga
+        // revalida ademas en cada salto; esto evita guardar URLs internas.
+        if ($this->resolverHostSeguro($url) === null) {
+            return ['success' => false, 'message' => 'La URL del calendario apunta a una direccion no permitida o su dominio no resuelve. Usa el link iCal (.ics) publico de la plataforma.'];
+        }
+
         $stmt = $this->db->query(
             "SELECT id FROM habitaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
             [$habitacionId, $hotelId]
@@ -317,33 +324,212 @@ class IcalCanalesService
 
     // ───────────────────────── Helpers ─────────────────────────
 
+    /**
+     * Descarga el feed con guard anti-SSRF:
+     *  - FOLLOWLOCATION queda APAGADO: cada redireccion se sigue A MANO
+     *    (max 3 saltos) revalidando el destino en CADA salto, asi un feed
+     *    publico que redirige a 169.254.169.254 o a un host interno se
+     *    corta ahi mismo.
+     *  - La conexion se PINEA a la IP ya validada via CURLOPT_RESOLVE para
+     *    cerrar el rebinding DNS entre validar y conectar (TLS sigue
+     *    validando el certificado contra el hostname original).
+     *  - Solo http/https, sin credenciales embebidas en la URL y sin enviar
+     *    cookies ni headers de autenticacion del servidor.
+     */
     private function descargar(string $url): ?string
     {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 3,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_CONNECTTIMEOUT => 8,
-            CURLOPT_USERAGENT => 'MedisoftHoteles-iCal/1.0',
-            CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-        ]);
-        $respuesta = curl_exec($ch);
-        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
+        $maxSaltos = 3;
 
-        if ($respuesta === false || $status !== 200) {
+        for ($salto = 0; $salto <= $maxSaltos; $salto++) {
+            $destino = $this->resolverHostSeguro($url);
+
+            if ($destino === null) {
+                return null; // host privado/reservado, esquema raro o DNS invalido
+            }
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => false, // redirecciones a mano, revalidando cada salto
+                CURLOPT_RESOLVE => [$destino['host'] . ':' . $destino['puerto'] . ':' . $destino['ip']],
+                CURLOPT_TIMEOUT => 20,
+                CURLOPT_CONNECTTIMEOUT => 8,
+                CURLOPT_MAXFILESIZE => 2 * 1024 * 1024,
+                CURLOPT_USERAGENT => 'MedisoftHoteles-iCal/1.0',
+                CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+                CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            ]);
+            $respuesta = curl_exec($ch);
+            $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            $location = curl_getinfo($ch, CURLINFO_REDIRECT_URL); // absoluta, ya resuelta por curl
+            curl_close($ch);
+
+            if (in_array($status, [301, 302, 303, 307, 308], true)) {
+                if (!is_string($location) || $location === '' || $salto === $maxSaltos) {
+                    return null;
+                }
+                $url = $location; // el siguiente giro del loop lo revalida
+                continue;
+            }
+
+            if ($respuesta === false || $status !== 200) {
+                return null;
+            }
+
+            // 2 MB de tope: un calendario legitimo jamas pesa eso.
+            if (strlen($respuesta) > 2 * 1024 * 1024) {
+                return null;
+            }
+
+            return (string) $respuesta;
+        }
+
+        return null;
+    }
+
+    /**
+     * Anti-SSRF: valida la URL (solo http/https, sin user:pass embebidos) y
+     * resuelve su host exigiendo que TODAS sus IPs (A y AAAA) sean publicas.
+     * Devuelve ['host', 'ip', 'puerto'] con la IP a pinear, o null si el
+     * destino no es seguro.
+     */
+    private function resolverHostSeguro(string $url): ?array
+    {
+        $partes = parse_url($url);
+
+        if (!is_array($partes) || empty($partes['host'])) {
             return null;
         }
 
-        // 2 MB de tope: un calendario legitimo jamas pesa eso.
-        if (strlen($respuesta) > 2 * 1024 * 1024) {
+        $esquema = strtolower((string) ($partes['scheme'] ?? ''));
+
+        if (!in_array($esquema, ['http', 'https'], true)) {
             return null;
         }
 
-        return (string) $respuesta;
+        if (isset($partes['user']) || isset($partes['pass'])) {
+            return null; // credenciales embebidas en la URL: fuera
+        }
+
+        $host = trim((string) $partes['host'], '[]');
+        $puerto = (int) ($partes['port'] ?? ($esquema === 'https' ? 443 : 80));
+
+        // Host que YA es una IP literal: validar directo, sin DNS.
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return $this->esIpPublica($host)
+                ? ['host' => $host, 'ip' => $host, 'puerto' => $puerto]
+                : null;
+        }
+
+        // Resolver A y AAAA; IPv4 primero para preferir su pin.
+        $ips = [];
+        $registros = @dns_get_record($host, DNS_A);
+        if (is_array($registros)) {
+            foreach ($registros as $r) {
+                if (!empty($r['ip'])) {
+                    $ips[] = (string) $r['ip'];
+                }
+            }
+        }
+        $registros = @dns_get_record($host, DNS_AAAA);
+        if (is_array($registros)) {
+            foreach ($registros as $r) {
+                if (!empty($r['ipv6'])) {
+                    $ips[] = (string) $r['ipv6'];
+                }
+            }
+        }
+
+        if (empty($ips)) {
+            // Fallback para entornos donde dns_get_record no responde.
+            $ip = gethostbyname($host);
+            if ($ip !== $host) {
+                $ips[] = $ip;
+            }
+        }
+
+        if (empty($ips)) {
+            return null;
+        }
+
+        // UNA sola IP privada tumba el host completo (mitiga split-horizon).
+        foreach ($ips as $ip) {
+            if (!$this->esIpPublica($ip)) {
+                return null;
+            }
+        }
+
+        return ['host' => $host, 'ip' => $ips[0], 'puerto' => $puerto];
+    }
+
+    /**
+     * true solo si la IP es publica y ruteable: rechaza privadas (10/8,
+     * 172.16/12, 192.168/16, fc00::/7), loopback (127/8, ::1), link-local
+     * (169.254/16 —incluye IMDS 169.254.169.254—, fe80::/10), 0/8, CGNAT
+     * 100.64/10, multicast/reservadas (224/4, 240/4) e IPv4-mapped.
+     */
+    private function esIpPublica(string $ip): bool
+    {
+        $ip = trim($ip, "[] \t");
+
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return false;
+        }
+
+        // IPv6: normalizar; una IPv4-mapped (::ffff:a.b.c.d) se juzga por su IPv4.
+        if (strpos($ip, ':') !== false) {
+            $bin = @inet_pton($ip);
+            if ($bin === false || strlen($bin) !== 16) {
+                return false;
+            }
+            if (substr($bin, 0, 12) === "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff") {
+                return $this->esIpPublica(implode('.', array_map('ord', str_split(substr($bin, 12)))));
+            }
+            if ($bin === str_repeat("\x00", 16)) {
+                return false; // ::
+            }
+            if ($bin === str_repeat("\x00", 15) . "\x01") {
+                return false; // ::1 loopback
+            }
+            $b0 = ord($bin[0]);
+            $b1 = ord($bin[1]);
+            if (($b0 & 0xFE) === 0xFC) {
+                return false; // fc00::/7 ULA
+            }
+            if ($b0 === 0xFE && ($b1 & 0xC0) === 0x80) {
+                return false; // fe80::/10 link-local
+            }
+            return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        // IPv4: base FILTER + refuerzo explicito (el filtro no cubre todos
+        // los rangos de forma fiable en todas las versiones).
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $long = ip2long($ip);
+        if ($long === false) {
+            return false;
+        }
+
+        $bloqueados = [
+            ['0.0.0.0', 8],       // "esta red"
+            ['127.0.0.0', 8],     // loopback
+            ['169.254.0.0', 16],  // link-local / metadatos de nube (IMDS)
+            ['100.64.0.0', 10],   // CGNAT
+            ['224.0.0.0', 4],     // multicast
+            ['240.0.0.0', 4],     // reservado
+        ];
+
+        foreach ($bloqueados as [$red, $bits]) {
+            $mascara = -1 << (32 - $bits);
+            if (($long & $mascara) === (ip2long($red) & $mascara)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Parser minimo de VEVENTs: devuelve uid, resumen, fecha_inicio, fecha_fin (Y-m-d). */

@@ -75,11 +75,10 @@ class TareaController extends Controller
     {
         $hotelId = $this->hotelIdActual();
         $tablaDisponible = $this->tareaModel->tablaDisponible();
-        $mesActualDesde = date('Y-m-01');
-        $mesActualHasta = date('Y-m-t');
+        $hoy = date('Y-m-d');
         $filtros = [
-            'desde' => $this->getQuery('desde', $mesActualDesde),
-            'hasta' => $this->getQuery('hasta', $mesActualHasta),
+            'desde' => $this->getQuery('desde', $hoy),
+            'hasta' => $this->getQuery('hasta', $hoy),
             'trabajador_id' => $this->getQuery('trabajador_id', 'todos'),
             'categoria' => $this->getQuery('categoria', 'todos'),
             'estado' => $this->getQuery('estado', 'activos'),
