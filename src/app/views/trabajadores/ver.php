@@ -589,9 +589,9 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                         <span class="wk-badge is-warn"><i class="fas fa-ban"></i> Sin corte abierto</span>
                     <?php endif; ?>
                     <?php if (!empty($pagoCaja['elegible'])): ?>
-                        <span class="wk-badge is-ok"><i class="fas fa-circle-check"></i> Elegible</span>
+                        <span class="wk-badge is-ok"><i class="fas fa-circle-check"></i> Se puede pagar</span>
                     <?php else: ?>
-                        <span class="wk-badge is-warn"><i class="fas fa-lock"></i> Bloqueado</span>
+                        <span class="wk-badge is-warn"><i class="fas fa-lock"></i> Aún no se puede pagar</span>
                     <?php endif; ?>
                 </div>
             </div>

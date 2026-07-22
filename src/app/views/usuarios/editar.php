@@ -919,12 +919,12 @@ if (!function_exists('usuario_form_error_attrs')) {
                                     <strong><?= !empty($usuario['created_at']) ? htmlspecialchars(format_datetime($usuario['created_at']), ENT_QUOTES, 'UTF-8') : '-' ?></strong>
                                 </div>
                                 <div class="worker-system-row">
-                                    <span>Ultimo login</span>
+                                    <span>&Uacute;ltimo acceso</span>
                                     <strong><?= !empty($usuario['ultimo_login']) ? htmlspecialchars(format_datetime($usuario['ultimo_login']), ENT_QUOTES, 'UTF-8') : 'Nunca' ?></strong>
                                 </div>
                                 <?php if (!empty($usuario['ip_ultimo_login'])): ?>
                                     <div class="worker-system-row">
-                                        <span>IP ultimo login</span>
+                                        <span>Conexi&oacute;n desde</span>
                                         <strong><?= htmlspecialchars($usuario['ip_ultimo_login'], ENT_QUOTES, 'UTF-8') ?></strong>
                                     </div>
                                 <?php endif; ?>

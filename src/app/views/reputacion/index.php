@@ -555,7 +555,7 @@ $totalCheckouts = count($filas);
                 <div class="valor"><?= $repSafe($tasaRespuesta) ?></div>
             </div>
             <div class="rep-kpi">
-                <div class="nombre">NPS (90 dias)</div>
+                <div class="nombre">Recomendaci&oacute;n 0-10 (NPS) &middot; 90 d&iacute;as</div>
                 <div class="valor"><?= $repSafe($nps) ?></div>
             </div>
         </section>
@@ -563,7 +563,7 @@ $totalCheckouts = count($filas);
         <section class="rep-card">
             <div class="rep-card-head">
                 <div>
-                    <h2 class="rep-card-title">Checkouts recientes</h2>
+                    <h2 class="rep-card-title">Salidas recientes</h2>
                     <p class="rep-card-sub">Genera, envia y copia encuestas para huespedes que ya hicieron checkout.</p>
                 </div>
                 <span class="rep-count-pill"><?= (int) $totalCheckouts ?> checkouts</span>
@@ -581,7 +581,7 @@ $totalCheckouts = count($filas);
                     </thead>
                     <tbody>
                     <?php if (empty($filas)): ?>
-                        <tr><td colspan="5" class="rep-empty">No hay checkouts en los ultimos 30 dias.</td></tr>
+                        <tr><td colspan="5" class="rep-empty">No hay salidas en los &uacute;ltimos 30 d&iacute;as.</td></tr>
                     <?php else: ?>
                         <?php foreach ($filas as $fila): ?>
                             <?php
@@ -691,7 +691,7 @@ $totalCheckouts = count($filas);
                 <?= csrf_field() ?>
                 <div class="rep-config-grid">
                     <div class="rep-field">
-                        <label for="rep-google">Link de resenas de Google</label>
+                        <label for="rep-google">Link de rese&ntilde;as de Google</label>
                         <input type="url" id="rep-google" name="google_review_url" maxlength="500"
                                placeholder="https://g.page/r/..." value="<?= $repSafe($config['google_review_url']) ?>" class="rep-control">
                     </div>

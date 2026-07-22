@@ -14,7 +14,7 @@ class PwaController extends Controller {
         $this->requireAuth();
 
         View::renderTemplate('pwa/pendientes', [
-            'title' => 'Operaciones offline - ' . (function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Medisoft Hoteles'),
+            'title' => 'Cambios sin enviar - ' . (function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Medisoft Hoteles'),
         ]);
     }
 

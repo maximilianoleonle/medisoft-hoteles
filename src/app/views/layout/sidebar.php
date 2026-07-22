@@ -884,7 +884,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <?php if ($sidebarMostrarLimpiezaOffline): ?>
             <button type="button" class="ms-mm-cleanup" onclick="document.getElementById('manual-offline-cleanup-btn') && document.getElementById('manual-offline-cleanup-btn').click();">
                 <i class="fas fa-broom" aria-hidden="true"></i>
-                <span>Limpiar datos offline</span>
+                <span>Borrar copia local de este equipo</span>
             </button>
             <?php endif; ?>
             <form method="POST" action="<?= url('logout') ?>" class="ms-mm-logout-form">
@@ -907,7 +907,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <!-- Operaciones offline pendientes/rechazadas (JS lo muestra solo si hay) -->
             <a href="<?= url('offline/pendientes') ?>" id="offline-ops-link" class="hidden"
                style="margin-left:auto;display:flex;align-items:center;gap:5px;text-decoration:none;"
-               title="Operaciones offline">
+               title="Cambios sin enviar">
                 <i class="fas fa-cloud-arrow-up" style="font-size:.8rem;color:#D97706;"></i>
                 <span id="offline-ops-badge" class="hidden"
                       style="background:#D97706;color:white;border-radius:10px;padding:0 7px;font-size:.7rem;font-weight:700;line-height:1.5;">0</span>
@@ -935,9 +935,9 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     class="dropdown-item"
                     id="manual-offline-cleanup-btn"
                     style="width:100%;background:none;border:0;text-align:left;cursor:pointer;"
-                    title="Limpia solo los datos offline locales de este navegador, con confirmacion previa.">
+                    title="Borra solo la copia guardada en este navegador, con confirmación previa. No borra nada del hotel.">
                 <i class="fas fa-broom"></i>
-                <span>Limpiar datos offline</span>
+                <span>Borrar copia local de este equipo</span>
             </button>
             <div class="dropdown-divider"></div>
             <?php endif; ?>

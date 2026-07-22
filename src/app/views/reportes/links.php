@@ -326,8 +326,8 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
             <div class="report-link-panel">
                 <div class="report-link-empty">
                     <i class="fas fa-database"></i>
-                    <strong>Falta ejecutar la migracion de links seguros.</strong>
-                    <p class="mt-2">La pantalla ya esta lista, pero la tabla <code>reporte_links</code> todavia no existe en esta base.</p>
+                    <strong>Esta función aún no está activada en tu hotel.</strong>
+                    <p class="mt-2">Contacta a soporte de Medisoft para activarla.</p>
                 </div>
             </div>
         <?php else: ?>

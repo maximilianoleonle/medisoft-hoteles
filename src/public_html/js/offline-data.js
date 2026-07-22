@@ -1014,7 +1014,7 @@
 
       if (fallidas > 0) {
         window.PWA?.showToast(
-          `${fallidas} operación(es) rechazadas al sincronizar. Revísalas en Operaciones offline.`,
+          `${fallidas === 1 ? '1 cambio fue rechazado' : fallidas + ' cambios fueron rechazados'} al enviarse. Revísalos en "Cambios sin enviar".`,
           'warning',
           8000
         );

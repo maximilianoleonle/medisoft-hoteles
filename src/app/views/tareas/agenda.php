@@ -374,7 +374,7 @@ $rangosRapidos = [
                                                 <?php if (!empty($tarea['mantenimiento_id'])): ?>
                                                     <div class="tk-sub">Mant. #<?= (int)$tarea['mantenimiento_id'] ?> <?= tlm_agenda_safe($tarea['tipo_mantenimiento'] ?? null, '') ?></div>
                                                 <?php elseif (empty($tarea['habitacion_id']) && empty($tarea['area_id'])): ?>
-                                                    <span class="tk-sub" style="margin:0">Sin contexto</span>
+                                                    <span class="tk-sub" style="margin:0">Sin habitaci&oacute;n ni &aacute;rea</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td><span class="tk-badge <?= $eClass ?>"><i class="fas <?= $eIcon ?>"></i> <?= $eLabel ?></span></td>

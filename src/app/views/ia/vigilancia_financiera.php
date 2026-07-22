@@ -568,11 +568,11 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                 <span>
                     <strong>Horario operativo sin configurar.</strong>
-                    El Guardi&aacute;n est&aacute; usando el horario default
+                    El Guardi&aacute;n est&aacute; usando el horario estándar
                     (<?= $vgfSafe($patrones['config']['horario_inicio'] ?? '06:00') ?> a <?= $vgfSafe($patrones['config']['horario_fin'] ?? '23:59') ?>).
                     Si tu recepci&oacute;n opera de noche, movimientos nocturnos leg&iacute;timos aparecer&aacute;n como patr&oacute;n a revisar.
                     P&iacute;delo en <a href="<?= url('configuracion') ?>">Configuraci&oacute;n</a> o a tu asesor Medisoft
-                    (claves guardian.horario_inicio / guardian.horario_fin).
+                   .
                 </span>
             </div>
         <?php endif; ?>

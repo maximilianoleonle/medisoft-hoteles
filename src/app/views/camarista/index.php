@@ -580,7 +580,7 @@ details.cam-section[open] .cam-section__chev{ transform:rotate(180deg); }
             $aid = (int) $ar['id'];
             $aEstado = (string) $ar['estado'];
             $tm = $tiposArea[$ar['tipo'] ?? 'otra'] ?? ['label' => 'Área', 'icono' => 'fa-location-dot'];
-            $aPiso = ($ar['piso'] === null || $ar['piso'] === '') ? 'Exterior / PB' : 'Piso ' . (int) $ar['piso'];
+            $aPiso = ($ar['piso'] === null || $ar['piso'] === '') ? 'Planta baja o exterior' : 'Piso ' . (int) $ar['piso'];
             $aTarea = $tareasLimpiezaAreas[$aid] ?? null;
             $aAsignadosCsv = $aTarea ? implode(',', $aTarea['trabajador_ids']) : '';
             $aAsignadosNombres = $aTarea ? trim((string) $aTarea['trabajador_nombres']) : '';

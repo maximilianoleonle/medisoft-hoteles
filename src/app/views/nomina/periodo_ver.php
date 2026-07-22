@@ -97,7 +97,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
 </style>
 
 <div class="nomina-pd-page">
-    <p class="nom-kicker">Nómina · Periodo <?= $pdEsV2 ? 'v2' : 'pre-nómina' ?></p>
+    <p class="nom-kicker">Nómina · Periodo <?= $pdEsV2 ? 'de Nómina' : 'de Pre-nómina (Personal)' ?></p>
     <h1 class="nom-title">
         <?= htmlspecialchars((string) ($pd['etiqueta'] ?? '')) ?>
         <?php if ($pdEstado): ?><span class="pd-badge <?= $pdEstado['c'] ?>"><?= $pdEstado['t'] ?></span><?php endif; ?>
@@ -140,7 +140,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <div>
             <strong>Aprobado: hay $<?= number_format($pdPendiente, 2) ?> esperando pago.</strong>
             Último paso: registra la entrega del dinero en la tarjeta de cada trabajador, más abajo
-            <?= $pdPuedePagar ? '(necesitas un corte de Caja abierto).' : '— requiere permiso de pago (personal.pagar).' ?>
+            <?= $pdPuedePagar ? '(necesitas un corte de Caja abierto).' : '— pide al administrador el permiso de pagar nómina.' ?>
         </div>
     </div>
     <?php elseif ($pdPagadoCompleto): ?>

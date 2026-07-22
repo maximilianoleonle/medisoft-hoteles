@@ -335,7 +335,7 @@ $visibles = count($cuentas);
                                                 <div class="cx-sub">
                                                     Pagos <?= cxc_money($cuenta['pagos_total'] ?? 0) ?> &middot; Abonos <?= cxc_money($cuenta['abonos_total'] ?? 0) ?>
                                                     <?php if ($cxcCobros > 0.004): ?>
-                                                        &middot; CxC <?= cxc_money($cxcCobros) ?>
+                                                        &middot; Cobros de cuenta <?= cxc_money($cxcCobros) ?>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -405,7 +405,7 @@ $visibles = count($cuentas);
                                         <?php if ($cxcCobros > 0.004): ?>
                                             <div class="cx-mcard-dates">
                                                 <i class="fas fa-table-list"></i>
-                                                Cobro CxC <?= cxc_money($cxcCobros) ?>
+                                                Cobros de cuenta <?= cxc_money($cxcCobros) ?>
                                             </div>
                                         <?php endif; ?>
 

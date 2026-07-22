@@ -1114,7 +1114,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <span class="pwa-banner-icon"><i class="fas fa-wifi"></i></span>
     <div class="pwa-banner-text">
       <strong>Sin conexión a internet</strong>
-      <span>Modo lectura activo. Los cambios se sincronizarán cuando vuelva internet.</span>
+      <span>Sin internet. Puedes seguir trabajando: tus cambios se guardan en este equipo y se enviarán solos.</span>
     </div>
   </div>
 
@@ -1181,7 +1181,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             </a>
             <?php endif; ?>
             <!-- Indicador de sincronización (toca para ver operaciones offline) -->
-            <div id="pwa-sync-indicator" title="Operaciones offline"
+            <div id="pwa-sync-indicator" title="Cambios sin enviar"
                  style="cursor:pointer;"
                  onclick="window.location.href='<?= url('offline/pendientes') ?>'">
                 <i class="fas fa-sync-alt"></i>

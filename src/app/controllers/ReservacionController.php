@@ -4691,7 +4691,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $anticipoInicial = (float) str_replace(',', '', (string) $this->getPost('anticipo_inicial', ''));
             if ($anticipoInicial > 0 && function_exists('current_hotel_has_module') && !current_hotel_has_module('anticipos')) {
                 $anticipoInicial = 0;
-                set_mensaje('Reservación creada. El anticipo no se registró porque el bloque de anticipos no está contratado.', 'warning');
+                set_mensaje('Reservación creada. El anticipo no se registró porque tu plan no incluye anticipos.', 'warning');
             }
             if ($anticipoInicial > 0) {
                 try {

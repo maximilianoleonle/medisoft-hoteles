@@ -103,7 +103,7 @@
     if (!corte || corte.estado !== 'abierto' || !corte.id) {
       _avisar(
         'warning',
-        'Sin corte en caché',
+        'No hay corte abierto en este equipo',
         'No hay un corte de caja abierto en los datos offline de este equipo. ' +
         'Este movimiento NO quedó guardado — regístralo cuando vuelva la conexión.'
       );
@@ -221,7 +221,7 @@
     const snapshot = await window.OfflineData.obtenerCajaSnapshot().catch(() => null);
     const corte = snapshot?.corte;
     if (!corte || corte.estado !== 'abierto' || !corte.id) {
-      _avisar('warning', 'Sin corte en caché', 'No hay un corte abierto en los datos offline de este equipo.');
+      _avisar('warning', 'No hay corte abierto en este equipo', 'No hay un corte de caja abierto en la copia de este equipo. Registra el movimiento a mano y captúralo al volver internet.');
       return;
     }
 

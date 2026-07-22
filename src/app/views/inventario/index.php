@@ -1931,7 +1931,7 @@
                 <span class="inv-pill"><span class="inv-dot" style="background:#10b981"></span>Correcto: <b><?= $productos_ok ?></b></span>
                 <span class="inv-pill"><span class="inv-dot" style="background:#f59e0b"></span>Stock bajo: <b><?= $productos_bajos ?></b></span>
                 <span class="inv-pill"><span class="inv-dot" style="background:#ef4444"></span>Agotados: <b><?= $productos_agotados ?></b></span>
-                <span class="inv-pill"><span class="inv-dot" style="background:#8b5cf6"></span>Auto check-in: <b><?= $productos_auto_cnt ?></b></span>
+                <span class="inv-pill"><span class="inv-dot" style="background:#8b5cf6"></span>Descuento automático: <b><?= $productos_auto_cnt ?></b></span>
             </div>
         </div>
     </div>

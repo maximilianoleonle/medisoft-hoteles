@@ -752,7 +752,7 @@ foreach ($notificaciones as $ntxItem) {
                 <div class="ntxm-empty">
                     <i class="fas fa-bell-slash"></i>
                     <h3>Notificaciones no disponibles</h3>
-                    <p>La tabla de notificaciones todavia no esta instalada para este hotel.</p>
+                    <p>Las notificaciones aún no están activadas en este hotel. Contacta a soporte para activarlas.</p>
                 </div>
             <?php elseif (empty($notificaciones)): ?>
                 <div class="ntxm-empty">
@@ -1053,7 +1053,7 @@ document.addEventListener('keydown', function (event) {
     function readyRegistration() {
         return navigator.serviceWorker.ready.then(function (registration) {
             if (!registration || !registration.pushManager) {
-                throw new Error('El Service Worker no esta listo para Push.');
+                throw new Error('Este dispositivo aún no está listo para recibir avisos. Cierra y vuelve a abrir la app, e intenta de nuevo.');
             }
 
             return registration;

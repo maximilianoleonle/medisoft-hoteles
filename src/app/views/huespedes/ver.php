@@ -2013,7 +2013,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
             <div class="guest-panel-head">
                 <div>
                     <h2>Perfil operativo</h2>
-                    <p>Lectura consolidada de recurrencia, cartera y expediente.</p>
+                    <p>Cu&aacute;ntas veces ha venido, cu&aacute;nto debe y qu&eacute; documentos tiene.</p>
                 </div>
                 <span class="guest-readonly-badge">
                     <i class="fas fa-shield-alt"></i>
@@ -2033,7 +2033,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                         <small><?= number_format((int)($perfilReservaciones['proximas'] ?? 0)) ?> reservaciones futuras</small>
                     </article>
                     <article class="guest-operational-card">
-                        <span>Saldo CxC</span>
+                        <span>Saldo por cobrar</span>
                         <strong><?= format_money($perfilCxcSaldo) ?></strong>
                         <small><?= number_format($perfilCxcCuentas) ?> cuentas pendientes</small>
                     </article>

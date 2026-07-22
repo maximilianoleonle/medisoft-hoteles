@@ -771,7 +771,7 @@ $severidadLabels = [
             <div class="cfin-hero-icon" aria-hidden="true"><i class="fas fa-shield-alt"></i></div>
             <div>
                 <div class="cfin-kicker">Operacion / Solo lectura</div>
-                <h1 class="cfin-title">Conciliacion financiera</h1>
+                <h1 class="cfin-title">Conciliación financiera</h1>
                 <p class="cfin-subtitle">Cruce operativo de CxC, CxP, Caja, cortes y auditoria del hotel actual. Esta pantalla no modifica saldos, no registra pagos, no cobra, no revierte y no corrige datos.</p>
             </div>
         </div>
@@ -783,9 +783,9 @@ $severidadLabels = [
     </div>
 
     <div class="cfin-grid" aria-label="Resumen financiero read-only">
-        <div class="cfin-card"><span>CxC abiertas</span><strong><?= cfin_num($cxc['cuentas_abiertas'] ?? 0) ?></strong><small><?= cfin_money($cxc['saldo_pendiente'] ?? 0) ?> pendiente</small></div>
+        <div class="cfin-card"><span>Por cobrar abiertas (CxC)</span><strong><?= cfin_num($cxc['cuentas_abiertas'] ?? 0) ?></strong><small><?= cfin_money($cxc['saldo_pendiente'] ?? 0) ?> pendiente</small></div>
         <div class="cfin-card"><span>Cobros CxC</span><strong><?= cfin_num($cxc['cobros'] ?? 0) ?></strong><small><?= cfin_money($cxc['cobros_importe'] ?? 0) ?> registrado</small></div>
-        <div class="cfin-card"><span>CxP abiertas</span><strong><?= cfin_num($cxp['cuentas_abiertas'] ?? 0) ?></strong><small><?= cfin_money($cxp['saldo_pendiente'] ?? 0) ?> pendiente</small></div>
+        <div class="cfin-card"><span>Por pagar abiertas (CxP)</span><strong><?= cfin_num($cxp['cuentas_abiertas'] ?? 0) ?></strong><small><?= cfin_money($cxp['saldo_pendiente'] ?? 0) ?> pendiente</small></div>
         <div class="cfin-card"><span>Pagos proveedor</span><strong><?= cfin_num($cxp['pagos'] ?? 0) ?></strong><small><?= cfin_money($cxp['pagos_importe'] ?? 0) ?> registrado</small></div>
         <div class="cfin-card"><span>Caja CxC</span><strong><?= cfin_num($caja['movimientos_cxc'] ?? 0) ?></strong><small>Neto <?= cfin_money($caja['neto_cxc'] ?? 0) ?></small></div>
         <div class="cfin-card"><span>Caja CxP</span><strong><?= cfin_num($caja['movimientos_cxp'] ?? 0) ?></strong><small>Neto <?= cfin_money($caja['neto_cxp'] ?? 0) ?></small></div>
@@ -800,7 +800,7 @@ $severidadLabels = [
         </div>
         <div class="cfin-band-counts">
             <span class="cfin-chip">OK <?= cfin_num($totalesAlertas['ok'] ?? 0) ?></span>
-            <span class="cfin-chip">Warnings <?= cfin_num($totalesAlertas['warning'] ?? 0) ?></span>
+            <span class="cfin-chip">Avisos <?= cfin_num($totalesAlertas['warning'] ?? 0) ?></span>
             <span class="cfin-chip">Errores <?= cfin_num($totalesAlertas['error'] ?? 0) ?></span>
             <span class="cfin-chip">Hallazgos <?= cfin_num($totalesAlertas['hallazgos'] ?? 0) ?></span>
         </div>
@@ -861,7 +861,7 @@ $severidadLabels = [
         <div class="cfin-panel-head">
             <div>
                 <h2 class="cfin-panel-title">Matriz de alertas</h2>
-                <p class="cfin-panel-subtitle">Reglas derivadas del preflight 9A-A, acotadas al hotel actual y sin correcciones automaticas.</p>
+                <p class="cfin-panel-subtitle">Validaciones automáticas de tus libros, solo del hotel actual. Nada se corrige en automático.</p>
             </div>
             <span class="cfin-badge"><i class="fas fa-table"></i> <?= cfin_num($paginacion['total'] ?? 0) ?> reglas</span>
         </div>

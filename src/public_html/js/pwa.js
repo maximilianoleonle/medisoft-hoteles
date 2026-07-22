@@ -451,69 +451,65 @@
   async function manualOfflineDataCleanup() {
     if (!hasOfflineStorageContext() || !DB_NAME) {
       warnMissingOfflineContext();
-      showToast('No hay contexto offline activo para limpiar.', 'warning');
+      showToast('No hay datos guardados en este equipo para borrar.', 'warning');
       return;
     }
 
     const pending = await countPendingOfflineData();
     if (!pending) {
       if (window.msToast) {
-        window.msToast('warning', 'Datos locales', 'No se pudo verificar si existen operaciones offline pendientes. Por seguridad no se limpiaron datos locales.');
+        window.msToast('warning', 'Copia local', 'No pudimos verificar si hay cambios sin enviar. Por seguridad no se borró nada.');
       } else {
-        window.alert('No se pudo verificar si existen operaciones offline pendientes. Por seguridad no se limpiaron datos locales.');
+        window.alert('No pudimos verificar si hay cambios sin enviar. Por seguridad no se borró nada.');
       }
       return;
     }
 
     const baseMessage = [
-      'Esto solo afecta este navegador o dispositivo.',
-      'No elimina datos del servidor.',
-      'No habilita sincronizacion offline.',
-      'Se limpiara solo la base local del hotel/usuario actual.',
+      'Esto solo borra la copia guardada en este equipo.',
+      'No se borra nada del hotel en el servidor.',
     ].join('\n');
 
     if (pending.total > 0) {
-      const typedCount = pending.operacionesOffline;
-      const queueCount = pending.offlineQueue;
-      const typedLabel = typedCount === 1 ? 'operacion tipada' : 'operaciones tipadas';
-      const queueLabel = queueCount === 1 ? 'accion generica' : 'acciones genericas';
+      const totalCambios = pending.operacionesOffline + pending.offlineQueue;
+      const cambiosLabel = totalCambios === 1
+        ? 'Hay 1 cambio hecho sin internet (reservación, cobro, limpieza...) que AÚN NO se envía al servidor.'
+        : `Hay ${totalCambios} cambios hechos sin internet (reservaciones, cobros, limpiezas...) que AÚN NO se envían al servidor.`;
       const warning = [
-        'Hay datos offline pendientes sin sincronizar:',
-        `- ${typedCount} ${typedLabel}`,
-        `- ${queueCount} ${queueLabel}`,
+        cambiosLabel,
+        'Si borras ahora, esos cambios se perderán para siempre.',
         '',
         baseMessage,
         '',
-        'Si continuas, esos datos locales podrian perderse.',
         'Escribe LIMPIAR para confirmar.'
       ].join('\n');
       const typedConfirmation = window.prompt(warning, '');
 
       if (typedConfirmation !== 'LIMPIAR') {
-        showToast('Limpieza offline cancelada.', 'info');
+        showToast('No se borró nada.', 'info');
         return;
       }
     } else {
       const confirmed = window.confirm(
-        `${baseMessage}\n\nNo se detectaron operaciones offline pendientes.\n\n` +
-        'Deseas limpiar los datos offline locales de este dispositivo?'
+        `${baseMessage}\n\nNo hay cambios pendientes de enviar.\n\n` +
+        '¿Borrar la copia local de este equipo?'
       );
 
       if (!confirmed) {
-        showToast('Limpieza offline cancelada.', 'info');
+        showToast('No se borró nada.', 'info');
         return;
       }
     }
 
     const deleted = await deleteIndexedDBByName(DB_NAME);
     if (!deleted) {
-      showToast('No se pudo limpiar la base offline. Cierra otras pestanas e intenta de nuevo.', 'error');
+      showToast('No se pudo borrar la copia local. Cierra otras pestañas e intenta de nuevo.', 'error');
       return;
     }
 
     clearKnownOfflineStorageKeys({ keepCurrentScope: true });
     rememberCurrentStorageScope();
-    showToast('Datos offline locales limpiados en este dispositivo.', 'success');
+    showToast('Copia local de este equipo borrada.', 'success');
   }
 
   clearOfflineStorageForScopeChange();
@@ -559,11 +555,11 @@
       });
     } catch (err) {
       console.warn('[PWA] No se guardo accion offline sin contexto de hotel:', err.message);
-      showToast('Modo offline no disponible sin contexto de hotel.', 'error');
+      showToast('Para trabajar sin internet, primero entra al sistema con conexión al menos una vez.', 'error');
       return;
     }
 
-    showToast('Sin conexion: accion guardada. Se enviara cuando vuelva internet.', 'warning');
+    showToast('Sin conexión: tu cambio quedó guardado. Se enviará cuando vuelva internet.', 'warning');
     updateQueueBadge();
   });
 
@@ -597,7 +593,7 @@
     updateQueueBadge();
 
     if (synced > 0) {
-      showToast(`${synced} accion(es) sincronizadas correctamente.`, 'success');
+      showToast(synced === 1 ? '1 cambio enviado correctamente.' : `${synced} cambios enviados correctamente.`, 'success');
       setTimeout(() => window.location.reload(), 1500);
     }
   }
@@ -654,12 +650,12 @@
 
     // Actualizar etiqueta en sidebar
     const label = document.getElementById('sidebar-net-label');
-    if (label) label.textContent = isOnline ? 'En linea' : 'Sin conexion';
+    if (label) label.textContent = isOnline ? 'En línea' : 'Sin conexión';
 
     if (isOnline) {
       // Solo mostrar toast si antes estÃ¡bamos offline (cambio real de estado)
       if (esCambioReal && !_estadoRedAnterior) {
-        showToast('Conexion restaurada', 'success');
+        showToast('Conexión restaurada', 'success');
         processOfflineQueue();
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           if ('SyncManager' in window) {
@@ -913,7 +909,7 @@
         setPushPanelState(panel, 'available', config.message || 'Puedes activar avisos en este dispositivo.');
       }
     } catch (error) {
-      setPushPanelState(panel, 'error', error.message || 'No se pudo revisar Push PWA.');
+      setPushPanelState(panel, 'error', error.message || 'No se pudo revisar si este equipo recibe avisos.');
     }
   }
 
@@ -980,7 +976,7 @@
           pushClientConfig = null;
           await refreshPushPanel(panel);
         } catch (error) {
-          showToast(error.message || 'No se pudo cambiar Push PWA.', 'error', 5200);
+          showToast(error.message || 'No se pudieron activar los avisos en este equipo.', 'error', 5200);
           await refreshPushPanel(panel);
         }
       });

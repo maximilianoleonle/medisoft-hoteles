@@ -50,7 +50,7 @@ if (!function_exists('occ_date')) {
         <section class="occ-hero">
             <div>
                 <span class="occ-kicker">Reportes</span>
-                <h1>Tasa de ocupacion</h1>
+                <h1>Tasa de ocupaci&oacute;n</h1>
             </div>
             <form class="occ-actions" method="get" action="<?= url('reportes/ocupacion') ?>">
                 <input type="date" name="fecha_inicio" value="<?= occ_safe($fecha_inicio) ?>">
@@ -67,7 +67,7 @@ if (!function_exists('occ_date')) {
         <section class="occ-grid">
             <article class="occ-metric"><span>Dias</span><strong><?= number_format((float)($estadisticas['dias_periodo'] ?? 0), 0) ?></strong></article>
             <article class="occ-metric"><span>Disponibles</span><strong><?= number_format((float)($estadisticas['habitaciones_disponibles'] ?? 0), 0) ?></strong></article>
-            <article class="occ-metric"><span>Ocupadas-dia</span><strong><?= number_format((float)($estadisticas['habitaciones_ocupadas'] ?? 0), 0) ?></strong></article>
+            <article class="occ-metric"><span>Noches vendidas</span><strong><?= number_format((float)($estadisticas['habitaciones_ocupadas'] ?? 0), 0) ?></strong></article>
             <article class="occ-metric"><span>Ocupacion</span><strong><?= number_format((float)($estadisticas['porcentaje_ocupacion'] ?? 0), 1) ?>%</strong></article>
         </section>
 

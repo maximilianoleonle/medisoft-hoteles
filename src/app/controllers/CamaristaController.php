@@ -212,19 +212,19 @@ class CamaristaController extends Controller {
         $nuevoEstado = (string) $this->getPost('estado', '');
 
         if (!in_array($nuevoEstado, ['limpieza', 'disponible'], true)) {
-            set_mensaje('Accion no permitida desde el tablero de limpieza.', 'error');
+            set_mensaje('Esa acción no se hace desde este tablero; pídela en recepción.', 'error');
             $this->redirect('camarista');
         }
 
         $area = $this->areaModel->obtenerPorId($areaId, $hotelId);
         if (!$area || (int) ($area['activa'] ?? 1) !== 1) {
-            set_mensaje('Area no encontrada.', 'error');
+            set_mensaje('Área no encontrada.', 'error');
             $this->redirect('camarista');
         }
 
         $estadoActual = (string) ($area['estado'] ?? '');
         if (!in_array($estadoActual, ['limpieza', 'disponible'], true)) {
-            set_mensaje('Esa area esta ' . $estadoActual . '; recepcion debe liberarla primero.', 'error');
+            set_mensaje('Esa área está en ' . $estadoActual . '. Pídele a recepción que la libere y vuelve a intentarlo.', 'error');
             $this->redirect('camarista');
         }
 
@@ -234,9 +234,9 @@ class CamaristaController extends Controller {
         if ($nuevoEstado === 'limpieza') {
             try {
                 $this->tareaModel->iniciarLimpiezaAreaParaHotel($hotelId, $areaId, $usuarioId);
-                set_mensaje('Area marcada por limpiar.', 'success');
+                set_mensaje('Área marcada por limpiar.', 'success');
             } catch (Throwable $e) {
-                set_mensaje($e->getMessage() ?: 'No se pudo marcar el area por limpiar.', 'error');
+                set_mensaje($e->getMessage() ?: 'No se pudo marcar el área por limpiar.', 'error');
             }
             $this->redirect('camarista');
         }
@@ -261,7 +261,7 @@ class CamaristaController extends Controller {
         }
 
         if ($estadoActual !== 'limpieza') {
-            set_mensaje('El area no esta en limpieza.', 'error');
+            set_mensaje('El área no está en limpieza.', 'error');
             $this->redirect('camarista');
         }
 
@@ -272,12 +272,12 @@ class CamaristaController extends Controller {
                 $sinPersonal ? [] : $trabajadorIds,
                 $usuarioId
             );
-            set_mensaje('Area marcada como limpia. ✨', 'success');
+            set_mensaje('Área marcada como limpia. ✨', 'success');
         } catch (Throwable $e) {
             error_log('camarista marcar limpia area #' . $areaId . ': ' . $e->getMessage());
             // Fail-open como los cuartos: al menos liberar el area.
             $this->areaModel->cambiarEstado($areaId, 'disponible', $hotelId);
-            set_mensaje('Area marcada como limpia. ✨', 'success');
+            set_mensaje('Área marcada como limpia. ✨', 'success');
         }
 
         $this->redirect('camarista');
@@ -295,7 +295,7 @@ class CamaristaController extends Controller {
 
         // Solo el par limpieza <-> disponible; el resto es de recepcion/mantenimiento.
         if (!in_array($nuevoEstado, ['limpieza', 'disponible'], true)) {
-            set_mensaje('Accion no permitida desde el tablero de limpieza.', 'error');
+            set_mensaje('Esa acción no se hace desde este tablero; pídela en recepción.', 'error');
             $this->redirect('camarista');
         }
 
@@ -307,7 +307,7 @@ class CamaristaController extends Controller {
         $habitacion = $stmt ? $stmt->fetch() : null;
 
         if (!$habitacion) {
-            set_mensaje('Habitacion no encontrada.', 'error');
+            set_mensaje('Habitación no encontrada.', 'error');
             $this->redirect('camarista');
         }
 
@@ -315,7 +315,7 @@ class CamaristaController extends Controller {
 
         // Nunca pisar ocupada ni mantenimiento desde aqui.
         if (!in_array($estadoActual, ['limpieza', 'disponible'], true)) {
-            set_mensaje('Esa habitacion esta ' . $estadoActual . '; recepcion debe liberarla primero.', 'error');
+            set_mensaje('Esa habitación está en ' . ($estadoActual === 'ocupada' ? 'uso' : $estadoActual) . '. Pídele a recepción que la libere y vuelve a intentarlo.', 'error');
             $this->redirect('camarista');
         }
 
@@ -361,8 +361,8 @@ class CamaristaController extends Controller {
 
         set_mensaje(
             $ok
-                ? ($nuevoEstado === 'disponible' ? 'Habitacion marcada como limpia. ✨' : 'Habitacion marcada en limpieza.')
-                : 'No se pudo actualizar la habitacion.',
+                ? ($nuevoEstado === 'disponible' ? 'Habitación marcada como limpia. ✨' : 'Habitación marcada en limpieza.')
+                : 'No se pudo actualizar la habitación.',
             $ok ? 'success' : 'error'
         );
         $this->redirect('camarista');
@@ -383,7 +383,7 @@ class CamaristaController extends Controller {
         $habitacionId = (int) $habitacionId;
 
         if (!$this->tareasDisponibles()) {
-            set_mensaje('El modulo de tareas no esta disponible para programar limpiezas.', 'error');
+            set_mensaje('Por ahora no se pueden programar limpiezas; avísale al administrador.', 'error');
             $this->redirect('camarista');
         }
 

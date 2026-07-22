@@ -94,7 +94,7 @@ $resumenPermisos = static function ($permisosJson) {
             <div class="rv-empty">
                 <i class="fas fa-user-shield"></i>
                 <h3>Aún no hay roles</h3>
-                <p>Si acabas de activar esta función, aplica la migración de roles para cargar los roles base.</p>
+                <p>Si acabas de activar esta función y no ves los roles, pide ayuda a soporte de Medisoft para cargarlos.</p>
                 <a href="<?= url('configuracion/roles/crear') ?>" class="rv-btn rv-btn-primary"><i class="fas fa-plus"></i> Crear primer rol</a>
             </div>
         <?php else: ?>

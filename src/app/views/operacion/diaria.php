@@ -1304,6 +1304,6 @@ $estadoReservacionLabels = [
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        <div class="op-daily-alert">Este tablero es solo lectura: no crea tareas, no cambia habitaciones, no toca Caja, no genera pagos y no usa `/api/sync`.</div>
+        <div class="op-daily-alert">Este tablero es solo lectura: no crea tareas, no cambia habitaciones, no toca Caja y no genera pagos.</div>
     </section>
 </div>

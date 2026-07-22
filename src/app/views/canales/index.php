@@ -570,7 +570,7 @@ foreach ($feeds as $feed) {
                         <tr>
                             <th>Habitaci&oacute;n</th>
                             <th>Calendario</th>
-                            <th>Ultima sincronizaci&oacute;n</th>
+                            <th>&Uacute;ltima sincronizaci&oacute;n</th>
                             <th>Bloqueos</th>
                             <th class="is-end">Acci&oacute;n</th>
                         </tr>
@@ -592,7 +592,7 @@ foreach ($feeds as $feed) {
                                     <?php elseif ($feed['last_sync_estado'] === 'ok'): ?>
                                         <span class="cnl-badge is-ok"><?= $cnSafe(date('d/m H:i', strtotime((string) $feed['last_sync_at']))) ?></span>
                                     <?php else: ?>
-                                        <span class="cnl-badge is-error" title="<?= $cnSafe($feed['last_sync_error']) ?>">Error</span>
+                                        <span class="cnl-badge is-error" title="Detalle t&eacute;cnico: <?= $cnSafe($feed['last_sync_error']) ?>">Error al leer el calendario &mdash; verifica que el link iCal siga vigente y vuelve a sincronizar</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="cnl-cell-strong"><?= (int) $feed['eventos_activos'] ?></td>

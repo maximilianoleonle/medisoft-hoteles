@@ -6398,7 +6398,7 @@ html[data-theme="dark"] .hc-page {
                                 <div class="hc-preview-contrast" data-brand-contrast aria-label="Revision de contraste de la vista previa">
                                     <div class="hc-preview-contrast-head">
                                         <span class="hc-preview-contrast-title">Legibilidad</span>
-                                        <span class="hc-preview-contrast-state" data-brand-contrast-summary>AA listo</span>
+                                        <span class="hc-preview-contrast-state" data-brand-contrast-summary>Texto legible &check;</span>
                                     </div>
                                     <div class="hc-preview-contrast-grid">
                                         <span class="hc-preview-contrast-item" data-brand-contrast-item="primary">
@@ -6611,7 +6611,7 @@ html[data-theme="dark"] .hc-page {
                                  </div>
 
                                  <div class="hc-field">
-                                     <label for="pwa_icon_192_file">Icono PWA 192</label>
+                                     <label for="pwa_icon_192_file">Icono de la app (chico, 192&times;192 px)</label>
                                      <div class="hc-upload-row">
                                          <div class="hc-upload-thumb">
                                             <img <?php if ($brandingPwa192Preview): ?>src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
@@ -6635,7 +6635,7 @@ html[data-theme="dark"] .hc-page {
                                  </div>
 
                                  <div class="hc-field">
-                                     <label for="pwa_icon_512_file">Icono PWA 512</label>
+                                     <label for="pwa_icon_512_file">Icono de la app (grande, 512&times;512 px)</label>
                                      <div class="hc-upload-row">
                                          <div class="hc-upload-thumb">
                                             <img <?php if ($brandingPwa512Preview): ?>src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
@@ -7079,7 +7079,7 @@ html[data-theme="dark"] .hc-page {
                                     Sistema y respaldos
                                 </h2>
                                 <p class="hc-panel-copy">
-                                    Campos legacy necesarios para mantener integraciones actuales de sesion, estancia y respaldo.
+                                    Ajustes generales del sistema: duración de la sesión, horas por estancia y respaldos.
                                 </p>
                             </div>
                         </div>
@@ -7092,7 +7092,7 @@ html[data-theme="dark"] .hc-page {
                                             <i class="fas fa-hourglass-half"></i>
                                             Sesion y estancia
                                         </h3>
-                                        <p class="hc-group-hint">Valores guardados en configuracion legacy del sistema.</p>
+                                        <p class="hc-group-hint">Valores guardados en ajustes generales del sistema.</p>
                                     </div>
                                 </div>
                                 <div class="hc-field-grid">
@@ -7795,7 +7795,7 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         }
 
         if (summary) {
-            summary.textContent = warningCount > 0 ? 'Revisar contraste' : 'AA listo';
+            summary.textContent = warningCount > 0 ? 'Revisar contraste' : 'Texto legible ✓';
         }
     };
 

@@ -254,7 +254,7 @@ class ConfiguracionController extends Controller {
             }
 
             if ($backgroundMode === 'custom' && !preg_match('/^#[0-9A-F]{6}$/', $backgroundColor)) {
-                set_mensaje('El fondo del sistema debe usar un color HEX valido.', 'error');
+                set_mensaje('Elige el color con el selector; el valor no es válido.', 'error');
                 $this->redirect('configuracion');
                 return;
             }
@@ -620,7 +620,7 @@ class ConfiguracionController extends Controller {
 
             $resultado = hotel_branding_upload_asset($_FILES[$input], $hotel['slug'] ?? '', $config['tipo']);
             if (empty($resultado['success'])) {
-                $errores[] = $resultado['error'] ?? 'No se pudo subir el asset de branding.';
+                $errores[] = $resultado['error'] ?? 'No se pudo subir la imagen. Intenta con otro archivo.';
                 continue;
             }
 

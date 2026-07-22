@@ -634,7 +634,7 @@ $prioridades = [
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="tk-help">Opcional. Para zonas del hotel (alberca, lobby&hellip;). Excluyente con habitaci&oacute;n.</div>
+                        <div class="tk-help">Opcional. Para zonas del hotel (alberca, lobby&hellip;). Elige &aacute;rea o habitaci&oacute;n, no las dos.</div>
                         <?php if (tk_create_form_error($tareaFormFieldErrors, 'area_id') !== ''): ?>
                             <span id="ms-form-error-tarea_area" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'area_id') ?></span>
                         <?php endif; ?>

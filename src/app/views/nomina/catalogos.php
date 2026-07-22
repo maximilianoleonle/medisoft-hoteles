@@ -96,7 +96,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
         </select>
     </div>
     <div class="cat-field">
-        <label>Monto default</label>
+        <label>Monto habitual</label>
         <input type="number" name="monto_default" min="0" step="0.01" value="<?= isset($r['monto_default']) && $r['monto_default'] !== null ? number_format((float) $r['monto_default'], 2, '.', '') : '' ?>">
     </div>
     <?php endif; ?>
@@ -227,7 +227,7 @@ $catRenderCampos = function (string $t, array $r = []) use ($catDepartamentos, $
         <div>
             <strong>Estás viendo catálogos en modo lectura.</strong><br>
             Tu usuario puede consultar nómina, pero no crear ni editar catálogos. Para configurar departamentos,
-            puestos, contratos o grupos de pago necesitas el permiso <strong>nomina.configurar</strong>.
+            puestos, contratos o grupos de pago, pide al administrador el permiso de configurar nómina.
             <div class="cat-notice-actions">
                 <a href="<?= url('nomina') ?>" class="cat-btn ms-pressable"><i class="fas fa-arrow-left"></i> Volver a nómina</a>
                 <?php if ($catPuedeGestionarRoles): ?>

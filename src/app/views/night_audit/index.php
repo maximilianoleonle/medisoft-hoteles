@@ -56,7 +56,7 @@ $naPendientes = static function ($c) {
                 <input type="date" id="na-fecha" name="fecha" value="<?= $naSafe($fechaSugerida) ?>" max="<?= date('Y-m-d') ?>">
             </div>
             <button type="submit" class="na-btn">Ejecutar cierre ahora</button>
-            <span style="font-size:.76rem;color:#8A93A6;">El cron lo hace solo cada madrugada; este botón es para no esperar. Si el día ya está cerrado, no se duplica.</span>
+            <span style="font-size:.76rem;color:#8A93A6;">El sistema hace este cierre solo cada madrugada; este botón es por si no quieres esperar. Si el día ya está cerrado, no se duplica.</span>
         </form>
     </div>
 
@@ -109,7 +109,7 @@ $naPendientes = static function ($c) {
             </thead>
             <tbody>
             <?php if (empty($historial)): ?>
-                <tr><td colspan="6" class="na-vacio">Todavía no hay cierres. Ejecuta el primero arriba o espera al cron de la madrugada.</td></tr>
+                <tr><td colspan="6" class="na-vacio">Todavía no hay cierres. Haz el primero con el botón de arriba o espera a que el sistema lo haga en la madrugada.</td></tr>
             <?php else: ?>
                 <?php foreach ($historial as $c): ?>
                     <?php $p = $naPendientes($c); ?>

@@ -95,7 +95,7 @@
 
     // Verificar si hay cache disponible
     if (!window.OfflineData) {
-      _mostrarBannerOffline('Sin caché disponible. Conéctate para ver reservaciones.');
+      _mostrarBannerOffline('Aún no hay copia guardada en este equipo. Conéctate una vez para verlas sin internet.');
       return;
     }
 
@@ -104,7 +104,7 @@
       const meta          = await _leerMetaSnapshot();
 
       if (!reservaciones || reservaciones.length === 0) {
-        _mostrarBannerOffline('Sin datos en caché. Conéctate al menos una vez para guardar las reservaciones.');
+        _mostrarBannerOffline('Aún no hay copia guardada. Conéctate al menos una vez para guardar las reservaciones.');
         _ocultarGridOriginal();
         return;
       }
@@ -116,7 +116,7 @@
 
     } catch (err) {
       console.error('[ReservacionesOffline] Error al leer caché:', err);
-      _mostrarBannerOffline('Error al leer el caché. Recarga cuando tengas internet.');
+      _mostrarBannerOffline('No se pudo leer la copia guardada. Recarga cuando tengas internet.');
     }
   }
 
@@ -401,7 +401,7 @@
     const horaCache = cacheFecha ? _formatHoraCache(cacheFecha) : null;
     const subtitulo = horaCache
       ? `Datos del caché guardado a las <strong>${horaCache}</strong>. Solo lectura sin conexión.`
-      : (mensajeExtra || 'Mostrando datos del caché local. Conéctate para datos actualizados.');
+      : (mensajeExtra || 'Estás viendo la última copia guardada. Conéctate para ver lo más reciente.');
 
     banner.innerHTML = `
       <span style="font-size:1.2em;flex-shrink:0;">📡</span>
@@ -447,7 +447,7 @@
                     display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
           <i class="fas fa-wifi-slash text-2xl" style="color:#D97706;"></i>
         </div>
-        <h3 class="text-lg font-bold text-gray-700 mb-2">Sin datos en caché</h3>
+        <h3 class="text-lg font-bold text-gray-700 mb-2">Sin copia guardada en este equipo</h3>
         <p class="text-gray-400 text-sm">
           Conéctate a internet al menos una vez para guardar las reservaciones del día.
         </p>

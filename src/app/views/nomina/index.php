@@ -175,7 +175,7 @@ $nomEstadoPeriodoLabels = [
         <div>
             <strong>Tu usuario puede consultar nómina, pero no configurarla.</strong><br>
             Puedes entrar a Catálogos para revisar lo existente. Para crear departamentos, puestos, contratos o grupos de pago,
-            entra con un rol con <strong>nomina.configurar</strong> o pide que ajusten tus permisos.
+            pide al administrador del hotel que te dé el permiso de configurar nómina.
             <?php if ($nomPuedeGestionarRoles): ?>
             <div style="margin-top:10px;">
                 <a href="<?= url('configuracion/roles') ?>" class="nom-btn ms-pressable"><i class="fas fa-user-lock"></i> Roles y permisos</a>

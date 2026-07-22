@@ -95,7 +95,7 @@ if (!function_exists('trab_periodo_snapshot_label')) {
         if ($estado === 'cerrado') {
             return 'Cerrado';
         }
-        return 'Snapshot';
+        return 'Cierre';
     }
 }
 
@@ -515,13 +515,13 @@ $previewNominaQuery = http_build_query([
                     <div class="period-kicker">Personal del hotel</div>
                     <h1 class="period-title">Pre-n&oacute;mina</h1>
                     <p class="period-subtitle">
-                        Revisi&oacute;n interna de periodos laborales con cierre persistente controlado. No genera n&oacute;mina oficial, no registra pago y no modifica Caja.
+                        Calcula cu&aacute;nto le toca a cada trabajador en el periodo. Aqu&iacute; solo revisas y guardas cifras: no se genera n&oacute;mina oficial, no se paga nada y no se toca Caja.
                     </p>
                 </div>
             </div>
             <span class="period-badge">
                 <i class="fas fa-lock"></i>
-                Preview GET / Cierre controlado
+                Solo consulta &middot; el cierre pide confirmaci&oacute;n
             </span>
         </div>
     </section>
@@ -717,9 +717,10 @@ $previewNominaQuery = http_build_query([
                                             <input type="hidden" name="estado" value="activos">
                                             <input type="hidden" name="rol_laboral" value="">
                                             <input type="hidden" name="incluir_pagos_caja" value="<?= $incluirPagosCaja ? '1' : '0' ?>">
-                                            <button class="period-btn period-btn-primary period-btn-compact" type="submit">
+                                            <button class="period-btn period-btn-primary period-btn-compact" type="submit"
+                                                    onclick="return confirm('Se guardarán las cifras del periodo tal como las ves. Esto NO paga ni mueve dinero de Caja. ¿Continuar?');">
                                                 <i class="fas fa-lock"></i>
-                                                Cerrar snapshot
+                                                Cerrar y guardar cifras
                                             </button>
                                         </form>
                                     <?php else: ?>
@@ -752,7 +753,7 @@ $previewNominaQuery = http_build_query([
                                     <?php if ((int)($periodoDetalle['snapshot_id'] ?? 0) > 0): ?>
                                         <a class="<?= trab_periodo_snapshot_badge_class($periodoDetalle['snapshot_estado'] ?? '') ?>" href="<?= url('trabajadores/nomina/periodos/' . (int)$periodoDetalle['snapshot_id']) ?>">
                                             <i class="fas fa-box-archive"></i>
-                                            Snapshot #<?= (int)$periodoDetalle['snapshot_id'] ?>
+                                            Cierre #<?= (int)$periodoDetalle['snapshot_id'] ?>
                                         </a>
                                     <?php endif; ?>
                                 </div>
@@ -851,13 +852,13 @@ $previewNominaQuery = http_build_query([
                                                 <td class="text-right">
                                                     <div class="font-black"><?= trab_periodo_money($trabajador['deducciones_informativas'] ?? 0) ?></div>
                                                     <div class="text-xs text-slate-500">
-                                                        Ant. <?= trab_periodo_money($trabajador['anticipos_saldo'] ?? 0) ?> / Prest. <?= trab_periodo_money($trabajador['prestamos_saldo'] ?? 0) ?>
+                                                        Anticipos <?= trab_periodo_money($trabajador['anticipos_saldo'] ?? 0) ?> / Pr&eacute;stamos <?= trab_periodo_money($trabajador['prestamos_saldo'] ?? 0) ?>
                                                     </div>
                                                 </td>
                                                 <td class="text-right">
                                                     <div class="font-black"><?= trab_periodo_money($trabajador['pagos_caja_aplicados'] ?? 0) ?></div>
                                                     <div class="text-xs text-slate-500">
-                                                        <?= trab_periodo_num($trabajador['pagos_caja_pagados'] ?? 0) ?> vig., <?= trab_periodo_num($trabajador['pagos_caja_revertidos'] ?? 0) ?> rev.
+                                                        <?= trab_periodo_num($trabajador['pagos_caja_pagados'] ?? 0) ?> vigentes, <?= trab_periodo_num($trabajador['pagos_caja_revertidos'] ?? 0) ?> revertidos
                                                     </div>
                                                 </td>
                                                 <td class="text-right">
@@ -888,7 +889,7 @@ $previewNominaQuery = http_build_query([
             <?php if (!$tablaPersistenteDisponible): ?>
                 <div class="period-panel p-5 bg-slate-50">
                     <strong>Cierre persistente no disponible.</strong>
-                    <p class="text-sm text-slate-500 mt-1">Faltan las tablas de snapshots de pre-nomina. El preview queda disponible sin cierre.</p>
+                    <p class="text-sm text-slate-500 mt-1">Esta parte a&uacute;n no est&aacute; instalada en tu hotel. Puedes seguir consultando; para activar el cierre, contacta a soporte de Medisoft.</p>
                 </div>
             <?php elseif (!empty($periodosPersistentes)): ?>
                 <div class="period-panel overflow-hidden">

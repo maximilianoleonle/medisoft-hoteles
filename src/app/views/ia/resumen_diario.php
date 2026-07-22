@@ -538,7 +538,7 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                 </div>
                 <div>
-                    <p class="iav-kicker">Briefing gerencial</p>
+                    <p class="iav-kicker">Resumen gerencial</p>
                     <h1 class="iav-title">Asesor inteligente</h1>
                     <p class="iav-subtitle">Tu resumen gerencial del d&iacute;a, narrado y accionable. Generado a partir de los datos reales del hotel.</p>
                 </div>
@@ -578,7 +578,7 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
             <div class="iav-panel-head">
                 <div>
                     <h2 class="iav-panel-title">Consulta y generaci&oacute;n</h2>
-                    <p class="iav-panel-sub">Selecciona el d&iacute;a que quieres revisar y actualiza el briefing cuando necesites una lectura fresca.</p>
+                    <p class="iav-panel-sub">Selecciona el d&iacute;a que quieres revisar y actualiza el resumen cuando necesites una lectura fresca.</p>
                 </div>
             </div>
             <div class="iav-toolbar">
@@ -622,7 +622,7 @@ $ctaTexto = $hayResumen ? 'Regenerar con datos actuales' : 'Generar resumen de h
                 <div class="iav-vacio">
                     <div class="ico" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <strong>A&uacute;n no hay resumen para este d&iacute;a</strong>
-                    <p><?= $iaSafe($resultado['message'] ?? 'Usa el boton "Generar resumen" para crear el briefing del dia.') ?></p>
+                    <p><?= $iaSafe($resultado['message'] ?? 'Usa el boton "Generar resumen" para crear el resumen del día.') ?></p>
                 </div>
             <?php endif; ?>
         </article>

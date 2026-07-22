@@ -211,10 +211,12 @@ public function indexAction() {
      * Estados posibles de la reservación
      */
     public static function getEstados() {
+        // Labels unificados en todo el sistema (listado, detalle y calendario):
+        // checked_in se muestra "Hospedado" y checked_out "Completada".
         return [
             'confirmada' => ['label' => 'Confirmada', 'color' => 'blue', 'icon' => 'calendar-check'],
-            'checked_in' => ['label' => 'Check-in', 'color' => 'green', 'icon' => 'user-check'],
-            'checked_out' => ['label' => 'Check-out', 'color' => 'gray', 'icon' => 'user-x'],
+            'checked_in' => ['label' => 'Hospedado', 'color' => 'green', 'icon' => 'user-check'],
+            'checked_out' => ['label' => 'Completada', 'color' => 'gray', 'icon' => 'user-x'],
             'cancelada' => ['label' => 'Cancelada', 'color' => 'red', 'icon' => 'x-circle']
         ];
     }

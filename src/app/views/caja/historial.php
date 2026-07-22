@@ -1295,9 +1295,9 @@ foreach ($cortes as $corte_metodo) {
 
                             <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
                                 <div class="cash-method-mini">
-                                    <span>E: <?= caja_hist_money($corte['total_ingresos_efectivo'] ?? 0) ?></span>
-                                    <span>T: <?= caja_hist_money($corte['total_ingresos_tarjeta'] ?? 0) ?></span>
-                                    <span>Tr: <?= caja_hist_money($corte['total_ingresos_transferencia'] ?? 0) ?></span>
+                                    <span>Efectivo <?= caja_hist_money($corte['total_ingresos_efectivo'] ?? 0) ?></span>
+                                    <span>Tarjeta <?= caja_hist_money($corte['total_ingresos_tarjeta'] ?? 0) ?></span>
+                                    <span>Transf. <?= caja_hist_money($corte['total_ingresos_transferencia'] ?? 0) ?></span>
                                 </div>
                                 <span class="cash-difference <?= $difference_class ?>">
                                     <i class="fas fa-<?= $diferencia == 0 ? 'check' : ($diferencia > 0 ? 'plus' : 'minus') ?>"></i>

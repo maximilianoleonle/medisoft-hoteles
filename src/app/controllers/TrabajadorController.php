@@ -230,7 +230,7 @@ class TrabajadorController extends Controller
 
         try {
             if (!$this->consumirNominaPeriodoToken('pago_snapshot_caja', $tokenKey, (string)$this->getPost('pago_token', ''))) {
-                throw new Exception('Token de pago invalido o ya utilizado; recarga el snapshot antes de reintentar');
+                throw new Exception('El permiso de pago expiró o ya se usó; recarga la página antes de reintentar');
             }
 
             $resultado = $this->snapshotPagoService->registrarPagoDesdeSnapshot(

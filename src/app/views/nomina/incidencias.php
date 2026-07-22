@@ -192,7 +192,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <input type="hidden" name="desde" value="<?= htmlspecialchars((string) ($inFiltros['desde'] ?? date('Y-m-01'))) ?>">
         <input type="hidden" name="hasta" value="<?= htmlspecialchars((string) ($inFiltros['hasta'] ?? date('Y-m-d'))) ?>">
         <button type="submit" class="inc-btn inc-btn-sec ms-pressable">
-            <i class="fas fa-wand-magic-sparkles"></i> Proponer desde la operación (adaptador del giro)
+            <i class="fas fa-wand-magic-sparkles"></i> Sugerir incidencias según la actividad del hotel
         </button>
         <span style="font-size:12px; color:var(--nom-muted); align-self:center;">
             Usa el rango de los filtros; las propuestas quedan pendientes de tu aprobación.

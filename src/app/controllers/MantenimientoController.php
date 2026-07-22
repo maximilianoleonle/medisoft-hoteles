@@ -105,7 +105,7 @@ class MantenimientoController extends Controller
         }
 
         if (!in_array($momento, MantenimientoFoto::MOMENTOS, true)) {
-            set_mensaje('Momento de evidencia no valido', 'error');
+            set_mensaje('No supimos si la foto es del problema o del arreglo. Vuelve a subirla desde la sección correcta.', 'error');
             $this->redirect('mantenimientos/' . $id);
             return;
         }

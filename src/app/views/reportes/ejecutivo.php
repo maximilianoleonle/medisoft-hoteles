@@ -58,7 +58,7 @@ $schemaOk = !empty($reporte['schema_ok']);
 
 $periodos = ['hoy' => 'Hoy', '7d' => '7 dias', '30d' => '30 dias', 'mes' => 'Mes', 'custom' => 'Custom'];
 $areas = ['todas' => 'Todas', 'operacion' => 'Operacion', 'finanzas' => 'Finanzas', 'inventario' => 'Inventario', 'personal' => 'Personal', 'documentos' => 'Documentos'];
-$severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'error' => 'Errores'];
+$severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', 'error' => 'Errores'];
 ?>
 
 <style>
@@ -385,10 +385,10 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
     <div class="exec-metrics">
         <div class="exec-metric"><span>Ingresos</span><strong><?= exec_money($resumen['ingresos_periodo'] ?? 0) ?></strong><small><?= exec_safe($filtros['fecha_desde'] ?? '') ?> a <?= exec_safe($filtros['fecha_hasta'] ?? '') ?></small></div>
         <div class="exec-metric"><span>Gastos</span><strong><?= exec_money($resumen['gastos_periodo'] ?? 0) ?></strong><small>Neto <?= exec_money($resumen['neto_periodo'] ?? 0) ?></small></div>
-        <div class="exec-metric"><span>CxC pendiente</span><strong><?= exec_money($resumen['saldo_cxc'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxc_pendientes'] ?? 0) ?> cuentas</small></div>
-        <div class="exec-metric"><span>CxP pendiente</span><strong><?= exec_money($resumen['saldo_cxp'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxp_pendientes'] ?? 0) ?> cuentas</small></div>
+        <div class="exec-metric"><span>Por cobrar (CxC)</span><strong><?= exec_money($resumen['saldo_cxc'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxc_pendientes'] ?? 0) ?> cuentas</small></div>
+        <div class="exec-metric"><span>Por pagar (CxP)</span><strong><?= exec_money($resumen['saldo_cxp'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxp_pendientes'] ?? 0) ?> cuentas</small></div>
         <div class="exec-metric"><span>Ocupacion</span><strong><?= exec_pct($operacion['ocupacion_pct'] ?? 0) ?></strong><small><?= exec_num($operacion['habitaciones_ocupadas'] ?? 0) ?> de <?= exec_num($operacion['habitaciones_total'] ?? 0) ?> habitaciones</small></div>
-        <div class="exec-metric"><span>Alertas</span><strong><?= exec_num(($totalesAlertas['warning'] ?? 0) + ($totalesAlertas['error'] ?? 0)) ?></strong><small><?= $schemaOk ? 'Esquema disponible' : 'Esquema con advertencias' ?></small></div>
+        <div class="exec-metric"><span>Alertas</span><strong><?= exec_num(($totalesAlertas['warning'] ?? 0) + ($totalesAlertas['error'] ?? 0)) ?></strong><small><?= $schemaOk ? 'Información completa' : 'Faltan algunos datos' ?></small></div>
     </div>
 
     <div class="exec-layout">

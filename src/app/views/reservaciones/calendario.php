@@ -15,8 +15,8 @@ if (!function_exists('hcal_estado_info')) {
     function hcal_estado_info($estado) {
         $map = [
             'confirmada'  => ['label' => 'Confirmada',   'icon' => 'fa-calendar-check',      'key' => 'confirmada'],
-            'checked_in'  => ['label' => 'En estancia',  'icon' => 'fa-right-to-bracket',     'key' => 'checked-in'],
-            'checked_out' => ['label' => 'Check-out',    'icon' => 'fa-right-from-bracket',   'key' => 'checked-out'],
+            'checked_in'  => ['label' => 'Hospedado',    'icon' => 'fa-right-to-bracket',     'key' => 'checked-in'],
+            'checked_out' => ['label' => 'Completada',   'icon' => 'fa-right-from-bracket',   'key' => 'checked-out'],
             'cancelada'   => ['label' => 'Cancelada',    'icon' => 'fa-ban',                  'key' => 'cancelada'],
         ];
         $key = (string)($estado ?? '');

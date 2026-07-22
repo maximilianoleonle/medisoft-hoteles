@@ -76,7 +76,7 @@ class RolController extends Controller {
 
         if (!$id) {
             save_old_input($data);
-            set_mensaje('No se pudo crear el rol. Verifique que la migracion de roles este aplicada.', 'error');
+            set_mensaje('No se pudo crear el rol. Intenta de nuevo; si sigue fallando, contacta a soporte.', 'error');
             $this->redirect('configuracion/roles/crear');
         }
 

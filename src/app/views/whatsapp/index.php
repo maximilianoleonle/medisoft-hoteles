@@ -578,8 +578,8 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
                 <div class="wav-summary-value <?= $conectado ? 'is-ok' : 'is-pending' ?>"><?= $conectado ? 'Conectado' : 'Pendiente' ?></div>
             </div>
             <div class="wav-summary-item">
-                <div class="wav-summary-label">Token</div>
-                <div class="wav-summary-value <?= $tokenConfigurado ? 'is-ok' : 'is-pending' ?>"><?= $tokenConfigurado ? 'Guardado' : 'Falta' ?></div>
+                <div class="wav-summary-label">Clave de conexi&oacute;n</div>
+                <div class="wav-summary-value <?= $tokenConfigurado ? 'is-ok' : 'is-pending' ?>"><?= $tokenConfigurado ? 'Guardada' : 'Falta' ?></div>
             </div>
             <div class="wav-summary-item">
                 <div class="wav-summary-label">Automatizaciones</div>
@@ -608,7 +608,7 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
                         <input type="text" id="wa-instance" name="id_instance" value="<?= $waSafe($cred['id_instance'] ?? '') ?>" placeholder="1101123456">
                     </div>
                     <div class="wav-field">
-                        <label for="wa-token">API Token<?= $tokenConfigurado ? ' - configurado' : '' ?></label>
+                        <label for="wa-token">API Token (la clave que te da Green API)<?= $tokenConfigurado ? ' - configurado' : '' ?></label>
                         <input type="password" id="wa-token" name="api_token" placeholder="<?= $tokenConfigurado ? 'Dejar vacio para conservar' : 'd75b3a66374942c5...' ?>" autocomplete="new-password">
                         <span class="hint wav-secure-hint"><i class="fa-solid fa-lock" aria-hidden="true"></i>Se guarda cifrado; nunca se vuelve a mostrar.</span>
                     </div>

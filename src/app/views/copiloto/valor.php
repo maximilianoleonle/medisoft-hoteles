@@ -204,7 +204,7 @@ html[data-theme="dark"] .cpv-barra:hover::after { background: #26231D; }
             <div class="cpv-tile">
                 <div class="cpv-tile-label">Avisos proactivos</div>
                 <div class="cpv-tile-value"><?= $cpvNum($avisos) ?></div>
-                <div class="cpv-tile-hint"><?= $cpvNum((int) ($uso['briefings'] ?? 0)) ?> briefing(s) y <?= $cpvNum((int) ($uso['alertas'] ?? 0)) ?> alerta(s) push</div>
+                <div class="cpv-tile-hint"><?= $cpvNum((int) ($uso['briefings'] ?? 0)) ?> resumen(es) y <?= $cpvNum((int) ($uso["alertas"] ?? 0)) ?> alerta(s) en el celular</div>
             </div>
             <div class="cpv-tile">
                 <div class="cpv-tile-label">Respuestas útiles (👍)</div>
@@ -282,7 +282,7 @@ html[data-theme="dark"] .cpv-barra:hover::after { background: #26231D; }
                         <span class="cpv-ia-v"><?= $cpvNum($fallback) ?></span>
                     </div>
                     <div class="cpv-ia-fila">
-                        <span class="cpv-ia-k">Tokens consumidos</span>
+                        <span class="cpv-ia-k">Consumo de IA (tokens)</span>
                         <span class="cpv-ia-v"><?= $cpvNum((int) ($uso['tokens_entrada'] ?? 0) + (int) ($uso['tokens_salida'] ?? 0)) ?></span>
                     </div>
                 </div>

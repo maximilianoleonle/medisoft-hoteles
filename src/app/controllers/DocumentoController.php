@@ -109,13 +109,13 @@ class DocumentoController extends Controller
         }
 
         if (($documento['estado'] ?? '') === 'eliminado') {
-            set_mensaje('No se puede editar metadata de documentos eliminados.', 'error');
+            set_mensaje('No se puede editar la información de documentos eliminados.', 'error');
             $this->redirect('documentos/' . $id);
             return;
         }
 
         View::renderTemplate('documentos/editar', [
-            'title' => 'Editar metadata documento #' . $id . ' - ' . current_hotel_display_name(),
+            'title' => 'Editar información del documento #' . $id . ' - ' . current_hotel_display_name(),
             'documento' => $documento,
             'tipos' => $this->documentoModel->tiposActivosPorHotel($hotelId),
         ]);
@@ -147,15 +147,15 @@ class DocumentoController extends Controller
 
             if (!($resultado['changed'] ?? false)) {
                 clear_old_input();
-                set_mensaje('No se detectaron cambios de metadata.', 'info');
+                set_mensaje('No cambiaste nada; el documento quedó igual.', 'info');
             } else {
                 clear_old_input();
-                set_mensaje('Metadata documental actualizada correctamente.', 'success');
+                set_mensaje('Información del documento actualizada.', 'success');
             }
 
             $this->redirect('documentos/' . $id);
         } catch (Throwable $e) {
-            set_mensaje_error_op($e, 'actualizar la metadata');
+            set_mensaje_error_op($e, 'actualizar la información del documento');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposDocumento([$e->getMessage()]));
             $this->redirect($id > 0 ? 'documentos/' . $id . '/editar' : 'documentos');
@@ -215,7 +215,7 @@ class DocumentoController extends Controller
 
             $documentoId = (int)($resultado['documento_id'] ?? 0);
             clear_old_input();
-            set_mensaje('Documento #' . $documentoId . ' cargado correctamente en storage privado.', 'success');
+            set_mensaje('Documento #' . $documentoId . ' guardado. El archivo queda en el espacio privado del hotel.', 'success');
             $this->redirect('documentos/' . $documentoId);
         } catch (Throwable $e) {
             set_mensaje_error_op($e, 'cargar el documento');
@@ -232,7 +232,7 @@ class DocumentoController extends Controller
         $entidadId = (int)($this->route_params['entidad_id'] ?? $this->route_params['id'] ?? 0);
 
         if ($entidadTipo === null || $entidadId <= 0) {
-            set_mensaje('Entidad documental no valida.', 'error');
+            set_mensaje('No encontramos el registro al que quieres ligar el documento. Regresa e inténtalo de nuevo.', 'error');
             $this->redirect('documentos');
             return;
         }
@@ -365,7 +365,7 @@ class DocumentoController extends Controller
             set_mensaje($mensajeExito, 'success');
             $this->redirect('documentos/' . $id);
         } catch (Throwable $e) {
-            set_mensaje_error_op($e, 'actualizar el estado documental');
+            set_mensaje_error_op($e, 'cambiar el estado del documento');
             $this->redirect($id > 0 ? 'documentos/' . $id : 'documentos');
         }
     }
@@ -550,8 +550,8 @@ class DocumentoController extends Controller
 
         $this->registrarAuditoriaDocumento($preview ? 'documentos.previsualizado' : 'documentos.descargado', $hotelId, $documentoId, [
             'descripcion' => $preview
-                ? 'Documento previsualizado desde storage privado'
-                : 'Documento descargado desde storage privado',
+                ? 'Documento previsualizado (archivo privado)'
+                : 'Documento descargado (archivo privado)',
             'datos_despues' => [
                 'documento_id' => $documentoId,
                 'nombre_original' => $documento['nombre_original'] ?? null,

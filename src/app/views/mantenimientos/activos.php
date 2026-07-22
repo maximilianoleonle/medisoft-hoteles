@@ -131,7 +131,7 @@ foreach ($activos as $a) {
         <section class="mact-card">
             <div class="mact-head">
                 <div>
-                    <h1><i class="fas fa-toolbox" style="color:var(--ma-gold);margin-right:8px;"></i>Activos y preventivo</h1>
+                    <h1><i class="fas fa-toolbox" style="color:var(--ma-gold);margin-right:8px;"></i>Equipos con servicio programado</h1>
                     <p>Boiler, bombas, aires... con servicio programado. El sistema genera el mantenimiento al vencer.</p>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">

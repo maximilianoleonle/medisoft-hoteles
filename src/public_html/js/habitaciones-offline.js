@@ -73,7 +73,7 @@
 
           // Actualizar UI de la card inmediatamente
           _actualizarCardEstado(id, 'disponible');
-          _mostrarToastOffline('Habitación marcada como disponible (pendiente sync)');
+          _mostrarToastOffline('Habitación marcada como disponible. Se enviará al volver internet.');
         });
       };
     }
@@ -114,7 +114,7 @@
 
           // Actualizar visualmente las cards de esa reservación
           _marcarReservacionCheckout(reservacionId);
-          _mostrarToastOffline('Check-out registrado (pendiente sync)');
+          _mostrarToastOffline('Check-out registrado. Se enviará al volver internet.');
         });
       };
     }
@@ -153,7 +153,7 @@
           );
 
           _marcarReservacionCheckin(reservacionId);
-          _mostrarToastOffline('Check-in registrado (pendiente sync)');
+          _mostrarToastOffline('Check-in registrado. Se enviará al volver internet.');
         });
       };
     }

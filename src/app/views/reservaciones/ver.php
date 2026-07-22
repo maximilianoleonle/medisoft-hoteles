@@ -3874,7 +3874,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                         <i class="fas fa-circle-info" aria-hidden="true"></i>
                                         <span>
                                         <?php if (!empty($rpEval['elegible']) && !$rpModuloAnticipos): ?>
-                                            El bloque de anticipos no está contratado; el saldo se cobra al hacer check-in.
+                                            Tu plan no incluye anticipos; el saldo se cobra al hacer check-in.
                                         <?php else: ?>
                                             <?= $rdSafe($rpEval['motivo'] ?: 'No se puede registrar un anticipo ahora.') ?>
                                         <?php endif; ?>
@@ -5916,7 +5916,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                     <input type="radio" name="requiere_factura" id="factura_no" value="no" onchange="seleccionarFactura('no')">
                                     <div>
                                         <strong>Sin factura del cliente</strong>
-                                        <p>Si hay tarjeta o transferencia quedara como uso interno.</p>
+                                        <p>El pago con tarjeta o transferencia se guardar&aacute; solo para el control del hotel, sin factura para el hu&eacute;sped.</p>
                                     </div>
                                 </label>
                             </div>
@@ -5944,7 +5944,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             </div>
 
                             <div id="facturaInfoInterna" class="rv-checkin-note hidden">
-                                <p><i class="fas fa-info-circle"></i> El pago con tarjeta/transferencia se registrara en facturacion para uso interno</p>
+                                <p><i class="fas fa-info-circle"></i> El pago con tarjeta o transferencia se guardar&aacute; solo para el control del hotel</p>
                             </div>
                         </div>
 
@@ -6216,7 +6216,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             border-radius: 0.375rem; border: 1px solid #BFDBFE;">
                     <p style="font-size: 0.7rem; color: #1E40AF; margin: 0;">
                         <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>
-                        El pago con tarjeta/transferencia se registrará en facturación para uso interno
+                        El pago con tarjeta o transferencia se guardará solo para el control del hotel
                     </p>
                 </div>
             </div>

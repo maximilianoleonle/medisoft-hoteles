@@ -921,16 +921,16 @@ $hotelNombre = function_exists('current_hotel_display_name')
                     Configuración de descuentos
                 </div>
 
-                <h1>Matriz de consumo automático</h1>
+                <h1>Consumo automático por tipo de habitación</h1>
                 <p>
-                    Define cuántas unidades se descuentan al check-in según el tipo de habitación. La configuración se guarda como reglas operativas para el hotel.
+                    Define cuántas unidades se descuentan al check-in según el tipo de habitación. La configuración se guarda como la configuración del hotel.
                 </p>
 
                 <div class="disc-hero-actions">
                     <?php if (!empty($productos_automaticos)): ?>
                         <a href="#matrizDescuentos" class="disc-btn is-accent">
                             <i class="fas fa-sliders-h"></i>
-                            Configurar matriz
+                            Configurar cantidades
                         </a>
                     <?php endif; ?>
                     <a href="<?= url('inventario') ?>" class="disc-btn is-soft">
@@ -1036,7 +1036,7 @@ $hotelNombre = function_exists('current_hotel_display_name')
                 <section class="disc-panel" id="matrizDescuentos">
                     <div class="disc-section-head">
                         <div>
-                            <span class="disc-section-kicker">Matriz por habitación</span>
+                            <span class="disc-section-kicker">Cantidades por habitación</span>
                             <h2>Cantidad a descontar por check-in</h2>
                         </div>
                         <span class="disc-pill"><?= number_format($productosCount) ?> productos · <?= number_format($tiposCount) ?> tipos</span>

@@ -78,9 +78,9 @@ if (!function_exists('arqueo_severity_label')) {
     function arqueo_severity_label(string $severity): string
     {
         return [
-            'ok' => 'OK',
-            'warning' => 'Warning',
-            'error' => 'Error',
+            'ok' => 'Correcto',
+            'warning' => 'Con aviso',
+            'error' => 'Con error',
         ][$severity] ?? 'OK';
     }
 }
@@ -106,9 +106,9 @@ $estadoOptions = [
 ];
 $severidadOptions = [
     'todos' => 'Todas',
-    'ok' => 'OK',
-    'warning' => 'Warning',
-    'error' => 'Error',
+    'ok' => 'Correcto',
+    'warning' => 'Con aviso',
+    'error' => 'Con error',
 ];
 $limitOptions = [10, 25, 50, 100];
 $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'transferencia'], array_keys($metodos))));
@@ -322,9 +322,9 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
         <div class="arqueo-panel-head">
             <div>
                 <h2 class="arqueo-panel-title">Alertas de consistencia</h2>
-                <p class="arqueo-panel-subtitle">Warnings historicos se muestran como diagnostico, sin autocorrecciones.</p>
+                <p class="arqueo-panel-subtitle">Avisos hist&oacute;ricos como diagn&oacute;stico; nada se corrige en autom&aacute;tico.</p>
             </div>
-            <span class="arqueo-badge"><i class="fas fa-shield-alt"></i> Read-only</span>
+            <span class="arqueo-badge"><i class="fas fa-shield-alt"></i> Solo lectura</span>
         </div>
         <div class="arqueo-table-wrap">
             <table class="arqueo-table">
@@ -347,7 +347,7 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
                         </tr>
                     <?php endforeach; ?>
                     <?php if (empty($alertas)): ?>
-                        <tr><td colspan="4"><div class="arqueo-empty"><strong>Sin alertas calculadas</strong>La consulta no devolvio indicadores de consistencia.</div></td></tr>
+                        <tr><td colspan="4"><div class="arqueo-empty"><strong>Todo en orden</strong>No encontramos diferencias en los cortes consultados.</div></td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -369,7 +369,7 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
                         <th>Caja</th>
                         <th>Estado</th>
                         <th>Apertura / cierre</th>
-                        <th>Movimientos vs guardado</th>
+                        <th>Sumado ahora vs guardado al cierre</th>
                         <th>Efectivo</th>
                         <th>Hallazgos</th>
                     </tr>

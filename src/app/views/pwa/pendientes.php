@@ -14,7 +14,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800">
-                    <i class="fas fa-cloud-arrow-up mr-2" style="color:#4A6340;"></i>Operaciones offline
+                    <i class="fas fa-cloud-arrow-up mr-2" style="color:#4A6340;"></i>Cambios sin enviar
                 </h1>
                 <p class="text-sm text-gray-500 mt-1">
                     Lo que se capturó sin internet en este equipo: qué está esperando, qué ya se aplicó y qué fue rechazado.
@@ -216,7 +216,7 @@
 
         if (accion === 'reintentar') {
             await window.OfflineData.reintentarOperacion(uuid);
-            window.PWA?.showToast('Operación reencolada. Se enviará en la próxima sincronización.', 'info');
+            window.PWA?.showToast('Listo, se volverá a intentar. Se enviará en cuanto haya internet.', 'info');
             await render();
             if (navigator.onLine) window.OfflineData.sincronizar();
             return;

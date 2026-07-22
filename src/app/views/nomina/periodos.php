@@ -118,7 +118,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <?php else: ?>
         <table class="per-tabla">
             <thead>
-                <tr><th>Periodo</th><th>Grupo</th><th>Rango</th><th>Empleados</th><th>Bruto</th><th>Neto sugerido</th><th>Estado</th><th>Motor</th></tr>
+                <tr><th>Periodo</th><th>Grupo</th><th>Rango</th><th>Empleados</th><th>Bruto</th><th>Neto sugerido</th><th>Estado</th><th>Origen</th></tr>
             </thead>
             <tbody data-ms-stagger>
                 <?php foreach ($pePeriodos as $p): ?>
@@ -135,7 +135,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
                     <td>$<?= number_format((float) $p['bruto_total'], 2) ?></td>
                     <td>$<?= number_format((float) $p['neto_sugerido_total'], 2) ?></td>
                     <td><?php if ($badge): ?><span class="per-badge <?= $badge['c'] ?>"><?= $badge['t'] ?></span><?php endif; ?></td>
-                    <td><span class="per-badge motor"><?= $esV2 ? 'v2' : 'pre-nómina' ?></span></td>
+                    <td><span class="per-badge motor"><?= $esV2 ? 'Nómina' : 'Pre-nómina (Personal)' ?></span></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

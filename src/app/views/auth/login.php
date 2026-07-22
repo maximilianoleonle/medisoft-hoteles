@@ -1260,7 +1260,7 @@ if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
                 <!-- Encabezado del formulario -->
                 <div class="form-header">
                     <h2 class="form-title">Iniciar Sesión</h2>
-                    <p class="form-subtitle">Ingresa tus credenciales para continuar</p>
+                    <p class="form-subtitle">Escribe tu usuario y contraseña</p>
                 </div>
                 
                 <!-- Mensajes de alerta -->
@@ -1342,7 +1342,7 @@ if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
                     </div>
                     <div class="security-badge">
                         <i class="fas fa-shield-alt"></i>
-                        <span>Datos encriptados</span>
+                        <span>Datos protegidos</span>
                     </div>
                 </div>
             </div>
