@@ -489,7 +489,10 @@ class ReservacionController extends Controller {
  
             $logoPath = $brand['logo'];
             if ($logoPath) {
-                $pdf->Image($logoPath, $margin, 5, 32, 32);
+                // Tarjeta blanca detrás del logo (estética sobre el fondo de marca)
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($margin - 1.5, 1.5, 35, 35, 'F');
+                $pdf->Image($logoPath, $margin, 3, 32, 32);
             }
             $headerTitleX = $logoPath ? $margin + 36 : $margin;
             $headerTitleW = $logoPath ? 100 : 136;
@@ -4839,7 +4842,10 @@ $cortesias_ids = $this->getPost('cortesias', []);
             // Logo
             $logoPath = $brand['logo'];
             if ($logoPath) {
-                $pdf->Image($logoPath, $margin, 5, 32, 32);
+                // Tarjeta blanca detrás del logo (estética sobre el fondo de marca)
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($margin - 1.5, 1.5, 35, 35, 'F');
+                $pdf->Image($logoPath, $margin, 3, 32, 32);
             }
             $headerTitleX = $logoPath ? $margin + 36 : $margin;
             $headerTitleW = $logoPath ? 100 : 136;
