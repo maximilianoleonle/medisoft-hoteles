@@ -4495,7 +4495,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
             <article class="res-metric is-primary">
                 <div class="res-metric-icon metric-arrivals"><i class="fas fa-sign-in-alt"></i></div>
                 <strong><?= (int) $entradas_count ?></strong>
-                <span>Llegadas hoy</span>
+                <span>Llegadas hoy<?php $cuartosLleganHoy = (int)($habitaciones_llegan_hoy ?? 0); if ($cuartosLleganHoy > $entradas_count): ?> · <?= $cuartosLleganHoy ?> cuartos<?php endif; ?></span>
             </article>
             <article class="res-metric">
                 <div class="res-metric-icon metric-departures"><i class="fas fa-sign-out-alt"></i></div>

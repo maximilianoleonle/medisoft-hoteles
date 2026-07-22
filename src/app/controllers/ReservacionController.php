@@ -2565,7 +2565,19 @@ public function indexAction() {
     $entradas_hoy = $this->reservacionModel->obtenerEntradasHoy();
     $salidas_hoy = $this->reservacionModel->obtenerSalidasHoy();
     $alertasPendientes = $this->obtenerAlertasPendientesReservaciones($this->hotelIdActual());
-    
+
+    // Cuartos que llegan hoy (una reserva grupal trae varios): mismo idioma
+    // que la ficha "Por llegar" del index de habitaciones.
+    $dbIdx = Database::getInstance();
+    $stmtCuartosHoy = $dbIdx->query(
+        "SELECT COUNT(DISTINCT rh.habitacion_id) AS total
+         FROM reservaciones r
+         INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+         WHERE r.hotel_id = ? AND r.fecha_entrada = CURDATE() AND r.estado = 'confirmada'",
+        [$this->hotelIdActual()]
+    );
+    $habitaciones_llegan_hoy = (int)(($stmtCuartosHoy ? $stmtCuartosHoy->fetch() : [])['total'] ?? 0);
+
     View::renderTemplate('reservaciones/index', [
         'title' => 'Reservaciones - ' . current_hotel_display_name(),
         'reservaciones' => $reservaciones,
@@ -2577,6 +2589,7 @@ public function indexAction() {
         'estadisticas' => $estadisticas,
         'entradas_hoy' => $entradas_hoy,
         'salidas_hoy' => $salidas_hoy,
+        'habitaciones_llegan_hoy' => $habitaciones_llegan_hoy,
         'checkins_pendientes' => $alertasPendientes['checkins'],
         'checkouts_vencidos' => $alertasPendientes['checkouts'],
         'llegadas_tardias' => $alertasPendientes['llegadas_tardias']

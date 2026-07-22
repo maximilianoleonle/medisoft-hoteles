@@ -2465,7 +2465,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <?php endif; ?>
         </div>
     </div>
-        <!-- Widgets de estado (6, semánticos, estilo boutique) -->
+        <?php
+        // Franja operativa del día: el TOTAL de cuartos que llegan hoy (dimension
+        // aparte de las fichas de estado, que son excluyentes y suman el total).
+        $hbLlegadasTotal = (int)($estadisticas['por_llegar_total'] ?? 0);
+        $hbLlegadasReservas = (int)($estadisticas['reservas_llegan_hoy'] ?? 0);
+        $hbLlegadasLimpieza = (int)($estadisticas['por_llegar_en_limpieza'] ?? 0);
+        $hbSalidasHoy = (int)($estadisticas['salidas_hoy'] ?? 0);
+        ?>
+        <?php if ($hbLlegadasTotal > 0 || $hbSalidasHoy > 0): ?>
+        <div class="hb-today-strip" role="note" aria-label="Movimiento de hoy">
+            <i class="fas fa-calendar-day" aria-hidden="true"></i>
+            <strong>Hoy:</strong>
+            <?php if ($hbLlegadasTotal > 0): ?>
+            <span><?= $hbLlegadasReservas ?> <?= $hbLlegadasReservas === 1 ? 'reserva llega' : 'reservas llegan' ?> · <?= $hbLlegadasTotal ?> <?= $hbLlegadasTotal === 1 ? 'cuarto por llegar' : 'cuartos por llegar' ?><?php if ($hbLlegadasLimpieza > 0): ?> <em>(<?= $hbLlegadasLimpieza ?> aún en limpieza)</em><?php endif; ?></span>
+            <?php endif; ?>
+            <?php if ($hbLlegadasTotal > 0 && $hbSalidasHoy > 0): ?><span class="hb-today-sep">·</span><?php endif; ?>
+            <?php if ($hbSalidasHoy > 0): ?>
+            <span><?= $hbSalidasHoy ?> <?= $hbSalidasHoy === 1 ? 'salida' : 'salidas' ?></span>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <!-- Widgets de estado (6, semánticos, excluyentes: suman el total) -->
         <div class="hb-stats" id="hbStats">
             <div class="hb-stat hb-stat--total" data-estado="" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Mostrar todas las habitaciones">
                 <span class="hb-stat-ic"><i class="fas fa-door-closed"></i></span>
@@ -2473,10 +2494,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-l">Total</span>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--available" data-estado="disponible" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones disponibles">
+            <div class="hb-stat hb-stat--available" data-estado="disponible" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones libres (sin llegada hoy)">
                 <span class="hb-stat-ic"><i class="fas fa-check-circle"></i></span>
-                <span class="hb-stat-n"><?= $estadisticas['disponibles'] ?? 0 ?></span>
-                <span class="hb-stat-l">Disponible</span>
+                <span class="hb-stat-n"><?= $estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0) ?></span>
+                <span class="hb-stat-l">Libres hoy</span>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
             <div class="hb-stat hb-stat--occupied" data-estado="ocupada" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones ocupadas">
@@ -2485,7 +2506,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-l">Ocupada</span>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones por llegar">
+            <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar llegadas de hoy con cuarto listo">
                 <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
                 <span class="hb-stat-l">Por llegar</span>
@@ -2495,6 +2516,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-ic"><i class="fas fa-broom"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
                 <span class="hb-stat-l">Limpieza</span>
+                <?php if (!empty($estadisticas['por_llegar_en_limpieza'])): ?>
+                <span class="hb-stat-sub"><?= (int)$estadisticas['por_llegar_en_limpieza'] ?> para llegadas de hoy</span>
+                <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
             <div class="hb-stat hb-stat--maint" data-estado="mantenimiento" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones en mantenimiento">
@@ -2507,7 +2531,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <?php
         $estadoActual = $filtros['estado'] ?? '';
         $hbMobileSegments = [
-            ['Disponible', (int)($estadisticas['disponibles'] ?? 0), 'var(--c-available)', 'disponible'],
+            ['Libres hoy', (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--c-available)', 'disponible'],
             ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--c-occupied)', 'ocupada'],
             ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--c-arriving)', 'por_llegar'],
             ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--c-cleaning)', 'limpieza'],
@@ -3037,7 +3061,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php
         $hbChips = [
             ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
-            'disponible'    => ['Disponible',    (int)($estadisticas['disponibles'] ?? 0),   'available'],
+            'disponible'    => ['Libres hoy',    (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'available'],
             'ocupada'       => ['Ocupada',       (int)($estadisticas['ocupadas'] ?? 0),      'occupied'],
             'por_llegar'    => ['Por llegar',    (int)($estadisticas['por_llegar'] ?? 0),    'arriving'],
             'limpieza'      => ['Limpieza',      (int)($estadisticas['limpieza'] ?? 0),      'cleaning'],
@@ -5010,7 +5034,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
                 <h4 class="hb-quick-aside-title">Estados</h4>
                 <?php
                 $quickLegend = [
-                    ['Disponible', (int)($estadisticas['disponibles'] ?? 0), 'var(--qv-green)'],
+                    ['Libres hoy', (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--qv-green)'],
                     ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--qv-purple)'],
                     ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--qv-occupied)'],
                     ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--qv-blue)'],
@@ -5710,6 +5734,17 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .hb-stat-ic i{ font-size:.95rem; }
 .habitaciones-view .hb-stat-n{ font-family:var(--serif); font-size:2.05rem; font-weight:700; line-height:1; color:var(--hb-primary); font-variant-numeric:tabular-nums; }
 .habitaciones-view .hb-stat-l{ font-size:.7rem; font-weight:700; letter-spacing:.03em; color:var(--hb-slate-500); margin-top:6px; text-transform:uppercase; }
+.habitaciones-view .hb-stat-sub{ font-size:.62rem; font-weight:600; color:color-mix(in srgb, var(--sc) 68%, var(--hb-slate-500)); margin-top:3px; line-height:1.25; }
+/* Franja operativa del dia (dimension aparte de las fichas de estado) */
+.habitaciones-view .hb-today-strip{
+  display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px;
+  background:var(--hb-surface); border:1px solid var(--hb-line); border-radius:12px;
+  padding:8px 14px; margin-bottom:10px; font-size:.8rem; color:var(--hb-slate-500);
+}
+.habitaciones-view .hb-today-strip i{ color:var(--hb-accent); font-size:.8rem; }
+.habitaciones-view .hb-today-strip strong{ color:var(--hb-slate-700); font-weight:700; }
+.habitaciones-view .hb-today-strip em{ font-style:normal; font-weight:700; color:var(--c-cleaning); }
+.habitaciones-view .hb-today-sep{ opacity:.5; }
 .habitaciones-view .hb-stat--total{ --sc:var(--hb-primary); }
 .habitaciones-view .hb-stat--available{ --sc:var(--c-available); }
 .habitaciones-view .hb-stat--occupied{ --sc:var(--c-occupied); }

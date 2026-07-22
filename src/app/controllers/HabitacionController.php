@@ -166,12 +166,13 @@ public function indexAction() {
     // Obtener reservaciones de hoy que no han hecho check-in
     $db = Database::getInstance();
     $hotelId = $this->hotelIdActual();
-    $sql = "SELECT 
+    $sql = "SELECT
             rh.habitacion_id,
             r.id as reservacion_id,
             r.hora_llegada_estimada,
             h.nombre_completo,
             h.telefono,
+            MAX(hab_scope.estado) as estado_habitacion,
             COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
@@ -278,8 +279,27 @@ public function indexAction() {
     // El estado queda como filtro visual inicial en la vista para no recortar el DOM.
     // Obtener estadísticas actualizadas
     $estadisticas = $this->habitacionModel->estadisticas();
-    $estadisticas['por_llegar'] = count($reservaciones_pendientes);
-    $estadisticas['disponibles_real'] = $estadisticas['disponibles'] - $estadisticas['por_llegar'];
+
+    // Fichas = particion EXCLUYENTE que suma el total (igual que pinta el grid):
+    // 'por_llegar' son SOLO las llegadas de hoy con cuarto ya listo (fisicamente
+    // disponible; el grid las pinta morado) y 'libres_hoy' las disponibles sin
+    // compromiso. Las llegadas cuyo cuarto sigue en limpieza se quedan en la
+    // ficha Limpieza (con sub-etiqueta) y el TOTAL de cuartos que llegan hoy
+    // viaja aparte en 'por_llegar_total' para la franja operativa.
+    $llegadas = self::derivarEstadisticasLlegadas($reservaciones_pendientes, (int)($estadisticas['disponibles'] ?? 0));
+    $estadisticas['por_llegar'] = $llegadas['por_llegar_listas'];
+    $estadisticas['por_llegar_total'] = $llegadas['por_llegar_total'];
+    $estadisticas['por_llegar_en_limpieza'] = $llegadas['por_llegar_en_limpieza'];
+    $estadisticas['libres_hoy'] = $llegadas['libres_hoy'];
+    $estadisticas['reservas_llegan_hoy'] = $llegadas['reservas_llegan_hoy'];
+
+    // Salidas de hoy (mismo criterio que reservaciones: checked_in que salen hoy)
+    $stmtSalidas = $db->query(
+        "SELECT COUNT(*) AS total FROM reservaciones
+         WHERE hotel_id = ? AND fecha_salida = CURDATE() AND estado = 'checked_in'",
+        [$hotelId]
+    );
+    $estadisticas['salidas_hoy'] = (int)(($stmtSalidas ? $stmtSalidas->fetch() : [])['total'] ?? 0);
     
     // Ordenar habitaciones por número
     usort($habitaciones, function($a, $b) {
@@ -900,6 +920,51 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
             save_form_errors($this->erroresCamposHabitacion([$mensajeError]));
             $this->redirect('habitaciones/create');
         }
+    }
+
+    /**
+     * Deriva las estadisticas de llegadas de hoy para las fichas del index.
+     * PURA (sin BD): testeable en aislamiento.
+     *
+     * Particion excluyente (fichas = grid = filtros, y suman el total):
+     * - 'por_llegar_listas': llegadas de hoy cuyo cuarto YA esta disponible
+     *   (el grid las pinta morado "Por llegar").
+     * - 'por_llegar_en_limpieza': llegadas cuyo cuarto sigue en limpieza
+     *   (se quedan en la ficha Limpieza, con sub-etiqueta de urgencia).
+     * - 'libres_hoy': disponibles sin compromiso hoy (lo vendible a walk-ins).
+     * - 'por_llegar_total' / 'reservas_llegan_hoy': totales para la franja
+     *   operativa (una llegada con cuarto ocupado/mantenimiento cuenta en el
+     *   total pero no en listas ni en limpieza: el grid la deja en su estado).
+     *
+     * @param array $reservacionesPendientes filas por habitacion_id con
+     *        'estado_habitacion' y 'reservacion_id' (query de llegadas de hoy)
+     */
+    public static function derivarEstadisticasLlegadas(array $reservacionesPendientes, int $disponiblesFisicas): array {
+        $listas = 0;
+        $enLimpieza = 0;
+        $reservas = [];
+
+        foreach ($reservacionesPendientes as $fila) {
+            $estadoHab = (string)($fila['estado_habitacion'] ?? '');
+            if ($estadoHab === 'disponible') {
+                $listas++;
+            } elseif ($estadoHab === 'limpieza') {
+                $enLimpieza++;
+            }
+
+            $reservacionId = (int)($fila['reservacion_id'] ?? 0);
+            if ($reservacionId > 0) {
+                $reservas[$reservacionId] = true;
+            }
+        }
+
+        return [
+            'por_llegar_total' => count($reservacionesPendientes),
+            'por_llegar_listas' => $listas,
+            'por_llegar_en_limpieza' => $enLimpieza,
+            'libres_hoy' => max(0, $disponiblesFisicas - $listas),
+            'reservas_llegan_hoy' => count($reservas),
+        ];
     }
 
     /**
