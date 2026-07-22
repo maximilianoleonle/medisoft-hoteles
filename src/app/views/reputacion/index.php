@@ -640,7 +640,7 @@ $totalCheckouts = count($filas);
                                             <?php endif; ?>
                                             <?php if (!empty($fila['telefono'])): ?>
                                                 <a class="rep-btn sec" target="_blank" rel="noopener"
-                                                   href="https://wa.me/52<?= $repSafe($telefonoDigits) ?>?text=<?= rawurlencode('Hola ' . $fila['nombre_completo'] . ', gracias por hospedarte con nosotros. Nos cuentas como te fue? ' . $urlPublica) ?>">
+                                                   href="https://wa.me/52<?= $repSafe($telefonoDigits) ?>?text=<?= rawurlencode('Hola ' . $fila['nombre_completo'] . ', gracias por hospedarte con nosotros. ¿Nos cuentas cómo te fue? ' . $urlPublica) ?>">
                                                     <i class="fab fa-whatsapp" aria-hidden="true"></i>WhatsApp
                                                 </a>
                                             <?php endif; ?>

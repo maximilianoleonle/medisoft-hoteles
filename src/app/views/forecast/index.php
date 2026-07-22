@@ -426,7 +426,7 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
         <section class="fc-panel" id="temporadas">
             <div class="fc-panel-head">
                 <h2 class="fc-panel-title">Temporadas y eventos<span class="fc-chip"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i>Alimenta al Copiloto</span></h2>
-                <p class="fc-panel-sub">Marca lo que mueve tu ocupaci&oacute;n (ferias, vacaciones locales, temporada de lluvias). El forecast lo se&ntilde;ala y el consejo de tarifa lo toma en cuenta. Los festivos de M&eacute;xico se calculan solos.</p>
+                <p class="fc-panel-sub">Marca lo que mueve tu ocupaci&oacute;n (ferias, vacaciones locales, temporada de lluvias). El pron&oacute;stico lo se&ntilde;ala y el consejo de tarifa lo toma en cuenta. Los festivos de M&eacute;xico se calculan solos.</p>
             </div>
 
             <?php if ($arranqueFrio && $puedeEditarTemporadas): ?>

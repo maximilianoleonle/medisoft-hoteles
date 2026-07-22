@@ -103,7 +103,7 @@ class MotorPasarelaService
     {
         $cred = $this->credenciales($hotelId);
         if (!$cred) {
-            return ['ok' => false, 'error' => 'El hotel no tiene pasarela de pago configurada.'];
+            return ['ok' => false, 'error' => 'Los pagos en línea de este hotel aún no están disponibles. Contacta al hotel para completar tu reservación.'];
         }
 
         if (($cred['proveedor'] ?? '') === 'mercadopago') {
@@ -137,7 +137,7 @@ class MotorPasarelaService
         if (!$res['ok'] || empty($res['json']['id']) || empty($res['json']['url'])) {
             $detalle = $res['json']['error']['message'] ?? ('HTTP ' . $res['status']);
             error_log('Motor pasarela: Stripe checkout fallo: ' . $detalle);
-            return ['ok' => false, 'error' => 'No se pudo iniciar el pago con la pasarela.'];
+            return ['ok' => false, 'error' => 'No pudimos iniciar tu pago en línea. Intenta de nuevo en unos minutos o contacta al hotel para reservar directo.'];
         }
 
         return [
@@ -175,7 +175,7 @@ class MotorPasarelaService
         if (!$res['ok'] || empty($res['json']['id'])) {
             $detalle = $res['json']['message'] ?? ('HTTP ' . $res['status']);
             error_log('Motor pasarela: MercadoPago checkout fallo: ' . $detalle);
-            return ['ok' => false, 'error' => 'No se pudo iniciar el pago con la pasarela.'];
+            return ['ok' => false, 'error' => 'No pudimos iniciar tu pago en línea. Intenta de nuevo en unos minutos o contacta al hotel para reservar directo.'];
         }
 
         $url = ($cred['modo'] ?? 'test') === 'live'

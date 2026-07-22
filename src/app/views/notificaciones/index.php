@@ -731,9 +731,9 @@ foreach ($notificaciones as $ntxItem) {
                             <input type="hidden" name="accion" value="archivar_pendientes">
                         </form>
                         <button type="button" class="ntxm-clear-btn" data-ntx-clear-btn
-                                aria-label="Borrar todas las notificaciones">
+                                aria-label="Archivar todas las notificaciones">
                             <i class="fas fa-xmark" data-ntx-clear-icon aria-hidden="true"></i>
-                            <span class="ntxm-clear-txt">Borrar todo</span>
+                            <span class="ntxm-clear-txt">Archivar todo</span>
                         </button>
                     </div>
                 <?php endif; ?>
@@ -1320,7 +1320,7 @@ document.addEventListener('keydown', function (event) {
         function resetClear() {
             btn.classList.remove('is-confirming');
             if (icon) { icon.className = 'fas fa-xmark'; }
-            btn.setAttribute('aria-label', 'Borrar todas las notificaciones');
+            btn.setAttribute('aria-label', 'Archivar todas las notificaciones');
             window.clearTimeout(confirmTimer);
         }
 
@@ -1349,7 +1349,7 @@ document.addEventListener('keydown', function (event) {
             }
             btn.classList.add('is-confirming');
             if (icon) { icon.className = 'fas fa-trash-can'; }
-            btn.setAttribute('aria-label', 'Confirmar: borrar todas');
+            btn.setAttribute('aria-label', 'Confirmar: archivar todas');
             confirmTimer = window.setTimeout(resetClear, 3500);
         });
 

@@ -44,13 +44,13 @@ class MotorDisponibilidadService
         $maxDias = max(1, ConfiguracionHotelRegistry::getInt('motor.anticipacion_max_dias', 180, $hotelId));
 
         if ($noches < $minNoches) {
-            return ['ok' => false, 'error' => 'La estancia minima es de ' . $minNoches . ' noche(s).', 'noches' => $noches];
+            return ['ok' => false, 'error' => 'La estancia mínima es de ' . $minNoches . ' ' . ($minNoches === 1 ? 'noche' : 'noches') . '.', 'noches' => $noches];
         }
         if ($noches > $maxNoches) {
-            return ['ok' => false, 'error' => 'La estancia maxima es de ' . $maxNoches . ' noche(s).', 'noches' => $noches];
+            return ['ok' => false, 'error' => 'La estancia máxima es de ' . $maxNoches . ' ' . ($maxNoches === 1 ? 'noche' : 'noches') . '.', 'noches' => $noches];
         }
         if ($tsEntrada > strtotime('+' . $maxDias . ' days', $tsHoy)) {
-            return ['ok' => false, 'error' => 'Solo se puede reservar con hasta ' . $maxDias . ' dias de anticipacion.', 'noches' => $noches];
+            return ['ok' => false, 'error' => 'Solo se puede reservar con hasta ' . $maxDias . ' días de anticipación.', 'noches' => $noches];
         }
 
         return ['ok' => true, 'error' => null, 'noches' => $noches];

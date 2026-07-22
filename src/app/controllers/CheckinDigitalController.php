@@ -46,8 +46,8 @@ class CheckinDigitalController extends Controller {
 
         set_mensaje(
             $token
-                ? 'Link de pre-registro listo. Copialo y mandaselo al huesped.'
-                : 'No se pudo generar el link (verifica que la reservacion siga activa).',
+                ? 'Link de pre-registro listo. Cópialo y mándaselo al huésped.'
+                : 'No se pudo generar el link (verifica que la reservación siga activa).',
             $token ? 'success' : 'error'
         );
         $this->redirect('checkin-digital');
@@ -61,7 +61,7 @@ class CheckinDigitalController extends Controller {
         $ruta = $servicio->rutaIdentificacion($hotelId, (int) $id);
 
         if (!$ruta) {
-            set_mensaje('La identificacion no esta disponible.', 'error');
+            set_mensaje('La identificación aún no está disponible. Pídele al huésped que complete su pre-registro.', 'error');
             $this->redirect('checkin-digital');
         }
 

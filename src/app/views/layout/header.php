@@ -1148,8 +1148,8 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <div class="mobile-header-modern" id="mobileHeaderModern">
         <a href="<?= url('dashboard') ?>"
            class="mobile-header-logo"
-           aria-label="Ir al dashboard"
-           title="Ir al dashboard">
+           aria-label="Ir a Inicio"
+           title="Ir a Inicio">
             <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
             <?php if (!$layoutEsPanelSaas): ?>
             <span class="mobile-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></span>

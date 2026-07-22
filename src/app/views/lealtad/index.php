@@ -337,7 +337,7 @@ $descuentoTexto = rtrim(rtrim(number_format((float) $config['descuento_pct'], 2)
                                             <?php endif; ?>
                                             <?php if (!empty($f['telefono'])): ?>
                                                 <a class="lea-btn sm sec" target="_blank" rel="noopener"
-                                                   href="https://wa.me/52<?= $leSafe(preg_replace('/\D/', '', substr((string) $f['telefono'], -10))) ?>?text=<?= rawurlencode('Hola ' . $f['nombre_completo'] . ', gracias por tu preferencia. Te regalamos un cupon de ' . rtrim(rtrim(number_format((float) $f['cupon_valor'], 2), '0'), '.') . '% para tu proxima reserva: ' . $f['cupon_codigo'] . '. Usalo aqui: ' . $urlMotor) ?>">
+                                                   href="https://wa.me/52<?= $leSafe(preg_replace('/\D/', '', substr((string) $f['telefono'], -10))) ?>?text=<?= rawurlencode('Hola ' . $f['nombre_completo'] . ', gracias por tu preferencia. Te regalamos un cupón de ' . rtrim(rtrim(number_format((float) $f['cupon_valor'], 2), '0'), '.') . '% para tu próxima reserva: ' . $f['cupon_codigo'] . '. Úsalo aquí: ' . $urlMotor) ?>">
                                                     WhatsApp
                                                 </a>
                                             <?php endif; ?>
@@ -390,7 +390,7 @@ $descuentoTexto = rtrim(rtrim(number_format((float) $config['descuento_pct'], 2)
                                     <?php endif; ?>
                                     <?php if (!empty($f['telefono'])): ?>
                                         <a class="lea-btn sm sec" target="_blank" rel="noopener"
-                                           href="https://wa.me/52<?= $leSafe(preg_replace('/\D/', '', substr((string) $f['telefono'], -10))) ?>?text=<?= rawurlencode('Hola ' . $f['nombre_completo'] . ', gracias por tu preferencia. Te regalamos un cupon de ' . rtrim(rtrim(number_format((float) $f['cupon_valor'], 2), '0'), '.') . '% para tu proxima reserva: ' . $f['cupon_codigo'] . '. Usalo aqui: ' . $urlMotor) ?>">
+                                           href="https://wa.me/52<?= $leSafe(preg_replace('/\D/', '', substr((string) $f['telefono'], -10))) ?>?text=<?= rawurlencode('Hola ' . $f['nombre_completo'] . ', gracias por tu preferencia. Te regalamos un cupón de ' . rtrim(rtrim(number_format((float) $f['cupon_valor'], 2), '0'), '.') . '% para tu próxima reserva: ' . $f['cupon_codigo'] . '. Úsalo aquí: ' . $urlMotor) ?>">
                                             WhatsApp
                                         </a>
                                     <?php endif; ?>

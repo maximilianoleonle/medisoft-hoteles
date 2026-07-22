@@ -588,7 +588,7 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
                 <a class="mrv-shortcut ms-glass-btn" href="<?= url('motor-reservas/cupones') ?>"><i class="fas fa-ticket-alt"></i> Cupones y promociones</a>
             <?php endif; ?>
             <?php if ($mrvTieneExtras): ?>
-                <a class="mrv-shortcut ms-glass-btn" href="<?= url('motor-reservas/extras') ?>"><i class="fas fa-gift"></i> Extras y upselling</a>
+                <a class="mrv-shortcut ms-glass-btn" href="<?= url('motor-reservas/extras') ?>"><i class="fas fa-gift"></i> Extras y ventas adicionales</a>
             <?php endif; ?>
             </div>
         <?php endif; ?>

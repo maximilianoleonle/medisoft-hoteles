@@ -1053,19 +1053,19 @@ a.billing-name:hover {
             <div>
                 <span class="billing-kicker">
                     <i class="fas fa-file-invoice-dollar"></i>
-                    Hotel Dafne
+                    <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?>
                 </span>
 
                 <div class="billing-title-row">
                     <span class="billing-hero-icon" aria-hidden="true">
                         <i class="fas fa-receipt"></i>
                     </span>
-                    <h1 class="billing-title">Facturacion</h1>
+                    <h1 class="billing-title">Facturación</h1>
                 </div>
 
                 <p class="billing-subtitle">
-                    Solicitudes fiscales, seguimiento y estados de emision en una vista clara,
-                    elegante y lista para operar sin ruido visual.
+                    Las facturas que tus huéspedes pidieron: cuáles faltan, cuáles están
+                    en proceso y cuáles ya se emitieron.
                 </p>
             </div>
 

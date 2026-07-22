@@ -1608,7 +1608,7 @@ textarea.invoice-input {
                     </div>
                     <h1>Solicitud #<?= fact_det_safe($solicitud['id'] ?? '') ?></h1>
                 </div>
-                <p>Confirma los datos fiscales, revisa los pagos registrados y cierra la solicitud cuando la factura ya exista en Aspel.</p>
+                <p>Confirma los datos fiscales, revisa los pagos registrados y cierra la solicitud cuando tu contador o tu sistema de facturación ya haya emitido la factura.</p>
             </section>
 
             <aside class="invoice-amount-card" aria-label="Resumen de factura">
@@ -1637,8 +1637,8 @@ textarea.invoice-input {
                 </article>
                 <article class="invoice-step <?= fact_det_step_class(3, $current_rank, $solicitud['estatus'] ?? '') ?>">
                     <span class="invoice-step-icon"><i class="fas fa-file-invoice"></i></span>
-                    <strong>Factura Aspel</strong>
-                    <span>Generacion externa</span>
+                    <strong>Factura emitida</strong>
+                    <span>Con tu sistema de facturación</span>
                 </article>
                 <article class="invoice-step <?= fact_det_step_class(4, $current_rank, $solicitud['estatus'] ?? '') ?>">
                     <span class="invoice-step-icon"><i class="fas fa-check"></i></span>
@@ -1988,7 +1988,7 @@ textarea.invoice-input {
                                     <i class="fas fa-check-circle"></i>
                                     Marcar como facturada
                                 </button>
-                                <p class="invoice-help">Cuando ya se genero la factura en Aspel.</p>
+                                <p class="invoice-help">Cuando la factura ya se emitió (con tu contador o tu sistema de facturación).</p>
 
                                 <hr class="invoice-divider">
 
@@ -2047,12 +2047,12 @@ textarea.invoice-input {
             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
             <div class="invoice-modal-body">
                 <div class="invoice-modal-alert">
-                    <strong>La solicitud pasara a completada.</strong>
-                    <span>Usa esta accion solamente cuando la factura ya exista en Aspel.</span>
+                    <strong>La solicitud pasará a completada.</strong>
+                    <span>Usa esta acción solamente cuando la factura ya se haya emitido.</span>
                 </div>
                 <label class="invoice-label" for="fact_numero_factura">Numero de factura</label>
                 <input type="text" id="fact_numero_factura" name="numero_factura" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'numero_factura') ?>" value="<?= $numeroFacturaOld ?>" placeholder="Ej: FA-001234" style="font-family: monospace; font-size: 1rem;"<?= fact_det_form_error_attrs($facturacionFieldErrors, 'numero_factura', 'ms-form-error-fact_numero_factura') ?>>
-                <p class="invoice-hint">Opcional. Folio de la factura generada en Aspel.</p>
+                <p class="invoice-hint">Opcional. Folio de la factura ya emitida.</p>
                 <?php if (fact_det_form_error($facturacionFieldErrors, 'numero_factura') !== ''): ?>
                     <span id="ms-form-error-fact_numero_factura" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'numero_factura') ?></span>
                 <?php endif; ?>

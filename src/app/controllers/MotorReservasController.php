@@ -229,7 +229,7 @@ class MotorReservasController extends Controller {
             $this->redirect('motor-reservas');
         }
 
-        set_mensaje('Configuracion del motor de reservas guardada correctamente.', 'success');
+        set_mensaje('Configuración de Reservas en línea guardada correctamente.', 'success');
         $this->redirect('motor-reservas');
     }
 

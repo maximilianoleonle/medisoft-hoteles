@@ -29,7 +29,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>Tu opinion - <?= $nombreHotel ?></title>
+    <title>Tu opinión - <?= $nombreHotel ?></title>
     <style>
     :root { --brand-primary: <?= $colorPrimario ?>; --brand-accent: <?= $colorAcento ?>; }
     * { box-sizing: border-box; }
@@ -71,7 +71,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
     <header class="en-header">
         <?php if ($logoUrl): ?><img src="<?= $enSafe($logoUrl) ?>" alt="<?= $nombreHotel ?>"><?php endif; ?>
         <h1><?= $nombreHotel ?></h1>
-        <p>Tu opinion nos ayuda a mejorar · toma menos de 1 minuto</p>
+        <p>Tu opinión nos ayuda a mejorar · toma menos de 1 minuto</p>
     </header>
 
     <div class="en-card">
@@ -85,10 +85,10 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
             <div class="en-exito">
                 <div class="ico" aria-hidden="true">💛</div>
                 <h2>¡Gracias<?= $primerNombre !== '' ? ', ' . $enSafe($primerNombre) : '' ?>!</h2>
-                <p>Recibimos tu opinion sobre tu estancia en <?= $nombreHotel ?>.</p>
+                <p>Recibimos tu opinión sobre tu estancia en <?= $nombreHotel ?>.</p>
                 <?php if ($mostrarGoogle): ?>
-                    <p>¿Nos ayudas con una resena? A otros viajeros les sirve muchisimo.</p>
-                    <p style="margin-top:14px;"><a class="en-btn-google" href="<?= $enSafe($googleUrl) ?>" rel="noopener">⭐ Dejar resena en Google</a></p>
+                    <p>¿Nos ayudas con una reseña? A otros viajeros les sirve muchísimo.</p>
+                    <p style="margin-top:14px;"><a class="en-btn-google" href="<?= $enSafe($googleUrl) ?>" rel="noopener">⭐ Dejar reseña en Google</a></p>
                 <?php else: ?>
                     <p>Esperamos verte pronto de nuevo. ¡Buen viaje!</p>
                 <?php endif; ?>
@@ -96,7 +96,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
         <?php elseif ($expirada): ?>
             <div class="en-exito">
                 <div class="ico" aria-hidden="true">⌛</div>
-                <h2>Esta encuesta ya expiro</h2>
+                <h2>Esta encuesta ya expiró</h2>
                 <p>De todos modos, gracias por hospedarte en <?= $nombreHotel ?>.</p>
             </div>
         <?php else: ?>
@@ -104,7 +104,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
                   action="<?= url('h/' . ($hotel['slug'] ?? '') . '/encuesta/' . $enSafe($token) . '/responder') ?>"
                   onsubmit="var b=this.querySelector('button'); b.disabled=true; b.textContent='Enviando...'; return true;">
                 <div class="en-field" style="text-align:center;">
-                    <span class="lbl">¿Como calificas tu estancia? *</span>
+                    <span class="lbl">¿Cómo calificas tu estancia? *</span>
                     <div class="en-estrellas">
                         <?php for ($i = 5; $i >= 1; $i--): ?>
                             <input type="radio" id="en-cal-<?= $i ?>" name="calificacion" value="<?= $i ?>" <?= $i === 5 ? 'required' : '' ?>>
@@ -113,7 +113,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
                     </div>
                 </div>
                 <div class="en-field">
-                    <span class="lbl">¿Que tanto nos recomendarias a un amigo o familiar?</span>
+                    <span class="lbl">¿Qué tanto nos recomendarías a un amigo o familiar?</span>
                     <div class="en-nps">
                         <?php for ($i = 0; $i <= 10; $i++): ?>
                             <input type="radio" id="en-nps-<?= $i ?>" name="nps" value="<?= $i ?>">
@@ -124,14 +124,14 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
                 </div>
                 <div class="en-field">
                     <label for="en-comentario">¿Algo que quieras contarnos?</label>
-                    <textarea id="en-comentario" name="comentario" maxlength="1000" placeholder="Lo que mas te gusto, o lo que podemos mejorar..."></textarea>
+                    <textarea id="en-comentario" name="comentario" maxlength="1000" placeholder="Lo que más te gustó, o lo que podemos mejorar..."></textarea>
                 </div>
-                <button type="submit" class="en-btn">Enviar mi opinion</button>
+                <button type="submit" class="en-btn">Enviar mi opinión</button>
             </form>
         <?php endif; ?>
     </div>
 
-    <p class="en-footer">Tu opinion se comparte solo con <?= $nombreHotel ?> · Impulsado por Medisoft Hoteles</p>
+    <p class="en-footer">Tu opinión se comparte solo con <?= $nombreHotel ?> · Impulsado por Medisoft Hoteles</p>
 </div>
 </body>
 </html>

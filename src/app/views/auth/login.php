@@ -1325,7 +1325,7 @@ if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
                             <input type="checkbox" name="remember" <?= $loginDisabled ? 'disabled' : '' ?>>
                             <span>Recordarme</span>
                         </label>
-                        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                        <span class="forgot-password" title="El administrador de tu hotel puede asignarte una nueva contraseña">¿Olvidaste tu contraseña? Pídesela al administrador</span>
                     </div>
                     
                     <!-- Botón de envío -->

@@ -20,9 +20,9 @@ try {
 } catch (Throwable $e) {
     $copNombre = 'Copiloto';
 }
-// El FAB conserva su etiqueta comercial de siempre salvo que el hotel haya
-// bautizado a su asistente.
-$copEtiquetaFab = $copNombre !== 'Copiloto' ? $copNombre : 'Asesor inteligente';
+// El FAB usa el nombre que el hotel le puso a su asistente; si no, "Asistente"
+// (no "Asesor inteligente", que es otra seccion del menu y confundia).
+$copEtiquetaFab = $copNombre !== 'Copiloto' ? $copNombre : 'Asistente';
 $copilotoLogoUrl = function_exists('asset_version')
     ? asset_version('img/logo.png')
     : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
@@ -52,14 +52,16 @@ $copSecciones = [
 ];
 $copOpcionales = [
     'huespedes' => ['huespedes' => $copU('huespedes')],
-    'motor_reservas' => ['motor de reservas' => $copU('motor-reservas')],
+    // Nombres nuevos (renombre jul-2026) + alias viejos: el modelo puede citar
+    // cualquiera de los dos y ambos deben volverse enlace.
+    'motor_reservas' => ['reservas en linea' => $copU('motor-reservas'), 'motor de reservas' => $copU('motor-reservas')],
     'promociones' => ['cupones' => $copU('motor-reservas/cupones')],
     'upsells' => ['extras' => $copU('motor-reservas/extras')],
-    'reputacion' => ['reputacion' => $copU('reputacion')],
+    'reputacion' => ['opiniones y encuestas' => $copU('reputacion'), 'reputacion' => $copU('reputacion')],
     'lealtad' => ['huesped frecuente' => $copU('lealtad')],
-    'forecast' => ['forecast' => $copU('forecast')],
-    'night_audit' => ['night audit' => $copU('night-audit')],
-    'auditoria' => ['bitacora' => $copU('auditoria')],
+    'forecast' => ['pronostico de ocupacion' => $copU('forecast'), 'pronostico' => $copU('forecast'), 'forecast' => $copU('forecast')],
+    'night_audit' => ['cierre del dia' => $copU('night-audit'), 'night audit' => $copU('night-audit')],
+    'auditoria' => ['historial de actividad' => $copU('auditoria'), 'bitacora' => $copU('auditoria')],
     'ia_ejecutiva' => ['asesor inteligente' => $copU('ia/resumen-diario')],
     'reportes' => ['reportes' => $copU('reportes')],
     'inventario' => ['inventario' => $copU('inventario')],
@@ -70,12 +72,12 @@ $copOpcionales = [
     'facturacion' => ['facturacion' => $copU('facturacion')],
     'cuentas_cobrar' => ['cuentas por cobrar' => $copU('cuentas-por-cobrar')],
     'documentos' => ['documentos' => $copU('documentos')],
-    'tarifas_dinamicas' => ['tarifas dinamicas' => $copU('configuracion/tarifas')],
+    'tarifas_dinamicas' => ['precios y temporadas' => $copU('configuracion/tarifas'), 'tarifas dinamicas' => $copU('configuracion/tarifas')],
     'checkin_digital' => ['check-in digital' => $copU('checkin-digital')],
-    'camarista' => ['app de camarista' => $copU('camarista')],
-    'canales_ical' => ['canales' => $copU('canales')],
-    'whatsapp' => ['whatsapp' => $copU('whatsapp')],
-    'tablero_ejecutivo' => ['operacion diaria' => $copU('operacion/diaria')],
+    'camarista' => ['limpieza' => $copU('camarista'), 'app de camarista' => $copU('camarista')],
+    'canales_ical' => ['airbnb y booking' => $copU('canales'), 'canales' => $copU('canales')],
+    'whatsapp' => ['conectar whatsapp' => $copU('whatsapp'), 'whatsapp' => $copU('whatsapp')],
+    'tablero_ejecutivo' => ['el hotel hoy' => $copU('operacion/diaria'), 'operacion diaria' => $copU('operacion/diaria')],
     'notificaciones' => ['notificaciones' => $copU('notificaciones')],
     'configuracion' => ['configuracion' => $copU('configuracion')],
     'usuarios' => ['usuarios' => $copU('usuarios')],
@@ -1072,7 +1074,7 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
                         iniciar_mantenimiento: ['Mantenimiento iniciado', 'La habitación quedó marcada y el equipo notificado. 🔧'],
                         finalizar_mantenimiento: ['Habitación liberada', 'Quedó disponible para rentar de nuevo. ✅'],
                         registrar_gasto: ['Gasto registrado', 'Quedó anotado en la caja de hoy. 💸'],
-                        crear_cupon: ['Cupón creado', 'Ya está activo en el motor de reservas. 🎟️'],
+                        crear_cupon: ['Cupón creado', 'Ya está activo en Reservas en línea. 🎟️'],
                         pagar_proveedor: ['Pago registrado', 'El egreso quedó en la caja y el saldo se actualizó. 🤝'],
                         finalizar_reserva: ['Huésped listo', 'Quedó registrado; abre el formulario para terminar. 🛎️'],
                         asignar_limpieza: ['Limpieza asignada', 'La tarea quedó en el tablero de limpieza. 🗓️'],

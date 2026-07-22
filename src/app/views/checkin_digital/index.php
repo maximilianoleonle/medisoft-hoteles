@@ -644,7 +644,7 @@ foreach ($filas as $fila) {
                                                     Copiar link
                                                 </button>
                                                 <a class="cdi-btn cdi-btn-whatsapp" target="_blank" rel="noopener"
-                                                   href="https://wa.me/52<?= $cdiSafe(preg_replace('/\D/', '', substr((string) ($fila['telefono'] ?? ''), -10))) ?>?text=<?= rawurlencode('Hola ' . ($fila['nombre_completo'] ?? '') . ', completa tu pre-registro para tu llegada aqui: ' . $urlPublica) ?>">
+                                                   href="https://wa.me/52<?= $cdiSafe(preg_replace('/\D/', '', substr((string) ($fila['telefono'] ?? ''), -10))) ?>?text=<?= rawurlencode('Hola ' . ($fila['nombre_completo'] ?? '') . ', completa tu pre-registro para tu llegada aquí: ' . $urlPublica) ?>">
                                                     <i class="fab fa-whatsapp" aria-hidden="true"></i>
                                                     Enviar por WhatsApp
                                                 </a>

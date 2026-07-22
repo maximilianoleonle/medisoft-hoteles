@@ -124,7 +124,7 @@ function initializeEventListeners() {
             this.classList.add('loading-indicator');
             updateDashboard().then(() => {
                 this.classList.remove('loading-indicator');
-                showNotification('Dashboard actualizado', 'success');
+                showNotification('Inicio actualizado', 'success');
             });
         });
     }
@@ -184,7 +184,7 @@ async function updateDashboard() {
         
     } catch (error) {
         console.error('Error actualizando dashboard:', error);
-        showNotification('Error al actualizar el dashboard', 'error');
+        showNotification('No se pudo actualizar Inicio. Revisa tu conexión e intenta de nuevo.', 'error');
     } finally {
         dashboardState.isUpdating = false;
     }

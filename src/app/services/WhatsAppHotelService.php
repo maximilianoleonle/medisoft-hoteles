@@ -163,7 +163,7 @@ class WhatsAppHotelService
         return $this->enviarMensaje(
             $hotelId,
             (string) $cred['numero_avisos'],
-            "✅ *{$nombreHotel}*\nWhatsApp conectado correctamente a Medisoft Hoteles.\nRecibiras aqui los avisos de reservas online."
+            "✅ *{$nombreHotel}*\nWhatsApp conectado correctamente a Medisoft Hoteles.\nRecibirás aquí los avisos de reservas online."
         );
     }
 
@@ -197,16 +197,16 @@ class WhatsAppHotelService
 
             if (ConfiguracionHotelRegistry::getBool('whatsapp.confirmacion_huesped_activa', true, $hotelId)
                 && !empty($r['telefono'])) {
-                $msj = "✅ *Reservacion confirmada — {$r['hotel_nombre']}*\n\n"
-                    . "Hola {$r['nombre']}, recibimos tu anticipo y tu habitacion esta apartada.\n\n"
+                $msj = "✅ *Reservación confirmada — {$r['hotel_nombre']}*\n\n"
+                    . "Hola {$r['nombre']}, recibimos tu anticipo y tu habitación está apartada.\n\n"
                     . "🧾 Folio: *#{$r['folio']}*\n"
                     . "📅 Llegada: {$fecha($r['entrada'])}\n"
                     . "📅 Salida: {$fecha($r['salida'])}\n"
-                    . "🛏 Habitacion: {$r['tipo']}\n"
+                    . "🛏 Habitación: {$r['tipo']}\n"
                     . "💳 Anticipo pagado: {$fmt($r['anticipo'])}\n"
                     . "💰 Pagas al llegar: {$fmt($r['saldo'])}\n\n"
                     . (!empty($r['checkin_url'])
-                        ? "⚡ Adelanta tu llegada: completa tu pre-registro aqui (1 minuto):\n{$r['checkin_url']}\n\n"
+                        ? "⚡ Adelanta tu llegada: completa tu pre-registro aquí (1 minuto):\n{$r['checkin_url']}\n\n"
                         : '')
                     . "Presenta tu folio al llegar. ¡Te esperamos!";
                 $this->enviarMensaje($hotelId, (string) $r['telefono'], $msj);
@@ -215,7 +215,7 @@ class WhatsAppHotelService
             if (ConfiguracionHotelRegistry::getBool('whatsapp.aviso_dueno_activo', true, $hotelId)
                 && !empty($cred['numero_avisos'])) {
                 $msj = "💵 *Nueva reserva online — {$r['hotel_nombre']}*\n\n"
-                    . "Huesped: {$r['nombre']}\n"
+                    . "Huésped: {$r['nombre']}\n"
                     . "Folio: #{$r['folio']} · {$r['tipo']}\n"
                     . "{$fecha($r['entrada'])} → {$fecha($r['salida'])}\n"
                     . "Anticipo cobrado: {$fmt($r['anticipo'])} (por conciliar a Caja)\n"

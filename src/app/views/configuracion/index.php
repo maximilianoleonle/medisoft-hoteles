@@ -347,8 +347,8 @@ $configHotelSettingGroupMeta = [
         'icon' => 'fa-mobile-screen-button',
     ],
     'copiloto' => [
-        'title' => 'Copiloto',
-        'hint' => 'Asistente del hotel: briefing matutino y avisos proactivos.',
+        'title' => 'Asistente del hotel',
+        'hint' => 'Resumen matutino y avisos proactivos del asistente.',
         'icon' => 'fa-wand-magic-sparkles',
     ],
     'otros' => [
@@ -376,7 +376,7 @@ $configNotificationGroups = [
     ],
     [
         'title' => 'Reglas operativas',
-        'hint' => 'Eventos que el dashboard puede convertir en avisos reales.',
+        'hint' => 'Eventos que la pantalla de Inicio puede convertir en avisos reales.',
         'keys' => $configNotificationRuleKeys,
         'icon' => 'fa-list-check',
     ],
@@ -5288,7 +5288,7 @@ html[data-theme="dark"] .hc-page {
                                         Reglas automaticas y push
                                     </h2>
                                     <p class="hc-panel-copy">
-                                        Preferencias por hotel para avisos del dashboard, reglas automaticas y umbrales de prioridad.
+                                        Elige qué avisos genera la pantalla de Inicio y cuándo suben de prioridad.
                                     </p>
                                 </div>
                             </div>
@@ -6041,7 +6041,7 @@ html[data-theme="dark"] .hc-page {
                                             <i class="fas fa-square-parking"></i>
                                             Estacionamientos
                                         </h3>
-                                        <p class="hc-field-hint">Define el nombre visible y el cupo que alimentara el indicador de estacionamiento del dashboard.</p>
+                                        <p class="hc-field-hint">Define el nombre visible y el cupo que alimentará el indicador de estacionamiento en la pantalla de Inicio.</p>
                                     </div>
                                     <div class="hc-catalog-actions">
                                         <span class="hc-catalog-metric" title="Suma de cupos activos" data-parking-capacity-total>

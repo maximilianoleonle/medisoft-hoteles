@@ -327,7 +327,7 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'input' => 'checkbox',
                 'default' => true,
                 'grupo' => 'notificaciones',
-                'descripcion' => 'Permite que el dashboard genere avisos operativos automaticos para el hotel.',
+                'descripcion' => 'Permite que la pantalla de Inicio genere avisos operativos automáticos para el hotel.',
                 'required' => false,
             ],
             'notificaciones.pwa_push_activo' => [
@@ -345,7 +345,7 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'input' => 'checkbox',
                 'default' => false,
                 'grupo' => 'notificaciones',
-                'descripcion' => 'Si se activa, el celular solo recibira avisos push de severidad alta o critica.',
+                'descripcion' => 'Si se activa, el celular solo recibirá avisos de prioridad alta o crítica.',
                 'required' => false,
             ],
             'notificaciones.pwa_push_automaticas' => [
@@ -354,7 +354,7 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'input' => 'checkbox',
                 'default' => true,
                 'grupo' => 'notificaciones',
-                'descripcion' => 'Permite enviar push cuando el dashboard crea avisos automaticos por reglas operativas.',
+                'descripcion' => 'Permite enviar avisos al celular cuando la pantalla de Inicio crea avisos automáticos.',
                 'required' => false,
             ],
             'notificaciones.pwa_push_eventos' => [
@@ -519,16 +519,16 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'max' => 40,
             ],
             'copiloto.briefing_activo' => [
-                'label' => 'Briefing matutino por push',
+                'label' => 'Resumen matutino en el celular',
                 'type' => 'boolean',
                 'input' => 'checkbox',
                 'default' => true,
                 'grupo' => 'copiloto',
-                'descripcion' => 'Enviar cada manana el pulso del dia (llegadas, salidas, limpieza, caja y avisos) por notificacion push. Requiere el bloque Copiloto proactivo.',
+                'descripcion' => 'Enviar cada mañana el pulso del día (llegadas, salidas, limpieza, caja y avisos) como aviso en el celular. Disponible si tu plan incluye el asistente proactivo.',
                 'required' => false,
             ],
             'copiloto.briefing_hora' => [
-                'label' => 'Hora del briefing',
+                'label' => 'Hora del resumen matutino',
                 'type' => 'string',
                 'input' => 'time',
                 'default' => '08:00',

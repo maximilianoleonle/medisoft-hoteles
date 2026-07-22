@@ -7,7 +7,7 @@
                 <div>
                     <h1 class="text-2xl font-bold font-playfair flex items-center gap-2">
                         <i class="fas fa-chart-line text-xl opacity-80"></i>
-                        Dashboard de Inventario
+                        Resumen de inventario
                     </h1>
                     <p class="text-hotel-gold mt-1 text-sm">
                         Análisis y estadísticas del inventario

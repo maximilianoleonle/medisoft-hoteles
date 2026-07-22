@@ -1041,7 +1041,7 @@ foreach ($cortes as $corte_metodo) {
                 <div class="cash-history-title-top">
                     <span class="cash-history-kicker">
                         <i class="fas fa-archive"></i>
-                        Bitácora de caja
+                        Historial de caja
                     </span>
                     <span class="cash-history-period-badge">
                         <i class="fas fa-calendar-alt"></i>
