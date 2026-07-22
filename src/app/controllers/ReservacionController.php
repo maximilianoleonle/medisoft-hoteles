@@ -91,6 +91,22 @@ class ReservacionController extends Controller {
         $secondary = $this->cotizacionPdfHex($branding['color_primary'] ?? null, '#1B2746');
         $accent = $this->cotizacionPdfHex($branding['color_accent'] ?? null, '#BD9441');
         $headerText = $this->cotizacionPdfTextColor($secondary);
+        $marcaClara = $headerText !== '#FFFFFF'; // fondo de marca claro -> texto oscuro
+
+        // Acento LEGIBLE sobre el fondo de marca (header/tabla/cajas de total):
+        // dorado solo cuando el fondo es oscuro; en fondos claros, el texto oscuro.
+        $headerAccent = $marcaClara ? $headerText : $accent;
+
+        // Acento para TEXTO sobre superficies claras del cuerpo (montos, noches,
+        // términos): el primario si contrasta; si ambos colores de marca son
+        // claros, gris tinta neutro para no perder legibilidad de dinero.
+        if ($this->cotizacionPdfTextColor($primary) === '#FFFFFF') {
+            $accentInk = $primary;
+        } elseif ($this->cotizacionPdfTextColor($secondary) === '#FFFFFF') {
+            $accentInk = $secondary;
+        } else {
+            $accentInk = '#374151';
+        }
 
         return [
             'hotel' => function_exists('current_hotel_display_name')
@@ -103,7 +119,9 @@ class ReservacionController extends Controller {
             'surface_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($primary, '#FFFFFF', 0.07)),
             'line_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($accent, '#E5E7EB', 0.25)),
             'header_text_rgb' => $this->cotizacionPdfRgb($headerText),
-            'header_muted_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($accent, $headerText, 0.65)),
+            'header_muted_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($accent, $headerText, $marcaClara ? 0.25 : 0.65)),
+            'header_accent_rgb' => $this->cotizacionPdfRgb($headerAccent),
+            'accent_ink_rgb' => $this->cotizacionPdfRgb($accentInk),
         ];
     }
 
@@ -429,12 +447,14 @@ class ReservacionController extends Controller {
             $creamMid  = $brand['line_rgb'];
             $headerText = $brand['header_text_rgb'];
             $headerMuted = $brand['header_muted_rgb'];
+            $goldMarca = $brand['header_accent_rgb']; // acento legible SOBRE el fondo de marca
+            $tinta     = $brand['accent_ink_rgb'];    // acento legible sobre superficies claras
             $gris      = [107, 114, 128];
             $grisCla   = [156, 163, 175];
             $blanco    = [255, 255, 255];
             $negro     = [55, 65, 81];
             $ambar     = [217, 119, 6];
- 
+
             $u = function($text) {
                 return iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $text);
             };
@@ -480,12 +500,12 @@ class ReservacionController extends Controller {
             $pdf->Cell($headerTitleW, 8, $u($brand['hotel']), 0, 2, 'L');
  
             $pdf->SetFont('Helvetica', '', 9);
-            $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+            $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
             $pdf->SetX($headerTitleX);
             $pdf->Cell($headerTitleW, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
- 
+
             $pdf->SetFont('Helvetica', 'B', 22);
-            $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+            $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
             $pdf->SetXY($pageW - $margin - 70, 9);
             $pdf->Cell(70, 10, $u('COTIZACIÓN'), 0, 0, 'R');
  
@@ -579,7 +599,7 @@ class ReservacionController extends Controller {
             $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
             $pdf->Cell($colW, 5, $u($formatFecha($reservacion['fecha_entrada'])), 0, 0, 'L');
             $pdf->Cell($colW, 5, $u($formatFecha($reservacion['fecha_salida'])), 0, 0, 'L');
-            $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
+            $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
 
             $pdf->SetX($margin + 4);
@@ -625,22 +645,39 @@ class ReservacionController extends Controller {
                     : ucwords(str_replace('_', ' ', (string)($habitacion['tipo'] ?? 'Habitacion')));
             };
 
-            // Columnas: HAB | TIPO | PISO | PRECIO/NOCHE | NOCHES | TOTAL
+            // Capacidad de personas: dato real de la habitación o estimada por tipo
+            $capacidadCotizacion = function(array $habitacion) {
+                $cap = (int)($habitacion['capacidad_personas'] ?? 0);
+                if ($cap > 0) {
+                    return $cap;
+                }
+                $tipo = strtolower((string)($habitacion['tipo'] ?? ''));
+                if (strpos($tipo, 'sencilla') !== false) return 1;
+                if (strpos($tipo, 'doble') !== false)    return 2;
+                if (strpos($tipo, 'triple') !== false)   return 3;
+                if (strpos($tipo, 'cuad') !== false)     return 4;
+                if (strpos($tipo, 'suite') !== false)    return 4;
+                return 2;
+            };
+
+            // Columnas: HAB | TIPO | PISO | PERSONAS | PRECIO/NOCHE | NOCHES | TOTAL
             $colHab    = 18;
-            $colTipo   = 50;
-            $colPiso   = 26;
-            $colPrecio = 34;
-            $colNoches = 22;
-            $colTotal  = $contentW - $colHab - $colTipo - $colPiso - $colPrecio - $colNoches;
- 
-            // Header tabla
+            $colTipo   = 36;
+            $colPiso   = 28;
+            $colPers   = 22;
+            $colPrecio = 30;
+            $colNoches = 20;
+            $colTotal  = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colPrecio - $colNoches;
+
+            // Header tabla (texto adaptativo: el fondo es el color de marca)
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
-            $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
+            $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
             $pdf->SetFont('Helvetica', 'B', 7.5);
             $pdf->SetX($margin);
             $pdf->Cell($colHab, 8, 'HAB.', 0, 0, 'C', true);
             $pdf->Cell($colTipo, 8, 'TIPO', 0, 0, 'C', true);
             $pdf->Cell($colPiso, 8, 'PISO', 0, 0, 'C', true);
+            $pdf->Cell($colPers, 8, 'PERS.', 0, 0, 'C', true);
             $pdf->Cell($colPrecio, 8, 'PRECIO/NOCHE', 0, 0, 'C', true);
             $pdf->Cell($colNoches, 8, 'NOCHES', 0, 0, 'C', true);
             $pdf->Cell($colTotal, 8, 'TOTAL', 0, 1, 'C', true);
@@ -700,7 +737,8 @@ class ReservacionController extends Controller {
                 $pdf->Cell($colHab, 7, $hab['numero'], 0, 0, 'C', true);
                 $pdf->Cell($colTipo, 7, $u($tipoRealCotizacion($hab)), 0, 0, 'C', true);
                 $pdf->Cell($colPiso, 7, $u($formatPisoCotizacion($hab['piso'] ?? '')), 0, 0, 'C', true);
- 
+                $pdf->Cell($colPers, 7, $capacidadCotizacion($hab), 0, 0, 'C', true);
+
                 // Precio y noches
                 if ($esCortesia) {
                     $pdf->SetTextColor($ambar[0], $ambar[1], $ambar[2]);
@@ -712,7 +750,7 @@ class ReservacionController extends Controller {
                     $pdf->Cell($colPrecio, 7, '$' . number_format($precioPorNoche, 0, '.', ','), 0, 0, 'C', true);
                     $pdf->Cell($colNoches, 7, $noches, 0, 0, 'C', true);
                     $pdf->SetFont('Helvetica', 'B', 8);
-                    $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
+                    $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
                     $pdf->Cell($colTotal, 7, '$' . number_format($precioTotalHab, 0, '.', ','), 0, 1, 'C', true);
                 }
 
@@ -794,10 +832,10 @@ class ReservacionController extends Controller {
                 $pdf->Rect($totalesX - 2, $totalBoxY, $totalesW + 4, 10, 'F');
  
                 $pdf->SetFont('Helvetica', 'B', 11);
-                $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
+                $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
                 $pdf->SetXY($totalesX, $totalBoxY + 1.5);
                 $pdf->Cell(40, 7, 'SALDO PENDIENTE:', 0, 0, 'R');
-                $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+                $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
                 $pdf->Cell(40, 7, '$' . number_format($saldo, 0, '.', ',') . ' MXN', 0, 1, 'R');
  
             } else {
@@ -812,10 +850,10 @@ class ReservacionController extends Controller {
                 $pdf->Rect($totalesX - 2, $totalBoxY, $totalesW + 4, 10, 'F');
  
                 $pdf->SetFont('Helvetica', 'B', 11);
-                $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
+                $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
                 $pdf->SetXY($totalesX, $totalBoxY + 1.5);
                 $pdf->Cell(40, 7, 'TOTAL:', 0, 0, 'R');
-                $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+                $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
                 $pdf->Cell(40, 7, '$' . number_format($totalReservacion, 0, '.', ',') . ' MXN', 0, 1, 'R');
             }
  
@@ -838,7 +876,7 @@ class ReservacionController extends Controller {
 
             $fechaEntradaTexto = $formatFecha($reservacion['fecha_entrada']);
             $terminos = $this->cotizacionPdfTerminos($cotizacionConfig, $fechaEntradaTexto, $brand['hotel']);
-            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $olivo, $negro);
+            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $tinta, $negro);
 
             // ═══════════════════════════════════════════════════════
             // FOOTER
@@ -4770,6 +4808,8 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $creamMid  = $brand['line_rgb'];
             $headerText = $brand['header_text_rgb'];
             $headerMuted = $brand['header_muted_rgb'];
+            $goldMarca = $brand['header_accent_rgb']; // acento legible SOBRE el fondo de marca
+            $tinta     = $brand['accent_ink_rgb'];    // acento legible sobre superficies claras
             $gris      = [107, 114, 128];  // #6B7280
             $grisCla   = [156, 163, 175];  // #9CA3AF
             $blanco    = [255, 255, 255];
@@ -4812,13 +4852,13 @@ $cortesias_ids = $this->getPost('cortesias', []);
 
             // Subtítulo
             $pdf->SetFont('Helvetica', '', 9);
-            $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+            $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
             $pdf->SetX($headerTitleX);
             $pdf->Cell($headerTitleW, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
 
             // Título COTIZACIÓN a la derecha
             $pdf->SetFont('Helvetica', 'B', 22);
-            $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+            $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
             $pdf->SetXY($pageW - $margin - 70, 9);
             $pdf->Cell(70, 10, $u('COTIZACIÓN'), 0, 0, 'R');
 
@@ -4903,6 +4943,12 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
             $noches = $calculo['noches'];
 
+            // Hora de llegada capturada en el form: si viene, pisa al horario
+            // genérico de check-in del hotel en la caja de estancia.
+            $checkinDetalle = ($hora_llegada !== null && $hora_llegada !== '')
+                ? 'Llegada estimada ' . $this->cotizacionPdfHoraTexto($hora_llegada)
+                : 'Desde ' . $cotizacionConfig['checkin_texto'];
+
             // Caja de fechas
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY2 = $pdf->GetY();
@@ -4924,13 +4970,13 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
             $pdf->Cell($colW, 5, $u($formatFecha($fecha_entrada)), 0, 0, 'L');
             $pdf->Cell($colW, 5, $u($formatFecha($fecha_salida)), 0, 0, 'L');
-            $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
+            $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
 
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', '', 7.5);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u($checkinDetalle), 0, 0, 'L');
             $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
 
@@ -4990,9 +5036,9 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $colNoches   = 20;
             $colTotal    = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colPrecio - $colNoches;
 
-            // Header de la tabla
+            // Header de la tabla (texto adaptativo: el fondo es el color de marca)
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
-            $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
+            $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
             $pdf->SetFont('Helvetica', 'B', 8);
             $pdf->SetX($margin);
             $pdf->Cell($colHab, 8, 'HAB.', 0, 0, 'C', true);
@@ -5051,7 +5097,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
                     $pdf->Cell($colPrecio, 7, '$' . number_format($precioPorNoche, 0, '.', ','), 0, 0, 'C', true);
                     $pdf->Cell($colNoches, 7, $noches, 0, 0, 'C', true);
                     $pdf->SetFont('Helvetica', 'B', 8);
-                    $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
+                    $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
                     $pdf->Cell($colTotal, 7, '$' . number_format($precioTotal, 0, '.', ','), 0, 1, 'C', true);
                 }
 
@@ -5134,10 +5180,10 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->Rect($totalesX - 2, $totalBoxY, $totalesW + 4, 10, 'F');
 
             $pdf->SetFont('Helvetica', 'B', 11);
-            $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
+            $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
             $pdf->SetXY($totalesX, $totalBoxY + 1.5);
             $pdf->Cell(40, 7, 'TOTAL:', 0, 0, 'R');
-            $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
+            $pdf->SetTextColor($goldMarca[0], $goldMarca[1], $goldMarca[2]);
             $pdf->Cell(40, 7, '$' . number_format($totalFinal, 0, '.', ',') . ' MXN', 0, 1, 'R');
 
             // ═══════════════════════════════════════════════════════
@@ -5161,7 +5207,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
 
             $fechaEntradaTexto = $formatFecha($fecha_entrada);
             $terminos = $this->cotizacionPdfTerminos($cotizacionConfig, $fechaEntradaTexto, $brand['hotel']);
-            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $olivo, $negro);
+            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $tinta, $negro);
 
             // ═══════════════════════════════════════════════════════
             // FOOTER
