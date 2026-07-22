@@ -1610,4 +1610,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include __DIR__ . '/../layout/footer.php'; ?>
+<?php /* Sin include de footer aqui: esta vista se sirve con View::renderTemplate(),
+   que ya lo incluye. Incluirlo a mano duplicaba el copiloto y no abria. */ ?>

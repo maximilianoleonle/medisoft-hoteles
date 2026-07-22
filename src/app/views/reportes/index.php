@@ -418,6 +418,10 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<?php /* Sin include de footer aqui: esta vista se sirve con View::renderTemplate(),
+   que ya lo incluye. Incluirlo a mano lo duplicaba (dos copilotos encimados:
+   el FAB de arriba sin listeners y el de abajo con doble toggle — no abria). */ ?>
+
 <style id="rp-candy-glass-cupertino">
 /* ═══ Reportes: botones "Abrir reporte" en candy glass — SOLO CUPERTINO claro
    (owner 2026-07-11, override explícito de una sola pieza; el resto del centro
@@ -451,5 +455,3 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .reportes-view .rp-btn.prim
             color-mix(in srgb, var(--rp-brand) 46%, #FFFFFF) 100%) !important;
 }
 </style>
-
-<?php include __DIR__ . '/../layout/footer.php'; ?>

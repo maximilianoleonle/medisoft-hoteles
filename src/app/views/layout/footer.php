@@ -1,3 +1,12 @@
+<?php
+// Candado anti doble render: View::renderTemplate() ya incluye este footer.
+// Si una vista ademas lo incluye a mano (paso en reportes/index, procedencia
+// y habitaciones-rentables, 2026-07-22), todo el footer salia DOS veces y el
+// copiloto quedaba duplicado: el FAB de arriba sin listeners y el de abajo
+// con toggle doble — el panel no abria. La segunda inclusion no pinta nada.
+if (!empty($GLOBALS['msFooterRenderizado'])) { return; }
+$GLOBALS['msFooterRenderizado'] = true;
+?>
 <body><?php if (isset($_SESSION['user_id']) && user_role() == 'gerente'): ?>
     <div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
        
