@@ -472,12 +472,12 @@ class ReservacionController extends Controller {
             };
             $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
 
-            // Hora de llegada registrada en la reservación: si existe, pisa al
-            // horario genérico de check-in del hotel en la caja de estancia.
+            // Hora de llegada registrada en la reservación → columna propia en la caja de estancia
             $horaLlegadaRes = $this->cotizacionPdfHoraConfig($reservacion['hora_llegada_estimada'] ?? '', '');
-            $checkinDetalle = $horaLlegadaRes !== ''
-                ? 'Llegada estimada ' . $this->cotizacionPdfHoraTexto($horaLlegadaRes)
-                : 'Desde ' . $cotizacionConfig['checkin_texto'];
+            $llegadaTexto = $horaLlegadaRes !== ''
+                ? $this->cotizacionPdfHoraTexto($horaLlegadaRes)
+                : 'Por confirmar';
+            $llegadaSub = $horaLlegadaRes !== '' ? 'Hora indicada por el huésped' : '';
 
             // ═══════════════════════════════════════════════════════
             // HEADER
@@ -589,27 +589,30 @@ class ReservacionController extends Controller {
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
             $pdf->Rect($margin, $boxY2, $contentW, 18, 'D');
  
-            $colW = $contentW / 3;
+            $colW = $contentW / 4;
             $pdf->SetXY($margin + 4, $boxY2 + 2);
             $pdf->SetFont('Helvetica', 'B', 8);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
             $pdf->Cell($colW, 4, 'CHECK-IN', 0, 0, 'L');
             $pdf->Cell($colW, 4, 'CHECK-OUT', 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('LLEGADA ESTIMADA'), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, 'NOCHES', 0, 1, 'L');
- 
+
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', 'B', 9);
             $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
             $pdf->Cell($colW, 5, $u($formatFecha($reservacion['fecha_entrada'])), 0, 0, 'L');
             $pdf->Cell($colW, 5, $u($formatFecha($reservacion['fecha_salida'])), 0, 0, 'L');
+            $pdf->Cell($colW, 5, $u($llegadaTexto), 0, 0, 'L');
             $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
 
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', '', 7.5);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-            $pdf->Cell($colW, 4, $u($checkinDetalle), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
             $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u($llegadaSub), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
 
             // ═══════════════════════════════════════════════════════
@@ -4949,11 +4952,12 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
             $noches = $calculo['noches'];
 
-            // Hora de llegada capturada en el form: si viene, pisa al horario
-            // genérico de check-in del hotel en la caja de estancia.
-            $checkinDetalle = ($hora_llegada !== null && $hora_llegada !== '')
-                ? 'Llegada estimada ' . $this->cotizacionPdfHoraTexto($hora_llegada)
-                : 'Desde ' . $cotizacionConfig['checkin_texto'];
+            // Hora de llegada capturada en el form → columna propia en la caja de estancia
+            $hayHoraLlegada = ($hora_llegada !== null && $hora_llegada !== '');
+            $llegadaTexto = $hayHoraLlegada
+                ? $this->cotizacionPdfHoraTexto($hora_llegada)
+                : 'Por confirmar';
+            $llegadaSub = $hayHoraLlegada ? 'Hora indicada por el huésped' : '';
 
             // Caja de fechas
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
@@ -4962,13 +4966,14 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
             $pdf->Rect($margin, $boxY2, $contentW, 18, 'D');
 
-            $colW = $contentW / 3;
+            $colW = $contentW / 4;
 
             $pdf->SetXY($margin + 4, $boxY2 + 2);
             $pdf->SetFont('Helvetica', 'B', 8);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
             $pdf->Cell($colW, 4, 'CHECK-IN', 0, 0, 'L');
             $pdf->Cell($colW, 4, 'CHECK-OUT', 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('LLEGADA ESTIMADA'), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, 'NOCHES', 0, 1, 'L');
 
             $pdf->SetX($margin + 4);
@@ -4976,14 +4981,16 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
             $pdf->Cell($colW, 5, $u($formatFecha($fecha_entrada)), 0, 0, 'L');
             $pdf->Cell($colW, 5, $u($formatFecha($fecha_salida)), 0, 0, 'L');
+            $pdf->Cell($colW, 5, $u($llegadaTexto), 0, 0, 'L');
             $pdf->SetTextColor($tinta[0], $tinta[1], $tinta[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
 
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', '', 7.5);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-            $pdf->Cell($colW, 4, $u($checkinDetalle), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
             $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u($llegadaSub), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
 
             // ═══════════════════════════════════════════════════════
