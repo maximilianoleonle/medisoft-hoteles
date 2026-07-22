@@ -1329,7 +1329,7 @@ public function vehiculosHuespedAction() {
 
     /**
      * Proyección de estacionamiento a días futuros (tarjeta del dashboard).
-     * GET /api/dashboard/estacionamiento-proyeccion?desde=Y-m-d&dias=7
+     * GET /api/dashboard/estacionamiento-proyeccion?desde=Y-m-d&dias=7[&detalle=1]
      */
     public function estacionamientoProyeccionAction() {
         try {
@@ -1367,6 +1367,13 @@ public function vehiculosHuespedAction() {
             require_once __DIR__ . '/../services/EstacionamientoProyeccionService.php';
             $service = new EstacionamientoProyeccionService();
             $data = $service->proyectar($hotel_id, $desde, $dias, $catalogRows);
+
+            // ?detalle=1 → desglose vehículo-por-vehículo del día 'desde'
+            // (lo usa la tarjeta del dashboard al seleccionar un día).
+            if (!empty($_GET['detalle'])) {
+                $data['fecha_detalle'] = $desde;
+                $data['detalle'] = $service->detallarDia($hotel_id, $desde, $catalogRows);
+            }
 
             View::renderJSON([
                 'success' => true,

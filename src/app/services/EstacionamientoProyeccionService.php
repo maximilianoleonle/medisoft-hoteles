@@ -96,6 +96,102 @@ class EstacionamientoProyeccionService {
     }
 
     /**
+     * Desglose vehículo-por-vehículo de UN día. PURO (sin BD).
+     *
+     * Mismas reglas de conteo que proyectarDia (dedup por huésped, semántica de
+     * vehiculos_estimados): la suma de 'cantidad' de las filas devueltas SIEMPRE
+     * coincide con proyectarDia()['total'] para los mismos datos.
+     *
+     * @param array $reservas Reservas que cubren el día; cada fila trae huesped_id y
+     *                        vehiculos_estimados más campos de contexto que se copian
+     *                        a la salida (reservacion_id, huesped, habitaciones, estado...).
+     * @param array $vehiculosDetallePorHuesped [huesped_id => [['area','vehiculo','placas'], ...]]
+     * @return array Filas: ['huesped_id','reservacion_id','huesped','habitaciones','estado',
+     *                       'area','vehiculo','placas','cantidad','por_confirmar']
+     */
+    public static function detalleDia(array $reservas, array $vehiculosDetallePorHuesped) {
+        // Dedup por huésped con la MISMA regla que proyectarDia, pero conservando
+        // la reserva ganadora para poder enlazarla.
+        $porHuesped = [];
+        foreach ($reservas as $reserva) {
+            $huespedId = (int)($reserva['huesped_id'] ?? 0);
+            if ($huespedId <= 0) {
+                continue;
+            }
+
+            $estimado = $reserva['vehiculos_estimados'] ?? null;
+            $estimado = ($estimado === null || $estimado === '') ? null : max(0, (int)$estimado);
+
+            if (!array_key_exists($huespedId, $porHuesped)) {
+                $porHuesped[$huespedId] = ['estimado' => $estimado, 'reserva' => $reserva];
+                continue;
+            }
+
+            if ($estimado !== null && ($porHuesped[$huespedId]['estimado'] === null || $estimado > $porHuesped[$huespedId]['estimado'])) {
+                $porHuesped[$huespedId] = ['estimado' => $estimado, 'reserva' => $reserva];
+            }
+        }
+
+        $filas = [];
+        foreach ($porHuesped as $huespedId => $item) {
+            $estimado = $item['estimado'];
+            $reserva = $item['reserva'];
+            $registrados = $vehiculosDetallePorHuesped[$huespedId] ?? [];
+
+            $base = [
+                'huesped_id' => $huespedId,
+                'reservacion_id' => (int)($reserva['reservacion_id'] ?? $reserva['id'] ?? 0),
+                'huesped' => (string)($reserva['huesped'] ?? ''),
+                'habitaciones' => (string)($reserva['habitaciones'] ?? ''),
+                'estado' => (string)($reserva['estado'] ?? ''),
+            ];
+
+            if ($estimado === 0) {
+                continue; // Declaró que no trae vehículo.
+            }
+
+            $usar = ($estimado === null) ? count($registrados) : min($estimado, count($registrados));
+            for ($i = 0; $i < $usar; $i++) {
+                $vehiculo = $registrados[$i];
+                $filas[] = $base + [
+                    'area' => (string)($vehiculo['area'] ?? 'coches'),
+                    'vehiculo' => (string)($vehiculo['vehiculo'] ?? ''),
+                    'placas' => (string)($vehiculo['placas'] ?? ''),
+                    'cantidad' => 1,
+                    'por_confirmar' => false,
+                ];
+            }
+
+            $pendientes = ($estimado === null) ? 0 : max(0, $estimado - count($registrados));
+            if ($pendientes > 0) {
+                $filas[] = $base + [
+                    'area' => self::AREA_POR_CONFIRMAR,
+                    'vehiculo' => '',
+                    'placas' => '',
+                    'cantidad' => $pendientes,
+                    'por_confirmar' => true,
+                ];
+            }
+        }
+
+        // Hospedados primero, luego por nombre; los "por confirmar" al final de su huésped.
+        usort($filas, function ($a, $b) {
+            $pa = $a['estado'] === 'checked_in' ? 0 : 1;
+            $pb = $b['estado'] === 'checked_in' ? 0 : 1;
+            if ($pa !== $pb) {
+                return $pa <=> $pb;
+            }
+            $nombre = strcasecmp($a['huesped'], $b['huesped']);
+            if ($nombre !== 0) {
+                return $nombre;
+            }
+            return ((int)$a['por_confirmar']) <=> ((int)$b['por_confirmar']);
+        });
+
+        return $filas;
+    }
+
+    /**
      * Semáforo del día (mismos umbrales que la tarjeta del dashboard). PURO.
      * @return string sin_cupo | ok | ocupado | casi_lleno | sobrecupo
      */
@@ -213,5 +309,124 @@ class EstacionamientoProyeccionService {
             'areas' => array_values($catalogRows),
             'proyeccion' => $proyeccion,
         ];
+    }
+
+    /**
+     * Desglose de vehículos de UN día para un hotel (consulta BD).
+     * Devuelve filas de detalleDia() con 'area_label' y 'estado_label' resueltos,
+     * listas para pintarse como enlaces a cada reservación.
+     *
+     * @param int    $hotelId
+     * @param string $fecha       Y-m-d del día a desglosar
+     * @param array  $catalogRows [codigo => ['codigo','label','cupo']]
+     * @return array
+     */
+    public function detallarDia($hotelId, $fecha, array $catalogRows) {
+        $hotelId = (int)$hotelId;
+
+        $dia = DateTime::createFromFormat('Y-m-d', (string)$fecha);
+        if (!$dia || $dia->format('Y-m-d') !== (string)$fecha) {
+            $dia = new DateTime('today');
+        }
+        $fecha = $dia->format('Y-m-d');
+
+        $db = Database::getInstance();
+
+        // Mismos estados y solape de noches que proyectar() para que el desglose
+        // cuadre con la barra del día.
+        $stmt = $db->query(
+            "SELECT r.id AS reservacion_id, r.huesped_id, r.estado, r.fecha_entrada, r.fecha_salida,
+                    r.vehiculos_estimados,
+                    h.nombre_completo AS huesped,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
+             FROM reservaciones r
+             INNER JOIN huespedes h
+                 ON h.id = r.huesped_id
+                AND h.hotel_id = r.hotel_id
+             LEFT JOIN reservacion_habitaciones rh
+                 ON rh.reservacion_id = r.id
+                AND rh.hotel_id = r.hotel_id
+             LEFT JOIN habitaciones hab
+                 ON hab.id = rh.habitacion_id
+                AND hab.hotel_id = r.hotel_id
+             WHERE r.hotel_id = ?
+               AND r.estado IN ('confirmada', 'checked_in')
+               AND r.fecha_entrada <= ?
+               AND r.fecha_salida > ?
+             GROUP BY r.id, r.huesped_id, r.estado, r.fecha_entrada, r.fecha_salida, r.vehiculos_estimados, h.nombre_completo",
+            [$hotelId, $fecha, $fecha]
+        );
+        $reservas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        if (empty($reservas)) {
+            return [];
+        }
+
+        $vehiculosDetalle = [];
+        $huespedIds = array_values(array_unique(array_map(
+            function ($r) { return (int)$r['huesped_id']; },
+            $reservas
+        )));
+        if (!empty($huespedIds)) {
+            $placeholders = implode(',', array_fill(0, count($huespedIds), '?'));
+            $stmtVeh = $db->query(
+                "SELECT hv.huesped_id, hv.estacionamiento, hv.marca, hv.modelo, hv.color, hv.placas
+                 FROM huesped_vehiculos hv
+                 WHERE hv.hotel_id = ?
+                   AND hv.activo = 1
+                   AND hv.huesped_id IN ({$placeholders})
+                 ORDER BY hv.estacionamiento ASC, hv.created_at ASC, hv.id ASC",
+                array_merge([$hotelId], $huespedIds)
+            );
+            foreach (($stmtVeh ? ($stmtVeh->fetchAll() ?: []) : []) as $fila) {
+                $hid = (int)$fila['huesped_id'];
+                $area = trim((string)($fila['estacionamiento'] ?? ''));
+                $nombre = trim(trim((string)($fila['marca'] ?? '')) . ' ' . trim((string)($fila['modelo'] ?? '')));
+                $color = trim((string)($fila['color'] ?? ''));
+                if ($nombre === '') {
+                    $nombre = 'Vehículo registrado';
+                }
+                if ($color !== '') {
+                    $nombre .= ' ' . $color;
+                }
+                $vehiculosDetalle[$hid][] = [
+                    'area' => $area !== '' ? $area : 'coches',
+                    'vehiculo' => $nombre,
+                    'placas' => trim((string)($fila['placas'] ?? '')),
+                ];
+            }
+        }
+
+        $filas = self::detalleDia($reservas, $vehiculosDetalle);
+
+        foreach ($filas as $i => $fila) {
+            $area = (string)$fila['area'];
+            if ($area === self::AREA_POR_CONFIRMAR) {
+                $areaLabel = 'Por confirmar';
+            } elseif (isset($catalogRows[$area]['label'])) {
+                $areaLabel = (string)$catalogRows[$area]['label'];
+            } else {
+                $areaLabel = ucwords(str_replace(['_', '-'], ' ', $area));
+            }
+
+            if ($fila['estado'] === 'checked_in') {
+                $estadoLabel = 'Hospedado';
+            } else {
+                $reservaFila = null;
+                foreach ($reservas as $r) {
+                    if ((int)$r['reservacion_id'] === (int)$fila['reservacion_id']) {
+                        $reservaFila = $r;
+                        break;
+                    }
+                }
+                $estadoLabel = ($reservaFila && (string)$reservaFila['fecha_entrada'] === $fecha)
+                    ? 'Llega ese día'
+                    : 'Confirmada';
+            }
+
+            $filas[$i]['area_label'] = $areaLabel;
+            $filas[$i]['estado_label'] = $estadoLabel;
+        }
+
+        return $filas;
     }
 }
