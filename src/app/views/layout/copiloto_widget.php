@@ -1118,6 +1118,29 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         }
     }
 
+    // ── Resiliencia bfcache (volver con las flechas del navegador) ──
+    // instant-nav.js habilita el back-forward cache: al regresar, la página
+    // revive CONGELADA con todo su estado JS. Si una pregunta viajaba justo
+    // al navegar, el fetch muere y su promesa puede no resolverse jamás:
+    // `ocupado` quedaba atorado (Enviar deshabilitado, chips ignorados,
+    // esqueleto "pensando" eterno) y un body.cop-abierto huérfano deja el
+    // FAB oculto en móvil. pagehide corre ANTES de congelar (la foto se
+    // guarda limpia) y pageshow es el cinturón al revivir.
+    function soltarCandados() {
+        ocupado = false;
+        sendBtn.disabled = false;
+        var cargando = body.querySelectorAll('.cop-msg.cop-loading');
+        for (var i = 0; i < cargando.length; i++) {
+            cargando[i].classList.remove('cop-loading');
+            cargando[i].innerHTML = '<span class="cop-reveal">No pude responder ahora mismo. Intenta de nuevo.</span>';
+        }
+        // El body y el panel deben contar la misma historia (un cop-abierto
+        // huérfano en móvil esconde el FAB con display:none).
+        document.body.classList.toggle('cop-abierto', panel.classList.contains('abierto'));
+    }
+    window.addEventListener('pagehide', soltarCandados);
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { soltarCandados(); } });
+
     // Catálogo del saludo: navegación de páginas con flechas (cíclica).
     function catNavegar(dir) {
         var paginas = [].slice.call(document.querySelectorAll('#cop-cat .cop-cat-page'));
@@ -1236,6 +1259,9 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
         // Cerrar el panel corta cualquier dictado en curso.
         closeBtn.addEventListener('click', detener);
         if (backdrop) { backdrop.addEventListener('click', detener); }
+        // Navegar también: un dictado activo no debe viajar en la foto del
+        // historial (y de paso deja a la página entrar al back-forward cache).
+        window.addEventListener('pagehide', detener);
     })();
 })();
 </script>

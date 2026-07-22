@@ -273,5 +273,22 @@
         if (p) { requestAnimationFrame(function(){ p.focus(); }); }
         return { close: close };
     };
+
+    // ── Resiliencia bfcache ──
+    // Los botones con href de msPageState navegan SIN cerrar el overlay (a
+    // propósito: cubre el think-time del servidor), pero con el back-forward
+    // cache activo esa pantalla completa (z 10004) viajaba en la foto del
+    // historial: al volver con "atrás" tapaba TODA la app (copiloto incluido).
+    // pagehide corre antes de congelar la página, así la copia guardada ya va
+    // limpia; pageshow es el respaldo al revivir.
+    function limpiarEstadoPagina() {
+        var ps = document.querySelectorAll('.ms-pagestate-modal');
+        for (var i = 0; i < ps.length; i++) {
+            if (ps[i].parentNode) { ps[i].parentNode.removeChild(ps[i]); }
+        }
+        settle(false);
+    }
+    window.addEventListener('pagehide', limpiarEstadoPagina);
+    window.addEventListener('pageshow', function(e){ if (e.persisted) { limpiarEstadoPagina(); } });
 })();
 </script>
