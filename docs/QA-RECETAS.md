@@ -138,6 +138,16 @@ Verificado E2E jul-2026 (localhost:8080, sesión QA en Los Cedros).
 7. Suite dedicada: `AreasTest.php` (36 asserts: modelo, limpieza con personal, mantenimiento, copiloto, aislamiento multi-hotel).
 8. GOTCHA de QA en el pane: si `screenshot` se cuelga (pasó incluso en portrait) verificar por `get_page_text` + asserts JS; si un clic físico no dispara `onclick`, usar `dispatchEvent(new MouseEvent('click'))` o `requestSubmit()` vía javascript_tool; para confirmar un msConfirm, forzar `classList.add('open')` en `.ms-cf-ov` antes del click (el pane throttlea rAF y sin la clase `open` el promise no resuelve).
 
+## Habitaciones — fichas de estado del index (partición excluyente)
+
+Verificado E2E en prod ✅ 2026-07-22 (Los Cedros vivo, con datos cambiando entre chequeos). Suite: `HabitacionLlegadasStatsTest.php`.
+
+1. `/habitaciones`: las 5 fichas (Libres hoy · Ocupada · Por llegar · Limpieza · Mantenimiento) deben **sumar exactamente el Total** y coincidir 1:1 con el conteo de tarjetas del grid por `data-estado` (verificar con JS: `querySelectorAll('.flip-card').data-estado` vs números de ficha) — verificado (49 = 7+7+33+0+2, grid idéntico).
+2. Clic en cada ficha/chip filtra EXACTAMENTE el número prometido (mismo criterio ficha=filtro=grid).
+3. Franja `.hb-today-strip` arriba de las fichas: "Hoy: N reservas llegan · M cuartos por llegar (K aún en limpieza) · S salidas"; se oculta sin movimiento del día; el "(K aún en limpieza)" desaparece con K=0 — verificado.
+4. Ficha Limpieza con llegadas pendientes muestra sub-etiqueta "K para llegadas de hoy" — cubierto por suite (en vivo quedó 0 al terminar las camaristas).
+5. `/reservaciones`: metric "Llegadas hoy" agrega "· M cuartos" solo cuando M > reservas (reserva grupal) — verificado ("Llegadas hoy · 33 cuartos = 10").
+
 ## Habitaciones — alta masiva (lote)
 
 1. `/habitaciones/lote` (botón "En lote" en el listado y en el estado vacío de onboarding; gate `habitaciones.create`). **Verificado en navegador + PDO (jul-2026)**: define piso/tipo/precio comunes + rango `numero_desde`–`numero_hasta` (prefijo y relleno de ceros opcionales). El preview lateral en vivo lista los números en chips, muestra el conteo y el botón refleja el total ("Crear 20 habitaciones").
