@@ -814,7 +814,12 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     // que pueda seguir se ignora: deslizar no es abrir.
     var gestoScroll = false;
     (function () {
-        var scroller = null, yPrev = 0, tPrev = 0, acumulado = 0, velocidad = 0, inercia = 0;
+        var scroller = null, yPrev = 0, acumulado = 0, inercia = 0;
+        // Muestras {t, y} de los últimos ~100ms: la velocidad del aventón se
+        // promedia sobre esa ventana (como el scroll nativo). Medirla solo del
+        // último frame salía ruidosa: si el dedo frenaba un instante justo al
+        // soltar, el flick "no volaba" y el gesto se sentía trabado.
+        var muestras = [];
 
         function scrollerDelShell() {
             var raiz = document.scrollingElement || document.documentElement;
@@ -830,9 +835,8 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             window.cancelAnimationFrame(inercia);
             scroller = scrollerDelShell();
             yPrev = e.touches[0].clientY;
-            tPrev = e.timeStamp;
             acumulado = 0;
-            velocidad = 0;
+            muestras = [{ t: e.timeStamp, y: yPrev }];
             gestoScroll = false;
         }, { passive: true });
 
@@ -840,30 +844,44 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             if (!scroller || e.touches.length !== 1) { return; }
             var y = e.touches[0].clientY;
             var dy = yPrev - y;
-            var dt = Math.max(1, e.timeStamp - tPrev);
             yPrev = y;
-            tPrev = e.timeStamp;
-            acumulado += dy;
-            // Umbral: el micro-tiemble de un tap no es un arrastre.
-            if (!gestoScroll && Math.abs(acumulado) < 6) { return; }
-            gestoScroll = true;
+            muestras.push({ t: e.timeStamp, y: y });
+            while (muestras.length > 2 && e.timeStamp - muestras[0].t > 100) { muestras.shift(); }
+            if (!gestoScroll) {
+                acumulado += dy;
+                // Umbral: el micro-tiemble de un tap no es un arrastre. Al
+                // superarlo se aplica TODO lo acumulado, para que el contenido
+                // alcance al dedo sin escalón de arranque.
+                if (Math.abs(acumulado) < 4) { return; }
+                gestoScroll = true;
+                dy = acumulado;
+            }
             scroller.scrollTop += dy;
-            velocidad = dy / dt; // px/ms, alimenta la inercia al soltar
             if (e.cancelable) { e.preventDefault(); }
         }, { passive: false });
 
-        fab.addEventListener('touchend', function () {
+        fab.addEventListener('touchend', function (e) {
             if (!gestoScroll || !scroller) { return; }
-            // Inercia corta con decaimiento para que el flick no frene en seco.
-            var v = velocidad * 16; // px por frame (~16ms)
+            // Aventón con la física del scroll nativo: velocidad promediada de
+            // la ventana de muestras y decaimiento POR TIEMPO (0.998/ms, la
+            // tasa de UIScrollView), no por frame — por frame dependía del
+            // framerate y moría en ~300ms: el gesto frenaba en seco.
+            var primera = muestras[0];
+            var dt = Math.max(1, e.timeStamp - primera.t);
+            var v = (primera.y - yPrev) / dt; // px/ms, + = el contenido baja
             var el = scroller;
-            function paso() {
-                v *= 0.94;
-                if (Math.abs(v) < 0.5) { return; }
-                el.scrollTop += v;
+            if (Math.abs(v) > 0.1) {
+                var tAnt = performance.now();
+                var paso = function (tAhora) {
+                    var ms = Math.min(64, tAhora - tAnt); // pestaña dormida: no saltar
+                    tAnt = tAhora;
+                    v *= Math.pow(0.998, ms);
+                    el.scrollTop += v * ms;
+                    var tope = el.scrollTop <= 0 || el.scrollTop >= el.scrollHeight - el.clientHeight;
+                    if (Math.abs(v) > 0.01 && !tope) { inercia = window.requestAnimationFrame(paso); }
+                };
                 inercia = window.requestAnimationFrame(paso);
             }
-            inercia = window.requestAnimationFrame(paso);
             // El flag lo consume el click sintético que el navegador pueda
             // emitir tras el arrastre; si no llega ninguno, caduca solo.
             window.setTimeout(function () { gestoScroll = false; }, 500);
@@ -873,6 +891,15 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             gestoScroll = false;
             scroller = null;
         }, { passive: true });
+
+        // Tocar CUALQUIER parte de la página frena el aventón en curso, igual
+        // que el scroll nativo (si no, el dedo nuevo y la inercia vieja se
+        // peleaban el scrollTop y se sentía un tirón).
+        document.addEventListener('touchstart', function (e) {
+            if (e.target !== fab && !fab.contains(e.target)) {
+                window.cancelAnimationFrame(inercia);
+            }
+        }, { passive: true, capture: true });
     })();
 
     fab.addEventListener('click', function () {
