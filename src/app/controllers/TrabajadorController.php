@@ -242,11 +242,11 @@ class TrabajadorController extends Controller
             );
 
             set_mensaje(
-                'Pago desde snapshot registrado. Movimiento Caja #' . (int)($resultado['movimiento_caja_id'] ?? 0) . '. El snapshot permanece inmutable.',
+                'Pago registrado y descontado de Caja. Las cifras guardadas del periodo no cambian.',
                 'success'
             );
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el pago desde snapshot: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el pago desde snapshot');
         }
 
         // El pago se puede lanzar desde la pantalla heredada (Personal) o desde el
@@ -293,7 +293,7 @@ class TrabajadorController extends Controller
             set_mensaje('Periodo de pre-nomina cerrado como snapshot persistente. No se genero pago ni movimiento de Caja.', 'success');
             $this->redirect('trabajadores/nomina/periodos/' . $periodoId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo cerrar el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cerrar el periodo de pre-nomina');
             $this->redirect('trabajadores/nomina/periodos' . $this->queryNominaPeriodoDesdeDatos($datos));
         }
     }
@@ -322,7 +322,7 @@ class TrabajadorController extends Controller
 
             set_mensaje('Periodo de pre-nomina aprobado administrativamente. No se genero pago ni movimiento de Caja.', 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo aprobar el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'aprobar el periodo de pre-nomina');
         }
 
         $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
@@ -357,7 +357,7 @@ class TrabajadorController extends Controller
 
             set_mensaje('Periodo de pre-nomina anulado sin borrar snapshot. No se genero movimiento de Caja.', 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo anular el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'anular el periodo de pre-nomina');
         }
 
         $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
@@ -786,7 +786,7 @@ class TrabajadorController extends Controller
             set_mensaje('Trabajador creado correctamente.', 'success');
             $this->redirect('trabajadores/' . $trabajadorId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo crear el trabajador: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear el trabajador');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposTrabajador([$e->getMessage()]));
             $this->redirect('trabajadores/crear');
@@ -852,7 +852,7 @@ class TrabajadorController extends Controller
             set_mensaje('Trabajador actualizado correctamente.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo actualizar el trabajador: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar el trabajador');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposTrabajador([$e->getMessage()]));
             $this->redirect($id > 0 ? 'trabajadores/' . $id . '/editar' : 'trabajadores');
@@ -902,7 +902,7 @@ class TrabajadorController extends Controller
             set_mensaje('Concepto laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el concepto laboral: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el concepto laboral');
             $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
         }
     }
@@ -940,7 +940,7 @@ class TrabajadorController extends Controller
             set_mensaje('Anticipo laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el anticipo laboral: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el anticipo laboral');
             $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
         }
     }
@@ -978,7 +978,7 @@ class TrabajadorController extends Controller
             set_mensaje('Prestamo laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el prestamo laboral: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el prestamo laboral');
             $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
         }
     }
@@ -1016,7 +1016,7 @@ class TrabajadorController extends Controller
             set_mensaje('Asistencia laboral registrada correctamente. No se genero nomina ni movimiento de Caja.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar la asistencia laboral: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar la asistencia laboral');
             $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
         }
     }
@@ -1050,12 +1050,12 @@ class TrabajadorController extends Controller
             );
 
             set_mensaje(
-                'Pago laboral registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
-                . ', saldo estimado nuevo ' . number_format((float)$resultado['saldo_posterior_estimado'], 2) . '.',
+                'Pago registrado y descontado de Caja. Le quedan pendientes $'
+                . number_format((float)$resultado['saldo_posterior_estimado'], 2) . ' a este trabajador.',
                 'success'
             );
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el pago laboral con Caja: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el pago laboral con Caja');
         }
 
         $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
@@ -1097,7 +1097,7 @@ class TrabajadorController extends Controller
                 'success'
             );
         } catch (Throwable $e) {
-            set_mensaje('No se pudo revertir el pago laboral con Caja: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'revertir el pago laboral con Caja');
         }
 
         $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
@@ -1130,7 +1130,7 @@ class TrabajadorController extends Controller
             set_mensaje($mensaje, 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo cambiar el estado del trabajador: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cambiar el estado del trabajador');
             $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
         }
     }

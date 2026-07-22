@@ -250,7 +250,7 @@ public function generarPdfMovimientosAction() {
         $this->generarPdfReporte($movimientos, $productos, $fecha_desde, $fecha_hasta);
 
     } catch (Exception $e) {
-        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'completar la operación');
         $this->redirect('inventario/exportar');
     }
 }
@@ -1113,7 +1113,7 @@ public function debugMovimientosDateAction() {
             if ($this->db->enTransaccion()) {
                 $this->db->safeRollBack();
             }
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposInventarioProducto([$e->getMessage()]));
             $this->redirect('inventario/nuevo');
@@ -1195,7 +1195,7 @@ public function debugMovimientosDateAction() {
             if ($this->db->enTransaccion()) {
                 $this->db->safeRollBack();
             }
-	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
             $this->redirect('inventario/entrada');
@@ -1287,7 +1287,7 @@ public function debugMovimientosDateAction() {
             if ($this->db->enTransaccion()) {
                 $this->db->safeRollBack();
             }
-	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
 	            $this->redirect('inventario/salida');
@@ -1355,7 +1355,7 @@ public function debugMovimientosDateAction() {
 
     } catch (Exception $e) {
         error_log("ERROR en guardarConfiguracion: " . $e->getMessage());
-        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'completar la operación');
     }
 
     $this->redirect('inventario/configuracion');
@@ -1436,7 +1436,7 @@ public function debugMovimientosDateAction() {
             }
 
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposInventarioProducto([$e->getMessage()]));
             $this->redirect('inventario/editar/' . $id);
@@ -1468,7 +1468,7 @@ public function debugMovimientosDateAction() {
             }
 
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
         }
 
         $this->redirect('inventario');
@@ -1613,7 +1613,7 @@ public function debugMovimientosDateAction() {
             if ($this->db->enTransaccion()) {
                 $this->db->safeRollBack();
             }
-	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
 	        }

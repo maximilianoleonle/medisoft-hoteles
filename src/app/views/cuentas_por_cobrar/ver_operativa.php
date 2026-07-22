@@ -320,7 +320,8 @@ if (!function_exists('cxc_op_form_error_attrs')) {
             </div>
 
             <?php if (!empty($cobroCaja['elegible']) && $cobroToken): ?>
-                <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . $cuentaId . '/registrar-cobro-caja') ?>" class="cx-pay-card mt-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . $cuentaId . '/registrar-cobro-caja') ?>" class="cx-pay-card mt-5 grid grid-cols-1 md:grid-cols-4 gap-4"
+                      onsubmit="var m = this.querySelector('[name=monto]'); return confirm('Vas a registrar un cobro de $' + ((m && m.value) ? m.value : '0') + ' que ENTRA a la Caja abierta. ¿Confirmar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="cobro_token" value="<?= cxc_op_view_safe($cobroToken, '') ?>">
                     <div>
@@ -427,7 +428,8 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                                         ? (string)($cxcOldInput['motivo'] ?? '')
                                         : '';
                                 ?>
-                                <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . $cuentaId . '/movimientos/' . $movimientoCobroId . '/revertir-cobro-caja') ?>" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . $cuentaId . '/movimientos/' . $movimientoCobroId . '/revertir-cobro-caja') ?>" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+                                      onsubmit="return confirm('Vas a revertir el cobro #<?= $movimientoCobroId ?> de $<?= number_format((float)($reversion['monto'] ?? $movimientoCobro['monto'] ?? 0), 2) ?>: el dinero SALDRÁ de Caja y la cuenta volverá a quedar pendiente. ¿Confirmar?');">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="reversion_token" value="<?= cxc_op_view_safe($reversionToken, '') ?>">
                                     <div>

@@ -354,7 +354,7 @@ class FacturacionController extends Controller {
             
         } catch (Exception $e) {
             error_log("Error al guardar datos fiscales: " . $e->getMessage());
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input(array_merge($datos ?? [], ['solicitud_id' => $id]));
             save_form_errors($this->erroresCamposFacturacion([$e->getMessage()]));
         }
@@ -421,7 +421,7 @@ class FacturacionController extends Controller {
             
         } catch (Exception $e) {
             error_log("Error al completar factura: " . $e->getMessage());
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input([
                 'solicitud_id' => $id,
                 'numero_factura' => $numero_factura,
@@ -494,7 +494,7 @@ class FacturacionController extends Controller {
             
         } catch (Exception $e) {
             error_log("Error al cancelar factura: " . $e->getMessage());
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             $redirect = $id ? 'facturacion/ver/' . $id : 'facturacion';
             save_old_input([
                 'solicitud_id' => $id,
@@ -547,7 +547,7 @@ class FacturacionController extends Controller {
                 );
             }
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
         }
         
         $this->redirect('facturacion/ver/' . $id);

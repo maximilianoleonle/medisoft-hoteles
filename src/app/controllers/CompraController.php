@@ -133,7 +133,7 @@ class CompraController extends Controller
                 ],
             ]);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo cargar el detalle de la compra: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cargar el detalle de la compra');
             $this->redirect('compras');
         }
     }
@@ -166,7 +166,7 @@ class CompraController extends Controller
                 'modoEdicion' => true,
             ]);
         } catch (Throwable $e) {
-            set_mensaje('No se puede editar la compra: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'editar la compra');
             $this->redirect('compras');
         }
     }
@@ -264,7 +264,7 @@ class CompraController extends Controller
             }
             $this->redirect('compras');
         } catch (Throwable $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposCompra([$e->getMessage()]));
             $this->redirect('compras/crear');
@@ -305,7 +305,7 @@ class CompraController extends Controller
             set_mensaje('Compra #' . $compraId . ' actualizada correctamente.', 'success');
             $this->redirect('compras/' . $compraId);
         } catch (Throwable $e) {
-            set_mensaje('Error al actualizar la compra: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar la compra');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposCompra([$e->getMessage()]));
             $this->redirect('compras/' . $compraId . '/editar');
@@ -331,7 +331,7 @@ class CompraController extends Controller
             );
             set_mensaje('Compra #' . $compraId . ' cancelada. No se modifico el inventario.', 'success');
         } catch (Throwable $e) {
-            set_mensaje('Error al cancelar la compra: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cancelar la compra');
         }
 
         $this->redirect('compras/' . $compraId);
@@ -366,12 +366,12 @@ class CompraController extends Controller
                 : 0;
 
             set_mensaje(
-                'Compra #' . $compraId . ' recibida correctamente. Movimientos de inventario: ' . $movimientos . '.',
+                'Compra #' . $compraId . ' recibida: ' . $movimientos . ' producto(s) entraron al inventario y quedó registrada la cuenta por pagar al proveedor.',
                 'success'
             );
             $this->redirect('compras?estado=recibida');
         } catch (Throwable $e) {
-            set_mensaje('Error al recibir compra: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'recibir compra');
             $this->redirect('compras');
         }
     }

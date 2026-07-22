@@ -224,7 +224,7 @@ class CuentaPorCobrarController extends Controller
             );
             $this->redirect('cuentas-por-cobrar/operativas/' . $cxcId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo generar la cuenta por cobrar: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'generar la cuenta por cobrar');
             $this->redirect('cuentas-por-cobrar');
         }
     }
@@ -266,14 +266,14 @@ class CuentaPorCobrarController extends Controller
             $advertenciaFactura = $this->sincronizarFacturaPorCobroCxc($cuentaId, $resultado);
 
             set_mensaje(
-                'Cobro CxC registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.'
+                'Cobro registrado en Caja. Saldo pendiente del cliente: $'
+                . number_format((float)$resultado['saldo_posterior'], 2) . '.'
                 . ($advertenciaFactura ?? ''),
                 'success'
             );
             clear_old_input();
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el cobro CxC: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el cobro CxC');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposCobro([$e->getMessage()]));
         }
@@ -318,14 +318,14 @@ class CuentaPorCobrarController extends Controller
             $advertenciaFactura = $this->sincronizarFacturaPorReversionCxc($cuentaId, $resultado);
 
             set_mensaje(
-                'Reversion CxC registrada. Gasto Caja #' . (int)$resultado['movimiento_caja_reversion_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.'
+                'Cobro revertido: el dinero salió de Caja. Saldo pendiente del cliente: $'
+                . number_format((float)$resultado['saldo_posterior'], 2) . '.'
                 . ($advertenciaFactura ?? ''),
                 'success'
             );
             clear_old_input();
         } catch (Throwable $e) {
-            set_mensaje('No se pudo revertir el cobro CxC: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'revertir el cobro CxC');
             $oldInput = $_POST;
             $oldInput['reversion_movimiento_id'] = $movimientoId;
             save_old_input($oldInput);

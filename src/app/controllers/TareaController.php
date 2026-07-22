@@ -250,7 +250,7 @@ class TareaController extends Controller
                 $this->redirect('tareas');
             }
         } catch (Throwable $e) {
-            set_mensaje('No se pudo crear la tarea: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear la tarea');
             save_old_input($_POST);
             save_form_errors(count($formularios) > 1
                 ? ['_global' => [$e->getMessage()]]
@@ -320,7 +320,7 @@ class TareaController extends Controller
             set_mensaje('Tarea actualizada correctamente.', 'success');
             $this->redirect('tareas/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo actualizar la tarea: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar la tarea');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposTarea([$e->getMessage()]));
             $this->redirect($id > 0 ? 'tareas/' . $id . '/editar' : 'tareas');
@@ -356,7 +356,7 @@ class TareaController extends Controller
             set_mensaje('Tarea vinculada al mantenimiento creada correctamente.', 'success');
             $this->redirect('tareas/' . $tareaId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo crear la tarea desde mantenimiento: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear la tarea desde mantenimiento');
             $this->redirect('reportes/mantenimiento-programado?dias=' . $dias);
         }
     }
@@ -388,7 +388,7 @@ class TareaController extends Controller
             set_mensaje('Tarea de limpieza creada correctamente.', 'success');
             $this->redirect('tareas/' . $tareaId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo crear la tarea de limpieza: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear la tarea de limpieza');
             $this->redirect($habitacionId > 0 ? 'habitaciones/' . $habitacionId : 'reportes/limpieza');
         }
     }
@@ -430,7 +430,7 @@ class TareaController extends Controller
             clear_old_input();
             set_mensaje('Tarea asignada correctamente.', 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo asignar la tarea: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'asignar la tarea');
             save_old_input([
                 'trabajador_ids' => array_values(array_map('strval', $trabajadorIds)),
                 'tarea_form_action' => 'asignar',
@@ -803,7 +803,7 @@ class TareaController extends Controller
             clear_old_input();
             set_mensaje($mensajeExito, 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo actualizar la tarea: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar la tarea');
             save_old_input([
                 'comentario' => $comentario,
                 'tarea_form_action' => $accion,

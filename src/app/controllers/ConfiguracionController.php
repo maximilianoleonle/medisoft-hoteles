@@ -469,7 +469,7 @@ class ConfiguracionController extends Controller {
             
         } catch (Exception $e) {
             error_log("Error al crear backup: " . $e->getMessage());
-            set_mensaje('Error al crear el respaldo: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear el respaldo');
         }
         
         $this->redirect('configuracion/backup');

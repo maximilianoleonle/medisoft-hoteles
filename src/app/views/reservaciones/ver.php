@@ -3901,7 +3901,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                                     <strong><?= $rdMoney($ab['monto']) ?></strong>
                                                     <span style="color:#667085;"> &middot; <?= $rdSafe($rpAbonoMetodoLabel) ?> &middot; <?= $rdSafe(date('d/m/Y H:i', strtotime((string)$ab['created_at']))) ?></span>
                                                 </div>
-                                                <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" data-ms-confirm data-ms-type="error" data-ms-icon="wallet" data-ms-title="¿Revertir anticipo?" data-ms-msg="Se generará un movimiento de caja de reverso por este anticipo." data-ms-ok="Sí, revertir" style="margin:0;">
+                                                <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" data-ms-confirm data-ms-type="error" data-ms-icon="wallet" data-ms-title="¿Revertir anticipo?" data-ms-msg="El anticipo se descontará de la Caja y la reservación volverá a quedar con saldo pendiente." data-ms-ok="Sí, revertir" style="margin:0;">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="abono_id" value="<?= (int)$ab['id'] ?>">
                                                     <button type="submit" style="background:none;border:none;color:#B4392B;cursor:pointer;font-size:.8rem;font-weight:600;"><i class="fas fa-rotate-left"></i> Revertir</button>
@@ -6002,7 +6002,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
             <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 1px solid #FCD34D; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem;">
                 <p style="font-size: 0.875rem; color: #92400E; margin: 0; font-weight: 600;">
                     <i class="fas fa-exclamation-triangle" style="margin-right: 0.375rem;"></i>
-                    ¿Está seguro de cancelar esta reservación?
+                    Al cancelar se liberan las habitaciones y, si hay anticipo, su devoluci&oacute;n se maneja en Caja. Esta acci&oacute;n no se puede deshacer.
                 </p>
             </div>
 

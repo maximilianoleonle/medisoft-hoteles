@@ -1646,7 +1646,7 @@ public function historialAction() {
                 
             } catch (Exception $e) {
                 $db->rollBack();
-                set_mensaje('Error al agregar imágenes: ' . $e->getMessage(), 'error');
+                set_mensaje_error_op($e, 'agregar imágenes');
             }
         } else {
             set_mensaje('No se seleccionaron imágenes', 'error');
@@ -1741,7 +1741,7 @@ public function eliminarImagenAction() {
     } catch (Exception $e) {
         $db->rollBack();
         error_log("Error al eliminar imagen: " . $e->getMessage());
-        set_mensaje('Error al eliminar la imagen: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'eliminar la imagen');
     }
     
     $this->redirect('habitaciones/' . $habitacion_id . '/imagenes');
@@ -1796,7 +1796,7 @@ public function mantenimientoAction() {
     $hotelId = $this->hotelIdActual();
 
     if (!in_array($accion, ['iniciar', 'finalizar'], true)) {
-        set_mensaje('AcciÃ³n de mantenimiento no vÃ¡lida', 'error');
+        set_mensaje('Acción de mantenimiento no válida', 'error');
         $this->redirect('habitaciones/' . $id);
     }
     
@@ -1837,7 +1837,7 @@ public function mantenimientoAction() {
             set_mensaje('Mantenimiento finalizado correctamente', 'success');
         }
     } catch (Exception $e) {
-        set_mensaje('Error al procesar mantenimiento: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'procesar mantenimiento');
     }
 
     $this->redirect('habitaciones/' . $id);

@@ -170,7 +170,8 @@ $estadoMeta = [
                                     ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>)'>
                                 <i class="fas fa-pen"></i> Editar
                             </button>
-                            <form method="POST" action="<?= url('areas/' . (int)$a['id'] . '/toggle') ?>" style="display:inline;">
+                            <form method="POST" action="<?= url('areas/' . (int)$a['id'] . '/toggle') ?>" style="display:inline;"
+                                  <?= $estaActiva ? 'onsubmit="return confirm(\'El área dejará de aparecer en la operación del hotel hasta que la reactives. ¿Pausar ' . htmlspecialchars((string)($a['nombre'] ?? 'el área'), ENT_QUOTES, 'UTF-8') . '?\');"' : '' ?>>
                                 <?= csrf_field() ?>
                                 <button type="submit" class="arx-mini">
                                     <i class="fas <?= $estaActiva ? 'fa-pause' : 'fa-play' ?>"></i>

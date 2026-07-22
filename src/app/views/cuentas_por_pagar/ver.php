@@ -639,7 +639,8 @@ if (!function_exists('cxp_form_error_attrs')) {
             </div>
 
             <?php if (!empty($pagoCaja['elegible']) && !empty($pagoToken)): ?>
-                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/registrar-pago-caja') ?>" class="cx-pay-card mt-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/registrar-pago-caja') ?>" class="cx-pay-card mt-5 grid grid-cols-1 md:grid-cols-4 gap-4"
+                      onsubmit="var m = this.querySelector('[name=monto]'); return confirm('Vas a registrar un pago al proveedor de $' + ((m && m.value) ? m.value : '0') + ' que SALE de la Caja abierta. ¿Confirmar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="pago_token" value="<?= cxp_view_safe($pagoToken, '') ?>">
 
@@ -769,7 +770,8 @@ if (!function_exists('cxp_form_error_attrs')) {
                                     ? (string)($cxpOldInput['motivo'] ?? '')
                                     : '';
                                 ?>
-                                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/movimientos/' . $movimientoPagoId . '/revertir-pago-caja') ?>" class="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-end">
+                                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/movimientos/' . $movimientoPagoId . '/revertir-pago-caja') ?>" class="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-end"
+                                      onsubmit="return confirm('Vas a revertir el pago #<?= $movimientoPagoId ?>: el dinero REGRESARÁ a Caja y la cuenta volverá a quedar por pagar. ¿Confirmar?');">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="reversion_token" value="<?= cxp_view_safe($tokenReversion, '') ?>">
                                     <div>

@@ -155,7 +155,7 @@ class DocumentoController extends Controller
 
             $this->redirect('documentos/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo actualizar la metadata: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar la metadata');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposDocumento([$e->getMessage()]));
             $this->redirect($id > 0 ? 'documentos/' . $id . '/editar' : 'documentos');
@@ -218,7 +218,7 @@ class DocumentoController extends Controller
             set_mensaje('Documento #' . $documentoId . ' cargado correctamente en storage privado.', 'success');
             $this->redirect('documentos/' . $documentoId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo cargar el documento: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cargar el documento');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposDocumento([$e->getMessage()]));
             $this->redirect('documentos/subir' . $this->queryContexto($datos));
@@ -365,7 +365,7 @@ class DocumentoController extends Controller
             set_mensaje($mensajeExito, 'success');
             $this->redirect('documentos/' . $id);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo actualizar el estado documental: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'actualizar el estado documental');
             $this->redirect($id > 0 ? 'documentos/' . $id : 'documentos');
         }
     }

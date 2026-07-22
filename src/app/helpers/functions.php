@@ -722,6 +722,36 @@ function set_mensaje($texto, $tipo = 'info') {
 }
 
 /**
+ * Flash de error de una operación fallida, en lenguaje de usuario.
+ * Si la excepción trae un mensaje de REGLA DE NEGOCIO (texto en español, sin
+ * rastros técnicos), se muestra: "No se pudo {accion}: {detalle}". Si huele a
+ * error técnico (SQL/PDO/clases/rutas), el detalle se loguea y el usuario ve
+ * "No se pudo {accion}. Intenta de nuevo...". Complementa el filtro SQLSTATE
+ * de set_mensaje() cubriendo también excepciones técnicas no-SQL.
+ *   Uso: set_mensaje_error_op($e, 'crear la tarea');
+ */
+function set_mensaje_error_op(Throwable $e, $accion) {
+    $msg = trim((string) $e->getMessage());
+    $esTecnico = $msg === ''
+        || stripos($msg, 'SQLSTATE') !== false
+        || stripos($msg, 'PDO') !== false
+        || stripos($msg, 'syntax') !== false
+        || stripos($msg, 'undefined') !== false
+        || stripos($msg, 'call to') !== false
+        || stripos($msg, 'stack trace') !== false
+        || strpos($msg, '::') !== false
+        || preg_match('#\.php\b#i', $msg);
+
+    if ($esTecnico) {
+        error_log('set_mensaje_error_op ocultó detalle técnico (' . $accion . '): ' . $msg);
+        set_mensaje('No se pudo ' . $accion . '. Intenta de nuevo; si sigue fallando, avisa a soporte.', 'error');
+        return;
+    }
+
+    set_mensaje('No se pudo ' . $accion . ': ' . $msg, 'error');
+}
+
+/**
  * Obtener mensaje flash
  */
 function get_mensaje() {

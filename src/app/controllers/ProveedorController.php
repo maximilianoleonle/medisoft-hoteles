@@ -116,7 +116,7 @@ class ProveedorController extends Controller {
             set_mensaje('Proveedor creado correctamente.', 'success');
             $this->redirect('proveedores');
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposProveedor([$e->getMessage()]));
             $this->redirect('proveedores/crear');
@@ -165,7 +165,7 @@ class ProveedorController extends Controller {
             set_mensaje('Proveedor actualizado correctamente.', 'success');
             $this->redirect('proveedores');
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposProveedor([$e->getMessage()]));
             $id = (int)($this->route_params['id'] ?? 0);
@@ -206,7 +206,7 @@ class ProveedorController extends Controller {
             $this->auditar($accion, $antes, $despues, $id);
             set_mensaje($mensaje, 'success');
         } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
         }
 
         $this->redirect('proveedores');

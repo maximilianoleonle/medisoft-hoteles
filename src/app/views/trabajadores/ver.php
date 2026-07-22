@@ -598,7 +598,8 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             <div class="wk-panel-pad">
 
             <?php if (!empty($pagoCaja['elegible']) && !empty($pagoCajaToken)): ?>
-                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/registrar-pago-caja') ?>" class="wk-pay-grid">
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/registrar-pago-caja') ?>" class="wk-pay-grid"
+                      onsubmit="var m = this.querySelector('[name=monto]'); return confirm('Vas a registrar un pago de $' + ((m && m.value) ? m.value : '0') + ' a este trabajador. El dinero SALE de la Caja abierta. ¿Confirmar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="pago_token" value="<?= trab_view_safe($pagoCajaToken, '') ?>">
                     <div>

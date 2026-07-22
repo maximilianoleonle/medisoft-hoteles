@@ -254,7 +254,7 @@ class AreaController extends Controller {
                 set_mensaje('Acción de limpieza no válida', 'error');
             }
         } catch (Throwable $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
         }
 
         $this->redirect('areas/' . $id);
@@ -302,7 +302,7 @@ class AreaController extends Controller {
                 set_mensaje('Mantenimiento del área finalizado correctamente', 'success');
             }
         } catch (Exception $e) {
-            set_mensaje('Error al procesar mantenimiento: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'procesar mantenimiento');
         }
 
         $this->redirect('areas/' . $id);

@@ -229,7 +229,7 @@ class CuentaPorPagarController extends Controller
             set_mensaje('Cuenta por pagar #' . $cxpId . ' generada desde compra #' . $compraId . '.', 'success');
             $this->redirect('cuentas-por-pagar/' . $cxpId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo generar la cuenta por pagar: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'generar la cuenta por pagar');
             $this->redirect('cuentas-por-pagar/generacion-preview');
         }
     }
@@ -269,13 +269,13 @@ class CuentaPorPagarController extends Controller
             );
 
             set_mensaje(
-                'Pago de proveedor registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'Pago al proveedor registrado: el dinero salió de Caja. Queda por pagar: $'
+                . number_format((float)$resultado['saldo_posterior'], 2) . '.',
                 'success'
             );
             clear_old_input();
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el pago proveedor: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el pago proveedor');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposPago([$e->getMessage()]));
         }
@@ -317,13 +317,13 @@ class CuentaPorPagarController extends Controller
             );
 
             set_mensaje(
-                'Pago proveedor revertido. Ingreso Caja #' . (int)$resultado['movimiento_caja_reversion_id']
-                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'Pago revertido: el dinero regresó a Caja. Queda por pagar: $'
+                . number_format((float)$resultado['saldo_posterior'], 2) . '.',
                 'success'
             );
             clear_old_input();
         } catch (Throwable $e) {
-            set_mensaje('No se pudo revertir el pago proveedor: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'revertir el pago proveedor');
             $oldInput = $_POST;
             $oldInput['reversion_movimiento_id'] = $movimientoId;
             save_old_input($oldInput);

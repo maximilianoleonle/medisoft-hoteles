@@ -108,7 +108,8 @@ $estadoMantMeta = [
                     </form>
                     <?php if ($puedeMantenimiento): ?>
                         <button type="button" class="arx-btn is-warn" onclick="arvTogglePanel('arvPanelMant')"><i class="fas fa-wrench"></i> Reportar mantenimiento</button>
-                        <form method="POST" action="<?= url('areas/' . $areaId . '/cerrar') ?>" style="display:inline;">
+                        <form method="POST" action="<?= url('areas/' . $areaId . '/cerrar') ?>" style="display:inline;"
+                              onsubmit="return confirm('El área quedará cerrada y fuera de servicio hasta que la reabras. ¿Cerrar el área?');">
                             <?= csrf_field() ?>
                             <button type="submit" class="arx-btn is-outline"><i class="fas fa-ban" style="color:var(--c-critical);"></i> Cerrar área</button>
                         </form>

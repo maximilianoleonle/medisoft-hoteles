@@ -136,10 +136,11 @@ foreach ($activos as $a) {
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <?php if ($puedeGestionar && $hayVencidos): ?>
-                        <form method="POST" action="<?= url('mantenimientos/activos/generar') ?>" style="display:inline;">
+                        <form method="POST" action="<?= url('mantenimientos/activos/generar') ?>" style="display:inline;"
+                              onsubmit="return confirm('Se crearán las órdenes de mantenimiento de los equipos con servicio vencido. ¿Continuar?');">
                             <?= csrf_field() ?>
-                            <button type="submit" class="mact-btn is-gold" onclick="this.disabled=true;this.form.submit();">
-                                <i class="fas fa-bolt"></i> Generar vencidos ahora
+                            <button type="submit" class="mact-btn is-gold">
+                                <i class="fas fa-bolt"></i> Crear mantenimientos vencidos
                             </button>
                         </form>
                     <?php endif; ?>

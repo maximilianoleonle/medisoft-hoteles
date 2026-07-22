@@ -199,7 +199,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/anular') ?>" class="pd-anular-form"
               data-ms-confirm data-ms-type="warning" data-ms-icon="trash"
               data-ms-title="Anular periodo"
-              data-ms-msg="Se anulará el snapshot y sus créditos de ledger. Los pagos ya hechos deben revertirse antes. ¿Anular?"
+              data-ms-msg="Este periodo dejará de contar para pagos y sus cifras guardadas se cancelarán. Si ya hiciste pagos, reviértelos primero. ¿Anular el periodo?"
               data-ms-ok="Anular">
             <?= csrf_field() ?>
             <input type="text" name="motivo" required maxlength="255" placeholder="Motivo de anulación (obligatorio)">
@@ -217,7 +217,7 @@ include APP_PATH . '/views/partials/back_arrow.php';
         <form method="POST" action="<?= url('nomina/periodos/' . (int) $pd['id'] . '/reabrir') ?>" class="pd-anular-form"
               data-ms-confirm data-ms-type="warning" data-ms-icon="key"
               data-ms-title="Reabrir periodo"
-              data-ms-msg="El periodo volverá a CERRADO (sin aprobación) y sus recibos se cancelarán. El snapshot no se recalcula. ¿Reabrir?"
+              data-ms-msg="El periodo volverá a CERRADO (sin aprobación) y sus recibos se cancelarán. Las cifras guardadas no se recalculan. ¿Reabrir?"
               data-ms-ok="Reabrir">
             <?= csrf_field() ?>
             <input type="text" name="motivo" required maxlength="255" placeholder="Motivo de reapertura (obligatorio)">
@@ -290,14 +290,15 @@ include APP_PATH . '/views/partials/back_arrow.php';
             ?>
             <div class="pd-pay">
                 <?php if ($pdEval && !empty($pdEval['elegible']) && $pdTok): ?>
-                <form method="POST" action="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id'] . '/detalles/' . $pdDid . '/registrar-pago-caja') ?>">
+                <form method="POST" action="<?= url('trabajadores/nomina/periodos/' . (int) $pd['id'] . '/detalles/' . $pdDid . '/registrar-pago-caja') ?>"
+                      onsubmit="var m = this.querySelector('[name=monto]'); return confirm('Vas a registrar un pago de nómina de $' + ((m && m.value) ? m.value : '0') + '. El dinero SALE de la Caja abierta. ¿Confirmar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="pago_token" value="<?= htmlspecialchars((string) $pdTok) ?>">
                     <input type="hidden" name="origen" value="nomina">
                     <div class="pd-payfacts">
-                        <div class="pd-payfact"><span title="Lo que quedó pendiente según la foto congelada al cerrar el periodo.">Snapshot</span><strong>$<?= $pdSnap ?></strong></div>
-                        <div class="pd-payfact"><span title="Lo que falta hoy de verdad, ya restando los pagos hechos después de cerrar.">Saldo vivo</span><strong>$<?= $pdVivo ?></strong></div>
-                        <div class="pd-payfact"><span title="Lo máximo que puedes pagar ahora: el menor entre el snapshot y el saldo vivo.">Máximo</span><strong>$<?= $pdMax ?></strong></div>
+                        <div class="pd-payfact"><span title="Lo que quedó pendiente según las cifras guardadas al cerrar el periodo.">Pendiente al cierre</span><strong>$<?= $pdSnap ?></strong></div>
+                        <div class="pd-payfact"><span title="Lo que falta hoy de verdad, ya restando los pagos hechos después de cerrar.">Pendiente hoy</span><strong>$<?= $pdVivo ?></strong></div>
+                        <div class="pd-payfact"><span title="Lo máximo que puedes pagar ahora: el menor entre los dos montos anteriores.">Máximo a pagar</span><strong>$<?= $pdMax ?></strong></div>
                     </div>
                     <div class="pd-payrow">
                         <div>

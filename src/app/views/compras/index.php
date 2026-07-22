@@ -829,7 +829,7 @@ $visibles = count($compras);
             button.innerHTML = '<i class="fas fa-check"></i> Confirmar recepci&oacute;n';
         }
 
-        showPurchaseToast('Recibir la compra suma la mercancia al inventario y genera movimientos. Presiona Confirmar recepcion para continuar.');
+        showPurchaseToast('Al recibirla, la mercancía entra al inventario y se crea la cuenta por pagar al proveedor. Presiona "Confirmar recepción" para continuar.');
         form._confirmReceiveTimer = window.setTimeout(() => resetReceiveForm(form), 7000);
     }, true);
 })();

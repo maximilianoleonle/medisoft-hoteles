@@ -658,7 +658,7 @@ class TarifasController extends Controller {
             $impacto = $servicio->previsualizar($id, $this->hotelIdActual());
         } catch (Exception $e) {
             error_log('Tarifas: error al previsualizar impacto: ' . $e->getMessage());
-            set_mensaje('No se pudo calcular el impacto en reservaciones: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'calcular el impacto en reservaciones');
             $this->redirect('configuracion/tarifas');
             return;
         }

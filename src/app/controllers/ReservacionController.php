@@ -341,7 +341,7 @@ class ReservacionController extends Controller {
     public function agregarNotaAction() {
     if (!$this->isPost()) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        echo json_encode(['success' => false, 'message' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.']);
         exit;
     }
     
@@ -1054,14 +1054,14 @@ public function checkOutParcialAction() {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'message' => 'Método no permitido'
+                'message' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.'
             ]);
             exit;
         }
-        
+
         $_SESSION['flash_message'] = [
             'tipo' => 'error',
-            'texto' => 'Método no permitido'
+            'texto' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.'
         ];
         return $this->redirect('/reservaciones');
     }
@@ -1106,14 +1106,14 @@ public function checkOutParcialAction() {
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => false,
-                    'message' => 'No se recibieron IDs válidos de habitaciones'
+                    'message' => 'Selecciona al menos una habitación para registrar la salida.'
                 ]);
                 exit;
             }
-            
+
             $_SESSION['flash_message'] = [
                 'tipo' => 'error',
-                'texto' => 'No se recibieron IDs válidos de habitaciones'
+                'texto' => 'Selecciona al menos una habitación para registrar la salida.'
             ];
             return $this->redirect('/reservaciones/ver/' . $id);
         }
@@ -1220,14 +1220,14 @@ public function checkOutParcialAction() {
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => false,
-                    'message' => $resultado['error'] ?? 'Error desconocido'
+                    'message' => $resultado['error'] ?? 'No se pudo registrar la salida. Intenta de nuevo.'
                 ]);
                 exit;
             }
-            
+
             $_SESSION['flash_message'] = [
                 'tipo' => 'error',
-                'texto' => 'Error: ' . ($resultado['error'] ?? 'Error desconocido')
+                'texto' => $resultado['error'] ?? 'No se pudo registrar la salida. Intenta de nuevo.'
             ];
             return $this->redirect('/reservaciones/ver/' . $id);
         }
@@ -1320,7 +1320,7 @@ public function obtenerNotasAction() {
 
     if (!$reservacion_id) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'ID de reservación inválido']);
+        echo json_encode(['success' => false, 'message' => 'No encontramos esa reservación.']);
         exit;
     }
 
@@ -1518,7 +1518,7 @@ public function obtenerNotasAction() {
         
     } catch (Exception $e) {
         error_log("Error en exportarPDFAction: " . $e->getMessage());
-        set_mensaje('Error al generar el PDF: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'generar el PDF');
         $this->redirect('reservaciones');
     }
 }
@@ -2897,7 +2897,7 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
             
         } catch (Exception $e) {
             error_log('ERROR en actualizarHabitacionesAction: ' . $e->getMessage());
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
             $this->redirect('reservaciones/editar-habitaciones/' . $reservacion_id);
         }
     }
@@ -3757,7 +3757,7 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             
         } catch (Exception $e) {
             error_log("Error en checkInAction: " . $e->getMessage());
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'completar la operación');
         }
         
         if ($checkInOk && $checkInReturnTo !== null) {
@@ -4176,7 +4176,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             $msg .= $advertenciaCxc;
             set_mensaje($msg, 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo registrar el cobro: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'registrar el cobro');
         }
         $this->redirect('reservaciones/ver/' . $id);
     }
@@ -4254,7 +4254,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             $msg .= $advertenciaCxc . $advertenciaFactura;
             set_mensaje($msg, 'success');
         } catch (Throwable $e) {
-            set_mensaje('No se pudo revertir el anticipo: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'revertir el anticipo');
         }
         $this->redirect('reservaciones/ver/' . $id);
     }
@@ -4393,7 +4393,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
         
     } catch (Exception $e) {
         error_log("Error en cancelarAction: " . $e->getMessage());
-        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'completar la operación');
         $this->redirect('reservaciones/ver/' . $id);
         return;
     }
@@ -4437,14 +4437,14 @@ public function noShowAction() {
         }
 
         if ($reservacion['estado'] !== 'confirmada') {
-            set_mensaje('Solo se puede marcar no-show una reservación confirmada pendiente de check-in.', 'error');
+            set_mensaje('Solo puedes marcar "no llegó" (no-show) en reservaciones confirmadas que aún no tienen check-in.', 'error');
             $this->redirect('reservaciones/ver/' . $id);
             return;
         }
 
         $resultado = $this->reservacionModel->marcarNoShow($id, $razon);
 
-        $mensaje = 'Reservación marcada como no-show.';
+        $mensaje = 'Reservación marcada: el huésped no llegó (no-show).';
         $retenido = is_array($resultado) ? (float)($resultado['total_retenido'] ?? 0) : 0;
         if ($retenido > 0) {
             $mensaje .= sprintf(' Se retuvo el anticipo de %s como penalización.', format_money($retenido));
@@ -4459,7 +4459,7 @@ public function noShowAction() {
         ));
     } catch (Exception $e) {
         error_log("Error en noShowAction: " . $e->getMessage());
-        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'completar la operación');
         $this->redirect('reservaciones/ver/' . $id);
         return;
     }
@@ -4741,7 +4741,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
         error_log('guardarAction: ' . $e->getMessage());
         save_old_input($_POST);
         save_form_errors($this->erroresCamposReservacionCrear($e->getMessage()));
-        set_mensaje('Error: ' . $e->getMessage(), 'error');
+        set_mensaje_error_op($e, 'completar la operación');
         if ($this->isAjax()) {
             View::renderJSON([
                 'success' => false,
@@ -5383,7 +5383,7 @@ public function checkOutRapidoAction() {
 
     if (!$this->isPost()) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        echo json_encode(['success' => false, 'message' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.']);
         exit;
     }
     
@@ -5560,7 +5560,7 @@ public function checkOutRapidoAction() {
         if (!$id) {
             $_SESSION['flash_message'] = [
                 'tipo' => 'error',
-                'texto' => 'ID de reservación inválido'
+                'texto' => 'No encontramos esa reservación.'
             ];
             $this->redirect('/reservaciones');
         }
@@ -5989,7 +5989,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
         header('Content-Type: application/json');
         
         if (!$this->isPost()) {
-            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            echo json_encode(['success' => false, 'message' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.']);
             exit;
         }
         

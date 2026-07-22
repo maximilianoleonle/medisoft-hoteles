@@ -242,7 +242,7 @@ class MantenimientoController extends Controller
             if ($db->enTransaccion()) {
                 $db->safeRollBack();
             }
-            set_mensaje('Error al cerrar el mantenimiento: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'cerrar el mantenimiento');
             $this->redirect('mantenimientos/' . $id);
             return;
         }

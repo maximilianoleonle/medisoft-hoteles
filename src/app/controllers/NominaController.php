@@ -476,7 +476,7 @@ class NominaController extends Controller {
             set_mensaje('Empleado creado correctamente. Ahora asignale puesto, grupo y salario.', 'success');
             $this->redirect('nomina/empleados/' . $trabajadorId);
         } catch (Throwable $e) {
-            set_mensaje('No se pudo crear el empleado: ' . $e->getMessage(), 'error');
+            set_mensaje_error_op($e, 'crear el empleado');
             save_old_input($_POST);
             save_form_errors($this->erroresCamposEmpleado([$e->getMessage()]));
             $this->redirect('nomina/empleados/crear');
@@ -1247,7 +1247,7 @@ class NominaController extends Controller {
 
         try {
             (new NominaCierreService())->anular($hotelId, (int) $id, (string) $this->getPost('motivo', ''), user_id());
-            set_mensaje('Periodo anulado y creditos de ledger revertidos.', 'success');
+            set_mensaje('Periodo anulado. Sus montos pendientes ya no cuentan para pagos.', 'success');
         } catch (Throwable $e) {
             set_mensaje($e->getMessage(), 'error');
         }

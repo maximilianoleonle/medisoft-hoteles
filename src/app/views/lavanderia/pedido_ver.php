@@ -105,8 +105,8 @@ $accionSiguiente = [
                 <form method="POST" action="<?= url('lavanderia/pedidos/' . $pedidoId . '/estado') ?>"
                       data-ms-confirm data-ms-type="error" data-ms-icon="x"
                       data-ms-title="¿Cancelar el pedido?"
-                      data-ms-msg="<?= $cobrado ? 'El pedido ya fue cobrado: primero registra la devolución en Caja.' : 'El pedido quedará cancelado sin cobro.' ?>"
-                      data-ms-ok="Sí, cancelar" style="display:inline;">
+                      data-ms-msg="<?= $cobrado ? 'OJO: este pedido ya fue cobrado. Si lo cancelas, registra también la devolución del dinero en Caja para que tu corte cuadre.' : 'El pedido quedará cancelado sin cobro.' ?>"
+                      data-ms-ok="<?= $cobrado ? 'Cancelar de todas formas' : 'Sí, cancelar' ?>" style="display:inline;">
                     <?= csrf_field() ?>
                     <input type="hidden" name="accion" value="cancelar">
                     <button type="submit" class="lvx-btn is-outline" style="color:var(--c-critical);">

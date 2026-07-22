@@ -1475,7 +1475,9 @@ if ($return_to == 'reservacion') {
         $codigoError = 'HSP-' . date('YmdHis') . '-' . substr(sha1($e->getMessage()), 0, 6);
         $detalleLog = $e->getPrevious() ? $e->getPrevious()->getMessage() : $e->getMessage();
         error_log('[' . $codigoError . '] Error al registrar huesped: ' . $detalleLog);
-        set_mensaje('No se pudo registrar el huesped. ' . $e->getMessage() . ' Codigo: ' . $codigoError, 'error');
+        // El detalle tecnico va al log con el codigo; al usuario solo el mensaje
+        // de negocio (si lo hay) y el codigo corto para reportar a soporte.
+        set_mensaje_error_op($e, 'registrar al huésped (código ' . $codigoError . ')');
         save_old_input($_POST);
         save_form_errors($this->erroresCamposHuesped([$e->getMessage()]));
         $this->redirect($this->rutaCrearConContexto());

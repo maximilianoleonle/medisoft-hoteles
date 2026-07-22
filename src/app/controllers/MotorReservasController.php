@@ -163,7 +163,14 @@ class MotorReservasController extends Controller {
                 'success'
             );
         } catch (Throwable $e) {
-            set_mensaje('No se pudo conciliar: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'), 'error');
+            // Causa mas comun: no hay corte de caja abierto. Guiar, no tecnicismo.
+            $detalle = trim((string) $e->getMessage());
+            set_mensaje(
+                stripos($detalle, 'corte') !== false
+                    ? 'No se pudo registrar el pago en Caja: ' . htmlspecialchars($detalle, ENT_QUOTES, 'UTF-8') . ' Abre primero un corte en Caja e intenta de nuevo.'
+                    : 'No se pudo registrar el pago en Caja. Verifica que haya un corte abierto e intenta de nuevo; si sigue fallando, avisa a soporte.',
+                'error'
+            );
         }
 
         $this->redirect('motor-reservas');
