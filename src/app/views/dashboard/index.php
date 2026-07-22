@@ -370,7 +370,7 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     WHERE r.hotel_id = ?
                       AND r.huesped_id IN ($placeholders)
                       AND r.estado IN ('checked_in', 'confirmada', 'reservada')
-                      AND DATE(r.fecha_entrada) = CURDATE()
+                      AND DATE(r.fecha_entrada) <= CURDATE()
                       AND DATE(r.fecha_salida) >= CURDATE()
                     GROUP BY
                         r.id,
@@ -407,7 +407,9 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     $fechaSalida = (string)($reserva['fecha_salida'] ?? '');
                     $tipo = null;
 
-                    if ($estado === 'checked_in' && $fechaEntrada === $today && $fechaSalida >= $today) {
+                    // Ocupado = hospedado AHORA aunque haya entrado días atrás (antes solo
+                    // contaba check-ins de hoy y un huésped de varias noches desaparecía).
+                    if ($estado === 'checked_in' && $fechaEntrada <= $today && $fechaSalida >= $today) {
                         $tipo = 'ocupado';
                     } elseif (in_array($estado, ['confirmada', 'reservada'], true) && $fechaEntrada === $today && $fechaSalida >= $today) {
                         $tipo = 'apartado';
@@ -2768,6 +2770,126 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     border-color: color-mix(in srgb, var(--dash-slate-400) 22%, var(--dash-line));
 }
 
+/* ── Proyección de estacionamiento a días futuros ── */
+.parking-forecast {
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid var(--dash-line-soft);
+}
+
+.parking-forecast-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.parking-forecast-head > span {
+    color: var(--dash-navy);
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.parking-forecast-head input[type="date"] {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--dash-line);
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: var(--dash-navy);
+    font-size: 11.5px;
+    font-weight: 750;
+}
+
+.parking-forecast-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.parking-forecast-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.parking-forecast-day b {
+    color: var(--dash-navy);
+    font-size: 11.5px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.parking-forecast-day .pf-bar {
+    width: 100%;
+    height: 44px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    border: 1px solid var(--dash-line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--dash-slate-400) 10%, #FFFFFF);
+}
+
+.parking-forecast-day .pf-bar i {
+    display: block;
+    width: 100%;
+    background: var(--parking-ring-end, var(--dash-gold));
+}
+
+.parking-forecast-day.pf-warn .pf-bar i { background: var(--dash-maint); }
+.parking-forecast-day.pf-over .pf-bar i { background: var(--dash-critical); }
+.parking-forecast-day.pf-over b { color: var(--dash-critical); }
+
+.parking-forecast-day small {
+    color: var(--dash-slate-500);
+    font-size: 10px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.parking-forecast-day.is-active .pf-bar {
+    border-color: color-mix(in srgb, var(--dash-gold) 55%, var(--dash-line));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-gold) 35%, transparent);
+}
+
+.parking-forecast-detail {
+    margin-top: 9px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--dash-gold) 18%, var(--dash-line));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--dash-gold) 5%, #FFFFFF);
+    color: var(--dash-navy);
+    font-size: 11.5px;
+    font-weight: 750;
+    line-height: 1.5;
+}
+
+.parking-forecast-detail b { font-weight: 950; }
+
+.parking-forecast-empty {
+    grid-column: 1 / -1;
+    padding: 6px 0;
+    color: var(--dash-slate-500);
+    font-size: 11.5px;
+    font-weight: 750;
+}
+
+.dm-park-forecast { margin-top: 10px; }
+
+.dm-park-forecast .pf-mini-title {
+    margin-bottom: 7px;
+    color: var(--dash-navy);
+    font-size: 11.5px;
+    font-weight: 850;
+}
+
 .parking-vehicle-list {
     width: 100%;
     display: grid;
@@ -4414,7 +4536,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <i class="fas fa-shield-halved" aria-hidden="true"></i>
                 </div>
                 <div style="min-width:0;flex:1;">
-                    <div class="card-title">El Guardi&aacute;n</div>
+                    <div class="card-title">Guardi&aacute;n financiero</div>
                     <div class="soft-note" style="margin-top:2px;">
                         <?= $guardian_nuevos > 0
                             ? $guardian_nuevos . ' patr&oacute;n(es) a revisar &mdash; conviene confirmar con el equipo'
@@ -4728,6 +4850,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                 </div>
                             <?php endforeach; ?>
                         </div>
+                        <div class="parking-forecast" id="parkingForecast"
+                             data-endpoint="<?= url('api/dashboard/estacionamiento-proyeccion') ?>"
+                             data-hoy="<?= date('Y-m-d') ?>">
+                            <div class="parking-forecast-head">
+                                <span><i class="fas fa-calendar-week" aria-hidden="true"></i> Próximos días</span>
+                                <input type="date" id="parkingForecastDate" min="<?= date('Y-m-d') ?>" aria-label="Ver estacionamiento proyectado de una fecha">
+                            </div>
+                            <div class="parking-forecast-strip" data-pf-strip aria-label="Vehículos proyectados en los próximos 7 días"></div>
+                            <div class="parking-forecast-detail" data-pf-detail hidden></div>
+                        </div>
                     </div>
                     <div class="parking-vehicle-list" aria-label="Vehiculos vinculados al estacionamiento">
                         <?php if (empty($lista_vehiculos_estacionamiento)): ?>
@@ -4875,6 +5007,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
+                    <div class="dm-park-forecast">
+                        <div class="pf-mini-title"><i class="fas fa-calendar-week" aria-hidden="true"></i> Próximos 7 días</div>
+                        <div class="parking-forecast-strip" data-pf-strip aria-label="Vehículos proyectados en los próximos 7 días"></div>
+                        <div class="parking-forecast-detail" data-pf-detail hidden></div>
+                    </div>
                 </div>
 
                 <div class="dm-sec"><span>Movimientos del día</span></div>
@@ -5225,6 +5362,132 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             row.addEventListener('pointercancel', finishDrag);
             row.addEventListener('click', function (e) {
                 if (row.dataset.dragged === '1') e.preventDefault();
+            });
+        });
+    }
+})();
+
+(function () {
+    const box = document.getElementById('parkingForecast');
+    if (!box) {
+        return;
+    }
+
+    const endpoint = box.getAttribute('data-endpoint');
+    const hoy = box.getAttribute('data-hoy');
+    const strips = document.querySelectorAll('[data-pf-strip]');
+    const details = document.querySelectorAll('[data-pf-detail]');
+    const dateInput = document.getElementById('parkingForecastDate');
+    const cache = {};
+
+    const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    function pedir(desde, dias) {
+        const key = desde + ':' + dias;
+        if (cache[key]) {
+            return Promise.resolve(cache[key]);
+        }
+        return fetch(endpoint + '?desde=' + encodeURIComponent(desde) + '&dias=' + dias, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function (r) { return r.json(); }).then(function (json) {
+            if (json && json.success && json.data) {
+                cache[key] = json.data;
+                return json.data;
+            }
+            throw new Error('proyeccion invalida');
+        });
+    }
+
+    function etiquetaDia(fechaStr) {
+        const f = new Date(fechaStr + 'T12:00:00');
+        return DIAS_CORTOS[f.getDay()] + ' ' + f.getDate();
+    }
+
+    function labelArea(data, codigo) {
+        if (codigo === 'por_confirmar') {
+            return 'Por confirmar';
+        }
+        const areas = data.areas || [];
+        for (let i = 0; i < areas.length; i++) {
+            if (areas[i].codigo === codigo) {
+                return areas[i].label;
+            }
+        }
+        return codigo;
+    }
+
+    function pintarDetalle(data, dia) {
+        const porArea = dia.por_area || {};
+        const partes = Object.keys(porArea).map(function (codigo) {
+            return labelArea(data, codigo) + ' ' + porArea[codigo];
+        });
+        const cupo = parseInt(data.cupo_total, 10) || 0;
+        let html = '<b>' + etiquetaDia(dia.fecha) + ':</b> ' + dia.total +
+            (cupo > 0 ? ' de ' + cupo : '') + ' vehículos proyectados';
+        if (partes.length) {
+            html += ' · ' + partes.join(' · ');
+        }
+        if (dia.nivel === 'sobrecupo' && cupo > 0) {
+            html += ' · <b>' + (dia.total - cupo) + ' sobre el cupo</b>';
+        }
+        details.forEach(function (det) {
+            det.innerHTML = html;
+            det.hidden = false;
+        });
+    }
+
+    function pintarTira(data) {
+        strips.forEach(function (strip) {
+            strip.innerHTML = '';
+            (data.proyeccion || []).forEach(function (dia) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'parking-forecast-day' +
+                    (dia.nivel === 'sobrecupo'
+                        ? ' pf-over'
+                        : (dia.nivel === 'casi_lleno' || dia.nivel === 'ocupado') ? ' pf-warn' : '');
+                const pct = Math.max(dia.total > 0 ? 8 : 0, Math.min(100, parseInt(dia.pct, 10) || 0));
+                btn.innerHTML = '<b>' + dia.total + '</b>' +
+                    '<span class="pf-bar"><i style="height:' + pct + '%"></i></span>' +
+                    '<small>' + etiquetaDia(dia.fecha) + '</small>';
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.parking-forecast-day.is-active').forEach(function (el) {
+                        el.classList.remove('is-active');
+                    });
+                    btn.classList.add('is-active');
+                    if (dateInput) {
+                        dateInput.value = dia.fecha;
+                    }
+                    pintarDetalle(data, dia);
+                });
+                strip.appendChild(btn);
+            });
+        });
+    }
+
+    pedir(hoy, 7).then(pintarTira).catch(function () {
+        strips.forEach(function (strip) {
+            strip.innerHTML = '<div class="parking-forecast-empty">No se pudo cargar la proyección.</div>';
+        });
+    });
+
+    if (dateInput) {
+        dateInput.addEventListener('change', function () {
+            const fecha = dateInput.value;
+            if (!fecha) {
+                return;
+            }
+            pedir(fecha, 1).then(function (data) {
+                const dia = (data.proyeccion || [])[0];
+                if (dia) {
+                    pintarDetalle(data, dia);
+                }
+            }).catch(function () {
+                details.forEach(function (det) {
+                    det.textContent = 'No se pudo consultar esa fecha.';
+                    det.hidden = false;
+                });
             });
         });
     }

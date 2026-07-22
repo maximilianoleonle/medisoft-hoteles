@@ -68,6 +68,7 @@ class ApiController extends Controller {
         $map = [
             'alertasDashboard' => 'dashboard',
             'calcularPrecio' => 'reservaciones',
+            'estacionamientoProyeccion' => 'dashboard',
             'estadisticasDashboard' => 'dashboard',
             'habitacionesDisponibles' => 'habitaciones',
             'informacionImagen' => 'habitaciones',
@@ -1323,6 +1324,58 @@ public function vehiculosHuespedAction() {
                     'ocupacion_semanal' => []
                 ]
             ], 500);
+        }
+    }
+
+    /**
+     * Proyección de estacionamiento a días futuros (tarjeta del dashboard).
+     * GET /api/dashboard/estacionamiento-proyeccion?desde=Y-m-d&dias=7
+     */
+    public function estacionamientoProyeccionAction() {
+        try {
+            $hotel_id = $this->hotelIdActual();
+            if ($hotel_id <= 0) {
+                View::renderJSON(['success' => false, 'message' => 'Sin contexto de hotel'], 403);
+                return;
+            }
+
+            $desde = trim((string)($_GET['desde'] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
+                $desde = date('Y-m-d');
+            }
+            $dias = max(1, min(31, (int)($_GET['dias'] ?? 7)));
+
+            // Catálogo de áreas del hotel (mismo origen que la tarjeta del dashboard).
+            $catalogRows = [];
+            if (function_exists('hotel_general_catalog_parking_rows')) {
+                foreach (hotel_general_catalog_parking_rows($hotel_id, false) as $parkingRow) {
+                    $codigo = trim((string)($parkingRow['codigo'] ?? ''));
+                    $label = trim((string)($parkingRow['label'] ?? ''));
+                    if ($codigo !== '' && $label !== '') {
+                        $catalogRows[$codigo] = [
+                            'codigo' => $codigo,
+                            'label' => $label,
+                            'cupo' => max(0, min(999, (int)($parkingRow['cupo'] ?? 0))),
+                        ];
+                    }
+                }
+            }
+            if (empty($catalogRows)) {
+                $catalogRows = ['coches' => ['codigo' => 'coches', 'label' => 'Coches', 'cupo' => 30]];
+            }
+
+            require_once __DIR__ . '/../services/EstacionamientoProyeccionService.php';
+            $service = new EstacionamientoProyeccionService();
+            $data = $service->proyectar($hotel_id, $desde, $dias, $catalogRows);
+
+            View::renderJSON([
+                'success' => true,
+                'data' => $data,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        } catch (Exception $e) {
+            error_log("Error en proyeccion de estacionamiento: " . $e->getMessage());
+            View::renderJSON(['success' => false, 'message' => 'Error al proyectar estacionamiento'], 500);
         }
     }
 

@@ -559,6 +559,7 @@ $router->post('/admin/saas/hoteles/{id:[0-9]+}/branding', ['controller' => 'Saas
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);
 $router->get('/api/dashboard/movimientos-recientes', ['controller' => 'Api', 'action' => 'movimientosRecientes']);
 $router->get('/api/dashboard/alertas', ['controller' => 'Api', 'action' => 'alertasDashboard']);
+$router->get('/api/dashboard/estacionamiento-proyeccion', ['controller' => 'Api', 'action' => 'estacionamientoProyeccion']);
 
 // GestiÃ³n de Habitaciones
 $router->get('/habitaciones', ['controller' => 'Habitacion', 'action' => 'index']);

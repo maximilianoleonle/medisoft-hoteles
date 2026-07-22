@@ -3261,6 +3261,26 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                     <?php endif; ?>
                                 </div>
                             </div>
+
+                            <!-- Vehículos que trae el huésped (alimenta la proyección de estacionamiento) -->
+                            <div class="mt-4">
+                                <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
+                                    <i class="fas fa-car mr-1" style="color:var(--lc-green);"></i>
+                                    ¿Trae vehículo?
+                                </label>
+                                <select name="vehiculos_estimados" id="vehiculos_estimados" class="lc-input" style="max-width:230px;">
+                                    <option value="">Sin confirmar</option>
+                                    <option value="0" <?= old('vehiculos_estimados') === '0' ? 'selected' : '' ?>>No trae vehículo</option>
+                                    <option value="1" <?= old('vehiculos_estimados') === '1' ? 'selected' : '' ?>>1 vehículo</option>
+                                    <option value="2" <?= old('vehiculos_estimados') === '2' ? 'selected' : '' ?>>2 vehículos</option>
+                                    <option value="3" <?= old('vehiculos_estimados') === '3' ? 'selected' : '' ?>>3 vehículos</option>
+                                    <option value="4" <?= old('vehiculos_estimados') === '4' ? 'selected' : '' ?>>4 vehículos</option>
+                                </select>
+                                <p class="arrival-help mt-1.5 flex items-center gap-1">
+                                    <i class="fas fa-info-circle"></i>
+                                    Alimenta la proyección de estacionamiento. "Sin confirmar" usa los vehículos registrados del huésped.
+                                </p>
+                            </div>
                         </div>
                     </div>
 

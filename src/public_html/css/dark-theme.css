@@ -371,6 +371,22 @@ html[data-theme="dark"] .parking-breakdown-item.is-unconfigured:not(.has-vehicle
     background: color-mix(in srgb, var(--dash-slate-400) 10%, #201F19);
 }
 
+html[data-theme="dark"] .parking-forecast-head input[type="date"] {
+    background: #24221C;
+    border-color: color-mix(in srgb, var(--dash-gold) 18%, #24221C);
+    color: var(--dash-navy);
+}
+
+html[data-theme="dark"] .parking-forecast-day .pf-bar {
+    background: color-mix(in srgb, var(--dash-slate-400) 12%, #201F19);
+    border-color: color-mix(in srgb, var(--dash-slate-400) 20%, #201F19);
+}
+
+html[data-theme="dark"] .parking-forecast-detail {
+    background: color-mix(in srgb, var(--dash-gold) 9%, #201F19);
+    border-color: color-mix(in srgb, var(--dash-gold) 22%, #201F19);
+}
+
 html[data-theme="dark"] .parking-vehicle-row {
     background: #24221C;
 }

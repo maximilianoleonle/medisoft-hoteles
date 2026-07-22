@@ -13,6 +13,7 @@ class Reservacion extends Model {
         'huesped_id',
         'total_habitaciones',
         'habitaciones_cortesia',
+        'vehiculos_estimados',
         'fecha_entrada',
         'hora_llegada_estimada',
         'hora_entrada',
@@ -2148,10 +2149,11 @@ public function obtenerEstadisticasDashboard() {
                     usuario_registro_id,
                     total_habitaciones,
                     habitaciones_cortesia,
+                    vehiculos_estimados,
                     hotel_id,
                     created_at,
                     updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
         $params = [
             $data['huesped_id'],
@@ -2166,6 +2168,7 @@ public function obtenerEstadisticasDashboard() {
             $data['usuario_registro_id'] ?? 1,
             $total_habitaciones,
             $habitaciones_cortesia,
+            array_key_exists('vehiculos_estimados', $data) ? $data['vehiculos_estimados'] : null,
             $hotel_id
         ];
         

@@ -4568,6 +4568,13 @@ private function validarCancelacion($reservacion) {
         $horaLlegadaEstimada = $this->resolverHoraLlegadaEstimada($horaLlegadaPost, $horaLlegadaModo);
 
         // Recopilar datos
+        // vehiculos_estimados: '' = no se preguntó (NULL); 0..9 = lo declarado al reservar
+        // (alimenta la proyección de estacionamiento del dashboard).
+        $vehiculosEstimadosPost = $this->getPost('vehiculos_estimados', '');
+        $vehiculosEstimados = ($vehiculosEstimadosPost === '' || $vehiculosEstimadosPost === null)
+            ? null
+            : max(0, min(9, intval($vehiculosEstimadosPost)));
+
         $data = [
             'huesped_id' => intval($this->getPost('huesped_id')),
             'fecha_entrada' => $this->getPost('fecha_entrada'),
@@ -4578,6 +4585,7 @@ private function validarCancelacion($reservacion) {
             'notas' => trim($this->getPost('notas', '')),
             'estado' => 'confirmada',
             'usuario_registro_id' => user_id(),
+            'vehiculos_estimados' => $vehiculosEstimados,
             'hotel_id' => $this->hotelIdActual()
         ];
 
