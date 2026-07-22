@@ -1207,6 +1207,9 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     max-height: min(326px, 52vh);
     overflow-y: auto;
     overflow-x: hidden;
+    /* contain: al llegar al tope, el gesto no se encadena al fondo (que en
+       el shell móvil muere y se siente como freno seco). */
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -3762,6 +3765,13 @@ a.dm-park-type:hover {
             transparent 100%),
         radial-gradient(circle at 78% 30%, color-mix(in srgb, var(--dash-accent) 22%, transparent), transparent 16rem);
     animation: dashHeroLight 7s ease-in-out infinite;
+}
+
+/* En táctil el velo del hero NO respira: la animación infinita mantenía el
+   compositor despierto 24/7 en la pantalla de Inicio (Cupertino ya la apaga
+   por su lado; esto cubre el resto de temas en móvil). El velo queda, quieto. */
+@media (pointer: coarse) {
+    .dm-hero-scrim { animation: none; }
 }
 
 .dm-hero-txt {

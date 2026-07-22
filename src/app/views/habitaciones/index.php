@@ -17427,4 +17427,25 @@ body.ms-modal-abierto .habitaciones-view .modern-header{
 /* (2) Fondos opacos: el blur no aporta y encarece cada frame de scroll/flip */
 .habitaciones-view .flip-card-front{ -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
 .habitaciones-view .flip-card-back .btn-action{ -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+
+/* (2b) La etiqueta de precio era el hueco que quedaba: un backdrop-filter
+   POR TARJETA (30-80 regiones de desenfoque vivas dentro del scroller).
+   El fondo translúcido se queda; solo cae el blur. */
+.habitaciones-view .flip-card-front .text-sm.font-bold{ -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+
+/* (3) En táctil, fuera las animaciones que PINTAN por frame (box-shadow /
+   outline / border animados, barridos y shakes perpetuos): con N tarjetas
+   con alerta el compositor nunca duerme y el scroll tironea. La alerta
+   sigue gritando — colores, bordes y sombras quedan ESTÁTICOS — y los
+   pulsos baratos de opacidad (compositables) se conservan. */
+@media (pointer: coarse){
+  .flip-card.has-checkin-vencido .flip-card-front,
+  .flip-card.has-checkout-vencido .flip-card-front{ animation:none!important; }
+  .checkin-vencido-indicator i,
+  .checkout-vencido-indicator i{ animation:none!important; }
+  .habitaciones-view .rc-incident--reservation-pending{ animation:none!important; }
+  .habitaciones-view .rc-incident--reservation-pending::after{ animation:none!important; opacity:0!important; }
+  .habitaciones-view .rc-incident--reservation-pending i{ animation:none!important; }
+  .habitaciones-view .hb-alerts-mark-wrap::after{ animation:none!important; }
+}
 </style>

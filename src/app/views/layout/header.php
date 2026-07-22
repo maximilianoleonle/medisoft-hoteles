@@ -218,7 +218,6 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     </script>
     <script>
         (function() {
-            var lastTouchEnd = 0;
             function blockZoom(event) {
                 if (event.cancelable) {
                     event.preventDefault();
@@ -233,13 +232,11 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
                     blockZoom(event);
                 }
             }, { passive: false });
-            document.addEventListener('touchend', function(event) {
-                var now = Date.now();
-                if (now - lastTouchEnd <= 300) {
-                    blockZoom(event);
-                }
-                lastTouchEnd = now;
-            }, { passive: false });
+            // El bloqueo de doble-tap-zoom por touchend se quitó a propósito:
+            // html{touch-action:pan-x pan-y} ya lo desactiva por CSS, y el
+            // preventDefault en touchend CANCELABA el click sintético del
+            // segundo tap rápido — steppers, flechas de calendario y botones
+            // repetidos "no agarraban" al tocarlos rápido.
         })();
     </script>
     
@@ -291,8 +288,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-size-override.css') : asset('css/sidebar-size-override.css') ?>">
 
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/performance-optimization.css') : asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
-    <!-- Chart.js para gráficas -->
-    <script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>"></script>
+    <!-- Chart.js ya NO se carga aquí: eran 204 KB bloqueando el primer
+         pintado de ~200 vistas en cada navegación (Safari no precarga MPA)
+         y las 6 vistas que grafican lo cargan por su cuenta (reportes/*,
+         caja/historial, inventario/reportes). -->
     
     <!-- SweetAlert2 -->
     <script src="<?= asset('vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>

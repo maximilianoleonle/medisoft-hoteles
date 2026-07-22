@@ -107,6 +107,10 @@ $areasListas     = array_values(array_filter($areas, static function ($a) { retu
 .cam-bubble.b3{ left:52%; width:18px; height:18px; animation-duration:8s;   animation-delay:.6s; }
 .cam-bubble.b4{ left:72%; width:11px; height:11px; animation-duration:10s;  animation-delay:2.1s; }
 .cam-bubble.b5{ left:88%; width:7px;  height:7px;  animation-duration:6.5s; animation-delay:.9s; }
+/* En táctil (donde las camaristas viven) las 5 burbujas perpetuas se apagan:
+   5 capas animándose 24/7 en el hero gastan compositor y pila. El destello
+   del emblema se queda como guiño vivo. */
+@media (pointer: coarse){ .cam-bubble{ animation:none; } }
 .cam-emblem{ position:relative; z-index:1; flex:0 0 auto; width:54px; height:54px; border-radius:16px; display:grid; place-items:center;
   background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.34);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 8px 18px -10px rgba(0,0,0,.4);

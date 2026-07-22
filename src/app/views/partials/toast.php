@@ -116,7 +116,10 @@ if ($msToastMensaje) {
 .ms-toast-t{ font-size:13.5px; font-weight:700; color:#1B2746; line-height:1.2; }
 .ms-toast-m{ font-size:12px; color:#6C7689; margin-top:1px; line-height:1.45; overflow-wrap:anywhere; }
 .ms-toast-m:empty{ display:none; }
-.ms-toast-x{ width:26px; height:26px; border-radius:7px; border:0; background:transparent; color:#939BAD; cursor:pointer; display:grid; place-items:center; flex:none; transition:background .15s, color .15s; }
+.ms-toast-x{ position:relative; width:26px; height:26px; border-radius:7px; border:0; background:transparent; color:#939BAD; cursor:pointer; display:grid; place-items:center; flex:none; transition:background .15s, color .15s; }
+/* Area tactil de 44px sin agrandar la X visual: 26px era el control de
+   cierre mas fallado con el dedo de todo el sistema. */
+.ms-toast-x::before{ content:''; position:absolute; inset:-9px; }
 .ms-toast-x:hover{ background:#F1ECE2; color:#6C7689; }
 .ms-toast-x svg{ width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
 .ms-toast-bar{ position:absolute; left:0; bottom:0; height:3px; width:100%; background:var(--ms-c, #0E96B8); border-radius:99px; }

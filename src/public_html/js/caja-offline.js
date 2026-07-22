@@ -366,7 +366,7 @@
           <span id="caja-offline-count" style="background:rgba(255,255,255,0.25);
                 border-radius:10px;padding:1px 8px;font-size:0.8em;font-weight:700;">0</span>
         </div>
-        <div id="caja-offline-list" style="overflow-y:auto;max-height:240px;padding:6px 8px;"></div>
+        <div id="caja-offline-list" style="overflow-y:auto;max-height:240px;padding:6px 8px;overscroll-behavior:contain;"></div>
         <div style="padding:6px 10px;border-top:1px solid #fde68a;background:#fffbeb;
                     font-size:0.75em;color:#92400e;text-align:center;">
           Se enviarán a Caja automáticamente al volver internet

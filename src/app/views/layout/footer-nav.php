@@ -101,9 +101,13 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         grid-auto-flow: column;
         grid-auto-columns: 1fr;
         align-items: stretch;
-        background: rgba(255, 255, 255, .6);
-        -webkit-backdrop-filter: saturate(180%) blur(24px);
-        backdrop-filter: saturate(180%) blur(24px);
+        background: rgba(255, 255, 255, .72);
+        /* blur 10 (era saturate(180%)+blur 24): en iOS el backdrop se
+           re-desenfoca en CADA frame de scroll y esta barra vive fija en
+           todas las vistas — mismo vidrio a ~1/4 del costo de GPU. El fondo
+           sube de .6 a .72 para compensar la legibilidad del cristal. */
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
         border: .5px solid rgba(255, 255, 255, .8);
         border-radius: 24px;
         box-shadow: 0 14px 34px rgba(27, 39, 70, .18);

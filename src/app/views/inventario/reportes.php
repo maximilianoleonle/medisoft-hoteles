@@ -171,6 +171,9 @@
     </div>
 </main>
 
+<!-- Chart.js lo carga cada vista que grafica (ya no viene del header):
+     defer es seguro aquí porque todo corre en DOMContentLoaded. -->
+<script src="<?= asset('vendor/chartjs/chart.umd.min.js') ?>" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Configurar los datos para las gráficas

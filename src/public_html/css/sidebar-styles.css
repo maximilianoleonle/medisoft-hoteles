@@ -938,3 +938,15 @@ main {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 28%, transparent) transparent;
 }
+
+/* ── Táctil: el sidebar duerme cuando no se ve ──
+   En móvil el cajón vive oculto con translateX(-100%) — NO display:none —
+   así que el brillo del header (capa 200%x200%) y los pulsos de badges
+   (animan box-shadow: pintura por frame) corrían 24/7 fuera de pantalla,
+   manteniendo el compositor despierto en TODAS las vistas. En táctil se
+   apagan; los badges conservan su color/sombra estáticos. */
+@media (pointer: coarse) {
+    .sidebar-header::before { animation: none !important; }
+    .nav-badge,
+    .nav-badge.pulse-green { animation: none !important; }
+}

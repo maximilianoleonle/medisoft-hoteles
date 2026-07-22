@@ -427,9 +427,12 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .hotel-
 /* ── 8. Header móvil: vidrio claro, tinta oscura ───────────────────── */
 @media (max-width: 1024px) {
     html[data-tema="cupertino"]:not([data-theme="dark"]) .hotel-layout-scope .mobile-header-modern {
-        background: rgba(255, 255, 255, .8) !important;
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
-        backdrop-filter: saturate(180%) blur(20px);
+        background: rgba(255, 255, 255, .85) !important;
+        /* blur 10 (era saturate+20): franja fija que se re-desenfoca cada
+           frame de scroll; junto con la bottom nav eran DOS bandas de blur
+           a lo ancho por frame en iPhone. Mismo vidrio, fracción del costo. */
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(0, 0, 0, .08);
         box-shadow: none;
     }
@@ -638,9 +641,10 @@ html[data-theme="dark"][data-tema="cupertino"] .ms-rail-fi.ms-on i {
 
 @media (max-width: 1024px) {
     html[data-theme="dark"][data-tema="cupertino"] .hotel-layout-scope .mobile-header-modern {
-        background: rgba(22, 22, 23, .8) !important;
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
-        backdrop-filter: saturate(180%) blur(20px);
+        background: rgba(22, 22, 23, .85) !important;
+        /* blur 10 (era saturate+20): ver nota del bloque claro. */
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255, 255, 255, .1);
         box-shadow: none;
     }
