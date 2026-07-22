@@ -2396,10 +2396,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>Nueva Reserva</span>
                     </a>
                     <?php if (can('habitaciones.create')): ?>
-                    <a href="<?= url('habitaciones/lote') ?>" title="Crear varias habitaciones a la vez (por piso y rango)" class="btn-modern btn-brand-outline">
-                        <i class="fas fa-layer-group text-sm"></i>
-                        <span>En lote</span>
-                    </a>
                     <a href="<?= url('habitaciones/create') ?>" title="Registrar una habitación nueva" class="btn-modern btn-brand-outline">
                         <span class="hidden sm:inline">Nueva</span>
                         <span>Habitaci&oacute;n</span>
@@ -2441,12 +2437,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Vista r&aacute;pida</span>
             </button>
             <?php if (can('habitaciones.create')): ?>
-            <a href="<?= url('habitaciones/lote') ?>"
-               title="Crear varias habitaciones a la vez (por piso y rango)"
-               class="hb-action-btn hb-action-btn--outline hb-action-btn--desktop-only">
-                <i class="fas fa-layer-group"></i>
-                <span>Crear en lote</span>
-            </a>
             <a href="<?= url('habitaciones/create') ?>"
                title="Registrar una habitación nueva"
                class="hb-action-btn hb-action-btn--outline hb-action-btn--desktop-only">
@@ -5781,17 +5771,19 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .hb-search:focus-within{ border-color:var(--hb-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--hb-accent) 20%, transparent); }
 .habitaciones-view .hb-fdiv{ width:1px; height:22px; background:var(--hb-line); margin:0 2px; }
 .habitaciones-view .hb-chips{ display:flex; gap:7px; flex-wrap:wrap; }
-.habitaciones-view .hb-chip{ display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:.78rem; font-weight:600; color:var(--hb-slate-700); background:var(--hb-surface-warm); border:1px solid var(--hb-line); padding:7px 13px; border-radius:999px; cursor:pointer; transition:transform .14s, border-color .14s, background .14s; white-space:nowrap; }
+.habitaciones-view .hb-chip{ --chip-c:var(--hb-primary); display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:.78rem; font-weight:600; color:var(--hb-slate-700); background:var(--hb-surface-warm); border:1px solid var(--hb-line); padding:7px 13px; border-radius:999px; cursor:pointer; transition:transform .14s, border-color .14s, background .14s; white-space:nowrap; }
 .habitaciones-view .hb-chip:hover{ border-color:var(--hb-accent); transform:translateY(-1px); }
-.habitaciones-view .hb-chip.is-active{ background:var(--hb-primary); color:#fff; border-color:var(--hb-primary); box-shadow:0 6px 14px -8px color-mix(in srgb, var(--hb-primary) 70%, transparent); }
-.habitaciones-view .hb-chip.is-active .hb-chip-ct{ color:rgba(255,255,255,.72); }
+/* Activo (Deleite Sereno): pastilla entintada del color del estado, sin losa negra */
+.habitaciones-view .hb-chip.is-active{ background:color-mix(in srgb, var(--chip-c) 13%, #fff); color:color-mix(in srgb, var(--chip-c) 74%, #1F2937); border-color:color-mix(in srgb, var(--chip-c) 42%, #fff); box-shadow:0 6px 14px -8px color-mix(in srgb, var(--chip-c) 55%, transparent); }
+.habitaciones-view .hb-chip.is-active .hb-chip-ct{ color:inherit; opacity:.78; }
 .habitaciones-view .hb-chip-ct{ color:var(--hb-slate-400); font-weight:700; }
-.habitaciones-view .hb-chip-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
-.habitaciones-view .chip-available .hb-chip-dot{ background:var(--c-available); }
-.habitaciones-view .chip-occupied  .hb-chip-dot{ background:var(--c-occupied); }
-.habitaciones-view .chip-arriving  .hb-chip-dot{ background:var(--c-arriving); }
-.habitaciones-view .chip-cleaning  .hb-chip-dot{ background:var(--c-cleaning); }
-.habitaciones-view .chip-maint     .hb-chip-dot{ background:var(--c-maint); }
+.habitaciones-view .hb-chip-dot{ width:8px; height:8px; border-radius:50%; flex:none; background:var(--chip-c); }
+/* Color semántico de cada estado (lo consumen chip y leyenda móvil) */
+.habitaciones-view .chip-available, .habitaciones-view .hb-mobile-lg[data-estado="disponible"]{ --chip-c:var(--c-available); }
+.habitaciones-view .chip-occupied,  .habitaciones-view .hb-mobile-lg[data-estado="ocupada"]{ --chip-c:var(--c-occupied); }
+.habitaciones-view .chip-arriving,  .habitaciones-view .hb-mobile-lg[data-estado="por_llegar"]{ --chip-c:var(--c-arriving); }
+.habitaciones-view .chip-cleaning,  .habitaciones-view .hb-mobile-lg[data-estado="limpieza"]{ --chip-c:var(--c-cleaning); }
+.habitaciones-view .chip-maint,     .habitaciones-view .hb-mobile-lg[data-estado="mantenimiento"]{ --chip-c:var(--c-maint); }
 .habitaciones-view .hb-filter-right{ display:flex; align-items:center; gap:6px; margin-left:auto; }
 @media (max-width:760px){ .habitaciones-view .hb-filter-right{ margin-left:0; } .habitaciones-view .hb-search{ max-width:none; } }
 
@@ -6777,6 +6769,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
     margin-top: 10px;
 }
 .habitaciones-view .hb-mobile-lg{
+    --chip-c: var(--hb-primary);
     display: inline-flex;
     flex-direction: row;
     align-items: center;
@@ -6792,7 +6785,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 }
 .habitaciones-view .hb-mobile-dot{ width: 8px; height: 8px; border-radius: 999px; flex: none; }
 .habitaciones-view .hb-mobile-lg b{ color: var(--hb-primary, #1B2746); font-weight: 700; margin-left: 1px; }
-.habitaciones-view .hb-mobile-lg.is-active{ color: var(--hb-primary, #1B2746); font-weight: 700; }
+.habitaciones-view .hb-mobile-lg.is-active{ color: color-mix(in srgb, var(--chip-c) 78%, #1F2937); font-weight: 700; }
 
 /* ═══ PANEL DE MOVIMIENTOS DEL DÍA (desktop + mobile) ═══ */
 .habitaciones-view .hb-movements{
@@ -7042,7 +7035,7 @@ body.hb-modal-open{ overflow:hidden; }
   }
   .habitaciones-view .hb-mobile-dot{ width:8px; height:8px; border-radius:999px; flex:none; }
   .habitaciones-view .hb-mobile-lg b{ color:var(--hb-primary); font-weight:900; }
-  .habitaciones-view .hb-mobile-lg.is-active{ color:var(--hb-primary); }
+  .habitaciones-view .hb-mobile-lg.is-active{ color:color-mix(in srgb,var(--chip-c) 78%,#1F2937); }
 
   .habitaciones-view .hb-filter-panel{
     padding:0!important;
@@ -7094,10 +7087,10 @@ body.hb-modal-open{ overflow:hidden; }
     font-weight:800!important;
   }
   .habitaciones-view .hb-chip.is-active{
-    border-color:var(--hb-primary)!important;
-    background:var(--hb-primary)!important;
-    color:#FDFBF6!important;
-    box-shadow:0 10px 20px -16px rgba(27,39,70,.65)!important;
+    border-color:color-mix(in srgb,var(--chip-c) 45%,#fff)!important;
+    background:color-mix(in srgb,var(--chip-c) 14%,#fff)!important;
+    color:color-mix(in srgb,var(--chip-c) 76%,#1F2937)!important;
+    box-shadow:0 10px 20px -16px color-mix(in srgb,var(--chip-c) 60%,transparent)!important;
   }
   .habitaciones-view .hb-filter-right{
     width:100%;
@@ -8469,13 +8462,13 @@ body.hb-modal-open{ overflow:hidden; }
 
 .habitaciones-view .hb-chip.is-active,
 .habitaciones-view .hb-mobile-lg.is-active{
-  background:var(--hb-heading)!important;
-  border-color:var(--hb-heading)!important;
-  color:#fff!important;
+  background:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 14%, #fff)!important;
+  border-color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 42%, #fff)!important;
+  color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 74%, #1F2937)!important;
 }
 
 .habitaciones-view .hb-mobile-lg.is-active b{
-  color:#fff!important;
+  color:inherit!important;
 }
 
 .habitaciones-view .flip-card-front{
@@ -9443,7 +9436,7 @@ body.hb-modal-open{ overflow:hidden; }
     color:var(--hb-primary)!important;
   }
   .habitaciones-view .hb-mobile-lg.is-active{
-    color:var(--hb-primary)!important;
+    color:color-mix(in srgb,var(--chip-c) 78%,#1F2937)!important;
   }
 
   /* 14. Corrección de pesos tipográficos (regla boutique: máx 700 sans) */
@@ -9685,15 +9678,15 @@ body.hb-modal-open{ overflow:hidden; }
     line-height:1.2!important;
   }
   .habitaciones-view .hb-mobile-lg.is-active{
-    background:color-mix(in srgb,var(--hb-primary) 9%,transparent)!important;
-    border:1px solid color-mix(in srgb,var(--hb-primary) 22%,transparent)!important;
+    background:color-mix(in srgb,var(--chip-c) 10%,transparent)!important;
+    border:1px solid color-mix(in srgb,var(--chip-c) 26%,transparent)!important;
     border-radius:999px!important;
     padding:2px 8px 2px 5px!important;
-    color:var(--hb-primary)!important;
+    color:color-mix(in srgb,var(--chip-c) 78%,#1F2937)!important;
     font-weight:600!important;
   }
   .habitaciones-view .hb-mobile-lg.is-active b{
-    color:var(--hb-primary)!important;
+    color:inherit!important;
     font-weight:700!important;
   }
   .habitaciones-view .hb-filter-panel{
@@ -9768,9 +9761,9 @@ body.hb-modal-open{ overflow:hidden; }
     box-shadow:none!important;
   }
   .habitaciones-view .hb-chip.is-active{
-    border-color:transparent!important;
-    background:linear-gradient(135deg,color-mix(in srgb,var(--hb-secondary) 62%,var(--hb-accent)),var(--hb-secondary))!important;
-    color:#F9F5ED!important;
+    border-color:color-mix(in srgb,var(--chip-c) 45%,#fff)!important;
+    background:color-mix(in srgb,var(--chip-c) 14%,#fff)!important;
+    color:color-mix(in srgb,var(--chip-c) 76%,#1F2937)!important;
     box-shadow:none!important;
   }
   .habitaciones-view .hb-chip-ct{color:inherit!important;opacity:.72!important;}
@@ -14145,6 +14138,55 @@ html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item{
 html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item:hover{ background:#2C2C2E!important; }
 html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item p:first-child{ color:#F5F5F7!important; }
 html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-move-item p:last-child{ color:#98989D!important; }
+
+/* ── Chips de filtro: cristal líquido del color del estado — SOLO CUPERTINO
+   (petición del owner 2026-07-22: fuera la pastilla oscura; el chip activo
+   se enciende con el candy glass de SU estado, como las tarjetas). "Todas"
+   usa la tinta de marca vía el fallback de --chip-c. !important + prefijo
+   de tema para ganar a los pases móviles del propio archivo. ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-chip.is-active{
+  background:
+    radial-gradient(60% 86% at 90% 78%, rgba(255,255,255,.85), rgba(255,255,255,0) 72%),
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--chip-c, var(--hb-primary)) 16%, #FFFFFF) 0%,
+      color-mix(in srgb, var(--chip-c, var(--hb-primary)) 34%, #FFFFFF) 100%)!important;
+  border-color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 30%, rgba(255,255,255,.9))!important;
+  color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 78%, #111827)!important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.95),
+    inset 0 -2px 5px color-mix(in srgb, var(--chip-c, var(--hb-primary)) 13%, transparent),
+    0 3px 7px color-mix(in srgb, var(--chip-c, var(--hb-primary)) 12%, rgba(27,39,70,.05)),
+    0 14px 26px -14px color-mix(in srgb, var(--chip-c, var(--hb-primary)) 52%, rgba(27,39,70,.28))!important;
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-chip.is-active .hb-chip-ct{
+  color:inherit!important;
+  opacity:.8!important;
+}
+/* Leyenda móvil: mismo lenguaje en tinte suave */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .habitaciones-view .hb-mobile-lg.is-active{
+  background:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 12%, #FFFFFF)!important;
+  border-color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 30%, rgba(255,255,255,.9))!important;
+  color:color-mix(in srgb, var(--chip-c, var(--hb-primary)) 78%, #111827)!important;
+}
+
+/* Modo oscuro: losa grafito encendida con el tinte del estado (como hb-move-head) */
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-chip.is-active{
+  background:linear-gradient(165deg,
+    color-mix(in srgb, var(--chip-c, #0A84FF) 32%, #1C1C1E) 0%,
+    color-mix(in srgb, var(--chip-c, #0A84FF) 16%, #1C1C1E) 100%)!important;
+  border-color:color-mix(in srgb, var(--chip-c, #0A84FF) 42%, #38383A)!important;
+  color:color-mix(in srgb, var(--chip-c, #0A84FF) 45%, #F5F5F7)!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-chip.is-active .hb-chip-ct{
+  color:inherit!important;
+  opacity:.75!important;
+}
+html[data-theme="dark"][data-tema="cupertino"] .habitaciones-view .hb-mobile-lg.is-active{
+  background:color-mix(in srgb, var(--chip-c, #0A84FF) 24%, #1C1C1E)!important;
+  border-color:color-mix(in srgb, var(--chip-c, #0A84FF) 40%, #38383A)!important;
+  color:color-mix(in srgb, var(--chip-c, #0A84FF) 42%, #F5F5F7)!important;
+}
 </style>
 
 <style id="lm-caja-motion">

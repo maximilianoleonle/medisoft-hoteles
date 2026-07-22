@@ -66,6 +66,22 @@
         position: relative; margin-top: .4rem;
         color: var(--room-muted); max-width: 60ch;
     }
+    .create-room-lote-link {
+        position: relative;
+        display: inline-flex; align-items: center; gap: .5rem;
+        margin-top: .9rem; padding: .55rem .95rem;
+        border: 1px solid rgba(118, 84, 56, 0.18);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--room-gold) 10%, white);
+        color: var(--room-brown);
+        font-size: .82rem; font-weight: 600; text-decoration: none;
+        transition: background .15s ease, transform .15s ease;
+    }
+    .create-room-lote-link:hover {
+        background: color-mix(in srgb, var(--room-gold) 18%, white);
+        transform: translateY(-1px);
+    }
+    .create-room-lote-link i { color: var(--room-gold); font-size: .78rem; }
 
     .create-room-form-grid {
         display: grid;
@@ -272,6 +288,10 @@
         background: #1C1C1E; border-color: #38383A; color: #E4C58C;
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
     }
+    html[data-theme="dark"] .create-room-lote-link {
+        background: #2C2C2E; border-color: #38383A; color: #E4C58C;
+    }
+    html[data-theme="dark"] .create-room-lote-link:hover { background: #38383A; }
     html[data-theme="dark"] .create-room-hero-card,
     html[data-theme="dark"] .create-room-card,
     html[data-theme="dark"] .create-room-active-card { box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5); }
@@ -328,6 +348,11 @@
         <div class="create-room-hero-card">
             <h1>Registrar nueva habitación</h1>
             <p>Complete la información para agregar una habitación al hotel — tipo, tarifa, capacidad, características y fotografías.</p>
+            <a href="<?= url('habitaciones/lote') ?>" class="create-room-lote-link" title="Crear varias habitaciones a la vez (por piso y rango)">
+                <i class="fas fa-layer-group"></i>
+                <span>¿Vas a registrar varias? Créalas en lote</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
 
         <form method="POST" action="<?= url('habitaciones/store') ?>" enctype="multipart/form-data" id="form-habitacion">
