@@ -129,6 +129,24 @@ t_throws(fn() => $service->cancelarBorrador($hotelId, $compraId, $usuarioId), 'b
 t_throws(fn() => $service->recibirCompra($hotelId, $compraId, $usuarioId), 'recibida', 'doble recepcion rechazada');
 t_eq('13.00', $pdo->query("SELECT stock_actual FROM inventario_productos WHERE id = {$productoId}")->fetchColumn(), 'doble recepcion rechazada no duplica stock');
 
+// Politica "ultimo costo": la recepcion actualiza el costo de catalogo del
+// producto al costo pagado en la linea (el producto nacio con 5.00 y la
+// compra recibida se pago a 6.50).
+t_eq('6.50', $pdo->query("SELECT costo_unitario FROM inventario_productos WHERE id = {$productoId}")->fetchColumn(), 'recepcion actualiza costo de catalogo al ultimo costo');
+
+// Con lineas repetidas del mismo producto (Fase 2U) gana la ultima linea.
+$compraDuplicadaId = $service->crearBorrador($hotelId, [
+    'proveedor_id' => $proveedorId,
+    'folio' => 'TEST-COMPRA-DUP',
+    'fecha_compra' => '2026-07-22',
+], [
+    ['producto_id' => $productoId, 'cantidad' => '1.00', 'costo_unitario' => '7.00'],
+    ['producto_id' => $productoId, 'cantidad' => '2.00', 'costo_unitario' => '7.25'],
+], $usuarioId);
+$service->recibirCompra($hotelId, $compraDuplicadaId, $usuarioId);
+t_eq('16.00', $pdo->query("SELECT stock_actual FROM inventario_productos WHERE id = {$productoId}")->fetchColumn(), 'recepcion con lineas repetidas suma todas las cantidades');
+t_eq('7.25', $pdo->query("SELECT costo_unitario FROM inventario_productos WHERE id = {$productoId}")->fetchColumn(), 'con lineas repetidas el costo queda en la ultima linea');
+
 $db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel Ajeno', 'hotel-ajeno-compras', 1, NOW())");
 $hotelAjenoId = (int)$db->lastInsertId();
 t_eq(null, $service->obtenerCompra($hotelAjenoId, $compraId), 'compra aislada por hotel');

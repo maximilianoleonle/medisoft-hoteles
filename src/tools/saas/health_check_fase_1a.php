@@ -3758,9 +3758,12 @@ if (!is_file($routesPath)) {
             'GET /compras/crear',
             'GET /compras/reportes/recibidas',
             'GET /compras/{id:[0-9]+}',
+            'GET /compras/{id:[0-9]+}/editar',
             'POST /compras',
             'POST /compras/{id:[0-9]+}/recibir',
-        ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
+            'POST /compras/{id:[0-9]+}/actualizar',
+            'POST /compras/{id:[0-9]+}/cancelar',
+        ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir', 'editar', 'actualizar', 'cancelar'], true);
 
         $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
@@ -3789,11 +3792,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenPurchaseRoutes)) {
-        hcOk('Solo hay compras minimas y CxP controlada; compras no expone pagos, contactos ni documentos.');
+        hcOk('Solo hay compras minimas (con edicion/cancelacion de borradores) y CxP controlada; compras no expone pagos, contactos ni documentos.');
     } else {
         hcError(
             'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
-            'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle, POST generar CxP, POST pago Caja de CxP y POST /compras/{id}/recibir.'
+            'Retirar rutas que no sean Compras basicas, edicion/actualizacion/cancelacion de borradores, CxP listado/preview/detalle, POST generar CxP, POST pago Caja de CxP y POST /compras/{id}/recibir.'
         );
     }
 
@@ -3884,13 +3887,15 @@ if (!is_file($routesPath)) {
         }
 
         if (
-            preg_match('/function\s+before\s*\([^)]*\).*?require_hotel_module\s*\(\s*[\'"]inventario[\'"]\s*\)/s', $providerControllerCode)
+            // Division ratificada 2026-07-22: Proveedores pertenece al modulo
+            // contratable 'compras' (antes colgaba del gate de inventario).
+            preg_match('/function\s+before\s*\([^)]*\).*?require_hotel_module\s*\(\s*[\'"]compras[\'"]\s*\)/s', $providerControllerCode)
         ) {
-            hcOk('ProveedorController requiere modulo inventario para acceso directo Fase 2H.');
+            hcOk('ProveedorController requiere modulo compras para acceso directo.');
         } else {
             hcError(
-                'ProveedorController no valida modulo inventario.',
-                'Proteger /proveedores con require_hotel_module("inventario") para alinear acceso directo con el sidebar.'
+                'ProveedorController no valida modulo compras.',
+                'Proteger /proveedores con require_hotel_module("compras") para alinear acceso directo con el sidebar.'
             );
         }
 
@@ -4747,9 +4752,12 @@ if (!is_file($routesPath)) {
 
     if ($purchaseControllerFile && is_file($purchaseControllerFile)) {
         $purchaseControllerCode = (string) file_get_contents($purchaseControllerFile);
+        // La cancelacion LOGICA de borradores es parte del contrato vigente
+        // ("Edicion y cancelacion operativa de borradores" en
+        // purchasing_inventory_contract.md); lo prohibido sigue siendo pagos,
+        // CxP directa, documentos y caja.
         $forbiddenPurchaseControllerTokens = [
             'function pagarAction',
-            'function cancelarAction',
             'movimientos_caja',
             'cuentas_por_pagar',
             'compra_pagos',
@@ -4770,7 +4778,10 @@ if (!is_file($routesPath)) {
             && strpos($purchaseControllerCode, 'function reporteRecibidasAction') !== false
             && strpos($purchaseControllerCode, 'function guardarAction') !== false
             && strpos($purchaseControllerCode, 'function recibirAction') !== false
-            && strpos($purchaseControllerCode, "require_hotel_module('inventario')") !== false
+            && strpos($purchaseControllerCode, 'function editarAction') !== false
+            && strpos($purchaseControllerCode, 'function actualizarAction') !== false
+            && strpos($purchaseControllerCode, 'function cancelarAction') !== false
+            && strpos($purchaseControllerCode, "require_hotel_module('compras')") !== false
             && strpos($purchaseControllerCode, 'compras/ver') !== false
             && strpos($purchaseControllerCode, 'compras/reporte_recibidas') !== false
             && strpos($purchaseControllerCode, 'obtenerCompra') !== false
@@ -4778,14 +4789,16 @@ if (!is_file($routesPath)) {
             && strpos($purchaseControllerCode, 'catalogosReporteRecibidas') !== false
             && strpos($purchaseControllerCode, 'crearBorrador') !== false
             && strpos($purchaseControllerCode, 'recibirCompra') !== false
+            && strpos($purchaseControllerCode, 'actualizarBorrador') !== false
+            && strpos($purchaseControllerCode, 'cancelarBorrador') !== false
             && strpos($purchaseControllerCode, 'validateCSRF') !== false
             && empty($controllerForbidden)
         ) {
-            hcOk('CompraController Fase 2Y expone listado, detalle, reporte read-only, borrador y recepcion minima bajo modulo inventario.');
+            hcOk('CompraController expone listado, detalle, reporte read-only, borrador, edicion/cancelacion logica y recepcion minima bajo modulo compras.');
         } else {
             hcError(
-                'CompraController Fase 2Y no cumple el alcance minimo o contiene tokens prohibidos: ' . (empty($controllerForbidden) ? 'sin detalle' : implode(', ', $controllerForbidden)),
-                'Mantener solo indexAction, crearAction, verAction, reporteRecibidasAction, guardarAction y recibirAction; sin pagos, CxP, documentos ni caja.'
+                'CompraController no cumple el alcance vigente o contiene tokens prohibidos: ' . (empty($controllerForbidden) ? 'sin detalle' : implode(', ', $controllerForbidden)),
+                'Mantener indexAction, crearAction, verAction, reporteRecibidasAction, guardarAction, editarAction, actualizarAction, cancelarAction y recibirAction; sin pagos, CxP directa, documentos ni caja.'
             );
         }
     } else {
@@ -4815,7 +4828,12 @@ if (!is_file($routesPath)) {
             strpos($purchaseIndexViewCode, "url('compras/crear')") !== false
             && strpos($purchaseIndexViewCode, "url('compras/reportes/recibidas')") !== false
             && $purchaseIndexHasDetailLink
-            && strpos($purchaseFormViewCode, "action=\"<?= url('compras') ?>\"") !== false
+            && (
+                // Form Fase 2R (solo crear) o form vigente con modo edicion:
+                // POST /compras al crear y POST /compras/{id}/actualizar al editar.
+                strpos($purchaseFormViewCode, "action=\"<?= url('compras') ?>\"") !== false
+                || strpos($purchaseFormViewCode, "'compras/' . \$compraId . '/actualizar' : 'compras'") !== false
+            )
             && strpos($purchaseFormViewCode, 'csrf_field()') !== false
             && strpos($purchaseFormViewCode, 'name="producto_id[]"') !== false
             && strpos($purchaseFormViewCode, 'name="cantidad[]"') !== false
@@ -4870,7 +4888,7 @@ if (!is_file($routesPath)) {
             && strpos($cxpControllerCode, 'consumirReversionPagoToken') !== false
             && strpos($cxpControllerCode, "require_hotel_module('caja')") !== false
             && strpos($cxpControllerCode, 'function verAction') !== false
-            && strpos($cxpControllerCode, "require_hotel_module('inventario')") !== false
+            && strpos($cxpControllerCode, "require_hotel_module('compras')") !== false
             && strpos($cxpControllerCode, 'cuentas_por_pagar/index') !== false
             && strpos($cxpControllerCode, 'cuentas_por_pagar/generacion_preview') !== false
             && strpos($cxpControllerCode, 'cuentas_por_pagar/simulador_caja') !== false
@@ -6348,7 +6366,7 @@ if (!is_file($routesPath)) {
 
     if (
         $opViewCode !== ''
-        && strpos($opViewCode, 'Tablero operativo diario') !== false
+        && strpos($opViewCode, 'El hotel hoy') !== false
         && strpos($opViewCode, '<form') === false
         && strpos($opViewCode, 'method="POST"') === false
         && strpos($opViewCode, 'csrf_field()') === false

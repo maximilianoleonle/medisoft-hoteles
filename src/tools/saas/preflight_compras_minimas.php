@@ -603,6 +603,9 @@ if (is_file($routesPath)) {
         ['method' => 'get', 'path' => 'compras/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'compras'],
         ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/recibir'],
+        ['method' => 'get', 'path' => 'compras/{id:[0-9]+}/editar'],
+        ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/actualizar'],
+        ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/cancelar'],
     ];
 
     $missingPurchaseRoutes = [];
@@ -634,9 +637,12 @@ if (is_file($routesPath)) {
             'GET /compras/crear',
             'GET /compras/reportes/recibidas',
             'GET /compras/{id:[0-9]+}',
+            'GET /compras/{id:[0-9]+}/editar',
             'POST /compras',
             'POST /compras/{id:[0-9]+}/recibir',
-        ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
+            'POST /compras/{id:[0-9]+}/actualizar',
+            'POST /compras/{id:[0-9]+}/cancelar',
+        ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir', 'editar', 'actualizar', 'cancelar'], true);
 
         $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
@@ -785,9 +791,11 @@ if (is_file($purchaseServicePath)) {
 
 if (is_file($purchaseControllerPath)) {
     $controller = (string) file_get_contents($purchaseControllerPath);
+    // La cancelacion LOGICA de borradores es parte del contrato vigente
+    // ("Edicion y cancelacion operativa de borradores"); lo prohibido sigue
+    // siendo pagos, CxP directa, documentos y caja.
     $forbiddenControllerTokens = [
         'function pagarAction',
-        'function cancelarAction',
         'movimientos_caja',
         'cuentas_por_pagar',
         'compra_pagos',
@@ -808,7 +816,10 @@ if (is_file($purchaseControllerPath)) {
         && strpos($controller, 'function reporteRecibidasAction') !== false
         && strpos($controller, 'function guardarAction') !== false
         && strpos($controller, 'function recibirAction') !== false
-        && strpos($controller, "require_hotel_module('inventario')") !== false
+        && strpos($controller, 'function editarAction') !== false
+        && strpos($controller, 'function actualizarAction') !== false
+        && strpos($controller, 'function cancelarAction') !== false
+        && strpos($controller, "require_hotel_module('compras')") !== false
         && strpos($controller, 'compras/ver') !== false
         && strpos($controller, 'compras/reporte_recibidas') !== false
         && strpos($controller, 'obtenerCompra') !== false
@@ -816,14 +827,16 @@ if (is_file($purchaseControllerPath)) {
         && strpos($controller, 'catalogosReporteRecibidas') !== false
         && strpos($controller, 'crearBorrador') !== false
         && strpos($controller, 'recibirCompra') !== false
+        && strpos($controller, 'actualizarBorrador') !== false
+        && strpos($controller, 'cancelarBorrador') !== false
         && strpos($controller, 'validateCSRF') !== false
         && empty($controllerForbidden)
     ) {
-        pfOk('CompraController Fase 2Y expone listado, detalle, reporte read-only, borrador y recepcion minima bajo modulo inventario.');
+        pfOk('CompraController expone listado, detalle, reporte read-only, borrador, edicion/cancelacion logica y recepcion minima bajo modulo compras.');
     } else {
         pfError(
-            'CompraController Fase 2Y no cumple el alcance minimo o contiene tokens prohibidos: ' . (empty($controllerForbidden) ? 'sin detalle' : implode(', ', $controllerForbidden)),
-            'Mantener solo indexAction, crearAction, verAction, reporteRecibidasAction, guardarAction y recibirAction; sin pagos, CxP, documentos ni caja.'
+            'CompraController no cumple el alcance vigente o contiene tokens prohibidos: ' . (empty($controllerForbidden) ? 'sin detalle' : implode(', ', $controllerForbidden)),
+            'Mantener indexAction, crearAction, verAction, reporteRecibidasAction, guardarAction, editarAction, actualizarAction, cancelarAction y recibirAction; sin pagos, CxP directa, documentos ni caja.'
         );
     }
 } else {
@@ -847,7 +860,12 @@ if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file
             strpos($indexView, "url('compras/' . (int)") !== false
             || strpos($indexView, "url('compras/' . \$compraId)") !== false
         )
-        && strpos($formView, "action=\"<?= url('compras') ?>\"") !== false
+        && (
+            // Form Fase 2R (solo crear) o form vigente con modo edicion:
+            // POST /compras al crear y POST /compras/{id}/actualizar al editar.
+            strpos($formView, "action=\"<?= url('compras') ?>\"") !== false
+            || strpos($formView, "'compras/' . \$compraId . '/actualizar' : 'compras'") !== false
+        )
         && strpos($formView, 'csrf_field()') !== false
         && strpos($formView, 'name="producto_id[]"') !== false
         && strpos($formView, 'name="cantidad[]"') !== false

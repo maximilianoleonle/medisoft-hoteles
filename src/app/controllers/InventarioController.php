@@ -859,6 +859,7 @@ public function debugMovimientosDateAction() {
             OR (
                 (m.reservacion_id IS NULL OR m.reservacion_id = 0)
                 AND {$motivo_sql} NOT LIKE '%autom%'
+                AND {$motivo_sql} NOT LIKE '%recepcion compra%'
                 AND {$motivo_sql} NOT LIKE '%check-in%'
                 AND {$motivo_sql} NOT LIKE '%devolucion%'
                 AND {$motivo_sql} NOT LIKE '%cancelacion%'

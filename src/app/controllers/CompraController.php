@@ -339,7 +339,10 @@ class CompraController extends Controller
 
     public function recibirAction(): void
     {
-        require_permission('compras.all');
+        // Accion separada de compras.all: recibir suma stock al inventario y
+        // habilita la CxP; puede otorgarse sola (compras.recibir) a un rol
+        // operativo de almacen sin darle editar/cancelar borradores.
+        require_permission('compras.recibir');
         if (!$this->isPost()) {
             $this->redirect('compras');
             return;

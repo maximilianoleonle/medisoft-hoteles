@@ -693,7 +693,7 @@ $visibles = count($compras);
                                                         <i class="fas fa-eye"></i>
                                                         Ver
                                                     </a>
-                                                    <?php if ($compraEstado === 'borrador'): ?>
+                                                    <?php if ($compraEstado === 'borrador' && can('compras.recibir')): ?>
                                                         <form class="cp-inline-form" method="POST" action="<?= url('compras/' . $compraId . '/recibir') ?>" data-receive-form="1">
                                                             <?= csrf_field() ?>
                                                             <button class="cp-action cp-btn-receive" type="submit">
@@ -752,7 +752,7 @@ $visibles = count($compras);
                                             <i class="fas fa-eye"></i>
                                             Ver
                                         </a>
-                                        <?php if ($compraEstado === 'borrador'): ?>
+                                        <?php if ($compraEstado === 'borrador' && can('compras.recibir')): ?>
                                             <form class="cp-inline-form" method="POST" action="<?= url('compras/' . $compraId . '/recibir') ?>" data-receive-form="1">
                                                 <?= csrf_field() ?>
                                                 <button class="cp-action cp-btn-receive" type="submit">

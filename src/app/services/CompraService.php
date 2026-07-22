@@ -269,6 +269,27 @@ class CompraService
                     throw new Exception('No se pudo actualizar stock de producto en el hotel actual');
                 }
 
+                // Politica "ultimo costo" (decision 2026-07-22): recibir tambien
+                // actualiza el costo de catalogo del producto al costo pagado en
+                // la linea, para que el valor del inventario refleje la ultima
+                // compra real. Costo 0 en la linea no pisa el costo de catalogo.
+                // Con lineas repetidas del mismo producto gana la ultima (Fase 2U:
+                // un movimiento por linea, orden por id ASC).
+                $costoLinea = (float)($detalle['costo_unitario'] ?? 0);
+                $costoCatalogoAnterior = (float)($producto['costo_unitario'] ?? 0);
+                if ($costoLinea > 0) {
+                    $stmt = $this->pdo->prepare(
+                        "UPDATE inventario_productos
+                         SET costo_unitario = ?, updated_at = NOW()
+                         WHERE id = ? AND hotel_id = ?"
+                    );
+                    $stmt->execute([
+                        $this->decimal($costoLinea),
+                        (int)$producto['id'],
+                        $hotelId,
+                    ]);
+                }
+
                 $stmt = $this->pdo->prepare(
                     "INSERT INTO movimientos_inventario
                         (hotel_id, producto_id, tipo_movimiento, cantidad,
@@ -314,6 +335,8 @@ class CompraService
                     'cantidad' => $this->decimal($cantidad),
                     'stock_anterior' => $this->decimal($stockAnterior),
                     'stock_posterior' => $this->decimal($stockPosterior),
+                    'costo_linea' => $this->decimal($costoLinea),
+                    'costo_catalogo_anterior' => $this->decimal($costoCatalogoAnterior),
                 ];
             }
 

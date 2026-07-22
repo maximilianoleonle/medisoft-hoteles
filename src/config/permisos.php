@@ -82,7 +82,7 @@ return [
         ],
         'cuentas_por_cobrar' => [
             'label' => 'Cuentas por cobrar',
-            'modulo' => null,
+            'modulo' => 'cuentas_cobrar',
             'permisos' => [
                 'cuentas_por_cobrar.view'   => ['label' => 'Ver cuentas por cobrar', 'tipo' => 'acceso'],
                 'cuentas_por_cobrar.cobrar' => ['label' => 'Registrar y revertir cobros de CxC', 'tipo' => 'accion'],
@@ -99,15 +99,16 @@ return [
         ],
         'compras' => [
             'label' => 'Compras',
-            'modulo' => 'inventario',
+            'modulo' => 'compras',
             'permisos' => [
-                'compras.view' => ['label' => 'Ver compras', 'tipo' => 'acceso'],
-                'compras.all'  => ['label' => 'Control total de compras', 'tipo' => 'wildcard'],
+                'compras.view'    => ['label' => 'Ver compras', 'tipo' => 'acceso'],
+                'compras.recibir' => ['label' => 'Recibir compras (suma stock al inventario y habilita CxP)', 'tipo' => 'accion'],
+                'compras.all'     => ['label' => 'Control total de compras', 'tipo' => 'wildcard'],
             ],
         ],
         'proveedores' => [
             'label' => 'Proveedores',
-            'modulo' => 'inventario',
+            'modulo' => 'compras',
             'permisos' => [
                 'proveedores.view' => ['label' => 'Ver proveedores', 'tipo' => 'acceso'],
                 'proveedores.all'  => ['label' => 'Control total de proveedores', 'tipo' => 'wildcard'],
@@ -115,7 +116,7 @@ return [
         ],
         'cuentas_por_pagar' => [
             'label' => 'Cuentas por pagar',
-            'modulo' => null,
+            'modulo' => 'compras',
             'permisos' => [
                 'cuentas_por_pagar.view'  => ['label' => 'Ver cuentas por pagar', 'tipo' => 'acceso'],
                 'cuentas_por_pagar.pagar' => ['label' => 'Registrar y revertir pagos de CxP', 'tipo' => 'accion'],
@@ -196,7 +197,7 @@ return [
             ],
         ],
         'tarifas' => [
-            'label' => 'Tarifas dinamicas',
+            'label' => 'Precios y temporadas',
             'modulo' => null,
             'permisos' => [
                 'tarifas.view' => ['label' => 'Ver tarifas', 'tipo' => 'acceso'],
@@ -246,7 +247,7 @@ return [
             ],
         ],
         'reputacion' => [
-            'label' => 'Reputacion',
+            'label' => 'Opiniones y encuestas',
             'modulo' => 'reputacion',
             'permisos' => [
                 'reputacion.view' => ['label' => 'Ver reputacion y encuestas', 'tipo' => 'acceso'],

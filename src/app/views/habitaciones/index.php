@@ -3518,7 +3518,7 @@ if ($tiene_doble_movimiento) {
                 <?php
                 // Colores (exactos del diseño): el STRIPE usa el color de la habitación
                 // (Área Confortable) o el del estado; la HOJA (sheet) usa SIEMPRE el color
-                // SEMÁNTICO del ESTADO. Vencido/no llegó = rojo crítico.
+                // SEMÁNTICO del ESTADO. Vencido/sin check-in = rojo crítico.
                 $stateAccentColors = [
                     'disponible'       => '#1E9E63',
                     'disponible_fecha' => '#1E9E63',
@@ -3563,7 +3563,7 @@ if ($tiene_doble_movimiento) {
                     $hbIncidencias[] = [
                         'type' => 'critical',
                         'icon' => 'exclamation-triangle',
-                        'label' => 'No llegó',
+                        'label' => 'Sin check-in',
                         'detail' => $diasRetraso > 0 ? ($diasRetraso . ' día' . ($diasRetraso === 1 ? '' : 's')) : 'Vencido',
                     ];
                 } elseif ($es_llegada_tardia) {
@@ -3668,7 +3668,7 @@ if ($tiene_doble_movimiento) {
                                 $faceMeta = 'Rotación de huéspedes';
                             } elseif ($es_checkin_vencido && $info_checkin_vencido && $estado_principal !== 'limpieza' && $estado_principal !== 'mantenimiento') {
                                 $faceGuest = $info_checkin_vencido['nombre'];
-                                $faceMeta = 'No llegó · ' . $info_checkin_vencido['dias_retraso'] . ' día' . ($info_checkin_vencido['dias_retraso'] > 1 ? 's' : '') . ' de retraso';
+                                $faceMeta = 'Sin check-in · ' . $info_checkin_vencido['dias_retraso'] . ' día' . ($info_checkin_vencido['dias_retraso'] > 1 ? 's' : '') . ' de retraso';
                             } elseif ($estado_principal == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
                                 $faceGuest = $habitacion['reservacion_pendiente']['nombre_completo'];
                                 $faceMeta = $es_llegada_tardia ? 'Llegada tardía pendiente' : ('Llega ' . date('g:i A', strtotime($habitacion['reservacion_pendiente']['hora_llegada_estimada'])));
@@ -8714,10 +8714,10 @@ body.hb-modal-open{ overflow:hidden; }
   border-left-color:var(--c-maint)!important;
 }
 
-/* "No llegó" + habitación DISPONIBLE: el badge verde se perdía sobre la
+/* "Sin check-in" + habitación DISPONIBLE: el badge verde se perdía sobre la
    superficie verde de la tarjeta (mismo tono + sin sombra). Le damos una
    píldora nítida —fondo claro, texto verde profundo, aro y sombra— para que
-   la leyenda "Disponible" resalte sin competir con el chip rojo "No llegó". */
+   la leyenda "Disponible" resalte sin competir con el chip rojo "Sin check-in". */
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible .rc-badge,
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha .rc-badge{
   background:#fff!important;

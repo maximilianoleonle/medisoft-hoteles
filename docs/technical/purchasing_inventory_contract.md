@@ -1380,6 +1380,38 @@ Alcance:
 - Sin afectacion a reportes financieros.
 - Sin cambios en `/api/sync`.
 
+## Actualizacion: division Compras vs Inventario ratificada
+
+Decision de producto (2026-07-22):
+
+- Inventario es el almacen: catalogo unico de productos, stock, kardex y consumo por habitacion.
+- Compras y proveedores es el abastecimiento: proveedores, ordenes `borrador`/`recibida`/`cancelada`, recepcion y CxP.
+- La unica escritura cruzada permitida sigue siendo `CompraService::recibirCompra()` (ENTRADA por linea).
+- No se fusionan modulos ni se re-parten pantallas.
+
+Permisos alineados con los modulos reales:
+
+- Catalogo de permisos: secciones `compras` y `proveedores` cuelgan del modulo contratable `compras` (antes `inventario`); `cuentas_por_pagar` cuelga de `compras` (antes `null`); `cuentas_por_cobrar` cuelga de `cuentas_cobrar` (antes `null`). La pantalla de Roles bloquea secciones por este campo; la deriva impedia asignar permisos a un hotel con `compras` sin `inventario`.
+- Nuevo permiso de accion `compras.recibir`: recibir suma stock y habilita CxP; puede otorgarse solo (rol de almacen) sin editar/cancelar.
+- `CompraController::recibirAction()` exige `compras.recibir`; editar/actualizar/cancelar siguen con `compras.all`; `compras.all` concede recibir via wildcard (`permission_in_list`).
+- El boton Recibir del listado solo se pinta con `can('compras.recibir')` (antes se mostraba a cualquiera con `compras.view` y el servidor lo rechazaba).
+
+Politica de costo "ultimo costo":
+
+- `recibirCompra()` actualiza `inventario_productos.costo_unitario` al costo de la linea recibida, dentro de la misma transaccion, para que el valor del inventario refleje la ultima compra real.
+- Costo `0` en la linea no pisa el costo de catalogo.
+- Con lineas repetidas del mismo producto gana la ultima linea (orden `id ASC`, consistente con Fase 2U).
+- La auditoria `compras.recibida` registra `costo_linea` y `costo_catalogo_anterior` por movimiento.
+
+Kardex:
+
+- El filtro/etiqueta de origen manual vs automatico de `/inventario/movimientos` reconoce `Recepcion compra` como automatico (antes la heuristica lo clasificaba como manual).
+
+Verificacion:
+
+- Script nuevo `src/tools/saas/probar_compras_permisos.php`: 28 checks de catalogo, presets, resolver, gates de codigo y alineacion catalogo-navegacion.
+- `ComprasProveedoresTest` ampliado: costo de catalogo actualizado al recibir y regla de ultima linea (38 asserts en verde).
+
 ## No implementar todavia
 
 - Pagos de compras.

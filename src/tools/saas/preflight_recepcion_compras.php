@@ -761,6 +761,9 @@ if (is_file($routesPath)) {
         ['method' => 'get', 'path' => 'compras/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'compras'],
         ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/recibir'],
+        ['method' => 'get', 'path' => 'compras/{id:[0-9]+}/editar'],
+        ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/actualizar'],
+        ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/cancelar'],
     ];
     $missingRoutes = [];
     foreach ($expectedRoutes as $expectedRoute) {
@@ -770,7 +773,7 @@ if (is_file($routesPath)) {
     }
 
     if (!$missingRoutes) {
-        prcOk('Rutas publicas de Compras incluyen reporte read-only, detalle, borradores y recepcion minima Fase 2V/2W/2X/2Y.');
+        prcOk('Rutas publicas de Compras incluyen reporte read-only, detalle, borradores, edicion/cancelacion de borradores y recepcion minima Fase 2V/2W/2X/2Y.');
     } else {
         prcError('Faltan rutas de borrador: ' . implode(', ', $missingRoutes), 'Restaurar rutas minimas antes de validar UI.');
     }
@@ -783,11 +786,20 @@ if (is_file($routesPath)) {
         $action = strtolower((string) $route['action']);
         $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
 
-        $allowed = in_array($method . ' /' . $path, ['GET /compras', 'GET /compras/crear', 'GET /compras/reportes/recibidas', 'GET /compras/{id:[0-9]+}', 'POST /compras'], true)
-            || $method . ' /' . $path === 'POST /compras/{id:[0-9]+}/recibir';
+        $allowed = in_array($method . ' /' . $path, [
+            'GET /compras',
+            'GET /compras/crear',
+            'GET /compras/reportes/recibidas',
+            'GET /compras/{id:[0-9]+}',
+            'GET /compras/{id:[0-9]+}/editar',
+            'POST /compras',
+            'POST /compras/{id:[0-9]+}/recibir',
+            'POST /compras/{id:[0-9]+}/actualizar',
+            'POST /compras/{id:[0-9]+}/cancelar',
+        ], true);
         $allowed = $allowed
             && $controller === 'compra'
-            && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
+            && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir', 'editar', 'actualizar', 'cancelar'], true);
 
         $allowedCxpReadOnly = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
@@ -819,11 +831,11 @@ if (is_file($routesPath)) {
     }
 
     if (!$forbiddenRoutes) {
-        prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP controlada; compras no registra pagos ni documentos.');
+        prcOk('Solo hay reporte read-only, detalle read-only, edicion/cancelacion de borradores, recepcion minima y CxP controlada; compras no registra pagos ni documentos.');
     } else {
         prcError(
             'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3D-D-A: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir, CxP GET/preview/detalle, POST generar CxP, POST pago Caja o POST reversion Caja de CxP.'
+            'Retirar rutas que no sean reporte read-only, detalle, borrador, edicion/actualizacion/cancelacion de borradores, POST /compras/{id}/recibir, CxP GET/preview/detalle, POST generar CxP, POST pago Caja o POST reversion Caja de CxP.'
         );
     }
 } else {
@@ -832,9 +844,11 @@ if (is_file($routesPath)) {
 
 if (is_file($purchaseControllerPath)) {
     $controller = (string) file_get_contents($purchaseControllerPath);
+    // La cancelacion LOGICA de borradores es parte del contrato vigente
+    // ("Edicion y cancelacion operativa de borradores"); lo prohibido en
+    // CompraController sigue siendo pagos, CxP directa, documentos y caja.
     $forbiddenControllerTokens = [
         'function pagarAction',
-        'function cancelarAction',
         'cuentas_por_pagar',
         'compra_pagos',
         'documentos_proveedor',
@@ -852,18 +866,23 @@ if (is_file($purchaseControllerPath)) {
         && strpos($controller, 'function verAction') !== false
         && strpos($controller, 'function reporteRecibidasAction') !== false
         && strpos($controller, 'function recibirAction') !== false
+        && strpos($controller, 'function editarAction') !== false
+        && strpos($controller, 'function actualizarAction') !== false
+        && strpos($controller, 'function cancelarAction') !== false
         && strpos($controller, 'obtenerCompra') !== false
         && strpos($controller, 'reporteRecibidas') !== false
         && strpos($controller, 'catalogosReporteRecibidas') !== false
         && strpos($controller, 'compras/reporte_recibidas') !== false
         && strpos($controller, 'compras/ver') !== false
         && strpos($controller, 'recibirCompra') !== false
+        && strpos($controller, 'actualizarBorrador') !== false
+        && strpos($controller, 'cancelarBorrador') !== false
     ) {
-        prcOk('CompraController expone reporte read-only, detalle read-only y recepcion minima; no expone pago, cancelacion, CxP, documentos ni caja.');
+        prcOk('CompraController expone reporte read-only, detalle read-only, edicion/cancelacion logica de borradores y recepcion minima; no expone pagos, CxP directa, documentos ni caja.');
     } else {
         prcError(
-            'CompraController no cumple Fase 2V/2W/2X/2Y o contiene tokens fuera de alcance: ' . (empty($found) ? 'sin detalle' : implode(', ', $found)),
-            'Mantener solo reporte read-only, detalle read-only y recepcion minima sin pago, cancelacion, CxP, documentos ni caja.'
+            'CompraController no cumple el contrato vigente o contiene tokens fuera de alcance: ' . (empty($found) ? 'sin detalle' : implode(', ', $found)),
+            'Mantener reporte read-only, detalle read-only, edicion/cancelacion logica de borradores y recepcion minima sin pagos, CxP directa, documentos ni caja.'
         );
     }
 } else {
