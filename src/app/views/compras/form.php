@@ -4,6 +4,9 @@ $proveedores = $catalogos['proveedores'] ?? [];
 $productos = $catalogos['productos'] ?? [];
 $tablaDisponible = $tablaDisponible ?? false;
 $errorTecnico = $errorTecnico ?? null;
+$compra = isset($compra) && is_array($compra) ? $compra : [];
+$modoEdicion = !empty($modoEdicion);
+$compraId = (int)($compra['id'] ?? 0);
 $compraFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('comp_form_safe')) {
@@ -53,13 +56,17 @@ if (!function_exists('comp_form_error_attrs')) {
 }
 
 $oldInputCompra = isset($_SESSION['old_input']) && is_array($_SESSION['old_input']) ? $_SESSION['old_input'] : [];
-$proveedorSeleccionado = (string)($oldInputCompra['proveedor_id'] ?? '');
-$folioValor = old('folio', '');
-$fechaCompraValor = old('fecha_compra', date('Y-m-d'));
-$notasValor = old('notas', '');
-$productosSeleccionados = is_array($oldInputCompra['producto_id'] ?? null) ? array_values($oldInputCompra['producto_id']) : [];
-$cantidadesFormulario = is_array($oldInputCompra['cantidad'] ?? null) ? array_values($oldInputCompra['cantidad']) : [];
-$costosFormulario = is_array($oldInputCompra['costo_unitario'] ?? null) ? array_values($oldInputCompra['costo_unitario']) : [];
+$detallesCompra = isset($compra['detalles']) && is_array($compra['detalles']) ? array_values($compra['detalles']) : [];
+$productosBase = array_column($detallesCompra, 'producto_id');
+$cantidadesBase = array_column($detallesCompra, 'cantidad');
+$costosBase = array_column($detallesCompra, 'costo_unitario');
+$proveedorSeleccionado = (string)($oldInputCompra['proveedor_id'] ?? ($compra['proveedor_id'] ?? ''));
+$folioValor = comp_form_safe($oldInputCompra['folio'] ?? ($compra['folio'] ?? ''));
+$fechaCompraValor = comp_form_safe($oldInputCompra['fecha_compra'] ?? ($compra['fecha_compra'] ?? date('Y-m-d')));
+$notasValor = comp_form_safe($oldInputCompra['notas'] ?? ($compra['notas'] ?? ''));
+$productosSeleccionados = is_array($oldInputCompra['producto_id'] ?? null) ? array_values($oldInputCompra['producto_id']) : $productosBase;
+$cantidadesFormulario = is_array($oldInputCompra['cantidad'] ?? null) ? array_values($oldInputCompra['cantidad']) : $cantidadesBase;
+$costosFormulario = is_array($oldInputCompra['costo_unitario'] ?? null) ? array_values($oldInputCompra['costo_unitario']) : $costosBase;
 $proveedoresPorProductoFormulario = is_array($oldInputCompra['detalle_proveedor_id'] ?? null) ? array_values($oldInputCompra['detalle_proveedor_id']) : [];
 $faltanCatalogos = empty($proveedores) || empty($productos);
 ?>
@@ -162,13 +169,13 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
 <div class="purchase-form-page p-4 sm:p-6">
     <div class="cp-shell">
-        <?php $back_arrow_href = back_url('compras'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <?php $back_arrow_href = back_url($modoEdicion ? 'compras/' . $compraId : 'compras'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
         <section class="cp-title-lockup">
             <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
             <div>
                 <p class="cp-kicker">Compras y abastecimiento</p>
-                <h1 class="cp-title">Nueva compra</h1>
-                <p class="cp-subtitle">Captura lo que vas a comprar. Se guarda como <strong>borrador</strong>: el inventario y la mercanc&iacute;a se actualizan despu&eacute;s, cuando marques la compra como recibida.</p>
+                <h1 class="cp-title"><?= $modoEdicion ? 'Editar compra #' . $compraId : 'Nueva compra' ?></h1>
+                <p class="cp-subtitle"><?= $modoEdicion ? 'Corrige el proveedor, folio o productos del borrador. Estos cambios todav&iacute;a no afectan el inventario.' : 'Captura lo que vas a comprar. Se guarda como <strong>borrador</strong>: el inventario y la mercanc&iacute;a se actualizan despu&eacute;s, cuando marques la compra como recibida.' ?></p>
             </div>
         </section>
 
@@ -185,13 +192,13 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                 </div>
             </section>
         <?php else: ?>
-            <form method="POST" action="<?= url('compras') ?>" class="cp-panel p-5">
+            <form method="POST" action="<?= url($modoEdicion ? 'compras/' . $compraId . '/actualizar' : 'compras') ?>" class="cp-panel p-5">
                 <?= csrf_field() ?>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="proveedor_id">Proveedor general <span class="cp-optional">(opcional)</span></label>
-                        <select class="cp-input<?= comp_form_error_class($compraFieldErrors, 'proveedor_id') ?>" id="proveedor_id" name="proveedor_id"<?= comp_form_error_attrs($compraFieldErrors, 'proveedor_id', 'ms-form-error-proveedor_id') ?>>
+                        <label for="proveedor_id"><?= $modoEdicion ? 'Proveedor' : 'Proveedor general' ?> <?= $modoEdicion ? '<span class="cp-req">*</span>' : '<span class="cp-optional">(opcional)</span>' ?></label>
+                        <select class="cp-input<?= comp_form_error_class($compraFieldErrors, 'proveedor_id') ?>" id="proveedor_id" name="proveedor_id"<?= $modoEdicion ? ' required' : '' ?><?= comp_form_error_attrs($compraFieldErrors, 'proveedor_id', 'ms-form-error-proveedor_id') ?>>
                             <option value="">Elige proveedor general</option>
                             <?php foreach ($proveedores as $proveedor): ?>
                                 <option value="<?= (int)$proveedor['id'] ?>" <?= $proveedorSeleccionado === (string)$proveedor['id'] ? 'selected' : '' ?>>
@@ -202,7 +209,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <?php if (comp_form_error($compraFieldErrors, 'proveedor_id')): ?>
                             <span class="cp-form-error ms-form-field-error" id="ms-form-error-proveedor_id"><?= comp_form_error($compraFieldErrors, 'proveedor_id') ?></span>
                         <?php endif; ?>
-                        <p class="cp-field-hint">Se usa solo en las lineas que digan "Usar proveedor general". Si cada producto ya tiene proveedor, puedes dejarlo vacio.</p>
+                        <p class="cp-field-hint"><?= $modoEdicion ? 'Todos los productos de este borrador pertenecen a este proveedor.' : 'Se usa solo en las lineas que digan "Usar proveedor general". Si cada producto ya tiene proveedor, puedes dejarlo vacio.' ?></p>
                     </div>
 
                     <div>
@@ -237,8 +244,8 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                             $costoValor = comp_form_safe($costosFormulario[$i] ?? '');
                             $proveedorLineaSeleccionado = (string)($proveedoresPorProductoFormulario[$i] ?? '');
                             ?>
-                            <div class="cp-line-row purchase-line-row grid grid-cols-1 md:grid-cols-[minmax(220px,1fr)_minmax(190px,.75fr)_120px_150px] gap-3<?= $proveedorLineaSeleccionado !== '' ? ' has-provider-override' : '' ?>">
-                                <div>
+                            <div class="cp-line-row purchase-line-row grid grid-cols-1 <?= $modoEdicion ? 'md:grid-cols-[minmax(220px,1fr)_120px_150px]' : 'md:grid-cols-[minmax(220px,1fr)_minmax(190px,.75fr)_120px_150px]' ?> gap-3<?= $proveedorLineaSeleccionado !== '' ? ' has-provider-override' : '' ?>">
+                                <?php if (!$modoEdicion): ?><div>
                                     <label for="producto_id_<?= $i ?>">Producto <?= $i === 0 ? '<span class="cp-req">*</span>' : '' ?></label>
                                     <select class="cp-input cp-product-select<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'producto_id_0') : '' ?>" id="producto_id_<?= $i ?>" name="producto_id[]" <?= $i === 0 ? 'required' : '' ?><?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'producto_id_0', 'ms-form-error-producto_id_0') : '' ?>>
                                         <option value="">Elige un producto</option>
@@ -252,7 +259,9 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                                     <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'producto_id_0')): ?>
                                         <span class="cp-form-error ms-form-field-error" id="ms-form-error-producto_id_0"><?= comp_form_error($compraFieldErrors, 'producto_id_0') ?></span>
                                     <?php endif; ?>
-                                </div>
+                                </div><?php else: ?>
+                                    <input type="hidden" name="detalle_proveedor_id[]" value="">
+                                <?php endif; ?>
 
                                 <div>
                                     <label for="detalle_proveedor_id_<?= $i ?>">Proveedor del producto</label>
@@ -306,9 +315,9 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                 <div class="flex flex-wrap gap-3 mt-6">
                     <button class="cp-btn cp-btn-gold" type="submit" <?= $faltanCatalogos ? 'disabled' : '' ?>>
                         <i class="fas fa-save"></i>
-                        Guardar borrador
+                        <?= $modoEdicion ? 'Guardar cambios' : 'Guardar borrador' ?>
                     </button>
-                    <a class="cp-btn cp-btn-muted" href="<?= back_url('compras') ?>">
+                    <a class="cp-btn cp-btn-muted" href="<?= back_url($modoEdicion ? 'compras/' . $compraId : 'compras') ?>">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>

@@ -39,6 +39,7 @@ if (!function_exists('cxc_estado_meta')) {
 $buscar = (string)($filtros['buscar'] ?? '');
 $estadoReservacion = (string)($filtros['estado_reservacion'] ?? 'todas');
 $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
+$vigencia = (string)($filtros['vigencia'] ?? 'vigentes');
 $visibles = count($cuentas);
 ?>
 
@@ -269,6 +270,11 @@ $visibles = count($cuentas);
                         <option value="checked_out" <?= $estadoReservacion === 'checked_out' ? 'selected' : '' ?>>Check-out</option>
                         <option value="cancelada" <?= $estadoReservacion === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                     </select>
+                    <select class="cx-control" name="vigencia">
+                        <option value="vigentes" <?= $vigencia === 'vigentes' ? 'selected' : '' ?>>Hoy y futuras</option>
+                        <option value="pasadas" <?= $vigencia === 'pasadas' ? 'selected' : '' ?>>Pasadas</option>
+                        <option value="todas" <?= $vigencia === 'todas' ? 'selected' : '' ?>>Todas las fechas</option>
+                    </select>
                     <select class="cx-control" name="estado_saldo">
                         <option value="todas" <?= $estadoSaldo === 'todas' ? 'selected' : '' ?>>Todos los saldos</option>
                         <option value="pendiente" <?= $estadoSaldo === 'pendiente' ? 'selected' : '' ?>>Con saldo pendiente</option>
@@ -472,6 +478,7 @@ $visibles = count($cuentas);
         input.value = p.get('buscar') || '';
         const er = form.querySelector('[name="estado_reservacion"]'); if (er) er.value = p.get('estado_reservacion') || 'todas';
         const es = form.querySelector('[name="estado_saldo"]'); if (es) es.value = p.get('estado_saldo') || 'pendiente';
+        const vg = form.querySelector('[name="vigencia"]'); if (vg) vg.value = p.get('vigencia') || 'vigentes';
         lastQuery = input.value.trim(); fetchResults(new URL(window.location.href), { pushState: false });
     });
     input.addEventListener('compositionstart', () => { isComposing = true; });

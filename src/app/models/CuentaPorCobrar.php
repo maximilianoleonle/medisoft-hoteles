@@ -89,6 +89,17 @@ class CuentaPorCobrar extends Model
             $where[] = "r.estado <> 'cancelada'";
         }
 
+        // Vigencia: por defecto solo estancias de hoy en adelante (una reservación
+        // cuya salida ya pasó es historia, no una cuenta accionable; sin este filtro
+        // el histórico migrado/viejo satura la pantalla). 'pasadas'/'todas' quedan
+        // disponibles para auditar.
+        $vigencia = $this->normalizarVigencia($filtros['vigencia'] ?? 'vigentes');
+        if ($vigencia === 'vigentes') {
+            $where[] = 'r.fecha_salida >= CURDATE()';
+        } elseif ($vigencia === 'pasadas') {
+            $where[] = 'r.fecha_salida < CURDATE()';
+        }
+
         $buscar = trim((string)($filtros['buscar'] ?? ''));
         if ($buscar !== '') {
             $like = '%' . $buscar . '%';
@@ -1211,6 +1222,14 @@ class CuentaPorCobrar extends Model
         return in_array($estado, ['confirmada', 'checked_in', 'checked_out', 'cancelada', 'todas'], true)
             ? $estado
             : 'todas';
+    }
+
+    private function normalizarVigencia($value): string
+    {
+        $vigencia = (string)($value ?? 'vigentes');
+        return in_array($vigencia, ['vigentes', 'pasadas', 'todas'], true)
+            ? $vigencia
+            : 'vigentes';
     }
 
     private function normalizarEstadoSaldo($value): string

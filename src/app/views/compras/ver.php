@@ -98,6 +98,8 @@ foreach ($detalles as $detalle) {
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease;
 }
 .purchase-detail-page .cp-btn:hover { transform: translateY(-1px); border-color: var(--cp-gold-line); color: var(--cp-gold-ink); }
+.purchase-detail-page .cp-btn-danger { color: var(--cp-danger); border-color: color-mix(in srgb, var(--cp-danger) 30%, var(--cp-border)); }
+.purchase-detail-page .cp-inline-form { display: inline-flex; margin: 0; }
 
 .purchase-detail-page .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .76rem; font-weight: 700; border: 1px solid transparent; }
 .purchase-detail-page .cp-badge.is-borrador { color: color-mix(in srgb, var(--cp-warning) 82%, #000); background: var(--cp-warning-bg); border-color: color-mix(in srgb, var(--cp-warning) 28%, #fff); }
@@ -324,6 +326,19 @@ foreach ($detalles as $detalle) {
                     <i class="fas fa-chart-column"></i>
                     Ver reporte
                 </a>
+                <?php if ($estado === 'borrador' && can('compras.all')): ?>
+                    <a class="cp-btn" href="<?= url('compras/' . (int)$compra['id'] . '/editar') ?>">
+                        <i class="fas fa-pen"></i>
+                        Editar borrador
+                    </a>
+                    <form class="cp-inline-form" method="POST" action="<?= url('compras/' . (int)$compra['id'] . '/cancelar') ?>" onsubmit="return confirm('¿Cancelar esta compra? Se conservara el registro y no se modificara el inventario.');">
+                        <?= csrf_field() ?>
+                        <button class="cp-btn cp-btn-danger" type="submit">
+                            <i class="fas fa-ban"></i>
+                            Cancelar compra
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
         </section>
 

@@ -1189,11 +1189,11 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     padding: 0.75rem 0;
 }
 
-/* Header sticky solo en desktop */
+/* Header en flujo normal: no acompaña el scroll */
 @media (min-width: 768px) {
     .modern-header {
-        position: sticky;
-        top: 0;
+        position: relative;
+        top: auto;
     }
 }
 
@@ -17195,11 +17195,11 @@ document.addEventListener('DOMContentLoaded', function() {
      ===================================================================== -->
 <style id="hb-header-hero">
 @media (min-width:768px){
-  /* Tarjeta FLOTANTE (no un rectangulo a todo el ancho): esquinas redondeadas
+  /* Tarjeta visualmente flotante, pero fija en el flujo de la pagina: esquinas redondeadas
      + margenes + sombra/glow de marca, misma forma que el modal. Gradiente de
      marca luminoso (marca -> marca aclarada) + brillo blanco = energia "wow". */
   .habitaciones-view .modern-header{
-    position:sticky; top:12px; overflow:hidden;
+    position:relative; top:auto; overflow:hidden;
     margin:16px clamp(14px,3vw,40px) 8px!important;
     border-radius:22px!important;
     --hb-hero-lift: color-mix(in srgb, var(--hb-primary) 66%, #ffffff);
@@ -17315,7 +17315,7 @@ document.addEventListener('DOMContentLoaded', function() {
    resto del contenido (mismo patrón que la sidebar). Necesario porque los modales
    de esta vista viven DENTRO del .container (position:relative; z-index:1): su
    z-index alto queda atrapado en ese contexto de apilamiento y cualquier elemento
-   externo con z>1 — este header sticky (z-index:40) — les pintaba encima. */
+   externo con z>1 — este header (z-index:40) — les pintaba encima. */
 body.ms-modal-abierto .habitaciones-view .modern-header{
   z-index:0!important;
   pointer-events:none!important;

@@ -88,6 +88,14 @@ Reglas:
 - `recibida` no debe recibirse otra vez.
 - Una compra pagada no debe cancelarse sin flujo contable posterior.
 
+### Edicion y cancelacion operativa de borradores
+
+- La edicion solo esta disponible mientras `compras.estado = 'borrador'`.
+- Editar reemplaza los renglones del borrador y recalcula subtotal y total dentro de una transaccion.
+- La cancelacion disponible en Compras es logica: cambia el estado a `cancelada`, conserva encabezado y detalles y registra `cancelada_por` y auditoria.
+- Ambas acciones exigen permiso `compras.all`, CSRF, pertenencia al hotel actual y ausencia de movimientos de inventario vinculados.
+- Una compra `recibida` no se edita ni se cancela desde este flujo. Su reversa futura debera compensar inventario y validar cuentas por pagar/pagos.
+
 ## Tablas sugeridas para fase futura
 
 ### `proveedores`

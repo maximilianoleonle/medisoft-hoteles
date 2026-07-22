@@ -85,8 +85,10 @@ class ReservacionController extends Controller {
             $branding = [];
         }
 
-        $primary = $this->cotizacionPdfHex($branding['color_primary'] ?? null, '#1B2746');
-        $secondary = $this->cotizacionPdfHex($branding['color_secondary'] ?? null, '#0F172A');
+        // Intercambio primario<->secundario (pedido jul-22): el cromado que antes
+        // usaba el color secundario del hotel ahora usa el primario y viceversa.
+        $primary = $this->cotizacionPdfHex($branding['color_secondary'] ?? null, '#0F172A');
+        $secondary = $this->cotizacionPdfHex($branding['color_primary'] ?? null, '#1B2746');
         $accent = $this->cotizacionPdfHex($branding['color_accent'] ?? null, '#BD9441');
         $headerText = $this->cotizacionPdfTextColor($secondary);
 
@@ -399,42 +401,6 @@ class ReservacionController extends Controller {
                 die('Huésped no encontrado.');
             }
  
-            // Obtener vehículos del huésped
-            $vehiculos = [];
-            try {
-                $stmtV = $this->db->prepare("
-                    SELECT v.marca, v.modelo, v.placas, v.color, v.estacionamiento
-                    FROM huesped_vehiculos v
-                    INNER JOIN huespedes h
-                        ON v.huesped_id = h.id
-                       AND h.hotel_id = v.hotel_id
-                    WHERE v.huesped_id = :hid
-                      AND v.hotel_id = :vehiculo_hotel_id
-                      AND h.hotel_id = :hotel_id
-                      AND v.activo = 1
-                    ORDER BY v.id ASC
-                ");
-                $stmtV->execute([
-                    ':hid' => $reservacion['huesped_id'],
-                    ':vehiculo_hotel_id' => $hotel_id,
-                    ':hotel_id' => $hotel_id,
-                ]);
-                $vehiculos = $stmtV->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Exception $e) {
-                error_log('Error obteniendo vehículos: ' . $e->getMessage());
-            }
- 
-            // Si no hay en la tabla nueva, intentar con campos legacy
-            if (empty($vehiculos) && !empty($huesped['vehiculo_marca'])) {
-                $vehiculos[] = [
-                    'marca'  => $huesped['vehiculo_marca'],
-                    'modelo' => '',
-                    'placas' => $huesped['vehiculo_placas'] ?? '',
-                    'color'  => '',
-                    'estacionamiento' => ''
-                ];
-            }
- 
             // Obtener habitaciones de la reservación
             $habitaciones = $this->reservacionModel->getHabitaciones($reservacion_id);
             if (empty($habitaciones)) {
@@ -485,7 +451,14 @@ class ReservacionController extends Controller {
                 return $d->format('d') . ' de ' . $meses[$d->format('n')-1] . ' de ' . $d->format('Y');
             };
             $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
- 
+
+            // Hora de llegada registrada en la reservación: si existe, pisa al
+            // horario genérico de check-in del hotel en la caja de estancia.
+            $horaLlegadaRes = $this->cotizacionPdfHoraConfig($reservacion['hora_llegada_estimada'] ?? '', '');
+            $checkinDetalle = $horaLlegadaRes !== ''
+                ? 'Llegada estimada ' . $this->cotizacionPdfHoraTexto($horaLlegadaRes)
+                : 'Desde ' . $cotizacionConfig['checkin_texto'];
+
             // ═══════════════════════════════════════════════════════
             // HEADER
             // ═══════════════════════════════════════════════════════
@@ -543,11 +516,8 @@ class ReservacionController extends Controller {
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
  
-            // Calcular alto de la caja del huésped (base 18 + vehículos)
+            // Alto fijo de la caja del huésped (el bloque de vehículos/placas se retiró jul-22)
             $huespedBoxH = 18;
-            if (!empty($vehiculos)) {
-                $huespedBoxH += 2 + (count($vehiculos) * 5) + 5 + 4; // separador + filas + título + margen inferior
-            }
  
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY = $pdf->GetY();
@@ -575,50 +545,7 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', '', 9);
             $procedencia = $huesped['procedencia_estado'] ?? ($huesped['procedencia'] ?? 'No especificada');
             $pdf->Cell(60, 5, $u($procedencia), 0, 0, 'L');
- 
-            // ── Vehículos ──────────────────────────────────────
-            if (!empty($vehiculos)) {
-                $vehY = $boxY + 20;
-                
-                // Línea separadora sutil
-                $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-                $pdf->SetLineWidth(0.3);
-                $pdf->Line($margin + 4, $vehY, $margin + $contentW - 4, $vehY);
- 
-                $pdf->SetXY($margin + 4, $vehY + 2);
-                $pdf->SetFont('Helvetica', 'B', 8);
-                $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-                $pdf->Cell(60, 4, $u('VEHÍCULOS'), 0, 1, 'L');
- 
-                foreach ($vehiculos as $veh) {
-                    $pdf->SetX($margin + 6);
-                    $pdf->SetFont('Helvetica', '', 8);
-                    $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
- 
-                    // Construir descripción del vehículo
-                    $vehDesc = '';
-                    $vehParts = [];
-                    
-                    if (!empty($veh['marca']))  $vehParts[] = $veh['marca'];
-                    if (!empty($veh['modelo'])) $vehParts[] = $veh['modelo'];
-                    $vehDesc = implode(' ', $vehParts);
-                    
-                    if (!empty($veh['color'])) {
-                        $vehDesc .= ' · ' . $veh['color'];
-                    }
- 
-                    // Icono bullet
-                    $pdf->SetFont('Helvetica', 'B', 7);
-                    $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
-                    $pdf->Cell(3, 5, $u('•'), 0, 0, 'L');
- 
-                    // Descripción
-                    $pdf->SetFont('Helvetica', '', 8);
-                    $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
-                    $pdf->Cell(70, 5, ' ' . $u($vehDesc), 0, 1, 'L');
-                }
-            }
- 
+
             // ═══════════════════════════════════════════════════════
             // DATOS DE LA ESTANCIA
             // ═══════════════════════════════════════════════════════
@@ -658,10 +585,10 @@ class ReservacionController extends Controller {
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', '', 7.5);
             $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u($checkinDetalle), 0, 0, 'L');
             $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
             $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
- 
+
             // ═══════════════════════════════════════════════════════
             // TABLA DE HABITACIONES
             // ═══════════════════════════════════════════════════════

@@ -51,6 +51,7 @@ class CuentaPorCobrarController extends Controller
             'buscar' => $this->getQuery('buscar', ''),
             'estado_reservacion' => $this->getQuery('estado_reservacion', 'todas'),
             'estado_saldo' => $this->getQuery('estado_saldo', 'pendiente'),
+            'vigencia' => $this->getQuery('vigencia', 'vigentes'),
         ];
 
         $tablaDisponible = $this->cuentaModel->tablasDisponibles();

@@ -138,6 +138,39 @@ class CompraController extends Controller
         }
     }
 
+    public function editarAction(): void
+    {
+        require_permission('compras.all');
+
+        try {
+            $compraId = (int)($this->route_params['id'] ?? 0);
+            if ($compraId <= 0) {
+                throw new Exception('Compra invalida');
+            }
+
+            $hotelId = $this->hotelIdActual();
+            $compra = $this->compraService->obtenerCompra($hotelId, $compraId);
+            if (!$compra) {
+                throw new Exception('Compra no encontrada para el hotel actual');
+            }
+            if ((string)($compra['estado'] ?? '') !== 'borrador') {
+                throw new Exception('Solo se pueden editar compras en borrador');
+            }
+
+            View::renderTemplate('compras/form', [
+                'title' => 'Editar compra #' . $compraId . ' - ' . current_hotel_display_name(),
+                'catalogos' => $this->compraService->catalogosBorrador($hotelId),
+                'tablaDisponible' => true,
+                'errorTecnico' => null,
+                'compra' => $compra,
+                'modoEdicion' => true,
+            ]);
+        } catch (Throwable $e) {
+            set_mensaje('No se puede editar la compra: ' . $e->getMessage(), 'error');
+            $this->redirect('compras');
+        }
+    }
+
     public function reporteRecibidasAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -236,6 +269,72 @@ class CompraController extends Controller
             save_form_errors($this->erroresCamposCompra([$e->getMessage()]));
             $this->redirect('compras/crear');
         }
+    }
+
+    public function actualizarAction(): void
+    {
+        require_permission('compras.all');
+        $compraId = (int)($this->route_params['id'] ?? 0);
+        if (!$this->isPost() || $compraId <= 0) {
+            $this->redirect('compras');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        try {
+            $detalles = $this->detallesFormulario();
+            if (!$detalles) {
+                throw new Exception('La compra requiere al menos un producto');
+            }
+
+            $this->compraService->actualizarBorrador(
+                $this->hotelIdActual(),
+                $compraId,
+                [
+                    'proveedor_id' => $_POST['proveedor_id'] ?? null,
+                    'folio' => $_POST['folio'] ?? null,
+                    'fecha_compra' => $_POST['fecha_compra'] ?? date('Y-m-d'),
+                    'notas' => $_POST['notas'] ?? null,
+                ],
+                $detalles,
+                $this->usuarioIdActual()
+            );
+
+            clear_old_input();
+            set_mensaje('Compra #' . $compraId . ' actualizada correctamente.', 'success');
+            $this->redirect('compras/' . $compraId);
+        } catch (Throwable $e) {
+            set_mensaje('Error al actualizar la compra: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposCompra([$e->getMessage()]));
+            $this->redirect('compras/' . $compraId . '/editar');
+        }
+    }
+
+    public function cancelarAction(): void
+    {
+        require_permission('compras.all');
+        $compraId = (int)($this->route_params['id'] ?? 0);
+        if (!$this->isPost() || $compraId <= 0) {
+            $this->redirect('compras');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        try {
+            $this->compraService->cancelarBorrador(
+                $this->hotelIdActual(),
+                $compraId,
+                $this->usuarioIdActual()
+            );
+            set_mensaje('Compra #' . $compraId . ' cancelada. No se modifico el inventario.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje('Error al cancelar la compra: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect('compras/' . $compraId);
     }
 
     public function recibirAction(): void

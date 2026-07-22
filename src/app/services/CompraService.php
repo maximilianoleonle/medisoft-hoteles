@@ -136,6 +136,97 @@ class CompraService
         }
     }
 
+    public function actualizarBorrador(int $hotelId, int $compraId, array $datos, array $detalles, ?int $usuarioId = null): array
+    {
+        $this->assertTablasDisponibles();
+        $this->assertTransaccionPropia();
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $compraId = $this->validarId($compraId, 'Compra invalida');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+        $proveedorId = $this->validarId($datos['proveedor_id'] ?? 0, 'Proveedor invalido');
+        $folio = $this->normalizarTextoNullable($datos['folio'] ?? null, 60);
+        $fechaCompra = $this->normalizarFecha($datos['fecha_compra'] ?? date('Y-m-d'));
+        $notas = $this->normalizarTextoNullable($datos['notas'] ?? null, 1000);
+
+        $this->assertTransactionPolicy();
+        $this->beginTransactionIfManaged();
+        try {
+            $compra = $this->obtenerCompraBloqueada($hotelId, $compraId);
+            $this->assertCompraEditable($compra);
+            $this->assertDetallesEditables($this->obtenerDetallesBloqueados($hotelId, $compraId));
+            $proveedor = $this->obtenerProveedorActivo($hotelId, $proveedorId);
+            $this->validarFolioDisponible($hotelId, $folio, $compraId);
+            $detallesNormalizados = $this->normalizarDetalles($hotelId, $detalles, false);
+            $totales = $this->calcularTotales($detallesNormalizados);
+
+            $stmt = $this->pdo->prepare(
+                "UPDATE compras SET proveedor_id = ?, folio = ?, fecha_compra = ?, subtotal = ?,
+                 impuestos = 0.00, total = ?, notas = ?, updated_by = ?, updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ? AND estado = 'borrador'"
+            );
+            $stmt->execute([$proveedorId, $folio, $fechaCompra, $totales['subtotal'], $totales['total'], $notas, $usuarioId, $compraId, $hotelId]);
+
+            $this->pdo->prepare(
+                "DELETE FROM compra_detalles WHERE compra_id = ? AND hotel_id = ? AND movimiento_inventario_id IS NULL"
+            )->execute([$compraId, $hotelId]);
+            $this->insertarDetalles($compraId, $hotelId, $detallesNormalizados);
+
+            AuditService::record('compras.actualizada', [
+                'hotel_id' => $hotelId, 'usuario_id' => $usuarioId,
+                'entidad_tipo' => 'compras', 'entidad_id' => (string)$compraId,
+                'descripcion' => 'Compra en borrador actualizada',
+                'datos_antes' => ['proveedor_id' => (int)$compra['proveedor_id'], 'folio' => $compra['folio'], 'total' => $compra['total']],
+                'datos_despues' => ['proveedor_id' => (int)$proveedor['id'], 'folio' => $folio, 'detalle_count' => count($detallesNormalizados), 'total' => $totales['total']],
+            ]);
+            $this->commitIfManaged();
+            return ['success' => true, 'compra_id' => $compraId, 'total' => $totales['total']];
+        } catch (Throwable $e) {
+            if ($this->manageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function cancelarBorrador(int $hotelId, int $compraId, ?int $usuarioId = null): array
+    {
+        $this->assertTablasDisponibles();
+        $this->assertTransaccionPropia();
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $compraId = $this->validarId($compraId, 'Compra invalida');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+
+        $this->assertTransactionPolicy();
+        $this->beginTransactionIfManaged();
+        try {
+            $compra = $this->obtenerCompraBloqueada($hotelId, $compraId);
+            $this->assertCompraEditable($compra);
+            $this->assertDetallesEditables($this->obtenerDetallesBloqueados($hotelId, $compraId));
+            $stmt = $this->pdo->prepare(
+                "UPDATE compras SET estado = 'cancelada', cancelada_por = ?, updated_by = ?, updated_at = NOW()
+                 WHERE id = ? AND hotel_id = ? AND estado = 'borrador'"
+            );
+            $stmt->execute([$usuarioId, $usuarioId, $compraId, $hotelId]);
+            if ($stmt->rowCount() !== 1) {
+                throw new Exception('No se pudo cancelar la compra; recarga e intenta de nuevo');
+            }
+            AuditService::record('compras.cancelada', [
+                'hotel_id' => $hotelId, 'usuario_id' => $usuarioId,
+                'entidad_tipo' => 'compras', 'entidad_id' => (string)$compraId,
+                'descripcion' => 'Compra en borrador cancelada sin afectar inventario',
+                'datos_antes' => ['estado' => 'borrador', 'total' => $compra['total']],
+                'datos_despues' => ['estado' => 'cancelada'],
+            ]);
+            $this->commitIfManaged();
+            return ['success' => true, 'compra_id' => $compraId, 'estado' => 'cancelada'];
+        } catch (Throwable $e) {
+            if ($this->manageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     public function recibirCompra(int $hotelId, int $compraId, ?int $usuarioId = null): array
     {
         $this->assertTablasDisponibles();
@@ -833,6 +924,25 @@ class CompraService
         }
     }
 
+    private function assertCompraEditable(array $compra): void
+    {
+        if ((string)($compra['estado'] ?? '') !== 'borrador') {
+            throw new Exception('Solo se pueden editar o cancelar compras en borrador');
+        }
+        if (!empty($compra['fecha_recepcion'])) {
+            throw new Exception('La compra ya tiene una recepcion registrada y no puede modificarse');
+        }
+    }
+
+    private function assertDetallesEditables(array $detalles): void
+    {
+        foreach ($detalles as $detalle) {
+            if (!empty($detalle['movimiento_inventario_id'])) {
+                throw new Exception('La compra ya tiene movimientos de inventario y no puede modificarse como borrador');
+            }
+        }
+    }
+
     private function obtenerDetallesBloqueados(int $hotelId, int $compraId): array
     {
         $stmt = $this->pdo->prepare(
@@ -915,20 +1025,20 @@ class CompraService
         return $producto;
     }
 
-    private function validarFolioDisponible(int $hotelId, ?string $folio): void
+    private function validarFolioDisponible(int $hotelId, ?string $folio, ?int $excluirCompraId = null): void
     {
         if ($folio === null) {
             return;
         }
 
-        $stmt = $this->pdo->prepare(
-            "SELECT id
-             FROM compras
-             WHERE hotel_id = ?
-               AND folio = ?
-             LIMIT 1"
-        );
-        $stmt->execute([$hotelId, $folio]);
+        $sql = "SELECT id FROM compras WHERE hotel_id = ? AND folio = ?";
+        $params = [$hotelId, $folio];
+        if ($excluirCompraId !== null && $excluirCompraId > 0) {
+            $sql .= ' AND id <> ?';
+            $params[] = $excluirCompraId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
 
         if ($stmt->fetch(PDO::FETCH_ASSOC)) {
             throw new Exception('Ya existe una compra con ese folio en el hotel actual');

@@ -394,8 +394,11 @@ $router->post('/proveedores/{id:[0-9]+}/reactivar', ['controller' => 'Proveedor'
 $router->get('/compras', ['controller' => 'Compra', 'action' => 'index']);
 $router->get('/compras/crear', ['controller' => 'Compra', 'action' => 'crear']);
 $router->get('/compras/reportes/recibidas', ['controller' => 'Compra', 'action' => 'reporteRecibidas']);
+$router->get('/compras/{id:[0-9]+}/editar', ['controller' => 'Compra', 'action' => 'editar']);
 $router->get('/compras/{id:[0-9]+}', ['controller' => 'Compra', 'action' => 'ver']);
 $router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
+$router->post('/compras/{id:[0-9]+}/actualizar', ['controller' => 'Compra', 'action' => 'actualizar']);
+$router->post('/compras/{id:[0-9]+}/cancelar', ['controller' => 'Compra', 'action' => 'cancelar']);
 $router->post('/compras/{id:[0-9]+}/recibir', ['controller' => 'Compra', 'action' => 'recibir']);
 
 // Fase 3B/3C-B/3D: CxP base, preview GET, generacion manual, simulador Caja y pago proveedor controlado.
