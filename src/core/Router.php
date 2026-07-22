@@ -111,7 +111,7 @@ class Router {
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Sesión expirada. Por favor, inicie sesión nuevamente.',
+                    'message' => 'Tu sesión expiró. Inicia sesión de nuevo para continuar.',
                     'redirect' => url($loginPath)
                 ]);
                 exit;

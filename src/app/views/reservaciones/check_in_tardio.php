@@ -188,7 +188,7 @@ $reservacion_id = $reservacion['id'];
                         Total a pagar: <strong><?= format_money($reservacion['precio_total']) ?></strong>
                     </p>
                     <p class="text-sm text-blue-700">
-                        Distribuya el pago entre los diferentes métodos:
+                        Distribuye el pago entre los diferentes métodos:
                     </p>
                 </div>
 

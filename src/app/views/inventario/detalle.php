@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800 font-playfair">Nuevo Producto</h1>
+            <h1 class="text-3xl font-bold text-gray-800 font-playfair">Nuevo producto</h1>
             <p class="text-gray-600 mt-1">Agregar producto al inventario</p>
         </div>
         
@@ -321,7 +321,7 @@
                 <div class="mt-6 p-3 bg-green-50 rounded-lg">
                     <p class="text-sm text-green-800">
                         <i class="fas fa-lightbulb mr-1"></i>
-                        <strong>Tip:</strong> Para productos como papel higiénico y jabón, active los descuentos automáticos para mayor eficiencia.
+                        <strong>Tip:</strong> Para productos como papel higiénico y jabón, activa los descuentos automáticos para mayor eficiencia.
                     </p>
                 </div>
             </div>

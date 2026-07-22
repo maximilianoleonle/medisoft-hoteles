@@ -56,7 +56,7 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
             <div class="flex justify-between items-center">
                 <h1 class="text-xl font-bold flex items-center gap-2">
                     <i class="fas fa-edit"></i>
-                    Editar Producto
+                    Editar producto
                 </h1>
                 <div class="flex items-center gap-3">
                     <span class="bg-white/20 px-3 py-1 rounded-full text-sm">

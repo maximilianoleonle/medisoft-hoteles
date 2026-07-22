@@ -980,7 +980,7 @@ input:checked + .toggle-slider:before {
                         </div>
                         <div class="min-w-0">
                             <p class="tarifa-page-kicker">Operación hotelera</p>
-                            <h1 class="tarifa-page-title">Nuevo incremento</h1>
+                            <h1 class="tarifa-page-title">Nuevo ajuste de precio</h1>
                             <p class="tarifa-page-subtitle">Configura una regla de precio para temporadas, eventos o ajustes puntuales sin perder claridad en alcance y vigencia.</p>
                         </div>
                     </div>

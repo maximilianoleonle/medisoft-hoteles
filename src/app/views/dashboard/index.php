@@ -2881,6 +2881,113 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     font-weight: 750;
 }
 
+/* ── Desglose de vehículos del día seleccionado (filas-enlace) ── */
+.pf-detail-head { margin-bottom: 2px; }
+
+.pf-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 6px 9px;
+    border: 1px solid color-mix(in srgb, var(--dash-gold) 22%, var(--dash-line));
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: var(--dash-navy);
+    text-decoration: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.pf-detail-row:hover {
+    border-color: color-mix(in srgb, var(--dash-gold) 55%, var(--dash-line));
+    box-shadow: 0 1px 6px color-mix(in srgb, var(--dash-gold) 18%, transparent);
+}
+
+.pf-detail-row i {
+    flex: 0 0 auto;
+    color: var(--parking-ring-end, var(--dash-gold));
+    font-size: 12px;
+}
+
+.pf-detail-row span {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.pf-detail-row strong {
+    overflow: hidden;
+    font-size: 11.5px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-detail-row em {
+    overflow: hidden;
+    color: var(--dash-slate-500);
+    font-size: 10.5px;
+    font-style: normal;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-detail-row > b {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--dash-gold) 12%, #FFFFFF);
+    color: color-mix(in srgb, var(--dash-gold) 62%, var(--dash-ink));
+    font-size: 10px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.pf-detail-row.is-pending { border-style: dashed; }
+.pf-detail-row.is-pending i { color: var(--dash-slate-500); }
+
+.pf-detail-empty {
+    margin-top: 6px;
+    color: var(--dash-slate-500);
+    font-weight: 700;
+}
+
+/* ── Enlaces de la sección de estacionamiento (mismo look, ahora clicables) ── */
+a.parking-head-note,
+a.parking-breakdown-item,
+a.parking-more-note,
+a.dm-sec-note,
+a.dm-park-type {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+a.parking-more-note { display: block; }
+
+a.parking-head-note:hover,
+a.dm-sec-note:hover,
+a.parking-more-note:hover { text-decoration: underline; }
+
+a.parking-breakdown-item:hover,
+a.dm-park-type:hover {
+    border-color: color-mix(in srgb, var(--dash-gold) 48%, var(--dash-line));
+    box-shadow: 0 1px 6px color-mix(in srgb, var(--dash-gold) 16%, transparent);
+}
+
+.soft-note a,
+.dm-park-note a {
+    color: inherit;
+    font-weight: 850;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+}
+
+.soft-note a:hover,
+.dm-park-note a:hover { text-decoration: underline solid; }
+
 .dm-park-forecast { margin-top: 10px; }
 
 .dm-park-forecast .pf-mini-title {
@@ -4445,7 +4552,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div class="cash-day-group">
                         <div class="cash-day-group-title income">
                             <i class="fas fa-arrow-trend-up" aria-hidden="true"></i>
-                            Dinero que quedo
+                            Dinero que quedó
                         </div>
                         <div class="cash-day-row"><span>Efectivo</span><strong><?= format_money($stats['ingresos']['efectivo_dia'] ?? 0) ?></strong></div>
                         <div class="cash-day-row"><span>Tarjeta</span><strong><?= format_money($stats['ingresos']['tarjeta_dia'] ?? 0) ?></strong></div>
@@ -4461,7 +4568,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                         <div class="cash-day-row"><span>Transferencia</span><strong><?= format_money($stats['egresos']['transferencia_dia'] ?? 0) ?></strong></div>
                     </div>
                 </div>
-                <div class="cash-day-balance"><span>Dinero que entro</span><strong><?= format_money($ingresos_brutos_total) ?></strong></div>
+                <div class="cash-day-balance"><span>Dinero que entró</span><strong><?= format_money($ingresos_brutos_total) ?></strong></div>
                 <div class="cash-day-balance"><span>Devuelto/cancelado</span><strong>-<?= format_money(abs($reversos_total)) ?></strong></div>
                 <div class="cash-day-balance"><span>Resultado</span><strong><?= format_money($balance_dia) ?></strong></div>
                 <a class="card-kicker-link" href="<?= url('caja') ?>" title="Ir a caja para revisar movimientos">
@@ -4539,7 +4646,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div class="card-title">Guardi&aacute;n financiero</div>
                     <div class="soft-note" style="margin-top:2px;">
                         <?= $guardian_nuevos > 0
-                            ? $guardian_nuevos . ' patr&oacute;n(es) a revisar &mdash; conviene confirmar con el equipo'
+                            ? $guardian_nuevos . ($guardian_nuevos === 1 ? ' patr&oacute;n a revisar' : ' patrones a revisar') . ' &mdash; conviene confirmar con el equipo'
                             : 'Todo en orden: nada se sale del patr&oacute;n de tu hotel' ?>
                     </div>
                 </div>
@@ -4745,7 +4852,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                         <div class="amount"><?= format_money($caja_info['monto_inicial'] ?? 0) ?></div>
                     </div>
                     <div class="cash-box">
-                        <div class="label">Dinero que quedo</div>
+                        <div class="label">Dinero que quedó</div>
                         <div class="amount" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                     </div>
                     <div class="cash-box">
@@ -4771,7 +4878,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             <article class="card card-pad dashboard-parking-card <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                 <div class="section-head">
                     <h2>Estacionamiento</h2>
-                    <span class="parking-head-note"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></span>
+                    <a class="parking-head-note" href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos de estacionamiento en Configuración"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></a>
                 </div>
                 <div class="park-ring">
                     <div class="ring-box">
@@ -4809,11 +4916,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                         <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
                         <div class="soft-note">
                             <?php if (!$estacionamiento_tiene_cupo): ?>
-                                Configura el cupo activo en Configuracion para medir disponibilidad real.
+                                <a href="<?= url('configuracion') ?>#hc-catalogs" title="Abrir la configuración de estacionamientos">Configura el cupo activo en Configuracion</a> para medir disponibilidad real.
                             <?php elseif ($espacios_excedidos > 0): ?>
-                                <?= $espacios_excedidos ?> espacios sobre el limite configurado
+                                <?= $espacios_excedidos ?> espacios sobre el <a href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos en Configuración">limite configurado</a>
                             <?php else: ?>
-                                <?= $espacios_disp ?> espacios disponibles · <?= $vehiculos_registrados_total ?> vehiculos registrados
+                                <?= $espacios_disp ?> espacios disponibles · <a href="<?= url('huespedes') ?>" title="Ver huéspedes y sus vehículos registrados"><?= $vehiculos_registrados_total ?> vehiculos registrados</a>
                             <?php endif; ?>
                         </div>
                         <div class="parking-breakdown" aria-label="Estacionamientos configurados">
@@ -4841,18 +4948,22 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                     $parkingDetail .= ' · +' . $parkingOver . ' sobre cupo';
                                 }
                                 ?>
-                                <div class="<?= implode(' ', $parkingClasses) ?>">
+                                <a class="<?= implode(' ', $parkingClasses) ?>"
+                                   href="<?= url('configuracion') ?>#hc-catalogs"
+                                   title="Ajustar el cupo de <?= dashboard_safe($parkingItem['label'] ?? 'este estacionamiento') ?> en Configuración">
                                     <span>
                                         <?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?>
                                         <small><?= dashboard_safe($parkingDetail) ?></small>
                                     </span>
                                     <strong><?= $parkingCapacity > 0 ? ($parkingTotal . '/' . $parkingCapacity) : $parkingTotal ?></strong>
-                                </div>
+                                </a>
                             <?php endforeach; ?>
                         </div>
                         <div class="parking-forecast" id="parkingForecast"
                              data-endpoint="<?= url('api/dashboard/estacionamiento-proyeccion') ?>"
-                             data-hoy="<?= date('Y-m-d') ?>">
+                             data-hoy="<?= date('Y-m-d') ?>"
+                             data-url-reservacion="<?= url('reservaciones/ver') ?>"
+                             data-url-huesped="<?= url('huespedes') ?>">
                             <div class="parking-forecast-head">
                                 <span><i class="fas fa-calendar-week" aria-hidden="true"></i> Próximos días</span>
                                 <input type="date" id="parkingForecastDate" min="<?= date('Y-m-d') ?>" aria-label="Ver estacionamiento proyectado de una fecha">
@@ -4895,7 +5006,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                 </a>
                             <?php endforeach; ?>
                             <?php if (count($lista_vehiculos_estacionamiento) > 5): ?>
-                                <div class="parking-more-note">+<?= count($lista_vehiculos_estacionamiento) - 5 ?> vehiculos adicionales registrados</div>
+                                <a class="parking-more-note" href="<?= url('huespedes') ?>" title="Ver todos los huéspedes y sus vehículos">+<?= count($lista_vehiculos_estacionamiento) - 5 ?> vehiculos adicionales registrados · ver todos</a>
                             <?php endif; ?>
                         <?php endif; ?>
                     </div>
@@ -4938,7 +5049,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </div>
                 </div>
 
-                <div class="dm-sec"><span>Estacionamiento</span><span class="dm-sec-note"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></span></div>
+                <div class="dm-sec"><span>Estacionamiento</span><a class="dm-sec-note" href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos de estacionamiento en Configuración"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></a></div>
                 <div class="dm-card dm-park <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                     <div class="dm-occ dm-park-top">
                         <div class="dm-ring dm-park-ring">
@@ -4969,11 +5080,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                         <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
                         <div class="dm-park-note">
                             <?php if (!$estacionamiento_tiene_cupo): ?>
-                                Configura el cupo en Configuración para medir disponibilidad.
+                                <a href="<?= url('configuracion') ?>#hc-catalogs">Configura el cupo en Configuración</a> para medir disponibilidad.
                             <?php elseif ($espacios_excedidos > 0): ?>
-                                <?= $espacios_excedidos ?> sobre el límite · <?= $vehiculos_registrados_total ?> vehículos registrados
+                                <?= $espacios_excedidos ?> sobre el <a href="<?= url('configuracion') ?>#hc-catalogs">límite</a> · <a href="<?= url('huespedes') ?>"><?= $vehiculos_registrados_total ?> vehículos registrados</a>
                             <?php else: ?>
-                                <?= $espacios_disp ?> espacios disponibles · <?= $vehiculos_registrados_total ?> vehículos registrados
+                                <?= $espacios_disp ?> espacios disponibles · <a href="<?= url('huespedes') ?>"><?= $vehiculos_registrados_total ?> vehículos registrados</a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -5000,10 +5111,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                 if ($pOver > 0) { $pDetail .= ' · +' . $pOver . ' sobre cupo'; }
                                 $pBadge = $pCupo > 0 ? ($pTotal . '/' . $pCupo) : (string)$pTotal;
                                 ?>
-                                <div class="<?= $pClass ?>">
+                                <a class="<?= $pClass ?>" href="<?= url('configuracion') ?>#hc-catalogs"
+                                   title="Ajustar el cupo de <?= dashboard_safe($parkingItem['label'] ?? 'este estacionamiento') ?> en Configuración">
                                     <span class="nm"><?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?><small><?= dashboard_safe($pDetail) ?></small></span>
                                     <strong class="ct"><?= dashboard_safe($pBadge) ?></strong>
-                                </div>
+                                </a>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
@@ -5025,7 +5137,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </div>
                     <div class="dm-split">
                         <div class="b">
-                            <div class="t" style="color:var(--dash-available)">Dinero que quedo</div>
+                            <div class="t" style="color:var(--dash-available)">Dinero que quedó</div>
                             <div class="v" style="color:var(--dash-available)"><?= format_money($ingresos_total) ?></div>
                         </div>
                         <div class="b">
@@ -5104,7 +5216,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             <div class="v"><?= format_money($caja_info['monto_inicial'] ?? 0) ?></div>
                         </div>
                         <div class="dm-cbox">
-                            <div class="t">Dinero que quedo</div>
+                            <div class="t">Dinero que quedó</div>
                             <div class="v" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                         </div>
                         <div class="dm-cbox">
@@ -5375,6 +5487,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
     const endpoint = box.getAttribute('data-endpoint');
     const hoy = box.getAttribute('data-hoy');
+    const urlReservacion = box.getAttribute('data-url-reservacion') || '';
+    const urlHuesped = box.getAttribute('data-url-huesped') || '';
     const strips = document.querySelectorAll('[data-pf-strip]');
     const details = document.querySelectorAll('[data-pf-detail]');
     const dateInput = document.getElementById('parkingForecastDate');
@@ -5382,12 +5496,12 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
     const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    function pedir(desde, dias) {
-        const key = desde + ':' + dias;
+    function pedir(desde, dias, conDetalle) {
+        const key = desde + ':' + dias + (conDetalle ? ':detalle' : '');
         if (cache[key]) {
             return Promise.resolve(cache[key]);
         }
-        return fetch(endpoint + '?desde=' + encodeURIComponent(desde) + '&dias=' + dias, {
+        return fetch(endpoint + '?desde=' + encodeURIComponent(desde) + '&dias=' + dias + (conDetalle ? '&detalle=1' : ''), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin'
         }).then(function (r) { return r.json(); }).then(function (json) {
@@ -5396,6 +5510,12 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                 return json.data;
             }
             throw new Error('proyeccion invalida');
+        });
+    }
+
+    function esc(valor) {
+        return String(valor == null ? '' : valor).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
 
@@ -5417,23 +5537,77 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         return codigo;
     }
 
+    function ponerDetalle(html) {
+        details.forEach(function (det) {
+            det.innerHTML = html;
+            det.hidden = false;
+        });
+    }
+
+    function filaVehiculoHtml(v) {
+        const reservacionId = parseInt(v.reservacion_id, 10) || 0;
+        const huespedId = parseInt(v.huesped_id, 10) || 0;
+        const href = reservacionId > 0
+            ? (urlReservacion + '/' + reservacionId)
+            : (urlHuesped + '/' + huespedId);
+        const cantidad = parseInt(v.cantidad, 10) || 1;
+        const nombre = v.por_confirmar
+            ? (cantidad + (cantidad === 1 ? ' vehículo por confirmar' : ' vehículos por confirmar'))
+            : ((v.vehiculo || 'Vehículo') + (v.placas ? ' · ' + v.placas : ''));
+        const metaPartes = [v.huesped || 'Huésped'];
+        if (v.habitaciones) {
+            metaPartes.push('Hab. ' + v.habitaciones);
+        }
+        if (v.area_label) {
+            metaPartes.push(v.area_label);
+        }
+        return '<a class="pf-detail-row' + (v.por_confirmar ? ' is-pending' : '') + '" href="' + esc(href) + '"' +
+            ' title="Abrir la reservación de ' + esc(v.huesped || 'este huésped') + '">' +
+            '<i class="fas ' + (v.por_confirmar ? 'fa-question-circle' : 'fa-car') + '" aria-hidden="true"></i>' +
+            '<span><strong>' + esc(nombre) + '</strong><em>' + esc(metaPartes.join(' · ')) + '</em></span>' +
+            '<b>' + esc(v.estado_label || 'Reservado') + '</b></a>';
+    }
+
     function pintarDetalle(data, dia) {
         const porArea = dia.por_area || {};
         const partes = Object.keys(porArea).map(function (codigo) {
             return labelArea(data, codigo) + ' ' + porArea[codigo];
         });
         const cupo = parseInt(data.cupo_total, 10) || 0;
-        let html = '<b>' + etiquetaDia(dia.fecha) + ':</b> ' + dia.total +
+        let head = '<b>' + etiquetaDia(dia.fecha) + ':</b> ' + dia.total +
             (cupo > 0 ? ' de ' + cupo : '') + ' vehículos proyectados';
         if (partes.length) {
-            html += ' · ' + partes.join(' · ');
+            head += ' · ' + partes.join(' · ');
         }
         if (dia.nivel === 'sobrecupo' && cupo > 0) {
-            html += ' · <b>' + (dia.total - cupo) + ' sobre el cupo</b>';
+            head += ' · <b>' + (dia.total - cupo) + ' sobre el cupo</b>';
         }
-        details.forEach(function (det) {
-            det.innerHTML = html;
-            det.hidden = false;
+
+        let html = '<div class="pf-detail-head">' + head + '</div>';
+        const filas = data.detalle || [];
+        if (filas.length) {
+            html += filas.map(filaVehiculoHtml).join('');
+        } else if ((parseInt(dia.total, 10) || 0) === 0) {
+            html += '<div class="pf-detail-empty">Sin vehículos proyectados para ese día.</div>';
+        }
+        ponerDetalle(html);
+    }
+
+    function marcarDiaActivo(fecha) {
+        document.querySelectorAll('.parking-forecast-day').forEach(function (el) {
+            el.classList.toggle('is-active', el.getAttribute('data-fecha') === fecha);
+        });
+    }
+
+    function mostrarDia(fecha) {
+        ponerDetalle('<div class="pf-detail-head">Buscando los vehículos del ' + esc(etiquetaDia(fecha)) + '…</div>');
+        pedir(fecha, 1, true).then(function (data) {
+            const dia = (data.proyeccion || [])[0];
+            if (dia) {
+                pintarDetalle(data, dia);
+            }
+        }).catch(function () {
+            ponerDetalle('No se pudo consultar esa fecha.');
         });
     }
 
@@ -5447,19 +5621,18 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     (dia.nivel === 'sobrecupo'
                         ? ' pf-over'
                         : (dia.nivel === 'casi_lleno' || dia.nivel === 'ocupado') ? ' pf-warn' : '');
+                btn.setAttribute('data-fecha', dia.fecha);
+                btn.title = 'Ver los vehículos del ' + etiquetaDia(dia.fecha);
                 const pct = Math.max(dia.total > 0 ? 8 : 0, Math.min(100, parseInt(dia.pct, 10) || 0));
-                btn.innerHTML = '<b>' + dia.total + '</b>' +
+                btn.innerHTML = '<small>' + etiquetaDia(dia.fecha) + '</small>' +
                     '<span class="pf-bar"><i style="height:' + pct + '%"></i></span>' +
-                    '<small>' + etiquetaDia(dia.fecha) + '</small>';
+                    '<b>' + dia.total + '</b>';
                 btn.addEventListener('click', function () {
-                    document.querySelectorAll('.parking-forecast-day.is-active').forEach(function (el) {
-                        el.classList.remove('is-active');
-                    });
-                    btn.classList.add('is-active');
+                    marcarDiaActivo(dia.fecha);
                     if (dateInput) {
                         dateInput.value = dia.fecha;
                     }
-                    pintarDetalle(data, dia);
+                    mostrarDia(dia.fecha);
                 });
                 strip.appendChild(btn);
             });
@@ -5478,17 +5651,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             if (!fecha) {
                 return;
             }
-            pedir(fecha, 1).then(function (data) {
-                const dia = (data.proyeccion || [])[0];
-                if (dia) {
-                    pintarDetalle(data, dia);
-                }
-            }).catch(function () {
-                details.forEach(function (det) {
-                    det.textContent = 'No se pudo consultar esa fecha.';
-                    det.hidden = false;
-                });
-            });
+            marcarDiaActivo(fecha);
+            mostrarDia(fecha);
         });
     }
 })();

@@ -316,7 +316,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                    autocomplete="off"
                    style="padding-right:28px;position:relative;z-index:2;pointer-events:auto;cursor:text;user-select:text;">
             <button id="buscador-global-clear"
-                    title="Limpiar busqueda"
+                    title="Limpiar búsqueda"
                     style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);
                            width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.18);
                            color:white;border:none;cursor:pointer;

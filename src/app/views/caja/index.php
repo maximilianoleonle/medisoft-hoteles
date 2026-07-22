@@ -1358,7 +1358,7 @@ $cash_methods = [
                                 $cj_cut_date = !empty($mov['created_at']) ? date('d/m/Y', strtotime($mov['created_at'])) : '';
                                 $cj_cut_eyebrow = $cj_is_current_cut
                                     ? 'Movimientos del corte actual'
-                                    : ($cj_mov_cut_id > 0 ? 'Aqui empieza otro corte' : 'Movimientos fuera de corte');
+                                    : ($cj_mov_cut_id > 0 ? 'Aquí empieza otro corte' : 'Movimientos fuera de corte');
                                 $cj_cut_title = $cj_mov_cut_id > 0
                                     ? 'Corte #' . $cj_mov_cut_id
                                     : 'Movimientos sin corte asignado';
@@ -1484,7 +1484,7 @@ $cash_methods = [
                     <div class="cash-field">
                         <label class="modal-label">Concepto <span class="text-red-400">*</span></label>
                         <select name="categoria_id" id="categoria_ingreso" class="modal-input<?= caja_form_error_class($cajaIngresoErrors, 'categoria_id') ?>" required<?= caja_form_error_attrs($cajaIngresoErrors, 'categoria_id', 'ms-form-error-caja_ingreso_categoria') ?>>
-                            <option value="">Seleccione un concepto</option>
+                            <option value="">Selecciona un concepto</option>
                             <?php foreach ($categorias['ingreso'] as $cat): ?>
                                 <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>"<?= caja_form_selected($cajaIngresoOld, 'categoria_id', (string)($cat['id'] ?? '')) ?>>
                                     <?= htmlspecialchars(cj_finance_label($cat['nombre'] ?? '')) ?>
@@ -1603,7 +1603,7 @@ $cash_methods = [
                     <div class="cash-field">
                         <label class="modal-label modal-label-red">Concepto <span class="text-red-400">*</span></label>
                         <select name="categoria_id" id="categoria_gasto" class="modal-input modal-input-red<?= caja_form_error_class($cajaGastoErrors, 'categoria_id') ?>" required<?= caja_form_error_attrs($cajaGastoErrors, 'categoria_id', 'ms-form-error-caja_gasto_categoria') ?>>
-                            <option value="">Seleccione un concepto</option>
+                            <option value="">Selecciona un concepto</option>
                             <?php foreach ($categorias['gasto'] as $cat): ?>
                                 <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>"<?= caja_form_selected($cajaGastoOld, 'categoria_id', (string)($cat['id'] ?? '')) ?>>
                                     <?= htmlspecialchars(cj_finance_label($cat['nombre'] ?? '')) ?>

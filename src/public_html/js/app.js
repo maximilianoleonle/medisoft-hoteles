@@ -20,9 +20,7 @@
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'activated') {
                                 // Mostrar notificaciÃ³n de actualizaciÃ³n
-                                if (window.confirm('Nueva versiÃ³n disponible. Â¿Desea actualizar?')) {
-                                    window.location.reload();
-                                }
+                                // La actualizacion la anuncia el banner 'Nueva version lista' (pwa.js); sin confirm duplicado.
                             }
                         });
                     });
@@ -1329,17 +1327,17 @@
         const normalized = isMoneyManaged ? rawValue.replace(/,/g, '') : rawValue.replace(/,/g, '.');
         const numberValue = Number(normalized);
         if (!Number.isFinite(numberValue)) {
-            return 'Ingresa un numero valido.';
+            return 'Ingresa un número válido.';
         }
 
         const minValue = field.getAttribute('min');
         const maxValue = field.getAttribute('max');
         if (minValue !== null && minValue !== '' && Number.isFinite(Number(minValue)) && numberValue < Number(minValue)) {
-            return 'El valor minimo permitido es ' + minValue + '.';
+            return 'El valor mínimo permitido es ' + minValue + '.';
         }
 
         if (maxValue !== null && maxValue !== '' && Number.isFinite(Number(maxValue)) && numberValue > Number(maxValue)) {
-            return 'El valor maximo permitido es ' + maxValue + '.';
+            return 'El valor máximo permitido es ' + maxValue + '.';
         }
 
         if (field.dataset.allowNegative !== 'true' && !field.matches('[data-allow-negative]') && minValue === null && numberValue < 0) {
@@ -1350,7 +1348,7 @@
         const isMoneyField = field.matches('[data-money-format="true"]') || /(^|[_\[\]-])(monto|importe|total|precio|costo|tarifa|anticipo|abono|deposito|descuento|salario)([_\]\[-]|$)/i.test(String(field.name || ''));
         const decimalsCheckValue = isMoneyManaged ? rawValue.replace(/,/g, '') : rawValue;
         if ((isMoneyField || stepValue === '0.01') && hasMoreThanTwoDecimals(decimalsCheckValue)) {
-            return 'Usa maximo 2 decimales.';
+            return 'Usa máximo 2 decimales.';
         }
 
         return '';
@@ -1455,7 +1453,7 @@
             }
 
             if (methodActive && amount > 0 && !hasCheckedCardType(form, cardAmount) && shouldValidate) {
-                setPreventiveFieldError(cardAmount, 'Selecciona si la tarjeta es credito o debito.', true);
+                setPreventiveFieldError(cardAmount, 'Selecciona si la tarjeta es crédito o débito.', true);
                 valid = false;
             } else if (typeof cardAmount.checkValidity === 'function' && cardAmount.checkValidity()) {
                 clearFieldError(cardAmount);
@@ -1750,7 +1748,7 @@
 
         if (validity.typeMismatch) {
             return String(field.type || '').toLowerCase() === 'email'
-                ? 'Ingresa un correo valido.'
+                ? 'Ingresa un correo válido.'
                 : 'Revisa el formato de este dato.';
         }
 
@@ -1839,8 +1837,8 @@
         const detail = document.createElement('span');
         const serverMessage = detailMessage || (invalidField && invalidField.dataset ? invalidField.dataset.msServerError : '');
 
-        strong.textContent = serverMessage ? 'No se pudo guardar este formulario.' : 'Revisa la informacion antes de guardar.';
-        detail.textContent = serverMessage || 'Hay campos obligatorios o con formato incorrecto. No se envio nada todavia.';
+        strong.textContent = serverMessage ? 'No se pudo guardar este formulario.' : 'Revisa la información antes de guardar.';
+        detail.textContent = serverMessage || 'Hay campos obligatorios o con formato incorrecto. No se envió nada todavía.';
 
         summary.replaceChildren(strong, detail);
 
@@ -1859,7 +1857,7 @@
         const notice = document.createElement('div');
         notice.className = 'ms-form-recovered-notice';
         notice.setAttribute('role', 'status');
-        notice.innerHTML = '<strong>Recupere tus datos.</strong><span>El guardado anterior tuvo un error y mantuve lo que habias capturado.</span><button type="button">Descartar</button>';
+        notice.innerHTML = '<strong>Recuperamos lo que escribiste.</strong><span>El guardado anterior falló, pero tu información sigue aquí.</span><button type="button">Descartar</button>';
 
         const button = notice.querySelector('button');
         if (button) {
@@ -2443,7 +2441,7 @@
     }
 
     function confirmDiscardChanges(form) {
-        if (window.confirm('Tienes cambios sin guardar. Si sales ahora se perderan.')) {
+        if (window.confirm('Tienes cambios sin guardar. Si sales ahora se perderán.')) {
             markFormClean(form);
             return true;
         }

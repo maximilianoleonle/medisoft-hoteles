@@ -38,7 +38,7 @@
                 <div class="card-body">
                     <div class="alert alert-info mb-4">
                         <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Información</h5>
-                        <p class="mb-2">Configure las cantidades de productos que se descontarán automáticamente para cada tipo de habitación:</p>
+                        <p class="mb-2">Configura las cantidades de productos que se descontarán automáticamente para cada tipo de habitación:</p>
                         <ul class="mb-0">
                             <li><strong>Cantidad Check-in:</strong> Se descuenta automáticamente cuando un huésped hace check-in</li>
                             <li><strong>Cantidad Limpieza:</strong> Se descuenta cuando se realiza limpieza de la habitación</li>

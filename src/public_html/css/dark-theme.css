@@ -387,6 +387,16 @@ html[data-theme="dark"] .parking-forecast-detail {
     border-color: color-mix(in srgb, var(--dash-gold) 22%, #201F19);
 }
 
+html[data-theme="dark"] .pf-detail-row {
+    background: #24221C;
+    border-color: color-mix(in srgb, var(--dash-gold) 24%, #24221C);
+}
+
+html[data-theme="dark"] .pf-detail-row > b {
+    background: color-mix(in srgb, var(--dash-gold) 18%, #24221C);
+    color: var(--dash-gold);
+}
+
 html[data-theme="dark"] .parking-vehicle-row {
     background: #24221C;
 }

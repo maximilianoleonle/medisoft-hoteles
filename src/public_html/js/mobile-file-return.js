@@ -198,8 +198,8 @@
     const copy = toast.querySelector('.ms-mobile-file-toast__copy');
     if (copy) {
       copy.innerHTML = blocked
-        ? `<strong>Abriendo ${label} aqui</strong><span>Si el visor ocupa la pantalla, usa Atras para volver al sistema.</span>`
-        : `<strong>${label} abierto aparte</strong><span>El sistema queda en esta pestana. Cambia de pestana o vuelve a la app cuando termines.</span>`;
+        ? `<strong>Abriendo ${label} aquí</strong><span>Si el visor ocupa la pantalla, usa Atrás para volver al sistema.</span>`
+        : `<strong>${label} abierto aparte</strong><span>El sistema queda en esta pestaña. Cambia de pestaña o vuelve a la app cuando termines.</span>`;
     }
 
     window.clearTimeout(toast._hideTimer);

@@ -52,7 +52,7 @@ class AuthController extends Controller {
         $hotel = $this->resolverHotelLoginPorSlug($slug);
 
         if (!$hotel) {
-            set_mensaje('Hotel no encontrado o inactivo. Verifique la liga de acceso.', 'error');
+            set_mensaje('Hotel no encontrado o inactivo. Verifica la liga de acceso.', 'error');
             View::render('auth/login', [
                 'title' => 'Hotel no encontrado - Medisoft',
                 'login_disabled' => true,
@@ -69,7 +69,7 @@ class AuthController extends Controller {
                 $this->redirect(home_route_for_current_user());
             }
 
-            set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
+            set_mensaje('Ya hay una sesión activa. Cierra sesión antes de entrar a otro hotel.', 'error');
             $this->redirect(home_route_for_current_user());
         }
 
@@ -100,7 +100,7 @@ class AuthController extends Controller {
         $loginPath = 'h/' . $slug . '/login';
 
         if (!$hotel) {
-            set_mensaje('Hotel no encontrado o inactivo. Verifique la liga de acceso.', 'error');
+            set_mensaje('Hotel no encontrado o inactivo. Verifica la liga de acceso.', 'error');
             $this->redirect($loginPath);
         }
 
@@ -109,7 +109,7 @@ class AuthController extends Controller {
                 $this->redirect(home_route_for_current_user());
             }
 
-            set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
+            set_mensaje('Ya hay una sesión activa. Cierra sesión antes de entrar a otro hotel.', 'error');
             $this->redirect(home_route_for_current_user());
         }
 
@@ -183,7 +183,7 @@ class AuthController extends Controller {
             $this->redirect($loginPath);
         }
 
-        set_mensaje('Usuario o contrasena no validos para este hotel. Te quedan ' . $fallo['restantes'] . ' intento(s).', 'error');
+        set_mensaje('Usuario o contraseña no válidos para este hotel. Te quedan ' . $fallo['restantes'] . ($fallo['restantes'] == 1 ? ' intento' : ' intentos') . '.', 'error');
         $this->redirect($loginPath);
     }
 
@@ -272,7 +272,7 @@ class AuthController extends Controller {
                 $this->redirect('login');
             }
 
-            set_mensaje('Usuario o contraseña incorrectos. Te quedan ' . $fallo['restantes'] . ' intento(s).', 'error');
+            set_mensaje('Usuario o contraseña incorrectos. Te quedan ' . $fallo['restantes'] . ($fallo['restantes'] == 1 ? ' intento' : ' intentos') . '.', 'error');
             $this->redirect('login');
         }
     }

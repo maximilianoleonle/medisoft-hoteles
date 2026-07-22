@@ -1966,7 +1966,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                         <?php if ($es_cliente_frecuente): ?>
                             <span class="guest-chip">
                                 <i class="fas fa-star"></i>
-                                Cliente frecuente
+                                Huésped frecuente
                             </span>
                         <?php endif; ?>
                     </div>
@@ -2448,7 +2448,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                 <section class="guest-side-card guest-score-card">
                     <h2>Perfil de actividad</h2>
                     <div class="guest-score-number"><?= number_format($total_reservaciones) ?></div>
-                    <p><?= $es_cliente_frecuente ? 'Cliente frecuente con historial activo.' : 'Historial en crecimiento.' ?></p>
+                    <p><?= $es_cliente_frecuente ? 'Huésped frecuente con historial activo.' : 'Historial en crecimiento.' ?></p>
                     <div class="guest-score-list">
                         <div>
                             <span>Total gastado</span>

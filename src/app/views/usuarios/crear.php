@@ -649,7 +649,7 @@ if (!function_exists('usuario_form_error_attrs')) {
                                 <div class="worker-panel-icon"><i class="fas fa-key"></i></div>
                                 <div>
                                     <h2>Acceso al sistema</h2>
-                                    <p>Usuario y contrasena para iniciar sesion.</p>
+                                    <p>Usuario y contraseña para iniciar sesión.</p>
                                 </div>
                             </div>
                         </div>
@@ -680,7 +680,7 @@ if (!function_exists('usuario_form_error_attrs')) {
                                 </div>
 
                                 <div class="worker-field">
-                                    <label for="password" class="worker-label">Contrasena *</label>
+                                    <label for="password" class="worker-label">Contraseña *</label>
                                     <div class="worker-control-wrap">
                                         <span class="worker-control-icon"><i class="fas fa-lock"></i></span>
                                         <input type="password"
@@ -707,7 +707,7 @@ if (!function_exists('usuario_form_error_attrs')) {
                                 </div>
 
                                 <div class="worker-field">
-                                    <label for="password_confirmation" class="worker-label">Confirmar contrasena *</label>
+                                    <label for="password_confirmation" class="worker-label">Confirmar contraseña *</label>
                                     <div class="worker-control-wrap">
                                         <span class="worker-control-icon"><i class="fas fa-lock"></i></span>
                                         <input type="password"

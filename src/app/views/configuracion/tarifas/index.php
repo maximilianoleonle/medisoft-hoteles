@@ -1823,12 +1823,12 @@ input.toggle-activo:checked ~ div {
                         <div style="width:64px;height:64px;border-radius:50%;background:rgba(92,122,78,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
                             <i class="fas fa-tags text-2xl" style="color:#A8C4A0"></i>
                         </div>
-                        <h3 class="text-sm font-bold text-gray-600 mb-2">No hay incrementos configurados</h3>
+                        <h3 class="text-sm font-bold text-gray-600 mb-2">Aún no tienes ajustes de precio. Crea el primero para subir o bajar precios por temporada</h3>
                         <p class="text-xs text-gray-400 mb-5 max-w-xs mx-auto">
                             Crea tu primer incremento para gestionar precios dinámicamente.
                         </p>
                         <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new">
-                            <i class="fas fa-plus text-xs"></i> Crear Primer Incremento
+                            <i class="fas fa-plus text-xs"></i> Crear el primer ajuste
                         </a>
                     </div>
                 <?php else: ?>

@@ -1,4 +1,4 @@
-<!-- Editar Incremento de Tarifa - Diseño Simplificado y Claro -->
+<!-- Editar ajuste de precio - Diseño Simplificado y Claro -->
 <style>
 :root {
     --primary: var(--brand-primary, #1B2746);
@@ -366,7 +366,7 @@ input:checked + .toggle-slider:before {
     <div class="tarifa-container px-4">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Editar Incremento de Tarifa</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Editar ajuste de precio</h1>
                 <p class="text-gray-600 mt-1">Modifique los parámetros del incremento</p>
             </div>
             <?php $back_arrow_href = back_url('configuracion/tarifas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>

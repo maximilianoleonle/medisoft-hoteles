@@ -13,7 +13,7 @@
             <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-3xl md:text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        Categorías de Movimientos
+                        Conceptos de ingresos y gastos
                     </h1>
                     <p class="text-gray-600">
                         Configuración y gestión de categorías para ingresos y gastos

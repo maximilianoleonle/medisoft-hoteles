@@ -722,7 +722,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                 <section class="ccx-panel">
                     <div class="ccx-panel-head">
                         <div>
-                            <h2>Metodo de pago</h2>
+                            <h2>Método de pago</h2>
                             <p>Ingresos, gastos y balance por forma de cobro.</p>
                         </div>
                         <span class="ccx-count">3 metodos</span>
@@ -868,7 +868,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                                 <tr>
                                     <th class="text-left">Hora</th>
                                     <th class="text-left">Tipo</th>
-                                    <th class="text-left">Descripcion</th>
+                                    <th class="text-left">Descripción</th>
                                     <th class="text-left">Categoria</th>
                                     <th class="text-left">Metodo</th>
                                     <th class="text-right">Monto</th>
@@ -1102,7 +1102,7 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
             showCancelButton: true,
             confirmButtonColor: '#DC2626',
             cancelButtonColor: '#6B7280',
-            confirmButtonText: '<i class="fas fa-cut mr-2"></i>Si, cerrar caja',
+            confirmButtonText: '<i class="fas fa-cut mr-2"></i>Sí, cerrar caja',
             cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {

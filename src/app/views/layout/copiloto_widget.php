@@ -1014,8 +1014,8 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     // esta, confirm nativo). Cancelar no ejecuta nada.
     function confirmarAccion(accion) {
         var pedir = window.msConfirm
-            ? window.msConfirm({ type: 'info', title: accion.confirm_titulo || '¿Confirmar accion?', msg: accion.confirm_msg || '', confirmLabel: accion.confirm_ok || 'Confirmar' })
-            : Promise.resolve(window.confirm(accion.confirm_msg || '¿Confirmar accion?'));
+            ? window.msConfirm({ type: 'info', title: accion.confirm_titulo || '¿Confirmar acción?', msg: accion.confirm_msg || '', confirmLabel: accion.confirm_ok || 'Confirmar' })
+            : Promise.resolve(window.confirm(accion.confirm_msg || '¿Confirmar acción?'));
 
         pedir.then(function (ok) {
             if (!ok) {

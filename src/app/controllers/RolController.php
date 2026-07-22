@@ -162,7 +162,7 @@ class RolController extends Controller {
 
         $usuarios = $this->rolModel->contarUsuarios((int) $rol['id']);
         if ($usuarios > 0) {
-            set_mensaje('No se puede eliminar: hay ' . $usuarios . ' usuario(s) con este rol. Reasignelos primero.', 'error');
+            set_mensaje('No se puede eliminar: hay ' . $usuarios . ($usuarios == 1 ? ' usuario' : ' usuarios') . ' con este rol. Reasígnalos primero.', 'error');
             $this->redirect('configuracion/roles');
         }
 

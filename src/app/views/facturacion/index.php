@@ -1095,7 +1095,7 @@ a.billing-name:hover {
             <div class="billing-panel-header">
                 <div>
                     <h2 class="billing-panel-title">Solicitudes fiscales</h2>
-                    <p class="billing-panel-copy">Filtra por huesped, tipo, estado o fecha para depurar la bandeja.</p>
+                    <p class="billing-panel-copy">Filtra por huésped, tipo, estado o fecha para encontrar una solicitud.</p>
                 </div>
                 <span class="billing-count-pill">
                     <?= number_format($total_registros) ?> registros

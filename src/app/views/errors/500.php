@@ -56,7 +56,7 @@
             <i class="fas fa-exclamation-circle text-red-500 text-8xl mb-4"></i>
             <h1 class="text-6xl font-bold text-hotel-brown font-playfair mb-2">500</h1>
             <p class="text-2xl text-hotel-brown-light mb-4">Error del Servidor</p>
-            <p class="text-gray-600 mb-8">Lo sentimos, algo salió mal en nuestro servidor.<br>Por favor, intente nuevamente más tarde.</p>
+            <p class="text-gray-600 mb-8">Algo falló de nuestro lado; tu información está a salvo.<br>Intenta de nuevo en unos minutos.</p>
         </div>
         
         <div class="space-x-4">
@@ -69,7 +69,7 @@
         </div>
         
         <div class="mt-8 text-sm text-gray-500">
-            <p>Si el problema persiste, contacte al administrador del sistema.</p>
+            <p>Si sigue fallando, avisa a soporte de Medisoft.</p>
             <?php if (!empty($request_id)): ?>
                 <p class="mt-2 font-mono text-gray-400">Código de referencia: #<?= htmlspecialchars($request_id, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>

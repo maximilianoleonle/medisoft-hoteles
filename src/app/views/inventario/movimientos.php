@@ -1124,7 +1124,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                                                 <?php else: ?>
                                                     <span class="inv-mov-context-chip">
                                                         <i class="fas fa-clipboard-list"></i>
-                                                        Sin reservacion vinculada
+                                                        Sin reservación vinculada
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
@@ -1203,7 +1203,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                                         <?php else: ?>
                                             <span class="inv-mov-context-chip">
                                                 <i class="fas fa-clipboard-list"></i>
-                                                Sin reservacion vinculada
+                                                Sin reservación vinculada
                                             </span>
                                         <?php endif; ?>
                                     </div>

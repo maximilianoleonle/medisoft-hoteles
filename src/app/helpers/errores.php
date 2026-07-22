@@ -43,7 +43,7 @@ function ms_render_error_500() {
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Error del servidor</title></head>'
         . '<body style="font-family:sans-serif;text-align:center;padding:3rem;">'
         . '<h1>Error del servidor</h1>'
-        . '<p>Ocurrio un problema inesperado. Intente nuevamente en unos minutos.</p>'
+        . '<p>Algo falló de nuestro lado. Intenta de nuevo en unos minutos.</p>'
         . '<p style="color:#888;">Codigo de referencia: #' . htmlspecialchars(ms_request_id(), ENT_QUOTES, 'UTF-8') . '</p>'
         . '</body></html>';
 }
@@ -73,7 +73,7 @@ function ms_manejar_throwable($e) {
         header('Content-Type: application/json; charset=utf-8');
         $payload = [
             'success' => false,
-            'message' => 'Ocurrio un error inesperado. Codigo de referencia: #' . ms_request_id(),
+            'message' => 'Algo falló de nuestro lado; tu información está a salvo. Código de referencia: #' . ms_request_id(),
             'request_id' => ms_request_id(),
         ];
         if ($debug) {

@@ -16473,7 +16473,7 @@ async function liberarHabitacion(id) {
         if (data.success) {
             Swal.fire({
                 icon: 'success',
-                title: '¡Habitación Disponible!',
+                title: '¡Habitación disponible!',
                 html: `
                     <div class="text-center">
                         <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>

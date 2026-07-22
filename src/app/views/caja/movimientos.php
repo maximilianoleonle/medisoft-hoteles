@@ -2604,7 +2604,7 @@ document.getElementById('formEditar').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            Swal.fire('Exito', 'Movimiento actualizado correctamente', 'success')
+            Swal.fire('Éxito', 'Movimiento actualizado correctamente', 'success')
                 .then(() => location.reload());
         } else {
             Swal.fire('Error', data.message || 'No se pudo actualizar el movimiento', 'error');

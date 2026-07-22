@@ -1604,7 +1604,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-ci-next:hover { transform: translateY(-1px); }
 }
 
-/* Nueva reservacion: selector de cliente + hora, consistente con habitaciones. */
+/* Nueva reservación: selector de cliente + hora, consistente con habitaciones. */
 .swal2-container.res-swal-reservation-container.swal2-backdrop-show,
 .swal2-container.res-swal-reservation-container.swal2-noanimation {
     background:
@@ -2456,7 +2456,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     }
 }
 
-/* Nueva reservacion: wizard visual alineado al index de habitaciones. */
+/* Nueva reservación: wizard visual alineado al index de habitaciones. */
 .swal2-container.res-swal-reservation-container.swal2-backdrop-show,
 .swal2-container.res-swal-reservation-container.swal2-noanimation {
     background: rgba(8, 13, 20, .58) !important;
@@ -3079,7 +3079,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     }
 }
 
-/* Nueva reservacion: paridad visual con el wizard de habitaciones. */
+/* Nueva reservación: paridad visual con el wizard de habitaciones. */
 .res-reserve-mobile-dates,
 .res-reserve-mobile-intro {
     display: none;
@@ -4486,7 +4486,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                 </div>
                 <a id="cop-ancla-nueva-reserva" href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
                     <i class="fas fa-plus"></i>
-                    Nueva reservacion
+                    Nueva reservación
                 </a>
             </div>
         </header>
@@ -5417,7 +5417,7 @@ function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
 
     return `
         <aside class="res-reserve-side" aria-label="Resumen de nueva reservacion">
-            <span class="res-reserve-side__eyebrow">Nueva reservacion</span>
+            <span class="res-reserve-side__eyebrow">Nueva reservación</span>
             <h2>Crear<br>reservacion</h2>
             <p>Configura los datos iniciales para preparar la estancia del huesped.</p>
 
@@ -5458,7 +5458,7 @@ function resReservaMobileIntro(fechaEntrada, fechaSalida, paso) {
 
     return `
         <div class="res-reserve-mobile-intro" role="group" aria-label="Resumen de nueva reservacion">
-            <span class="res-reserve-mobile-kicker">Nueva reservacion</span>
+            <span class="res-reserve-mobile-kicker">Nueva reservación</span>
             <h2 class="res-reserve-mobile-title">Crear reservacion</h2>
             <p class="res-reserve-mobile-copy">Configura los datos iniciales para preparar la estancia del huesped.</p>
 
@@ -6691,10 +6691,10 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
         Swal.fire({
             icon: 'success',
             title: 'Check-in registrado',
-            text: 'La reservacion paso a check-in y el listado ya se actualizo.',
+            text: 'La reservación pasó a check-in y el listado ya se actualizó.',
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-eye"></i> Ver reservacion',
-            cancelButtonText: 'Quedarme aqui',
+            cancelButtonText: 'Quedarme aquí',
             confirmButtonColor: 'var(--brand-primary, #1B2746)',
             cancelButtonColor: '#6B7280',
             reverseButtons: true
@@ -6744,7 +6744,7 @@ function confirmarCheckOut(id) {
         title: 'Confirmar check-out',
         html: `
             <div class="res-checkout-confirm">
-                <p class="res-checkout-confirm__lead">Reservacion #${id}. Se registrara la salida del huesped y las habitaciones pasaran a limpieza.</p>
+                <p class="res-checkout-confirm__lead">Reservacion #${id}. Se registrará la salida del huésped y las habitaciones pasaran a limpieza.</p>
                 <p class="res-checkout-confirm__note">
                     <i class="fas fa-circle-info"></i>
                     <span>Esta accion actualiza el estado operativo de la reservacion. Revisa que el huesped ya haya desocupado antes de confirmar.</span>

@@ -221,7 +221,7 @@
                             <div class="lote-field">
                                 <label>Producto <span class="req">*</span></label>
                                 <select name="producto_id" id="producto_id" required>
-                                    <option value="">Seleccione producto...</option>
+                                    <option value="">Elige un producto...</option>
                                     <?php foreach ($productos as $producto): ?>
                                         <option value="<?= $producto['id'] ?>"
                                                 <?= old('producto_id') == $producto['id'] ? 'selected' : '' ?>
@@ -274,7 +274,7 @@
 
                             <div class="lote-field">
                                 <label>Detalles <span class="req">*</span></label>
-                                <textarea name="motivo" id="motivo" rows="2" placeholder="Especifique el motivo..." required><?= old('motivo') ?></textarea>
+                                <textarea name="motivo" id="motivo" rows="2" placeholder="Escribe el motivo..." required><?= old('motivo') ?></textarea>
                                 <?php if (form_error('motivo')): ?>
                                     <span class="inv-form-error"><?= form_error('motivo') ?></span>
                                 <?php endif; ?>
@@ -396,7 +396,7 @@ document.getElementById('motivo_tipo').addEventListener('change', function() {
             motivoTextarea.placeholder = 'Ej: Para limpieza de habitaciones...';
             break;
         default:
-            motivoTextarea.placeholder = 'Especifique el motivo...';
+            motivoTextarea.placeholder = 'Escribe el motivo...';
     }
 });
 

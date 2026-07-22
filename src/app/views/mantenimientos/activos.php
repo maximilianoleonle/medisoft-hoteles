@@ -30,7 +30,7 @@ $puedeGestionar = !empty($puede_gestionar);
 $vencMeta = [
     'vencido' => ['label' => 'Vencido', 'clase' => 'is-danger', 'icono' => 'fa-triangle-exclamation'],
     'por_vencer' => ['label' => 'Por vencer', 'clase' => 'is-warn', 'icono' => 'fa-hourglass-half'],
-    'al_dia' => ['label' => 'Al dia', 'clase' => 'is-ok', 'icono' => 'fa-circle-check'],
+    'al_dia' => ['label' => 'Al día', 'clase' => 'is-ok', 'icono' => 'fa-circle-check'],
     'sin_programa' => ['label' => 'Sin programa', 'clase' => 'is-info', 'icono' => 'fa-circle-question'],
     'inactivo' => ['label' => 'Pausado', 'clase' => 'is-off', 'icono' => 'fa-pause'],
 ];

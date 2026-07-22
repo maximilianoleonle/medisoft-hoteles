@@ -1380,7 +1380,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                     <span id="hcalMAgSummary"><?= hcal_safe($hcalResumen($hcalDefInfo)) ?></span>
                 </div>
                 <a href="<?= url('reservaciones/crear') ?>?fecha_entrada=<?= hcal_safe($hcalDefFecha) ?>"
-                   class="hcal-m-agenda-add" id="hcalMAgAdd" aria-label="Nueva reserva este día">
+                   class="hcal-m-agenda-add" id="hcalMAgAdd" aria-label="Nueva reservación este día">
                     <i class="fas fa-plus"></i>
                 </a>
             </div>
@@ -1487,7 +1487,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                     <i class="fas fa-print"></i>
                 </button>
                 <a href="<?= url('reservaciones/crear') ?>" class="hcal-btn is-primary">
-                    <i class="fas fa-plus"></i> Nueva reserva
+                    <i class="fas fa-plus"></i> Nueva reservación
                 </a>
             </div>
         </div>
@@ -1813,7 +1813,7 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                         <i class="fas fa-chart-line"></i> Ver reportes
                     </a>
                     <a href="<?= url('reservaciones/crear') ?>" class="hcal-side-btn">
-                        <i class="fas fa-plus-circle"></i> Nueva reserva
+                        <i class="fas fa-plus-circle"></i> Nueva reservación
                     </a>
                 </div>
             </div>

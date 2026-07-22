@@ -389,15 +389,15 @@ if (!function_exists('cxc_op_form_error_attrs')) {
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div>
                     <h2 class="cx-panel-title">Revertir cobros registrados</h2>
-                    <p class="cx-panel-sub">Usalo cuando un cobro se registro con metodo, huesped o cuenta incorrecta. La reversion crea una salida en Caja, vuelve a abrir el saldo de esta cuenta y conserva el historial. Si despues registras otro cobro, ese nuevo cobro tambien podra revertirse.</p>
+                    <p class="cx-panel-sub">Úsalo cuando un cobro se registró con método, huésped o cuenta incorrecta. La reversión crea una salida en Caja, vuelve a abrir el saldo de esta cuenta y conserva el historial. Si después registras otro cobro, ese nuevo cobro también podrá revertirse.</p>
                 </div>
             </div>
 
             <?php if (empty($movimientosCobro)): ?>
                 <div class="cx-soft-note mt-5">
                     <?= $cxcLiquidadaPorReservacion
-                        ? 'No hay cobros CxC que revertir. El saldo se cubrio desde la reservacion; revisa el pago desde el boton Reservacion.'
-                        : 'Esta cuenta todavia no tiene cobros que se puedan revertir.' ?>
+                        ? 'No hay cobros CxC que revertir. El saldo se cubrió desde la reservación; revisa el pago desde el botón Reservación.'
+                        : 'Esta cuenta todavía no tiene cobros que se puedan revertir.' ?>
                 </div>
             <?php else: ?>
                 <div class="mt-5 space-y-4">

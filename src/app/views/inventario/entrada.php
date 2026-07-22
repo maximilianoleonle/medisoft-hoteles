@@ -227,7 +227,7 @@
                             <div class="lote-field">
                                 <label>Producto <span class="req">*</span></label>
                                 <select name="producto_id" id="producto_select" required>
-                                    <option value="">Seleccione producto...</option>
+                                    <option value="">Elige un producto...</option>
                                     <?php foreach ($productos as $producto): ?>
                                         <option value="<?= $producto['id'] ?>"
                                                 <?= old('producto_id') == $producto['id'] ? 'selected' : '' ?>

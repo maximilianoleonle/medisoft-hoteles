@@ -5683,7 +5683,7 @@ html[data-theme="dark"] .hc-page {
                         <div class="hc-owner-preview" data-owner-preview>
                             <div class="hc-owner-summary-grid" aria-label="Vista previa de propietarios">
                                 <article class="hc-owner-summary-card">
-                                    <span><i class="fas fa-users"></i> Duenos activos</span>
+                                    <span><i class="fas fa-users"></i> Dueños activos</span>
                                     <strong data-owner-preview-active-count><?= count($configOwnerActiveRows) ?></strong>
                                     <small>Participan en cortes y reportes.</small>
                                 </article>
@@ -5722,7 +5722,7 @@ html[data-theme="dark"] .hc-page {
 
                                 <div class="hc-owner-flow-list" data-owner-preview-list>
                                     <?php if (empty($configOwnerActiveRows)): ?>
-                                        <p class="hc-owner-flow-empty">No hay duenos activos configurados.</p>
+                                        <p class="hc-owner-flow-empty">No hay dueños activos configurados.</p>
                                     <?php else: ?>
                                         <?php foreach ($configOwnerActiveRows as $ownerRow): ?>
                                             <?php
@@ -5731,7 +5731,7 @@ html[data-theme="dark"] .hc-page {
                                             $previewOwnerPct = $configOwnerFormatPercentage($ownerRow['participacion_pct'] ?? 100);
                                             $previewIsDefault = $previewOwnerKey !== '' && $previewOwnerKey === $configOwnerDefault;
                                             $previewNote = $previewIsDefault
-                                                ? 'Dueno predeterminado: recibe remanentes y lo no clasificado.'
+                                                ? 'Dueño predeterminado: recibe remanentes y lo no clasificado.'
                                                 : ((float) ($ownerRow['participacion_pct'] ?? 100) < 100
                                                     ? 'Recibe ' . $previewOwnerPct . '%. El resto va a ' . ($configOwnerDefaultName ?: $configOwnerDefault) . '.'
                                                     : 'Recibe el 100% de sus habitaciones asignadas.');
@@ -7523,7 +7523,7 @@ document.querySelectorAll('[data-owner-add]').forEach(button => {
         const note = document.createElement('p');
         note.className = 'hc-owner-flow-note';
         if (owner.key === defaultOwner.key) {
-            note.textContent = 'Dueno predeterminado: recibe remanentes y lo no clasificado.';
+            note.textContent = 'Dueño predeterminado: recibe remanentes y lo no clasificado.';
         } else if (Number(owner.percentage) < 100) {
             note.textContent = `Recibe ${owner.percentage}%. El resto va a ${defaultOwner.name || defaultOwner.key || 'el default'}.`;
         } else {
@@ -7575,7 +7575,7 @@ document.querySelectorAll('[data-owner-add]').forEach(button => {
             if (visibleOwners.length === 0) {
                 const empty = document.createElement('p');
                 empty.className = 'hc-owner-flow-empty';
-                empty.textContent = 'No hay duenos activos configurados.';
+                empty.textContent = 'No hay dueños activos configurados.';
                 listNode.appendChild(empty);
             } else {
                 visibleOwners.forEach(owner => {

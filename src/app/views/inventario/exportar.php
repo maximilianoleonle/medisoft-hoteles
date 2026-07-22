@@ -487,9 +487,9 @@ $fecha_inicio_mes = $fecha_inicio_mes ?? date('Y-m-01');
                     </form>
                 </section>
 
-                <aside class="exp-panel exp-side" aria-label="Exportaciones rapidas">
+                <aside class="exp-panel exp-side" aria-label="Exportaciones rápidas">
                     <div class="exp-side-title">
-                        <h2>Exportaciones rapidas</h2>
+                        <h2>Exportaciones rápidas</h2>
                         <p>Accesos simples para reportes frecuentes.</p>
                     </div>
 

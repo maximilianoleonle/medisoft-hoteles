@@ -163,7 +163,7 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'required' => false,
             ],
             'reservaciones.politica_reserva' => [
-                'label' => 'Politica de reservacion',
+                'label' => 'Política de reservación',
                 'type' => 'string',
                 'input' => 'textarea',
                 'default' => '',
@@ -2774,7 +2774,7 @@ if (!function_exists('hotel_guest_field_catalog')) {
             ],
             'direccion' => [
                 'scope' => 'guest',
-                'label' => 'Direccion',
+                'label' => 'Dirección',
                 'descripcion' => 'Domicilio del huesped si el hotel lo requiere.',
                 'input' => 'text',
                 'storage' => 'extra',

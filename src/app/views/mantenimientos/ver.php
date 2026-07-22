@@ -290,7 +290,7 @@ $momentos = [
                         <i class="fas fa-coins"></i>
                         <div>
                             <h2>Costo del trabajo</h2>
-                            <p>Lo que costo resolver esta incidencia</p>
+                            <p>Lo que costó resolver esta incidencia</p>
                         </div>
                     </div>
                     <?php if ($costoReal !== null && $costoReal > 0): ?>

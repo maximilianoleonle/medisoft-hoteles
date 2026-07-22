@@ -1122,7 +1122,7 @@ if ($diferencia > 0) {
                     <span class="cut-meta-pill"><i class="fas fa-user"></i><?= cut_h($usuario_apertura) ?></span>
                     <?php if ($esta_cerrado): ?>
                         <span class="cut-meta-pill"><i class="fas fa-calendar-check"></i><?= cut_h($fecha_cierre_label) ?></span>
-                        <span class="cut-meta-pill"><i class="fas fa-user-check"></i>Cerro: <?= cut_h($usuario_cierre) ?></span>
+                        <span class="cut-meta-pill"><i class="fas fa-user-check"></i>Cerró: <?= cut_h($usuario_cierre) ?></span>
                     <?php endif; ?>
                 </div>
             </div>

@@ -506,7 +506,7 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
                  data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$checkout['id']), ENT_QUOTES, 'UTF-8') ?>"
                  role="link"
                  tabindex="0"
-                 title="Abrir reservacion"
+                 title="Abrir reservación"
                  aria-label="Abrir reservacion de <?= htmlspecialchars($checkout['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
                 <span class="hb-alerts-ico hb-alerts-ico--late"><i class="fas fa-sign-out-alt"></i></span>
                 <div class="hb-alerts-info">
@@ -537,7 +537,7 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
                  data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$checkin['id']), ENT_QUOTES, 'UTF-8') ?>"
                  role="link"
                  tabindex="0"
-                 title="Abrir reservacion"
+                 title="Abrir reservación"
                  aria-label="Abrir reservacion de <?= htmlspecialchars($checkin['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
                 <span class="hb-alerts-ico hb-alerts-ico--pending"><i class="fas fa-user-clock"></i></span>
                 <div class="hb-alerts-info">
@@ -571,7 +571,7 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
                  data-href="<?= htmlspecialchars(url('reservaciones/ver/' . (int)$tardio['id']), ENT_QUOTES, 'UTF-8') ?>"
                  role="link"
                  tabindex="0"
-                 title="Abrir reservacion"
+                 title="Abrir reservación"
                  aria-label="Abrir reservacion de <?= htmlspecialchars($tardio['nombre_completo'] ?? 'huesped', ENT_QUOTES, 'UTF-8') ?>">
                 <span class="hb-alerts-ico hb-alerts-ico--today"><i class="fas fa-clock"></i></span>
                 <div class="hb-alerts-info">

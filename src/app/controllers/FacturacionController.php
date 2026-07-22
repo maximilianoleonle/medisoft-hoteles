@@ -347,9 +347,9 @@ class FacturacionController extends Controller {
                     NotificacionService::sincronizarFacturacion($hotel_id, (int)$id);
                 }
             } else {
-                set_mensaje('No se pudieron guardar los datos. Intente de nuevo.', 'error');
+                set_mensaje('No se pudieron guardar los datos. Intenta de nuevo.', 'error');
                 save_old_input(array_merge($datos, ['solicitud_id' => $id]));
-                save_form_errors($this->erroresCamposFacturacion(['No se pudieron guardar los datos. Intente de nuevo.']));
+                save_form_errors($this->erroresCamposFacturacion(['No se pudieron guardar los datos. Intenta de nuevo.']));
             }
             
         } catch (Exception $e) {

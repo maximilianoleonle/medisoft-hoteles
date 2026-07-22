@@ -406,12 +406,12 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     min-width: 0;
 }
 
-/* Las secciones obligatorias suben arriba; Informacion personal SIEMPRE primera.
+/* Las secciones obligatorias suben arriba; Información personal SIEMPRE primera.
    Se reordena por CSS (sin mover el DOM ni parpadeo); la linea de tiempo lo espeja
    leyendo el mismo `order`. Detecta obligatoria por el distintivo .gc-badge-req. */
 main.gc-form > .gc-section { order: 2; }                    /* opcionales al final */
 main.gc-form > .gc-section:has(.gc-badge-req) { order: 1; } /* obligatorias arriba */
-main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion personal fija primera */
+main.gc-form > .gc-section:first-child { order: 0; }        /* Información personal fija primera */
 
 .gc-section,
 .gc-side-card,
@@ -2024,7 +2024,7 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion perso
                             <div class="gc-section-title-wrap">
                                 <span class="gc-section-icon"><i class="fas fa-user"></i></span>
                                 <div>
-                                    <h2>Informacion personal</h2>
+                                    <h2>Información personal</h2>
                                     <p class="gc-section-sub">Datos de contacto y nombre legal para el expediente.</p>
                                 </div>
                             </div>
@@ -2041,7 +2041,7 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion perso
                                            name="nombre_completo"
                                            value="<?= old('nombre_completo') ?>"
                                            required
-                                           placeholder="Ingrese el nombre completo del huesped"
+                                           placeholder="Escribe el nombre completo del huesped"
                                            class="gc-control">
                                     <?php if (form_error('nombre_completo')): ?>
                                         <span class="gc-form-error"><?= form_error('nombre_completo') ?></span>
@@ -2055,7 +2055,7 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion perso
                                         <input type="tel"
                                                name="telefono"
                                                value="<?= old('telefono') ?>"
-                                               placeholder="10 digitos"
+                                               placeholder="10 dígitos"
                                                class="gc-control has-icon"
                                                <?= $gcGuestFieldRequired('telefono') ? 'required' : '' ?>>
                                     </div>
@@ -2201,7 +2201,7 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion perso
                                                    name="extras[nacionalidad]"
                                                    value="<?= htmlspecialchars($gcNacValue, ENT_QUOTES, 'UTF-8') ?>"
                                                    maxlength="80"
-                                                   placeholder="Estadounidense, canadiense, espanola..."
+                                                   placeholder="Estadounidense, canadiense, española..."
                                                    class="gc-control has-icon"
                                                    data-foreign-input
                                                    <?= $gcNacRequired ? 'required' : '' ?>>
@@ -2340,7 +2340,7 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Informacion perso
                             <div class="gc-section-title-wrap">
                                 <span class="gc-section-icon"><i class="fas fa-car"></i></span>
                                 <div>
-                                    <h2>Vehiculos</h2>
+                                    <h2>Vehículos</h2>
                                     <p class="gc-section-sub">Autos asociados al huesped para control de estacionamiento.</p>
                                 </div>
                             </div>
@@ -2501,7 +2501,7 @@ function sincronizarVehiculoOpcional(vehiculo) {
     });
 }
 
-function sincronizarVehiculosOpcionales(root = document) {
+function sincronizarVehículosOpcionales(root = document) {
     root.querySelectorAll('.vehiculo-item').forEach(sincronizarVehiculoOpcional);
 }
 
@@ -2624,7 +2624,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
 
 });
 
-sincronizarVehiculosOpcionales();
+sincronizarVehículosOpcionales();
 
 // Bloque "huesped extranjero": el toggle revela y limpia el campo nacionalidad
 document.querySelectorAll('[data-foreign-block]').forEach(function(block) {
@@ -2733,7 +2733,7 @@ document.querySelectorAll('[data-foreign-block]').forEach(function(block) {
             return s.querySelector('h2') && s.querySelector('.gc-badge');
         });
         // Espejar el orden visual del formulario (CSS `order`): obligatorias arriba,
-        // Informacion personal primera. Array.sort es estable → conserva el orden de origen en empates.
+        // Información personal primera. Array.sort es estable → conserva el orden de origen en empates.
         sections.sort(function(a, b){
             return (parseInt(getComputedStyle(a).order, 10) || 0) - (parseInt(getComputedStyle(b).order, 10) || 0);
         });
@@ -2879,7 +2879,7 @@ document.querySelectorAll('[data-foreign-block]').forEach(function(block) {
     formEl.addEventListener('focusin', function(){ refresh(false); });
     formEl.addEventListener('focusout', function(){ setTimeout(function(){ refresh(false); }, 0); });
 
-    // Vehiculos se agregan/eliminan dinamicamente: reconstruir sus subcampos.
+    // Vehículos se agregan/eliminan dinamicamente: reconstruir sus subcampos.
     var vc = document.getElementById('vehiculos-container');
     if (vc && window.MutationObserver){
         var rebuildT;

@@ -329,7 +329,7 @@ class CompraController extends Controller
                 $compraId,
                 $this->usuarioIdActual()
             );
-            set_mensaje('Compra #' . $compraId . ' cancelada. No se modifico el inventario.', 'success');
+            set_mensaje('Compra #' . $compraId . ' cancelada. No se modificó el inventario.', 'success');
         } catch (Throwable $e) {
             set_mensaje_error_op($e, 'cancelar la compra');
         }

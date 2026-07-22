@@ -386,7 +386,7 @@ async function buscarHuesped() {
     const termino = document.getElementById('buscar_huesped_input').value.trim();
     
     if (termino.length < 3) {
-        mostrarAlerta('Por favor ingrese al menos 3 caracteres para buscar', 'warning');
+        mostrarAlerta('Escribe al menos 3 letras para buscar', 'warning');
         return;
     }
     
@@ -509,13 +509,13 @@ function validarFormulario() {
     // Verificar huésped seleccionado
     const huespedId = document.getElementById('huesped_id').value;
     if (!huespedId) {
-        mostrarAlerta('Debe seleccionar un huésped', 'error');
+        mostrarAlerta('Selecciona un huésped', 'error');
         return false;
     }
     
     // Verificar habitaciones seleccionadas
     if (habitacionesSeleccionadas.length === 0) {
-        mostrarAlerta('Debe seleccionar al menos una habitación', 'error');
+        mostrarAlerta('Selecciona al menos una habitación', 'error');
         return false;
     }
     

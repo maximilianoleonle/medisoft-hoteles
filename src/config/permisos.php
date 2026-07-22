@@ -254,10 +254,10 @@ return [
             ],
         ],
         'dueno' => [
-            'label' => 'Modo Dueno',
+            'label' => 'Modo Dueño',
             'modulo' => 'modo_dueno',
             'permisos' => [
-                'dueno.view' => ['label' => 'Ver el Modo Dueno (resumen remoto de solo lectura)', 'tipo' => 'acceso'],
+                'dueno.view' => ['label' => 'Ver el Modo Dueño (resumen remoto de solo lectura)', 'tipo' => 'acceso'],
             ],
         ],
     ],
@@ -271,7 +271,7 @@ return [
         ],
         'propietario' => [
             'nombre'      => 'Propietario',
-            'descripcion' => 'Dueno del hotel. Acceso total, incluida la gestion de roles.',
+            'descripcion' => 'Dueño del hotel. Acceso total, incluida la gestion de roles.',
             'es_sistema'  => 1,
             'permisos'    => ['*'],
         ],

@@ -209,7 +209,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <?php if (comp_form_error($compraFieldErrors, 'proveedor_id')): ?>
                             <span class="cp-form-error ms-form-field-error" id="ms-form-error-proveedor_id"><?= comp_form_error($compraFieldErrors, 'proveedor_id') ?></span>
                         <?php endif; ?>
-                        <p class="cp-field-hint"><?= $modoEdicion ? 'Todos los productos de este borrador pertenecen a este proveedor.' : 'Se usa solo en las lineas que digan "Usar proveedor general". Si cada producto ya tiene proveedor, puedes dejarlo vacio.' ?></p>
+                        <p class="cp-field-hint"><?= $modoEdicion ? 'Todos los productos de este borrador pertenecen a este proveedor.' : 'Se usa solo en las líneas que digan "Usar proveedor general". Si cada producto ya tiene proveedor, puedes dejarlo vacío.' ?></p>
                     </div>
 
                     <div>
@@ -218,7 +218,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <?php if (comp_form_error($compraFieldErrors, 'folio')): ?>
                             <span class="cp-form-error ms-form-field-error" id="ms-form-error-folio"><?= comp_form_error($compraFieldErrors, 'folio') ?></span>
                         <?php endif; ?>
-                        <p class="cp-field-hint">Si mezclas proveedores, se agregara un sufijo al folio de cada borrador.</p>
+                        <p class="cp-field-hint">Si mezclas proveedores, se agregará un sufijo al folio de cada borrador.</p>
                     </div>
 
                     <div>
@@ -273,7 +273,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <p class="cp-line-note">Se guardara en un borrador separado para este proveedor.</p>
+                                    <p class="cp-line-note">Se guardará en un borrador separado para este proveedor.</p>
                                 </div>
 
                                 <div>
@@ -294,7 +294,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                             </div>
                         <?php endfor; ?>
                     </div>
-                    <p class="mt-2" style="font-size:.74rem;color:var(--cp-muted);font-weight:600">Puedes capturar hasta 5 productos. El costo se llena solo al elegir el producto; ajustalo si pagaste otro precio. Si una linea usa otro proveedor, se creara un borrador separado para mantener correcta la cuenta por pagar.</p>
+                    <p class="mt-2" style="font-size:.74rem;color:var(--cp-muted);font-weight:600">Puedes capturar hasta 5 productos. El costo se llena solo al elegir el producto; ajústalo si pagaste otro precio. Si una línea usa otro proveedor, se creará un borrador separado para mantener correcta la cuenta por pagar.</p>
                 </div>
 
                 <div class="mt-6">

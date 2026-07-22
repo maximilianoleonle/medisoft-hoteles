@@ -5060,7 +5060,7 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
         Swal.fire({
             icon: 'warning',
             title: 'Datos incompletos',
-            text: 'Complete todos los campos y seleccione al menos una habitación.',
+            text: 'Completa todos los campos y selecciona al menos una habitación.',
             confirmButtonColor: 'var(--lc-green)'
         });
         return;

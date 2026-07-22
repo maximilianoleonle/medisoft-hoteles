@@ -24,7 +24,7 @@ class UsuarioController extends Controller {
 
         // Acceso administrativo del hotel cuando el modulo esta activo.
         if (!$this->puedeGestionarUsuariosHotel()) {
-            set_mensaje('No tiene permisos para acceder a esta sección', 'error');
+            set_mensaje('No tienes permiso para acceder a esta sección', 'error');
             $this->redirect('dashboard');
             return false;
         }
@@ -428,7 +428,7 @@ class UsuarioController extends Controller {
         } elseif (in_array($data['rol'], ['propietario', 'superadmin'], true) && !$this->actorTienePoderTotal()) {
             // Anti-escalada en el camino legacy (hotel sin roles configurables):
             // el ENUM crudo propietario/superadmin solo lo asigna quien ya tiene poder total.
-            $errores[] = 'No tiene permisos para asignar un rol de máximo privilegio';
+            $errores[] = 'No tienes permiso para asignar un rol de máximo privilegio';
         }
 
         return $errores;

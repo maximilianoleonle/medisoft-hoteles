@@ -76,7 +76,7 @@
                        <?= count($imagenes) >= 10 ? 'disabled' : '' ?>>
                 <label for="nuevas-fotos" class="cursor-pointer">
                     <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
-                    <p class="text-gray-600 font-medium">Click para seleccionar imágenes</p>
+                    <p class="text-gray-600 font-medium">Clic para seleccionar imágenes</p>
                     <p class="text-sm text-gray-500">
                         Puedes agregar hasta <?= 10 - count($imagenes) ?> imagen<?= (10 - count($imagenes)) > 1 ? 'es' : '' ?> más
                     </p>
@@ -89,7 +89,7 @@
                     id="btn-subir"
                     class="hidden bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-200">
                 <i class="fas fa-upload mr-2"></i>
-                Subir Imágenes
+                Subir imágenes
             </button>
         </form>
         <?php endif; ?>

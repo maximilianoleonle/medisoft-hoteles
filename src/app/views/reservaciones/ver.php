@@ -3739,7 +3739,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                     <?php $back_arrow_href = back_url('reservaciones'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
                     <a class="rdv3-back ms-back-legacy" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
                     <div class="rdv3-topbar-copy">
-                        <div class="rdv3-crumbs"><span class="rdv3-crumb-prefix">Reservaciones / </span><strong>Reservacion #<?= $rdReservationId ?></strong></div>
+                        <div class="rdv3-crumbs"><span class="rdv3-crumb-prefix">Reservaciones / </span><strong>Reservación #<?= $rdReservationId ?></strong></div>
                         <div class="rdv3-topbar-hotel"><?= $rdSafe($nombreHotelVisible, 'Medisoft Hoteles') ?></div>
                     </div>
                     <a class="rdv3-topbar-menu" href="#rdv3-actions-panel" aria-label="Ver acciones"><i class="fas fa-ellipsis"></i></a>
@@ -3980,11 +3980,11 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                         </div>
                                     </section>
                                     <section class="rda-stage" data-rda-stage="2" hidden>
-                                        <div class="rda-inv-q"><i class="fas fa-file-invoice" aria-hidden="true"></i> ¿El cliente requiere factura?</div>
+                                        <div class="rda-inv-q"><i class="fas fa-file-invoice" aria-hidden="true"></i> ¿El huésped requiere factura?</div>
                                         <label class="rda-radio-card">
                                             <input type="radio" name="requiere_factura" value="si" data-rda-factura>
                                             <span class="rc-dot"></span>
-                                            <span class="rc-txt"><strong>Factura para cliente</strong><small>Se emitirá comprobante fiscal</small></span>
+                                            <span class="rc-txt"><strong>Factura para el huésped</strong><small>Se emitirá comprobante fiscal</small></span>
                                         </label>
                                         <label class="rda-radio-card">
                                             <input type="radio" name="requiere_factura" value="no" data-rda-factura>
@@ -4455,7 +4455,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                     <div class="rdv3-info <?= $rdGuestOrigin === '' ? 'is-empty' : '' ?>"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin, 'No registrado') ?></b></div></div>
                                 </div>
 
-                                <div class="rdv3-contact-actions" aria-label="Acciones rapidas de contacto">
+                                <div class="rdv3-contact-actions" aria-label="Acciones rápidas de contacto">
                                     <?php if ($rdGuestTelHref !== ''): ?>
                                         <a class="rdv3-contact-action" href="<?= $rdSafe($rdGuestTelHref, '') ?>"><i class="fas fa-phone"></i>Llamar</a>
                                     <?php else: ?>
@@ -4603,7 +4603,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                     <aside class="rdv3-right" aria-label="Panel lateral de reservacion">
                         <section id="rdv3-actions-panel" class="rdv3-card rdv3-side-card rdv3-side-card--actions">
                             <header class="rdv3-card-header">
-                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="fas fa-grip"></i></span><h2 class="rdv3-card-title">Acciones rapidas</h2></div>
+                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="fas fa-grip"></i></span><h2 class="rdv3-card-title">Acciones rápidas</h2></div>
                             </header>
                             <div class="rdv3-card-body rdv3-actions">
                                 <?php if ($rdCheckinMode === 'normal' || $rdCheckinMode === 'express'): ?>
@@ -5175,7 +5175,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
         <div class="modal-header">
             <h3 class="font-bold text-lg">
                 <i class="fas fa-sign-out-alt mr-2"></i>
-                Check-out de Habitaciones
+                Check-out de habitaciones
             </h3>
             <button onclick="cerrarModalCheckOut()" class="text-gray-500 hover:text-gray-700">
                 <i class="fas fa-times text-xl"></i>
@@ -5719,7 +5719,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                     <span class="rv-checkin-icon" aria-hidden="true"><i class="fas fa-right-to-bracket"></i></span>
                     <div>
                         <h3 id="rvCheckinTitle">Registrar check-in</h3>
-                        <p><?= $rdSafe($rdHuespedNombre) ?> - Reservacion #<?= (int)$rdReservationId ?> - Hab. <?= $rdSafe($rdHabitacionesTexto ?: 'Sin habitaciones') ?></p>
+                        <p><?= $rdSafe($rdHuespedNombre) ?> - Reservación #<?= (int)$rdReservationId ?> - Hab. <?= $rdSafe($rdHabitacionesTexto ?: 'Sin habitaciones') ?></p>
                     </div>
                 </div>
                 <button type="button" onclick="cerrarModalCheckIn()" class="rv-checkin-close" aria-label="Cerrar modal de check-in">
@@ -5833,7 +5833,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 <div>
                                     <label id="label_recibido_efectivo">Dinero recibido</label>
                                     <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" oninput="calcularCambio()" onchange="calcularCambio()" onkeyup="calcularCambio()" placeholder="0.00">
-                                    <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Pagó justo</button>
+                                    <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Pagó exacto</button>
                                 </div>
                             </div>
                             <div class="rv-change-pill">Cambio <strong id="cambio_efectivo">$0.00</strong></div>
@@ -5891,7 +5891,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                 <section class="rv-invoice-section rv-checkin-stage" data-checkin-stage="3" aria-labelledby="rvFacturaTitle" aria-hidden="true">
                     <div class="rv-final-grid">
                         <div class="rv-final-invoice">
-                            <h4 id="rvFacturaTitle"><i class="far fa-file-alt"></i> ¿El cliente requiere factura? <span>*</span></h4>
+                            <h4 id="rvFacturaTitle"><i class="far fa-file-alt"></i> ¿El huésped requiere factura? <span>*</span></h4>
 
                             <?php if (!empty($anticipoFacturaSolicitud)): ?>
                                 <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 13px;margin-bottom:12px;color:#1E40AF;font-size:.83rem;font-weight:600;">
@@ -5907,7 +5907,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 <label class="rv-invoice-choice" id="label_factura_si" onmouseover="this.style.borderColor='#3B82F6'" onmouseout="if(!document.getElementById('factura_si').checked) this.style.borderColor='#E5E7EB'">
                                     <input type="radio" name="requiere_factura" id="factura_si" value="si" onchange="seleccionarFactura('si')">
                                     <div>
-                                        <strong>Factura para cliente</strong>
+                                        <strong>Factura para el huésped</strong>
                                         <p>Se registra solicitud de factura para el huesped.</p>
                                     </div>
                                 </label>
@@ -5940,7 +5940,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             </div>
 
                             <div id="facturaValidacion" class="rv-checkin-message hidden">
-                                <p><i class="fas fa-exclamation-circle"></i> Debe indicar si el cliente requiere factura</p>
+                                <p><i class="fas fa-exclamation-circle"></i> Indica si el huésped requiere factura</p>
                             </div>
 
                             <div id="facturaInfoInterna" class="rv-checkin-note hidden">
@@ -5992,7 +5992,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
         <div style="padding: 1rem; border-bottom: 2px solid #FEE2E2; background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border-radius: 1rem 1rem 0 0;">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0; color: #991B1B;">
                 <i class="fas fa-times-circle" style="color: #EF4444; margin-right: 0.5rem;"></i>
-                Cancelar Reservación
+                Cancelar reservación
             </h3>
         </div>
 
@@ -6162,7 +6162,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
             <div style="margin-top: 1rem; margin-bottom: 0.5rem;">
                 <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
                     <i class="fas fa-file-invoice" style="color: #2563EB; margin-right: 0.375rem;"></i>
-                    ¿El cliente requiere factura?
+                    ¿El huésped requiere factura?
                     <span style="color: #EF4444; font-size: 0.75rem;">*</span>
                 </h4>
 
@@ -6206,7 +6206,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             border-radius: 0.375rem; border: 1px solid #FECACA;">
                     <p style="font-size: 0.75rem; color: #DC2626; margin: 0;">
                         <i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i>
-                        Debe indicar si el cliente requiere factura
+                        Indica si el huésped requiere factura
                     </p>
                 </div>
 
@@ -6474,7 +6474,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                                     <div class="xpm-fld">
                                         <span class="xpm-fld-lbl">Monto recibido</span>
                                         <input type="number" name="recibido_efectivo" id="recibido_efectivo_tardio" data-money-format="true" step="0.01" min="0" oninput="calcularCambioTardio()" onchange="calcularCambioTardio()" onkeyup="calcularCambioTardio()" placeholder="0.00" class="xpm-inp">
-                                        <button type="button" class="xpm-mini rv-money-mini" onclick="marcarEfectivoExactoTardio()">Recibí exacto</button>
+                                        <button type="button" class="xpm-mini rv-money-mini" onclick="marcarEfectivoExactoTardio()">Pagó exacto</button>
                                     </div>
                                 </div>
                                 <div class="xpm-cambio">
@@ -6837,7 +6837,7 @@ function actualizarResultadoFacturaCheckIn() {
 
     if (facturaSi && facturaSi.checked) {
         resultado.classList.add('is-client');
-        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para cliente: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
+        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para el huésped: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
         return;
     }
 
@@ -7078,7 +7078,7 @@ function avanzarCheckInWizard() {
     }
 
     if (!validarFacturaCheckIn()) {
-        mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
+        mostrarMensaje('Indica si el huésped requiere factura', 'warning');
         return;
     }
 
@@ -7160,7 +7160,7 @@ function actualizarResultadoFacturaTardio() {
 
     if (facturaSi && facturaSi.checked) {
         resultado.classList.add('is-client');
-        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para cliente: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
+        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para el huésped: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
         return;
     }
 
@@ -7851,7 +7851,7 @@ if (formCheckInModal) {
 
         if (!validarFacturaCheckIn()) {
             setCheckInWizardStep(3);
-            mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
+            mostrarMensaje('Indica si el huésped requiere factura', 'warning');
             return;
         }
 
@@ -9088,7 +9088,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // NUEVA VALIDACIÓN: Verificar factura
             if (!validarFacturaTardio()) {
-                mostrarMensajeTardio('Debe indicar si el cliente requiere factura.', 'warning');
+                mostrarMensajeTardio('Indica si el huésped requiere factura.', 'warning');
                 document.getElementById('facturaContainerTardio').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return false;
             }

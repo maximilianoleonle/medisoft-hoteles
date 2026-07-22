@@ -14,10 +14,10 @@ $auSafe = static function ($v) {
 // Traduccion amable de acciones tecnicas comunes.
 $auAccion = static function ($accion) {
     $map = [
-        'cancelar' => 'Cancelacion', 'eliminar' => 'Eliminacion', 'guardar' => 'Guardado',
-        'crear' => 'Creacion', 'actualizar' => 'Actualizacion', 'revertir' => 'Reversion',
-        'checkin' => 'Check-in', 'checkout' => 'Check-out', 'conciliar' => 'Conciliacion',
-        'config' => 'Configuracion', 'guardarConfiguracion' => 'Configuracion',
+        'cancelar' => 'Cancelación', 'eliminar' => 'Eliminación', 'guardar' => 'Guardado',
+        'crear' => 'Creación', 'actualizar' => 'Actualización', 'revertir' => 'Reversión',
+        'checkin' => 'Check-in', 'checkout' => 'Check-out', 'conciliar' => 'Conciliación',
+        'config' => 'Configuración', 'guardarConfiguracion' => 'Configuración',
     ];
     return $map[$accion] ?? ucfirst($accion);
 };

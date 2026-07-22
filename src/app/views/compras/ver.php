@@ -331,7 +331,7 @@ foreach ($detalles as $detalle) {
                         <i class="fas fa-pen"></i>
                         Editar borrador
                     </a>
-                    <form class="cp-inline-form" method="POST" action="<?= url('compras/' . (int)$compra['id'] . '/cancelar') ?>" onsubmit="return confirm('¿Cancelar esta compra? Se conservara el registro y no se modificara el inventario.');">
+                    <form class="cp-inline-form" method="POST" action="<?= url('compras/' . (int)$compra['id'] . '/cancelar') ?>" onsubmit="return confirm('¿Cancelar esta compra? Se conservará el registro y no se modificará el inventario.');">
                         <?= csrf_field() ?>
                         <button class="cp-btn cp-btn-danger" type="submit">
                             <i class="fas fa-ban"></i>

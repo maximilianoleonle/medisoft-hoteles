@@ -7,7 +7,7 @@ $stockActualAjuste = round((float)($producto['stock_actual'] ?? 0), 2);
 $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
 ?>
 
-<!-- Ajustar Stock -->
+<!-- Ajustar existencias -->
 <style>
 .inv-form-error {
     display: block;
@@ -27,7 +27,7 @@ $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
                 <div>
                     <h1 class="text-2xl font-bold font-playfair flex items-center gap-2">
                         <i class="fas fa-sync text-xl opacity-80"></i>
-                        Ajustar Stock
+                        Ajustar existencias
                     </h1>
                     <p class="text-hotel-gold mt-1 text-sm">
                         Registrar entrada o salida de inventario
@@ -72,10 +72,10 @@ $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
             <form method="POST" action="<?= url('inventario/ajuste/' . $producto['id']) ?>" class="space-y-6">
                 <?= csrf_field() ?>
                 
-                <!-- Tipo de Movimiento -->
+                <!-- Tipo de movimiento -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Tipo de Movimiento <span class="text-red-500">*</span>
+                        Tipo de movimiento <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-4">
                         <label class="relative">
@@ -139,7 +139,7 @@ $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
                 <!-- Motivo -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Motivo del Ajuste <span class="text-red-500">*</span>
+                        Motivo del ajuste <span class="text-red-500">*</span>
                     </label>
                     <textarea name="motivo" 
                               rows="3"
@@ -159,7 +159,7 @@ $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
                     <textarea name="observaciones"
                               rows="2"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
-                              placeholder="Detalle opcional para auditoria..."><?= old('observaciones') ?></textarea>
+                              placeholder="Detalle opcional para auditoría..."><?= old('observaciones') ?></textarea>
                     <?php if (form_error('observaciones')): ?>
                         <span class="inv-form-error"><?= form_error('observaciones') ?></span>
                     <?php endif; ?>
@@ -188,7 +188,7 @@ $stockActualAjusteLabel = number_format($stockActualAjuste, 2, '.', '');
                     <button type="submit" 
                             class="px-6 py-2 bg-hotel-brown text-white rounded-lg hover:bg-hotel-brown-dark transition-all duration-300 flex items-center gap-2">
                         <i class="fas fa-check"></i>
-                        <span>Confirmar Ajuste</span>
+                        <span>Confirmar ajuste</span>
                     </button>
                 </div>
             </form>

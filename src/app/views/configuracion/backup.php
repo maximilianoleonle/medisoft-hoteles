@@ -4,7 +4,7 @@
  */
 ?>
 
-<h1>Respaldos del Sistema</h1>
+<h1>Respaldos del sistema</h1>
 
 <div>
     <a href="<?= back_url('configuracion') ?>">Volver a Configuración</a>
@@ -13,8 +13,8 @@
 <div>
     <form method="POST" action="<?= url('configuracion/backup/create') ?>" style="display: inline;" data-backup-confirm="1">
         <?= csrf_field() ?>
-        <button type="submit" data-default-label="Crear Respaldo Manual">
-            Crear Respaldo Manual
+        <button type="submit" data-default-label="Crear respaldo manual">
+            Crear respaldo manual
         </button>
     </form>
 </div>

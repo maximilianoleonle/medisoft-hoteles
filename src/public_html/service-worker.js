@@ -202,7 +202,7 @@ self.addEventListener('push', event => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (error) {
-    data = { body: 'Nueva notificacion de Medisoft Hoteles' };
+    data = { body: 'Nueva notificación de Medisoft Hoteles' };
   }
 
   const notificationAsset = (value, fallback) => {
@@ -217,7 +217,7 @@ self.addEventListener('push', event => {
   };
 
   const options = {
-    body: data.body || 'Nueva notificacion de Medisoft Hoteles',
+    body: data.body || 'Nueva notificación de Medisoft Hoteles',
     icon: notificationAsset(data.icon, BASE + 'img/icons/icon-192x192.png'),
     badge: notificationAsset(data.badge, BASE + 'img/icons/icon-72x72.png'),
     vibrate: [100, 50, 100],
@@ -434,7 +434,7 @@ async function networkFirstPage(request) {
     const offline = await caches.match(BASE + 'offline.html');
     if (offline) return offline;
 
-    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
+    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
       status: 503,
       headers: { 'Content-Type': 'text/html' },
     });
@@ -458,7 +458,7 @@ async function networkOnlyPage(request) {
     const offline = await caches.match(BASE + 'offline.html');
     if (offline) return offline;
 
-    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
+    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
       status: 503,
       headers: { 'Content-Type': 'text/html' },
     });

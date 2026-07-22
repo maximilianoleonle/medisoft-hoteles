@@ -470,7 +470,7 @@ function require_hotel_context() {
         ], 403);
     }
 
-    set_mensaje('No hay contexto de hotel activo. Inicie sesion desde el acceso de su hotel.', 'error');
+    set_mensaje('Tu sesión terminó. Entra de nuevo desde la página de acceso de tu hotel.', 'error');
     redirect(login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null));
 }
 
@@ -756,7 +756,7 @@ function require_auth() {
         }
         
         // Para peticiones normales, redirigir al login
-        set_mensaje('Debe iniciar sesión para acceder a esta página', 'error');
+        set_mensaje('Inicia sesión para ver esta página', 'error');
         redirect($loginPath);
     }
 }
@@ -771,7 +771,7 @@ function require_role($role) {
         if (is_ajax()) {
             json_response([
                 'success' => false,
-                'message' => 'No tiene permisos para acceder a esta funcionalidad'
+                'message' => 'No tienes permiso para esta sección. Pídele acceso a la persona administradora de tu hotel.'
             ], 403);
         }
         
@@ -809,11 +809,11 @@ function require_permission($permission) {
         if (is_ajax()) {
             json_response([
                 'success' => false,
-                'message' => 'No tiene permisos para realizar esta acción'
+                'message' => 'No tienes permiso para esta acción. Pídele acceso a la persona administradora de tu hotel.'
             ], 403);
         }
         
-        set_mensaje('No tiene permisos para realizar esta acción', 'error');
+        set_mensaje('No tienes permiso para esta acción. Pídele acceso a la persona administradora de tu hotel.', 'error');
         redirect(home_route_for_current_user());
     }
 }

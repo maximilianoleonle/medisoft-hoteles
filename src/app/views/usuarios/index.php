@@ -1274,7 +1274,7 @@ html[data-theme="dark"] .usuarios-view .usr-tr .usr-avatar {
                     </div>
                     <span class="text-2xl font-bold text-[#3D5234]"><?= count($usuarios) ?></span>
                 </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider"><?= $esGestionHotel ? 'Total Trabajadores' : 'Total Usuarios' ?></p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider"><?= $esGestionHotel ? 'Total de trabajadores' : 'Total Usuarios' ?></p>
                 <div class="flex items-baseline gap-1.5 mt-1.5">
                     <span class="text-lg font-bold text-[#3D5234]">
                         <?= count(array_filter($usuarios, fn($u) => $u['activo'])) ?>
@@ -1339,7 +1339,7 @@ html[data-theme="dark"] .usuarios-view .usr-tr .usr-avatar {
                     <div style="background:rgba(255,255,255,.18);width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-list text-white text-xs"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-white">Usuarios del Sistema</h3>
+                    <h3 class="text-sm font-bold text-white">Usuarios del sistema</h3>
                 </div>
                 <span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                     <?= count($usuarios) ?>

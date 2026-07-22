@@ -1977,7 +1977,7 @@
                     </div>
                     <span class="text-2xl font-bold text-[#3D5234]"><?= $total_productos ?></span>
                 </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Productos</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de productos</p>
                 <p class="text-xs text-gray-400 mt-0.5">en catálogo</p>
                 <div class="bar-track"><div class="bar-fill" style="width:100%;background:#5C7A4E"></div></div>
             </div>
@@ -1990,7 +1990,7 @@
                     </div>
                     <span class="text-2xl font-bold text-emerald-600"><?= $productos_ok ?></span>
                 </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stock Correcto</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stock correcto</p>
                 <p class="text-xs text-gray-400 mt-0.5"><?= $total_productos > 0 ? round($productos_ok/$total_productos*100) : 0 ?>% óptimo</p>
                 <div class="bar-track"><div class="bar-fill" style="width:<?= $total_productos > 0 ? $productos_ok/$total_productos*100 : 0 ?>%;background:#10b981"></div></div>
             </div>

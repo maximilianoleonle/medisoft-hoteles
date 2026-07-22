@@ -1259,7 +1259,7 @@ if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
             <div class="form-container">
                 <!-- Encabezado del formulario -->
                 <div class="form-header">
-                    <h2 class="form-title">Iniciar Sesión</h2>
+                    <h2 class="form-title">Iniciar sesión</h2>
                     <p class="form-subtitle">Escribe tu usuario y contraseña</p>
                 </div>
                 
@@ -1330,7 +1330,7 @@ if ($loginTema !== 'deleite' && defined('PUBLIC_PATH') && is_file(PUBLIC_PATH . 
                     
                     <!-- Botón de envío -->
                     <button type="submit" class="submit-btn" id="submitBtn" <?= $loginDisabled ? 'disabled' : '' ?>>
-                        Iniciar Sesión
+                        Iniciar sesión
                     </button>
                 </form>
                 

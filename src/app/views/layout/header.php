@@ -1105,7 +1105,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <div class="pwa-portrait-guard-card">
       <span class="pwa-portrait-guard-icon"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
       <p class="pwa-portrait-guard-title">Usa la app en vertical</p>
-      <p class="pwa-portrait-guard-copy">Gira tu dispositivo para continuar con la operacion del hotel.</p>
+      <p class="pwa-portrait-guard-copy">Gira tu teléfono para seguir trabajando.</p>
     </div>
   </div>
 

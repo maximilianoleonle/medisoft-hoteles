@@ -253,10 +253,10 @@ abstract class Controller {
                 if ($this->isAjax()) {
                     View::renderJSON([
                         'success' => false,
-                        'message' => 'Token de seguridad inválido'
+                        'message' => 'Tu sesión de seguridad expiró. Recarga la página e inténtalo de nuevo.'
                     ], 403);
                 } else {
-                    set_mensaje('Token de seguridad inválido. Por favor, intente nuevamente.', 'error');
+                    set_mensaje('Tu sesión de seguridad expiró. Recarga la página e inténtalo de nuevo.', 'error');
                     // Solo se regresa al Referer si es de este mismo host (anti open redirect).
                     $this->redirectBackSeguro('dashboard');
                 }
