@@ -690,6 +690,27 @@ input:checked + .toggle-slider:before {
                 </div>
             </div>
 
+            <!-- Reservaciones existentes: revision opcional del impacto -->
+            <div class="section-card" id="cardImpactoReservas">
+                <div class="section-body" style="display:flex; align-items:flex-start; gap:.85rem;">
+                    <label class="toggle-switch" style="flex-shrink:0; margin-top:.15rem;">
+                        <input type="checkbox"
+                               name="revisar_reservaciones"
+                               id="revisar_reservaciones"
+                               value="1">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div>
+                        <div class="font-semibold">Revisar reservaciones existentes al guardar</div>
+                        <div class="text-sm text-gray-600">
+                            Las reservaciones ya creadas conservan su precio congelado. Con esta opción, al guardar verás
+                            las futuras afectadas (precio actual → nuevo y saldo resultante) y confirmarás el recálculo.
+                            Nada se modifica sin tu confirmación.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Botones de acción -->
             <div id="tarifaFormAlert" class="tarifa-form-alert" role="alert" aria-live="assertive" hidden>
                 <i class="fas fa-circle-exclamation"></i>
@@ -751,7 +772,23 @@ function selectClase(clase) {
         card.classList.toggle('selected', isSel);
         if (isSel) { radio.checked = true; }
     });
+    actualizarCardImpacto();
 }
+
+// La revision de reservaciones existentes solo aplica a incrementos:
+// los descuentos se calculan al crear cada reservacion, no en retro.
+function actualizarCardImpacto() {
+    const card = document.getElementById('cardImpactoReservas');
+    if (!card) { return; }
+    const claseSel = document.querySelector('input[name="clase"]:checked');
+    const esDescuento = claseSel && claseSel.value === 'descuento';
+    card.style.display = esDescuento ? 'none' : '';
+    if (esDescuento) {
+        const chk = document.getElementById('revisar_reservaciones');
+        if (chk) { chk.checked = false; }
+    }
+}
+document.addEventListener('DOMContentLoaded', actualizarCardImpacto);
 
 // Función para seleccionar alcance - CORREGIDA
 function selectAlcance(alcance) {

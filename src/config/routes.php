@@ -779,6 +779,8 @@ $router->get('/configuracion/tarifas/crear', ['controller' => 'Tarifas', 'action
 $router->post('/configuracion/tarifas/crear', ['controller' => 'Tarifas', 'action' => 'crear']);
 $router->get('/configuracion/tarifas/editar/{id:\d+}', ['controller' => 'Tarifas', 'action' => 'editar']);
 $router->post('/configuracion/tarifas/editar/{id:\d+}', ['controller' => 'Tarifas', 'action' => 'editar']);
+$router->get('/configuracion/tarifas/impacto/{id:\d+}', ['controller' => 'Tarifas', 'action' => 'impacto']);
+$router->post('/configuracion/tarifas/impacto/{id:\d+}/aplicar', ['controller' => 'Tarifas', 'action' => 'aplicarImpacto']);
 $router->post('/configuracion/tarifas/toggle', ['controller' => 'Tarifas', 'action' => 'toggle']);
 $router->post('/configuracion/tarifas/eliminar', ['controller' => 'Tarifas', 'action' => 'eliminar']);
 $router->post('/configuracion/tarifas/previsualizar', ['controller' => 'Tarifas', 'action' => 'previsualizar']);

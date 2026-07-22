@@ -253,7 +253,9 @@ class TarifasController extends Controller {
     private function procesarCreacion() {
         require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
-        
+
+        $revisar_impacto = $this->getPost('revisar_reservaciones') ? true : false;
+
         try {
             // Validar datos básicos
             $nombre = trim($this->getPost('nombre'));
@@ -330,7 +332,15 @@ class TarifasController extends Controller {
             
             // Registrar en log
             $this->registrarAccion('crear_incremento_tarifa', "Incremento creado: {$nombre}");
-            
+
+            // Opcion "revisar reservaciones existentes": tras guardar se muestra
+            // la pantalla de impacto (precio actual -> nuevo) y ahi el operador
+            // confirma el recalculo. Solo aplica a clase 'incremento'.
+            if ($revisar_impacto && $datos['clase'] === 'incremento') {
+                set_mensaje('Incremento creado. Revisa las reservaciones afectadas antes de confirmar el recalculo.', 'success');
+                $this->redirect('configuracion/tarifas/impacto/' . (int)$incremento);
+            }
+
             set_mensaje('Incremento de tarifa creado exitosamente', 'success');
             $this->redirect('configuracion/tarifas');
             
@@ -388,7 +398,9 @@ class TarifasController extends Controller {
     private function procesarEdicion($id) {
         require_permission_or_403('tarifas.edit');
         $this->validateCSRF();
-        
+
+        $revisar_impacto = $this->getPost('revisar_reservaciones') ? true : false;
+
         try {
             // Validaciones similares a crear
             $nombre = trim($this->getPost('nombre'));
@@ -459,7 +471,12 @@ class TarifasController extends Controller {
             
             // Registrar en log
             $this->registrarAccion('editar_incremento_tarifa', "Incremento editado: {$nombre}");
-            
+
+            if ($revisar_impacto && $datos['clase'] === 'incremento') {
+                set_mensaje('Incremento actualizado. Revisa las reservaciones afectadas antes de confirmar el recalculo.', 'success');
+                $this->redirect('configuracion/tarifas/impacto/' . (int)$id);
+            }
+
             set_mensaje('Incremento de tarifa actualizado exitosamente', 'success');
             $this->redirect('configuracion/tarifas');
             
@@ -617,6 +634,103 @@ class TarifasController extends Controller {
         ]);
     }
     
+    /**
+     * Impacto de una tarifa sobre reservaciones existentes: lista futuras
+     * afectadas (confirmada/checked_in con noches solapadas a la vigencia y
+     * habitaciones dentro del alcance) con precio actual -> nuevo y saldo
+     * resultante. Solo lectura; el recalculo lo confirma aplicarImpactoAction.
+     */
+    public function impactoAction() {
+        require_permission_or_403('tarifas.edit');
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $incremento = $this->tarifaModel->find($id);
+
+        if (!$incremento) {
+            set_mensaje('Incremento no encontrado', 'error');
+            $this->redirect('configuracion/tarifas');
+        }
+
+        require_once __DIR__ . '/../services/TarifaImpactoService.php';
+
+        try {
+            $servicio = new TarifaImpactoService();
+            $impacto = $servicio->previsualizar($id, $this->hotelIdActual());
+        } catch (Exception $e) {
+            error_log('Tarifas: error al previsualizar impacto: ' . $e->getMessage());
+            set_mensaje('No se pudo calcular el impacto en reservaciones: ' . $e->getMessage(), 'error');
+            $this->redirect('configuracion/tarifas');
+            return;
+        }
+
+        View::renderTemplate('configuracion/tarifas/impacto', [
+            'title' => 'Impacto en reservaciones',
+            'incremento' => $incremento,
+            'impacto' => $impacto
+        ]);
+    }
+
+    /**
+     * Aplica el recalculo a las reservaciones seleccionadas en la pantalla de
+     * impacto. Transaccional (FOR UPDATE por reservacion, re-verifica estado);
+     * conserva descuento_total y cortesias; registra la accion en el log.
+     */
+    public function aplicarImpactoAction() {
+        if (!$this->isPost()) {
+            $this->redirect('configuracion/tarifas');
+        }
+
+        require_permission_or_403('tarifas.edit');
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $incremento = $this->tarifaModel->find($id);
+
+        if (!$incremento) {
+            set_mensaje('Incremento no encontrado', 'error');
+            $this->redirect('configuracion/tarifas');
+        }
+
+        $seleccion = array_values(array_filter(array_map('intval', (array)$this->getPost('reservaciones', []))));
+        if (empty($seleccion)) {
+            set_mensaje('Selecciona al menos una reservacion para recalcular', 'error');
+            $this->redirect('configuracion/tarifas/impacto/' . $id);
+        }
+
+        require_once __DIR__ . '/../services/TarifaImpactoService.php';
+
+        try {
+            $servicio = new TarifaImpactoService();
+            $resultado = $servicio->aplicar($id, $seleccion, $this->hotelIdActual());
+
+            $n = count($resultado['actualizadas']);
+            $delta = (float)$resultado['delta_total'];
+            $signo = $delta >= 0 ? '+' : '-';
+
+            $this->registrarAccion(
+                'recalcular_reservaciones_tarifa',
+                "Tarifa '{$incremento['nombre']}' (#{$id}): {$n} reservaciones recalculadas, diferencia {$signo}\$" . number_format(abs($delta), 2)
+            );
+
+            if ($n > 0) {
+                $mensaje = "Se recalcularon {$n} " . ($n === 1 ? 'reservacion' : 'reservaciones')
+                    . " (diferencia total: {$signo}\$" . number_format(abs($delta), 2) . ')';
+            } else {
+                $mensaje = 'Ninguna reservacion requirio cambios';
+            }
+            if (!empty($resultado['omitidas'])) {
+                $mensaje .= '; ' . count($resultado['omitidas']) . ' omitidas (cambio de estado o sin cambio de precio)';
+            }
+
+            set_mensaje($mensaje, 'success');
+            $this->redirect('configuracion/tarifas');
+        } catch (Exception $e) {
+            error_log('Tarifas: error al aplicar recalculo de reservaciones: ' . $e->getMessage());
+            set_mensaje($e->getMessage(), 'error');
+            $this->redirect('configuracion/tarifas/impacto/' . $id);
+        }
+    }
+
     /**
      * Registrar acción en log
      */
