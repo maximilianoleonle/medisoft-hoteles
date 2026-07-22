@@ -9148,6 +9148,23 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========== DATOS DE RESERVACIÓN PARA TICKET ==========
 const ticketLogoSrc = <?= json_encode($ticketLogoSrc) ?>;
 const ticketDownloadFileName = <?= json_encode('ticket-reservacion-' . (int) $reservacion['id'] . '.html') ?>;
+<?php
+// Solo los campos que el ticket usa (nada de volcar SELECT * al HTML).
+$ticketMapCobro = function ($c) {
+    return [
+        'monto' => (float)($c['monto'] ?? 0),
+        'metodo_pago' => (string)($c['metodo_pago'] ?? ''),
+        'tipo_tarjeta' => (string)($c['tipo_tarjeta'] ?? ''),
+        'created_at' => (string)($c['created_at'] ?? ''),
+    ];
+};
+$ticketResumen = is_array($resumenPagos ?? null) ? [
+    'total' => (float)($resumenPagos['total'] ?? floatval($reservacion['precio_total'] ?? 0)),
+    'pagado' => (float)($resumenPagos['pagado'] ?? 0),
+    'saldo' => (float)($resumenPagos['saldo'] ?? 0),
+    'cxc_cobros' => (float)($resumenPagos['cxc_cobros'] ?? 0),
+] : null;
+?>
 const ticketData = {
     id: <?= json_encode($reservacion['id']) ?>,
     huesped: <?= json_encode($huesped['nombre_completo'] ?? 'N/A') ?>,
@@ -9159,7 +9176,9 @@ const ticketData = {
     metodoPago: <?= json_encode($reservacion['metodo_pago'] ?? '') ?>,
     estado: <?= json_encode($reservacion['estado'] ?? '') ?>,
     habitaciones: <?= json_encode(array_map(function($h) use ($rdRoomTypeLabel) { return ['numero' => $h['numero'], 'tipo' => $rdRoomTypeLabel($h)]; }, $habitaciones)) ?>,
-    pagos: <?= json_encode($pagos ?? []) ?>,
+    pagos: <?= json_encode(array_map($ticketMapCobro, is_array($pagos ?? null) ? $pagos : [])) ?>,
+    abonos: <?= json_encode(array_map($ticketMapCobro, is_array($abonos ?? null) ? $abonos : [])) ?>,
+    resumen: <?= json_encode($ticketResumen) ?>,
     noches: <?= json_encode((!empty($reservacion['fecha_entrada']) && !empty($reservacion['fecha_salida'])) ? max(1, (new DateTime($reservacion['fecha_salida']))->diff(new DateTime($reservacion['fecha_entrada']))->days) : 1) ?>
 };
 
@@ -9183,27 +9202,77 @@ function imprimirTicketTermico(modo = 'imprimir') {
     const fechaImpresion = ahora.toLocaleDateString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric' });
     const horaImpresion = ahora.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
 
+    // Los datos (nombre, teléfono, método) se interpolan en el HTML del ticket.
+    const tEsc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const tMoney = n => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const tMetodo = c => {
+        const base = String(c.metodo_pago || '').trim();
+        if (!base) return 'N/A';
+        const tipo = String(c.tipo_tarjeta || '').toLowerCase();
+        if (base.toLowerCase() === 'tarjeta' && (tipo === 'credito' || tipo === 'debito')) {
+            return tipo === 'credito' ? 'Tarjeta crédito' : 'Tarjeta débito';
+        }
+        return base.charAt(0).toUpperCase() + base.slice(1);
+    };
+    const tFecha = s => (s && s.length >= 10) ? `${s.substring(8, 10)}/${s.substring(5, 7)}/${s.substring(0, 4)}` : '';
+
     // Construir detalle de habitaciones
     let habsHtml = '';
     ticketData.habitaciones.forEach(h => {
-        habsHtml += `<tr><td style="text-align:left;">Hab. ${h.numero} </td><td style="text-align:right;">1</td></tr>`;
+        habsHtml += `<tr><td style="text-align:left;">Hab. ${tEsc(h.numero)}</td><td style="text-align:right;">${tEsc(h.tipo || '')}</td></tr>`;
     });
 
-    // Construir detalle de pagos
+    // Cobros REALES: anticipos (reservacion_abonos) + pagos (reservacion_pagos),
+    // en orden cronológico. Jamás se inventa un pago con reservaciones.metodo_pago:
+    // eso imprimía el total completo como pagado aun sin cobrar un peso.
+    const cobros = []
+        .concat((ticketData.abonos || []).map(a => Object.assign({}, a, { etiqueta: 'Anticipo' })))
+        .concat((ticketData.pagos || []).map(p => Object.assign({}, p, { etiqueta: 'Pago' })))
+        .filter(c => (Number(c.monto) || 0) > 0)
+        .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
+    const sumaCobros = cobros.reduce((s, c) => s + (Number(c.monto) || 0), 0);
+
+    // Resumen real de cuenta (total / pagado / saldo); si el servidor no lo dio,
+    // se reconstruye con lo listado.
+    const resumen = ticketData.resumen || {
+        total: ticketData.precioTotal,
+        pagado: sumaCobros,
+        saldo: Math.max(0, ticketData.precioTotal - sumaCobros),
+        cxc_cobros: 0
+    };
+    let totalTicket = Number(resumen.total) || 0;
+    let pagadoTicket = Number(resumen.pagado) || 0;
+    let saldoTicket = Number(resumen.saldo) || 0;
+
     let pagosHtml = '';
-    if (ticketData.pagos && ticketData.pagos.length > 0) {
-        ticketData.pagos.forEach(p => {
-            const metodo = p.metodo_pago ? p.metodo_pago.charAt(0).toUpperCase() + p.metodo_pago.slice(1) : 'N/A';
-            const monto = parseFloat(p.monto).toFixed(2);
-            pagosHtml += `<tr><td style="text-align:left;">${metodo}</td><td style="text-align:right;">$${monto}</td></tr>`;
-        });
-    } else if (ticketData.metodoPago) {
-        pagosHtml = `<tr><td style="text-align:left;">${ticketData.metodoPago.charAt(0).toUpperCase() + ticketData.metodoPago.slice(1)}</td><td style="text-align:right;">$${ticketData.precioTotal.toFixed(2)}</td></tr>`;
+    cobros.forEach(c => {
+        const fecha = tFecha(c.created_at);
+        pagosHtml += `<tr><td style="text-align:left;">${tEsc(c.etiqueta)} ${tEsc(tMetodo(c))}${fecha ? ` <span style="font-size:10px;">(${fecha})</span>` : ''}</td><td style="text-align:right;">${tMoney(c.monto)}</td></tr>`;
+    });
+
+    // Cobros posteriores vía cuentas por cobrar (cuentan como pagado pero no
+    // tienen fila en pagos/abonos).
+    const cxcTicket = Number(resumen.cxc_cobros) || 0;
+    if (cxcTicket > 0.004) {
+        pagosHtml += `<tr><td style="text-align:left;">Cobro posterior (CxC)</td><td style="text-align:right;">${tMoney(cxcTicket)}</td></tr>`;
     }
 
     if (!pagosHtml) {
-        pagosHtml = `<tr><td style="text-align:left;">Sin pago registrado</td><td style="text-align:right;">$0.00</td></tr>`;
+        if (ticketData.estado === 'checked_out' && ticketData.metodoPago && pagadoTicket <= 0.004) {
+            // Reservación histórica con check-out previa a reservacion_pagos/abonos:
+            // el check-out exigía liquidar, se asume pagada con el método guardado.
+            pagosHtml = `<tr><td style="text-align:left;">${tEsc(tMetodo({ metodo_pago: ticketData.metodoPago }))}</td><td style="text-align:right;">${tMoney(totalTicket)}</td></tr>`;
+            pagadoTicket = totalTicket;
+            saldoTicket = 0;
+        } else {
+            pagosHtml = `<tr><td style="text-align:left;">Sin pago registrado</td><td style="text-align:right;">$0.00</td></tr>`;
+        }
     }
+
+    const haySaldo = saldoTicket > 0.004;
+    const tituloTicket = pagadoTicket <= 0.004
+        ? 'COMPROBANTE DE RESERVACIÓN'
+        : (haySaldo ? 'COMPROBANTE DE PAGO PARCIAL' : 'COMPROBANTE DE PAGO');
 
         // Intentar cargar logo desde múltiples ubicaciones
    const logoSrc = ticketLogoSrc || '';
@@ -9292,6 +9361,38 @@ function imprimirTicketTermico(modo = 'imprimir') {
         margin: 6px 0;
         letter-spacing: 1px;
     }
+    /* Resumen de cuenta: total / pagado / saldo, con el saldo destacado */
+    .acct { margin: 6px 0; }
+    .acct-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 0;
+    }
+    .acct-line .lab { color: #333; }
+    .acct-line.acct-paid .val { color: #000; }
+    .acct-box {
+        margin-top: 6px;
+        border: 2px solid #000;
+        border-radius: 6px;
+        padding: 7px 8px;
+        text-align: center;
+    }
+    .acct-box .cap {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .acct-box .amt {
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        margin-top: 2px;
+    }
+    .acct-box.is-due { border-style: solid; }
+    .acct-box.is-paid { border-style: double; border-width: 4px; }
     .footer {
         text-align: center;
         font-size: 10px;
@@ -9386,7 +9487,7 @@ function imprimirTicketTermico(modo = 'imprimir') {
     <div class="divider-double"></div>
 
     <div style="text-align:center; font-weight:900; font-size:15px; margin:4px 0; letter-spacing:1px;">
-        COMPROBANTE DE PAGO
+        ${tituloTicket}
     </div>
     <div style="text-align:center; font-size:11px; color:#333; font-weight:700;">
         Reservación #${ticketData.id}
@@ -9395,8 +9496,8 @@ function imprimirTicketTermico(modo = 'imprimir') {
     <div class="divider"></div>
 
     <div class="section-title">DATOS DEL HUÉSPED</div>
-    <div class="row"><span class="label">Nombre:</span><span class="value">${ticketData.huesped}</span></div>
-    ${ticketData.telefono ? `<div class="row"><span class="label">Tel:</span><span class="value">${ticketData.telefono}</span></div>` : ''}
+    <div class="row"><span class="label">Nombre:</span><span class="value">${tEsc(ticketData.huesped)}</span></div>
+    ${ticketData.telefono ? `<div class="row"><span class="label">Tel:</span><span class="value">${tEsc(ticketData.telefono)}</span></div>` : ''}
 
     <div class="divider"></div>
 
@@ -9413,12 +9514,23 @@ function imprimirTicketTermico(modo = 'imprimir') {
 
     <div class="divider"></div>
 
-    <div class="total-row">
-        TOTAL: $${ticketData.precioTotal.toFixed(2)} MXN
+    <div class="section-title">${haySaldo ? 'PAGO RECIBIDO' : 'FORMA DE PAGO'}</div>
+    <table>${pagosHtml}</table>
+
+    <div class="divider"></div>
+
+    <div class="section-title">RESUMEN DE CUENTA</div>
+    <div class="acct">
+        <div class="acct-line"><span class="lab">Total a cobrar</span><span class="val">${tMoney(totalTicket)}</span></div>
+        <div class="acct-line acct-paid"><span class="lab">Pagado</span><span class="val">${tMoney(pagadoTicket)}</span></div>
+        <div class="acct-box ${haySaldo ? 'is-due' : 'is-paid'}">
+            ${haySaldo
+                ? `<div class="cap">Queda por cobrar</div><div class="amt">${tMoney(saldoTicket)} MXN</div>`
+                : `<div class="cap">Pagado por completo</div><div class="amt">${tMoney(pagadoTicket)} MXN</div>`}
+        </div>
     </div>
 
-    <div class="section-title">FORMA DE PAGO</div>
-    <table>${pagosHtml}</table>
+    ${haySaldo ? `<div style="text-align:center; font-size:11px; font-weight:700; margin-top:5px;">Este ticket NO es prueba de pago total.<br>Saldo pendiente: ${tMoney(saldoTicket)} MXN</div>` : ''}
 
     <div class="divider-double"></div>
 
@@ -9436,13 +9548,7 @@ function imprimirTicketTermico(modo = 'imprimir') {
             setTimeout(function() { window.print(); }, 500);
         });
     <\/script>`}
-        <div class="row"><span class="label"> </span><span class="value"></span></div>
-        <div class="row"><span class="label"> </span><span class="value"></span></div>
-        <div class="row"><span class="label"> </span><span class="value"></span></div>
-        <div class="row"><span class="label"> :</span><span class="value"></span></div>
-
-
-
+    <div style="height:30px;"></div>
 </body>
 </html>`;
 

@@ -2962,28 +2962,28 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
             $vehiculos = $this->huespedModel->getVehiculosPorHotel($reservacion['huesped_id'], $this->hotelIdActual());
         }
         
-        // Obtener pagos si está en check-in
+        // Obtener pagos registrados en cualquier estado: el ticket y la ficha
+        // los necesitan también tras el check-out (cargarlos solo en checked_in
+        // dejaba el ticket reimpreso sin desglose real de pagos).
         $pagos = [];
-        if ($reservacion['estado'] == 'checked_in') {
-            try {
-                // Verificar si la tabla existe
-                $sql_check = "SHOW TABLES LIKE 'reservacion_pagos'";
-                $result = $this->db->query($sql_check);
-                
-                if ($result && $result->fetch()) {
-                    // La tabla existe, obtener pagos
-                    $sql = "SELECT * FROM reservacion_pagos 
-                            WHERE reservacion_id = ?
-                            AND hotel_id = ?
-                            ORDER BY created_at DESC";
-                    $stmt = $this->db->prepare($sql);
-                    $stmt->execute([$id, $this->hotelIdActual()]);
-                    $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                }
-            } catch (Exception $e) {
-                error_log("Error al obtener pagos: " . $e->getMessage());
-                $pagos = [];
+        try {
+            // Verificar si la tabla existe
+            $sql_check = "SHOW TABLES LIKE 'reservacion_pagos'";
+            $result = $this->db->query($sql_check);
+
+            if ($result && $result->fetch()) {
+                // La tabla existe, obtener pagos
+                $sql = "SELECT * FROM reservacion_pagos
+                        WHERE reservacion_id = ?
+                        AND hotel_id = ?
+                        ORDER BY created_at DESC";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$id, $this->hotelIdActual()]);
+                $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
+        } catch (Exception $e) {
+            error_log("Error al obtener pagos: " . $e->getMessage());
+            $pagos = [];
         }
         
         // Obtener notas
