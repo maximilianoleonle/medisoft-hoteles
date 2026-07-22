@@ -262,10 +262,16 @@ if (empty($copPaginas)) {
 
 /* ---- Launcher flotante (el "widget") ---- */
 #cop-fab { position: fixed; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); right: calc(22px + env(safe-area-inset-right, 0px)); z-index: 10000; width: 64px; max-width: calc(100vw - 44px); height: 64px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 14%, #FFFFFF); cursor: pointer; background: #fff; padding: 0; box-shadow: 0 1px 2px rgba(20,28,45,.14), 0 12px 30px -10px rgba(20,28,45,.5), 0 0 0 6px color-mix(in srgb, var(--brand-accent, #BD9441) 6%, transparent); display: flex; align-items: center; justify-content: flex-start; transition: width .34s cubic-bezier(.34,1.4,.5,1), transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .24s ease; overflow: visible; isolation: isolate; }
-#cop-fab:hover,
 #cop-fab:focus-visible,
 #cop-fab.cop-fab-discover { width: min(218px, calc(100vw - 44px)); box-shadow: 0 2px 4px rgba(20,28,45,.16), 0 18px 40px -10px rgba(20,28,45,.56), 0 0 0 8px color-mix(in srgb, var(--brand-accent, #BD9441) 10%, transparent); }
-#cop-fab:hover { transform: translateY(-2px) scale(1.035); }
+/* Expandirse con hover SOLO donde hay hover real: iOS deja el :hover "pegado"
+   tras el primer toque y el FAB quedaba inflado (218px) estorbando justo en la
+   franja donde el pulgar desliza. En tactil la expansion queda para focus/discover. */
+@media (hover: hover) {
+    #cop-fab:hover { width: min(218px, calc(100vw - 44px)); box-shadow: 0 2px 4px rgba(20,28,45,.16), 0 18px 40px -10px rgba(20,28,45,.56), 0 0 0 8px color-mix(in srgb, var(--brand-accent, #BD9441) 10%, transparent); transform: translateY(-2px) scale(1.035); }
+    #cop-fab:hover .cop-fab-mark .cop-logo-img { transform: scale(2.14); }
+    #cop-fab:hover .cop-fab-label { opacity: 1; transform: translateX(0); }
+}
 #cop-fab:active { transform: translateY(0) scale(.97); transition-duration: .08s; }
 /* Anillo ambiente: latido lento y continuo para que el widget "respire"
    y no se pierda; opacidad baja y mucho reposo entre pulsos. */
@@ -282,9 +288,7 @@ body.cop-abierto #cop-fab::before { animation: none; opacity: 0; }
 .cop-logo-img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 1; transform-origin: center; transition: opacity .18s ease, transform .3s cubic-bezier(.34,1.4,.5,1); }
 .cop-logo-img-noche { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 .cop-fab-mark .cop-logo-img { transform: scale(2.05); }
-#cop-fab:hover .cop-fab-mark .cop-logo-img { transform: scale(2.14); }
 .cop-fab-label { color: var(--brand-primary, #1B2746); font-size: .88rem; font-weight: 700; line-height: 1; white-space: nowrap; padding: 0 18px 0 2px; opacity: 0; transform: translateX(-8px); transition: opacity .2s ease, transform .28s cubic-bezier(.34,1.4,.5,1); }
-#cop-fab:hover .cop-fab-label,
 #cop-fab:focus-visible .cop-fab-label,
 #cop-fab.cop-fab-discover .cop-fab-label { opacity: 1; transform: translateX(0); }
 html[data-theme="dark"] #cop-fab { background: #171612; border-color: rgba(239,233,220,.14); box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 34px -12px rgba(0,0,0,.72), 0 0 0 6px color-mix(in srgb, var(--brand-accent, #BD9441) 8%, transparent); }
@@ -506,8 +510,10 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
         width: 56px;
     }
 
-    body.page-reservaciones #cop-fab:hover {
-        transform: translateY(-1px) scale(1.02);
+    @media (hover: hover) {
+        body.page-reservaciones #cop-fab:hover {
+            transform: translateY(-1px) scale(1.02);
+        }
     }
 
     body.page-reservaciones .cop-fab-mark {
@@ -798,7 +804,81 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             setTimeout(function () { input.focus(); }, 50);
         }
     }
-    fab.addEventListener('click', function () { abrir(!panel.classList.contains('abierto')); });
+    // ── Deslizar sobre el FAB debe mover la página, no tragarse el gesto ──
+    // El shell scrollea en main.main-content (el body es overflow:hidden y no
+    // desborda): un swipe que EMPIEZA sobre el FAB —fixed, hijo de <body>—
+    // sube por su cadena de ancestros sin hallar nada scrolleable y el
+    // navegador mata el gesto: la página "ya no baja" cuando el dedo cae en
+    // el copiloto. El FAB reenvía el arrastre al scroller del shell (con una
+    // inercia breve al soltar) y, si hubo arrastre real, el click sintético
+    // que pueda seguir se ignora: deslizar no es abrir.
+    var gestoScroll = false;
+    (function () {
+        var scroller = null, yPrev = 0, tPrev = 0, acumulado = 0, velocidad = 0, inercia = 0;
+
+        function scrollerDelShell() {
+            var raiz = document.scrollingElement || document.documentElement;
+            // Si la página scrollea en el body (login, layouts sueltos), el
+            // gesto nativo ya funciona y no hay nada que reenviar.
+            if (raiz.scrollHeight > raiz.clientHeight + 5) { return null; }
+            var m = document.querySelector('main.main-content');
+            return (m && m.scrollHeight > m.clientHeight + 5) ? m : null;
+        }
+
+        fab.addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1) { scroller = null; return; }
+            window.cancelAnimationFrame(inercia);
+            scroller = scrollerDelShell();
+            yPrev = e.touches[0].clientY;
+            tPrev = e.timeStamp;
+            acumulado = 0;
+            velocidad = 0;
+            gestoScroll = false;
+        }, { passive: true });
+
+        fab.addEventListener('touchmove', function (e) {
+            if (!scroller || e.touches.length !== 1) { return; }
+            var y = e.touches[0].clientY;
+            var dy = yPrev - y;
+            var dt = Math.max(1, e.timeStamp - tPrev);
+            yPrev = y;
+            tPrev = e.timeStamp;
+            acumulado += dy;
+            // Umbral: el micro-tiemble de un tap no es un arrastre.
+            if (!gestoScroll && Math.abs(acumulado) < 6) { return; }
+            gestoScroll = true;
+            scroller.scrollTop += dy;
+            velocidad = dy / dt; // px/ms, alimenta la inercia al soltar
+            if (e.cancelable) { e.preventDefault(); }
+        }, { passive: false });
+
+        fab.addEventListener('touchend', function () {
+            if (!gestoScroll || !scroller) { return; }
+            // Inercia corta con decaimiento para que el flick no frene en seco.
+            var v = velocidad * 16; // px por frame (~16ms)
+            var el = scroller;
+            function paso() {
+                v *= 0.94;
+                if (Math.abs(v) < 0.5) { return; }
+                el.scrollTop += v;
+                inercia = window.requestAnimationFrame(paso);
+            }
+            inercia = window.requestAnimationFrame(paso);
+            // El flag lo consume el click sintético que el navegador pueda
+            // emitir tras el arrastre; si no llega ninguno, caduca solo.
+            window.setTimeout(function () { gestoScroll = false; }, 500);
+        }, { passive: true });
+
+        fab.addEventListener('touchcancel', function () {
+            gestoScroll = false;
+            scroller = null;
+        }, { passive: true });
+    })();
+
+    fab.addEventListener('click', function () {
+        if (gestoScroll) { gestoScroll = false; return; } // fue arrastre, no tap
+        abrir(!panel.classList.contains('abierto'));
+    });
     closeBtn.addEventListener('click', function () { abrir(false); });
     if (backdrop) { backdrop.addEventListener('click', function () { abrir(false); }); }
 
