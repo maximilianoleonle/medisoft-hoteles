@@ -40,7 +40,7 @@ class WhatsAppController extends Controller {
         }
 
         View::renderTemplate('whatsapp/index', [
-            'title' => 'WhatsApp - ' . current_hotel_display_name(),
+            'title' => 'Conectar WhatsApp - ' . current_hotel_display_name(),
             'cred' => $cred,
             'config' => [
                 'confirmacion_huesped' => ConfiguracionHotelRegistry::getBool('whatsapp.confirmacion_huesped_activa', true, $hotelId),

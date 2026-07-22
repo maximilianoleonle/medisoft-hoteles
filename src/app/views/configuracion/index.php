@@ -5128,7 +5128,7 @@ html[data-theme="dark"] .hc-page {
                             <a href="<?= !empty($configGroupedHotelSettings) ? '#hc-settings' : '#hc-guest-fields' ?>" class="hc-config-map-card" data-hc-section-trigger>
                                 <span class="hc-config-map-icon"><i class="fas fa-sliders-h" aria-hidden="true"></i></span>
                                 <span>
-                                    <strong>Operación diaria</strong>
+                                    <strong>Operación del hotel</strong>
                                     <small>Horarios, contacto, documentos y reglas generales.</small>
                                 </span>
                                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -6278,7 +6278,7 @@ html[data-theme="dark"] .hc-page {
                                         </div>
 
                                         <div class="hc-preview-nav">
-                                            <span class="hc-preview-nav-item is-active"><i class="fas fa-compass"></i><span>Dashboard</span></span>
+                                            <span class="hc-preview-nav-item is-active"><i class="fas fa-compass"></i><span>Inicio</span></span>
                                             <span class="hc-preview-nav-item"><i class="fas fa-bed"></i><span>Habitaciones</span></span>
                                             <span class="hc-preview-nav-item"><i class="fas fa-wallet"></i><span>Caja</span></span>
                                         </div>

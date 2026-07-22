@@ -576,9 +576,9 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
         <div class="mrv-title-lockup">
             <div class="mrv-hero-icon"><i class="fas fa-globe"></i></div>
             <div>
-                <p class="mrv-kicker">Ventas en linea</p>
-                <h1>Motor de reservas online</h1>
-                <p class="sub">Reservas desde tu pagina publica con anticipo pagado. El dinero de la pasarela se concilia a Caja desde aqui.</p>
+                <p class="mrv-kicker">Motor de reservas</p>
+                <h1>Reservas en l&iacute;nea</h1>
+                <p class="sub">Reservas desde tu p&aacute;gina p&uacute;blica con anticipo pagado. El dinero de la pasarela se concilia a Caja desde aqu&iacute;.</p>
             </div>
         </div>
 

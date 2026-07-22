@@ -391,31 +391,34 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             </div>
             <?php if ($mostrarDashboard): ?>
             <a href="<?= url('dashboard') ?>"
-               class="nav-item <?= $sidebarActiveDashboard ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveDashboard ? 'active' : '' ?>"
+               title="Resumen general del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-compass"></i>
                 </div>
-                <span class="nav-text">Dashboard</span>
+                <span class="nav-text">Inicio</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarOperacionDiaria): ?>
             <a href="<?= url('operacion/diaria') ?>"
-               class="nav-item <?= $sidebarActiveOperacionDiaria ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveOperacionDiaria ? 'active' : '' ?>"
+               title="Todo lo del día en una pantalla: cobros, llegadas, salidas y tareas">
                 <div class="nav-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <span class="nav-text">Operacion diaria</span>
+                <span class="nav-text">El hotel hoy</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarForecast): ?>
             <a href="<?= url('forecast') ?>"
-               class="nav-item <?= $sidebarActiveForecast ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveForecast ? 'active' : '' ?>"
+               title="Qué tan lleno estará el hotel los próximos 30, 60 y 90 días">
                 <div class="nav-icon">
                     <i class="fas fa-arrow-trend-up"></i>
                 </div>
-                <span class="nav-text">Forecast</span>
+                <span class="nav-text">Pronóstico de ocupación</span>
             </a>
             <?php endif; ?>
 
@@ -438,7 +441,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarHabitaciones): ?>
             <a href="<?= url('habitaciones') ?>"
-               class="nav-item <?= $sidebarActiveHabitaciones ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveHabitaciones ? 'active' : '' ?>"
+               title="Estado de los cuartos y espacios del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-bed"></i>
                     <?= $sidebarBadge('habitaciones', $sidebarActiveHabitaciones) ?>
@@ -449,7 +453,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarReservaciones): ?>
             <a href="<?= url('reservaciones') ?>"
-               class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>"
+               title="Crea y administra las reservas, entradas y salidas">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-check"></i>
                     <?= $sidebarBadge('reservaciones', $sidebarActiveReservaciones) ?>
@@ -460,7 +465,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarHuespedes): ?>
             <a href="<?= url('huespedes') ?>"
-               class="nav-item <?= $sidebarActiveHuespedes ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveHuespedes ? 'active' : '' ?>"
+               title="Directorio de tus huéspedes y su historial">
                 <div class="nav-icon">
                     <i class="fas fa-users"></i>
                     <?= $sidebarBadge('huespedes', $sidebarActiveHuespedes) ?>
@@ -471,7 +477,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCheckinDigital): ?>
             <a href="<?= url('checkin-digital') ?>"
-               class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCheckinDigital ? 'active' : '' ?>"
+               title="El huésped se registra desde su celular antes de llegar">
                 <div class="nav-icon">
                     <i class="fas fa-qrcode"></i>
                     <?= $sidebarBadge('checkin-digital', $sidebarActiveCheckinDigital) ?>
@@ -490,7 +497,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCaja): ?>
             <a href="<?= url('caja') ?>"
-               class="nav-item <?= $sidebarActiveCaja ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCaja ? 'active' : '' ?>"
+               title="Cobros, gastos y cortes del turno">
                 <div class="nav-icon">
                     <i class="fas fa-wallet"></i>
                     <?php
@@ -506,7 +514,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCuentasPorCobrar): ?>
             <a href="<?= url('cuentas-por-cobrar') ?>"
-               class="nav-item <?= $sidebarActiveCuentasPorCobrar ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCuentasPorCobrar ? 'active' : '' ?>"
+               title="Lo que te deben huéspedes y empresas">
                 <div class="nav-icon">
                     <i class="fas fa-hand-holding-dollar"></i>
                     <?= $sidebarBadge('cuentas-por-cobrar', $sidebarActiveCuentasPorCobrar) ?>
@@ -517,7 +526,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarFacturacion): ?>
             <a href="<?= url('facturacion') ?>"
-               class="nav-item <?= $sidebarActiveFacturacion ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveFacturacion ? 'active' : '' ?>"
+               title="Facturas fiscales de tus ventas">
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice"></i>
                     <?= $sidebarBadge('facturacion', $sidebarActiveFacturacion) ?>
@@ -528,7 +538,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCuentasPorPagar): ?>
             <a href="<?= url('cuentas-por-pagar') ?>"
-               class="nav-item <?= $sidebarActiveCuentasPorPagar ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCuentasPorPagar ? 'active' : '' ?>"
+               title="Lo que le debes a tus proveedores">
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <?= $sidebarBadge('cuentas-por-pagar', $sidebarActiveCuentasPorPagar) ?>
@@ -548,7 +559,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarTareas): ?>
             <a href="<?= url('tareas') ?>"
-               class="nav-item <?= $sidebarActiveTareas ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveTareas ? 'active' : '' ?>"
+               title="Pendientes del equipo del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-tasks"></i>
                     <?= $sidebarBadge('tareas', $sidebarActiveTareas) ?>
@@ -559,7 +571,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCamarista): ?>
             <a href="<?= url('camarista') ?>"
-               class="nav-item <?= $sidebarActiveCamarista ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCamarista ? 'active' : '' ?>"
+               title="Trabajo de camaristas: qué cuarto limpiar y en qué estado va">
                 <div class="nav-icon">
                     <i class="fas fa-broom"></i>
                     <?= $sidebarBadge('camarista', $sidebarActiveCamarista) ?>
@@ -570,7 +583,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarMantenimientoPlus): ?>
             <a href="<?= url('mantenimientos/activos') ?>"
-               class="nav-item <?= $sidebarActiveMantenimientos ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveMantenimientos ? 'active' : '' ?>"
+               title="Reparaciones y servicio preventivo de equipos">
                 <div class="nav-icon">
                     <i class="fas fa-toolbox"></i>
                     <?= $sidebarBadge('mantenimientos/activos', $sidebarActiveMantenimientos) ?>
@@ -581,7 +595,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarLavanderia): ?>
             <a href="<?= url('lavanderia') ?>"
-               class="nav-item <?= $sidebarActiveLavanderia ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveLavanderia ? 'active' : '' ?>"
+               title="Control de blancos: sábanas, toallas y ropa">
                 <div class="nav-icon">
                     <i class="fas fa-shirt"></i>
                     <?= $sidebarBadge('lavanderia', $sidebarActiveLavanderia) ?>
@@ -592,7 +607,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarInventario): ?>
             <a href="<?= url('inventario') ?>"
-               class="nav-item <?= $sidebarActiveInventario ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveInventario ? 'active' : '' ?>"
+               title="Existencias de productos e insumos">
                 <div class="nav-icon">
                     <i class="fas fa-boxes-stacked"></i>
                 </div>
@@ -602,7 +618,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCompras): ?>
             <a href="<?= url('compras') ?>"
-               class="nav-item <?= $sidebarActiveCompras ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCompras ? 'active' : '' ?>"
+               title="Órdenes de compra y recepción de mercancía">
                 <div class="nav-icon">
                     <i class="fas fa-clipboard-list"></i>
                 </div>
@@ -612,7 +629,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarProveedores): ?>
             <a href="<?= url('proveedores') ?>"
-               class="nav-item <?= $sidebarActiveProveedores ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveProveedores ? 'active' : '' ?>"
+               title="Directorio de tus proveedores">
                 <div class="nav-icon">
                     <i class="fas fa-truck"></i>
                 </div>
@@ -622,7 +640,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarDocumentos): ?>
             <a href="<?= url('documentos') ?>"
-               class="nav-item <?= $sidebarActiveDocumentos ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveDocumentos ? 'active' : '' ?>"
+               title="Archivos y expedientes del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-folder-open"></i>
                 </div>
@@ -632,11 +651,12 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarNightAudit): ?>
             <a href="<?= url('night-audit') ?>"
-               class="nav-item <?= $sidebarActiveNightAudit ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveNightAudit ? 'active' : '' ?>"
+               title="Revisión nocturna: no-shows, salidas vencidas y cortes abiertos">
                 <div class="nav-icon">
                     <i class="fas fa-moon"></i>
                 </div>
-                <span class="nav-text">Night audit</span>
+                <span class="nav-text">Cierre del día</span>
             </a>
             <?php endif; ?>
 
@@ -646,54 +666,59 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         <?php if ($mostrarVentasCanales): ?>
         <div class="nav-section hotel-nav-section hotel-ventas-section">
             <div class="nav-section-title">
-                <span>VENTAS Y CANALES</span>
+                <span>VENTAS Y COMUNICACIÓN</span>
             </div>
 
             <?php if ($mostrarMotorReservas): ?>
             <a href="<?= url('motor-reservas') ?>"
-               class="nav-item <?= $sidebarActiveMotorReservas ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveMotorReservas ? 'active' : '' ?>"
+               title="Tu página pública para que el huésped reserve y pague anticipo">
                 <div class="nav-icon">
                     <i class="fas fa-globe"></i>
                     <?= $sidebarBadge('motor-reservas', $sidebarActiveMotorReservas) ?>
                 </div>
-                <span class="nav-text">Motor de reservas</span>
+                <span class="nav-text">Reservas en línea</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarCanales): ?>
             <a href="<?= url('canales') ?>"
-               class="nav-item <?= $sidebarActiveCanales ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCanales ? 'active' : '' ?>"
+               title="Sincroniza calendarios para no vender dos veces el mismo cuarto">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
-                <span class="nav-text">Canales (iCal)</span>
+                <span class="nav-text">Airbnb y Booking</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarMensajes): ?>
             <a href="<?= url('mensajes') ?>"
-               class="nav-item <?= $sidebarActiveMensajes ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveMensajes ? 'active' : '' ?>"
+               title="Confirmaciones, recordatorios y encuestas listos para enviar">
                 <div class="nav-icon">
                     <i class="fas fa-comment-dots"></i>
                     <?= $sidebarBadge('mensajes', $sidebarActiveMensajes) ?>
                 </div>
-                <span class="nav-text">Mensajes</span>
+                <span class="nav-text">Mensajes a huéspedes</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarWhatsApp): ?>
             <a href="<?= url('whatsapp') ?>"
-               class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveWhatsApp ? 'active' : '' ?>"
+               title="Conecta el número del hotel para avisos automáticos">
                 <div class="nav-icon">
                     <i class="fab fa-whatsapp"></i>
                 </div>
-                <span class="nav-text">WhatsApp</span>
+                <span class="nav-text">Conectar WhatsApp</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarIaEjecutiva): ?>
             <a href="<?= url('ia/resumen-diario') ?>"
-               class="nav-item <?= $sidebarActiveIaEjecutiva ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveIaEjecutiva ? 'active' : '' ?>"
+               title="Resumen del día narrado con inteligencia artificial">
                 <div class="nav-icon">
                     <i class="fas fa-wand-magic-sparkles"></i>
                 </div>
@@ -703,38 +728,42 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarCopilotoPanel): ?>
             <a href="<?= url('copiloto/valor') ?>"
-               class="nav-item <?= $sidebarActiveCopilotoPanel ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCopilotoPanel ? 'active' : '' ?>"
+               title="Cuánto y cómo se usa el asistente del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-robot"></i>
                 </div>
-                <span class="nav-text">Copiloto</span>
+                <span class="nav-text">Uso del asistente</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarVigilanciaFinanciera): ?>
             <a href="<?= url('ia/vigilancia-financiera') ?>"
-               class="nav-item <?= $sidebarActiveVigilanciaFinanciera ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveVigilanciaFinanciera ? 'active' : '' ?>"
+               title="Avisa cuando algo en los números se sale del patrón del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-shield-halved"></i>
                 </div>
-                <span class="nav-text">Vigilancia financiera</span>
+                <span class="nav-text">Guardián financiero</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarReputacion): ?>
             <a href="<?= url('reputacion') ?>"
-               class="nav-item <?= $sidebarActiveReputacion ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveReputacion ? 'active' : '' ?>"
+               title="Lo que opinan tus huéspedes: reseñas y encuestas">
                 <div class="nav-icon">
                     <i class="fas fa-star"></i>
                     <?= $sidebarBadge('reputacion', $sidebarActiveReputacion) ?>
                 </div>
-                <span class="nav-text">Reputación</span>
+                <span class="nav-text">Opiniones y encuestas</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarLealtad): ?>
             <a href="<?= url('lealtad') ?>"
-               class="nav-item <?= $sidebarActiveLealtad ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveLealtad ? 'active' : '' ?>"
+               title="Premia a los huéspedes que regresan">
                 <div class="nav-icon">
                     <i class="fas fa-heart"></i>
                 </div>
@@ -752,7 +781,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarReportes): ?>
             <a href="<?= url('reportes') ?>"
-               class="nav-item <?= $sidebarActiveReportes ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveReportes ? 'active' : '' ?>"
+               title="Estadísticas y gráficas del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -762,7 +792,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarPersonal): ?>
             <a href="<?= url('trabajadores') ?>"
-               class="nav-item <?= $sidebarActivePersonal ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActivePersonal ? 'active' : '' ?>"
+               title="Expedientes de tus empleados">
                 <div class="nav-icon">
                     <i class="fas fa-id-card"></i>
                 </div>
@@ -772,7 +803,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarNomina): ?>
             <a href="<?= url('nomina') ?>"
-               class="nav-item <?= $sidebarActiveNomina ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveNomina ? 'active' : '' ?>"
+               title="Sueldos, incidencias y periodos de pago">
                 <div class="nav-icon">
                     <i class="fas fa-money-check-dollar"></i>
                 </div>
@@ -782,7 +814,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarUsuariosAdmin): ?>
             <a href="<?= url('usuarios') ?>"
-               class="nav-item <?= $sidebarActiveUsuarios ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveUsuarios ? 'active' : '' ?>"
+               title="Cuentas de acceso al sistema (no confundir con Personal)">
                 <div class="nav-icon">
                     <i class="fas fa-user"></i>
                 </div>
@@ -792,11 +825,12 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarAuditoria): ?>
             <a href="<?= url('auditoria') ?>"
-               class="nav-item <?= $sidebarActiveAuditoria ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveAuditoria ? 'active' : '' ?>"
+               title="Quién hizo qué y cuándo dentro del sistema">
                 <div class="nav-icon">
                     <i class="fas fa-clock-rotate-left"></i>
                 </div>
-                <span class="nav-text">Bitácora</span>
+                <span class="nav-text">Historial de actividad</span>
             </a>
             <?php endif; ?>
         </div>
@@ -810,7 +844,8 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarConfiguracion): ?>
             <a href="<?= url('configuracion') ?>"
-               class="nav-item <?= $sidebarActiveConfiguracion ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveConfiguracion ? 'active' : '' ?>"
+               title="Datos y ajustes generales del hotel">
                 <div class="nav-icon">
                     <i class="fas fa-cog"></i>
                 </div>
@@ -820,17 +855,19 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 
             <?php if ($mostrarTarifas): ?>
             <a href="<?= url('configuracion/tarifas') ?>"
-               class="nav-item <?= $sidebarActiveTarifas ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveTarifas ? 'active' : '' ?>"
+               title="Tarifas por temporada e incrementos de precio">
                 <div class="nav-icon">
                     <i class="fas fa-tags"></i>
                 </div>
-                <span class="nav-text">Tarifas dinámicas</span>
+                <span class="nav-text">Precios y temporadas</span>
             </a>
             <?php endif; ?>
 
             <?php if ($mostrarRoles): ?>
             <a href="<?= url('configuracion/roles') ?>"
-               class="nav-item <?= $sidebarActiveRoles ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveRoles ? 'active' : '' ?>"
+               title="Qué puede ver y hacer cada puesto en el sistema">
                 <div class="nav-icon">
                     <i class="fas fa-user-shield"></i>
                 </div>

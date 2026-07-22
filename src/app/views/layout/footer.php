@@ -11,8 +11,8 @@
     <!-- La barra inferior de accesos rápidos ahora se incluye desde el header
          (visible desde el primer paint, como el header móvil) -->
 
-    <!-- Scripts adicionales para vistas específicas -->
-    <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
+    <!-- Scripts adicionales para vistas específicas (titulo "Inicio - ..."; se conserva "Dashboard" por compatibilidad) -->
+    <?php if (isset($title) && (strpos($title, 'Dashboard') !== false || strpos($title, 'Inicio - ') === 0)): ?>
     <script src="<?= function_exists('asset_version') ? asset_version('js/dashboard.js') : asset('js/dashboard.js') ?>"></script>
     <?php endif; ?>
 

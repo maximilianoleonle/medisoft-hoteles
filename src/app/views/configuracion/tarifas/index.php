@@ -1603,9 +1603,9 @@ input.toggle-activo:checked ~ div {
                         <i class="fas fa-tags text-lg"></i>
                     </div>
                     <div class="tarifa-index-title-copy">
-                        <p class="tarifa-page-kicker">Operaci&oacute;n hotelera</p>
-                        <h1 class="tarifa-page-title text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Tarifas din&aacute;micas</h1>
-                        <p class="tarifa-page-subtitle text-xs text-gray-400 mt-0.5">Administra incrementos y promociones de precios con lectura clara de vigencia, alcance y estado · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="tarifa-page-kicker">Tarifas din&aacute;micas</p>
+                        <h1 class="tarifa-page-title text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Precios y temporadas</h1>
+                        <p class="tarifa-page-subtitle text-xs text-gray-400 mt-0.5">Sube o baja tus precios por temporada, con vigencia, alcance y estado claros · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
 

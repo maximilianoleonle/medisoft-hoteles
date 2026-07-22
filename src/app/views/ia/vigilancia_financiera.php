@@ -506,7 +506,7 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
                 </div>
                 <div>
                     <p class="vgf-kicker">Auditor&iacute;a continua</p>
-                    <h1 class="vgf-title">El Guardi&aacute;n</h1>
+                    <h1 class="vgf-title">Guardi&aacute;n financiero</h1>
                     <p class="vgf-subtitle">Cruza tus libros y observa los patrones de operaci&oacute;n del equipo. Cuando algo se sale del patr&oacute;n del hotel, te dice qu&eacute; revisar y con qui&eacute;n confirmarlo &mdash; sin acusar a nadie.</p>
                 </div>
             </div>

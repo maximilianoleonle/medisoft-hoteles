@@ -30,7 +30,7 @@ $exSafe = static function ($v) {
 </style>
 
 <div class="ext">
-    <a href="<?= url('motor-reservas') ?>" style="font-size:.82rem;color:#6B7486;text-decoration:none;">&larr; Motor de reservas</a>
+    <a href="<?= url('motor-reservas') ?>" style="font-size:.82rem;color:#6B7486;text-decoration:none;">&larr; Reservas en l&iacute;nea</a>
     <h1>Extras y upselling</h1>
     <p class="sub">Lo que el huésped puede agregar a su reserva en línea (desayuno, late checkout, decoración). El importe se suma al total de la estancia.</p>
 

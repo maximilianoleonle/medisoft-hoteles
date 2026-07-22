@@ -39,7 +39,7 @@ class OperacionController extends Controller
         $hotelId = $this->hotelIdActual();
 
         View::renderTemplate('operacion/diaria', [
-            'title' => 'Operacion diaria - ' . current_hotel_display_name(),
+            'title' => 'El hotel hoy - ' . current_hotel_display_name(),
             'reporte' => $this->operacionModel->reporteReadOnlyPorHotel($hotelId),
             'tablasDisponibles' => $this->operacionModel->tablasDisponibles(),
         ]);

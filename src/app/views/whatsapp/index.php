@@ -547,8 +547,8 @@ $automatizacionesActivas = (!empty($config['confirmacion_huesped']) ? 1 : 0) + (
                     <i class="fab fa-whatsapp"></i>
                 </div>
                 <div>
-                    <p class="wav-kicker">Mensajeria automatica</p>
-                    <h1 class="wav-title">WhatsApp del hotel</h1>
+                    <p class="wav-kicker">Mensajer&iacute;a autom&aacute;tica</p>
+                    <h1 class="wav-title">Conectar WhatsApp</h1>
                     <p class="wav-subtitle">Conecta el n&uacute;mero de tu hotel para confirmar reservas online al hu&eacute;sped y avisarte de cada venta.</p>
                 </div>
             </div>

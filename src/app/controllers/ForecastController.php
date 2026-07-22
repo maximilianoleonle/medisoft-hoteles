@@ -60,7 +60,7 @@ class ForecastController extends Controller {
         }
 
         View::renderTemplate('forecast/index', [
-            'title' => 'Forecast - ' . current_hotel_display_name(),
+            'title' => 'Pronóstico de ocupación - ' . current_hotel_display_name(),
             'totalHabitaciones' => $totalHabitaciones,
             'porDia' => $porDia,
             'kpis' => [

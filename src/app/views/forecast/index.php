@@ -276,8 +276,8 @@ $fcIaOk = trim((string) (getenv('ANTHROPIC_API_KEY') ?: '')) !== '';
             <div class="fc-title-lockup">
                 <div class="fc-hero-icon" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
                 <div>
-                    <p class="fc-kicker">Proyecci&oacute;n de ocupaci&oacute;n</p>
-                    <h1 class="fc-title">Forecast de ocupaci&oacute;n</h1>
+                    <p class="fc-kicker">Forecast</p>
+                    <h1 class="fc-title">Pron&oacute;stico de ocupaci&oacute;n</h1>
                     <p class="fc-subtitle">C&oacute;mo pinta tu ocupaci&oacute;n hacia adelante y a qu&eacute; ritmo est&aacute;s vendiendo. Solo lectura: nada de esto modifica reservaciones.</p>
                 </div>
             </div>

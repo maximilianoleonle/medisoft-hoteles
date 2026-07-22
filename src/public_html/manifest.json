@@ -67,7 +67,7 @@
             "src": "/img/screenshots/dashboard.png",
             "sizes": "1280x720",
             "type": "image/png",
-            "label": "Dashboard principal del sistema"
+            "label": "Pantalla de inicio del sistema"
         },
         {
             "src": "/img/screenshots/habitaciones.png",

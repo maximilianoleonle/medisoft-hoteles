@@ -29,7 +29,7 @@ class LealtadController extends Controller {
         $slug = (string) (function_exists('current_hotel_slug') ? current_hotel_slug() : '');
 
         View::renderTemplate('lealtad/index', [
-            'title' => 'Huesped frecuente - ' . current_hotel_display_name(),
+            'title' => 'Huésped frecuente - ' . current_hotel_display_name(),
             'frecuentes' => $servicio->frecuentes($hotelId, $minEstancias),
             'config' => [
                 'min_estancias' => $minEstancias,

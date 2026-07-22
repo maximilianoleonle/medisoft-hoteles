@@ -479,9 +479,9 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
             <div class="au-title-lockup">
                 <div class="au-hero-icon" aria-hidden="true"><i class="fas fa-shield-alt"></i></div>
                 <div>
-                    <p class="au-kicker">Administracion / Auditoria</p>
-                    <h1 class="au-title" id="au-title">Bit&aacute;cora de auditor&iacute;a</h1>
-                    <p class="au-subtitle">Cada acci&oacute;n importante queda trazada con usuario, m&oacute;dulo, fecha y ruta. El registro es autom&aacute;tico y permanece solo lectura.</p>
+                    <p class="au-kicker">Bit&aacute;cora de auditor&iacute;a</p>
+                    <h1 class="au-title" id="au-title">Historial de actividad</h1>
+                    <p class="au-subtitle">Qui&eacute;n hizo qu&eacute; y cu&aacute;ndo: cada acci&oacute;n importante queda registrada con usuario, m&oacute;dulo, fecha y ruta. El registro es autom&aacute;tico y solo lectura.</p>
                 </div>
             </div>
             <div class="au-hero-actions">

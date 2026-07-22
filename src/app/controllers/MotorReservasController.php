@@ -84,7 +84,7 @@ class MotorReservasController extends Controller {
         $slugHotel = (string) (function_exists('current_hotel_slug') ? current_hotel_slug() : '');
 
         View::renderTemplate('motor_reservas/index', [
-            'title' => 'Motor de reservas - ' . current_hotel_display_name(),
+            'title' => 'Reservas en línea - ' . current_hotel_display_name(),
             'pagos' => $pagos,
             'resumen' => $resumen,
             'credenciales' => $credenciales,

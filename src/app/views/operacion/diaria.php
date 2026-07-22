@@ -1088,15 +1088,15 @@ $estadoReservacionLabels = [
         <div class="op-daily-title-lockup">
             <div class="op-daily-hero-icon" aria-hidden="true"><i class="fas fa-clipboard-check"></i></div>
             <div>
-                <div class="op-daily-kicker">Operacion / Diario</div>
-                <h1 class="op-daily-title">Tablero operativo diario</h1>
-                <p class="op-daily-subtitle">Lectura consolidada del hotel actual. No cambia reservaciones, habitaciones, tareas, documentos, Caja, nomina ni sincronizacion offline.</p>
+                <div class="op-daily-kicker">Resumen del d&iacute;a</div>
+                <h1 class="op-daily-title">El hotel hoy</h1>
+                <p class="op-daily-subtitle">Todo lo del d&iacute;a en una sola pantalla: cobros, llegadas, salidas y tareas. Solo lectura: no cambia reservaciones, habitaciones, tareas, documentos, Caja ni n&oacute;mina.</p>
             </div>
         </div>
         <div class="op-daily-actions">
             <span class="op-daily-readonly"><i class="fas fa-lock" aria-hidden="true"></i> Solo lectura</span>
             <?php $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-            <a class="op-daily-btn ms-back-legacy ms-glass-btn" href="<?= back_url('dashboard') ?>"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <a class="op-daily-btn ms-back-legacy ms-glass-btn" href="<?= back_url('dashboard') ?>"><i class="fas fa-arrow-left"></i> Inicio</a>
             <a class="op-daily-btn ms-glass-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-shield-alt"></i> Conciliacion financiera</a>
             <a class="op-daily-btn ms-glass-btn" href="<?= url('tareas/reporte') ?>"><i class="fas fa-tasks"></i> Reporte TLM</a>
         </div>

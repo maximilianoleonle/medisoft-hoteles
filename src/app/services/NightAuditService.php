@@ -143,7 +143,7 @@ class NightAuditService
             return ['ok' => false, 'error' => 'Sin destinatarios de correo configurados.'];
         }
 
-        $asunto = 'Night audit ' . $cierre['fecha'] . ' - ' . $nombreHotel;
+        $asunto = 'Cierre del día ' . $cierre['fecha'] . ' - ' . $nombreHotel;
         $headers = [
             'MIME-Version: 1.0',
             'Content-Type: text/html; charset=UTF-8',
@@ -308,7 +308,7 @@ class NightAuditService
                 'modulo' => 'night_audit',
                 'tipo' => 'cierre_con_pendientes',
                 'severidad' => 'alta',
-                'titulo' => 'Night audit con pendientes',
+                'titulo' => 'Cierre del día con pendientes',
                 'mensaje' => 'Cierre del ' . $cierre['fecha'] . ': ' . implode(', ', $pendientes) . '.',
                 'entidad_tipo' => 'night_audit_cierre',
                 'entidad_id' => (int) $cierre['id'],
@@ -351,7 +351,7 @@ class NightAuditService
             . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7fb;padding:24px 0;"><tr><td align="center">'
             . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">'
             . '<tr><td style="padding:24px;font-size:15px;line-height:1.6;">'
-            . '<strong>' . $e($nombreHotel) . '</strong> · Night audit del <strong>' . $e($cierre['fecha']) . '</strong>'
+            . '<strong>' . $e($nombreHotel) . '</strong> · Cierre del d&iacute;a <strong>' . $e($cierre['fecha']) . '</strong>'
             . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #EDEFF3;border-bottom:1px solid #EDEFF3;font-size:14px;">'
             . $filaResumen('Llegadas del dia', $cierre['llegadas'])
             . $filaResumen('Salidas del dia', $cierre['salidas'])

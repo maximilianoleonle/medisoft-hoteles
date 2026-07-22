@@ -38,8 +38,8 @@ $naPendientes = static function ($c) {
 </style>
 
 <div class="na">
-    <h1>Night audit</h1>
-    <p class="sub">El cierre nocturno de cada día: no-shows, checkouts vencidos y cortes abiertos. Solo detecta y avisa — corregir sigue siendo decisión tuya.</p>
+    <h1>Cierre del día</h1>
+    <p class="sub">La revisión nocturna de cada día (night audit): no-shows, checkouts vencidos y cortes abiertos. Solo detecta y avisa — corregir sigue siendo decisión tuya.</p>
 
     <?php if ($mensaje = get_mensaje()): ?>
         <?php $tipo = $mensaje['tipo'] ?? 'info'; ?>

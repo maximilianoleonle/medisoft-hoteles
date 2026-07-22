@@ -78,15 +78,16 @@ $vtbExtras = [
     'roles'          => 'Roles y permisos',
     'lavanderia'     => 'Lavandería',
     'lealtad'        => 'Huésped frecuente',
-    'forecast'       => 'Forecast',
-    'night-audit'    => 'Night Audit',
-    'auditoria'      => 'Bitácora',
+    'forecast'       => 'Pronóstico de ocupación',
+    'night-audit'    => 'Cierre del día',
+    'auditoria'      => 'Historial de actividad',
     'correccion'     => 'Corrección',
     'operacion'      => 'Operación',
     'offline'        => 'Offline',
     'navegacion'     => 'Navegación',
-    'ia'             => 'IA ejecutiva',
-    'reputacion'     => 'Reputación',
+    'ia'             => 'Asistente IA',
+    'copiloto'       => 'Uso del asistente',
+    'reputacion'     => 'Opiniones y encuestas',
 ];
 
 $vtbHotel = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Medisoft Hoteles';

@@ -399,7 +399,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
                         <h2 class="exec-panel-title">Operacion hotelera</h2>
                         <p class="exec-panel-subtitle">Habitaciones, agenda y reservaciones proximas.</p>
                     </div>
-                    <a class="exec-btn" href="<?= url('operacion/diaria') ?>">Operacion diaria</a>
+                    <a class="exec-btn" href="<?= url('operacion/diaria') ?>">El hotel hoy</a>
                 </div>
                 <div class="exec-panel-body">
                     <div class="exec-stat-grid">

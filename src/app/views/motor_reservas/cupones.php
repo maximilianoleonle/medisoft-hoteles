@@ -42,7 +42,7 @@ $cpVigencia = static function ($c) {
 </style>
 
 <div class="cup">
-    <a href="<?= url('motor-reservas') ?>" style="font-size:.82rem;color:#6B7486;text-decoration:none;">&larr; Motor de reservas</a>
+    <a href="<?= url('motor-reservas') ?>" style="font-size:.82rem;color:#6B7486;text-decoration:none;">&larr; Reservas en l&iacute;nea</a>
     <h1>Cupones y promociones</h1>
     <p class="sub">Códigos de descuento para tu página de reservas en línea. El descuento se aplica al total de la estancia y al anticipo.</p>
 

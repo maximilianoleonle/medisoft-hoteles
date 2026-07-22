@@ -520,8 +520,8 @@ $totalCheckouts = count($filas);
                     <i class="fa-solid fa-star"></i>
                 </div>
                 <div>
-                    <p class="rep-kicker">Encuestas post-estancia</p>
-                    <h1 class="rep-title">Reputacion y encuestas</h1>
+                    <p class="rep-kicker">Reputaci&oacute;n del hotel</p>
+                    <h1 class="rep-title">Opiniones y encuestas</h1>
                     <p class="rep-subtitle">Manda la encuesta a tus checkouts recientes; las buenas calificaciones van a Google y las bajas te llegan a ti primero.</p>
                 </div>
             </div>

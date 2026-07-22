@@ -27,7 +27,7 @@ class ReputacionController extends Controller {
         $servicio = new ReputacionService();
 
         View::renderTemplate('reputacion/index', [
-            'title' => 'Reputacion - ' . current_hotel_display_name(),
+            'title' => 'Opiniones y encuestas - ' . current_hotel_display_name(),
             'kpis' => $servicio->kpis($hotelId),
             'filas' => $servicio->tablero($hotelId),
             'slugHotel' => (string) (function_exists('current_hotel_slug') ? current_hotel_slug() : ''),

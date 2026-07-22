@@ -31,7 +31,7 @@ class MensajesController extends Controller {
         $servicio = new CanalWhatsAppService();
 
         View::renderTemplate('mensajes/index', [
-            'title' => 'Mensajes - ' . current_hotel_display_name(),
+            'title' => 'Mensajes a huéspedes - ' . current_hotel_display_name(),
             'pendientes' => $servicio->pendientesDeHoy($hotelId),
             'historial' => $servicio->historial($hotelId, 60),
             'resumen' => $servicio->resumenHoy($hotelId),
@@ -121,7 +121,7 @@ class MensajesController extends Controller {
         }
 
         View::renderTemplate('mensajes/configuracion', [
-            'title' => 'Mensajes · Configuración - ' . current_hotel_display_name(),
+            'title' => 'Mensajes a huéspedes · Configuración - ' . current_hotel_display_name(),
             'config' => $config,
             'plantillasSugeridas' => CanalWhatsAppService::plantillasSugeridas(),
             'reputacionActiva' => function_exists('hotel_has_module') ? (bool) hotel_has_module('reputacion', $hotelId) : false,

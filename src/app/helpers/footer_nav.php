@@ -27,7 +27,7 @@ if (!function_exists('hotel_footer_nav_catalog')) {
         // 'modules_any' vacío = disponible siempre que haya contexto de hotel.
         return [
             'dashboard' => [
-                'label' => 'Dashboard',
+                'label' => 'Inicio',
                 'short' => 'Inicio',
                 'icon' => 'fa-compass',
                 'path' => 'dashboard',
@@ -35,8 +35,8 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'descripcion' => 'Resumen general del hotel.',
             ],
             'operacion_diaria' => [
-                'label' => 'Operación diaria',
-                'short' => 'Operación',
+                'label' => 'El hotel hoy',
+                'short' => 'Hoy',
                 'icon' => 'fa-clipboard-check',
                 'path' => 'operacion/diaria',
                 'modules_any' => ['dashboard'],
@@ -139,7 +139,7 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'descripcion' => 'Indicadores e informes del hotel.',
             ],
             'mensajes' => [
-                'label' => 'Mensajes',
+                'label' => 'Mensajes a huéspedes',
                 'short' => 'Mensajes',
                 'icon' => 'fa-comment-dots',
                 'path' => 'mensajes',

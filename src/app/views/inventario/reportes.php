@@ -5,7 +5,7 @@
     <div class="container-fluid px-4">
         <h1 class="mt-4">Reportes de Inventario</h1>
         <ol class="breadcrumb mb-4">
-            <li class="breadcrumb-item"><a href="<?= url('/dashboard') ?>">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="<?= url('/dashboard') ?>">Inicio</a></li>
             <li class="breadcrumb-item"><a href="<?= url('/inventarios') ?>">Inventario</a></li>
             <li class="breadcrumb-item active">Reportes</li>
         </ol>

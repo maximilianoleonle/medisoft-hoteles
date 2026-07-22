@@ -32,7 +32,7 @@ class DashboardController extends Controller {
     }
 
     private function dashboardTitle() {
-        return 'Dashboard - ' . $this->dashboardNombreVisual();
+        return 'Inicio - ' . $this->dashboardNombreVisual();
     }
 
     private function dashboardNombreVisual() {

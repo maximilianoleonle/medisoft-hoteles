@@ -422,8 +422,8 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <!-- CSS PWA (offline banner, toasts, install btn) -->
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/pwa.css') : asset('css/pwa.css') ?>">
     
-    <!-- Solo en el dashboard -->
-    <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
+    <!-- Solo en el dashboard (titulo "Inicio - ..."; se conserva "Dashboard" por compatibilidad) -->
+    <?php if (isset($title) && (strpos($title, 'Dashboard') !== false || strpos($title, 'Inicio - ') === 0)): ?>
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/dashboard.css') : asset('css/dashboard.css') ?>">
     <?php endif; ?>
     

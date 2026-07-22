@@ -279,7 +279,7 @@ if (
 
 if (
     $viewCode !== ''
-    && strpos($viewCode, 'Tablero operativo diario') !== false
+    && strpos($viewCode, 'El hotel hoy') !== false
     && strpos($viewCode, 'KPIs financieros estimados') !== false
     && strpos($viewCode, "url('cuentas-por-cobrar')") !== false
     && strpos($viewCode, 'method="POST"') === false

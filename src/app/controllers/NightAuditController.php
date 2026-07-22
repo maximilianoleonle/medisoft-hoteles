@@ -30,7 +30,7 @@ class NightAuditController extends Controller {
         $ultimo = $historial[0] ?? null;
 
         View::renderTemplate('night_audit/index', [
-            'title' => 'Night audit - ' . current_hotel_display_name(),
+            'title' => 'Cierre del día - ' . current_hotel_display_name(),
             'historial' => $historial,
             'ultimo' => $ultimo,
             'hallazgosUltimo' => $ultimo ? (json_decode((string) ($ultimo['hallazgos_json'] ?? ''), true) ?: []) : [],

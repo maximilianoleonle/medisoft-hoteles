@@ -181,7 +181,7 @@ class CopilotoController extends Controller {
         $servicio = new CopilotoService();
 
         View::renderTemplate('copiloto/valor', [
-            'title' => 'Copiloto - ' . current_hotel_display_name(),
+            'title' => 'Uso del asistente - ' . current_hotel_display_name(),
             'uso' => $servicio->resumenUso($hotelId, 30),
             'nombreAsistente' => CopilotoService::nombreAsistente($hotelId),
             'iaDisponible' => $servicio->iaDisponible($hotelId),

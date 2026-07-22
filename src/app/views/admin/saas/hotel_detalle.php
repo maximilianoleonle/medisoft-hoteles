@@ -995,7 +995,7 @@ if (empty($planActual['id'])) {
             $fila('Moneda', trim(($hotel['moneda_codigo'] ?? '') . ' ' . ($hotel['moneda_simbolo'] ?? '')));
             $fila('Plan comercial', $copyVisible($planActual['nombre'] ?? 'Sin plan'));
             $fila('Login del hotel', $hotelLoginUrl ?: 'Disponible cuando el hotel esté activo');
-            $fila('Motor de reservas (link publico)', url('h/' . ($hotel['slug'] ?? '') . '/reservar'));
+            $fila('Reservas en linea (link publico)', url('h/' . ($hotel['slug'] ?? '') . '/reservar'));
             $fila('Creado', $hotel['created_at'] ?? null);
             $fila('Actualizado', $hotel['updated_at'] ?? null);
             ?>

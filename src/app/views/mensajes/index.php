@@ -417,7 +417,7 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
                 </div>
                 <div>
                     <p class="msj-kicker">Canal WhatsApp</p>
-                    <h1 class="msj-title">Mensajes</h1>
+                    <h1 class="msj-title">Mensajes a hu&eacute;spedes</h1>
                     <p class="msj-subtitle">Lo que toca mandar hoy, ya redactado: confirma reservas nuevas, recuerda las llegadas de mañana y agradece a quien se fue con tu encuesta.</p>
                 </div>
             </div>

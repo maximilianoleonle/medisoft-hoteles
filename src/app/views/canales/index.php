@@ -451,8 +451,8 @@ foreach ($feeds as $feed) {
                     <i class="fa-solid fa-calendar-days"></i>
                 </div>
                 <div>
-                    <p class="cnl-kicker">Canales conectados</p>
-                    <h1 class="cnl-title ms-glass-title">Canales iCal</h1>
+                    <p class="cnl-kicker">Canales iCal</p>
+                    <h1 class="cnl-title ms-glass-title">Airbnb y Booking</h1>
                     <p class="cnl-subtitle">Sincroniza tu calendario con Airbnb y Booking para no vender dos veces la misma habitaci&oacute;n.</p>
                 </div>
             </div>

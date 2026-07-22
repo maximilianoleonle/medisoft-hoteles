@@ -184,7 +184,7 @@ class TarifasController extends Controller {
         $incrementos = $this->conResultadoCopiloto($incrementos);
 
         View::renderTemplate('configuracion/tarifas/index', [
-            'title' => 'Gestión de Tarifas Dinámicas',
+            'title' => 'Precios y temporadas',
             'incrementos' => $incrementos,
             'estadisticas' => $estadisticas
         ]);

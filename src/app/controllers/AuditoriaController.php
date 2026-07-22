@@ -93,7 +93,7 @@ class AuditoriaController extends Controller {
         }
 
         View::renderTemplate('auditoria/index', [
-            'title' => 'Bitacora - ' . current_hotel_display_name(),
+            'title' => 'Historial de actividad - ' . current_hotel_display_name(),
             'eventos' => $eventos,
             'usuarios' => $usuarios,
             'modulos' => $modulos,

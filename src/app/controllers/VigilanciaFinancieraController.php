@@ -75,7 +75,7 @@ class VigilanciaFinancieraController extends Controller {
         }
 
         View::renderTemplate('ia/vigilancia_financiera', [
-            'title' => 'El Guardián - ' . current_hotel_display_name(),
+            'title' => 'Guardián financiero - ' . current_hotel_display_name(),
             'resultado' => $resultado,
             'totales' => $totales,
             'patrones' => $patrones,

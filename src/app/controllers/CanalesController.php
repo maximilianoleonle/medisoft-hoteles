@@ -41,7 +41,7 @@ class CanalesController extends Controller {
         $slug = (string) ($hotel['slug'] ?? '');
 
         View::renderTemplate('canales/index', [
-            'title' => 'Canales iCal - ' . current_hotel_display_name(),
+            'title' => 'Airbnb y Booking - ' . current_hotel_display_name(),
             'habitaciones' => $habitaciones,
             'feeds' => $servicio->feedsDelHotel($hotelId),
             'token' => $token,
