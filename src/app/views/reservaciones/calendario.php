@@ -963,7 +963,10 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ESCRITORIO · vista Mes + toggle Mes/Habitaciones
+   ESCRITORIO · vista Mes
+   El toggle Mes/Habitaciones está desactivado: la vista Habitaciones
+   nunca se muestra porque nada agrega ya la clase .show-hab. Los estilos
+   se conservan para poder reactivarla sin rehacerlos.
    ══════════════════════════════════════════════════════════════ */
 .hcal-calcol { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .hcal-calcol .hcal-tableview { display: none; }
@@ -1467,14 +1470,9 @@ tr:hover .hcal-room-td             { background: var(--green-soft); }
                 </button>
             </div>
 
-            <div class="hcal-viewtoggle" role="tablist" aria-label="Tipo de vista">
-                <button type="button" class="hcal-vt-btn is-on" data-view="mes" role="tab" aria-selected="true">
-                    <i class="fas fa-calendar"></i> Mes
-                </button>
-                <button type="button" class="hcal-vt-btn" data-view="hab" role="tab" aria-selected="false">
-                    <i class="fas fa-table-cells-large"></i> Habitaciones
-                </button>
-            </div>
+            <?php /* Toggle Mes/Habitaciones desactivado: la vista Habitaciones
+                     aún no se muestra. Para reactivarlo hay que restaurar este
+                     bloque .hcal-viewtoggle y la lógica de setView() al final. */ ?>
 
             <div class="hcal-actions">
                 <a href="<?= url('reservaciones') ?>" class="hcal-btn">
@@ -2095,31 +2093,15 @@ window.hcalDays = <?= json_encode($hcalDaysData, JSON_UNESCAPED_UNICODE) ?>;
     });
 })();
 
-// ── Escritorio: toggle Mes / Habitaciones + expandir "+N más" ─────
+// ── Escritorio: expandir "+N más" ─────────────────────────────────
+// El toggle Mes/Habitaciones está desactivado (la vista Habitaciones aún no
+// se muestra). Se limpia 'hcalView' para que a quien la tuviera seleccionada
+// no le quede el estado guardado apuntando a una vista que ya no se ofrece.
 (function () {
     var col = document.getElementById('hcalCalCol');
     if (!col) return;
 
-    var KEY  = 'hcalView';
-    var btns = document.querySelectorAll('.hcal-vt-btn');
-
-    function setView(v) {
-        col.classList.toggle('show-hab', v === 'hab');
-        btns.forEach(function (b) {
-            var on = b.dataset.view === v;
-            b.classList.toggle('is-on', on);
-            b.setAttribute('aria-selected', on ? 'true' : 'false');
-        });
-        try { localStorage.setItem(KEY, v); } catch (e) {}
-    }
-
-    btns.forEach(function (b) {
-        b.addEventListener('click', function () { setView(b.dataset.view); });
-    });
-
-    var saved = null;
-    try { saved = localStorage.getItem(KEY); } catch (e) {}
-    if (saved === 'hab') setView('hab');
+    try { localStorage.removeItem('hcalView'); } catch (e) {}
 
     // "+N más" expande / colapsa las reservas ocultas de una celda
     col.addEventListener('click', function (e) {
