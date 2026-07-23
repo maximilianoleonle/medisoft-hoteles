@@ -201,12 +201,12 @@ class NominaCatalogoService {
         $base = [
             ['Sueldo base', 'percepcion', 'sueldo', 'manual', 10],
             ['Bono', 'percepcion', 'bono', 'manual', 20],
-            ['Comision', 'percepcion', 'comision', 'manual', 30],
+            ['Comisión', 'percepcion', 'comision', 'manual', 30],
             ['Horas extra', 'percepcion', 'horas_extra', 'por_cantidad', 40],
             ['Ajuste a favor', 'percepcion', 'ajuste', 'manual', 50],
             ['Descuento', 'deduccion', 'descuento', 'manual', 60],
             ['Anticipo', 'deduccion', 'anticipo', 'manual', 70],
-            ['Prestamo (abono)', 'deduccion', 'prestamo', 'manual', 80],
+            ['Préstamo (abono)', 'deduccion', 'prestamo', 'manual', 80],
             ['Ajuste en contra', 'deduccion', 'ajuste', 'manual', 90],
         ];
 

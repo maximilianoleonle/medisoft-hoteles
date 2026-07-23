@@ -293,14 +293,14 @@ $configOperationalReadOnly = [
         'featured' => false,
     ],
     [
-        'label' => 'Telefono',
+        'label' => 'Teléfono',
         'value' => $configHotelSetting('contacto.telefono', ''),
         'detail' => 'Contacto visible del hotel.',
         'icon' => 'fa-phone',
         'featured' => false,
     ],
     [
-        'label' => 'Direccion',
+        'label' => 'Dirección',
         'value' => $configHotelSetting('contacto.direccion', ''),
         'detail' => 'Domicilio operativo registrado.',
         'icon' => 'fa-map-marker-alt',
@@ -5713,7 +5713,7 @@ html[data-theme="dark"] .hc-page {
                                             <i class="fas fa-route"></i>
                                             Vista previa del reparto
                                         </h3>
-                                        <p>El porcentaje menor a 100 envia el remanente al dueno predeterminado.</p>
+                                        <p>El porcentaje menor a 100 envía el remanente al dueño predeterminado.</p>
                                     </div>
                                     <span class="hc-owner-flow-pill" data-owner-preview-default-key>
                                         <?= htmlspecialchars($configOwnerDefault !== '' ? $configOwnerDefault : 'default', ENT_QUOTES, 'UTF-8') ?>

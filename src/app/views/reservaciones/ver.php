@@ -4448,10 +4448,10 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                     </div>
                                 </div>
 
-                                <div class="rdv3-info-grid" aria-label="Contacto del huesped">
-                                    <div class="rdv3-info <?= $rdGuestPhone === '' ? 'is-empty' : '' ?>"><i class="fas fa-phone"></i><div><small>Telefono</small><b<?= $rdEditAttr('telefono', $rdGuestPhone, 'No registrado', 'tel') ?>><?= $rdSafe($rdGuestPhone, 'No registrado') ?></b></div></div>
+                                <div class="rdv3-info-grid" aria-label="Contacto del huésped">
+                                    <div class="rdv3-info <?= $rdGuestPhone === '' ? 'is-empty' : '' ?>"><i class="fas fa-phone"></i><div><small>Teléfono</small><b<?= $rdEditAttr('telefono', $rdGuestPhone, 'No registrado', 'tel') ?>><?= $rdSafe($rdGuestPhone, 'No registrado') ?></b></div></div>
                                     <div class="rdv3-info <?= $rdGuestEmail === '' ? 'is-empty' : '' ?>"><i class="far fa-envelope"></i><div><small>Email</small><b<?= $rdEditAttr('email', $rdGuestEmail, 'No registrado', 'email') ?>><?= $rdSafe($rdGuestEmail, 'No registrado') ?></b></div></div>
-                                    <div class="rdv3-info <?= $rdGuestId === '' ? 'is-empty' : '' ?>"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestId === '' ? 'is-empty' : '' ?>"><i class="far fa-address-card"></i><div><small>Identificación</small><b><?= $rdSafe($rdGuestId, 'No registrado') ?></b></div></div>
                                     <div class="rdv3-info <?= $rdGuestOrigin === '' ? 'is-empty' : '' ?>"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin, 'No registrado') ?></b></div></div>
                                 </div>
 

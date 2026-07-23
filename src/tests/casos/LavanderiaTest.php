@@ -212,7 +212,7 @@ $mov = $db->query(
 t_eq(1, count($mov), 'exactamente UN movimiento de caja LAV-#');
 t_eq('ingreso', (string) $mov[0]['tipo'], 'el cobro es ingreso');
 t_eq(256.5, (float) $mov[0]['monto'], 'monto del ingreso = total del pedido');
-t_eq('Lavanderia', (string) $mov[0]['categoria'], 'categoria lazy Lavanderia creada y ligada');
+t_eq('Lavandería', (string) $mov[0]['categoria'], 'categoria lazy Lavandería creada y ligada');
 
 $recobro = $refCobro->invoke($controller, $pedidoId, $hotelId, 'efectivo');
 t_ok(!empty($recobro['success']), 'segundo cobro responde amable (ya cobrado)');

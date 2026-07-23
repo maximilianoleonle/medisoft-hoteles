@@ -52,13 +52,13 @@ return [
             ],
         ],
         'huespedes' => [
-            'label' => 'Huespedes',
+            'label' => 'Huéspedes',
             'modulo' => 'huespedes',
             'permisos' => [
-                'huespedes.view'   => ['label' => 'Ver huespedes', 'tipo' => 'acceso'],
-                'huespedes.create' => ['label' => 'Crear huespedes', 'tipo' => 'accion'],
-                'huespedes.edit'   => ['label' => 'Editar huespedes', 'tipo' => 'accion'],
-                'huespedes.all'    => ['label' => 'Control total de huespedes', 'tipo' => 'wildcard'],
+                'huespedes.view'   => ['label' => 'Ver huéspedes', 'tipo' => 'acceso'],
+                'huespedes.create' => ['label' => 'Crear huéspedes', 'tipo' => 'accion'],
+                'huespedes.edit'   => ['label' => 'Editar huéspedes', 'tipo' => 'accion'],
+                'huespedes.all'    => ['label' => 'Control total de huéspedes', 'tipo' => 'wildcard'],
             ],
         ],
         'caja' => [
@@ -73,11 +73,11 @@ return [
             ],
         ],
         'facturacion' => [
-            'label' => 'Facturacion',
+            'label' => 'Facturación',
             'modulo' => 'facturacion',
             'permisos' => [
-                'facturacion.view' => ['label' => 'Ver facturacion', 'tipo' => 'acceso'],
-                'facturacion.all'  => ['label' => 'Control total de facturacion', 'tipo' => 'wildcard'],
+                'facturacion.view' => ['label' => 'Ver facturación', 'tipo' => 'acceso'],
+                'facturacion.all'  => ['label' => 'Control total de facturación', 'tipo' => 'wildcard'],
             ],
         ],
         'cuentas_por_cobrar' => [
@@ -140,13 +140,13 @@ return [
             ],
         ],
         'lavanderia' => [
-            'label' => 'Lavanderia',
+            'label' => 'Lavandería',
             'modulo' => 'lavanderia',
             'permisos' => [
-                'lavanderia.view'   => ['label' => 'Ver lavanderia', 'tipo' => 'acceso'],
-                'lavanderia.operar' => ['label' => 'Operar lavanderia (blancos, ciclos de lavado y pedidos)', 'tipo' => 'accion'],
-                'lavanderia.cobrar' => ['label' => 'Cobrar pedidos y registrar gastos de lavanderia en Caja', 'tipo' => 'accion'],
-                'lavanderia.all'    => ['label' => 'Control total de lavanderia', 'tipo' => 'wildcard'],
+                'lavanderia.view'   => ['label' => 'Ver lavandería', 'tipo' => 'acceso'],
+                'lavanderia.operar' => ['label' => 'Operar lavandería (blancos, ciclos de lavado y pedidos)', 'tipo' => 'accion'],
+                'lavanderia.cobrar' => ['label' => 'Cobrar pedidos y registrar gastos de lavandería en Caja', 'tipo' => 'accion'],
+                'lavanderia.all'    => ['label' => 'Control total de lavandería', 'tipo' => 'wildcard'],
             ],
         ],
         'camarista' => [
@@ -169,31 +169,31 @@ return [
             ],
         ],
         'personal' => [
-            'label' => 'Personal y nomina',
+            'label' => 'Personal y nómina',
             'modulo' => null,
             'permisos' => [
-                'personal.view'      => ['label' => 'Ver personal y pre-nomina', 'tipo' => 'acceso'],
-                'personal.gestionar' => ['label' => 'Gestionar personal (altas, conceptos, anticipos, prestamos, asistencia y pre-nomina)', 'tipo' => 'accion'],
-                'personal.pagar'     => ['label' => 'Pagar nomina por Caja y revertir pagos', 'tipo' => 'accion'],
+                'personal.view'      => ['label' => 'Ver personal y pre-nómina', 'tipo' => 'acceso'],
+                'personal.gestionar' => ['label' => 'Gestionar personal (altas, conceptos, anticipos, préstamos, asistencia y pre-nómina)', 'tipo' => 'accion'],
+                'personal.pagar'     => ['label' => 'Pagar nómina por Caja y revertir pagos', 'tipo' => 'accion'],
                 'personal.all'       => ['label' => 'Control total de personal', 'tipo' => 'wildcard'],
             ],
         ],
         'nomina' => [
-            'label' => 'Nomina avanzada',
+            'label' => 'Nómina avanzada',
             'modulo' => 'nomina_avanzada',
             'permisos' => [
-                'nomina.view'        => ['label' => 'Ver nomina', 'tipo' => 'acceso'],
-                'nomina.empleados'   => ['label' => 'Gestionar empleados en nomina', 'tipo' => 'accion'],
+                'nomina.view'        => ['label' => 'Ver nómina', 'tipo' => 'acceso'],
+                'nomina.empleados'   => ['label' => 'Gestionar empleados en nómina', 'tipo' => 'accion'],
                 'nomina.salarios'    => ['label' => 'Editar sueldos y esquemas de pago', 'tipo' => 'accion'],
                 'nomina.incidencias' => ['label' => 'Registrar incidencias', 'tipo' => 'accion'],
-                'nomina.calcular'    => ['label' => 'Calcular y previsualizar nomina', 'tipo' => 'accion'],
-                'nomina.cerrar'      => ['label' => 'Cerrar periodos de nomina', 'tipo' => 'accion'],
+                'nomina.calcular'    => ['label' => 'Calcular y previsualizar nómina', 'tipo' => 'accion'],
+                'nomina.cerrar'      => ['label' => 'Cerrar periodos de nómina', 'tipo' => 'accion'],
                 'nomina.aprobar'     => ['label' => 'Aprobar periodos cerrados', 'tipo' => 'accion'],
                 'nomina.reabrir'     => ['label' => 'Reabrir o recalcular periodos', 'tipo' => 'accion'],
-                'nomina.pagar'       => ['label' => 'Registrar pagos de nomina', 'tipo' => 'accion'],
-                'nomina.exportar'    => ['label' => 'Exportar reportes de nomina', 'tipo' => 'accion'],
-                'nomina.configurar'  => ['label' => 'Configurar la nomina del negocio', 'tipo' => 'accion'],
-                'nomina.all'         => ['label' => 'Control total de nomina', 'tipo' => 'wildcard'],
+                'nomina.pagar'       => ['label' => 'Registrar pagos de nómina', 'tipo' => 'accion'],
+                'nomina.exportar'    => ['label' => 'Exportar reportes de nómina', 'tipo' => 'accion'],
+                'nomina.configurar'  => ['label' => 'Configurar la nómina del negocio', 'tipo' => 'accion'],
+                'nomina.all'         => ['label' => 'Control total de nómina', 'tipo' => 'wildcard'],
             ],
         ],
         'tarifas' => [
@@ -222,11 +222,11 @@ return [
             ],
         ],
         'configuracion' => [
-            'label' => 'Configuracion',
+            'label' => 'Configuración',
             'modulo' => null,
             'permisos' => [
-                'configuracion.view' => ['label' => 'Ver configuracion', 'tipo' => 'acceso'],
-                'configuracion.edit' => ['label' => 'Editar configuracion', 'tipo' => 'accion'],
+                'configuracion.view' => ['label' => 'Ver configuración', 'tipo' => 'acceso'],
+                'configuracion.edit' => ['label' => 'Editar configuración', 'tipo' => 'accion'],
             ],
         ],
         'notificaciones' => [
@@ -237,20 +237,20 @@ return [
             ],
         ],
         'guardian' => [
-            'label' => 'Guardian financiero',
+            'label' => 'Guardián financiero',
             'modulo' => 'ia_ejecutiva',
             'permisos' => [
                 // Sensible: incluye patrones de comportamiento POR USUARIO.
                 // Solo direccion (dueno/gerencia); un operativo jamas debe ver
                 // su propio perfil ni el de un companero.
-                'guardian.view' => ['label' => 'Ver el Guardian financiero (patrones por usuario)', 'tipo' => 'acceso'],
+                'guardian.view' => ['label' => 'Ver el Guardián financiero (patrones por usuario)', 'tipo' => 'acceso'],
             ],
         ],
         'reputacion' => [
             'label' => 'Opiniones y encuestas',
             'modulo' => 'reputacion',
             'permisos' => [
-                'reputacion.view' => ['label' => 'Ver reputacion y encuestas', 'tipo' => 'acceso'],
+                'reputacion.view' => ['label' => 'Ver reputación y encuestas', 'tipo' => 'acceso'],
             ],
         ],
         'dueno' => [
@@ -265,19 +265,19 @@ return [
     'presets' => [
         'superadmin' => [
             'nombre'      => 'Superadministrador',
-            'descripcion' => 'Acceso total. Rol tecnico reservado.',
+            'descripcion' => 'Acceso total. Rol técnico reservado.',
             'es_sistema'  => 1,
             'permisos'    => ['*'],
         ],
         'propietario' => [
             'nombre'      => 'Propietario',
-            'descripcion' => 'Dueño del hotel. Acceso total, incluida la gestion de roles.',
+            'descripcion' => 'Dueño del hotel. Acceso total, incluida la gestión de roles.',
             'es_sistema'  => 1,
             'permisos'    => ['*'],
         ],
         'gerente' => [
             'nombre'      => 'Gerente',
-            'descripcion' => 'Direccion operativa y financiera del hotel.',
+            'descripcion' => 'Dirección operativa y financiera del hotel.',
             'es_sistema'  => 1,
             'permisos'    => [
                 'usuarios.view', 'usuarios.create', 'usuarios.edit', 'usuarios.delete',
@@ -296,7 +296,7 @@ return [
         ],
         'administrador' => [
             'nombre'      => 'Administrador',
-            'descripcion' => 'Administracion operativa del hotel.',
+            'descripcion' => 'Administración operativa del hotel.',
             'es_sistema'  => 1,
             'permisos'    => [
                 'usuarios.view', 'usuarios.create', 'usuarios.edit',
@@ -314,7 +314,7 @@ return [
         ],
         'recepcionista' => [
             'nombre'      => 'Recepcionista',
-            'descripcion' => 'Operacion de recepcion: check-in/out, huespedes y cobros.',
+            'descripcion' => 'Operación de recepción: check-in/out, huéspedes y cobros.',
             'es_sistema'  => 1,
             'permisos'    => [
                 'habitaciones.view', 'habitaciones.checkin', 'habitaciones.checkout', 'habitaciones.mantenimiento',
@@ -328,8 +328,8 @@ return [
             ],
         ],
         'dueno_remoto' => [
-            'nombre'      => 'Dueno (remoto)',
-            'descripcion' => 'Dueno que no opera el hotel: solo lectura del resumen del dia (Modo Dueno).',
+            'nombre'      => 'Dueño (remoto)',
+            'descripcion' => 'Dueño que no opera el hotel: solo lectura del resumen del día (Modo Dueño).',
             'es_sistema'  => 1,
             'permisos'    => [
                 'dueno.view',

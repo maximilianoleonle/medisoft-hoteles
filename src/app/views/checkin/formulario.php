@@ -133,9 +133,9 @@ $valor = static function ($campo) use ($datos, $link, $cdSafe) {
                     </div>
                 </div>
                 <div class="cd-field">
-                    <label for="cd-id">Identificacion oficial (INE/pasaporte) *</label>
+                    <label for="cd-id">Identificación oficial (INE/pasaporte) *</label>
                     <input type="file" id="cd-id" name="identificacion" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required>
-                    <span class="hint">Foto legible o PDF. Maximo 5 MB. Solo el hotel puede verla.</span>
+                    <span class="hint">Foto legible o PDF. Máximo 5 MB. Solo el hotel puede verla.</span>
                 </div>
                 <button type="submit" class="cd-btn">Completar mi registro</button>
             </form>

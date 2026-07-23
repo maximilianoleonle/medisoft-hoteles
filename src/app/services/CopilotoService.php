@@ -814,7 +814,7 @@ class CopilotoService
                 $c = $this->caja($hotelId);
                 if (!$c['abierto']) {
                     return [
-                        'texto' => 'No hay ningun corte de caja abierto en este momento.',
+                        'texto' => 'No hay ningún corte de caja abierto en este momento.',
                         'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
                         'acciones' => [['label' => 'Ir a Caja', 'url' => 'caja']],
                     ];
@@ -891,7 +891,7 @@ class CopilotoService
                 $mw = (new CanalWhatsAppService())->contarPendientesHoy($hotelId);
                 if ($mw === 0) {
                     return [
-                        'texto' => 'La cola de WhatsApp esta al dia: no hay mensajes pendientes de enviar hoy.',
+                        'texto' => 'La cola de WhatsApp está al día: no hay mensajes pendientes de enviar hoy.',
                         'enlace' => ['url' => 'mensajes', 'texto' => 'Abrir Mensajes'],
                     ];
                 }
@@ -969,7 +969,7 @@ class CopilotoService
                 $mp = $this->mantenimientosProximos($hotelId);
                 if (!$mp['hay']) {
                     return [
-                        'texto' => 'No tienes preventivos por vencer ni incidencias de mantenimiento abiertas. Todo al dia.',
+                        'texto' => 'No tienes preventivos por vencer ni incidencias de mantenimiento abiertas. Todo al día.',
                         'enlace' => ['url' => 'mantenimientos/activos', 'texto' => 'Ver activos'],
                     ];
                 }
@@ -1069,7 +1069,7 @@ class CopilotoService
             case 'ganancias_dia':
                 $dref = $this->resolverDiaReferido($norm);
                 if ($dref === null) {
-                    return ['texto' => 'No identifique de que dia me hablas. Prueba con "como nos fue el jueves" o "cuanto vendi ayer".', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                    return ['texto' => 'No identifiqué de qué día me hablas. Prueba con "cómo nos fue el jueves" o "cuánto vendí ayer".', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
                 }
                 $gd = $this->gananciasEntre($hotelId, $dref['fecha'], date('Y-m-d', strtotime($dref['fecha'] . ' +1 day')));
                 if (!$gd['hay']) {
@@ -1083,7 +1083,7 @@ class CopilotoService
             case 'dia_top':
                 $dt = $this->diasTopMes($hotelId);
                 if (!$dt['hay']) {
-                    return ['texto' => 'Aun no tengo movimientos de caja este mes para sacar tu mejor dia.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
+                    return ['texto' => 'Aún no tengo movimientos de caja este mes para sacar tu mejor día.', 'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja']];
                 }
                 $txtDia = "Tu **mejor dia** de este mes fue el {$dt['mejorFecha']} con **\${$dt['mejorNeto']}** de ganancia neta.";
                 if ($dt['mejorFecha'] !== $dt['peorFecha']) {
@@ -1200,7 +1200,7 @@ class CopilotoService
             case 'limpiar_hoy':
                 $lh = $this->limpiezaHoy($hotelId);
                 if ($lh['limpieza'] === 0 && $lh['salidas'] === 0) {
-                    return ['texto' => 'No tienes habitaciones en limpieza ni salidas pendientes hoy. Todo al dia. ✔', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
+                    return ['texto' => 'No tienes habitaciones en limpieza ni salidas pendientes hoy. Todo al día. ✔', 'enlace' => ['url' => 'habitaciones', 'texto' => 'Ver habitaciones']];
                 }
                 $partesLh = [];
                 if ($lh['limpieza'] > 0) {
@@ -1274,7 +1274,7 @@ class CopilotoService
             case 'nomina_periodo':
                 $np = $this->nominaPeriodo($hotelId);
                 if ($np === null) {
-                    return ['texto' => 'Aun no tienes ningun periodo de nomina cerrado.', 'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nomina']];
+                    return ['texto' => 'Aún no tienes ningún periodo de nómina cerrado.', 'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nómina']];
                 }
                 $rango = date('d/m', strtotime((string) $np['fecha_inicio'])) . '-' . date('d/m', strtotime((string) $np['fecha_fin']));
                 $neto = number_format((float) $np['neto_sugerido_total'], 2);
@@ -1501,7 +1501,7 @@ class CopilotoService
             return [
                 'texto' => $texto,
                 'enlace' => null,
-                'acciones' => [['label' => 'Ver la reservacion', 'url' => 'reservaciones/ver/' . (int) $r['id']]],
+                'acciones' => [['label' => 'Ver la reservación', 'url' => 'reservaciones/ver/' . (int) $r['id']]],
             ];
         }
 
@@ -1643,7 +1643,7 @@ class CopilotoService
         }
 
         if (!$r) {
-            return ['texto' => 'No encuentro esa reservacion en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
+            return ['texto' => 'No encuentro esa reservación en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
         }
 
         $huesped = trim((string) $r['nombre_completo']);
@@ -1702,7 +1702,7 @@ class CopilotoService
         }
 
         if (!$hab) {
-            return ['texto' => 'No encuentro esa habitacion en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
+            return ['texto' => 'No encuentro esa habitación en tu hotel. Recarga la pantalla e intenta de nuevo.', 'enlace' => null];
         }
 
         $estados = ['disponible' => 'disponible', 'ocupada' => 'ocupada', 'limpieza' => 'en limpieza', 'mantenimiento' => 'en mantenimiento'];
@@ -2160,7 +2160,7 @@ class CopilotoService
                 'habitacion_id' => (int) $hab['id'],
                 'habitacion' => (string) $hab['numero'],
                 'fecha' => date('Y-m-d'),
-                'confirm_titulo' => '¿Liberar la habitacion?',
+                'confirm_titulo' => '¿Liberar la habitación?',
                 'confirm_msg' => "La habitacion {$hab['numero']} sale de mantenimiento y queda disponible.",
                 'confirm_ok' => 'Liberar',
             ],
@@ -2230,13 +2230,13 @@ class CopilotoService
             $nombres = $this->categoriasGasto($hotelId);
             if (empty($nombres)) {
                 return ['intent' => 'accion:gasto_sin_catalogo', 'respuesta' => [
-                    'texto' => 'Este hotel aun no tiene categorias de gasto en Caja. Crea al menos una en **Caja → Categorias** y vuelve a decirmelo.',
+                    'texto' => 'Este hotel aún no tiene categorías de gasto en Caja. Crea al menos una en **Caja → Categorías** y vuelve a decírmelo.',
                     'enlace' => ['url' => 'caja', 'texto' => 'Ir a Caja'],
                 ]];
             }
             $lista = array_column(array_slice($nombres, 0, 6), 'nombre');
             return ['intent' => 'accion:gasto_sin_categoria', 'respuesta' => [
-                'texto' => '¿En que categoria lo anoto? Tengo: **' . implode('**, **', $lista) . '**. Repitemelo asi: "registra un gasto de '
+                'texto' => '¿En qué categoría lo anoto? Tengo: **' . implode('**, **', $lista) . '**. Repítemelo así: "registra un gasto de '
                     . number_format($parse['monto'], 2) . ' de ' . $parse['concepto'] . ' en ' . $lista[0] . '".',
                 'enlace' => null,
             ]];
@@ -2444,7 +2444,7 @@ class CopilotoService
             $conDeuda = $this->proveedoresConDeuda($hotelId);
             if (empty($conDeuda)) {
                 return ['intent' => 'accion:pago_sin_deuda', 'respuesta' => [
-                    'texto' => 'No tienes cuentas por pagar pendientes con ningun proveedor. ✔',
+                    'texto' => 'No tienes cuentas por pagar pendientes con ningún proveedor. ✔',
                     'enlace' => ['url' => 'cuentas-por-pagar', 'texto' => 'Ver cuentas por pagar'],
                 ]];
             }
@@ -2885,7 +2885,7 @@ class CopilotoService
                     'texto' => "La habitacion **{$hab['numero']}** NO esta libre {$this->rangoNochesTexto($f['fe'], $f['fs'])}: tiene una reserva o mantenimiento que se cruza. "
                         . 'Te dejo el formulario con las fechas puestas para que elijas otra habitacion ahi (te muestra solo las disponibles).',
                     'enlace' => null,
-                    'acciones' => [['label' => 'Crear la reservacion', 'url' => $this->urlCrearReserva($f)]],
+                    'acciones' => [['label' => 'Crear la reservación', 'url' => $this->urlCrearReserva($f)]],
                 ]];
             }
             $f['hab_id'] = (int) $hab['id'];
@@ -3082,7 +3082,7 @@ class CopilotoService
     {
         if (preg_match('/\b(cancela|cancelar|cancelalo|olvidalo|dejalo|ya no|olvida)\b/', $norm)) {
             return ['intent' => 'flujo:reserva_cancel', 'respuesta' => [
-                'texto' => 'Listo, cancele la reservacion que traiamos a medias. Aqui sigo para lo que necesites.',
+                'texto' => 'Listo, cancelé la reservación que traíamos a medias. Aquí sigo para lo que necesites.',
                 'enlace' => null,
                 'flujo_fin' => true,
             ]];
@@ -3273,7 +3273,7 @@ class CopilotoService
                     'telefono' => $f['tel'],
                     'huesped_nuevo' => 1,
                     'fecha' => date('Y-m-d'),
-                    'confirm_titulo' => '¿Registrar huesped y armar la reservacion?',
+                    'confirm_titulo' => '¿Registrar huésped y armar la reservación?',
                     'confirm_msg' => "Se registra a {$nombreBonito} ({$telTexto}) como huesped y se abre el formulario: " . strip_tags(str_replace('**', '', implode(', ', array_slice($piezas, 0, -1)))) . '.',
                     'confirm_ok' => 'Registrar y armar',
                 ],
@@ -3281,10 +3281,10 @@ class CopilotoService
         }
 
         return ['intent' => 'accion:reserva_link', 'respuesta' => [
-            'texto' => 'Te dejo la reservacion armada: ' . implode(', ', $piezas) . '. '
+            'texto' => 'Te dejo la reservación armada: ' . implode(', ', $piezas) . '. '
                 . 'Abre el formulario, revisa el precio que calcula el sistema y guardala ahi; el cobro o anticipo se hace en esa pantalla, como siempre.',
             'enlace' => null,
-            'acciones' => [['label' => 'Crear la reservacion', 'url' => $this->urlCrearReserva($f)]],
+            'acciones' => [['label' => 'Crear la reservación', 'url' => $this->urlCrearReserva($f)]],
         ]];
     }
 
@@ -3971,7 +3971,7 @@ class CopilotoService
             }
         }
         if ($categoria === null) {
-            return ['success' => false, 'texto' => 'Esa categoria de gasto no existe en este hotel. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+            return ['success' => false, 'texto' => 'Esa categoría de gasto no existe en este hotel. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
         }
 
         require_once __DIR__ . '/../models/Caja.php';
@@ -4126,12 +4126,12 @@ class CopilotoService
         $fe = (string) ($params['fecha_entrada'] ?? '');
         $fs = (string) ($params['fecha_salida'] ?? '');
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fe) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fs) || $fs <= $fe) {
-            return ['success' => false, 'texto' => 'Las fechas de la reservacion no son validas. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+            return ['success' => false, 'texto' => 'Las fechas de la reservación no son válidas. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
         }
 
         $nombre = trim((string) ($params['huesped_nombre'] ?? ''));
         if (mb_strlen($nombre) < 3 || mb_strlen($nombre) > 60) {
-            return ['success' => false, 'texto' => 'Falta el nombre del huesped. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
+            return ['success' => false, 'texto' => 'Falta el nombre del huésped. Intenta de nuevo desde el chat.', 'fuente' => 'reglas'];
         }
         $telefono = mb_substr((string) preg_replace('/[^\d]/', '', (string) ($params['telefono'] ?? '')), 0, 20);
 
@@ -4151,7 +4151,7 @@ class CopilotoService
             } catch (Throwable $e) {
                 error_log('Copiloto: error al registrar huesped: ' . $e->getMessage());
                 $this->registrar($hotelId, $usuarioId, "[accion reserva huesped]", 'reglas', 'accion:reserva_fin_error', 0, 0);
-                return ['success' => false, 'texto' => 'No se pudo registrar al huesped. Intenta de nuevo.', 'fuente' => 'reglas'];
+                return ['success' => false, 'texto' => 'No se pudo registrar al huésped. Intenta de nuevo.', 'fuente' => 'reglas'];
             }
         }
 
@@ -4182,7 +4182,7 @@ class CopilotoService
             'texto' => $quien . ' Te dejo el formulario de la reservacion con todo puesto; revisa el precio y guardala ahi.' . $notaHab,
             'fuente' => 'reglas',
             'enlace' => null,
-            'acciones' => [['label' => 'Crear la reservacion', 'url' => $url]],
+            'acciones' => [['label' => 'Crear la reservación', 'url' => $url]],
         ];
     }
 
@@ -5171,132 +5171,132 @@ class CopilotoService
              'enlace' => ['url' => 'caja#cop-ancla-corte', 'texto' => 'Ir a hacer el corte']],
             ['clave' => 'registrar_ingreso', 'modulo' => null, 'nombre' => 'Caja',
              'palabras' => ['registrar un ingreso', 'ingreso que no es de una reserva', 'ingreso que no es de reserva', 'ingreso manual', 'meter dinero a caja', 'como registro un ingreso', 'agregar un ingreso', 'registrar dinero', 'ingreso extra', 'entrada de dinero'],
-             'texto' => 'Para registrar un ingreso que no viene de una reservacion (una venta suelta, una propina, etc.): entra a **Caja** y usa el boton **Registrar Ingreso**. Eliges la categoria, el monto y el concepto. Para una salida de dinero es el boton Registrar Gasto.',
+             'texto' => 'Para registrar un ingreso que no viene de una reservación (una venta suelta, una propina, etc.): entra a **Caja** y usa el botón **Registrar Ingreso**. Eliges la categoría, el monto y el concepto. Para una salida de dinero es el botón Registrar Gasto.',
              'enlace' => ['url' => 'caja#cop-ancla-ingreso', 'texto' => 'Registrar un ingreso']],
             ['clave' => 'registrar_gasto', 'modulo' => null, 'nombre' => 'Caja',
              'palabras' => ['registrar un gasto', 'gasto manual', 'como registro un gasto', 'sacar dinero de caja', 'pagar algo de caja', 'registrar una salida', 'salida de dinero'],
-             'texto' => 'Para registrar un gasto o salida de dinero: entra a **Caja** y usa el boton **Registrar Gasto**. Eliges la categoria, el monto y el concepto.',
+             'texto' => 'Para registrar un gasto o salida de dinero: entra a **Caja** y usa el botón **Registrar Gasto**. Eliges la categoría, el monto y el concepto.',
              'enlace' => ['url' => 'caja#cop-ancla-gasto', 'texto' => 'Registrar un gasto']],
             ['clave' => 'reservacion', 'modulo' => null, 'nombre' => 'Reservaciones',
              'palabras' => ['como hago una reservacion', 'como creo una reserva', 'nueva reservacion', 'registrar reserva', 'como agrego una reserva'],
-             'texto' => 'Para una reservacion nueva: entra a **Reservaciones** y usa el boton **Nueva reservacion**; elige fechas y habitacion, captura al huesped y guarda. Desde ahi puedes hacer el check-in cuando llegue.',
-             'enlace' => ['url' => 'reservaciones#cop-ancla-nueva-reserva', 'texto' => 'Crear reservacion']],
+             'texto' => 'Para una reservación nueva: entra a **Reservaciones** y usa el botón **Nueva reservación**; elige fechas y habitación, captura al huésped y guarda. Desde ahí puedes hacer el check-in cuando llegue.',
+             'enlace' => ['url' => 'reservaciones#cop-ancla-nueva-reserva', 'texto' => 'Crear reservación']],
             ['clave' => 'checkin', 'modulo' => null, 'nombre' => 'Reservaciones',
              'palabras' => ['como hago un check-in', 'como hago un checkin', 'como registro la llegada', 'como doy entrada', 'como hago la entrada'],
-             'texto' => 'Para el check-in: entra a **Reservaciones**, abre la reservacion del huesped que llega y usa la opcion de check-in. Ahi confirmas habitacion y datos, y se marca la habitacion como ocupada.',
+             'texto' => 'Para el check-in: entra a **Reservaciones**, abre la reservación del huésped que llega y usa la opción de check-in. Ahí confirmas habitación y datos, y se marca la habitación como ocupada.',
              'enlace' => ['url' => 'reservaciones', 'texto' => 'Ir a Reservaciones']],
             ['clave' => 'checkout', 'modulo' => null, 'nombre' => 'Reservaciones',
              'palabras' => ['como hago un check-out', 'como hago un checkout', 'como registro la salida', 'como doy salida', 'como cierro una estancia'],
-             'texto' => 'Para el check-out: entra a **Reservaciones**, abre la reservacion activa y usa la opcion de check-out. Se libera la habitacion y se cierra la cuenta del huesped.',
+             'texto' => 'Para el check-out: entra a **Reservaciones**, abre la reservación activa y usa la opción de check-out. Se libera la habitación y se cierra la cuenta del huésped.',
              'enlace' => ['url' => 'reservaciones', 'texto' => 'Ir a Reservaciones']],
             ['clave' => 'cancelar_reserva', 'modulo' => null, 'nombre' => 'Reservaciones',
              'palabras' => ['como cancelo una reserva', 'cancelar una reservacion', 'como anulo una reserva', 'como cancelo una reservacion'],
-             'texto' => 'Para cancelar una reservacion: entra a **Reservaciones**, abre la reservacion y usa la opcion de cancelar. Si habia anticipo, el sistema te guia con la devolucion en Caja.',
+             'texto' => 'Para cancelar una reservación: entra a **Reservaciones**, abre la reservación y usa la opción de cancelar. Si había anticipo, el sistema te guía con la devolución en Caja.',
              'enlace' => ['url' => 'reservaciones', 'texto' => 'Ir a Reservaciones']],
             ['clave' => 'reportes', 'modulo' => 'reportes', 'nombre' => 'Reportes',
              'palabras' => ['ver mis reportes', 'ver mis ganancias', 'cuanto vendi', 'cuanto he ganado', 'reporte del mes', 'mis ingresos del mes', 'como veo mis reportes', 'quiero ver mis ganancias'],
-             'texto' => 'Tus reportes de ingresos, ventas y ocupacion estan en **Reportes**. Puedes filtrar por periodo y descargarlos.',
+             'texto' => 'Tus reportes de ingresos, ventas y ocupación están en **Reportes**. Puedes filtrar por periodo y descargarlos.',
              'enlace' => ['url' => 'reportes', 'texto' => 'Ir a Reportes']],
             ['clave' => 'cupon', 'modulo' => 'promociones', 'nombre' => 'Cupones y promociones',
              'palabras' => ['como hago un cupon', 'como creo un cupon', 'crear cupon', 'codigo de descuento', 'como hago un descuento'],
-             'texto' => 'Los cupones viven en **Motor de reservas > Cupones**. Crea un codigo, elige % o monto fijo, su vigencia y limite de usos. El huesped lo captura al reservar en linea.',
+             'texto' => 'Los cupones viven en **Motor de reservas > Cupones**. Crea un código, elige % o monto fijo, su vigencia y límite de usos. El huésped lo captura al reservar en línea.',
              'enlace' => ['url' => 'motor-reservas/cupones', 'texto' => 'Ir a Cupones']],
             ['clave' => 'extras', 'modulo' => 'upsells', 'nombre' => 'Extras y upselling',
              'palabras' => ['como vendo extras', 'como agrego extras', 'desayuno extra', 'late checkout'],
-             'texto' => 'Los extras (desayuno, late checkout) se configuran en **Motor de reservas > Extras**. Defines nombre, precio y como se cobra; el huesped los agrega al reservar.',
+             'texto' => 'Los extras (desayuno, late checkout) se configuran en **Motor de reservas > Extras**. Defines nombre, precio y cómo se cobra; el huésped los agrega al reservar.',
              'enlace' => ['url' => 'motor-reservas/extras', 'texto' => 'Ir a Extras']],
             ['clave' => 'encuesta', 'modulo' => 'reputacion', 'nombre' => 'Opiniones y encuestas',
              'palabras' => ['como mando una encuesta', 'encuesta de satisfaccion', 'como pido una resena', 'como pido calificacion', 'reputacion'],
-             'texto' => 'En **Opiniones y encuestas** puedes generar y enviar la encuesta post-estancia a tus huespedes con checkout. Las buenas calificaciones se invitan a Google; las bajas te llegan como alerta.',
+             'texto' => 'En **Opiniones y encuestas** puedes generar y enviar la encuesta post-estancia a tus huéspedes con checkout. Las buenas calificaciones se invitan a Google; las bajas te llegan como alerta.',
              'enlace' => ['url' => 'reputacion', 'texto' => 'Ir a Opiniones']],
-            ['clave' => 'forecast', 'modulo' => 'forecast', 'nombre' => 'Pronostico de ocupacion',
+            ['clave' => 'forecast', 'modulo' => 'forecast', 'nombre' => 'Pronóstico de ocupación',
              'palabras' => ['como veo el forecast', 'proyeccion de ocupacion', 'como veo mi ocupacion futura', 'pronostico de ocupacion'],
-             'texto' => 'En **Pronostico de ocupacion** ves que tan lleno estara el hotel a 30, 60 y 90 dias, el ritmo de reservas y la comparativa con el anio pasado.',
-             'enlace' => ['url' => 'forecast', 'texto' => 'Ir a Pronostico']],
-            ['clave' => 'lealtad', 'modulo' => 'lealtad', 'nombre' => 'Huesped frecuente',
+             'texto' => 'En **Pronóstico de ocupación** ves qué tan lleno estará el hotel a 30, 60 y 90 días, el ritmo de reservas y la comparativa con el año pasado.',
+             'enlace' => ['url' => 'forecast', 'texto' => 'Ir a Pronóstico']],
+            ['clave' => 'lealtad', 'modulo' => 'lealtad', 'nombre' => 'Huésped frecuente',
              'palabras' => ['huesped frecuente', 'cliente frecuente', 'como premio a mis clientes', 'programa de lealtad'],
-             'texto' => 'En **Huesped frecuente** ves a tus huespedes que regresan y les generas un cupon personal de agradecimiento para su siguiente reserva en linea.',
-             'enlace' => ['url' => 'lealtad', 'texto' => 'Ir a Huesped frecuente']],
-            ['clave' => 'huesped_nuevo', 'modulo' => null, 'nombre' => 'Huespedes',
+             'texto' => 'En **Huésped frecuente** ves a tus huéspedes que regresan y les generas un cupón personal de agradecimiento para su siguiente reserva en línea.',
+             'enlace' => ['url' => 'lealtad', 'texto' => 'Ir a Huésped frecuente']],
+            ['clave' => 'huesped_nuevo', 'modulo' => null, 'nombre' => 'Huéspedes',
              'palabras' => ['como registro un huesped', 'como agrego un huesped', 'como busco un huesped', 'datos de un huesped', 'alta de huesped'],
-             'texto' => 'En **Huespedes** puedes buscar, registrar y editar los datos de tus huespedes (contacto, procedencia, historial). Al crear una reservacion tambien puedes capturar al huesped ahi mismo.',
-             'enlace' => ['url' => 'huespedes', 'texto' => 'Ir a Huespedes']],
+             'texto' => 'En **Huéspedes** puedes buscar, registrar y editar los datos de tus huéspedes (contacto, procedencia, historial). Al crear una reservación también puedes capturar al huésped ahí mismo.',
+             'enlace' => ['url' => 'huespedes', 'texto' => 'Ir a Huéspedes']],
             ['clave' => 'habitacion_estado', 'modulo' => null, 'nombre' => 'Habitaciones',
              'palabras' => ['como pongo una habitacion en mantenimiento', 'como cambio el estado de una habitacion', 'marcar habitacion sucia', 'habitacion fuera de servicio', 'como agrego una habitacion', 'crear habitacion'],
              'texto' => 'En **Habitaciones** ves cada cuarto con su estado (disponible, ocupada, limpieza, mantenimiento) y desde su tarjeta puedes cambiarlo o editar sus datos y fotos.',
              'enlace' => ['url' => 'habitaciones', 'texto' => 'Ir a Habitaciones']],
             ['clave' => 'inventario', 'modulo' => 'inventario', 'nombre' => 'Inventario',
              'palabras' => ['como veo mi inventario', 'cuanto stock tengo', 'como registro un movimiento de inventario', 'existencias', 'productos del inventario'],
-             'texto' => 'En **Inventario** ves tus productos, existencias y movimientos. Ahi registras entradas, salidas y ajustes, y el sistema te alerta cuando algo baja del minimo.',
+             'texto' => 'En **Inventario** ves tus productos, existencias y movimientos. Ahí registras entradas, salidas y ajustes, y el sistema te alerta cuando algo baja del mínimo.',
              'enlace' => ['url' => 'inventario', 'texto' => 'Ir a Inventario']],
             ['clave' => 'tareas', 'modulo' => 'tareas', 'nombre' => 'Tareas operativas',
              'palabras' => ['como creo una tarea', 'asignar una tarea', 'tareas del personal', 'pendientes del equipo'],
              'texto' => 'En **Tareas** creas pendientes operativos y los asignas a tu personal (limpieza, mantenimiento, encargos). Cada quien ve su agenda y va marcando avance.',
              'enlace' => ['url' => 'tareas', 'texto' => 'Ir a Tareas']],
-            ['clave' => 'personal', 'modulo' => 'personal', 'nombre' => 'Personal y Nomina',
+            ['clave' => 'personal', 'modulo' => 'personal', 'nombre' => 'Personal y Nómina',
              'palabras' => ['como registro a un trabajador', 'alta de empleado', 'asistencia del personal', 'como pago la nomina', 'anticipos del personal', 'prestamos al personal'],
-             'texto' => 'En **Personal** llevas a tus trabajadores: datos, asistencia, anticipos y prestamos, y el pago de nomina ligado a Caja con recibos.',
+             'texto' => 'En **Personal** llevas a tus trabajadores: datos, asistencia, anticipos y préstamos, y el pago de nómina ligado a Caja con recibos.',
              'enlace' => ['url' => 'trabajadores', 'texto' => 'Ir a Personal']],
             ['clave' => 'compras', 'modulo' => 'compras', 'nombre' => 'Compras y proveedores',
              'palabras' => ['como registro una compra', 'alta de proveedor', 'pagar a un proveedor', 'cuentas por pagar'],
              'texto' => 'En **Compras** registras proveedores y compras, y llevas las cuentas por pagar; los pagos a proveedor salen de Caja con su trazabilidad.',
              'enlace' => ['url' => 'compras', 'texto' => 'Ir a Compras']],
-            ['clave' => 'facturacion', 'modulo' => 'facturacion', 'nombre' => 'Facturacion',
+            ['clave' => 'facturacion', 'modulo' => 'facturacion', 'nombre' => 'Facturación',
              'palabras' => ['como facturo', 'solicitud de factura', 'el huesped quiere factura', 'datos fiscales'],
-             'texto' => 'En **Facturacion** llevas las solicitudes de factura de tus huespedes: capturas datos fiscales, marcas en proceso y completas cuando emites la factura.',
-             'enlace' => ['url' => 'facturacion', 'texto' => 'Ir a Facturacion']],
-            ['clave' => 'cxc', 'modulo' => 'cuentas_cobrar', 'nombre' => 'Credito a clientes (CxC)',
+             'texto' => 'En **Facturación** llevas las solicitudes de factura de tus huéspedes: capturas datos fiscales, marcas en proceso y completas cuando emites la factura.',
+             'enlace' => ['url' => 'facturacion', 'texto' => 'Ir a Facturación']],
+            ['clave' => 'cxc', 'modulo' => 'cuentas_cobrar', 'nombre' => 'Crédito a clientes (CxC)',
              'palabras' => ['cuentas por cobrar', 'credito a un cliente', 'quien me debe', 'cobrar una deuda'],
-             'texto' => 'En **Cuentas por cobrar** ves los creditos a clientes y registras sus cobros a Caja, con reversion controlada si algo se capturo mal.',
+             'texto' => 'En **Cuentas por cobrar** ves los créditos a clientes y registras sus cobros a Caja, con reversión controlada si algo se capturó mal.',
              'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ir a CxC']],
             ['clave' => 'documentos', 'modulo' => 'documentos', 'nombre' => 'Centro documental',
              'palabras' => ['donde subo documentos', 'guardar un documento', 'archivos del hotel', 'centro documental'],
-             'texto' => 'En **Documentos** guardas los archivos del hotel (contratos, identificaciones, evidencias) ligados a huespedes, reservaciones o personal, con descarga segura.',
+             'texto' => 'En **Documentos** guardas los archivos del hotel (contratos, identificaciones, evidencias) ligados a huéspedes, reservaciones o personal, con descarga segura.',
              'enlace' => ['url' => 'documentos', 'texto' => 'Ir a Documentos']],
             ['clave' => 'tarifas', 'modulo' => 'tarifas_dinamicas', 'nombre' => 'Precios y temporadas',
              'palabras' => ['como cambio los precios', 'precios por temporada', 'tarifa de fin de semana', 'subir tarifas', 'tarifas dinamicas'],
-             'texto' => 'En **Precios y temporadas** defines incrementos por temporada, fecha o dia de la semana; el motor y las reservaciones los aplican en automatico.',
+             'texto' => 'En **Precios y temporadas** defines incrementos por temporada, fecha o día de la semana; el motor y las reservaciones los aplican en automático.',
              'enlace' => ['url' => 'configuracion/tarifas', 'texto' => 'Ir a Precios y temporadas']],
-            ['clave' => 'branding', 'modulo' => null, 'nombre' => 'Configuracion',
+            ['clave' => 'branding', 'modulo' => null, 'nombre' => 'Configuración',
              'palabras' => ['como cambio el logo', 'colores del hotel', 'branding', 'datos del hotel', 'como configuro mi hotel'],
-             'texto' => 'En **Configuracion** ajustas los datos del hotel, su logo y colores (que tambien visten tu pagina publica de reservas) y las opciones de cada modulo.',
-             'enlace' => ['url' => 'configuracion', 'texto' => 'Ir a Configuracion']],
+             'texto' => 'En **Configuración** ajustas los datos del hotel, su logo y colores (que también visten tu página pública de reservas) y las opciones de cada módulo.',
+             'enlace' => ['url' => 'configuracion', 'texto' => 'Ir a Configuración']],
             ['clave' => 'usuarios', 'modulo' => null, 'nombre' => 'Usuarios',
              'palabras' => ['como creo un usuario', 'alta de usuario', 'dar acceso a alguien', 'cambiar contrasena de un usuario', 'permisos de un usuario'],
-             'texto' => 'En **Usuarios** das de alta a quienes usan el sistema y les asignas su rol (recepcion, gerente, etc.). Los permisos finos se afinan en Roles si tienes ese bloque.',
+             'texto' => 'En **Usuarios** das de alta a quienes usan el sistema y les asignas su rol (recepción, gerente, etc.). Los permisos finos se afinan en Roles si tienes ese bloque.',
              'enlace' => ['url' => 'usuarios', 'texto' => 'Ir a Usuarios']],
             ['clave' => 'checkin_digital', 'modulo' => 'checkin_digital', 'nombre' => 'Check-in digital',
              'palabras' => ['pre-registro', 'pre registro', 'link de check-in', 'checkin digital', 'check-in digital', 'que el huesped llene sus datos'],
-             'texto' => 'Con **Check-in digital** le mandas al huesped un link antes de llegar: el llena sus datos y sube su identificacion, y tu haces el check-in en un minuto.',
+             'texto' => 'Con **Check-in digital** le mandas al huésped un link antes de llegar: él llena sus datos y sube su identificación, y tú haces el check-in en un minuto.',
              'enlace' => ['url' => 'checkin-digital', 'texto' => 'Ir a Check-in digital']],
             ['clave' => 'camarista', 'modulo' => 'camarista', 'nombre' => 'App de camarista',
              'palabras' => ['app de limpieza', 'camarista', 'que las camaristas vean', 'marcar habitacion limpia'],
-             'texto' => 'La **App de camarista** es un tablero movil para tu personal de limpieza: ven las salidas del dia y marcan cada habitacion como limpia con un toque.',
+             'texto' => 'La **App de camarista** es un tablero móvil para tu personal de limpieza: ven las salidas del día y marcan cada habitación como limpia con un toque.',
              'enlace' => ['url' => 'camarista', 'texto' => 'Ir a Camarista']],
             ['clave' => 'canales', 'modulo' => 'canales_ical', 'nombre' => 'Airbnb y Booking',
              'palabras' => ['conectar airbnb', 'conectar booking', 'sincronizar calendario', 'canales ical', 'evitar sobreventa'],
-             'texto' => 'En **Airbnb y Booking** sincronizas tus calendarios via iCal para evitar dobles ventas: lo que se ocupa alla se bloquea aca y viceversa.',
+             'texto' => 'En **Airbnb y Booking** sincronizas tus calendarios vía iCal para evitar dobles ventas: lo que se ocupa allá se bloquea acá y viceversa.',
              'enlace' => ['url' => 'canales', 'texto' => 'Ir a Airbnb y Booking']],
             ['clave' => 'whatsapp', 'modulo' => 'whatsapp', 'nombre' => 'Conectar WhatsApp',
              'palabras' => ['conectar whatsapp', 'mensajes automaticos', 'whatsapp del hotel'],
-             'texto' => 'En **Conectar WhatsApp** conectas el numero del hotel para mandar confirmaciones automaticas al huesped y avisos al dueno cuando entra una reserva online.',
+             'texto' => 'En **Conectar WhatsApp** conectas el número del hotel para mandar confirmaciones automáticas al huésped y avisos al dueño cuando entra una reserva online.',
              'enlace' => ['url' => 'whatsapp', 'texto' => 'Ir a Conectar WhatsApp']],
-            ['clave' => 'motor_activar', 'modulo' => 'motor_reservas', 'nombre' => 'Reservas en linea',
+            ['clave' => 'motor_activar', 'modulo' => 'motor_reservas', 'nombre' => 'Reservas en línea',
              'palabras' => ['como activo las reservas en linea', 'pagina de reservas', 'reservar en linea', 'motor de reservas', 'link para que reserven'],
-             'texto' => 'En **Reservas en linea** configuras tu pagina publica: enciendes las reservas en linea, defines el anticipo, conectas tu pasarela y copias el link para compartir.',
-             'enlace' => ['url' => 'motor-reservas', 'texto' => 'Ir a Reservas en linea']],
+             'texto' => 'En **Reservas en línea** configuras tu página pública: enciendes las reservas en línea, defines el anticipo, conectas tu pasarela y copias el link para compartir.',
+             'enlace' => ['url' => 'motor-reservas', 'texto' => 'Ir a Reservas en línea']],
             ['clave' => 'tablero', 'modulo' => 'tablero_ejecutivo', 'nombre' => 'El hotel hoy',
              'palabras' => ['operacion diaria', 'tablero ejecutivo', 'conciliacion financiera', 'reporte gerencial', 'el hotel hoy'],
-             'texto' => 'En **El hotel hoy** esta el tablero de direccion: el pulso del dia, la conciliacion financiera y el reporte gerencial.',
+             'texto' => 'En **El hotel hoy** está el tablero de dirección: el pulso del día, la conciliación financiera y el reporte gerencial.',
              'enlace' => ['url' => 'operacion/diaria', 'texto' => 'Ir a El hotel hoy']],
             ['clave' => 'notificaciones', 'modulo' => 'notificaciones', 'nombre' => 'Notificaciones',
              'palabras' => ['ver mis notificaciones', 'alertas del sistema', 'donde veo las alertas'],
-             'texto' => 'En **Notificaciones** se juntan las alertas del sistema (calificaciones bajas, cierres con pendientes, inventario bajo). La campanita del menu te marca las nuevas.',
+             'texto' => 'En **Notificaciones** se juntan las alertas del sistema (calificaciones bajas, cierres con pendientes, inventario bajo). La campanita del menú te marca las nuevas.',
              'enlace' => ['url' => 'notificaciones', 'texto' => 'Ir a Notificaciones']],
-            ['clave' => 'nomina', 'modulo' => 'nomina_avanzada', 'nombre' => 'Nomina avanzada',
+            ['clave' => 'nomina', 'modulo' => 'nomina_avanzada', 'nombre' => 'Nómina avanzada',
              'palabras' => ['como corro la nomina', 'calcular la nomina', 'nomina legal', 'nomina avanzada'],
-             'texto' => 'En **Nomina** corres el calculo del periodo con las reglas configuradas, revisas la prenomina y cierras con recibos y trazabilidad a Caja.',
-             'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nomina']],
+             'texto' => 'En **Nómina** corres el cálculo del periodo con las reglas configuradas, revisas la prenómina y cierras con recibos y trazabilidad a Caja.',
+             'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nómina']],
         ];
 
         foreach ($faqs as $faq) {
@@ -5309,7 +5309,7 @@ class CopilotoService
                 if ($faq['modulo'] !== null && !$this->tieneModulo($faq['modulo'], $hotelId)) {
                     return [
                         'intent' => 'faq_inactivo:' . $faq['clave'],
-                        'texto' => 'El modulo de **' . $faq['nombre'] . '** no esta activo en tu hotel, por eso no te aparece en el menu. Si te interesa activarlo, contacta a Medisoft.',
+                        'texto' => 'El módulo de **' . $faq['nombre'] . '** no está activo en tu hotel, por eso no te aparece en el menú. Si te interesa activarlo, contacta a Medisoft.',
                         'enlace' => null,
                     ];
                 }

@@ -78,7 +78,7 @@ class AuthController extends Controller {
             : null;
 
         View::render('auth/login', [
-            'title' => 'Iniciar Sesion - ' . hotel_branding_public_name($branding, $hotel['nombre_comercial']),
+            'title' => 'Iniciar Sesión - ' . hotel_branding_public_name($branding, $hotel['nombre_comercial']),
             'hotel' => $hotel,
             'login_action' => url('h/' . $hotel['slug'] . '/login/authenticate'),
             'branding' => $branding

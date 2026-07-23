@@ -85,7 +85,7 @@ class TrabajadorReciboLaboralPdfService
 
         $pdf->SetFont('helvetica', '', 9);
         $this->dato($pdf, 'Nombre', $trabajador['nombre_completo'] ?? null, 12, 54, 92);
-        $this->dato($pdf, 'Identificacion', $trabajador['identificacion'] ?? null, 108, 54, 46);
+        $this->dato($pdf, 'Identificación', $trabajador['identificacion'] ?? null, 108, 54, 46);
         $this->dato($pdf, 'Rol', $trabajador['rol_laboral'] ?? null, 158, 54, 46);
         $this->dato($pdf, 'Periodo', $this->fecha($periodo['fecha_inicio'] ?? null) . ' - ' . $this->fecha($periodo['fecha_fin'] ?? null), 12, 70, 70);
         $this->dato($pdf, 'Pagos Caja', !empty($periodo['incluir_pagos_caja']) ? 'Incluidos' : 'Excluidos', 86, 70, 46);

@@ -255,8 +255,8 @@ class HuespedController extends Controller {
         $documentoModel = new Documento();
         $documentoDatos = [
             'documento_tipo_id' => 0,
-            'titulo' => 'Identificacion de huesped - ' . trim($nombreHuesped),
-            'descripcion' => 'Documento capturado desde el registro del huesped.',
+            'titulo' => 'Identificación de huésped - ' . trim($nombreHuesped),
+            'descripcion' => 'Documento capturado desde el registro del huésped.',
             'etiquetas' => 'huesped,identificacion,ine',
             'entidad_tipo' => 'huesped',
             'entidad_id' => $huespedId,
@@ -309,7 +309,7 @@ class HuespedController extends Controller {
         $sufijo = $nombreHuesped !== '' ? ' - ' . $nombreHuesped : '';
 
         if ($tipo === 'identificacion') {
-            return 'Identificacion de huesped' . $sufijo;
+            return 'Identificación de huésped' . $sufijo;
         }
 
         if ($tipo === 'comprobante') {
@@ -801,7 +801,7 @@ public function actualizarAction() {
 
         $mensaje = 'Huésped actualizado exitosamente';
         if (!empty($documentoIdentificacionId)) {
-            $mensaje .= '. Identificacion vinculada al expediente.';
+            $mensaje .= '. Identificación vinculada al expediente.';
         }
 
         clear_old_input();

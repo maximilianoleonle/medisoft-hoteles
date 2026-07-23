@@ -1080,7 +1080,7 @@ class NominaController extends Controller {
         $salida = fopen('php://output', 'w');
         fwrite($salida, "\xEF\xBB\xBF");
         fputcsv($salida, ['Periodo', $this->csvValor($periodo['etiqueta']), $periodo['fecha_inicio'], $periodo['fecha_fin'], 'estado', $periodo['estado'], 'motor', $periodo['motor'] ?? 'v1']);
-        fputcsv($salida, ['Empleado', 'Identificacion', 'Puesto', 'Concepto', 'Tipo', 'Clasificacion', 'Origen', 'Cantidad', 'Base', 'Monto', 'Referencia']);
+        fputcsv($salida, ['Empleado', 'Identificación', 'Puesto', 'Concepto', 'Tipo', 'Clasificación', 'Origen', 'Cantidad', 'Base', 'Monto', 'Referencia']);
         foreach ($filas as $f) {
             fputcsv($salida, [
                 $this->csvValor($f['trabajador_nombre']),

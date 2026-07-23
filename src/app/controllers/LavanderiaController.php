@@ -732,12 +732,12 @@ class LavanderiaController extends Controller {
         }
 
         $descripcion = $tipo === 'gasto'
-            ? 'Costos de lavanderia (servicio externo, insumos del lavado)'
-            : 'Cobros de lavanderia de huespedes';
+            ? 'Costos de lavandería (servicio externo, insumos del lavado)'
+            : 'Cobros de lavandería de huéspedes';
 
         $db->query(
             "INSERT INTO categorias_movimientos (hotel_id, nombre, tipo, descripcion, icono, color, activa, orden)
-             VALUES (?, 'Lavanderia', ?, ?, 'fas fa-shirt', '#2F77E0', 1, 0)",
+             VALUES (?, 'Lavandería', ?, ?, 'fas fa-shirt', '#2F77E0', 1, 0)",
             [$hotelId, $tipo, $descripcion]
         );
 
