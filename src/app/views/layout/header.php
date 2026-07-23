@@ -1755,5 +1755,43 @@ html[data-theme="dark"] .psk-fieldset{ border-color:#38352C; }
          del contenido de cada vista; excluye Dashboard, Reportes y vistas con
          barra propia (ver partials/view_topbar.php) ── -->
     <?php include APP_PATH . '/views/partials/view_topbar.php'; ?>
+
+    <!-- ── Flechas de regreso: retroceso REAL de historial ──
+         back_url() (PHP) apunta la flecha a la página del Referer, pero navegar
+         "hacia adelante" a ese destino crea OTRA entrada de historial: entre dos
+         pantallas las flechas terminan en ping-pong A↔B y nunca salen del par.
+         Arreglo: si el destino de la flecha ES la página de la que venimos,
+         retrocedemos de verdad (history.back()), igual que la flecha del
+         navegador — restaura scroll/estado y los clics sucesivos siguen
+         retrocediendo. Si PHP eligió el fallback (venías de un formulario, de la
+         misma página, de fuera de la app) o no hay historial (pestaña nueva),
+         la navegación normal al href se respeta con todas sus protecciones.
+         Cubre TODAS las flechas del sistema: .ms-vtb-back (barra global),
+         .ms-back (partial móvil) y .ms-back-legacy (botones de cada vista). -->
+    <script>
+    (function() {
+        var normalizar = function(u) {
+            try {
+                var url = new URL(u, window.location.href);
+                var path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
+                return url.origin + path + url.search;
+            } catch (e) { return null; }
+        };
+        document.addEventListener('click', function(ev) {
+            if (ev.defaultPrevented || ev.button !== 0) { return; }
+            if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) { return; } // pestaña/ventana nueva: nativo
+            var flecha = ev.target && ev.target.closest
+                ? ev.target.closest('a.ms-vtb-back, a.ms-back, a.ms-back-legacy')
+                : null;
+            if (!flecha || !flecha.getAttribute('href') || flecha.target === '_blank') { return; }
+            if (window.history.length <= 1 || !document.referrer) { return; } // sin historial: href normal
+            var destino = normalizar(flecha.href);
+            if (destino && destino === normalizar(document.referrer)) {
+                ev.preventDefault();
+                window.history.back();
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
