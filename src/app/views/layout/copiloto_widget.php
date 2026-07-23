@@ -328,7 +328,9 @@ html[data-theme="dark"] .cop-logo-mark { background: rgba(0,0,0,.18); }
 .cop-close { margin-left: auto; width: 30px; height: 30px; display: grid; place-items: center; background: transparent; border: 0; color: #fff; font-size: 1.25rem; line-height: 1; cursor: pointer; border-radius: 50%; transition: background .18s ease, transform .22s cubic-bezier(.34,1.4,.5,1); }
 .cop-close:hover { background: rgba(255,255,255,.16); transform: rotate(90deg); }
 .cop-close:active { transform: rotate(90deg) scale(.9); }
-.cop-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: transparent; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent) transparent; }
+/* overscroll-behavior: contain corta el "encadenado": al llegar al final del
+   chat y seguir arrastrando, la pagina de atras ya no se lleva el gesto. */
+.cop-body { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: transparent; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent) transparent; }
 .cop-body::-webkit-scrollbar { width: 8px; }
 .cop-body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--brand-primary, #1B2746) 20%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 .cop-body::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--brand-primary, #1B2746) 34%, transparent); background-clip: padding-box; }
@@ -566,6 +568,10 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
     #cop-panel.abierto { transform: translate(-50%, -50%) scale(1); }
     body.cop-abierto #cop-fab { display: none; }
 
+    /* El fondo congelado con el copiloto abierto NO se define aqui: lo pone
+       modal-sidebar-fix.js (body.ms-fondo-bloqueado), el mismo candado que
+       usan los modales del sistema. Ver bloquearFondo() en el script de abajo. */
+
     /* Tipografía cómoda de dedo, sin gritar. El input va a 16px exactos
        para que iOS no haga zoom al enfocar. */
     .cop-msg { font-size: .92rem; max-width: 90%; }
@@ -583,7 +589,22 @@ html[data-theme="dark"] .cop-sk-line { background: linear-gradient(100deg, rgba(
 @media (max-width: 1024px) {
     body.ms-modal-abierto #cop-fab,
     body.ms-modal-abierto #cop-backdrop,
-    body.ms-modal-abierto #cop-panel {
+    body.ms-modal-abierto #cop-panel,
+    /* ── Y con el menú lateral abierto ──
+       Mismo criterio que la barra inferior (ver footer-nav.php): el cajón
+       ocupa 86vw por encima de todo, así que el widget estorba sin poder
+       usarse. Al cerrar el menú reaparece solo, igual que con los modales.
+       Van los dos detectores a propósito: la clase la pone syncOverlayState()
+       de footer-nav.php y el :has() no depende de JS; basta cualquiera. */
+    body.hbn-menu-abierto #cop-fab,
+    body.hbn-menu-abierto #cop-backdrop,
+    body.hbn-menu-abierto #cop-panel,
+    body:has(#sidebar.active) #cop-fab,
+    body:has(#sidebar.active) #cop-backdrop,
+    body:has(#sidebar.active) #cop-panel,
+    body:has(#sidebar.open) #cop-fab,
+    body:has(#sidebar.open) #cop-backdrop,
+    body:has(#sidebar.open) #cop-panel {
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -652,6 +673,47 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .cop-foot button:hover {
 }
 html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     background: linear-gradient(165deg, #232325 0%, #1A1A1C 100%) !important;
+}
+
+/* ═══ Copiloto quieto en móvil (2026-07-22) ═══
+   En aparatos tactiles el widget NO se ensancha solo, no late, no destella
+   y no le barre el brillo: se queda como boton redondo estatico y solo
+   reacciona al presionarlo (abre el panel, con su animacion de apertura).
+   Todo ese "descubrimiento" (ensancharse a 218px + anillos + sheen) se
+   queda SOLO en escritorio, que es donde hay puntero y hover de verdad.
+
+   El detector es "aparato sin mouse", no un ancho: un @media de pixeles
+   se equivocaria en ambos sentidos (laptop con ventana angosta perderia
+   la animacion; tablet grande la conservaria).
+
+   Ojo con el hover pegado: en tactil el :hover se queda aplicado despues
+   de tocar, por eso hay que neutralizarlo explicitamente o el widget se
+   quedaba agrandado tras abrirlo. Revertir: borrar este bloque. */
+@media (hover: none), (pointer: coarse) {
+    #cop-fab,
+    #cop-fab:hover,
+    #cop-fab:focus-visible,
+    #cop-fab.cop-fab-discover {
+        width: 64px;
+        max-width: 64px;
+        box-shadow: 0 1px 2px rgba(20,28,45,.14), 0 12px 30px -10px rgba(20,28,45,.5), 0 0 0 6px color-mix(in srgb, var(--brand-accent, #BD9441) 6%, transparent);
+        transition: transform .12s ease;
+    }
+    /* Sin nudge al tocar; solo el hundido de "si te presione". */
+    #cop-fab:hover,
+    body.page-reservaciones #cop-fab:hover { transform: none; }
+    #cop-fab:active,
+    body.page-reservaciones #cop-fab:active { transform: scale(.96); }
+    /* Anillo ambiente, destello de descubrimiento y brillo del logo. */
+    #cop-fab::before,
+    #cop-fab::after,
+    #cop-fab.cop-fab-attention::after,
+    .cop-fab-mark::after { animation: none; }
+    /* La etiqueta ya nunca se revela; fuera del DOM visual para que su
+       area invisible no quede tocable al lado del boton. */
+    #cop-fab .cop-fab-label { display: none; }
+    /* El logo tampoco crece con el hover pegado. */
+    #cop-fab:hover .cop-fab-mark .cop-logo-img { transform: scale(2.05); }
 }
 </style>
 
@@ -796,9 +858,36 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
     }
 
     var backdrop = document.getElementById('cop-backdrop');
+
+    // Congelar el fondo SOLO donde el copiloto se ve como modal a pantalla
+    // completa (<=640px, el mismo corte con el que aparece #cop-backdrop). En
+    // tablet y escritorio sigue siendo widget de esquina y la pagina de atras
+    // tiene que poder desplazarse como siempre.
+    var mqModal = window.matchMedia('(max-width: 640px)');
+    function bloquearFondo(v) {
+        // El candado lo lleva modal-sidebar-fix.js (footer, todas las
+        // paginas), compartido con los modales del sistema: si cada uno
+        // guardara SU scroll, abrir un modal encima del copiloto leeria 0
+        // -- el body ya esta fijo -- y al cerrar la pagina saltaria al inicio.
+        // Si ese script no cargo, no hay candado: se degrada al comportamiento
+        // de antes, nunca a una pagina congelada.
+        if (window.msBloquearFondo) {
+            window.msBloquearFondo('copiloto', v && mqModal.matches);
+        }
+    }
+    // Si gira el telefono o cambia el ancho con el panel abierto, el bloqueo
+    // sigue al breakpoint; si no, el body se quedaba fijo ya en escritorio.
+    var alCambiarModal = function () { bloquearFondo(panel.classList.contains('abierto')); };
+    if (mqModal.addEventListener) {
+        mqModal.addEventListener('change', alCambiarModal);
+    } else if (mqModal.addListener) {
+        mqModal.addListener(alCambiarModal);
+    }
+
     function abrir(v) {
         panel.classList.toggle('abierto', v);
         document.body.classList.toggle('cop-abierto', v);
+        bloquearFondo(v);
         if (v) {
             marcarDescubierto();
             setTimeout(function () { input.focus(); }, 50);
@@ -1242,8 +1331,11 @@ html[data-theme="dark"][data-tema="cupertino"] .cop-head {
             cargando[i].innerHTML = '<span class="cop-reveal">No pude responder ahora mismo. Intenta de nuevo.</span>';
         }
         // El body y el panel deben contar la misma historia (un cop-abierto
-        // huérfano en móvil esconde el FAB con display:none).
-        document.body.classList.toggle('cop-abierto', panel.classList.contains('abierto'));
+        // huérfano en móvil esconde el FAB con display:none, y un candado de
+        // fondo huérfano deja la página entera sin poder desplazarse).
+        var sigueAbierto = panel.classList.contains('abierto');
+        document.body.classList.toggle('cop-abierto', sigueAbierto);
+        bloquearFondo(sigueAbierto);
     }
     window.addEventListener('pagehide', soltarCandados);
     window.addEventListener('pageshow', function (e) { if (e.persisted) { soltarCandados(); } });

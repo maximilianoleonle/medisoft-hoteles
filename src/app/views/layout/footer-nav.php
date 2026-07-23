@@ -92,7 +92,7 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         left: 14px;
         right: 14px;
         bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-        z-index: 980; /* debajo del overlay del sidebar (999) y del header móvil */
+        z-index: 980; /* debajo del menú lateral (cajón 10020 / fondo 10010) y del header móvil */
         height: 64px;
         padding: 7px;
         transform: translateY(0);
@@ -203,6 +203,19 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
     /* Con un modal u overlay abierto, la barra se retira para no interferir */
     .hotel-bottom-nav[hidden],
     body.hbn-overlay-open .hotel-bottom-nav,
+    /* ── Y con el menú lateral abierto ──
+     * El cajón mide 86vw y va a z-index 10020, así que tapaba la barra: se
+     * veía asomada por debajo pero los toques se los quedaba él (desde caja,
+     * abrir el menú y tocar "Caja" en la barra no hacía nada). Subirle el
+     * z-index a la barra NO sirvió — algún ancestro le atrapa el apilamiento —
+     * así que se esconde, que además es lo honesto: no mostrar algo que no se
+     * puede tocar. Para salir del menú está la hamburguesa del header, que lo
+     * alterna abrir/cerrar y queda por encima del cajón.
+     * Van las dos formas de detectarlo a propósito: la clase la pone
+     * syncOverlayState() y el :has() no depende de JS. Cualquiera basta. */
+    body.hbn-menu-abierto .hotel-bottom-nav,
+    body:has(#sidebar.active) .hotel-bottom-nav,
+    body:has(#sidebar.open) .hotel-bottom-nav,
     body.hb-mobile-sheet-open .hotel-bottom-nav,
     body.hb-modal-open .hotel-bottom-nav,
     body.swal2-shown .hotel-bottom-nav,
@@ -438,6 +451,16 @@ foreach ($footerNavItems as $footerNavKey => $footerNavItem) {
         var nav = document.getElementById('hotel-bottom-nav');
 
         document.body.classList.toggle('hbn-overlay-open', isOpen);
+
+        // Con el menú lateral abierto la barra se esconde: el cajón la tapaba
+        // y se quedaba con los toques (ver el bloque de CSS que la retira).
+        // Se mira #sidebar directamente en vez de engancharse a quien lo abre,
+        // porque hay dos botones (el "Menú" de aquí y la hamburguesa del
+        // header, en otro archivo) y el observer de arriba ya nos trae hasta
+        // aquí en cuanto cambia cualquier clase del documento.
+        var sidebarEl = document.getElementById('sidebar');
+        document.body.classList.toggle('hbn-menu-abierto', !!(sidebarEl
+            && (sidebarEl.classList.contains('active') || sidebarEl.classList.contains('open'))));
 
         // Bloqueo de scroll del fondo con un modal abierto. El scroll real de la
         // app NO vive en body/html (el shell es h-screen overflow-hidden) sino en
