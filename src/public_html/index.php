@@ -154,6 +154,7 @@ require_once APP_PATH . '/helpers/modulos.php';
 require_once APP_PATH . '/helpers/navegacion.php';
 require_once APP_PATH . '/helpers/footer_nav.php';
 require_once APP_PATH . '/helpers/branding.php';
+require_once APP_PATH . '/helpers/paises.php';
 
 // Cargar helper de habitaciones si existe
 if (file_exists(APP_PATH . '/helpers/habitaciones.php')) {

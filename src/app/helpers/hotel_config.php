@@ -2670,14 +2670,14 @@ if (!function_exists('hotel_guest_field_catalog')) {
             ],
             'nacionalidad' => [
                 'scope' => 'guest',
-                'label' => 'Nacionalidad',
-                'descripcion' => 'Pais o nacionalidad declarada por el huesped. Al activarlo, el registro pregunta si el huesped es extranjero y captura su nacionalidad para el reporte de procedencia internacional.',
+                'label' => 'Pais de origen',
+                'descripcion' => 'Pais del huesped extranjero. Al activarlo, el registro pregunta si el huesped es extranjero y ofrece un buscador de paises (con bandera) para el reporte de procedencia internacional.',
                 'input' => 'text',
                 'storage' => 'extra',
                 'default_visible' => false,
                 'default_required' => false,
                 'max' => 80,
-                'placeholder' => 'Estadounidense, canadiense, espanola...',
+                'placeholder' => 'Estados Unidos, Canada, Espana...',
                 'icon' => 'fa-earth-americas',
             ],
             'identificacion_tipo' => [

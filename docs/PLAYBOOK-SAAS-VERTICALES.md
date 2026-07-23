@@ -553,6 +553,27 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     documenta el contrato. GOTCHA de verificación: simular el rol acotado exige un
     `role_id` real, no el rol-string de un usuario con rol global alto.
 
+29. **Toda lista larga se captura escribiendo, no cazando (verificado jul 2026).**
+    Cualquier catálogo de >15 opciones (estados, países, razas, marcas, modelos,
+    padecimientos) en un `<select>` nativo obliga a scrollear y es el reclamo #1 de
+    recepción. Patrón: UN componente global de progressive enhancement
+    (`js/ms-combo.js` + `css/ms-combo.css`) que convierte cualquier
+    `<select data-ms-combo>` en botón + panel con buscador — el `<select>` real se
+    queda en el DOM (invisible pero RENDERIZADO, `tabindex="-1"`) para no perder
+    `required`, borradores ni validación nativa, y al elegir dispara `input`+`change`
+    para que la vista no se entere del cambio. Reglas que lo hacen sentir instantáneo:
+    búsqueda SIN acentos (`NFD` + quitar diacríticos: "queretaro" halla "Querétaro"),
+    ranking prefijo-de-nombre > inicio-de-palabra > medio, alias multiidioma por
+    opción (`data-search="germany deutschland"`), grupo "más frecuentes" arriba,
+    hoja inferior con dedo cómodo en ≤640px y `pagehide` que cierra el panel (bfcache).
+    El catálogo vive en UN helper PHP con test propio (nombre canónico + gentilicio +
+    alias + ISO), y el valor guardado se resuelve contra él para no perder datos
+    viejos. Banderas: derivarlas del ISO2 con indicadores regionales (cero assets) y
+    detectar soporte por ancho en canvas — Windows no las trae, ahí cae a chip "US".
+    Regla de datos: guardar el NOMBRE canónico (no el gentilicio) para que el reporte
+    agrupe solo; permitir escribir fuera del catálogo (`data-ms-combo-free`) o la
+    captura se traba con el caso raro.
+
 ---
 
 ## §4. LO PROHIBIDO (errores pagados una vez; no se pagan dos)

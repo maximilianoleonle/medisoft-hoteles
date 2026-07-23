@@ -2146,6 +2146,8 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Información pers
                                         <label class="gc-label">Estado<?= $gcRequiredMark('procedencia_estado') ?></label>
                                         <select name="procedencia_estado"
                                                 class="gc-control"
+                                                data-ms-combo="Escribe el estado..."
+                                                data-ms-combo-empty="Selecciona un estado"
                                                 <?= $gcGuestFieldRequired('procedencia_estado') ? 'required' : '' ?>>
                                             <option value="">Seleccione un estado</option>
                                             <?php foreach ($estados as $estado): ?>
@@ -2194,18 +2196,16 @@ main.gc-form > .gc-section:first-child { order: 0; }        /* Información pers
                                         </label>
                                     <?php endif; ?>
                                     <div class="gc-field gc-field-full gc-foreign-field" data-foreign-field>
-                                        <label class="gc-label">Nacionalidad<?= $gcNacRequired ? ' <span class="gc-required">*</span>' : '' ?></label>
-                                        <div class="gc-input-wrap">
-                                            <i class="fas fa-earth-americas"></i>
-                                            <input type="text"
-                                                   name="extras[nacionalidad]"
-                                                   value="<?= htmlspecialchars($gcNacValue, ENT_QUOTES, 'UTF-8') ?>"
-                                                   maxlength="80"
-                                                   placeholder="Estadounidense, canadiense, española..."
-                                                   class="gc-control has-icon"
-                                                   data-foreign-input
-                                                   <?= $gcNacRequired ? 'required' : '' ?>>
-                                        </div>
+                                        <label class="gc-label">Pa&iacute;s de origen<?= $gcNacRequired ? ' <span class="gc-required">*</span>' : '' ?></label>
+                                        <?= ms_select_paises([
+                                            'name'     => 'extras[nacionalidad]',
+                                            'value'    => $gcNacValue,
+                                            'class'    => 'gc-control',
+                                            'required' => $gcNacRequired,
+                                            'placeholder' => 'Selecciona el país',
+                                            'extra'    => 'data-foreign-input',
+                                        ]) ?>
+                                        <span class="gc-field-hint">Escribe para buscar: pa&iacute;s, nacionalidad o su nombre en ingl&eacute;s.</span>
                                         <?php if (form_error('extras[nacionalidad]')): ?>
                                             <span class="gc-form-error"><?= form_error('extras[nacionalidad]') ?></span>
                                         <?php endif; ?>
@@ -2639,9 +2639,12 @@ document.querySelectorAll('[data-foreign-block]').forEach(function(block) {
         block.classList.toggle('is-open', abierto);
         if (!abierto && clearWhenClosed) {
             input.value = '';
+            input.dispatchEvent(new Event('change', { bubbles: true })); // repinta el buscador de paises
         }
         if (abierto) {
-            input.focus();
+            // el select de paises se opera por su boton (ms-combo); el nativo esta oculto
+            const trigger = input.closest('.ms-combo')?.querySelector('.ms-combo__trigger');
+            (trigger || input).focus();
         }
     }
 

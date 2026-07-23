@@ -35,6 +35,9 @@ $GLOBALS['msFooterRenderizado'] = true;
     <script src="<?= function_exists('asset_version') ? asset_version('js/buscador-global.js') : asset('js/buscador-global.js') ?>" defer></script>
     <script src="<?= function_exists('asset_version') ? asset_version('js/mobile-file-return.js') : asset('js/mobile-file-return.js') ?>" defer></script>
 
+    <!-- Selects con buscador: cualquier <select data-ms-combo> se vuelve filtrable -->
+    <script src="<?= function_exists('asset_version') ? asset_version('js/ms-combo.js') : asset('js/ms-combo.js') ?>" defer></script>
+
     <!-- Navegación fluida: regresar instantáneo (bfcache) + precarga en intención (todas las páginas) -->
     <script src="<?= function_exists('asset_version') ? asset_version('js/instant-nav.js') : asset('js/instant-nav.js') ?>" defer></script>
 

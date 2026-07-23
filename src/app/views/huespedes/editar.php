@@ -1805,6 +1805,8 @@ textarea.ge-control {
                                         <select id="procedencia_estado"
                                                 name="procedencia_estado"
                                                 class="ge-control"
+                                                data-ms-combo="Escribe el estado..."
+                                                data-ms-combo-empty="Selecciona un estado"
                                                 <?= $geGuestFieldRequired('procedencia_estado') ? 'required' : '' ?>>
                                             <option value="">Seleccione un estado</option>
                                             <?php foreach ($estados as $estado): ?>
@@ -1847,15 +1849,15 @@ textarea.ge-control {
                                     $geNacRequired = $geGuestFieldRequired('nacionalidad');
                                 ?>
                                 <div class="ge-field ge-field-full" style="margin-top: 14px;">
-                                    <label class="ge-label" for="ge_nacionalidad">Nacionalidad<?= $geNacRequired ? ' <span class="ge-required">*</span>' : '' ?></label>
-                                    <input type="text"
-                                           id="ge_nacionalidad"
-                                           name="extras[nacionalidad]"
-                                           value="<?= htmlspecialchars($geNacValue, ENT_QUOTES, 'UTF-8') ?>"
-                                           maxlength="80"
-                                           placeholder="Solo si el huesped es extranjero (estadounidense, canadiense...)"
-                                           class="ge-control"
-                                           <?= $geNacRequired ? 'required' : '' ?>>
+                                    <label class="ge-label" for="ge_nacionalidad">Pa&iacute;s de origen<?= $geNacRequired ? ' <span class="ge-required">*</span>' : '' ?></label>
+                                    <?= ms_select_paises([
+                                        'name'        => 'extras[nacionalidad]',
+                                        'id'          => 'ge_nacionalidad',
+                                        'value'       => $geNacValue,
+                                        'class'       => 'ge-control',
+                                        'required'    => $geNacRequired,
+                                        'placeholder' => 'Solo si el huésped es extranjero',
+                                    ]) ?>
                                     <?php if (form_error('extras[nacionalidad]')): ?>
                                         <span class="ge-form-error"><?= form_error('extras[nacionalidad]') ?></span>
                                     <?php endif; ?>

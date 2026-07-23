@@ -288,6 +288,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/sidebar-size-override.css') : asset('css/sidebar-size-override.css') ?>">
 
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/performance-optimization.css') : asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
+
+    <!-- Selector con buscador (cualquier <select data-ms-combo>) -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/ms-combo.css') : asset('css/ms-combo.css') ?>">
     <!-- Chart.js ya NO se carga aquí: eran 204 KB bloqueando el primer
          pintado de ~200 vistas en cada navegación (Safari no precarga MPA)
          y las 6 vistas que grafican lo cargan por su cuenta (reportes/*,
