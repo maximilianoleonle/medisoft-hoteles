@@ -402,11 +402,18 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 }
 .res-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .res-tab {
+    --tab-c: var(--res-brand);
     border: 1px solid var(--res-line); background: rgba(255,255,255,.86); color: #40506A; border-radius: 999px;
     padding: 9px 13px; font-weight: 650; font-size: .82rem; display: inline-flex; align-items: center; gap: 7px;
 }
-.res-tab-dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
-.res-tab.is-active { background: var(--res-heading); border-color: var(--res-heading); color: #fff; box-shadow: 0 12px 26px color-mix(in srgb, var(--res-heading) 14%, transparent); }
+/* Color semántico de cada estado (mismo mapa que los badges y el stripe móvil) */
+.res-tab[data-estado="confirmada"]  { --tab-c: #1E9E63; }
+.res-tab[data-estado="checked_in"]  { --tab-c: #C2603C; }
+.res-tab[data-estado="checked_out"] { --tab-c: #5B6B86; }
+.res-tab[data-estado="cancelada"]   { --tab-c: #D64539; }
+.res-tab-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--tab-c); }
+/* Activa (Deleite Sereno): pastilla entintada del color del estado, sin losa negra */
+.res-tab.is-active { background: color-mix(in srgb, var(--tab-c) 13%, #fff); border-color: color-mix(in srgb, var(--tab-c) 42%, #fff); color: color-mix(in srgb, var(--tab-c) 74%, #16233A); box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--tab-c) 55%, transparent); }
 .res-date-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .res-date-tools input { height: 39px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 11px; color: var(--res-heading); background: #fff; font-weight: 700; }
 .res-date-chip { height: 39px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 12px; background: #fff; color: #40506A; font-weight: 650; font-size: .82rem; text-decoration: none; white-space: nowrap; }
@@ -1488,6 +1495,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 @media (max-width: 1023px) {
     .res-table-shell { display: none; }
     .res-mobile-list { display: grid; gap: 12px; }
+    /* El contador "Mostrando N de M" solo se conserva en escritorio: en la
+       lista movil ocupa una franja entera y no aporta sobre las tarjetas. */
+    #searchResults { display: none; }
 }
 @media (max-width: 720px) {
     .res-shell { padding: 18px 12px 28px; }
@@ -3971,10 +3981,10 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     }
     .res-tab.is-active {
         font-weight: 700;
-        background: var(--res-brand);
-        border-color: transparent;
-        color: #fff;
-        box-shadow: 0 6px 16px color-mix(in srgb, var(--res-brand) 22%, transparent);
+        background: color-mix(in srgb, var(--tab-c) 14%, #fff);
+        border-color: color-mix(in srgb, var(--tab-c) 45%, #fff);
+        color: color-mix(in srgb, var(--tab-c) 76%, #16233A);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--tab-c) 18%, transparent);
     }
     .res-tab-dot { width: 7px; height: 7px; }
     .res-date-tools {

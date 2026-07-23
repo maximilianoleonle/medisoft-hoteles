@@ -1237,6 +1237,25 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .ccx-page .ccx-textarea:foc
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary, #0071E3) 16%, transparent) !important;
 }
 
+/* Pills de filtro de reservaciones (Cupertino claro): la activa deja la
+   tinta negra y se enciende en cristal líquido del color de SU estado —
+   mismo candy glass que las tarjetas de habitaciones (owner 2026-07-22).
+   "Todas" usa la tinta de marca vía el fallback de --tab-c. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .res-bookings .res-tab.is-active {
+    background:
+        radial-gradient(60% 86% at 90% 78%, rgba(255,255,255,.85), rgba(255,255,255,0) 72%),
+        linear-gradient(165deg,
+            color-mix(in srgb, var(--tab-c, var(--res-brand)) 16%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--tab-c, var(--res-brand)) 34%, #FFFFFF) 100%);
+    border-color: color-mix(in srgb, var(--tab-c, var(--res-brand)) 30%, rgba(255,255,255,.9));
+    color: color-mix(in srgb, var(--tab-c, var(--res-brand)) 78%, #111827);
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.95),
+        inset 0 -2px 5px color-mix(in srgb, var(--tab-c, var(--res-brand)) 13%, transparent),
+        0 3px 7px color-mix(in srgb, var(--tab-c, var(--res-brand)) 12%, rgba(27,39,70,.05)),
+        0 14px 26px -14px color-mix(in srgb, var(--tab-c, var(--res-brand)) 52%, rgba(27,39,70,.28));
+}
+
 /* ═══ 20. RESERVACIONES: detalle modo oscuro ════════════════════════
    El pase 1 volteó los tokens --res-*; aquí caen los literales claros
    que quedaban (tabla, pills de filtro, fecha, agenda). La pill activa
@@ -1257,6 +1276,16 @@ html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-tab.is-active 
     border-color: #F5F5F7;
     color: #1D1D1F;
     box-shadow: none;
+}
+
+/* Estados en oscuro: la pill activa se enciende con el tinte de su color
+   (solo "Todas" conserva la inversión blanca estilo iOS). */
+html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-tab.is-active[data-estado]:not([data-estado="todos"]) {
+    background: linear-gradient(165deg,
+        color-mix(in srgb, var(--tab-c, #0A84FF) 32%, #1C1C1E) 0%,
+        color-mix(in srgb, var(--tab-c, #0A84FF) 16%, #1C1C1E) 100%);
+    border-color: color-mix(in srgb, var(--tab-c, #0A84FF) 42%, #38383A);
+    color: color-mix(in srgb, var(--tab-c, #0A84FF) 45%, #F5F5F7);
 }
 
 html[data-theme="dark"][data-tema="cupertino"] .res-bookings .res-date-tools input {
