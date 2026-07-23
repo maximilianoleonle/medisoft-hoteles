@@ -51,9 +51,9 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog{
     --mp-ink:#172033;
     --mp-muted:#64748b;
-    --mp-line:#d8ded7;
-    --mp-soft:#f6f4ee;
-    --mp-panel:#fffdfa;
+    --mp-line:#DDE3EA;
+    --mp-soft:#F4F6F9;
+    --mp-panel:#FFFFFF;
     --mp-machine:#3e4a43;
     --mp-accent:#b58a38;
     --mp-teal:#0f766e;
@@ -64,7 +64,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
     color:var(--mp-ink);
     background:
         repeating-linear-gradient(135deg, rgba(181,138,56,.055) 0 1px, transparent 1px 22px),
-        linear-gradient(180deg,#fffdfa,var(--mp-soft));
+        linear-gradient(180deg,#FFFFFF,var(--mp-soft));
 }
 .mant-prog-hero{
     display:grid;
@@ -185,7 +185,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
     align-items:center;
     padding:18px 20px;
     border-bottom:1px solid var(--mp-line);
-    background:linear-gradient(90deg,#fffdfa,#F5F5F7);
+    background:linear-gradient(90deg,#FFFFFF,#F5F5F7);
 }
 .mant-prog-panel-title{margin:0;color:#111827;font-size:1.12rem;font-weight:950;line-height:1.15}
 .mant-prog-panel-subtitle{margin:5px 0 0;color:var(--mp-muted);font-size:.86rem;font-weight:750;line-height:1.35}
@@ -219,7 +219,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-table th{
     padding:13px 16px;
     border-bottom:1px solid var(--mp-line);
-    background:#fbfaf7;
+    background:#F8FAFC;
     color:var(--mp-muted);
     font-size:.72rem;
     font-weight:950;
@@ -269,7 +269,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
     padding:7px 9px;
     border:1px solid #e4e0d6;
     border-radius:7px;
-    background:#fbfaf7;
+    background:#F8FAFC;
     color:#475569;
     font-size:.78rem;
     font-weight:800;
@@ -340,7 +340,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-note{
     padding:14px 18px;
     border-top:1px solid var(--mp-line);
-    background:#fbfaf7;
+    background:#F8FAFC;
     color:#5f6b7a;
     font-size:.8rem;
     font-weight:750;
@@ -455,7 +455,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
         padding:8px 9px;
         border:1px solid #ebe6dc;
         border-radius:11px;
-        background:#fbfaf7;
+        background:#F8FAFC;
     }
     .mant-prog-table td:nth-child(5){
         padding:2px 0;
@@ -586,7 +586,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
         padding:8px 9px;
         border:1px solid #ebe6dc;
         border-radius:12px;
-        background:#fbfaf7;
+        background:#F8FAFC;
     }
     .mant-prog-card-cell strong{
         display:block;

@@ -75,7 +75,7 @@ $estadoConfig = [
     'en_proceso' => ['bg' => '#E8F3FA', 'text' => '#1D5F8C', 'dot' => '#3B83BD', 'label' => 'En proceso'],
     'completado' => ['bg' => '#EAF6EF', 'text' => '#166534', 'dot' => '#16824E', 'label' => 'Completado'],
     'cancelado' => ['bg' => '#FDE9E7', 'text' => '#9B2C2C', 'dot' => '#B94A48', 'label' => 'Cancelado'],
-    'programado' => ['bg' => '#F1E8DA', 'text' => '#6B5634', 'dot' => '#BD9441', 'label' => 'Programado'],
+    'programado' => ['bg' => '#FBF3DD', 'text' => '#6B5634', 'dot' => '#BD9441', 'label' => 'Programado'],
 ];
 
 $maxHabitaciones = !empty($habitacionesMasMant) ? max(array_map(fn($h) => (int)($h['total_mantenimientos'] ?? 0), $habitacionesMasMant)) : 1;
@@ -105,12 +105,12 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     --mant-accent: var(--brand-accent, #BD9441);
     --mant-action: var(--brand-action-bg, var(--mant-primary));
     --mant-action-hover: var(--brand-action-bg-hover, var(--mant-secondary));
-    --mant-on-action: var(--brand-action-text, #FFFEFB);
-    --mant-bg: color-mix(in srgb, var(--mant-accent) 8%, #F6F1E8);
-    --mant-surface: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
-    --mant-soft: color-mix(in srgb, var(--mant-primary) 5%, #FFFDF8);
-    --mant-line: color-mix(in srgb, var(--mant-primary) 13%, #E8DCCA);
-    --mant-line-soft: color-mix(in srgb, var(--mant-primary) 8%, #F1E8DA);
+    --mant-on-action: var(--brand-action-text, #FFFFFF);
+    --mant-bg: color-mix(in srgb, var(--mant-primary) 4%, #F8FAFC);
+    --mant-surface: #FFFFFF;
+    --mant-soft: color-mix(in srgb, var(--mant-primary) 5%, #FFFFFF);
+    --mant-line: color-mix(in srgb, var(--mant-primary) 13%, #E5E7EB);
+    --mant-line-soft: color-mix(in srgb, var(--mant-primary) 8%, #F1F5F9);
     --mant-text: #17233E;
     --mant-muted: #748096;
     --mant-good: #16824E;
@@ -119,9 +119,9 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     --mant-card-shadow: 0 18px 44px -36px rgba(15, 23, 42, .52);
     min-height: 100vh;
     background:
-        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--mant-accent) 24%, transparent), transparent 30rem),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--mant-accent) 9%, transparent), transparent 30rem),
         linear-gradient(135deg, color-mix(in srgb, var(--mant-primary) 5%, transparent) 0 1px, transparent 1px 28px),
-        linear-gradient(180deg, var(--mant-bg), #FBFAF7 54%, #F1EAE0);
+        linear-gradient(180deg, var(--mant-bg), #F8FAFC 54%, #EEF2F7);
     color: var(--mant-text);
     opacity: 0;
     transition: opacity .24s ease;
@@ -201,7 +201,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     border: 1px solid rgba(255, 255, 255, .16);
     border-radius: 13px;
     background: rgba(255, 255, 255, .09);
-    color: #FFFDF8;
+    color: #FFFFFF;
     font-weight: 700;
     text-decoration: none;
 }
@@ -316,7 +316,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-btn.is-soft {
     border-color: rgba(255, 255, 255, .22);
     background: rgba(255, 255, 255, .1);
-    color: #FFFDF8;
+    color: #FFFFFF;
 }
 
 .mant-btn:hover,
@@ -370,7 +370,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     min-height: 43px;
     border: 1px solid var(--mant-line);
     border-radius: 13px;
-    background: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 3%, #FFFFFF);
     color: var(--mant-primary);
     font-size: .92rem;
     font-weight: 600;
@@ -399,7 +399,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     min-height: 40px;
     border: 1px solid var(--mant-line-soft);
     border-radius: 13px;
-    background: color-mix(in srgb, var(--mant-primary) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 4%, #FFFFFF);
     color: var(--mant-primary);
     font-size: .76rem;
     font-weight: 700;
@@ -422,7 +422,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-metric.is-featured {
     background:
         radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--mant-accent) 18%, transparent), transparent 12rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--mant-accent) 10%, #FFFDF8), var(--mant-surface));
+        linear-gradient(135deg, color-mix(in srgb, var(--mant-primary) 6%, #FFFFFF), var(--mant-surface));
 }
 
 .mant-metric-head {
@@ -439,7 +439,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: color-mix(in srgb, var(--mant-accent) 13%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-accent) 13%, #FFFFFF);
     color: color-mix(in srgb, var(--mant-accent) 82%, var(--mant-primary));
 }
 
@@ -480,7 +480,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     padding: 18px 20px;
     border-bottom: 1px solid var(--mant-line-soft);
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--mant-accent) 6%, #FFFDF8), var(--mant-surface));
+        linear-gradient(180deg, color-mix(in srgb, var(--mant-primary) 4%, #FFFFFF), var(--mant-surface));
 }
 
 .mant-section-head h2,
@@ -502,7 +502,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     min-height: 28px;
     padding: 0 10px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mant-primary) 7%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 7%, #FFFFFF);
     color: var(--mant-primary);
     font-size: .73rem;
     font-weight: 700;
@@ -536,7 +536,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 
 .mant-gauge-bg {
     fill: none;
-    stroke: color-mix(in srgb, var(--mant-primary) 8%, #FFFDF8);
+    stroke: color-mix(in srgb, var(--mant-primary) 8%, #FFFFFF);
     stroke-width: 12;
 }
 
@@ -590,7 +590,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     border: 1px solid var(--mant-line-soft);
     border-radius: 18px;
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--mant-accent) 4%, #FFFFFF), #FFFDF8);
+        linear-gradient(180deg, color-mix(in srgb, var(--mant-primary) 3%, #FFFFFF), #FFFFFF);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74);
 }
 
@@ -630,7 +630,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin-top: 7px;
     overflow: hidden;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mant-primary) 8%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 8%, #FFFFFF);
 }
 
 .mant-progress span {
@@ -652,7 +652,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     padding: 16px;
     border: 1px solid var(--mant-line-soft);
     border-radius: 18px;
-    background: color-mix(in srgb, var(--mant-primary) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 3%, #FFFFFF);
 }
 
 .mant-chart-title {
@@ -744,7 +744,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     z-index: 2;
     padding: 12px 11px;
     border-bottom: 1px solid var(--mant-line);
-    background: color-mix(in srgb, var(--mant-accent) 7%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 4%, #FFFFFF);
     text-align: left;
 }
 
@@ -761,7 +761,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 }
 
 .mant-table tbody tr:hover {
-    background: color-mix(in srgb, var(--mant-accent) 5%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 4%, #FFFFFF);
 }
 
 .mant-room-badge,
@@ -782,9 +782,9 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     min-width: 98px;
     justify-content: center;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--mant-primary) 16%, #E8DCCA);
+    border: 1px solid color-mix(in srgb, var(--mant-primary) 16%, #E5E7EB);
     background:
-        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--mant-accent) 7%, #FFFDF8));
+        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--mant-primary) 4%, #FFFFFF));
     color: color-mix(in srgb, var(--mant-primary) 86%, #101827);
     box-shadow:
         0 10px 22px -18px rgba(15, 23, 42, .55),
@@ -797,7 +797,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 }
 
 .mant-chip {
-    background: color-mix(in srgb, var(--mant-primary) 6%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-primary) 6%, #FFFFFF);
     color: var(--mant-primary);
 }
 
@@ -832,10 +832,10 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     align-items: center;
     justify-content: center;
     place-items: center;
-    border: 1px solid color-mix(in srgb, var(--mant-primary) 16%, #E8DCCA);
+    border: 1px solid color-mix(in srgb, var(--mant-primary) 16%, #E5E7EB);
     border-radius: 15px;
     background:
-        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--mant-accent) 8%, #FFFDF8));
+        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--mant-primary) 5%, #FFFFFF));
     color: color-mix(in srgb, var(--mant-primary) 86%, #101827);
     font-size: .75rem;
     font-weight: 700;
@@ -879,7 +879,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     justify-content: center;
     margin-bottom: 14px;
     border-radius: 22px;
-    background: color-mix(in srgb, var(--mant-accent) 12%, #FFFDF8);
+    background: color-mix(in srgb, var(--mant-accent) 12%, #FFFFFF);
     color: color-mix(in srgb, var(--mant-accent) 80%, var(--mant-primary));
     font-size: 1.55rem;
 }

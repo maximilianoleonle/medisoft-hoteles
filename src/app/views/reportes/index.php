@@ -21,13 +21,13 @@ if ($repRol !== '') {
     --rp-on-brand: var(--brand-action-text, #FFFFFF);
     --rp-gold: var(--brand-accent, #B0883F);
     --rp-gold-soft: color-mix(in srgb, var(--rp-gold) 55%, var(--rp-on-brand));
-    --rp-gold-line: color-mix(in srgb, var(--rp-gold) 32%, #F0E7D6);
-    --rp-gold-bg: color-mix(in srgb, var(--rp-gold) 14%, #FFFDF7);
+    --rp-gold-line: color-mix(in srgb, var(--rp-gold) 32%, #E5E7EB);
+    --rp-gold-bg: color-mix(in srgb, var(--rp-gold) 14%, #FFFFFF);
     /* Superficies serenas */
     --rp-ivory: #F5F5F7;
     --rp-ivory-2: #FAFAFC;
     --rp-surface: #FFFFFF;
-    --rp-line: #ECE5D8;
+    --rp-line: #E5E7EB;
     /* Tinta */
     --rp-heading: var(--brand-text, #1B2746);
     --rp-ink: var(--brand-text, #1B2746);
@@ -65,7 +65,7 @@ if ($repRol !== '') {
 .rp-hic svg { width: 28px; height: 28px; }
 .rp-spark {
     position: absolute; top: -4px; right: -4px; width: 13px; height: 13px;
-    background: linear-gradient(135deg, #FFFDF5, var(--rp-gold));
+    background: linear-gradient(135deg, #FFFFFF, var(--rp-gold));
     clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
     animation: rpTwinkle 2.6s ease-in-out infinite;
 }
@@ -231,17 +231,17 @@ if ($repRol !== '') {
   <symbol id="rp-i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
   <symbol id="rp-i-box" viewBox="0 0 24 24"><path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9"/></symbol>
   <symbol id="rp-i-check" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm-1.2 12.5L7 11.7l1.1-1.1 2.7 2.7 4.9-4.9 1.1 1.1z" fill="currentColor" stroke="none"/></symbol>
-  <symbol id="rp-i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M12 6l-6 2 3 5a3 3 0 0 1-6 0l3-5M12 6l6 2-3 5a3 3 0 0 0 6 0l-3-5M6 8l12-4"/></symbol>
+  <symbol id="rp-i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M12 6l-6 2 3 5a3 3 0 0 1-6 0l3-5M12 6l6 2-3 5a3 3 0 0 0 6 0l-3-5"/></symbol>
   <symbol id="rp-i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></symbol>
   <symbol id="rp-i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0V4zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 20h6M12 14v6"/></symbol>
   <symbol id="rp-i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8 6.2 21l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-2.3z"/></symbol>
   <symbol id="rp-i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></symbol>
   <symbol id="rp-i-broom" viewBox="0 0 24 24"><path d="M19 5 14 10M9.5 14.5 4 20m0 0h4l1-4 5-2 4-4-3-3-4 4-2 5z"/></symbol>
-  <symbol id="rp-i-share" viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4M14 9l7-7M15 2h6v6"/></symbol>
+  <symbol id="rp-i-share" viewBox="0 0 24 24"><path d="M20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5"/><path d="M13 11l7-7M14 4h6v6"/></symbol>
   <symbol id="rp-i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
   <symbol id="rp-i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 6 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-6-3.5-9s1-6.5 3.5-9z"/></symbol>
   <symbol id="rp-i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></symbol>
-  <symbol id="rp-i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0M12 14l4-4"/><circle cx="12" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="rp-i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0M12 18l4-6"/><circle cx="12" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
   <symbol id="rp-i-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M8 12h8M8 15h8M8 18h5"/></symbol>
   <symbol id="rp-i-dash2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M9 21V9"/></symbol>
 </svg>

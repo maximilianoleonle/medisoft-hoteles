@@ -39,7 +39,7 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
     --lr-ink:#172033;
     --lr-muted:#64748b;
     --lr-line:#d8e3df;
-    --lr-panel:#fffefd;
+    --lr-panel:#FFFFFF;
     --lr-clean:#28766f;
     --lr-clean-dark:#24443f;
     --lr-water:#2f83a5;
@@ -123,7 +123,7 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
     .lim-rep-table-wrap{overflow:visible;padding:0;background:#F5F5F7}
     .lim-rep-table{display:none!important}
     .lim-rep-mobile-list{display:grid;gap:10px;padding:10px;background:#F5F5F7}
-    .lim-rep-room-card{position:relative;display:grid;gap:9px;min-width:0;overflow:hidden;border:1px solid var(--lr-line);border-radius:16px;background:#fffefd;box-shadow:0 12px 26px -22px rgba(15,23,42,.42)}
+    .lim-rep-room-card{position:relative;display:grid;gap:9px;min-width:0;overflow:hidden;border:1px solid var(--lr-line);border-radius:16px;background:#FFFFFF;box-shadow:0 12px 26px -22px rgba(15,23,42,.42)}
     .lim-rep-room-card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--lr-clean)}
     .lim-rep-room-main{display:grid;gap:9px;min-width:0;padding:12px 12px 4px 15px}
     .lim-rep-room-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}

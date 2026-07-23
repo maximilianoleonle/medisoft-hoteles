@@ -134,12 +134,12 @@ $metodoMeta = [
     --pr-accent: var(--brand-accent, #BD9441);
     --pr-action: var(--brand-action-bg, var(--pr-primary));
     --pr-action-hover: var(--brand-action-bg-hover, var(--pr-secondary));
-    --pr-on-action: var(--brand-action-text, #FFFEFB);
-    --pr-bg: color-mix(in srgb, var(--pr-accent) 8%, #F7F2EA);
-    --pr-surface: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
-    --pr-soft: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
-    --pr-line: color-mix(in srgb, var(--pr-primary) 13%, #E8DCCC);
-    --pr-line-soft: color-mix(in srgb, var(--pr-primary) 8%, #F0E7DB);
+    --pr-on-action: var(--brand-action-text, #FFFFFF);
+    --pr-bg: color-mix(in srgb, var(--pr-primary) 4%, #F8FAFC);
+    --pr-surface: #FFFFFF;
+    --pr-soft: color-mix(in srgb, var(--pr-primary) 5%, #FFFFFF);
+    --pr-line: color-mix(in srgb, var(--pr-primary) 13%, #E5E7EB);
+    --pr-line-soft: color-mix(in srgb, var(--pr-primary) 8%, #F1F5F9);
     --pr-text: #17233E;
     --pr-muted: #748096;
     --pr-income: #16824E;
@@ -153,9 +153,9 @@ $metodoMeta = [
 .profit-report-view {
     min-height: 100vh;
     background:
-        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--pr-accent) 24%, transparent), transparent 30rem),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--pr-accent) 9%, transparent), transparent 30rem),
         linear-gradient(135deg, color-mix(in srgb, var(--pr-primary) 5%, transparent) 0 1px, transparent 1px 28px),
-        linear-gradient(180deg, var(--pr-bg), #FBFAF7 56%, #F3EDE4);
+        linear-gradient(180deg, var(--pr-bg), #F8FAFC 56%, #EEF2F7);
     opacity: 0;
     transition: opacity .24s ease;
 }
@@ -300,7 +300,7 @@ $metodoMeta = [
 .profit-btn.is-soft {
     border-color: rgba(255, 255, 255, .22);
     background: rgba(255, 255, 255, .10);
-    color: #FFFDF8;
+    color: #FFFFFF;
 }
 
 .profit-btn.is-accent {
@@ -365,7 +365,7 @@ $metodoMeta = [
     min-height: 43px;
     border: 1px solid var(--pr-line);
     border-radius: 13px;
-    background: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 3%, #FFFFFF);
     color: var(--pr-primary);
     font-weight: 600;
     outline: none;
@@ -391,7 +391,7 @@ $metodoMeta = [
 
 .profit-period-btn {
     border: 1px solid var(--pr-line-soft);
-    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF);
     color: var(--pr-primary);
     font-size: .76rem;
     font-weight: 700;
@@ -412,7 +412,7 @@ $metodoMeta = [
 
 .profit-card.is-main {
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--pr-accent) 11%, #FFFDF8), var(--pr-surface));
+        linear-gradient(135deg, color-mix(in srgb, var(--pr-primary) 6%, #FFFFFF), var(--pr-surface));
 }
 
 .profit-card-head {
@@ -429,7 +429,7 @@ $metodoMeta = [
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: color-mix(in srgb, var(--pr-accent) 13%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-accent) 13%, #FFFFFF);
     color: color-mix(in srgb, var(--pr-accent) 82%, var(--pr-primary));
 }
 
@@ -557,7 +557,7 @@ $metodoMeta = [
     padding: 18px 20px;
     border-bottom: 1px solid var(--pr-line-soft);
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--pr-accent) 6%, #FFFDF8), var(--pr-surface));
+        linear-gradient(180deg, color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF), var(--pr-surface));
 }
 
 .profit-section-head h2,
@@ -591,7 +591,7 @@ $metodoMeta = [
     padding: 0 11px;
     border: 1px solid var(--pr-line);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF);
     color: var(--pr-primary);
     font-size: .75rem;
     font-weight: 700;
@@ -643,11 +643,11 @@ $metodoMeta = [
 }
 
 .profit-table tbody tr:hover {
-    background: color-mix(in srgb, var(--pr-accent) 5%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF);
 }
 
 .profit-table tfoot td {
-    background: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 5%, #FFFFFF);
     color: var(--pr-primary);
     font-weight: 700;
 }
@@ -657,7 +657,7 @@ $metodoMeta = [
     margin-top: 6px;
     border-radius: 999px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--pr-primary) 8%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 8%, #FFFFFF);
 }
 
 .profit-bar span {
@@ -693,7 +693,7 @@ $metodoMeta = [
     justify-content: center;
     margin-bottom: 14px;
     border-radius: 22px;
-    background: color-mix(in srgb, var(--pr-accent) 12%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-accent) 12%, #FFFFFF);
     color: color-mix(in srgb, var(--pr-accent) 80%, var(--pr-primary));
     font-size: 1.55rem;
 }
@@ -714,11 +714,11 @@ $metodoMeta = [
     padding: 13px;
     border: 1px solid var(--pr-line-soft);
     border-radius: 16px;
-    background: color-mix(in srgb, var(--pr-accent) 2%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 2%, #FFFFFF);
 }
 
 .profit-day-row.is-weekend {
-    background: color-mix(in srgb, var(--pr-accent) 8%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 5%, #FFFFFF);
 }
 
 .profit-day-date {
@@ -742,7 +742,7 @@ $metodoMeta = [
     padding: 15px;
     border: 1px solid var(--pr-line-soft);
     border-radius: 17px;
-    background: color-mix(in srgb, var(--pr-accent) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 3%, #FFFFFF);
 }
 
 .profit-insight strong {
@@ -785,7 +785,7 @@ $metodoMeta = [
 .profit-modal-head {
     padding: 18px 20px;
     border-bottom: 1px solid var(--pr-line-soft);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--pr-accent) 7%, #FFFDF8), var(--pr-surface));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF), var(--pr-surface));
 }
 
 .profit-modal-head h3 {
@@ -827,7 +827,7 @@ $metodoMeta = [
     padding: 10px 12px;
     border: 1px solid var(--pr-line-soft);
     border-radius: 13px;
-    background: color-mix(in srgb, var(--pr-primary) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--pr-primary) 3%, #FFFFFF);
 }
 
 .profit-check-list input {
@@ -1460,7 +1460,7 @@ if (datosGrafica && datosGrafica.length > 0) {
         const infoColor = styles.getPropertyValue('--pr-info').trim() || '#2563A7';
         const reverseColor = styles.getPropertyValue('--pr-accent').trim() || '#9A6A2F';
         const textColor = styles.getPropertyValue('--pr-text').trim() || '#17233E';
-        const gridColor = styles.getPropertyValue('--pr-line-soft').trim() || '#F0E7DB';
+        const gridColor = styles.getPropertyValue('--pr-line-soft').trim() || '#F1F5F9';
 
         myChart = new Chart(canvas.getContext('2d'), {
             type: 'line',

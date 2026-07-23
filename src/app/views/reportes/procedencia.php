@@ -72,12 +72,12 @@ foreach ($porEstado as $estadoDato) {
     --geo-accent: var(--brand-accent, #BD9441);
     --geo-action: var(--brand-action-bg, var(--geo-primary));
     --geo-action-hover: var(--brand-action-bg-hover, var(--geo-secondary));
-    --geo-on-action: var(--brand-action-text, #FFFEFB);
-    --geo-bg: color-mix(in srgb, var(--geo-accent) 8%, #F7F2EA);
-    --geo-surface: color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
-    --geo-soft: color-mix(in srgb, var(--geo-primary) 5%, #FFFDF8);
-    --geo-line: color-mix(in srgb, var(--geo-primary) 13%, #E8DCCC);
-    --geo-line-soft: color-mix(in srgb, var(--geo-primary) 8%, #F0E7DB);
+    --geo-on-action: var(--brand-action-text, #FFFFFF);
+    --geo-bg: color-mix(in srgb, var(--geo-primary) 4%, #F8FAFC);
+    --geo-surface: #FFFFFF;
+    --geo-soft: color-mix(in srgb, var(--geo-primary) 5%, #FFFFFF);
+    --geo-line: color-mix(in srgb, var(--geo-primary) 13%, #E5E7EB);
+    --geo-line-soft: color-mix(in srgb, var(--geo-primary) 8%, #F1F5F9);
     --geo-text: #17233E;
     --geo-muted: #748096;
     --geo-map-empty: #D7DEE8;
@@ -87,16 +87,16 @@ foreach ($porEstado as $estadoDato) {
     --geo-map-4: #F97316;
     --geo-map-5: #E11D48;
     --geo-map-stroke: rgba(15, 23, 42, .72);
-    --geo-map-stroke-light: rgba(255, 253, 248, .9);
+    --geo-map-stroke-light: rgba(255, 255, 255, .9);
     --geo-map-bg-deep: color-mix(in srgb, var(--geo-secondary) 78%, #030712);
     --geo-map-bg-mid: color-mix(in srgb, var(--geo-primary) 58%, #111827);
     --geo-map-bg-glow: color-mix(in srgb, var(--geo-accent) 36%, transparent);
     --geo-card-shadow: 0 18px 44px -36px rgba(15, 23, 42, .52);
     min-height: 100vh;
     background:
-        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--geo-accent) 24%, transparent), transparent 30rem),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--geo-accent) 9%, transparent), transparent 30rem),
         linear-gradient(135deg, color-mix(in srgb, var(--geo-primary) 5%, transparent) 0 1px, transparent 1px 28px),
-        linear-gradient(180deg, var(--geo-bg), #FBFAF7 56%, #F2ECE3);
+        linear-gradient(180deg, var(--geo-bg), #F8FAFC 56%, #EEF2F7);
     color: var(--geo-text);
     opacity: 0;
     transition: opacity .24s ease;
@@ -242,7 +242,7 @@ foreach ($porEstado as $estadoDato) {
 .geo-btn.is-soft {
     border-color: rgba(255, 255, 255, .22);
     background: rgba(255, 255, 255, .10);
-    color: #FFFDF8;
+    color: #FFFFFF;
 }
 
 .geo-btn.is-accent {
@@ -304,7 +304,7 @@ foreach ($porEstado as $estadoDato) {
     min-height: 43px;
     border: 1px solid var(--geo-line);
     border-radius: 13px;
-    background: color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-primary) 3%, #FFFFFF);
     color: var(--geo-primary);
     font-weight: 800;
     outline: none;
@@ -328,7 +328,7 @@ foreach ($porEstado as $estadoDato) {
 
 .geo-period-btn {
     border: 1px solid var(--geo-line-soft);
-    background: color-mix(in srgb, var(--geo-primary) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-primary) 4%, #FFFFFF);
     color: var(--geo-primary);
     font-size: .76rem;
     font-weight: 900;
@@ -349,7 +349,7 @@ foreach ($porEstado as $estadoDato) {
 
 .geo-card.is-main {
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--geo-accent) 11%, #FFFDF8), var(--geo-surface));
+        linear-gradient(135deg, color-mix(in srgb, var(--geo-primary) 6%, #FFFFFF), var(--geo-surface));
 }
 
 .geo-card-head {
@@ -366,7 +366,7 @@ foreach ($porEstado as $estadoDato) {
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: color-mix(in srgb, var(--geo-accent) 13%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-accent) 13%, #FFFFFF);
     color: color-mix(in srgb, var(--geo-accent) 82%, var(--geo-primary));
 }
 
@@ -408,7 +408,7 @@ foreach ($porEstado as $estadoDato) {
     padding: 18px 20px;
     border-bottom: 1px solid var(--geo-line-soft);
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--geo-accent) 6%, #FFFDF8), var(--geo-surface));
+        linear-gradient(180deg, color-mix(in srgb, var(--geo-primary) 4%, #FFFFFF), var(--geo-surface));
 }
 
 .geo-section-head h2,
@@ -501,7 +501,7 @@ foreach ($porEstado as $estadoDato) {
     border: 1px solid rgba(255, 255, 255, .16);
     border-radius: 15px;
     background: rgba(15, 23, 42, .94);
-    color: #FFFDF8;
+    color: #FFFFFF;
     box-shadow: 0 20px 44px -26px rgba(0, 0, 0, .7);
     transition: opacity .18s ease;
 }
@@ -542,7 +542,7 @@ foreach ($porEstado as $estadoDato) {
     padding: 12px;
     border: 1px solid var(--geo-line-soft);
     border-radius: 16px;
-    background: color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-primary) 3%, #FFFFFF);
 }
 
 .geo-rank {
@@ -552,7 +552,7 @@ foreach ($porEstado as $estadoDato) {
     align-items: center;
     justify-content: center;
     border-radius: 13px;
-    background: color-mix(in srgb, var(--geo-accent) 15%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-accent) 15%, #FFFFFF);
     color: var(--geo-primary);
     font-weight: 950;
 }
@@ -652,7 +652,7 @@ foreach ($porEstado as $estadoDato) {
     padding: 0 10px;
     border-radius: 999px;
     color: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 72%, var(--geo-primary));
-    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 14%, #FFFDF8);
+    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 14%, #FFFFFF);
 }
 
 .geo-state-share {
@@ -660,7 +660,7 @@ foreach ($porEstado as $estadoDato) {
     height: 30px;
     border-radius: 999px;
     color: var(--geo-primary);
-    background: rgba(255, 253, 248, .78);
+    background: rgba(255, 255, 255, .78);
     font-size: .75rem;
 }
 
@@ -673,7 +673,7 @@ foreach ($porEstado as $estadoDato) {
     margin: 14px 0 12px;
     border-radius: 50%;
     background:
-        conic-gradient(var(--rank-color, var(--geo-accent)) var(--rank-angle, 0deg), color-mix(in srgb, var(--geo-primary) 8%, #FFFDF8) 0);
+        conic-gradient(var(--rank-color, var(--geo-accent)) var(--rank-angle, 0deg), color-mix(in srgb, var(--geo-primary) 8%, #FFFFFF) 0);
 }
 
 .geo-state-orbit::after {
@@ -681,7 +681,7 @@ foreach ($porEstado as $estadoDato) {
     position: absolute;
     inset: 8px;
     border-radius: inherit;
-    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 4%, #FFFDF8);
+    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 4%, #FFFFFF);
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .05);
 }
 
@@ -771,7 +771,7 @@ foreach ($porEstado as $estadoDato) {
     height: 40px;
     border-radius: 14px;
     color: var(--geo-primary);
-    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 13%, #FFFDF8);
+    background: color-mix(in srgb, var(--rank-color, var(--geo-accent)) 13%, #FFFFFF);
 }
 
 .geo-state-row-main {
@@ -806,7 +806,7 @@ foreach ($porEstado as $estadoDato) {
     min-width: 74px;
     padding: 6px 8px;
     border-radius: 12px;
-    background: rgba(255, 253, 248, .74);
+    background: rgba(255, 255, 255, .74);
     color: var(--geo-muted);
     font-size: .62rem;
     font-weight: 850;
@@ -908,7 +908,7 @@ foreach ($porEstado as $estadoDato) {
 }
 
 .geo-table tbody tr:hover {
-    background: color-mix(in srgb, var(--geo-accent) 5%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-primary) 4%, #FFFFFF);
 }
 
 .geo-table-wrap {
@@ -921,7 +921,7 @@ foreach ($porEstado as $estadoDato) {
     margin-top: 6px;
     border-radius: 999px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--geo-primary) 8%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-primary) 8%, #FFFFFF);
 }
 
 .geo-progress span {
@@ -949,7 +949,7 @@ foreach ($porEstado as $estadoDato) {
     justify-content: center;
     margin-bottom: 14px;
     border-radius: 22px;
-    background: color-mix(in srgb, var(--geo-accent) 12%, #FFFDF8);
+    background: color-mix(in srgb, var(--geo-accent) 12%, #FFFFFF);
     color: color-mix(in srgb, var(--geo-accent) 80%, var(--geo-primary));
     font-size: 1.55rem;
 }
@@ -1037,8 +1037,8 @@ foreach ($porEstado as $estadoDato) {
     border: 1px solid var(--geo-line-soft);
     border-radius: 16px;
     background:
-        radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--geo-accent) 12%, transparent), transparent 8rem),
-        color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
+        radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--geo-accent) 8%, transparent), transparent 8rem),
+        color-mix(in srgb, var(--geo-primary) 3%, #FFFFFF);
 }
 
 .geo-intl-kpi strong {
@@ -1501,7 +1501,7 @@ function getChartPalette() {
 
 function buildCharts() {
     const textColor = getGeoColor('--geo-text', '#17233E');
-    const lineColor = getGeoColor('--geo-line-soft', '#F0E7DB');
+    const lineColor = getGeoColor('--geo-line-soft', '#F1F5F9');
     const colorPalette = getChartPalette();
 
     const evolucionCanvas = document.getElementById('graficaEvolucion');

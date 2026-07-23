@@ -155,7 +155,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
 .exec-filter-note{margin:0;color:var(--exec-muted);font-size:.72rem;font-weight:700;line-height:1.25;text-align:right}
 .exec-filter-grid{grid-template-columns:1fr repeat(2,minmax(128px,.92fr)) repeat(3,minmax(112px,.8fr)) minmax(112px,.72fr);gap:8px;align-items:end}
 .exec-field label{margin-bottom:5px;color:var(--exec-muted);font-size:.63rem;font-weight:850;letter-spacing:.075em}
-.exec-field input,.exec-field select{height:38px;border-color:var(--exec-line);border-radius:11px;background:#fffefb;color:#111827;font-size:.78rem;font-weight:750;padding:0 10px}
+.exec-field input,.exec-field select{height:38px;border-color:var(--exec-line);border-radius:11px;background:#FFFFFF;color:#111827;font-size:.78rem;font-weight:750;padding:0 10px}
 .exec-field input:focus,.exec-field select:focus{border-color:var(--exec-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--exec-accent) 18%,transparent)}
 .exec-metrics{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .exec-metric{position:relative;min-height:86px;padding:12px 13px;border-color:var(--exec-line);border-radius:14px;background:#fff;box-shadow:none;overflow:hidden}
@@ -280,7 +280,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
     .exec-stat{min-height:56px;padding:8px;border-radius:12px}
     .exec-stat span{font-size:.58rem}
     .exec-stat strong{font-size:1.08rem}
-    .exec-row{align-items:flex-start;min-height:0;margin-bottom:7px;padding:8px 9px;border:1px solid var(--exec-line-soft);border-radius:12px;background:#fffefb}
+    .exec-row{align-items:flex-start;min-height:0;margin-bottom:7px;padding:8px 9px;border:1px solid var(--exec-line-soft);border-radius:12px;background:#FFFFFF}
     .exec-row:last-child{margin-bottom:0}
     .exec-row span{font-size:.7rem}
     .exec-row span small{font-size:.63rem}

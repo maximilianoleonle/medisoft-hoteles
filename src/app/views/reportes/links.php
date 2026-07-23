@@ -47,7 +47,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
     --rl-primary: var(--brand-primary, #1B2746);
     --rl-secondary: var(--brand-secondary, #0F172A);
     --rl-accent: var(--brand-accent, #BD9441);
-    --rl-bg: color-mix(in srgb, var(--rl-accent) 7%, #F7F8FA);
+    --rl-bg: color-mix(in srgb, var(--rl-primary) 4%, #F8FAFC);
     --rl-surface: #FFFFFF;
     --rl-line: color-mix(in srgb, var(--rl-primary) 14%, #E5E7EB);
     --rl-muted: #667085;
@@ -148,7 +148,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
     align-items: end;
     padding: 16px;
     border-bottom: 1px solid var(--rl-line);
-    background: color-mix(in srgb, var(--rl-accent) 4%, #fff);
+    background: color-mix(in srgb, var(--rl-primary) 3%, #fff);
 }
 .report-link-field {
     display: grid;

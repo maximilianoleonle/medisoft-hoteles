@@ -59,14 +59,14 @@ $riesgoRows = [
     --gd-brand: var(--brand-primary, #1B2746);
     --gd-brand-2: color-mix(in srgb, var(--gd-brand) 82%, #111827);
     --gd-accent: var(--brand-accent, #BD9441);
-    --gd-line: color-mix(in srgb, var(--gd-brand) 10%, #E7E1D4);
+    --gd-line: color-mix(in srgb, var(--gd-brand) 10%, #E5E7EB);
     --gd-muted: #667085;
     --gd-text: #172033;
-    --gd-bg: #FBFAF6;
+    --gd-bg: #F8FAFC;
     min-height: 100vh;
     padding: 24px;
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--gd-accent) 5%, #FFFFFF), transparent 280px),
+        linear-gradient(180deg, color-mix(in srgb, var(--gd-brand) 4%, #FFFFFF), transparent 280px),
         var(--gd-bg);
     color: var(--gd-text);
 }
