@@ -1,8 +1,21 @@
 <?php
+// Gate del panel. La ficha anfitriona (huesped, reservacion, trabajador,
+// compra, proveedor, cuenta por pagar, tarea) tiene su propio permiso, que no
+// dice nada sobre documentos: sin este corte se filtraban titulos de archivos
+// ("INE de Juan Perez") a hoteles sin el modulo contratado y a usuarios sin
+// 'documentos.view'. La descarga ya estaba protegida; la lista no.
+if (function_exists('puede_ver_documentos_vinculados') && !puede_ver_documentos_vinculados()) {
+    return;
+}
+
 $documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 $documentosEntidadContexto = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
 $documentosEntidadPermiteVerTodos = (bool)($documentosEntidadPermiteVerTodos ?? true);
-$documentosEntidadPermiteVincular = (bool)($documentosEntidadPermiteVincular ?? true);
+
+// La ficha puede pedir el boton de vincular, pero subir es escritura del
+// centro documental: exige 'documentos.all' igual que editar/archivar/borrar.
+$documentosEntidadPermiteVincular = (bool)($documentosEntidadPermiteVincular ?? true)
+    && (!function_exists('puede_vincular_documentos') || puede_vincular_documentos());
 
 if (!function_exists('doc_entity_safe')) {
     function doc_entity_safe($value, string $fallback = '-'): string

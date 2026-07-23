@@ -148,3 +148,33 @@ function require_hotel_module($clave) {
     set_mensaje($mensaje, 'error');
     redirect(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard');
 }
+
+/**
+ * Gate del panel "Documentos vinculados" que otras fichas (huesped,
+ * reservacion, trabajador, compra, proveedor, cuenta por pagar, tarea)
+ * pintan con el partial documentos_entidad.
+ *
+ * Mismo contrato que el menu (views/layout/sidebar.php): el hotel debe tener
+ * contratado el modulo 'documentos' y el usuario debe poder verlos. Sin esto
+ * el titulo del archivo ("INE de Juan Perez") se filtraba aunque la descarga
+ * si estuviera protegida por DocumentoController.
+ */
+function puede_ver_documentos_vinculados() {
+    if (function_exists('hotel_menu_module_enabled') && !hotel_menu_module_enabled('documentos')) {
+        return false;
+    }
+
+    return !function_exists('can') || can('documentos.view');
+}
+
+/**
+ * Vincular un archivo es una escritura del centro documental: mismo contrato
+ * que editar/archivar/eliminar en DocumentoController ('documentos.all').
+ */
+function puede_vincular_documentos() {
+    if (!puede_ver_documentos_vinculados()) {
+        return false;
+    }
+
+    return !function_exists('can') || can('documentos.all');
+}

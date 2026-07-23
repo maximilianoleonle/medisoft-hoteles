@@ -179,6 +179,11 @@ $guestDocPanelClass = 'guest-docs ' . ($guestDocCount > 1 ? 'is-gallery' : ($gue
 $guestDocEntityId = (int)($huesped['id'] ?? 0);
 $guestDocEntityQuery = $guestDocEntityId > 0 ? '?entidad_tipo=huesped&entidad_id=' . $guestDocEntityId : '';
 
+// Este panel es centro documental dentro de la ficha del huesped: se pinta
+// con el mismo contrato que el partial documentos_entidad.
+$guestDocsVisible = !function_exists('puede_ver_documentos_vinculados') || puede_ver_documentos_vinculados();
+$guestDocsPuedeVincular = !function_exists('puede_vincular_documentos') || puede_vincular_documentos();
+
 $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $estacionamientoDefault) {
     $html = '';
     foreach ($estacionamientos as $parkingCode => $parkingLabel) {
@@ -2149,13 +2154,14 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                             <?php endforeach; ?>
                         </div>
 
+                        <?php if ($guestDocsVisible): ?>
                         <section class="<?= guest_detail_safe($guestDocPanelClass) ?>" aria-label="Documentos del huesped">
                             <div class="guest-docs-head">
                                 <div class="guest-docs-title">
                                     <i class="fas fa-id-card-clip"></i>
                                     <span>Vista documental del huesped</span>
                                 </div>
-                                <?php if ($guestDocEntityId > 0): ?>
+                                <?php if ($guestDocEntityId > 0 && $guestDocsPuedeVincular): ?>
                                     <div class="guest-docs-actions">
                                         <a class="guest-doc-action" href="<?= url('documentos/subir' . $guestDocEntityQuery) ?>">
                                             <i class="fas fa-paperclip"></i>
@@ -2170,7 +2176,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                     <i class="fas fa-folder-open"></i>
                                     <div>
                                         Sin documento vinculado.
-                                        <?php if ($guestDocEntityId > 0): ?>
+                                        <?php if ($guestDocEntityId > 0 && $guestDocsPuedeVincular): ?>
                                             <br><a class="guest-doc-open" href="<?= url('documentos/subir' . $guestDocEntityQuery) ?>">Agregar identificacion o archivo</a>
                                         <?php endif; ?>
                                     </div>
@@ -2265,6 +2271,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                 </div>
                             <?php endif; ?>
                         </section>
+                        <?php endif; ?>
 
                         <?php if (!empty($huesped['notas'])): ?>
                             <div class="guest-note">

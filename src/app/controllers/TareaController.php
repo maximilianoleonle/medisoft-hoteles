@@ -515,6 +515,12 @@ class TareaController extends Controller
             return [];
         }
 
+        // La ficha de tarea se abre con 'tareas.view', que no autoriza a ver
+        // el centro documental. Sin este corte se filtraban los titulos.
+        if (!puede_ver_documentos_vinculados()) {
+            return [];
+        }
+
         return $this->documentoModel->documentosPorTareaHotel($hotelId, $tareaId, 50);
     }
 

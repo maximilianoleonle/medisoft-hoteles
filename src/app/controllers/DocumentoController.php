@@ -29,7 +29,7 @@ class DocumentoController extends Controller
 
         // Permiso base del centro documental (PII/expedientes): mismo contrato
         // que el menu (config/navegacion.php -> 'documentos.view'). Las
-        // escrituras (metadata/estado) exigen ademas 'documentos.all'.
+        // escrituras (subida, metadata y estado) exigen ademas 'documentos.all'.
         require_permission_or_403('documentos.view');
 
         return true;
@@ -179,6 +179,12 @@ class DocumentoController extends Controller
 
     public function subirAction(): void
     {
+        // Cargar un archivo al expediente es escritura, no consulta: mismo
+        // contrato que actualizarAction() y cambiarEstadoAction(). Antes solo
+        // heredaba 'documentos.view' del before() y un rol de solo lectura
+        // (p.ej. Recepcion) podia subir documentos al hotel.
+        require_permission_or_403('documentos.all');
+
         $hotelId = $this->hotelIdActual();
         $contextoEntidad = $this->contextoEntidadDesdeRequest($hotelId, true);
 
@@ -197,6 +203,10 @@ class DocumentoController extends Controller
 
     public function guardarAction(): void
     {
+        // Gate propio: subirAction() solo pinta el formulario, el POST entra
+        // aqui directo y debe exigir lo mismo.
+        require_permission_or_403('documentos.all');
+
         if (!$this->isPost()) {
             $this->redirect('documentos/subir');
             return;

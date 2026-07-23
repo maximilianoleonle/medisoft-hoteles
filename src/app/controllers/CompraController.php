@@ -116,8 +116,10 @@ class CompraController extends Controller
 
             $documentosEntidad = [];
             try {
-                $documentoModel = new Documento();
-                $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'compra', $compraId, 10);
+                if (puede_ver_documentos_vinculados()) {
+                    $documentoModel = new Documento();
+                    $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'compra', $compraId, 10);
+                }
             } catch (Throwable $e) {
                 $documentosEntidad = [];
             }

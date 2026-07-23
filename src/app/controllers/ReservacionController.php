@@ -2979,14 +2979,16 @@ $total_notas = count($notas);
 $documentosEntidad = [];
 $documentosHuesped = [];
 try {
-    $hotelId = (int)$this->hotelIdActual();
-    $documentoModel = new Documento();
-    if ($documentoModel->entidadExisteEnHotel($hotelId, 'reservacion', (int)$id)) {
-        $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'reservacion', (int)$id, 10);
-    }
-    $huespedId = (int)($huesped['id'] ?? $reservacion['huesped_id'] ?? 0);
-    if ($huespedId > 0 && $documentoModel->entidadExisteEnHotel($hotelId, 'huesped', $huespedId)) {
-        $documentosHuesped = $documentoModel->documentosPorEntidad($hotelId, 'huesped', $huespedId, 8);
+    if (puede_ver_documentos_vinculados()) {
+        $hotelId = (int)$this->hotelIdActual();
+        $documentoModel = new Documento();
+        if ($documentoModel->entidadExisteEnHotel($hotelId, 'reservacion', (int)$id)) {
+            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'reservacion', (int)$id, 10);
+        }
+        $huespedId = (int)($huesped['id'] ?? $reservacion['huesped_id'] ?? 0);
+        if ($huespedId > 0 && $documentoModel->entidadExisteEnHotel($hotelId, 'huesped', $huespedId)) {
+            $documentosHuesped = $documentoModel->documentosPorEntidad($hotelId, 'huesped', $huespedId, 8);
+        }
     }
 } catch (Throwable $e) {
     $documentosEntidad = [];

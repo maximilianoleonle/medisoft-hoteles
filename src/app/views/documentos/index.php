@@ -87,6 +87,10 @@ if ($esEntidad) {
     ]);
 }
 $visibles = count($documentos);
+
+// Subir es escritura: exige 'documentos.all' en DocumentoController. Sin este
+// corte el boton seguia visible para quien solo consulta y terminaba en 403.
+$puedeSubirDocumento = !function_exists('can') || can('documentos.all');
 ?>
 
 <style>
@@ -636,10 +640,12 @@ $visibles = count($documentos);
                             <span>Todos los documentos</span>
                         </a>
                     <?php endif; ?>
-                    <a class="dc-btn dc-btn-gold ms-glass-btn" href="<?= doc_safe($uploadUrl, '') ?>">
-                        <i class="fas fa-upload"></i>
-                        <span>Subir documento</span>
-                    </a>
+                    <?php if ($puedeSubirDocumento): ?>
+                        <a class="dc-btn dc-btn-gold ms-glass-btn" href="<?= doc_safe($uploadUrl, '') ?>">
+                            <i class="fas fa-upload"></i>
+                            <span>Subir documento</span>
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </section>
@@ -717,11 +723,15 @@ $visibles = count($documentos);
                     <section class="dc-empty">
                         <div class="dc-empty-icon"><i class="fas fa-folder-open"></i></div>
                         <h2>A&uacute;n no hay documentos</h2>
-                        <p>Sube el primero o cambia la b&uacute;squeda. Aceptamos PDF, JPG, PNG o WEBP.</p>
-                        <a class="dc-btn dc-btn-gold mt-4" href="<?= doc_safe($uploadUrl, '') ?>" style="display:inline-flex">
-                            <i class="fas fa-upload"></i>
-                            Subir documento
-                        </a>
+                        <?php if ($puedeSubirDocumento): ?>
+                            <p>Sube el primero o cambia la b&uacute;squeda. Aceptamos PDF, JPG, PNG o WEBP.</p>
+                            <a class="dc-btn dc-btn-gold mt-4" href="<?= doc_safe($uploadUrl, '') ?>" style="display:inline-flex">
+                                <i class="fas fa-upload"></i>
+                                Subir documento
+                            </a>
+                        <?php else: ?>
+                            <p>Cambia la b&uacute;squeda o los filtros para ver otros documentos.</p>
+                        <?php endif; ?>
                     </section>
                 <?php else: ?>
                     <section class="dc-panel overflow-hidden">
@@ -803,7 +813,7 @@ $visibles = count($documentos);
                                                     <?php if ($previewUrl): ?>
                                                         <a class="dc-action dc-action-preview" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener" title="Previsualizar" aria-label="Previsualizar documento"><i class="fas fa-magnifying-glass"></i></a>
                                                     <?php endif; ?>
-                                                    <?php if ($docEstado !== 'eliminado'): ?>
+                                                    <?php if ($docEstado !== 'eliminado' && $puedeSubirDocumento): /* editar = documentos.all, igual que subir */ ?>
                                                         <a class="dc-action dc-action-edit" href="<?= url('documentos/' . $docId . '/editar') ?>" title="Editar" aria-label="Editar documento"><i class="fas fa-pen"></i></a>
                                                     <?php endif; ?>
                                                     <?php if ($docEstado === 'activo'): ?>
@@ -865,7 +875,7 @@ $visibles = count($documentos);
                                         <?php if ($previewUrl): ?>
                                             <a class="dc-card-btn" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener" title="Vista previa" aria-label="Vista previa"><i class="fas fa-magnifying-glass"></i> <span>Vista</span></a>
                                         <?php endif; ?>
-                                        <?php if ($docEstado !== 'eliminado'): ?>
+                                        <?php if ($docEstado !== 'eliminado' && $puedeSubirDocumento): /* editar = documentos.all */ ?>
                                             <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/editar') ?>" title="Editar documento" aria-label="Editar documento"><i class="fas fa-pen"></i> <span>Editar</span></a>
                                         <?php endif; ?>
                                         <?php if ($docEstado === 'activo'): ?>

@@ -2008,6 +2008,12 @@ $rdGuestDocEntityId = (int)($huesped['id'] ?? $reservacion['huesped_id'] ?? 0);
 $rdGuestDocEntityQuery = $rdGuestDocEntityId > 0
     ? '?entidad_tipo=huesped&entidad_id=' . $rdGuestDocEntityId
     : '';
+
+// Panel documental dentro de la ficha de reservacion: mismo contrato que el
+// partial documentos_entidad (modulo contratado + 'documentos.view'), y
+// vincular exige 'documentos.all'.
+$rdGuestDocsVisible = !function_exists('puede_ver_documentos_vinculados') || puede_ver_documentos_vinculados();
+$rdGuestDocsPuedeVincular = !function_exists('puede_vincular_documentos') || puede_vincular_documentos();
 $rdEntryTime = trim((string)($reservacion['hora_entrada'] ?? '15:00'));
 $rdExitTime = trim((string)($reservacion['hora_salida'] ?? '12:00'));
 $rdCreatedAt = $reservacion['created_at'] ?? $reservacion['fecha_creacion'] ?? null;
@@ -4469,13 +4475,14 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                     <?php endif; ?>
                                 </div>
 
+                                <?php if ($rdGuestDocsVisible): ?>
                                 <section class="<?= $rdSafe($rdGuestDocPanelClass) ?>" aria-label="Documentos del huesped">
                                     <div class="rdv3-guest-docs-head">
                                         <div class="rdv3-guest-docs-title">
                                             <i class="fas fa-id-card-clip"></i>
                                             <span>Vista documental del huesped</span>
                                         </div>
-                                        <?php if ($rdGuestDocEntityId > 0): ?>
+                                        <?php if ($rdGuestDocEntityId > 0 && $rdGuestDocsPuedeVincular): ?>
                                             <div class="rdv3-guest-docs-actions">
                                                 <a class="rdv3-link" href="<?= url('documentos/subir' . $rdGuestDocEntityQuery) ?>"><i class="fas fa-paperclip"></i> Vincular</a>
                                             </div>
@@ -4487,7 +4494,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                             <i class="fas fa-id-card"></i>
                                             <div>
                                                 Sin documento vinculado.
-                                                <?php if ($rdGuestDocEntityId > 0): ?>
+                                                <?php if ($rdGuestDocEntityId > 0 && $rdGuestDocsPuedeVincular): ?>
                                                     <br><a class="rdv3-link" href="<?= url('documentos/subir' . $rdGuestDocEntityQuery) ?>">Agregar INE, licencia o archivo</a>
                                                 <?php endif; ?>
                                             </div>
@@ -4564,6 +4571,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                         </div>
                                     <?php endif; ?>
                                 </section>
+                                <?php endif; ?>
 
                                 <div class="rdv3-subhead rdv3-subhead--stack">
                                     <div class="rdv3-subhead-copy">

@@ -923,9 +923,11 @@ public function actualizarAction() {
 
     $documentosEntidad = [];
     try {
-        $documentoModel = new Documento();
-        if ($documentoModel->entidadExisteEnHotel($hotelId, 'huesped', (int)$id)) {
-            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'huesped', (int)$id, 10);
+        if (puede_ver_documentos_vinculados()) {
+            $documentoModel = new Documento();
+            if ($documentoModel->entidadExisteEnHotel($hotelId, 'huesped', (int)$id)) {
+                $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'huesped', (int)$id, 10);
+            }
         }
     } catch (Throwable $e) {
         $documentosEntidad = [];

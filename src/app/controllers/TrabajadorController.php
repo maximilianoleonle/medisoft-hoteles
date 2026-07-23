@@ -671,8 +671,10 @@ class TrabajadorController extends Controller
 
         $documentosEntidad = [];
         try {
-            $documentoModel = new Documento();
-            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'trabajador', $id, 10);
+            if (puede_ver_documentos_vinculados()) {
+                $documentoModel = new Documento();
+                $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'trabajador', $id, 10);
+            }
         } catch (Throwable $e) {
             $documentosEntidad = [];
         }
