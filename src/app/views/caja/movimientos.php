@@ -714,6 +714,94 @@ $balance_es_positivo = $balance_total >= 0;
     gap: 10px;
     padding-top: 4px;
 }
+.cash-detail-body {
+    padding: 18px;
+    display: grid;
+    gap: 13px;
+    max-height: calc(92dvh - 74px);
+    overflow-y: auto;
+}
+.cash-detail-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    border: 1px solid var(--cash-line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.72);
+}
+.cash-detail-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 950;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    background: var(--cash-muted);
+}
+.cash-detail-hero.is-ingreso .cash-detail-type {
+    background: #16824E;
+}
+.cash-detail-hero.is-gasto .cash-detail-type {
+    background: #C24135;
+}
+.cash-detail-amount {
+    font-size: 1.32rem;
+    font-weight: 950;
+    color: var(--cash-ink);
+}
+.cash-detail-hero.is-ingreso .cash-detail-amount {
+    color: #16824E;
+}
+.cash-detail-hero.is-gasto .cash-detail-amount {
+    color: #C24135;
+}
+.cash-detail-list {
+    margin: 0;
+    display: grid;
+}
+.cash-detail-row {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 9px 2px;
+    border-bottom: 1px dashed var(--cash-line);
+}
+.cash-detail-row:last-child {
+    border-bottom: 0;
+}
+.cash-detail-row.hidden {
+    display: none;
+}
+.cash-detail-row dt {
+    color: var(--cash-primary);
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    padding-top: 2px;
+}
+.cash-detail-row dd {
+    margin: 0;
+    color: var(--cash-ink);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.cash-detail-edited {
+    color: var(--cash-expense);
+}
+@media (max-width: 520px) {
+    .cash-detail-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+}
 .cash-cancel,
 .cash-save {
     min-height: 42px;
@@ -2541,6 +2629,77 @@ $balance_es_positivo = $balance_total >= 0;
     </div>
 </div>
 
+<div id="modalDetalle" class="cash-modal hidden">
+    <div class="cash-modal-card">
+        <div class="cash-modal-head">
+            <h3>
+                <i class="fas fa-eye"></i>
+                Detalle del movimiento
+            </h3>
+            <button type="button" onclick="cerrarModalDetalle()" class="cash-modal-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="cash-detail-body">
+            <div class="cash-detail-hero">
+                <span id="det_tipo" class="cash-detail-type"></span>
+                <strong id="det_monto" class="cash-detail-amount"></strong>
+            </div>
+            <dl class="cash-detail-list">
+                <div class="cash-detail-row">
+                    <dt>Descripcion</dt>
+                    <dd id="det_descripcion"></dd>
+                </div>
+                <div class="cash-detail-row">
+                    <dt>Fecha y hora</dt>
+                    <dd id="det_fecha"></dd>
+                </div>
+                <div class="cash-detail-row">
+                    <dt>Categoria</dt>
+                    <dd id="det_categoria"></dd>
+                </div>
+                <div class="cash-detail-row">
+                    <dt>Metodo de pago</dt>
+                    <dd id="det_metodo"></dd>
+                </div>
+                <div class="cash-detail-row">
+                    <dt>Referencia</dt>
+                    <dd id="det_referencia"></dd>
+                </div>
+                <div class="cash-detail-row" id="det_row_comprobante">
+                    <dt>Comprobante</dt>
+                    <dd id="det_comprobante"></dd>
+                </div>
+                <div class="cash-detail-row" id="det_row_proveedor">
+                    <dt>Proveedor</dt>
+                    <dd id="det_proveedor"></dd>
+                </div>
+                <div class="cash-detail-row">
+                    <dt>Registrado por</dt>
+                    <dd id="det_usuario"></dd>
+                </div>
+                <div class="cash-detail-row" id="det_row_reserva">
+                    <dt>Reservacion</dt>
+                    <dd><a id="det_reserva_link" href="#" class="cash-reserve-link"><i class="fas fa-bed"></i><span id="det_reserva_texto"></span></a></dd>
+                </div>
+                <div class="cash-detail-row" id="det_row_habitaciones">
+                    <dt>Habitaciones</dt>
+                    <dd id="det_habitaciones"></dd>
+                </div>
+                <div class="cash-detail-row" id="det_row_editado">
+                    <dt>Edicion</dt>
+                    <dd id="det_editado" class="cash-detail-edited"></dd>
+                </div>
+            </dl>
+
+            <div class="cash-modal-actions">
+                <button type="button" onclick="cerrarModalDetalle()" class="cash-cancel">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function toggleFiltros() {
     const panel = document.getElementById('panelFiltros');
@@ -2616,8 +2775,92 @@ document.getElementById('formEditar').addEventListener('submit', function(e) {
     });
 });
 
+<?php
+// Mapa id => datos ya formateados para el modal "Ver detalle" (solo lectura).
+// Se preformatea en PHP con los mismos helpers de la vista; el JS solo inyecta texto.
+$caja_mov_detalles = [];
+foreach ($movimientos as $mov_det) {
+    $det_tipo_key = $mov_det['tipo'] ?? 'gasto';
+    $det_es_ingreso = $det_tipo_key === 'ingreso';
+    $det_metodo_key = (string)($mov_det['metodo_pago'] ?? '');
+    $caja_mov_detalles[(string)($mov_det['id'] ?? '')] = [
+        'tipo' => $tipos[$det_tipo_key]['label'] ?? ucfirst((string)$det_tipo_key),
+        'es_ingreso' => $det_es_ingreso,
+        'monto' => ($det_es_ingreso ? '+' : '-') . caja_mov_money($mov_det['monto'] ?? 0),
+        'descripcion' => trim((string)($mov_det['descripcion'] ?? '')) !== '' ? trim((string)$mov_det['descripcion']) : '-',
+        'fecha' => caja_mov_date($mov_det['created_at'] ?? null, 'd/m/Y H:i:s'),
+        'categoria' => trim((string)($mov_det['categoria_nombre'] ?? '')) !== '' ? trim((string)$mov_det['categoria_nombre']) : 'Sin categoria',
+        'metodo' => $metodos_pago[$det_metodo_key]['label'] ?? ($det_metodo_key !== '' ? ucfirst($det_metodo_key) : '-'),
+        'referencia' => trim((string)($mov_det['referencia'] ?? '')) !== '' ? trim((string)$mov_det['referencia']) : '-',
+        'comprobante' => trim((string)($mov_det['comprobante'] ?? '')),
+        'proveedor' => trim((string)($mov_det['proveedor'] ?? '')),
+        'usuario' => trim((string)($mov_det['usuario_nombre'] ?? '')) !== '' ? trim((string)$mov_det['usuario_nombre']) : '-',
+        'reserva_url' => !empty($mov_det['reservacion_id']) ? url('reservaciones/ver/' . (int)$mov_det['reservacion_id']) : '',
+        'reserva_texto' => !empty($mov_det['reservacion_id'])
+            ? ('Reserva #' . (int)$mov_det['reservacion_id'] . (trim((string)($mov_det['huesped_nombre'] ?? '')) !== '' ? ' - ' . trim((string)$mov_det['huesped_nombre']) : ''))
+            : '',
+        'habitaciones' => trim((string)($mov_det['habitaciones_detalle'] ?? '')),
+        'editado' => !empty($mov_det['editado']),
+        'motivo_edicion' => trim((string)($mov_det['motivo_edicion'] ?? '')),
+    ];
+}
+?>
+const CAJA_MOV_DETALLES = <?= json_encode($caja_mov_detalles, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
 function verDetalle(id) {
-    console.log('Ver detalle de movimiento:', id);
+    const mov = CAJA_MOV_DETALLES[String(id)];
+    if (!mov) return;
+
+    const setTexto = (elId, valor) => {
+        const el = document.getElementById(elId);
+        if (el) el.textContent = valor;
+    };
+    // Filas opcionales: se ocultan cuando el movimiento no trae ese dato.
+    const toggleFila = (filaId, visible) => {
+        const fila = document.getElementById(filaId);
+        if (fila) fila.classList.toggle('hidden', !visible);
+    };
+
+    const hero = document.querySelector('#modalDetalle .cash-detail-hero');
+    if (hero) {
+        hero.classList.toggle('is-ingreso', !!mov.es_ingreso);
+        hero.classList.toggle('is-gasto', !mov.es_ingreso);
+    }
+
+    setTexto('det_tipo', mov.tipo);
+    setTexto('det_monto', mov.monto);
+    setTexto('det_descripcion', mov.descripcion);
+    setTexto('det_fecha', mov.fecha);
+    setTexto('det_categoria', mov.categoria);
+    setTexto('det_metodo', mov.metodo);
+    setTexto('det_referencia', mov.referencia);
+    setTexto('det_usuario', mov.usuario);
+
+    toggleFila('det_row_comprobante', mov.comprobante !== '');
+    setTexto('det_comprobante', mov.comprobante);
+
+    toggleFila('det_row_proveedor', mov.proveedor !== '');
+    setTexto('det_proveedor', mov.proveedor);
+
+    toggleFila('det_row_reserva', mov.reserva_url !== '');
+    const reservaLink = document.getElementById('det_reserva_link');
+    if (reservaLink) reservaLink.setAttribute('href', mov.reserva_url || '#');
+    setTexto('det_reserva_texto', mov.reserva_texto);
+
+    toggleFila('det_row_habitaciones', mov.habitaciones !== '');
+    setTexto('det_habitaciones', mov.habitaciones);
+
+    toggleFila('det_row_editado', !!mov.editado);
+    setTexto('det_editado', mov.motivo_edicion !== '' ? mov.motivo_edicion : 'Movimiento editado');
+
+    document.getElementById('modalDetalle').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function cerrarModalDetalle() {
+    const modal = document.getElementById('modalDetalle');
+    if (modal) modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
 }
 
 function exportarMovimientos() {
@@ -2632,9 +2875,14 @@ document.getElementById('modalEditar')?.addEventListener('click', function(e) {
     if (e.target === this) cerrarModalEditar();
 });
 
+document.getElementById('modalDetalle')?.addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalDetalle();
+});
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         cerrarModalEditar();
+        cerrarModalDetalle();
     }
 
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
