@@ -192,6 +192,29 @@ class EstacionamientoProyeccionService {
     }
 
     /**
+     * Nombre presentable de un vehículo registrado. PURO.
+     * Ignora los rellenos tipo "sin definir" que arrastra la captura legacy
+     * (se veían nombres como "AUTOBUS SIN DEFINIR sin definir" en el dashboard).
+     */
+    public static function nombreVehiculo($marca, $modelo, $color) {
+        $partes = [];
+        foreach ([$marca, $modelo, $color] as $parte) {
+            $parte = trim((string)$parte);
+            if ($parte === '' || self::esRellenoSinDato($parte)) {
+                continue;
+            }
+            $partes[] = $parte;
+        }
+        return !empty($partes) ? implode(' ', $partes) : 'Vehículo registrado';
+    }
+
+    /** true si el texto es un relleno de "no capturado" (sin definir, n/a, -...). PURO. */
+    public static function esRellenoSinDato($valor) {
+        $norm = mb_strtolower(trim((string)$valor), 'UTF-8');
+        return in_array($norm, ['sin definir', 'sin especificar', 'sin dato', 'n/a', 'na', 's/d', '-', '--'], true);
+    }
+
+    /**
      * Semáforo del día (mismos umbrales que la tarjeta del dashboard). PURO.
      * @return string sin_cupo | ok | ocupado | casi_lleno | sobrecupo
      */
@@ -380,18 +403,11 @@ class EstacionamientoProyeccionService {
             foreach (($stmtVeh ? ($stmtVeh->fetchAll() ?: []) : []) as $fila) {
                 $hid = (int)$fila['huesped_id'];
                 $area = trim((string)($fila['estacionamiento'] ?? ''));
-                $nombre = trim(trim((string)($fila['marca'] ?? '')) . ' ' . trim((string)($fila['modelo'] ?? '')));
-                $color = trim((string)($fila['color'] ?? ''));
-                if ($nombre === '') {
-                    $nombre = 'Vehículo registrado';
-                }
-                if ($color !== '') {
-                    $nombre .= ' ' . $color;
-                }
+                $placas = trim((string)($fila['placas'] ?? ''));
                 $vehiculosDetalle[$hid][] = [
                     'area' => $area !== '' ? $area : 'coches',
-                    'vehiculo' => $nombre,
-                    'placas' => trim((string)($fila['placas'] ?? '')),
+                    'vehiculo' => self::nombreVehiculo($fila['marca'] ?? '', $fila['modelo'] ?? '', $fila['color'] ?? ''),
+                    'placas' => self::esRellenoSinDato($placas) ? '' : $placas,
                 ];
             }
         }

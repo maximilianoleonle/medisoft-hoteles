@@ -138,6 +138,14 @@ $filas = EstacionamientoProyeccionService::detalleDia(
 t_eq(1, count($filas), 'dedup: estimado 1 recorta a un vehiculo');
 t_eq(602, $filas[0]['reservacion_id'], 'enlaza la reserva declarada, no la legacy');
 
+// ── Nombre presentable del vehículo (limpia rellenos legacy "sin definir") ──
+t_eq('Toyota Tacoma GRIS', EstacionamientoProyeccionService::nombreVehiculo('Toyota', 'Tacoma', 'GRIS'), 'nombre completo normal');
+t_eq('AUTOBUS', EstacionamientoProyeccionService::nombreVehiculo('AUTOBUS', 'SIN DEFINIR', 'sin definir'), 'filtra sin definir en cualquier caja');
+t_eq('TRAX', EstacionamientoProyeccionService::nombreVehiculo('TRAX', 'n/a', '-'), 'filtra n/a y guion');
+t_eq('Vehículo registrado', EstacionamientoProyeccionService::nombreVehiculo('', 'sin definir', ''), 'todo relleno = etiqueta generica');
+t_eq(true, EstacionamientoProyeccionService::esRellenoSinDato('  SIN DEFINIR '), 'relleno detectado con espacios/mayusculas');
+t_eq(false, EstacionamientoProyeccionService::esRellenoSinDato('GRIS'), 'dato real no es relleno');
+
 // ── Semáforo ──
 t_eq('sin_cupo', EstacionamientoProyeccionService::clasificarNivel(5, 0), 'cupo 0 = sin_cupo');
 t_eq('ok', EstacionamientoProyeccionService::clasificarNivel(5, 40), '12% = ok');

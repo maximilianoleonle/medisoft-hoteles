@@ -545,7 +545,6 @@ $resumen_estacionamientos_dashboard = $estado_estacionamiento_dashboard['resumen
 $limite_estacionamiento = (int)($estado_estacionamiento_dashboard['limite'] ?? 0);
 $vehiculos_ocupados_fisicos = (int)($estado_estacionamiento_dashboard['ocupados'] ?? 0);
 $vehiculos_apartados_reserva = (int)($estado_estacionamiento_dashboard['apartados'] ?? 0);
-$vehiculos_registrados_total = (int)($estado_estacionamiento_dashboard['total_vehiculos'] ?? 0);
 $vehiculos_estacionados = (int)($estado_estacionamiento_dashboard['usados'] ?? 0);
 $estacionamiento_tiene_cupo = $limite_estacionamiento > 0;
 $pct_estacionamiento = $estacionamiento_tiene_cupo
@@ -2590,6 +2589,10 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .park-ring {
     display: grid;
+    /* Columna fija al ancho de la tarjeta: sin esto, un texto sin salto de línea
+       en el desglose (listas largas de habitaciones) estira el track a su
+       min-content y toda la sección se corta por la derecha. */
+    grid-template-columns: 100%;
     justify-items: center;
     gap: 14px;
 }
@@ -2634,6 +2637,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .park-bar {
     width: 100%;
+    min-width: 0; /* nunca ensanchar la tarjeta por contenido nowrap del desglose */
     margin-top: 2px;
     padding: 15px;
     border: 1px solid var(--dash-line);
@@ -2885,7 +2889,48 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 /* ── Desglose de vehículos del día seleccionado (filas-enlace) ── */
-.pf-detail-head { margin-bottom: 2px; }
+.pf-detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.pf-detail-head > span { min-width: 0; }
+
+.pf-detail-close {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: -2px -3px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--dash-slate-500);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+
+.pf-detail-close:hover {
+    background: color-mix(in srgb, var(--dash-gold) 16%, transparent);
+    color: var(--dash-navy);
+    transform: rotate(90deg);
+}
+
+.parking-forecast-detail.pf-anim {
+    animation: pfDetailIn .22s ease both;
+}
+
+@keyframes pfDetailIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 .pf-detail-row {
     display: flex;
@@ -3120,6 +3165,42 @@ a.dm-park-type:hover {
     text-align: center;
 }
 
+/* Acordeón local de la lista de vehículos: los que exceden el corte
+   se despliegan aquí mismo, sin navegar a otra página. */
+.parking-vehicle-extra {
+    display: grid;
+    gap: 8px;
+}
+
+.parking-vehicle-extra[hidden] {
+    display: none; /* el display:grid de arriba le ganaría al atributo hidden */
+}
+
+button.parking-more-note {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button.parking-more-note:hover {
+    color: var(--dash-navy);
+    text-decoration: underline;
+}
+
+.parking-more-note .fa-chevron-down {
+    display: inline-block;
+    margin-right: 5px;
+    font-size: 9px;
+    transition: transform .18s ease;
+}
+
+.parking-more-note[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
 .list-row {
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto;
@@ -3273,6 +3354,8 @@ a.dm-park-type:hover {
     color: var(--dash-slate-500);
     font-size: 11px;
     font-weight: 850;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .cash-box.dark .label {
@@ -4068,6 +4151,8 @@ a.dm-park-type:hover {
     font-weight: 900;
     letter-spacing: .06em;
     text-transform: uppercase;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .dm-split .v {
@@ -4343,6 +4428,8 @@ a.dm-park-type:hover {
     font-weight: 900;
     letter-spacing: .04em;
     text-transform: uppercase;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .dm-cbox.dark .t {
@@ -4579,7 +4666,7 @@ a.dm-park-type:hover {
                     </div>
                 </div>
                 <div class="cash-day-balance"><span>Dinero que entró</span><strong><?= format_money($ingresos_brutos_total) ?></strong></div>
-                <div class="cash-day-balance"><span>Devuelto/cancelado</span><strong>-<?= format_money(abs($reversos_total)) ?></strong></div>
+                <div class="cash-day-balance"><span>Devuelto/<wbr>cancelado</span><strong>-<?= format_money(abs($reversos_total)) ?></strong></div>
                 <div class="cash-day-balance"><span>Resultado</span><strong><?= format_money($balance_dia) ?></strong></div>
                 <a class="card-kicker-link" href="<?= url('caja') ?>" title="Ir a caja para revisar movimientos">
                     Revisar caja
@@ -4866,7 +4953,7 @@ a.dm-park-type:hover {
                         <div class="amount" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                     </div>
                     <div class="cash-box">
-                        <div class="label">Devuelto/cancelado</div>
+                        <div class="label">Devuelto/<wbr>cancelado</div>
                         <div class="amount" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_reversos)) ?></div>
                     </div>
                     <div class="cash-box">
@@ -4930,7 +5017,7 @@ a.dm-park-type:hover {
                             <?php elseif ($espacios_excedidos > 0): ?>
                                 <?= $espacios_excedidos ?> espacios sobre el <a href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos en Configuración">limite configurado</a>
                             <?php else: ?>
-                                <?= $espacios_disp ?> espacios disponibles · <a href="<?= url('huespedes') ?>" title="Ver huéspedes y sus vehículos registrados"><?= $vehiculos_registrados_total ?> vehiculos registrados</a>
+                                <?= $espacios_disp ?> espacios disponibles
                             <?php endif; ?>
                         </div>
                         <div class="parking-breakdown" aria-label="Estacionamientos configurados">
@@ -4952,8 +5039,8 @@ a.dm-park-type:hover {
                                     $parkingClasses[] = 'is-full';
                                 }
                                 $parkingDetail = $parkingCapacity > 0
-                                    ? ((int)($parkingItem['ocupados'] ?? 0) . ' ocupados · ' . (int)($parkingItem['apartados'] ?? 0) . ' apartados · ' . $parkingAvailable . ' libres · ' . (int)($parkingItem['registrados'] ?? 0) . ' registrados')
-                                    : ((int)($parkingItem['ocupados'] ?? 0) . ' ocupados · ' . (int)($parkingItem['apartados'] ?? 0) . ' apartados · ' . (int)($parkingItem['registrados'] ?? 0) . ' registrados · sin cupo');
+                                    ? ((int)($parkingItem['ocupados'] ?? 0) . ' ocupados · ' . (int)($parkingItem['apartados'] ?? 0) . ' apartados · ' . $parkingAvailable . ' libres')
+                                    : ((int)($parkingItem['ocupados'] ?? 0) . ' ocupados · ' . (int)($parkingItem['apartados'] ?? 0) . ' apartados · sin cupo');
                                 if ($parkingOver > 0) {
                                     $parkingDetail .= ' · +' . $parkingOver . ' sobre cupo';
                                 }
@@ -4986,7 +5073,22 @@ a.dm-park-type:hover {
                         <?php if (empty($lista_vehiculos_estacionamiento)): ?>
                             <div class="empty-state" style="min-height:90px">Sin vehiculos con check-in programado para hoy.</div>
                         <?php else: ?>
-                            <?php foreach (array_slice($lista_vehiculos_estacionamiento, 0, 5) as $vehiculoParking): ?>
+                            <?php
+                            // Todos los vehículos del día a la vista. Solo con una lista muy
+                            // larga (>15) los últimos se guardan en un acordeón local que se
+                            // abre aquí mismo — nunca manda a otra página.
+                            $parkingVehiculosDia = array_values($lista_vehiculos_estacionamiento);
+                            $parkingTotalDia = count($parkingVehiculosDia);
+                            $parkingVisibles = $parkingTotalDia <= 15 ? $parkingTotalDia : 12;
+                            $parkingOcultos = $parkingTotalDia - $parkingVisibles;
+                            $parkingLabelMas = $parkingOcultos === 1
+                                ? 'Ver el vehículo que falta'
+                                : 'Ver los ' . $parkingOcultos . ' vehículos que faltan';
+                            ?>
+                            <?php foreach ($parkingVehiculosDia as $parkingIdx => $vehiculoParking): ?>
+                                <?php if ($parkingOcultos > 0 && $parkingIdx === $parkingVisibles): ?>
+                                    <div class="parking-vehicle-extra" id="parkingVehicleExtra" hidden>
+                                <?php endif; ?>
                                 <?php
                                 $parkingHref = !empty($vehiculoParking['reservacion_id'])
                                     ? url('reservaciones/ver/' . (int)$vehiculoParking['reservacion_id'])
@@ -5015,8 +5117,14 @@ a.dm-park-type:hover {
                                     </span>
                                 </a>
                             <?php endforeach; ?>
-                            <?php if (count($lista_vehiculos_estacionamiento) > 5): ?>
-                                <a class="parking-more-note" href="<?= url('huespedes') ?>" title="Ver todos los huéspedes y sus vehículos">+<?= count($lista_vehiculos_estacionamiento) - 5 ?> vehiculos adicionales registrados · ver todos</a>
+                            <?php if ($parkingOcultos > 0): ?>
+                                </div>
+                                <button type="button" class="parking-more-note" data-parking-more
+                                        aria-expanded="false" aria-controls="parkingVehicleExtra"
+                                        data-label-mas="<?= dashboard_safe($parkingLabelMas) ?>" data-label-menos="Ver menos">
+                                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                    <span><?= dashboard_safe($parkingLabelMas) ?></span>
+                                </button>
                             <?php endif; ?>
                         <?php endif; ?>
                     </div>
@@ -5092,9 +5200,9 @@ a.dm-park-type:hover {
                             <?php if (!$estacionamiento_tiene_cupo): ?>
                                 <a href="<?= url('configuracion') ?>#hc-catalogs">Configura el cupo en Configuración</a> para medir disponibilidad.
                             <?php elseif ($espacios_excedidos > 0): ?>
-                                <?= $espacios_excedidos ?> sobre el <a href="<?= url('configuracion') ?>#hc-catalogs">límite</a> · <a href="<?= url('huespedes') ?>"><?= $vehiculos_registrados_total ?> vehículos registrados</a>
+                                <?= $espacios_excedidos ?> sobre el <a href="<?= url('configuracion') ?>#hc-catalogs">límite</a>
                             <?php else: ?>
-                                <?= $espacios_disp ?> espacios disponibles · <a href="<?= url('huespedes') ?>"><?= $vehiculos_registrados_total ?> vehículos registrados</a>
+                                <?= $espacios_disp ?> espacios disponibles
                             <?php endif; ?>
                         </div>
                     </div>
@@ -5108,7 +5216,6 @@ a.dm-park-type:hover {
                                 $pOver  = (int)($parkingItem['sobrecupo'] ?? 0);
                                 $pOcc   = (int)($parkingItem['ocupados'] ?? 0);
                                 $pApar  = (int)($parkingItem['apartados'] ?? 0);
-                                $pReg   = (int)($parkingItem['registrados'] ?? 0);
                                 $pClass = 'dm-park-type';
                                 if ($pCupo <= 0) { $pClass .= ' is-unconfigured'; }
                                 elseif ($pOver > 0) { $pClass .= ' is-over-capacity'; }
@@ -5116,7 +5223,7 @@ a.dm-park-type:hover {
                                 if ($pCupo > 0) {
                                     $pDetail = $pOcc . ' ocup · ' . $pApar . ' apart · ' . $pDisp . ' libres';
                                 } else {
-                                    $pDetail = $pOcc . ' ocup · ' . $pReg . ' registrado' . ($pReg === 1 ? '' : 's');
+                                    $pDetail = $pOcc . ' ocup · sin cupo';
                                 }
                                 if ($pOver > 0) { $pDetail .= ' · +' . $pOver . ' sobre cupo'; }
                                 $pBadge = $pCupo > 0 ? ($pTotal . '/' . $pCupo) : (string)$pTotal;
@@ -5155,7 +5262,7 @@ a.dm-park-type:hover {
                             <div class="v" style="color:var(--dash-critical)"><?= format_money($egresos_total) ?></div>
                         </div>
                         <div class="b">
-                            <div class="t" style="color:var(--dash-critical)">Devuelto/cancelado</div>
+                            <div class="t" style="color:var(--dash-critical)">Devuelto/<wbr>cancelado</div>
                             <div class="v" style="color:var(--dash-critical)">-<?= format_money(abs($reversos_total)) ?></div>
                         </div>
                     </div>
@@ -5230,7 +5337,7 @@ a.dm-park-type:hover {
                             <div class="v" style="color:var(--dash-available)"><?= $dash_caja_ingreso_neto >= 0 ? '+' : '-' ?><?= format_money(abs($dash_caja_ingreso_neto)) ?></div>
                         </div>
                         <div class="dm-cbox">
-                            <div class="t">Devuelto/cancelado</div>
+                            <div class="t">Devuelto/<wbr>cancelado</div>
                             <div class="v" style="color:var(--dash-critical)">-<?= format_money(abs($dash_caja_reversos)) ?></div>
                         </div>
                         <div class="dm-cbox">
@@ -5489,6 +5596,26 @@ a.dm-park-type:hover {
     }
 })();
 
+/* Acordeón de la lista de vehículos: despliega los restantes aquí mismo. */
+(function () {
+    const boton = document.querySelector('[data-parking-more]');
+    const extra = document.getElementById('parkingVehicleExtra');
+    if (!boton || !extra) {
+        return;
+    }
+    boton.addEventListener('click', function () {
+        const abrir = extra.hidden;
+        extra.hidden = !abrir;
+        boton.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        const texto = boton.querySelector('span');
+        if (texto) {
+            texto.textContent = abrir
+                ? (boton.getAttribute('data-label-menos') || 'Ver menos')
+                : (boton.getAttribute('data-label-mas') || 'Ver más');
+        }
+    });
+})();
+
 (function () {
     const box = document.getElementById('parkingForecast');
     if (!box) {
@@ -5549,8 +5676,52 @@ a.dm-park-type:hover {
 
     function ponerDetalle(html) {
         details.forEach(function (det) {
+            const estabaOculto = det.hidden;
             det.innerHTML = html;
             det.hidden = false;
+            if (estabaOculto) {
+                det.classList.remove('pf-anim');
+                void det.offsetWidth; // reinicia la animación de entrada
+                det.classList.add('pf-anim');
+            }
+        });
+    }
+
+    function cerrarDetalle() {
+        marcarDiaActivo(null);
+        details.forEach(function (det) {
+            if (det.hidden) {
+                return;
+            }
+            if (typeof det.animate !== 'function') {
+                det.hidden = true;
+                det.innerHTML = '';
+                return;
+            }
+            const alto = det.offsetHeight;
+            det.style.overflow = 'hidden';
+            let cerrado = false;
+            const finalizar = function () {
+                if (cerrado) {
+                    return;
+                }
+                cerrado = true;
+                det.hidden = true;
+                det.style.overflow = '';
+                det.classList.remove('pf-anim');
+                det.innerHTML = '';
+            };
+            const anim = det.animate(
+                [
+                    { opacity: 1, transform: 'translateY(0)', height: alto + 'px', paddingTop: getComputedStyle(det).paddingTop, paddingBottom: getComputedStyle(det).paddingBottom, marginTop: getComputedStyle(det).marginTop },
+                    { opacity: 0, transform: 'translateY(-6px)', height: '0px', paddingTop: '0px', paddingBottom: '0px', marginTop: '0px' }
+                ],
+                { duration: 220, easing: 'ease' }
+            );
+            anim.onfinish = finalizar;
+            // Respaldo: si el navegador pausa la animación (pestaña en segundo
+            // plano), el panel se oculta igual al terminar el tiempo previsto.
+            setTimeout(finalizar, 320);
         });
     }
 
@@ -5593,7 +5764,8 @@ a.dm-park-type:hover {
             head += ' · <b>' + (dia.total - cupo) + ' sobre el cupo</b>';
         }
 
-        let html = '<div class="pf-detail-head">' + head + '</div>';
+        let html = '<div class="pf-detail-head"><span>' + head + '</span>' +
+            '<button type="button" class="pf-detail-close" title="Ocultar el desglose" aria-label="Ocultar el desglose"><i class="fas fa-times" aria-hidden="true"></i></button></div>';
         const filas = data.detalle || [];
         if (filas.length) {
             html += filas.map(filaVehiculoHtml).join('');
@@ -5648,6 +5820,15 @@ a.dm-park-type:hover {
             });
         });
     }
+
+    details.forEach(function (det) {
+        det.addEventListener('click', function (e) {
+            if (e.target && e.target.closest && e.target.closest('.pf-detail-close')) {
+                e.preventDefault();
+                cerrarDetalle();
+            }
+        });
+    });
 
     pedir(hoy, 7).then(pintarTira).catch(function () {
         strips.forEach(function (strip) {
