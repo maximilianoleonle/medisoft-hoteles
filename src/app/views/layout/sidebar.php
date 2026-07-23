@@ -153,6 +153,22 @@ if (!$sidebarEsPanelSaas) {
     $sidebarNovedades = sidebar_novedades();
 }
 
+// Campana de notificaciones del sidebar. Misma puerta por modulo que la del
+// dashboard y la del header movil; los datos salen de notificaciones_quick()
+// (cacheado ~60s en sesion) porque aqui no hay controlador que los inyecte.
+$sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
+$sidebarNotifActivo = !$sidebarEsPanelSaas && $menuModuloActivo('notificaciones');
+$sidebarNotifPendientes = 0;
+$sidebarNotifRecientes = [];
+if ($sidebarNotifActivo) {
+    require_once APP_PATH . '/helpers/notificaciones_quick.php';
+    $sidebarNotifQuick = notificaciones_quick(8);
+    $sidebarNotifPendientes = (int) ($sidebarNotifQuick['pendientes'] ?? 0);
+    $sidebarNotifRecientes = is_array($sidebarNotifQuick['recientes'] ?? null)
+        ? $sidebarNotifQuick['recientes']
+        : [];
+}
+
 /**
  * Burbuja de una entrada del menu. Se oculta en la seccion activa (ya estas ahi).
  *   - ['dot' => true]  -> punto de novedad (algo nuevo desde tu ultima visita)
@@ -324,6 +340,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 <i class="fas fa-times"></i>
             </button>
         </div>
+
         <div id="buscador-global-dropdown"
              style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);
                     background:white;border-radius:12px;
@@ -890,7 +907,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             <form method="POST" action="<?= url('logout') ?>" class="ms-mm-logout-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="ms-mm-logout">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 12H3m0 0 4-4m-4 4 4 4M20 4v16"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M21 12H10M17 8l4 4-4 4"/></svg>
                     Cerrar sesión
                 </button>
             </form>
@@ -923,6 +940,84 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                 <p class="user-name"><?= user_name() ?></p>
                 <p class="user-role"><?= user_role() ?></p>
             </div>
+            <?php if ($sidebarNotifActivo): ?>
+            <!-- ── Campana de notificaciones: mismo panel rápido del dashboard,
+                 aquí disponible desde cualquier pantalla. Vive junto al menú
+                 de usuario; el panel se abre hacia arriba desde el pie. ── -->
+            <div class="sb-bell-shell" data-sb-notif>
+                <button type="button"
+                        class="user-menu-btn sb-bell<?= $sidebarNotifPendientes > 0 ? ' has-pendientes' : '' ?><?= $sidebarActiveNotificaciones ? ' is-active' : '' ?>"
+                        data-sb-notif-toggle
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        aria-controls="sbNotifPanel"
+                        title="Notificaciones"
+                        aria-label="<?= $sidebarNotifPendientes > 0 ? 'Notificaciones: ' . $sidebarNotifPendientes . ' sin leer' : 'Notificaciones' ?>">
+                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <?php if ($sidebarNotifPendientes > 0): ?>
+                    <span class="sb-bell-badge"><?= $sidebarNotifPendientes > 99 ? '99+' : (int) $sidebarNotifPendientes ?></span>
+                    <?php endif; ?>
+                </button>
+
+                <div class="sb-notif-panel" id="sbNotifPanel" data-sb-notif-panel hidden>
+                    <div class="sb-notif-head">
+                        <span>Pendientes</span>
+                        <strong data-sb-notif-count><?= (int) $sidebarNotifPendientes ?></strong>
+                    </div>
+
+                    <div class="sb-notif-list" data-sb-notif-list>
+                        <?php if (empty($sidebarNotifRecientes)): ?>
+                            <div class="sb-notif-empty">Sin pendientes operativos por ahora.</div>
+                        <?php else: ?>
+                            <?php foreach (array_slice($sidebarNotifRecientes, 0, 8) as $sbNotif): ?>
+                                <?php
+                                $sbModulo = (string) ($sbNotif['modulo'] ?? 'sistema');
+                                $sbId = (int) ($sbNotif['id'] ?? 0);
+                                $sbTieneUrl = trim((string) ($sbNotif['url'] ?? '')) !== '';
+                                $sbHref = ($sbTieneUrl && $sbId > 0)
+                                    ? url('notificaciones/' . $sbId . '/abrir')
+                                    : url('notificaciones');
+                                $sbAutomatica = strpos((string) ($sbNotif['tipo'] ?? ''), 'regla_') === 0;
+                                $sbSeveridad = strtolower((string) ($sbNotif['severidad'] ?? ''));
+                                $sbSevClass = in_array($sbSeveridad, ['critica', 'alta'], true)
+                                    ? ' sb-crit'
+                                    : ($sbSeveridad === 'media' ? ' sb-warn' : '');
+                                $sbFecha = notificaciones_quick_fecha($sbNotif['created_at'] ?? null);
+                                ?>
+                                <div class="sb-swipe" data-sb-swipe>
+                                    <div class="sb-swipe-bg" aria-hidden="true">
+                                        <i class="fas fa-check" aria-hidden="true"></i> Archivar
+                                    </div>
+                                    <a class="sb-notif-row<?= $sbSevClass ?>"
+                                       href="<?= htmlspecialchars($sbHref, ENT_QUOTES, 'UTF-8') ?>"
+                                       <?= $sbId > 0 ? 'data-archive-url="' . htmlspecialchars(url('notificaciones/' . $sbId . '/descartar'), ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+                                        <span class="sb-notif-icon">
+                                            <i class="fas <?= htmlspecialchars(notificaciones_quick_icono($sbModulo), ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="sb-notif-body">
+                                            <span class="sb-notif-title"><?= htmlspecialchars((string) ($sbNotif['titulo'] ?? 'Notificación'), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="sb-notif-meta">
+                                                <?= htmlspecialchars(notificaciones_quick_etiqueta($sbModulo), ENT_QUOTES, 'UTF-8') ?><?= $sbFecha !== '' ? ' · ' . htmlspecialchars($sbFecha, ENT_QUOTES, 'UTF-8') : '' ?> · <?= $sbAutomatica ? 'Automática' : 'Manual' ?>
+                                            </span>
+                                        </span>
+                                        <span class="sb-notif-go">
+                                            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                                        </span>
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!empty($sidebarNotifRecientes)): ?>
+                    <div class="sb-notif-hint" data-sb-notif-hint>
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        Desliza una notificación a la izquierda para archivar
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
             <button type="button" class="user-menu-btn" id="user-menu-toggle" aria-label="Abrir menú de usuario">
                 <i class="fas fa-ellipsis-v"></i>
             </button>
@@ -1858,4 +1953,513 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
 }
 </style>
 
+<?php endif; ?>
+
+<?php if ($sidebarNotifActivo): ?>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CAMPANA DE NOTIFICACIONES DEL SIDEBAR
+   Vive en el pie, dentro de la tarjeta del usuario (junto al menú
+   de ⋮): las alertas acompañan a la persona, no a la búsqueda.
+   Colores con tokens --hotel-* para que el tema oscuro entre solo.
+   El panel se muda a <body> al abrir (el aside es overflow:hidden)
+   y crece hacia arriba porque el ancla está al fondo del viewport.
+   ═══════════════════════════════════════════════════════════════ */
+/* Ancla del numerito; el panel se va a <body> en cuanto carga el JS. */
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell-shell {
+    position: relative;
+    flex: 0 0 auto;
+    display: block;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+}
+
+/* El timbre LLEVA la clase .user-menu-btn a propósito: así hereda el fondo,
+   el radio y el hover que cada piel le pinta al botón de ⋮ de al lado
+   (shell, rail, cupertino, oscuro) sin duplicar una sola regla de color.
+   Aquí solo se corrige la geometría: cuadrado parejo y campana centrada. */
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell:active { transform: scale(.92); }
+
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--sr-primary, #1B2746) 55%, transparent);
+    outline-offset: 2px;
+}
+
+/* Abierto: se queda "presionado" con la misma gramática del hover del ⋮. */
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell-shell.is-open .sb-bell {
+    background: color-mix(in srgb, var(--sr-primary, #1B2746) 10%, transparent) !important;
+    color: var(--sr-primary, #1B2746) !important;
+}
+
+/* Repique discreto al cargar cuando hay algo por atender. */
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell.has-pendientes i {
+    transform-origin: 50% 12%;
+    animation: sbBellRing 4.5s ease-in-out .8s 2;
+}
+
+@keyframes sbBellRing {
+    0%, 8%, 100% { transform: rotate(0); }
+    2%  { transform: rotate(11deg); }
+    4%  { transform: rotate(-9deg); }
+    6%  { transform: rotate(5deg); }
+}
+
+/* Mismo rojo semantico de las burbujas del menu y del header movil.
+   Sin anillo de color: el fondo de la sidebar es un degradado y ningun anillo
+   solido casa con el; una sombra suave la despega sin ensuciar. */
+.hotel-layout-scope #sidebar.hotel-sidebar .sb-bell-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #FFFEFB;
+    font-size: .6rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.01em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .28);
+    pointer-events: none;
+}
+
+/* ── Panel ──────────────────────────────────────────────────── */
+.sb-notif-panel {
+    position: fixed;
+    z-index: 1250;
+    width: min(360px, calc(100vw - 24px));
+    border: 1px solid var(--hotel-border, #E7DEC9);
+    border-radius: 18px;
+    /* Mismo destello dorado del flyout del rail: el panel se lee como
+       hermano suyo, no como una caja ajena pegada al menú. */
+    background:
+        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--hotel-accent, #BD9441) 12%, transparent), transparent 11rem),
+        var(--hotel-panel, #fff);
+    color: var(--hotel-text, #0F172A);
+    box-shadow: 0 22px 52px color-mix(in srgb, var(--hotel-secondary, #0F172A) 18%, transparent);
+    overflow: hidden;
+    font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif;
+    animation: sbNotifIn .22s cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes sbNotifIn {
+    from { opacity: 0; transform: translateX(-8px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.sb-notif-panel[hidden] { display: none; }
+
+.sb-notif-panel.sb-closing {
+    animation: sbNotifOut .16s cubic-bezier(.4, 0, 1, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes sbNotifOut {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateX(-6px) scale(.98); }
+}
+
+.sb-notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 19px 12px;
+}
+
+.sb-notif-head span {
+    color: var(--hotel-muted, #939BAD);
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.sb-notif-head strong {
+    color: var(--hotel-text, #1B2746);
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.sb-notif-list {
+    max-height: min(326px, 52vh);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sb-notif-list::-webkit-scrollbar { width: 6px; }
+.sb-notif-list::-webkit-scrollbar-thumb { background: var(--hotel-line, #E2D6BF); border-radius: 99px; }
+
+/* Fila deslizable: capa verde "Archivar" debajo de la fila. */
+.sb-swipe {
+    position: relative;
+    border-top: 1px solid var(--hotel-border, #ECE5D8);
+    overflow: hidden;
+}
+
+.sb-swipe.gone {
+    transition: height .32s ease, opacity .2s ease;
+    opacity: 0;
+    border-top: 0;
+}
+
+.sb-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-right: 22px;
+    background: linear-gradient(90deg, #2BA76A, #1E9E63);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sb-notif-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 19px;
+    background: var(--hotel-panel, #fff);
+    color: inherit;
+    text-decoration: none;
+    transition: background .14s ease;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.sb-notif-row.dragging { transition: none; }
+.sb-notif-row.settle { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+
+.sb-notif-row:hover,
+.sb-notif-row:focus-visible {
+    background: color-mix(in srgb, var(--hotel-accent, #BD9441) 7%, var(--hotel-panel, #fff));
+    outline: none;
+}
+
+.sb-notif-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--hotel-primary, #1B2746) 7%, transparent);
+    color: var(--hotel-muted, #6C7689);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+/* Severidad semantica: critica/alta rojo, media ambar (no cambia con la marca). */
+.sb-crit .sb-notif-icon { background: #FBE9E7; color: #D64539; }
+.sb-warn .sb-notif-icon { background: #FAF0DC; color: #C2841C; }
+
+.sb-notif-body { min-width: 0; flex: 1; pointer-events: none; }
+
+.sb-notif-title {
+    display: block;
+    color: var(--hotel-text, #1B2746);
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sb-notif-meta {
+    display: block;
+    margin-top: 3px;
+    color: var(--hotel-muted, #939BAD);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sb-notif-go {
+    margin-left: auto;
+    flex: none;
+    color: var(--hotel-muted, #B7BDCB);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.sb-notif-empty {
+    padding: 24px 19px;
+    color: var(--hotel-muted, #939BAD);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.sb-notif-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px;
+    border-top: 1px solid var(--hotel-border, #ECE5D8);
+    background: color-mix(in srgb, var(--hotel-accent, #BD9441) 5%, var(--hotel-panel, #fff));
+    color: var(--hotel-muted, #939BAD);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* En movil el menu es pantalla completa y el header ya trae su campana:
+   una sola por vista, sin duplicar el mismo control. */
+@media (max-width: 1024px) {
+    #sidebar.hotel-sidebar .sb-bell-shell { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hotel-layout-scope #sidebar.hotel-sidebar .sb-bell.has-pendientes i { animation: none; }
+    .sb-notif-panel, .sb-notif-panel.sb-closing { animation: none; }
+}
+</style>
+
+<script>
+(function () {
+    var root = document.querySelector('[data-sb-notif]');
+    if (!root) { return; }
+
+    var button = root.querySelector('[data-sb-notif-toggle]');
+    var panel = root.querySelector('[data-sb-notif-panel]');
+    if (!button || !panel) { return; }
+
+    // El aside es overflow:hidden; el panel vive en <body> y se posiciona fijo.
+    document.body.appendChild(panel);
+
+    // Flotante a la derecha del menu, alineado con la campana. Si no cabe
+    // (ventana angosta), cae al otro lado y se ajusta al alto disponible.
+    // Mismo anclaje que el flyout del rail (sidebar-rail.js): pegado al borde
+    // derecho del menu, no al boton, para que no se monte sobre la sidebar.
+    var aside = document.getElementById('sidebar');
+
+    function placePanel() {
+        var rect = button.getBoundingClientRect();
+        var borde = aside ? aside.getBoundingClientRect().right : rect.right;
+        var width = Math.min(360, Math.max(280, window.innerWidth - 24));
+        var left = Math.round(borde + 8);
+        if (left + width > window.innerWidth - 8) {
+            left = Math.round(rect.left - width - 8);
+        }
+        // Tope duro: si el menu esta fuera de pantalla (drawer cerrado, resize
+        // a medias), el ancla da basura y el panel no debe irse del viewport.
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+
+        panel.style.width = width + 'px';
+        panel.style.left = left + 'px';
+        panel.style.top = '0px';
+
+        var alto = panel.offsetHeight || 320;
+        var top = Math.max(8, Math.min(rect.top - 6, window.innerHeight - alto - 8));
+        panel.style.top = Math.round(top) + 'px';
+    }
+
+    var animTimer = null;
+
+    function openPanel() {
+        if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+        panel.classList.remove('sb-closing');
+        panel.hidden = false;
+        button.setAttribute('aria-expanded', 'true');
+        root.classList.add('is-open');
+        placePanel();
+    }
+
+    function closePanel() {
+        if (panel.hidden || panel.classList.contains('sb-closing')) { return; }
+        panel.classList.add('sb-closing');
+        button.setAttribute('aria-expanded', 'false');
+        root.classList.remove('is-open');
+        animTimer = setTimeout(function () {
+            panel.hidden = true;
+            panel.classList.remove('sb-closing');
+            animTimer = null;
+        }, 160);
+    }
+
+    button.addEventListener('click', function (event) {
+        event.stopPropagation();
+        if (panel.hidden || panel.classList.contains('sb-closing')) {
+            openPanel();
+            return;
+        }
+        closePanel();
+    });
+
+    // Solo abre con clic: nada de hover. Pasar el cursor por el menu no debe
+    // desplegar un panel que tapa media pantalla.
+
+    document.addEventListener('click', function (event) {
+        if (!(event.target instanceof Element)) { return; }
+        if (!panel.hidden && !root.contains(event.target) && !panel.contains(event.target)) {
+            closePanel();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !panel.hidden) {
+            closePanel();
+            button.focus();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!panel.hidden) { placePanel(); }
+    });
+
+    window.addEventListener('scroll', function () {
+        if (!panel.hidden) { placePanel(); }
+    }, true);
+
+    // ── Deslizar para archivar (mismo POST a /notificaciones/{id}/descartar) ──
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.content : '';
+    var headCount = panel.querySelector('[data-sb-notif-count]');
+    var list = panel.querySelector('[data-sb-notif-list]');
+    var THRESHOLD = 96;
+    var pendientes = headCount ? (parseInt(headCount.textContent, 10) || 0) : 0;
+
+    function renderCounts() {
+        if (headCount) { headCount.textContent = pendientes; }
+        var badge = button.querySelector('.sb-bell-badge');
+        if (pendientes <= 0) {
+            if (badge) { badge.remove(); }
+            button.classList.remove('has-pendientes');
+            button.setAttribute('aria-label', 'Notificaciones');
+        } else if (badge) {
+            badge.textContent = pendientes > 99 ? '99+' : String(pendientes);
+            button.setAttribute('aria-label', 'Notificaciones: ' + pendientes + ' sin leer');
+        }
+    }
+
+    function onArchived(sw) {
+        sw.classList.add('gone');
+        sw.style.height = '0px';
+        pendientes = Math.max(0, pendientes - 1);
+        renderCounts();
+        setTimeout(function () {
+            sw.remove();
+            if (list && !list.querySelector('[data-sb-swipe]')) {
+                list.innerHTML = '<div class="sb-notif-empty">Sin pendientes operativos por ahora.</div>';
+                var hint = panel.querySelector('[data-sb-notif-hint]');
+                if (hint) { hint.remove(); }
+            }
+            if (!panel.hidden) { placePanel(); }
+        }, 340);
+    }
+
+    function archiveRow(sw, row) {
+        row.classList.add('settle');
+        row.style.transform = 'translateX(-110%)';
+        sw.style.height = sw.offsetHeight + 'px';
+
+        var body = new URLSearchParams();
+        body.set('csrf_token', csrfToken);
+
+        fetch(row.dataset.archiveUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: body
+        }).then(function (res) {
+            if (!res.ok) { throw new Error('HTTP ' + res.status); }
+            onArchived(sw);
+        }).catch(function () {
+            sw.style.height = '';
+            row.style.transform = 'translateX(0)';
+            if (typeof window.msToast === 'function') {
+                window.msToast('error', 'Notificaciones', 'No se pudo archivar. Intenta de nuevo.');
+            }
+        });
+    }
+
+    if (list) {
+        list.querySelectorAll('[data-sb-swipe]').forEach(function (sw) {
+            var row = sw.querySelector('.sb-notif-row');
+            if (!row || !row.dataset.archiveUrl) { return; }
+
+            var startX = 0, startY = 0, dx = 0;
+            var active = false, decided = false, horiz = false;
+
+            row.addEventListener('pointerdown', function (e) {
+                if (e.pointerType === 'mouse' && e.button !== 0) { return; }
+                startX = e.clientX; startY = e.clientY;
+                dx = 0; active = true; decided = false; horiz = false;
+                row.classList.remove('settle');
+            });
+
+            row.addEventListener('pointermove', function (e) {
+                if (!active) { return; }
+                var mx = e.clientX - startX;
+                var my = e.clientY - startY;
+                if (!decided && (Math.abs(mx) > 6 || Math.abs(my) > 6)) {
+                    decided = true;
+                    horiz = Math.abs(mx) > Math.abs(my);
+                    if (horiz) {
+                        row.classList.add('dragging');
+                        try { row.setPointerCapture(e.pointerId); } catch (err) {}
+                    }
+                }
+                if (!horiz) { return; }
+                if (e.cancelable) { e.preventDefault(); }
+                dx = Math.min(0, mx); // solo hacia la izquierda
+                row.style.transform = 'translateX(' + dx + 'px)';
+            });
+
+            function finishDrag() {
+                if (!active) { return; }
+                active = false;
+                row.classList.remove('dragging');
+                if (horiz) {
+                    // Suprime la navegacion del click que sigue al arrastre.
+                    row.dataset.dragged = '1';
+                    setTimeout(function () { delete row.dataset.dragged; }, 0);
+                    if (dx < -THRESHOLD) {
+                        archiveRow(sw, row);
+                    } else {
+                        row.classList.add('settle');
+                        row.style.transform = 'translateX(0)';
+                    }
+                }
+            }
+
+            row.addEventListener('pointerup', finishDrag);
+            row.addEventListener('pointercancel', finishDrag);
+            row.addEventListener('click', function (e) {
+                if (row.dataset.dragged === '1') { e.preventDefault(); }
+            });
+        });
+    }
+})();
+</script>
 <?php endif; ?>
