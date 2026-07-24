@@ -80,7 +80,6 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
     border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .88rem; line-height: 1; cursor: pointer; text-decoration: none;
     transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease; }
 .cxc-op-page .cx-btn:hover { transform: translateY(-1px); }
-.cxc-op-page .cx-btn-brand { background: linear-gradient(135deg, var(--cx-brand), var(--cx-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cx-brand) 60%, transparent); }
 .cxc-op-page .cx-btn-muted { background: var(--cx-surface); border-color: var(--cx-border); color: var(--cx-muted); }
 
 .cxc-op-page .cx-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -99,7 +98,6 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
 .cxc-op-page .cx-search { position: relative; }
 .cxc-op-page .cx-search .cx-control { padding-left: 38px; }
 .cxc-op-page .cx-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--cx-muted); font-size: .9rem; pointer-events: none; }
-.cxc-op-page .cx-filter-form .cx-btn-brand { display: none; }
 .cxc-op-page .cx-filter-form .cx-reset { width: 42px; min-width: 42px; padding: 0; border-radius: 12px; overflow: hidden; font-size: 0; color: var(--cx-muted); }
 .cxc-op-page .cx-filter-form .cx-reset i { margin: 0; font-size: .86rem; }
 .cxc-op-page .cx-filter-form .cx-reset:hover { background: var(--cx-gold-soft); border-color: var(--cx-gold-line); color: var(--cx-gold-ink); }
@@ -202,7 +200,6 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                         <option value="incobrable" <?= $estado === 'incobrable' ? 'selected' : '' ?>>Incobrables</option>
                     </select>
-                    <button class="cx-btn cx-btn-brand" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="cx-btn cx-btn-muted cx-reset" href="<?= url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-times"></i> Limpiar</a>
                 </form>
             </section>

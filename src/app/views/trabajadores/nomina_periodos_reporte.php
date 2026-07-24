@@ -164,7 +164,7 @@ include APP_PATH . '/views/partials/nomina_report_ui.php';
             </div>
         <?php else: ?>
             <?php include APP_PATH . '/views/partials/filtros.php'; ?>
-            <form method="GET" action="<?= url('trabajadores/nomina/periodos/reporte') ?>" class="msf-bar">
+            <form method="GET" action="<?= url('trabajadores/nomina/periodos/reporte') ?>" class="msf-bar" data-auto-filter-form>
                 <label class="msf-field msf-field--sm">
                     <span class="msf-label">Desde</span>
                     <input class="msf-control" type="date" name="fecha_inicio" value="<?= trab_nomina_report_safe($fechaInicio, '') ?>">
@@ -191,7 +191,6 @@ include APP_PATH . '/views/partials/nomina_report_ui.php';
                     <button type="button" class="msf-chip" data-msf-range="mes-pasado">Mes pasado</button>
                 </div>
                 <div class="msf-actions">
-                    <button class="msf-btn msf-btn--primary" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="msf-btn" href="<?= url('trabajadores/nomina/periodos/reporte') ?>"><i class="fas fa-rotate-left"></i> Limpiar</a>
                 </div>
             </form>

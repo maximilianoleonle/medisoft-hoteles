@@ -151,11 +151,6 @@ $visibles = count($proveedores);
     color: #fff;
     box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--pv-gold) 58%, transparent);
 }
-.providers-page .pv-btn-brand {
-    background: linear-gradient(135deg, var(--pv-brand), var(--pv-brand-2));
-    color: #fff;
-    box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--pv-brand) 60%, transparent);
-}
 .providers-page .pv-btn-muted {
     background: var(--pv-surface);
     border-color: var(--pv-border);
@@ -204,7 +199,7 @@ $visibles = count($proveedores);
 /* Filtros */
 .providers-page .pv-filter-form {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) minmax(170px, 220px) auto auto;
+    grid-template-columns: minmax(240px, 1fr) minmax(170px, 220px) auto;
     gap: 10px;
     align-items: center;
 }
@@ -583,12 +578,6 @@ $visibles = count($proveedores);
     background: linear-gradient(135deg, color-mix(in srgb, var(--pv-gold) 86%, #fff), color-mix(in srgb, var(--pv-gold) 72%, var(--pv-brand)));
     box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--pv-gold) 42%, transparent);
 }
-.providers-page .pv-btn-brand {
-    background: color-mix(in srgb, var(--pv-gold) 10%, #FFFFFF);
-    border-color: color-mix(in srgb, var(--pv-gold) 28%, #ECE1D1);
-    color: var(--pv-gold-ink);
-    box-shadow: 0 8px 18px -18px color-mix(in srgb, var(--pv-gold) 34%, transparent);
-}
 .providers-page .pv-btn-muted {
     background: rgba(255,255,255,.86);
     border-color: var(--pv-border);
@@ -922,10 +911,6 @@ $visibles = count($proveedores);
                         <option value="inactivos" <?= $estado === 'inactivos' ? 'selected' : '' ?>>Inactivos</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
                     </select>
-                    <button class="pv-btn pv-btn-brand pv-filter-submit" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                     <a class="pv-btn pv-btn-muted pv-reset" href="<?= url('proveedores') ?>">
                         <i class="fas fa-times"></i>
                         Limpiar

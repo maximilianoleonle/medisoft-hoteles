@@ -92,7 +92,6 @@ $estado = (string)($filtros['estado'] ?? 'todos');
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease;
 }
 .cxp-cash-page .cx-btn:hover { transform: translateY(-1px); }
-.cxp-cash-page .cx-btn-brand { background: linear-gradient(135deg, var(--cx-brand), var(--cx-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cx-brand) 60%, transparent); }
 .cxp-cash-page .cx-btn-muted { background: var(--cx-surface); border-color: var(--cx-border); color: var(--cx-muted); }
 
 .cxp-cash-page .cx-panel { background: var(--cx-surface); border: 1px solid var(--cx-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
@@ -105,7 +104,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 .cxp-cash-page .cx-control { width: 100%; min-height: 40px; border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cx-text); font-weight: 600; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .cxp-cash-page .cx-control:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; }
 .cxp-cash-page select.cx-control { cursor: pointer; }
-.cxp-cash-page .cx-filter-form { display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: center; }
+.cxp-cash-page .cx-filter-form { display: grid; grid-template-columns: 1fr 180px; gap: 10px; align-items: center; }
 
 .cxp-cash-page .cx-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
 .cxp-cash-page .cx-badge.is-pendiente { color: color-mix(in srgb, var(--cx-info) 80%, #000); background: var(--cx-info-bg); border-color: color-mix(in srgb, var(--cx-info) 26%, #fff); }
@@ -236,17 +235,6 @@ $estado = (string)($filtros['estado'] ?? 'todos');
     color: var(--cx-text);
 }
 
-.cxp-cash-page .cx-btn-brand {
-    color: #fff;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--cx-gold) 86%, #fff), color-mix(in srgb, var(--cx-gold) 72%, var(--cx-brand)));
-    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--cx-gold) 42%, transparent);
-}
-
-.cxp-cash-page .cx-btn-brand:hover {
-    color: #fff;
-    box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--cx-gold) 54%, transparent);
-}
-
 .cxp-cash-page .cx-btn-muted {
     color: var(--cx-muted);
     background: rgba(255,255,255,.86);
@@ -268,7 +256,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 }
 
 .cxp-cash-page .cx-filter-form {
-    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px) auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px);
 }
 
 .cxp-cash-page .cx-control {
@@ -505,10 +493,6 @@ $estado = (string)($filtros['estado'] ?? 'todos');
                         <option value="pagada" <?= $estado === 'pagada' ? 'selected' : '' ?>>Pagadas</option>
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                     </select>
-                    <button class="cx-btn cx-btn-brand" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                 </form>
             </section>
 

@@ -84,7 +84,6 @@ $visibles = count($cuentas);
 .cxc-page .cx-btn:hover { transform: translateY(-1px); }
 .cxc-page .cx-btn:active { transform: translateY(0) scale(.98); }
 .cxc-page .cx-btn:focus-visible { outline: 3px solid var(--cx-ring); outline-offset: 2px; }
-.cxc-page .cx-btn-brand { background: linear-gradient(135deg, var(--cx-brand), var(--cx-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cx-brand) 60%, transparent); }
 .cxc-page .cx-btn-gold { background: linear-gradient(135deg, var(--cx-gold), color-mix(in srgb, var(--cx-gold) 76%, var(--cx-brand))); color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--cx-gold) 58%, transparent); }
 .cxc-page .cx-btn-muted { background: var(--cx-surface); border-color: var(--cx-border); color: var(--cx-muted); }
 
@@ -94,7 +93,7 @@ $visibles = count($cuentas);
 .cxc-page .cx-summary-value { margin-top: 2px; font-family: var(--cx-serif); font-size: 1.7rem; font-weight: 700; line-height: 1.1; color: var(--cx-heading); }
 
 .cxc-page .cx-panel { background: var(--cx-surface); border: 1px solid var(--cx-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
-.cxc-page .cx-filter-form { display: grid; grid-template-columns: minmax(240px, 1.15fr) minmax(150px, 180px) minmax(150px, 180px) 42px; max-width: 840px; gap: 10px; align-items: center; }
+.cxc-page .cx-filter-form { display: grid; grid-template-columns: minmax(220px, 1.15fr) minmax(140px, 180px) minmax(140px, 180px) minmax(140px, 180px) 42px; max-width: 900px; gap: 10px; align-items: center; }
 .cxc-page .cx-control { width: 100%; min-height: 40px; border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cx-text); font-weight: 600; font-size: .86rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .cxc-page .cx-control:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; }
 .cxc-page .cx-control::placeholder { color: color-mix(in srgb, var(--cx-muted) 72%, #fff); font-weight: 600; }
@@ -102,7 +101,6 @@ $visibles = count($cuentas);
 .cxc-page .cx-search { position: relative; }
 .cxc-page .cx-search .cx-control { padding-left: 38px; }
 .cxc-page .cx-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--cx-muted); font-size: .9rem; pointer-events: none; }
-.cxc-page .cx-filter-form .cx-btn-brand { display: none; }
 .cxc-page .cx-filter-form .cx-reset { width: 42px; min-width: 42px; padding: 0; border-radius: 12px; overflow: hidden; font-size: 0; color: var(--cx-muted); }
 .cxc-page .cx-filter-form .cx-reset i { margin: 0; font-size: .86rem; }
 .cxc-page .cx-filter-form .cx-reset:hover { background: var(--cx-gold-soft); border-color: var(--cx-gold-line); color: var(--cx-gold-ink); }
@@ -182,11 +180,10 @@ $visibles = count($cuentas);
     .cxc-page .cx-summary-item { padding: 10px 12px; border-radius: 12px; }
     .cxc-page .cx-summary-value { font-size: 1.35rem; }
 
-    /* Filtros: search + selects apilados; "Filtrar" se oculta (live-search auto-aplica) */
+    /* Filtros: search + selects apilados (live-search auto-aplica) */
     .cxc-page .cx-panel.p-3 { padding: 12px !important; }
     .cxc-page .cx-filter-form { grid-template-columns: 1fr; gap: 8px; }
     .cxc-page .cx-control { min-height: 44px; }
-    .cxc-page .cx-filter-form .cx-btn-brand { display: none; }   /* omitido: redundante con busqueda en vivo */
     .cxc-page .cx-filter-form .cx-reset { width: 42px; justify-self: end; }
 
     /* Tabla oculta → tarjetas */
@@ -281,7 +278,6 @@ $visibles = count($cuentas);
                         <option value="liquidada" <?= $estadoSaldo === 'liquidada' ? 'selected' : '' ?>>Ya pagadas</option>
                         <option value="excedente" <?= $estadoSaldo === 'excedente' ? 'selected' : '' ?>>Con excedente</option>
                     </select>
-                    <button class="cx-btn cx-btn-brand" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="cx-btn cx-btn-muted cx-reset" href="<?= url('cuentas-por-cobrar') ?>"><i class="fas fa-times"></i> Limpiar</a>
                 </form>
             </section>

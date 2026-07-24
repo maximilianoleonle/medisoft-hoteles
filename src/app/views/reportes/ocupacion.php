@@ -29,7 +29,6 @@ if (!function_exists('occ_date')) {
 .occ-hero h1 { margin: 5px 0 0; font-size: clamp(1.65rem, 2.5vw, 2.35rem); letter-spacing: 0; }
 .occ-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .occ-actions input, .occ-actions select { min-height: 42px; border: 1px solid var(--occ-line); border-radius: 8px; padding: 0 10px; background: #fff; }
-.occ-btn { min-height: 42px; border: 0; border-radius: 8px; padding: 0 16px; background: var(--occ-primary); color: #fff; font-weight: 800; cursor: pointer; }
 .occ-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }
 .occ-metric { background: #fff; border: 1px solid var(--occ-line); border-radius: 8px; padding: 16px; }
 .occ-metric span { display: block; color: var(--occ-muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; }
@@ -52,7 +51,7 @@ if (!function_exists('occ_date')) {
                 <span class="occ-kicker">Reportes</span>
                 <h1>Tasa de ocupaci&oacute;n</h1>
             </div>
-            <form class="occ-actions" method="get" action="<?= url('reportes/ocupacion') ?>">
+            <form class="occ-actions" method="get" action="<?= url('reportes/ocupacion') ?>" data-auto-filter-form>
                 <input type="date" name="fecha_inicio" value="<?= occ_safe($fecha_inicio) ?>">
                 <input type="date" name="fecha_fin" value="<?= occ_safe($fecha_fin) ?>">
                 <select name="tipo">
@@ -60,7 +59,6 @@ if (!function_exists('occ_date')) {
                     <option value="semanal" <?= $tipo === 'semanal' ? 'selected' : '' ?>>Semanal</option>
                     <option value="mensual" <?= $tipo === 'mensual' ? 'selected' : '' ?>>Mensual</option>
                 </select>
-                <button class="occ-btn" type="submit">Filtrar</button>
             </form>
         </section>
 

@@ -325,7 +325,6 @@ foreach ($cortes as $corte_metodo) {
 }
 
 .cash-history-form select,
-.cash-history-form button,
 .cash-history-link,
 .cash-action-icon {
     min-height: 42px;
@@ -360,7 +359,6 @@ foreach ($cortes as $corte_metodo) {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ch-accent) 22%, transparent);
 }
 
-.cash-history-form button,
 .cash-history-link {
     display: inline-flex;
     align-items: center;
@@ -368,27 +366,12 @@ foreach ($cortes as $corte_metodo) {
     gap: 8px;
     padding: 0 15px;
     font-weight: 900;
-}
-
-.cash-history-form button {
-    grid-column: 1 / -1;
-    border: 1px solid color-mix(in srgb, var(--ch-action) 78%, transparent);
-    background: var(--ch-action);
-    color: var(--ch-on-action);
-}
-
-.cash-history-form button:hover {
-    background: var(--ch-action-hover);
-}
-
-.cash-history-link {
     border: 1px solid var(--ch-line);
     background: color-mix(in srgb, var(--ch-primary) 4%, #FFFDF8);
     color: var(--ch-primary);
     text-decoration: none;
 }
 
-.cash-history-form button:hover,
 .cash-history-link:hover,
 .cash-action-icon:hover {
     transform: translateY(-1px);
@@ -1099,10 +1082,6 @@ foreach ($cortes as $corte_metodo) {
                             <?php endfor; ?>
                         </select>
                     </label>
-                    <button type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar cortes
-                    </button>
                 </form>
 
                 <?php $back_arrow_href = back_url('caja'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>

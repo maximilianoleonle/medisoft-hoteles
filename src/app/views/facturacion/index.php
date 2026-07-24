@@ -430,7 +430,6 @@ if ($total_paginas > 1) {
     align-items: center;
 }
 
-.billing-filter-btn,
 .billing-clear-btn {
     min-height: 2.72rem;
     display: inline-flex;
@@ -446,20 +445,12 @@ if ($total_paginas > 1) {
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.billing-filter-btn {
-    border: 1px solid transparent;
-    color: #fff;
-    background: linear-gradient(135deg, var(--billing-brand), var(--billing-brand-2));
-    box-shadow: 0 15px 28px color-mix(in srgb, var(--billing-brand) 20%, transparent);
-}
-
 .billing-clear-btn {
     border: 1px solid var(--billing-line);
     color: var(--billing-brand);
     background: rgba(255, 255, 255, 0.72);
 }
 
-.billing-filter-btn:hover,
 .billing-clear-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 16px 32px rgba(31, 41, 55, 0.09);
@@ -992,7 +983,6 @@ a.billing-name:hover {
         gap: 0.42rem;
     }
 
-    .billing-filter-btn,
     .billing-clear-btn {
         width: 2.42rem;
         min-width: 2.42rem;
@@ -1006,7 +996,6 @@ a.billing-name:hover {
         display: none;
     }
 
-    .billing-filter-btn i,
     .billing-clear-btn i {
         font-size: 0.86rem;
     }
@@ -1150,10 +1139,6 @@ a.billing-name:hover {
                 </div>
 
                 <div class="billing-filter-actions">
-                    <button type="submit" class="billing-filter-btn" aria-label="Filtrar solicitudes" title="Filtrar">
-                        <i class="fas fa-filter"></i>
-                        <span class="billing-filter-label">Filtrar</span>
-                    </button>
                     <a href="<?= url('facturacion') ?>" class="billing-clear-btn" aria-label="Limpiar filtros" title="Limpiar filtros">
                         <i class="fas fa-undo"></i>
                         <span class="billing-filter-label">Limpiar</span>

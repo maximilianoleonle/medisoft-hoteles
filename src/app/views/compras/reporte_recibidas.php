@@ -111,7 +111,6 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease;
 }
 .purchase-report-page .cp-btn:hover { transform: translateY(-1px); }
-.purchase-report-page .cp-btn-brand { background: linear-gradient(135deg, var(--cp-brand), var(--cp-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cp-brand) 60%, transparent); }
 .purchase-report-page .cp-btn-muted { background: var(--cp-surface); border-color: var(--cp-border); color: var(--cp-muted); }
 
 .purchase-report-page .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
@@ -125,7 +124,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
 .purchase-report-page .cp-panel-title { font-family: var(--cp-serif); font-size: 1.35rem; font-weight: 700; color: var(--cp-heading); }
 .purchase-report-page .cp-panel-hint { font-size: .72rem; color: var(--cp-muted); font-weight: 600; }
 
-.purchase-report-page .cp-filter-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: center; }
+.purchase-report-page .cp-filter-form { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: center; }
 .purchase-report-page .cp-control { width: 100%; min-height: 40px; border: 1px solid var(--cp-border); background: var(--cp-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cp-text); font-weight: 600; font-size: .86rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .purchase-report-page .cp-control:focus { border-color: var(--cp-gold); box-shadow: 0 0 0 3px var(--cp-ring); outline: none; }
 .purchase-report-page select.cp-control { cursor: pointer; }
@@ -224,10 +223,6 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todas</option>
                     </select>
-                    <button class="cp-btn cp-btn-brand" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                 </form>
             </section>
 

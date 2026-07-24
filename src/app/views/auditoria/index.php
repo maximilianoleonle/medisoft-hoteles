@@ -273,12 +273,6 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
 .audit-page .au-btn:active { transform: translateY(0) scale(.98); }
 .audit-page .au-btn:focus-visible { outline: 3px solid var(--au-ring); outline-offset: 2px; }
 
-.audit-page .au-btn-gold {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--au-gold) 86%, #fff), color-mix(in srgb, var(--au-gold) 72%, var(--au-brand)));
-    color: #fff;
-    box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--au-gold) 42%, transparent);
-}
-
 .audit-page .au-btn-muted {
     background: var(--au-surface);
     border-color: var(--au-border);
@@ -509,7 +503,7 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
         </section>
 
         <section class="au-panel" aria-label="Filtros de auditoria">
-            <form class="au-filter-form" method="GET" action="<?= url('auditoria') ?>">
+            <form class="au-filter-form" method="GET" action="<?= url('auditoria') ?>" data-auto-filter-form>
                 <div class="au-field">
                     <label for="au-usuario">Usuario</label>
                     <select id="au-usuario" name="usuario">
@@ -539,7 +533,6 @@ $auFiltrosActivos += trim((string)($filtros['hasta'] ?? '')) !== '' ? 1 : 0;
                     <input type="date" id="au-hasta" name="hasta" value="<?= $auSafe($filtros['hasta']) ?>">
                 </div>
                 <div class="au-filter-actions">
-                    <button type="submit" class="au-btn au-btn-gold"><i class="fas fa-filter" aria-hidden="true"></i> Filtrar</button>
                     <a href="<?= url('auditoria') ?>" class="au-btn au-btn-muted"><i class="fas fa-undo" aria-hidden="true"></i> Limpiar</a>
                 </div>
             </form>

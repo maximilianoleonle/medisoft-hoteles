@@ -373,9 +373,6 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button type="submit" class="report-link-btn">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
                     <a href="<?= url('reportes/links') ?>" class="report-link-btn">
                         <i class="fas fa-rotate-left"></i> Limpiar
                     </a>

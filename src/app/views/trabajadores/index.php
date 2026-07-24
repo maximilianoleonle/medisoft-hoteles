@@ -91,7 +91,6 @@ $visibles = count($trabajadores);
 .workers-page .wk-btn:active { transform: translateY(0) scale(.98); }
 .workers-page .wk-btn:focus-visible { outline: 3px solid var(--wk-ring); outline-offset: 2px; }
 .workers-page .wk-btn-gold { background: linear-gradient(135deg, color-mix(in srgb, var(--wk-gold) 86%, #fff), color-mix(in srgb, var(--wk-gold) 72%, var(--wk-brand))); color: #fff; box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--wk-gold) 42%, transparent); }
-.workers-page .wk-btn-brand { background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--wk-brand) 60%, transparent); }
 .workers-page .wk-btn-muted { background: var(--wk-surface); border-color: var(--wk-border); color: var(--wk-muted); }
 
 .workers-page .wk-navrow { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -102,7 +101,7 @@ $visibles = count($trabajadores);
 .workers-page .wk-summary-value.is-active { color: color-mix(in srgb, var(--wk-success) 68%, var(--wk-text)); }
 
 .workers-page .wk-panel { background: rgba(255,255,255,.86); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); }
-.workers-page .wk-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(160px, 200px) auto auto; gap: 10px; align-items: center; }
+.workers-page .wk-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(160px, 200px) auto; gap: 10px; align-items: center; }
 .workers-page .wk-control { width: 100%; min-height: 40px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--wk-text); font-weight: 560; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .workers-page .wk-control::placeholder { color: color-mix(in srgb, var(--wk-muted) 82%, #B8C0CB); font-weight: 520; }
 .workers-page .wk-control:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; }
@@ -375,7 +374,6 @@ $visibles = count($trabajadores);
                         <option value="baja" <?= $estado === 'baja' ? 'selected' : '' ?>>De baja</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
                     </select>
-                    <button class="wk-btn wk-btn-brand" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="wk-btn wk-btn-muted wk-reset" href="<?= url('trabajadores') ?>"><i class="fas fa-times"></i> Limpiar</a>
                 </form>
             </section>

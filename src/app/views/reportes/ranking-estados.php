@@ -20,7 +20,6 @@ if (!function_exists('rank_safe')) {
 .rank-hero h1 { margin: 5px 0 0; font-size: clamp(1.65rem, 2.5vw, 2.35rem); letter-spacing: 0; }
 .rank-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .rank-actions input { min-height: 42px; border: 1px solid var(--rank-line); border-radius: 8px; padding: 0 10px; }
-.rank-btn { min-height: 42px; border: 0; border-radius: 8px; padding: 0 16px; background: var(--rank-primary); color: #fff; font-weight: 800; cursor: pointer; }
 .rank-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }
 .rank-metric { background: #fff; border: 1px solid var(--rank-line); border-radius: 8px; padding: 16px; }
 .rank-metric span { display: block; color: var(--rank-muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; }
@@ -43,10 +42,9 @@ if (!function_exists('rank_safe')) {
                 <span class="rank-kicker">Reportes</span>
                 <h1>Ranking de estados</h1>
             </div>
-            <form class="rank-actions" method="get" action="<?= url('reportes/ranking-estados') ?>">
+            <form class="rank-actions" method="get" action="<?= url('reportes/ranking-estados') ?>" data-auto-filter-form>
                 <input type="date" name="fecha_inicio" value="<?= rank_safe($fecha_inicio) ?>">
                 <input type="date" name="fecha_fin" value="<?= rank_safe($fecha_fin) ?>">
-                <button class="rank-btn" type="submit">Filtrar</button>
             </form>
         </section>
 

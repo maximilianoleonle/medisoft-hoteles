@@ -359,7 +359,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
 
 .inv-mov-filters {
     display: grid;
-    grid-template-columns: minmax(200px, 1.2fr) minmax(130px, .7fr) minmax(150px, .8fr) repeat(2, minmax(145px, .7fr)) auto auto;
+    grid-template-columns: minmax(200px, 1.2fr) minmax(130px, .7fr) minmax(150px, .8fr) repeat(2, minmax(145px, .7fr)) auto;
     gap: 10px;
     align-items: end;
     padding: 14px;
@@ -1036,11 +1036,6 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                         <label for="fecha_hasta">Hasta</label>
                         <input type="date" class="inv-mov-input" id="fecha_hasta" name="fecha_hasta" value="<?= $inv_mov_safe($filtros['fecha_hasta'] ?? '') ?>">
                     </div>
-
-                    <button type="submit" class="inv-mov-btn primary">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
 
                     <a href="<?= url('inventario/movimientos') ?>" class="inv-mov-btn ghost">
                         <i class="fas fa-undo"></i>

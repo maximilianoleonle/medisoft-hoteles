@@ -74,7 +74,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
 .exec-btn.primary{background:var(--exec-brand);border-color:var(--exec-brand);color:var(--brand-action-text,#fff)}
 .exec-badge{background:var(--exec-accent-soft);border-color:color-mix(in srgb,var(--exec-accent) 34%,#fff);color:var(--exec-brand)}
 .exec-filter{margin-bottom:16px;padding:14px;border:1px solid var(--exec-border);border-radius:8px;background:#fff}
-.exec-filter-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:end}
+.exec-filter-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end}
 .exec-field label{display:block;margin-bottom:6px;color:var(--exec-muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .exec-field input,.exec-field select{width:100%;height:38px;border:1px solid var(--exec-border);border-radius:7px;background:#fff;color:var(--exec-text);font-size:13px;font-weight:600;padding:0 10px}
 .exec-field input:focus,.exec-field select:focus{outline:0;border-color:var(--exec-brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--exec-brand) 13%,transparent)}
@@ -153,7 +153,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
 .exec-filter-head{display:none;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px;padding:0 2px}
 .exec-filter-title{margin:0;color:#111827;font-size:.9rem;font-weight:900;line-height:1.1}
 .exec-filter-note{margin:0;color:var(--exec-muted);font-size:.72rem;font-weight:700;line-height:1.25;text-align:right}
-.exec-filter-grid{grid-template-columns:1fr repeat(2,minmax(128px,.92fr)) repeat(3,minmax(112px,.8fr)) minmax(112px,.72fr);gap:8px;align-items:end}
+.exec-filter-grid{grid-template-columns:1fr repeat(2,minmax(128px,.92fr)) repeat(3,minmax(112px,.8fr));gap:8px;align-items:end}
 .exec-field label{margin-bottom:5px;color:var(--exec-muted);font-size:.63rem;font-weight:850;letter-spacing:.075em}
 .exec-field input,.exec-field select{height:38px;border-color:var(--exec-line);border-radius:11px;background:#FFFFFF;color:#111827;font-size:.78rem;font-weight:750;padding:0 10px}
 .exec-field input:focus,.exec-field select:focus{border-color:var(--exec-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--exec-accent) 18%,transparent)}
@@ -261,7 +261,6 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
     .exec-filter{margin-bottom:9px;padding:10px;border-radius:15px}
     .exec-filter-head{display:none}
     .exec-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-    .exec-field:last-child{grid-column:1/-1}
     .exec-field label{font-size:.55rem}
     .exec-field input,.exec-field select{height:38px;border-radius:10px;font-size:.72rem;padding:0 8px}
     .exec-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:9px}
@@ -299,7 +298,6 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
 }
 @media (max-width:380px){
     .exec-filter-grid{grid-template-columns:1fr}
-    .exec-field:last-child{grid-column:auto}
     .exec-actions{grid-template-columns:1fr}
     .exec-metrics{grid-template-columns:1fr}
 }
@@ -328,7 +326,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
         </div>
     </div>
 
-    <form class="exec-filter" method="get" action="<?= url('reportes/ejecutivo') ?>">
+    <form class="exec-filter" method="get" action="<?= url('reportes/ejecutivo') ?>" data-auto-filter-form>
         <div class="exec-filter-head">
             <div>
                 <p class="exec-filter-title">Filtros del tablero</p>
@@ -375,9 +373,6 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
                         <option value="<?= $limit ?>" <?= ((int)($filtros['limit'] ?? 10) === $limit) ? 'selected' : '' ?>><?= $limit ?></option>
                     <?php endforeach; ?>
                 </select>
-            </div>
-            <div class="exec-field">
-                <button class="exec-btn primary" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
             </div>
         </div>
     </form>

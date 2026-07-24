@@ -146,7 +146,6 @@ $visibles = count($tareas);
 .tk-page .tk-btn:active { transform: translateY(0) scale(.98); }
 .tk-page .tk-btn:focus-visible { outline: 3px solid var(--tk-ring); outline-offset: 2px; }
 .tk-page .tk-btn-gold { background: linear-gradient(135deg, color-mix(in srgb, var(--tk-gold) 86%, #fff), color-mix(in srgb, var(--tk-gold) 72%, var(--tk-brand))); color: #fff; box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--tk-gold) 42%, transparent); }
-.tk-page .tk-btn-brand { background: linear-gradient(135deg, color-mix(in srgb, var(--tk-brand) 82%, #fff), color-mix(in srgb, var(--tk-brand-2) 64%, var(--tk-gold))); color: #fff; box-shadow: 0 12px 24px -16px color-mix(in srgb, var(--tk-brand) 48%, transparent); }
 .tk-page .tk-btn-muted { background: var(--tk-surface); border-color: var(--tk-border); color: var(--tk-muted); }
 .tk-page .tk-btn-agenda,
 .tk-page .tk-btn-report {
@@ -297,13 +296,12 @@ $visibles = count($tareas);
     .tk-page .tk-summary-item:last-child { grid-column: 1 / -1; }
     .tk-page .tk-summary-value { font-size: 1.35rem; }
 
-    /* Filtros compactos: search arriba + controles en 2 columnas; "Filtrar" oculto */
+    /* Filtros compactos: search arriba + controles en 2 columnas */
     .tk-page .tk-panel.p-3 { padding: 10px !important; }
     .tk-page .tk-filter-form { grid-template-columns: 1fr 1fr; gap: 7px; }
     .tk-page .tk-search { grid-column: 1 / -1; }
     .tk-page .tk-field-label { font-size: .62rem; }
     .tk-page .tk-control { min-height: 38px; font-size: .82rem; border-radius: 9px; }
-    .tk-page .tk-filter-form .tk-btn-brand { display: none; }   /* omitido: redundante con busqueda en vivo */
     .tk-page .tk-filter-actions { grid-column: 1 / -1; grid-template-columns: 1fr; }
     .tk-page .tk-filter-form .tk-reset { min-height: 38px; font-size: .82rem; }
     .tk-page .tk-filter-note { align-items: flex-start; flex-direction: column; gap: 8px; font-size: .76rem; }
@@ -539,7 +537,6 @@ $visibles = count($tareas);
         font-weight: 650;
         text-overflow: ellipsis;
     }
-    .tk-page .tk-filter-form .tk-btn-brand { display: none; }
     .tk-page .tk-filter-actions {
         grid-column: 1 / -1;
         display: grid;
@@ -752,7 +749,6 @@ $visibles = count($tareas);
                         </select>
                     </div>
                     <div class="tk-filter-actions">
-                        <button class="tk-btn tk-btn-brand" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                         <a class="tk-btn tk-btn-muted tk-reset" href="<?= url('tareas') ?>"><i class="fas fa-times"></i> Limpiar</a>
                     </div>
                 </form>

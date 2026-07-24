@@ -383,7 +383,7 @@ $severidadLabels = [
 
 .cfin-filter-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr)) auto auto;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) auto;
     gap: 10px;
     align-items: end;
 }
@@ -806,7 +806,7 @@ $severidadLabels = [
         </div>
     </div>
 
-    <form class="cfin-filter" method="get" action="<?= url('operacion/conciliacion-financiera') ?>">
+    <form class="cfin-filter" method="get" action="<?= url('operacion/conciliacion-financiera') ?>" data-auto-filter-form>
         <div class="cfin-filter-grid">
             <div class="cfin-field">
                 <label for="fecha_desde">Desde</label>
@@ -847,9 +847,6 @@ $severidadLabels = [
                         <option value="<?= $limit ?>" <?= ((int)($filtros['limit'] ?? 25) === $limit) ? 'selected' : '' ?>><?= $limit ?></option>
                     <?php endforeach; ?>
                 </select>
-            </div>
-            <div class="cfin-field">
-                <button class="cfin-btn primary" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
             </div>
             <div class="cfin-field">
                 <a class="cfin-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-rotate-left"></i> Limpiar</a>

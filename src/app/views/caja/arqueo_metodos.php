@@ -213,7 +213,7 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
         </div>
     </div>
 
-    <form method="get" action="<?= url('caja/arqueo-metodos') ?>" class="arqueo-filter">
+    <form method="get" action="<?= url('caja/arqueo-metodos') ?>" class="arqueo-filter" data-auto-filter-form>
         <div class="arqueo-filter-grid">
             <div class="arqueo-field">
                 <label for="fecha_desde">Desde</label>
@@ -264,9 +264,6 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
                         <option value="<?= (int)$limit ?>" <?= ((int)($filtros['limit'] ?? 25) === $limit) ? 'selected' : '' ?>><?= (int)$limit ?></option>
                     <?php endforeach; ?>
                 </select>
-            </div>
-            <div class="arqueo-field">
-                <button type="submit" class="arqueo-btn primary" style="width:100%;height:40px"><i class="fas fa-search"></i> Filtrar</button>
             </div>
             <div class="arqueo-field">
                 <a href="<?= url('caja/arqueo-metodos') ?>" class="arqueo-btn" style="width:100%;height:40px"><i class="fas fa-times"></i> Limpiar</a>

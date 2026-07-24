@@ -149,7 +149,6 @@ include APP_PATH . '/views/partials/nomina_report_ui.php';
                     <button type="button" class="msf-chip" data-msf-range="mes-pasado">Mes pasado</button>
                 </div>
                 <div class="msf-actions">
-                    <button class="msf-btn msf-btn--primary" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                     <a class="msf-btn" href="<?= url('trabajadores/pagos-caja/reporte') ?>"><i class="fas fa-rotate-left"></i> Limpiar</a>
                 </div>
             </form>

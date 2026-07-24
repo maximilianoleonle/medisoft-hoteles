@@ -99,7 +99,6 @@ $visibles = count($compras);
 .purchases-page .cp-btn:active { transform: translateY(0) scale(.98); }
 .purchases-page .cp-btn:focus-visible { outline: 3px solid var(--cp-ring); outline-offset: 2px; }
 .purchases-page .cp-btn-gold { background: linear-gradient(135deg, var(--cp-gold), color-mix(in srgb, var(--cp-gold) 76%, #000)); color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--cp-gold) 58%, transparent); }
-.purchases-page .cp-btn-brand { background: linear-gradient(135deg, var(--cp-brand), var(--cp-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cp-brand) 60%, transparent); }
 .purchases-page .cp-btn-muted { background: var(--cp-surface); border-color: var(--cp-border); color: var(--cp-muted); }
 
 .purchases-page .cp-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -111,7 +110,7 @@ $visibles = count($compras);
 
 .purchases-page .cp-panel { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 
-.purchases-page .cp-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(160px, 200px) auto auto auto; gap: 10px; align-items: center; }
+.purchases-page .cp-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(160px, 200px) auto auto; gap: 10px; align-items: center; }
 .purchases-page .cp-control { width: 100%; min-height: 40px; border: 1px solid var(--cp-border); background: var(--cp-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cp-text); font-weight: 600; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .purchases-page .cp-control:focus { border-color: var(--cp-gold); box-shadow: 0 0 0 3px var(--cp-ring); outline: none; }
 .purchases-page select.cp-control { cursor: pointer; }
@@ -274,12 +273,6 @@ $visibles = count($compras);
 .purchases-page .cp-btn-gold {
     background: linear-gradient(135deg, color-mix(in srgb, var(--cp-gold) 86%, #fff), color-mix(in srgb, var(--cp-gold) 72%, var(--cp-brand)));
     box-shadow: 0 12px 24px -14px color-mix(in srgb, var(--cp-gold) 42%, transparent);
-}
-.purchases-page .cp-btn-brand {
-    background: color-mix(in srgb, var(--cp-gold) 10%, #FFFFFF);
-    border-color: color-mix(in srgb, var(--cp-gold) 28%, #ECE1D1);
-    color: var(--cp-gold-ink);
-    box-shadow: 0 8px 18px -18px color-mix(in srgb, var(--cp-gold) 34%, transparent);
 }
 .purchases-page .cp-btn-muted {
     background: rgba(255,255,255,.86);
@@ -605,10 +598,6 @@ $visibles = count($compras);
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todas</option>
                     </select>
-                    <button class="cp-btn cp-btn-brand cp-filter-submit" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                     <a class="cp-btn cp-btn-muted" href="<?= url('compras/reportes/recibidas') ?>" title="Ver reporte de compras recibidas">
                         <i class="fas fa-chart-column"></i>
                         Reporte

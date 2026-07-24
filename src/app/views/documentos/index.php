@@ -169,7 +169,7 @@ $puedeSubirDocumento = !function_exists('can') || can('documentos.all');
 .docs-page .dc-panel { background: rgba(255,255,255,.86); border: 1px solid var(--dc-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); }
 .docs-page .dc-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 
-.docs-page .dc-filter-form { display: grid; grid-template-columns: minmax(200px, 1fr) 170px 200px auto auto; gap: 10px; align-items: center; }
+.docs-page .dc-filter-form { display: grid; grid-template-columns: minmax(200px, 1fr) 170px 200px auto; gap: 10px; align-items: center; }
 .docs-page .dc-control { width: 100%; min-height: 44px; border: 1px solid var(--dc-border); background: var(--dc-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--dc-text); font-weight: 560; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .docs-page .dc-control::placeholder { color: color-mix(in srgb, var(--dc-muted) 82%, #B8C0CB); font-weight: 520; }
 .docs-page .dc-control:focus { border-color: var(--dc-gold); box-shadow: 0 0 0 3px var(--dc-ring); outline: none; }
@@ -706,10 +706,6 @@ $puedeSubirDocumento = !function_exists('can') || can('documentos.all');
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button class="dc-btn dc-btn-muted" type="submit" style="border-color:transparent;background:linear-gradient(135deg,var(--dc-brand),var(--dc-brand-2));color:#fff">
-                            <i class="fas fa-filter"></i>
-                            <span>Filtrar</span>
-                        </button>
                         <a class="dc-btn dc-btn-muted dc-reset" href="<?= url('documentos') ?>" title="Limpiar filtros">
                             <i class="fas fa-times"></i>
                             <span>Limpiar</span>

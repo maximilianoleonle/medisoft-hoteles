@@ -183,7 +183,6 @@ $rangosRapidos = [
     border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .tk-agenda .tk-btn:hover { transform: translateY(-1px); }
-.tk-agenda .tk-btn-brand { background: linear-gradient(135deg, var(--tk-brand), var(--tk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--tk-brand) 60%, transparent); }
 .tk-agenda .tk-btn-muted { background: var(--tk-surface); border-color: var(--tk-border); color: var(--tk-muted); }
 
 .tk-agenda .tk-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -205,7 +204,6 @@ $rangosRapidos = [
 .tk-agenda .tk-control-date { width: 142px; }
 .tk-agenda .tk-control-worker { width: 220px; }
 .tk-agenda .tk-control-compact { width: 148px; }
-.tk-agenda .tk-filter-submit { min-width: 112px; }
 
 .tk-agenda .tk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
 .tk-agenda .tk-table-wrap { overflow-x: auto; }
@@ -315,7 +313,6 @@ $rangosRapidos = [
                             <option value="<?= tlm_agenda_safe($key) ?>" <?= ($filtros['estado'] ?? 'activos') === $key ? 'selected' : '' ?>><?= tlm_agenda_safe($label) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <button type="submit" class="tk-btn tk-btn-brand tk-filter-submit"><i class="fas fa-filter"></i> Filtrar</button>
                 </form>
             </section>
 

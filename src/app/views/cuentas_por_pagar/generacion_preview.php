@@ -89,7 +89,6 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease;
 }
 .cxp-preview-page .cx-btn:hover { transform: translateY(-1px); }
-.cxp-preview-page .cx-btn-brand { background: linear-gradient(135deg, var(--cx-brand), var(--cx-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cx-brand) 60%, transparent); }
 .cxp-preview-page .cx-btn-gold { background: linear-gradient(135deg, var(--cx-gold), color-mix(in srgb, var(--cx-gold) 76%, #000)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cx-gold) 58%, transparent); }
 .cxp-preview-page .cx-btn-muted { background: var(--cx-surface); border-color: var(--cx-border); color: var(--cx-muted); }
 
@@ -97,7 +96,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
 .cxp-preview-page .cx-control { width: 100%; min-height: 40px; border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cx-text); font-weight: 600; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .cxp-preview-page .cx-control:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; }
 .cxp-preview-page select.cx-control { cursor: pointer; }
-.cxp-preview-page .cx-filter-form { display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: center; }
+.cxp-preview-page .cx-filter-form { display: grid; grid-template-columns: 1fr 180px; gap: 10px; align-items: center; }
 
 .cxp-preview-page .cx-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
 .cxp-preview-page .cx-badge.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, #000); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
@@ -184,10 +183,6 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todas</option>
                     </select>
-                    <button class="cx-btn cx-btn-brand" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                 </form>
             </section>
 

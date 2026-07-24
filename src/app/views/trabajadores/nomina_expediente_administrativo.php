@@ -167,7 +167,7 @@ include APP_PATH . '/views/partials/nomina_report_ui.php';
         <?php endif; ?>
 
         <?php include APP_PATH . '/views/partials/filtros.php'; ?>
-        <form class="msf-bar" method="GET" action="<?= url('trabajadores/nomina/expediente') ?>">
+        <form class="msf-bar" method="GET" action="<?= url('trabajadores/nomina/expediente') ?>" data-auto-filter-form>
             <label class="msf-field msf-field--grow">
                 <span class="msf-label">Trabajador</span>
                 <select class="msf-control" name="trabajador_id"><?= msf_worker_options($trabajadoresFiltro, $trabajadorId) ?></select>
@@ -202,7 +202,6 @@ include APP_PATH . '/views/partials/nomina_report_ui.php';
                 <button type="button" class="msf-chip" data-msf-range="mes-pasado">Mes pasado</button>
             </div>
             <div class="msf-actions">
-                <button class="msf-btn msf-btn--primary" type="submit"><i class="fas fa-filter"></i> Filtrar</button>
                 <a class="msf-btn" href="<?= url('trabajadores/nomina/expediente') ?>"><i class="fas fa-rotate-left"></i> Limpiar</a>
             </div>
         </form>

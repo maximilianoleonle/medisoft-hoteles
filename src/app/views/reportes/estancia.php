@@ -23,7 +23,6 @@ if (!function_exists('stay_safe')) {
 .stay-hero h1 { margin: 5px 0 0; font-size: clamp(1.65rem, 2.5vw, 2.35rem); letter-spacing: 0; }
 .stay-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .stay-actions input { min-height: 42px; border: 1px solid var(--stay-line); border-radius: 8px; padding: 0 10px; }
-.stay-btn { min-height: 42px; border: 0; border-radius: 8px; padding: 0 16px; background: var(--stay-primary); color: #fff; font-weight: 800; cursor: pointer; }
 .stay-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 22px 0; }
 .stay-metric { background: #fff; border: 1px solid var(--stay-line); border-radius: 8px; padding: 16px; }
 .stay-metric span { display: block; color: var(--stay-muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; }
@@ -47,10 +46,9 @@ if (!function_exists('stay_safe')) {
                 <span class="stay-kicker">Reportes</span>
                 <h1>Promedio de estancia</h1>
             </div>
-            <form class="stay-actions" method="get" action="<?= url('reportes/estancia') ?>">
+            <form class="stay-actions" method="get" action="<?= url('reportes/estancia') ?>" data-auto-filter-form>
                 <input type="date" name="fecha_inicio" value="<?= stay_safe($fecha_inicio) ?>">
                 <input type="date" name="fecha_fin" value="<?= stay_safe($fecha_fin) ?>">
-                <button class="stay-btn" type="submit">Filtrar</button>
             </form>
         </section>
 

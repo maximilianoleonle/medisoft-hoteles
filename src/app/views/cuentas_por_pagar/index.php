@@ -102,7 +102,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
 .cxp-page .cx-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .cxp-page .cx-hint-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--cx-surface-warm); color: var(--cx-muted); border: 1px solid var(--cx-border); font-size: .74rem; font-weight: 700; }
 
-.cxp-page .cx-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(170px, 210px) auto auto; gap: 10px; align-items: center; }
+.cxp-page .cx-filter-form { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(170px, 210px) auto; gap: 10px; align-items: center; }
 .cxp-page .cx-control { width: 100%; min-height: 40px; border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cx-text); font-weight: 600; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .cxp-page .cx-control:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; }
 .cxp-page select.cx-control { cursor: pointer; }
@@ -312,7 +312,7 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
 }
 
 .cxp-page .cx-filter-form {
-    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px) auto auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(160px, 210px) auto;
 }
 
 .cxp-page .cx-control {
@@ -448,7 +448,6 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
     }
 
     .cxp-page .cx-btn,
-    .cxp-page .cx-filter-submit,
     .cxp-page .cx-reset {
         width: 100%;
     }
@@ -544,10 +543,6 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                         <option value="pagada" <?= $estado === 'pagada' ? 'selected' : '' ?>>Pagadas</option>
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
                     </select>
-                    <button class="cx-btn cx-btn-brand cx-filter-submit" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
                     <a class="cx-btn cx-btn-muted cx-reset" href="<?= url('cuentas-por-pagar') ?>" title="Limpiar filtros">
                         <i class="fas fa-times"></i>
                         Limpiar
