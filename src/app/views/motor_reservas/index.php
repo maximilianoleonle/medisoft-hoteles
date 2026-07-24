@@ -650,7 +650,7 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
                             </td>
                             <td style="font-size:.8rem;color:#6B7486;white-space:nowrap;"><?= $mrSafe(date('d/m/Y H:i', strtotime((string) $pago['created_at']))) ?></td>
                             <td style="text-align:right;">
-                                <?php if (($pago['estado'] ?? '') === 'pagado' && !empty($pago['reservacion_id'])): ?>
+                                <?php if (($pago['estado'] ?? '') === 'pagado' && !empty($pago['reservacion_id']) && (!function_exists('can') || can('motor_reservas.conciliar'))): /* conciliar mete dinero a Caja */ ?>
                                     <form method="POST" action="<?= url('motor-reservas/pagos/' . (int) $pago['id'] . '/conciliar') ?>"
                                           onsubmit="return confirm('Conciliar este pago registra el anticipo de <?= $mrMoney($pago['monto']) ?> en Caja. ¿Continuar?');">
                                         <?= csrf_field() ?>
@@ -674,6 +674,7 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
             <h2>Configuracion del motor</h2>
             <p>Enciende tu pagina publica, define el anticipo y conecta tu pasarela de pago.</p>
         </div>
+        <?php if (!function_exists('can') || can('motor_reservas.configurar')): /* editar config = motor_reservas.configurar; recepción solo ve la pantalla */ ?>
         <form method="POST" action="<?= url('motor-reservas/configuracion') ?>" class="mrv-form" autocomplete="off">
             <?= csrf_field() ?>
 
@@ -753,6 +754,7 @@ $pasarelaLista = $credenciales && !empty($credenciales['secret_configurado']) &&
                 <button type="submit" class="mrv-btn">Guardar configuracion</button>
             </div>
         </form>
+        <?php endif; ?>
 
         <div class="mrv-link">
             <strong>Tu pagina publica:</strong>

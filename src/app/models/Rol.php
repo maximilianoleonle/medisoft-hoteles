@@ -48,6 +48,23 @@ class Rol extends Model {
     }
 
     /**
+     * Claves de roles base que no se le muestran al hotel (config/permisos.php).
+     * Se siguen sembrando y can() los resuelve igual: solo desaparecen de las
+     * pantallas (listado de roles y selector de rol de una persona).
+     */
+    public function clavesOcultas() {
+        $cfg = $this->config();
+        $claves = $cfg['roles_ocultos'] ?? [];
+
+        return is_array($claves) ? array_values(array_filter(array_map('strval', $claves))) : [];
+    }
+
+    /** ¿Esta clave de rol esta oculta de la interfaz? */
+    public function estaOculto($clave) {
+        return in_array((string) $clave, $this->clavesOcultas(), true);
+    }
+
+    /**
      * Lista plana de todas las claves de permiso validas (catalogo + legacy).
      */
     public function permisosValidos() {
@@ -98,6 +115,13 @@ class Rol extends Model {
 
         if ($soloActivos) {
             $sql .= " AND r.activo = 1";
+        }
+
+        // Los roles base ocultos no se le pintan al hotel en ninguna pantalla.
+        $ocultas = $this->clavesOcultas();
+        if ($ocultas) {
+            $sql .= " AND r.clave NOT IN (" . implode(',', array_fill(0, count($ocultas), '?')) . ")";
+            $params = array_merge($params, $ocultas);
         }
 
         $sql .= " ORDER BY r.es_sistema DESC, r.nombre ASC";
@@ -178,6 +202,169 @@ class Rol extends Model {
         );
 
         return !empty($rows) ? (int) $rows[0]['total'] : 0;
+    }
+
+    /* ---------------------------------------------------------------------
+     * Las personas que tienen cada rol
+     * ------------------------------------------------------------------- */
+
+    /**
+     * Todas las personas del hotel agrupadas por rol configurable:
+     * [role_id => [fila, fila, ...]]. UNA sola consulta (el listado de roles
+     * pinta a su gente, y N tarjetas no pueden ser N consultas).
+     *
+     * Quien no tiene rol configurable (datos legacy) queda fuera de este mapa;
+     * para esos esta usuariosSinRol().
+     */
+    public function usuariosPorRolDeHotel($hotelId) {
+        $filas = $this->query(
+            "SELECT hu.role_id,
+                    hu.usuario_id,
+                    hu.activo,
+                    hu.es_principal,
+                    hu.permisos_json,
+                    u.nombre_completo,
+                    u.nombre_usuario,
+                    u.ultimo_login
+             FROM hotel_usuarios hu
+             INNER JOIN usuarios u ON u.id = hu.usuario_id
+             WHERE hu.hotel_id = ? AND hu.role_id IS NOT NULL
+             ORDER BY hu.activo DESC, u.nombre_completo ASC, u.nombre_usuario ASC",
+            [(int) $hotelId]
+        );
+
+        $mapa = [];
+
+        foreach ($filas as $fila) {
+            $fila['ajustes'] = function_exists('normalizar_ajustes_permisos')
+                ? normalizar_ajustes_permisos($fila['permisos_json'] ?? null)
+                : null;
+            unset($fila['permisos_json']);
+
+            $mapa[(int) $fila['role_id']][] = $fila;
+        }
+
+        return $mapa;
+    }
+
+    /**
+     * Personas del hotel SIN rol configurable asignado. Caen a permisos
+     * antiguos por su rol-string, asi que el panel de roles las señala aparte
+     * en vez de esconderlas.
+     */
+    public function usuariosSinRol($hotelId) {
+        return $this->query(
+            "SELECT hu.usuario_id,
+                    hu.rol,
+                    hu.activo,
+                    u.nombre_completo,
+                    u.nombre_usuario
+             FROM hotel_usuarios hu
+             INNER JOIN usuarios u ON u.id = hu.usuario_id
+             WHERE hu.hotel_id = ? AND hu.role_id IS NULL
+             ORDER BY hu.activo DESC, u.nombre_completo ASC",
+            [(int) $hotelId]
+        );
+    }
+
+    /**
+     * Una persona del hotel con su rol configurable resuelto. Devuelve null si
+     * no pertenece al hotel (cinturon multi-tenant de la pantalla por persona).
+     */
+    public function usuarioDelHotel($hotelId, $usuarioId) {
+        $filas = $this->query(
+            "SELECT hu.usuario_id,
+                    hu.role_id,
+                    hu.rol AS rol_legacy,
+                    hu.activo,
+                    hu.es_principal,
+                    hu.permisos_json,
+                    u.nombre_completo,
+                    u.nombre_usuario,
+                    u.email
+             FROM hotel_usuarios hu
+             INNER JOIN usuarios u ON u.id = hu.usuario_id
+             WHERE hu.hotel_id = ? AND hu.usuario_id = ?
+             LIMIT 1",
+            [(int) $hotelId, (int) $usuarioId]
+        );
+
+        if (empty($filas)) {
+            return null;
+        }
+
+        $fila = $filas[0];
+        $fila['ajustes'] = function_exists('normalizar_ajustes_permisos')
+            ? normalizar_ajustes_permisos($fila['permisos_json'] ?? null)
+            : null;
+
+        return $fila;
+    }
+
+    /**
+     * Traduce lo que quedo MARCADO en la matriz de una persona a la diferencia
+     * contra su rol. FUNCION PURA (probada en RolPermisosPersonaTest).
+     *
+     * $ambito acota la comparacion a los permisos que la pantalla realmente
+     * mostro: un permiso fuera del catalogo (p. ej. el legacy 'llaves.control')
+     * jamas se pierde por no haber tenido casilla que marcar.
+     *
+     * @return array{extra: string[], quitados: string[]}
+     */
+    public static function derivarAjustes(array $permisosRol, array $marcados, array $ambito) {
+        $extra = [];
+        $quitados = [];
+
+        foreach ($ambito as $permiso) {
+            $loDaElRol = permission_in_list($permiso, $permisosRol);
+
+            // Para QUITAR se mira lo marcado en sentido amplio: si viene el
+            // control total del area ('<modulo>.all'), sus hijos cuentan como
+            // marcados aunque la pantalla no los haya enviado (van bloqueados).
+            // Sin esto, poner el control total quitaria todo el detalle.
+            $cubierto = permission_in_list($permiso, $marcados);
+
+            // Para DAR se mira solo lo enviado de verdad: asi 'extra' guarda la
+            // clave total sola en vez de repetir sus hijos uno por uno.
+            $marcadoLiteral = in_array($permiso, $marcados, true);
+
+            if ($marcadoLiteral && !$loDaElRol) {
+                $extra[] = $permiso;
+            } elseif (!$cubierto && $loDaElRol) {
+                $quitados[] = $permiso;
+            }
+        }
+
+        return ['extra' => $extra, 'quitados' => $quitados];
+    }
+
+    /**
+     * Guarda (o borra, con null) los ajustes personales de permisos de una
+     * persona. El arreglo llega ya normalizado y saneado por el controlador.
+     *
+     * @param array{extra: string[], quitados: string[]}|null $ajustes
+     */
+    public function guardarAjustesUsuario($hotelId, $usuarioId, $ajustes) {
+        $json = null;
+
+        if (is_array($ajustes) && (!empty($ajustes['extra']) || !empty($ajustes['quitados']))) {
+            $json = json_encode(
+                [
+                    'extra' => array_values($ajustes['extra'] ?? []),
+                    'quitados' => array_values($ajustes['quitados'] ?? []),
+                ],
+                JSON_UNESCAPED_UNICODE
+            );
+        }
+
+        $stmt = $this->db->query(
+            "UPDATE hotel_usuarios
+             SET permisos_json = ?, updated_at = NOW()
+             WHERE hotel_id = ? AND usuario_id = ?",
+            [$json, (int) $hotelId, (int) $usuarioId]
+        );
+
+        return $stmt !== false;
     }
 
     /* ---------------------------------------------------------------------

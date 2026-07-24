@@ -40,7 +40,11 @@ function nav_normalizar_ruta($ruta) {
 
 /**
  * Visibilidad de una pantalla para el usuario/hotel actual.
- * Replica la logica del sidebar: modulo activo Y (permiso O rol) cuando aplican.
+ * Replica la logica del sidebar: modulo activo Y permiso.
+ *
+ * El gate por rol-string se retiro el 23 jul 2026 (auditoria de accesos): no
+ * distinguia los roles personalizados y ademas abria el menu a pantallas que
+ * el servidor luego rechazaba. Ver la cabecera de config/navegacion.php.
  */
 function nav_pantalla_visible(array $pantalla) {
     // Requisito de modulo (string o lista en OR)
@@ -63,27 +67,20 @@ function nav_pantalla_visible(array $pantalla) {
     }
 
     $permiso = $pantalla['permiso'] ?? null;
-    $roles = $pantalla['roles'] ?? null;
 
-    // Sin restricciones adicionales
-    if ($permiso === null && $roles === null) {
+    // Sin permiso declarado: basta el requisito de modulo.
+    if ($permiso === null) {
         return true;
     }
 
-    // permiso y roles se evaluan en OR (igual que sidebar.php). 'permiso' puede
-    // ser un string o una lista any-of (basta cumplir uno), p. ej. Limpieza:
-    // ['camarista.view', 'tareas.view'].
-    if ($permiso !== null && function_exists('can')) {
-        foreach ((is_array($permiso) ? $permiso : [$permiso]) as $permisoUno) {
-            if (can($permisoUno)) {
-                return true;
-            }
-        }
+    if (!function_exists('can')) {
+        return false;
     }
 
-    if ($roles !== null) {
-        $rolActual = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-        if ($rolActual !== null && in_array($rolActual, $roles, true)) {
+    // 'permiso' puede ser un string o una lista any-of (basta cumplir uno),
+    // p. ej. Limpieza: ['camarista.view', 'tareas.view'].
+    foreach ((is_array($permiso) ? $permiso : [$permiso]) as $permisoUno) {
+        if (can($permisoUno)) {
             return true;
         }
     }

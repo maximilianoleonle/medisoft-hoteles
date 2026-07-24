@@ -1090,19 +1090,30 @@ $cash_methods = [
                 </div>
             </div>
             <div class="cj-resh-acts">
+                <?php /* Solo se muestran los botones que el rol puede ejecutar; el
+                         servidor los gatea igual (CajaController). Registrar Ingreso =
+                         caja.cobros, Gasto = caja.movimientos, Corte = caja.corte. */ ?>
+                <?php if (can('caja.cobros')): ?>
                 <button id="cop-ancla-ingreso" type="button" onclick="mostrarModalIngreso()" class="cj-act-btn cj-act-income">
                     <i class="fas fa-plus"></i> Registrar Ingreso
                 </button>
+                <?php endif; ?>
+                <?php if (can('caja.movimientos')): ?>
                 <button id="cop-ancla-gasto" type="button" onclick="mostrarModalGasto()" class="cj-act-btn cj-act-expense">
                     <i class="fas fa-minus"></i> Registrar Gasto
                 </button>
+                <?php endif; ?>
+                <?php if (can('caja.corte')): ?>
                 <a id="cop-ancla-corte" href="<?= url('caja/corte') ?>" class="cj-act-btn cj-act-corte">
                     <i class="fas fa-scissors"></i> Hacer Corte
                 </a>
+                <?php endif; ?>
             </div>
         </div><!-- /.cj-resh -->
 
-        <?php if (!empty($gastos_mantenimiento_pendientes)): ?>
+        <?php /* La cola registra gastos en caja (MantenimientoController::registrarGasto
+                 exige caja.movimientos): se muestra solo a quien puede registrarlos. */ ?>
+        <?php if (!empty($gastos_mantenimiento_pendientes) && can('caja.movimientos')): ?>
         <!-- ── Cola: gastos de mantenimiento por registrar (mantenimiento_plus) ── -->
         <div style="background:#FAF0DC;border:1px solid rgba(194,132,28,.35);border-radius:14px;padding:14px 16px;margin-bottom:14px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">

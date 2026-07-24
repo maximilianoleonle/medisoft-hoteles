@@ -11,6 +11,10 @@ class PwaController extends Controller {
      * desde IndexedDB, así la pantalla también funciona sin internet.
      */
     public function pendientesAction() {
+        // Sin permiso a proposito (auditoria de accesos, 23 jul 2026): la
+        // pantalla no consulta nada del servidor, se dibuja 100% en el cliente
+        // desde el IndexedDB del propio navegador. No hay dato del hotel que
+        // proteger aqui; cada quien ve solo su cola local.
         $this->requireAuth();
 
         View::renderTemplate('pwa/pendientes', [

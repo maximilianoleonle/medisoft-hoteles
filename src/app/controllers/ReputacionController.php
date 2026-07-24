@@ -8,6 +8,17 @@ require_once __DIR__ . '/../services/ReputacionService.php';
 
 class ReputacionController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Generar y enviar
+     * encuestas sale hacia el huesped: no lo autoriza el permiso de solo ver.
+     */
+    private const PERMISOS = [
+        'index'   => 'reputacion.view',
+        'generar' => 'reputacion.encuestas',
+        'enviar'  => 'reputacion.encuestas',
+        'config'  => 'reputacion.configurar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +29,8 @@ class ReputacionController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('reputacion');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

@@ -7,6 +7,10 @@
 
 class AuditoriaController extends Controller {
 
+    private const PERMISOS = [
+        'index' => 'auditoria.view',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,12 +22,13 @@ class AuditoriaController extends Controller {
             require_hotel_module('auditoria');
         }
 
-        // Bitacora: solo direccion del hotel.
-        $rol = function_exists('current_hotel_user_role') ? (string) current_hotel_user_role() : '';
-        if (!in_array($rol, ['gerente', 'administrador'], true)) {
-            set_mensaje('La bitacora de auditoria es solo para gerencia.', 'error');
-            $this->redirect('dashboard');
-        }
+        // Bitacora: quien la lee vigila a los demas. Antes se gateaba por el
+        // rol-string ('gerente'/'administrador'), que NO distingue los roles
+        // personalizados: todos se guardan como 'recepcionista' (ver
+        // UsuarioController::resolverAsignacionRol), asi que un rol a la medida
+        // no podia entrar aunque el propietario se lo concediera. Ahora manda
+        // el permiso, que si es configurable desde Roles y permisos.
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

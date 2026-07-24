@@ -8,6 +8,18 @@ require_once __DIR__ . '/../services/IcalCanalesService.php';
 
 class CanalesController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Quitar un
+     * calendario deja de bloquear fechas y puede provocar sobreventa: por eso
+     * gestionar va separado de consultar el estado de la sincronizacion.
+     */
+    private const PERMISOS = [
+        'index'        => 'canales.view',
+        'guardarFeed'  => 'canales.gestionar',
+        'eliminarFeed' => 'canales.gestionar',
+        'sincronizar'  => 'canales.gestionar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +30,8 @@ class CanalesController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('canales_ical');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

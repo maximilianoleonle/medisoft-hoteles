@@ -7,6 +7,16 @@ require_once __DIR__ . '/../services/IaEjecutivaService.php';
 
 class IaEjecutivaController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). El resumen narra
+     * cifras de dinero del hotel completo; regenerarlo consume IA, asi que se
+     * puede dar la lectura sin dar el boton de volver a generarlo.
+     */
+    private const PERMISOS = [
+        'resumenDiario'     => 'ia.view',
+        'regenerarResumen'  => 'ia.regenerar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -17,6 +27,8 @@ class IaEjecutivaController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('ia_ejecutiva');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

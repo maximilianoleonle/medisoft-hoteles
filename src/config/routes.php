@@ -793,6 +793,10 @@ $router->post('/configuracion/roles', ['controller' => 'Rol', 'action' => 'guard
 $router->get('/configuracion/roles/{id:[0-9]+}/editar', ['controller' => 'Rol', 'action' => 'editar']);
 $router->post('/configuracion/roles/{id:[0-9]+}', ['controller' => 'Rol', 'action' => 'actualizar']);
 $router->post('/configuracion/roles/{id:[0-9]+}/eliminar', ['controller' => 'Rol', 'action' => 'eliminar']);
+// Ajuste de permisos de UNA persona dentro de su rol
+$router->get('/configuracion/roles/{id:[0-9]+}/persona/{usuarioid:[0-9]+}', ['controller' => 'Rol', 'action' => 'permisosUsuario']);
+$router->post('/configuracion/roles/{id:[0-9]+}/persona/{usuarioid:[0-9]+}', ['controller' => 'Rol', 'action' => 'guardarPermisosUsuario']);
+$router->post('/configuracion/roles/{id:[0-9]+}/persona/{usuarioid:[0-9]+}/restablecer', ['controller' => 'Rol', 'action' => 'restablecerPermisosUsuario']);
 
 // APIs para AJAX
 $router->get('/api/buscar', ['controller' => 'Api', 'action' => 'buscarGlobal']);

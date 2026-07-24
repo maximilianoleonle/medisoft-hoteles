@@ -14,24 +14,99 @@ abstract class Model {
     public function __construct() {
         $this->db = Database::getInstance();
     }
-    
+
+    /* ---------------------------------------------------------------------
+     * Aislamiento multi-hotel automatico (auditoria de accesos, 23 jul 2026).
+     *
+     * Cuando la tabla del modelo tiene columna hotel_id Y hay un hotel activo
+     * en contexto, los metodos por clave (find/update/delete) y de barrido
+     * (all/paginate) filtran por ese hotel. Asi un id ajeno que llegue por la
+     * URL no alcanza el registro de otro hotel aunque el controlador olvide
+     * validarlo -- es la red que faltaba, no la unica defensa.
+     *
+     * SIN hotel en contexto (CLI, cron, panel SaaS interno) NO filtra: conserva
+     * exactamente el comportamiento previo. Un modelo puede desactivarlo con
+     * protected $aislarPorHotel = false; ademas la deteccion por columna ya
+     * exime sola a las tablas globales (hoteles, modulos, planes, usuarios...).
+     *
+     * where()/first()/count() NO llevan scope automatico a proposito: reciben
+     * condiciones arbitrarias y los modelos ya les pasan hotel_id donde toca.
+     * El scope cubre el acceso-por-id, que es el vector que abre fuga en
+     * silencio. Los modelos que ya blindan find/where a mano (Habitacion y
+     * afines) no pasan por aqui: sobreescriben estos metodos.
+     * ------------------------------------------------------------------- */
+    protected $aislarPorHotel = true;
+    protected $columnaHotel = 'hotel_id';
+
+    /** Hotel activo por el que acotar, o null si no hay que acotar. */
+    private function hotelParaAcotar() {
+        if (!$this->aislarPorHotel || empty($this->table)) {
+            return null;
+        }
+        if (!$this->tablaAceptaHotel()) {
+            return null;
+        }
+        $hotelId = function_exists('obtenerHotelIdActualCompat') ? (int) obtenerHotelIdActualCompat() : 0;
+        return $hotelId > 0 ? $hotelId : null;
+    }
+
+    /** ¿La tabla tiene la columna de hotel? Se resuelve una vez por tabla/request. */
+    private function tablaAceptaHotel() {
+        static $cache = [];
+        $t = (string) $this->table;
+        if (array_key_exists($t, $cache)) {
+            return $cache[$t];
+        }
+        try {
+            // information_schema SÍ acepta parametros preparados (SHOW COLUMNS
+            // LIKE ? no: da error de sintaxis). DATABASE() es la BD activa de la
+            // conexion (la del hotel), no una global.
+            $stmt = $this->db->query(
+                "SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?
+                 LIMIT 1",
+                [$t, $this->columnaHotel]
+            );
+            return $cache[$t] = ($stmt && $stmt->fetch()) ? true : false;
+        } catch (Throwable $e) {
+            // Ante cualquier duda, no acotar: esta red nunca debe romper una query.
+            return $cache[$t] = false;
+        }
+    }
+
     /**
-     * Obtener todos los registros
+     * Obtener todos los registros (acotado al hotel activo si aplica).
      */
     public function all($columns = ['*']) {
         $columns = implode(', ', $columns);
         $sql = "SELECT {$columns} FROM {$this->table}";
-        $stmt = $this->db->query($sql);
+        $params = [];
+
+        $hotelId = $this->hotelParaAcotar();
+        if ($hotelId !== null) {
+            $sql .= " WHERE {$this->columnaHotel} = ?";
+            $params[] = $hotelId;
+        }
+
+        $stmt = $this->db->query($sql, $params);
         return $stmt->fetchAll();
     }
-    
+
     /**
-     * Buscar por ID
+     * Buscar por ID (acotado al hotel activo si aplica).
      */
     public function find($id, $columns = ['*']) {
         $columns = implode(', ', $columns);
         $sql = "SELECT {$columns} FROM {$this->table} WHERE {$this->primaryKey} = ?";
-        $stmt = $this->db->query($sql, [$id]);
+        $params = [$id];
+
+        $hotelId = $this->hotelParaAcotar();
+        if ($hotelId !== null) {
+            $sql .= " AND {$this->columnaHotel} = ?";
+            $params[] = $hotelId;
+        }
+
+        $stmt = $this->db->query($sql, $params);
         return $stmt->fetch();
     }
     
@@ -120,25 +195,41 @@ public function create($data) {
         }
         
         $values[] = $id;
-        
-        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . 
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) .
                " WHERE {$this->primaryKey} = ?";
-        
+
+        // Aislamiento: no dejar tocar el registro de otro hotel aunque el id
+        // llegue de fuera. Sin hotel en contexto, no acota (comportamiento previo).
+        $hotelId = $this->hotelParaAcotar();
+        if ($hotelId !== null) {
+            $sql .= " AND {$this->columnaHotel} = ?";
+            $values[] = $hotelId;
+        }
+
         $stmt = $this->db->query($sql, $values);
-        
+
         if ($stmt) {
             return $this->find($id);
         }
-        
+
         return false;
     }
-    
+
     /**
      * Eliminar registro
      */
     public function delete($id) {
         $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = ?";
-        $stmt = $this->db->query($sql, [$id]);
+        $params = [$id];
+
+        $hotelId = $this->hotelParaAcotar();
+        if ($hotelId !== null) {
+            $sql .= " AND {$this->columnaHotel} = ?";
+            $params[] = $hotelId;
+        }
+
+        $stmt = $this->db->query($sql, $params);
         return $stmt !== false;
     }
     
@@ -179,7 +270,15 @@ public function create($data) {
      */
     public function paginate($perPage = 15, $page = 1, $conditions = []) {
         $offset = ($page - 1) * $perPage;
-        
+
+        // Aislamiento: acotar al hotel activo salvo que quien llama ya fije
+        // hotel_id. Se inyecta en las condiciones para que el conteo y el
+        // listado usen el MISMO filtro.
+        $hotelId = $this->hotelParaAcotar();
+        if ($hotelId !== null && !array_key_exists($this->columnaHotel, $conditions)) {
+            $conditions[$this->columnaHotel] = $hotelId;
+        }
+
         // Obtener total
         $total = $this->count($conditions);
         

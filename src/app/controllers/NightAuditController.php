@@ -8,6 +8,12 @@ require_once __DIR__ . '/../services/NightAuditService.php';
 
 class NightAuditController extends Controller {
 
+    /** Permiso por accion (auditoria de accesos, 23 jul 2026). */
+    private const PERMISOS = [
+        'index'    => 'night_audit.view',
+        'ejecutar' => 'night_audit.ejecutar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +24,8 @@ class NightAuditController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('night_audit');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

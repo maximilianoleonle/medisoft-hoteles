@@ -7,6 +7,21 @@ require_once __DIR__ . '/../services/NotificacionService.php';
 require_once __DIR__ . '/../services/NotificacionReglasService.php';
 
 class NotificacionController extends Controller {
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Todas piden lo
+     * mismo: la notificacion ya se filtra por persona y rol al leerla
+     * (Notificacion::visibleParaUsuario), asi que nadie resuelve ni descarta
+     * una que no le tocaba ver. Este gate solo cierra la puerta de entrada.
+     */
+    private const PERMISOS = [
+        'index'             => 'notificaciones.view',
+        'abrir'             => 'notificaciones.view',
+        'marcarTodasLeidas' => 'notificaciones.view',
+        'marcarLeida'       => 'notificaciones.view',
+        'resolver'          => 'notificaciones.view',
+        'descartar'         => 'notificaciones.view',
+    ];
+
     private $notificacionModel;
 
     public function __construct($route_params = []) {
@@ -24,6 +39,8 @@ class NotificacionController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('notificaciones');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

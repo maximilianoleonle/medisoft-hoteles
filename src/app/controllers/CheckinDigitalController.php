@@ -8,6 +8,18 @@ require_once __DIR__ . '/../services/CheckinDigitalService.php';
 
 class CheckinDigitalController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Descargar la
+     * identificacion del huesped (INE / pasaporte) es dato personal sensible:
+     * lleva permiso propio, separado de ver el tablero, para poder darle a
+     * recepcion el tablero sin darle las identificaciones si asi se decide.
+     */
+    private const PERMISOS = [
+        'index'       => 'checkin_digital.view',
+        'generar'     => 'checkin_digital.generar',
+        'descargarId' => 'checkin_digital.identificacion',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +30,8 @@ class CheckinDigitalController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('checkin_digital');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

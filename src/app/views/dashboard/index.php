@@ -6,6 +6,11 @@
 $stats = $stats ?? [];
 $caja_info = $caja_info ?? null;
 $corte_actual = $corte_actual ?? null;
+// Solo quien puede ver caja ve las cifras de dinero del tablero. Lo decide el
+// controlador (can('caja.view')); el fallback true cubre render directo en
+// pruebas. Las cifras monetarias ya vienen neutralizadas del controlador
+// cuando esto es false: esto solo oculta los bloques (defensa en profundidad).
+$puede_ver_caja = $puede_ver_caja ?? true;
 $reservaciones_hoy = $reservaciones_hoy ?? [];
 $proximas_llegadas = $proximas_llegadas ?? [];
 $proximas_salidas = $proximas_salidas ?? [];
@@ -4634,6 +4639,7 @@ button.parking-more-note:hover {
                 </div>
             </article>
 
+            <?php if ($puede_ver_caja): ?>
             <article class="card card-pad cash-day-card">
                 <div class="card-row-head" style="justify-content:flex-start">
                     <div class="mini-icon" style="background:var(--dash-bg-available);color:var(--dash-available)">
@@ -4673,6 +4679,7 @@ button.parking-more-note:hover {
                     <i class="fas fa-arrow-right" aria-hidden="true"></i>
                 </a>
             </article>
+            <?php endif; ?>
 
             <article class="card card-pad">
                 <div class="card-row-head" style="justify-content:flex-start">
@@ -4927,6 +4934,7 @@ button.parking-more-note:hover {
                 <?php endif; ?>
             </article>
 
+            <?php if ($puede_ver_caja): ?>
             <article class="card card-pad">
                 <div class="section-head">
                     <h2 style="font-size:21px">Estado de caja</h2>
@@ -4970,6 +4978,7 @@ button.parking-more-note:hover {
                     <a href="<?= url('caja') ?>" class="dash-btn ghost" title="Ver el corte actual"><i class="fas fa-eye" aria-hidden="true"></i>Ver corte</a>
                 </div>
             </article>
+            <?php endif; ?>
             </section>
             </div>
             <article class="card card-pad dashboard-parking-card <?= dashboard_safe($estado_visual_estacionamiento) ?>">
@@ -5243,6 +5252,7 @@ button.parking-more-note:hover {
                     </div>
                 </div>
 
+                <?php if ($puede_ver_caja): ?>
                 <div class="dm-sec"><span>Movimientos del día</span></div>
                 <div class="dm-card">
                     <div class="dm-mvtop">
@@ -5267,6 +5277,7 @@ button.parking-more-note:hover {
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <div class="dm-sec"><span>Habitaciones</span><a href="<?= url('habitaciones') ?>">Ver todas</a></div>
                 <div class="dm-card">
@@ -5325,6 +5336,7 @@ button.parking-more-note:hover {
                     <?php endif; ?>
                 </div>
 
+                <?php if ($puede_ver_caja): ?>
                 <div class="dm-sec"><span>Estado de caja</span></div>
                 <div class="dm-card">
                     <div class="dm-caja">
@@ -5354,6 +5366,7 @@ button.parking-more-note:hover {
                         <a href="<?= url('caja') ?>" class="dm-btn ghost" title="Ver el corte actual"><i class="fas fa-eye" aria-hidden="true"></i>Ver corte</a>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </main>

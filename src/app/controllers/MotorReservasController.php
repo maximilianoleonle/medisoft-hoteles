@@ -14,6 +14,26 @@ require_once __DIR__ . '/../services/MotorPasarelaService.php';
 
 class MotorReservasController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Antes este
+     * controlador solo verificaba el bloque contratado: cualquier persona con
+     * sesion en el hotel podia conciliar pagos contra Caja.
+     *
+     * Cupones y extras se venden como bloques aparte (promociones / upsells) y
+     * por eso llevan su propio permiso, no el del motor.
+     */
+    private const PERMISOS = [
+        'index'                => 'motor_reservas.view',
+        'conciliar'            => 'motor_reservas.conciliar',
+        'guardarConfiguracion' => 'motor_reservas.configurar',
+        'cupones'              => 'promociones.view',
+        'crearCupon'           => 'promociones.gestionar',
+        'alternarCupon'        => 'promociones.gestionar',
+        'extras'               => 'upsells.view',
+        'crearExtra'           => 'upsells.gestionar',
+        'alternarExtra'        => 'upsells.gestionar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -24,6 +44,8 @@ class MotorReservasController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('motor_reservas');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

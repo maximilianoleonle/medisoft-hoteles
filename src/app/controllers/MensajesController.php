@@ -12,6 +12,19 @@ require_once __DIR__ . '/../services/CanalWhatsAppService.php';
 
 class MensajesController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Enviar sale
+     * hacia el huesped; elegir que mensajes salen solos es configuracion del
+     * hotel. Recepcion tiene ver y enviar, no configurar.
+     */
+    private const PERMISOS = [
+        'index'                => 'mensajes.view',
+        'enviar'               => 'mensajes.enviar',
+        'descartar'            => 'mensajes.enviar',
+        'configuracion'        => 'mensajes.configurar',
+        'guardarConfiguracion' => 'mensajes.configurar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -22,6 +35,8 @@ class MensajesController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('canal_whatsapp');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

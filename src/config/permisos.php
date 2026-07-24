@@ -28,6 +28,12 @@ return [
     // Permiso comodin que concede todo.
     'comodin' => '*',
 
+    // Roles base que NO se le muestran al hotel: no salen en Roles y permisos
+    // ni en el selector de rol de una persona. Siguen existiendo en la tabla
+    // `roles` (y can() los sigue resolviendo si alguien los tuviera), solo se
+    // esconden de la interfaz. Para volver a mostrarlos, saca su clave de aqui.
+    'roles_ocultos' => ['superadmin', 'propietario'],
+
     'catalogo' => [
         'habitaciones' => [
             'label' => 'Habitaciones',
@@ -70,6 +76,7 @@ return [
                 'caja.movimientos' => ['label' => 'Registrar movimientos', 'tipo' => 'accion'],
                 'caja.corte'       => ['label' => 'Hacer cortes de caja', 'tipo' => 'accion'],
                 'caja.ajustes'     => ['label' => 'Ajustes y correcciones de caja', 'tipo' => 'accion'],
+                'caja.all'         => ['label' => 'Control total de caja', 'tipo' => 'wildcard'],
             ],
         ],
         'facturacion' => [
@@ -202,6 +209,7 @@ return [
             'permisos' => [
                 'tarifas.view' => ['label' => 'Ver tarifas', 'tipo' => 'acceso'],
                 'tarifas.edit' => ['label' => 'Editar tarifas', 'tipo' => 'accion'],
+                'tarifas.all'  => ['label' => 'Control total de precios y temporadas', 'tipo' => 'wildcard'],
             ],
         ],
         'usuarios' => [
@@ -212,6 +220,7 @@ return [
                 'usuarios.create' => ['label' => 'Crear usuarios', 'tipo' => 'accion'],
                 'usuarios.edit'   => ['label' => 'Editar usuarios', 'tipo' => 'accion'],
                 'usuarios.delete' => ['label' => 'Eliminar usuarios', 'tipo' => 'accion'],
+                'usuarios.all'    => ['label' => 'Control total de usuarios', 'tipo' => 'wildcard'],
             ],
         ],
         'roles' => [
@@ -227,6 +236,7 @@ return [
             'permisos' => [
                 'configuracion.view' => ['label' => 'Ver configuración', 'tipo' => 'acceso'],
                 'configuracion.edit' => ['label' => 'Editar configuración', 'tipo' => 'accion'],
+                'configuracion.all'  => ['label' => 'Control total de configuración', 'tipo' => 'wildcard'],
             ],
         ],
         'notificaciones' => [
@@ -250,7 +260,11 @@ return [
             'label' => 'Opiniones y encuestas',
             'modulo' => 'reputacion',
             'permisos' => [
-                'reputacion.view' => ['label' => 'Ver reputación y encuestas', 'tipo' => 'acceso'],
+                'reputacion.view'       => ['label' => 'Ver reputación y encuestas', 'tipo' => 'acceso'],
+                // Sale hacia el huesped: no puede autorizarlo un permiso de solo ver.
+                'reputacion.encuestas'  => ['label' => 'Generar y enviar encuestas a los huéspedes', 'tipo' => 'accion'],
+                'reputacion.configurar' => ['label' => 'Configurar las encuestas', 'tipo' => 'accion'],
+                'reputacion.all'        => ['label' => 'Control total de opiniones y encuestas', 'tipo' => 'wildcard'],
             ],
         ],
         'dueno' => [
@@ -258,6 +272,172 @@ return [
             'modulo' => 'modo_dueno',
             'permisos' => [
                 'dueno.view' => ['label' => 'Ver el Modo Dueño (resumen remoto de solo lectura)', 'tipo' => 'acceso'],
+            ],
+        ],
+
+        /* -------------------------------------------------------------------
+         * Areas incorporadas el 23 jul 2026 (auditoria de accesos, paso 1).
+         *
+         * Estos modulos existian y se vendian, pero NO tenian ningun permiso
+         * definido: sanitizarPermisos() solo deja pasar lo que esta en este
+         * catalogo, asi que no habia forma de acotarlos ni casilla que ofrecer
+         * en Roles y permisos. Sus controladores hoy solo verifican el modulo
+         * contratado, no quien eres dentro del hotel.
+         *
+         * Declarar el permiso NO lo aplica: hasta que el controlador llame a
+         * require_permission_or_403() (paso 2) esto solo puebla la matriz.
+         * ----------------------------------------------------------------- */
+
+        'motor_reservas' => [
+            'label' => 'Reservas en línea',
+            'modulo' => 'motor_reservas',
+            'permisos' => [
+                'motor_reservas.view'       => ['label' => 'Ver las reservas que entran por internet y sus pagos', 'tipo' => 'acceso'],
+                // Mete dinero a Caja: la accion mas sensible del modulo.
+                'motor_reservas.conciliar'  => ['label' => 'Conciliar los pagos en línea con la caja', 'tipo' => 'accion'],
+                'motor_reservas.configurar' => ['label' => 'Configurar el motor de reservas', 'tipo' => 'accion'],
+                'motor_reservas.all'        => ['label' => 'Control total de reservas en línea', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'promociones' => [
+            'label' => 'Cupones de descuento',
+            'modulo' => 'promociones',
+            'permisos' => [
+                'promociones.view'      => ['label' => 'Ver los cupones', 'tipo' => 'acceso'],
+                'promociones.gestionar' => ['label' => 'Crear cupones y activarlos o desactivarlos', 'tipo' => 'accion'],
+                'promociones.all'       => ['label' => 'Control total de cupones', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'upsells' => [
+            'label' => 'Extras de venta',
+            'modulo' => 'upsells',
+            'permisos' => [
+                'upsells.view'      => ['label' => 'Ver los extras', 'tipo' => 'acceso'],
+                'upsells.gestionar' => ['label' => 'Crear extras y activarlos o desactivarlos', 'tipo' => 'accion'],
+                'upsells.all'       => ['label' => 'Control total de extras', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'canales' => [
+            'label' => 'Airbnb y Booking',
+            'modulo' => 'canales_ical',
+            'permisos' => [
+                'canales.view'      => ['label' => 'Ver la sincronización con Airbnb y Booking', 'tipo' => 'acceso'],
+                // Quitar un calendario deja de bloquear fechas: puede provocar
+                // sobreventa. Por eso va separado de la vista.
+                'canales.gestionar' => ['label' => 'Conectar, quitar y sincronizar calendarios', 'tipo' => 'accion'],
+                'canales.all'       => ['label' => 'Control total de Airbnb y Booking', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'whatsapp' => [
+            'label' => 'Conectar WhatsApp',
+            'modulo' => 'whatsapp',
+            'permisos' => [
+                'whatsapp.view'       => ['label' => 'Ver el estado de la conexión de WhatsApp', 'tipo' => 'acceso'],
+                // Guarda credenciales del proveedor: solo direccion.
+                'whatsapp.configurar' => ['label' => 'Conectar el número y guardar las claves de acceso', 'tipo' => 'accion'],
+                'whatsapp.all'        => ['label' => 'Control total de la conexión de WhatsApp', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'mensajes' => [
+            'label' => 'Mensajes a huéspedes',
+            'modulo' => 'canal_whatsapp',
+            'permisos' => [
+                'mensajes.view'       => ['label' => 'Ver la cola de mensajes del día', 'tipo' => 'acceso'],
+                'mensajes.enviar'     => ['label' => 'Enviar y descartar mensajes', 'tipo' => 'accion'],
+                'mensajes.configurar' => ['label' => 'Elegir qué mensajes se envían solos', 'tipo' => 'accion'],
+                'mensajes.all'        => ['label' => 'Control total de mensajes a huéspedes', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'checkin_digital' => [
+            'label' => 'Check-in digital',
+            'modulo' => 'checkin_digital',
+            'permisos' => [
+                'checkin_digital.view'           => ['label' => 'Ver el tablero de pre-registro', 'tipo' => 'acceso'],
+                'checkin_digital.generar'        => ['label' => 'Generar el link de pre-registro del huésped', 'tipo' => 'accion'],
+                // Dato personal sensible (INE / pasaporte). Se separa a proposito
+                // de la vista del tablero: se puede dar una sin la otra.
+                'checkin_digital.identificacion' => ['label' => 'Ver y descargar la identificación del huésped', 'tipo' => 'accion'],
+                'checkin_digital.all'            => ['label' => 'Control total de check-in digital', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'auditoria' => [
+            'label' => 'Historial de actividad',
+            'modulo' => 'auditoria',
+            'permisos' => [
+                // Es la bitacora que permite revisar a los demas: quien la lee
+                // vigila, y quien hizo algo indebido querria leerla o taparla.
+                // Solo direccion.
+                'auditoria.view' => ['label' => 'Ver el historial de actividad (quién hizo qué)', 'tipo' => 'acceso'],
+            ],
+        ],
+        'night_audit' => [
+            'label' => 'Cierre del día',
+            'modulo' => 'night_audit',
+            'permisos' => [
+                'night_audit.view'     => ['label' => 'Ver el cierre del día', 'tipo' => 'acceso'],
+                'night_audit.ejecutar' => ['label' => 'Ejecutar el cierre del día', 'tipo' => 'accion'],
+                'night_audit.all'      => ['label' => 'Control total del cierre del día', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'lealtad' => [
+            'label' => 'Huésped frecuente',
+            'modulo' => 'lealtad',
+            'permisos' => [
+                'lealtad.view'       => ['label' => 'Ver a los huéspedes frecuentes', 'tipo' => 'acceso'],
+                // Genera un descuento real: es dinero que deja de entrar.
+                'lealtad.cupones'    => ['label' => 'Generar y enviar cupones de agradecimiento', 'tipo' => 'accion'],
+                'lealtad.configurar' => ['label' => 'Configurar el programa de huésped frecuente', 'tipo' => 'accion'],
+                'lealtad.all'        => ['label' => 'Control total de huésped frecuente', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'forecast' => [
+            'label' => 'Pronóstico de ocupación',
+            'modulo' => 'forecast',
+            'permisos' => [
+                'forecast.view'       => ['label' => 'Ver el pronóstico de ocupación', 'tipo' => 'acceso'],
+                // El calendario de temporadas alimenta precios y consejos.
+                'forecast.temporadas' => ['label' => 'Definir el calendario de temporadas', 'tipo' => 'accion'],
+                'forecast.all'        => ['label' => 'Control total del pronóstico', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'operacion' => [
+            'label' => 'El hotel hoy',
+            'modulo' => 'tablero_ejecutivo',
+            'permisos' => [
+                'operacion.view'         => ['label' => 'Ver el tablero del día', 'tipo' => 'acceso'],
+                // Cruza cobros contra caja: cifras de dinero del hotel completo.
+                'operacion.conciliacion' => ['label' => 'Ver la conciliación financiera del día', 'tipo' => 'accion'],
+                'operacion.all'          => ['label' => 'Control total del tablero del día', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'ia' => [
+            'label' => 'Asesor inteligente',
+            'modulo' => 'ia_ejecutiva',
+            'permisos' => [
+                // Narra cifras de dinero del hotel completo.
+                'ia.view'      => ['label' => 'Ver el resumen del día del asesor', 'tipo' => 'acceso'],
+                'ia.regenerar' => ['label' => 'Volver a generar el resumen del día', 'tipo' => 'accion'],
+                'ia.all'       => ['label' => 'Control total del asesor inteligente', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'copiloto' => [
+            'label' => 'Asistente',
+            'modulo' => 'copiloto',
+            'permisos' => [
+                'copiloto.usar'     => ['label' => 'Preguntarle al asistente', 'tipo' => 'acceso'],
+                // El asistente ejecuta la accion en nombre de quien pregunta; el
+                // servicio revalida permiso y bloque por tipo de accion.
+                'copiloto.acciones' => ['label' => 'Dejar que el asistente ejecute lo que se le confirme', 'tipo' => 'accion'],
+                'copiloto.valor'    => ['label' => 'Ver el panel de uso del asistente', 'tipo' => 'accion'],
+                'copiloto.all'      => ['label' => 'Control total del asistente', 'tipo' => 'wildcard'],
+            ],
+        ],
+        'copiloto_ia' => [
+            'label' => 'Asistente con IA',
+            'modulo' => 'copiloto_ia',
+            'permisos' => [
+                // Aplicar una sugerencia de tarifa ya exige aparte 'tarifas.edit'.
+                'copiloto_ia.usar' => ['label' => 'Usar el análisis con IA de opiniones, pronóstico y tarifas', 'tipo' => 'acceso'],
             ],
         ],
     ],
@@ -275,23 +455,37 @@ return [
             'es_sistema'  => 1,
             'permisos'    => ['*'],
         ],
+        // El Gerente es el techo del hotel: manda en TODAS las areas. Se le da
+        // el control total de cada area ('<modulo>.all') en vez del comodin '*'
+        // a proposito: asi sus permisos se ven en la matriz, se pueden editar y
+        // se le pueden recortar a UNA persona (con '*' el sistema bloquea las
+        // dos cosas). Al agregar un area nueva al catalogo, agregala tambien
+        // aqui o el Gerente se queda sin ella.
         'gerente' => [
             'nombre'      => 'Gerente',
-            'descripcion' => 'Dirección operativa y financiera del hotel.',
+            'descripcion' => 'Manda en todo el hotel: todas las áreas, más usuarios y configuración.',
             'es_sistema'  => 1,
             'permisos'    => [
-                'usuarios.view', 'usuarios.create', 'usuarios.edit', 'usuarios.delete',
-                'roles.manage',
-                'configuracion.view', 'configuracion.edit',
-                'reportes.all',
-                'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte', 'caja.ajustes',
-                'habitaciones.all', 'reservaciones.all', 'huespedes.all', 'inventarios.all',
-                'compras.all', 'proveedores.all', 'facturacion.view',
+                'habitaciones.all', 'reservaciones.all', 'huespedes.all',
+                'caja.all', 'facturacion.all',
                 'cuentas_por_cobrar.all', 'cuentas_por_pagar.all',
-                'documentos.all', 'tareas.all', 'lavanderia.all',
-                'personal.view', 'personal.gestionar', 'personal.pagar', 'nomina.all',
-                'tarifas.view', 'tarifas.edit', 'notificaciones.view',
-                'guardian.view',
+                'inventarios.all', 'compras.all', 'proveedores.all',
+                'documentos.all', 'tareas.all', 'lavanderia.all', 'camarista.view',
+                'reportes.all',
+                'personal.all', 'nomina.all',
+                'tarifas.all',
+                'usuarios.all', 'roles.manage',
+                'configuracion.all',
+                'notificaciones.view', 'guardian.view', 'reputacion.all', 'dueno.view',
+                // Areas incorporadas el 23 jul 2026 (ver bloque del catalogo).
+                'motor_reservas.all', 'promociones.all', 'upsells.all',
+                'canales.all', 'whatsapp.all', 'mensajes.all',
+                'checkin_digital.all', 'night_audit.all', 'lealtad.all',
+                'forecast.all', 'operacion.all', 'ia.all',
+                'copiloto.all', 'copiloto_ia.usar',
+                'auditoria.view',
+                // Fuera de la matriz (sin casilla que marcar), pero parte del todo.
+                'llaves.control',
             ],
         ],
         'administrador' => [
@@ -310,6 +504,19 @@ return [
                 'personal.view', 'personal.gestionar', 'personal.pagar',
                 'nomina.view', 'nomina.incidencias', 'nomina.calcular',
                 'notificaciones.view',
+                // Areas incorporadas el 23 jul 2026. Se le da la operacion
+                // completa, MENOS lo que es de direccion: la bitacora de
+                // actividad (auditoria.view) y las claves de WhatsApp
+                // (whatsapp.configurar, solo ve el estado de la conexion).
+                'motor_reservas.all', 'promociones.all', 'upsells.all',
+                'reputacion.all',
+                'canales.all', 'whatsapp.view', 'mensajes.all',
+                'checkin_digital.all', 'night_audit.all', 'lealtad.all',
+                'forecast.all', 'operacion.all',
+                'ia.view',
+                // copiloto.valor: el panel de uso hoy lo abre gerencia Y
+                // administracion (era un gate por rol-string), se conserva.
+                'copiloto.usar', 'copiloto.acciones', 'copiloto.valor', 'copiloto_ia.usar',
             ],
         ],
         'recepcionista' => [
@@ -325,6 +532,14 @@ return [
                 'lavanderia.view', 'lavanderia.operar', 'lavanderia.cobrar',
                 'notificaciones.view',
                 'llaves.control',
+                // Areas incorporadas el 23 jul 2026. Solo lo que recepcion usa
+                // en el mostrador: ve las reservas que entran por internet
+                // (no las concilia), manda las confirmaciones y recibe la
+                // identificacion del huesped al registrarlo.
+                'motor_reservas.view',
+                'mensajes.view', 'mensajes.enviar',
+                'checkin_digital.view', 'checkin_digital.generar', 'checkin_digital.identificacion',
+                'copiloto.usar',
             ],
         ],
         'dueno_remoto' => [
@@ -340,6 +555,14 @@ return [
                 'reputacion.view',
                 'guardian.view',
                 'notificaciones.view',
+                // Areas incorporadas el 23 jul 2026. Solo lectura, en la linea
+                // del Modo Dueno: el resumen del dia, el pronostico, lo que
+                // entra por internet y quien hizo que en su hotel.
+                'operacion.view',
+                'ia.view',
+                'forecast.view',
+                'motor_reservas.view',
+                'auditoria.view',
             ],
         ],
     ],

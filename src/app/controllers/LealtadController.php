@@ -8,6 +8,18 @@ require_once __DIR__ . '/../services/LealtadService.php';
 
 class LealtadController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Generar y enviar
+     * un cupon es dinero que deja de entrar: va separado de solo consultar
+     * quien es huesped frecuente.
+     */
+    private const PERMISOS = [
+        'index'   => 'lealtad.view',
+        'generar' => 'lealtad.cupones',
+        'enviar'  => 'lealtad.cupones',
+        'config'  => 'lealtad.configurar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +30,8 @@ class LealtadController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('lealtad');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

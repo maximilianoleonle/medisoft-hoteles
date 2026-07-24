@@ -574,6 +574,48 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     agrupe solo; permitir escribir fuera del catálogo (`data-ms-combo-free`) o la
     captura se traba con el caso raro.
 
+30. **La excepción por PERSONA se guarda como DIFERENCIA, no como copia
+    (verificado jul 2026).** En cualquier giro, tarde o temprano el dueño pide
+    "a Fulano sí déjalo hacer X, pero solo a él". Dos formas de resolverlo y una
+    sola correcta: copiar los permisos del rol a la persona y editarlos ahí la
+    condena a quedarse congelada (el día que se edita el rol, los ajustados no se
+    enteran); guardar solo el delta — `{"extra":[...],"quitados":[...]}` en la fila
+    de pertenencia al tenant — la deja heredando todo lo demás. La resolución es
+    una sola función: quitar gana, luego extra, luego el rol (comodines `*`/`.all`
+    incluidos, y quitar también le gana al comodín). Tres reglas que evitan los
+    accidentes: (a) la diferencia se DERIVA comparando la matriz enviada contra lo
+    que el rol concede, y la comparación se acota al catálogo que la pantalla
+    realmente pintó — un permiso legacy sin casilla se perdería en silencio en cada
+    guardado; (b) los roles de acceso total no se recortan por persona (mismo
+    criterio que su formulario: evitar dejar al dueño fuera); (c) nadie se da a SÍ
+    MISMO lo que su rol no trae — a otros sí, porque editar el rol ya lo permitía y
+    prohibirlo solo aquí vuelve la pantalla incoherente; subirlo al rol queda a la
+    vista de todos, la puerta trasera silenciosa no. La entrada natural es el
+    listado de roles mostrando quién tiene cada uno (con marca visible en quien
+    tiene ajustes): resuelve de paso el "no me revuelvo" que origina el pedido.
+    No se cachea entre requests: quitar un permiso debe pegar en el siguiente clic,
+    no cuando expire un TTL.
+
+31. **Una opción que anula a las demás no va en la misma lista (verificado jul
+    2026).** En toda matriz de permisos hay un "control total del área" que vuelve
+    irrelevantes a sus hermanos. Puesto como una casilla más al final de la lista
+    se lee como una opción entre otras y el dueño no entiende qué gana marcarla
+    ("¿entonces para qué están las de arriba?"). Patrón: sacarla de la lista,
+    subirla a un bloque propio con su explicación en una línea ("incluye todo lo
+    de abajo y lo que se agregue después"), y cuando está puesta **bloquear el
+    detalle** — marcado, atenuado y no editable — con un separador que cambia de
+    "o elige punto por punto" a "todo esto ya va incluido". El detalle bloqueado
+    NO debe viajar en el envío: así lo guardado es la clave total sola y no una
+    lista redundante que hay que mantener en sintonía. Eso obliga a que el
+    servidor entienda que el total CUBRE a sus hijos al calcular qué se quitó
+    (si no, poner el interruptor los borra a todos), y a que cualquier acción
+    masiva del grupo ("marcar todos") alcance solo al detalle, nunca al
+    interruptor. Regla hermana que sale del mismo bug: **una pantalla que guarda
+    una lista completa borra lo que no dibuja** — todo valor válido que la matriz
+    no pinte hay que reinyectarlo al guardar, o se pierde en silencio (caso real:
+    un permiso legacy sin casilla que recepción perdía cada vez que se editaba
+    su rol).
+
 ---
 
 ## §4. LO PROHIBIDO (errores pagados una vez; no se pagan dos)

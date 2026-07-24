@@ -339,6 +339,8 @@ class ReservacionController extends Controller {
     }
 
     public function agregarNotaAction() {
+    require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
     if (!$this->isPost()) {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'No se pudo procesar la acción. Recarga la página e intenta de nuevo.']);
@@ -386,6 +388,8 @@ class ReservacionController extends Controller {
 }
 
     public function cotizacionReservacionPdfAction() {
+        require_permission_or_403('reservaciones.view');
+
         if (!$this->isPost()) {
             $this->redirect('reservaciones');
             return;
@@ -1349,6 +1353,7 @@ public function obtenerNotasAction() {
     
     public function exportarPDFAction() {
     require_hotel_module('exportaciones');
+    require_permission_or_403('reservaciones.view');
     try {
         $fecha = $this->getQuery('fecha', date('Y-m-d'));
         
@@ -1525,6 +1530,7 @@ public function obtenerNotasAction() {
 
     public function exportarExcelAction() {
         require_hotel_module('exportaciones');
+        require_permission_or_403('reservaciones.view');
         try {
             $fecha = $this->getQuery('fecha', date('Y-m-d'));
 
@@ -2606,6 +2612,8 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
      * Mostrar vista para editar habitaciones de una reservación
      */
     public function editarHabitacionesAction() {
+    require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
     $id = $this->route_params['id'] ?? 0;
     
     $reservacion = $this->reservacionModel->obtenerPorId($id);
@@ -2759,6 +2767,8 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
      * desplazar la fecha de llegada en reservaciones confirmadas.
      */
     public function editarEstanciaAction() {
+        require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
         $id = $this->route_params['id'] ?? 0;
 
         $reservacion = $this->reservacionModel->obtenerPorId($id);
@@ -3921,6 +3931,8 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
      * GET /api/reservaciones/{id}/limpieza-personal
      */
     public function limpiezaPersonalApiAction() {
+        require_permission_or_403('reservaciones.view');
+
         header('Content-Type: application/json');
 
         $id = (int)($this->route_params['id'] ?? 0);
@@ -4528,6 +4540,10 @@ private function validarCancelacion($reservacion) {
     }
 
     public function crearAction() {
+    // Mismo criterio que el menu (config/navegacion.php): abrir el formulario
+    // pide ver reservaciones; guardarlo exige 'reservaciones.create'.
+    require_permission_or_403('reservaciones.view');
+
     // Obtener parámetros de preselección
     $habitacion_id = $this->getQuery('habitacion_id');
     $fecha_entrada = $this->getQuery('fecha_entrada');
@@ -4759,6 +4775,8 @@ $cortesias_ids = $this->getPost('cortesias', []);
      * Se llama via POST desde el formulario de crear reservación
      */
     public function cotizacionPdfAction() {
+        require_permission_or_403('reservaciones.view');
+
         if (!$this->isPost()) {
             $this->redirect('reservaciones/crear');
             return;
@@ -5557,6 +5575,8 @@ public function checkOutRapidoAction() {
      * Mostrar interfaz para check-in tardío con opciones
      */
     public function checkInTardioAction() {
+        require_permission_or_403('habitaciones.checkin', 'No tiene permiso para registrar check-in');
+
         $id = $this->route_params['id'] ?? 0;
         
         if (!$id) {
@@ -5821,6 +5841,8 @@ public function checkOutRapidoAction() {
      * API AJAX para verificar estado antes de check-in
      */
     public function verificarCheckInAction() {
+        require_permission_or_403('habitaciones.checkin', 'No tiene permiso para registrar check-in');
+
         header('Content-Type: application/json');
         
         $id = $this->route_params['id'] ?? 0;
@@ -6275,6 +6297,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
      * Verificar disponibilidad para modificar días (AJAX)
      */
     public function verificarModificarDiasAction() {
+        require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
         header('Content-Type: application/json');
 
         $reservacion_id      = intval($this->getPost('reservacion_id'));
@@ -6365,6 +6389,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
      * Devuelve: max_noches, max_checkout, y datos de la reserva que limita.
      */
     public function topeModificarDiasAction() {
+        require_permission_or_403('reservaciones.edit', 'No tiene permiso para editar reservaciones');
+
         header('Content-Type: application/json');
 
         $reservacion_id = intval($this->getPost('reservacion_id'));

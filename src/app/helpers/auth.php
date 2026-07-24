@@ -358,11 +358,10 @@ function current_hotel_role_clave() {
  * directo en su pantalla de trabajo (ver primary_landing_route).
  */
 function nav_puede_ver_dashboard() {
-    if (function_exists('current_hotel_user_role')
-        && in_array(current_hotel_user_role(), ['gerente', 'administrador', 'propietario'], true)) {
-        return true;
-    }
-
+    // Solo por permiso (auditoria de accesos, 23 jul 2026). El atajo por
+    // rol-string que habia aqui era redundante -- gerente y administrador
+    // cumplen de sobra la lista de abajo -- y ademas no reconocia los roles
+    // personalizados, que guardan todos el ENUM 'recepcionista'.
     return can_any([
         'reservaciones.view', 'caja.view', 'reportes.view',
         'huespedes.view', 'configuracion.view', 'usuarios.view',
@@ -561,6 +560,21 @@ function isSaasAdmin() {
  * comportamiento previo (paridad).
  */
 function can($permission) {
+    // Ajustes personales de ESTA persona (hotel_usuarios.permisos_json). Mandan
+    // sobre el rol: lo quitado se niega aunque el rol lo conceda, y lo extra se
+    // concede aunque el rol no lo traiga. Ver permisos_con_ajustes_personales().
+    $ajustes = current_hotel_permission_ajustes();
+
+    if ($ajustes !== null) {
+        if (in_array($permission, $ajustes['quitados'], true)) {
+            return false;
+        }
+
+        if (permission_in_list($permission, $ajustes['extra'])) {
+            return true;
+        }
+    }
+
     $roleId = current_hotel_role_id();
 
     if ($roleId) {
@@ -641,6 +655,132 @@ function hotel_role_permissions($roleId) {
         error_log('hotel_role_permissions: ' . $e->getMessage());
         return null;
     }
+}
+
+/**
+ * Normaliza los ajustes personales de permisos guardados en
+ * hotel_usuarios.permisos_json. FUNCION PURA (no toca BD ni sesion).
+ *
+ * Forma canonica: {"extra": [...], "quitados": [...]}
+ *  - 'extra'    => permisos concedidos a ESTA persona ademas de los de su rol.
+ *  - 'quitados' => permisos que su rol concede pero a ella se le niegan.
+ *
+ * Tolera el formato plano (una lista suelta) interpretandolo como 'extra', que
+ * es la lectura aditiva y por tanto la unica que no puede quitarle acceso a
+ * nadie por sorpresa. Devuelve null cuando no hay ajustes utiles: asi can()
+ * salta el bloque completo y el rol manda tal cual.
+ *
+ * @param  string|array|null $raw JSON crudo de la columna o arreglo ya decodificado.
+ * @return array{extra: string[], quitados: string[]}|null
+ */
+function normalizar_ajustes_permisos($raw) {
+    if ($raw === null || $raw === '' || $raw === false) {
+        return null;
+    }
+
+    $datos = is_array($raw) ? $raw : json_decode((string) $raw, true);
+
+    if (!is_array($datos)) {
+        return null;
+    }
+
+    $limpiar = static function ($lista) {
+        if (!is_array($lista)) {
+            return [];
+        }
+
+        $lista = array_filter(array_map('strval', $lista), static function ($p) {
+            return $p !== '';
+        });
+
+        return array_values(array_unique($lista));
+    };
+
+    // Formato plano (lista suelta): se lee como concesiones extra.
+    if (!array_key_exists('extra', $datos) && !array_key_exists('quitados', $datos)) {
+        $extra = $limpiar($datos);
+        return $extra ? ['extra' => $extra, 'quitados' => []] : null;
+    }
+
+    $extra = $limpiar($datos['extra'] ?? []);
+    $quitados = $limpiar($datos['quitados'] ?? []);
+
+    // Un permiso no puede estar concedido y quitado a la vez: gana quitar
+    // (criterio cerrado, igual que el resto de la matriz).
+    $extra = array_values(array_diff($extra, $quitados));
+
+    if (!$extra && !$quitados) {
+        return null;
+    }
+
+    return ['extra' => $extra, 'quitados' => $quitados];
+}
+
+/**
+ * Ajustes personales de permisos del usuario en el hotel actual, o null si no
+ * tiene (el caso normal: hereda su rol sin cambios).
+ *
+ * Se consulta UNA vez por request y NO se cachea entre requests ni en sesion a
+ * proposito: quitarle un permiso a alguien debe surtir efecto en su siguiente
+ * clic, no cuando expire un TTL o vuelva a entrar. Es un lookup por clave unica
+ * (hotel_id, usuario_id), barato.
+ *
+ * @return array{extra: string[], quitados: string[]}|null
+ */
+function current_hotel_permission_ajustes() {
+    static $cache = [];
+
+    $hotelId = current_hotel_id();
+    $userId = $_SESSION['user_id'] ?? null;
+
+    if (!$hotelId || !$userId || !class_exists('Database')) {
+        return null;
+    }
+
+    $key = $hotelId . ':' . $userId;
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT permisos_json FROM hotel_usuarios
+             WHERE hotel_id = ? AND usuario_id = ? AND activo = 1
+             LIMIT 1",
+            [(int) $hotelId, (int) $userId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+
+        return $cache[$key] = normalizar_ajustes_permisos($row['permisos_json'] ?? null);
+    } catch (Throwable $e) {
+        // Columna ausente o BD caida: sin ajustes, el rol manda (comportamiento previo).
+        error_log('current_hotel_permission_ajustes: ' . $e->getMessage());
+        return $cache[$key] = null;
+    }
+}
+
+/**
+ * ¿Este permiso queda concedido para alguien con estos permisos de rol y estos
+ * ajustes personales? FUNCION PURA: misma regla que can() pero sobre datos
+ * dados, para poder resolver los permisos de OTRA persona (la pantalla de
+ * ajuste por persona) y para poder probarla sin sesion.
+ *
+ * @param array{extra: string[], quitados: string[]}|null $ajustes
+ */
+function permisos_con_ajustes_personales($permission, array $permisosRol, $ajustes = null) {
+    if (is_array($ajustes)) {
+        if (in_array($permission, $ajustes['quitados'] ?? [], true)) {
+            return false;
+        }
+
+        if (permission_in_list($permission, $ajustes['extra'] ?? [])) {
+            return true;
+        }
+    }
+
+    return permission_in_list($permission, $permisosRol);
 }
 
 /**

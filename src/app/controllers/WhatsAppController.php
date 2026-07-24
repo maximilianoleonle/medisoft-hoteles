@@ -8,6 +8,17 @@ require_once __DIR__ . '/../services/WhatsAppHotelService.php';
 
 class WhatsAppController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Guardar la
+     * conexion escribe las claves de acceso del proveedor, asi que ver el
+     * estado y configurarlo son permisos distintos a proposito.
+     */
+    private const PERMISOS = [
+        'index'   => 'whatsapp.view',
+        'guardar' => 'whatsapp.configurar',
+        'probar'  => 'whatsapp.configurar',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -18,6 +29,8 @@ class WhatsAppController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('whatsapp');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

@@ -35,14 +35,12 @@ if (!function_exists('tlm_date')) {
 if (!function_exists('tk_detail_can_view_start_delay')) {
     function tk_detail_can_view_start_delay(): bool
     {
-        $rolesAdmin = ['superadmin', 'propietario', 'gerente', 'administrador'];
-        $rolHotel = function_exists('current_hotel_user_role') ? strtolower((string)current_hotel_user_role()) : '';
-        $rolGlobal = function_exists('user_role') ? strtolower((string)user_role()) : '';
-
-        return in_array($rolHotel, $rolesAdmin, true)
-            || in_array($rolGlobal, $rolesAdmin, true)
-            || (function_exists('is_gerente') && is_gerente())
-            || (function_exists('is_admin') && is_admin());
+        // Dato de supervision (cuanto tardo en arrancar la tarea): lo ve quien
+        // manda en Tareas. Antes miraba el rol del hotel Y el rol GLOBAL del
+        // usuario (usuarios.rol), que es ajeno a este hotel: alguien con rol
+        // global 'gerente' pero camarista en este hotel lo veia igual.
+        // Auditoria de accesos, 23 jul 2026: una sola verdad, el permiso.
+        return function_exists('can') && can('tareas.all');
     }
 }
 

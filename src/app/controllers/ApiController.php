@@ -5,7 +5,71 @@
  */
 
 class ApiController extends Controller {
-    
+
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Antes este
+     * before() solo exigia sesion + bloque contratado: cualquier persona del
+     * hotel podia leer por API la caja del dia, el buscador global o las cifras
+     * del tablero, aunque su pantalla no se lo mostrara.
+     *
+     * Cada endpoint pide el permiso de LO QUE DEVUELVE, no el de la pantalla
+     * que lo llama. Cerrado por defecto (ver Controller::requirePermissionForAction).
+     */
+    private const PERMISOS = [
+        // No exponen datos del hotel.
+        'navFavorito'               => true,  // preferencia personal de navegacion
+        'sync'                      => true,  // hoy responde 423: deshabilitado
+
+        // Habitaciones e imagenes
+        'validarImagen'             => 'habitaciones.view',
+        'informacionImagen'         => 'habitaciones.view',
+        'todasConOcupacion'         => 'habitaciones.view',
+        'habitaciones'              => 'habitaciones.view',
+        'limpiarImagenesHuerfanas'  => 'habitaciones.all',
+        'optimizarImagenes'         => 'habitaciones.all',
+
+        // Disponibilidad y precios: los usa tanto la pantalla de reservaciones
+        // como la de habitaciones, por eso van en any-of.
+        'disponibles'               => ['reservaciones.view', 'habitaciones.view'],
+        'habitacionesDisponibles'   => ['reservaciones.view', 'habitaciones.view'],
+        'verificarDisponibilidad'   => ['reservaciones.view', 'habitaciones.view'],
+        'calcularPrecio'            => ['reservaciones.view', 'tarifas.view'],
+        'incrementosTarifaActivos'  => ['reservaciones.view', 'tarifas.view'],
+
+        // Huespedes
+        'buscarHuespedes'           => 'huespedes.view',
+        'vehiculosHuesped'          => 'huespedes.view',
+
+        // Reservaciones
+        'reservacionesHoy'          => 'reservaciones.view',
+        'reservacionResumenPagos'   => ['reservaciones.view', 'caja.view'],
+
+        // Inventario
+        'alertasInventario'         => 'inventarios.view',
+        'previewCheckinInventario'  => 'inventarios.view',
+        'verificarStockHabitacion'  => 'inventarios.view',
+
+        // Dinero: se exige caja.view a secas, no any-of. Los cuatro roles base
+        // lo tienen, asi que el tablero sigue funcionando; un rol acotado
+        // (camarista y afines) no debe ver cifras de caja ni aunque la pantalla
+        // se las pida.
+        'cajaSnapshot'              => 'caja.view',
+        'movimientosRecientes'      => 'caja.view',
+        'estadisticasDashboard'     => 'caja.view',
+
+        // Tablero: ocupacion y alertas operativas, sin cifras de caja.
+        'ocupacionActual'           => ['habitaciones.view', 'reservaciones.view'],
+        'alertasDashboard'          => ['habitaciones.view', 'reservaciones.view'],
+        'estacionamientoProyeccion' => ['habitaciones.view', 'reservaciones.view'],
+
+        // Buscador global. OJO: exige tener ALGUNA de las tres lecturas, pero
+        // los resultados NO se filtran todavia por permiso — quien entra con
+        // habitaciones.view tambien recibe huespedes y reservaciones. Pendiente
+        // anotado en la auditoria; el filtro por seccion va dentro de
+        // buscarGlobalAction, no aqui.
+        'buscarGlobal'              => ['huespedes.view', 'reservaciones.view', 'habitaciones.view'],
+    ];
+
     /**
      * Verificar que sea una petición AJAX
      */
@@ -33,7 +97,9 @@ class ApiController extends Controller {
         if ($module && function_exists('require_hotel_module_api')) {
             require_hotel_module_api($module);
         }
-        
+
+        $this->requirePermissionForAction(self::PERMISOS);
+
         return true;
     }
 
@@ -91,7 +157,21 @@ class ApiController extends Controller {
         return $map[$action] ?? null;
     }
 
-    private function globalSearchModuleAllowed($clave) {
+    /**
+     * ¿El buscador global puede incluir esta seccion? Exige el modulo
+     * contratado Y el permiso de lectura de la seccion.
+     *
+     * El permiso se agrego el 23 jul 2026 (auditoria de accesos): antes solo
+     * miraba el modulo, asi que quien entraba al buscador con habitaciones.view
+     * tambien recibia huespedes y reservaciones en los resultados. El gate del
+     * before() ('buscarGlobal' => any-of las tres lecturas) es solo la puerta;
+     * aqui se acota que ve cada quien seccion por seccion.
+     */
+    private function globalSearchModuleAllowed($clave, $permiso = null) {
+        if ($permiso !== null && function_exists('can') && !can($permiso)) {
+            return false;
+        }
+
         if (!function_exists('has_hotel_context') || !has_hotel_context()) {
             return true;
         }
@@ -781,9 +861,9 @@ public function vehiculosHuespedAction() {
      */
     public function buscarGlobalAction() {
         $q = trim($this->getQuery('q', ''));
-        $buscarHuespedes = $this->globalSearchModuleAllowed('huespedes');
-        $buscarReservaciones = $this->globalSearchModuleAllowed('reservaciones');
-        $buscarHabitaciones = $this->globalSearchModuleAllowed('habitaciones');
+        $buscarHuespedes = $this->globalSearchModuleAllowed('huespedes', 'huespedes.view');
+        $buscarReservaciones = $this->globalSearchModuleAllowed('reservaciones', 'reservaciones.view');
+        $buscarHabitaciones = $this->globalSearchModuleAllowed('habitaciones', 'habitaciones.view');
 
         if ($q === '__offline_cache__') {
             try {

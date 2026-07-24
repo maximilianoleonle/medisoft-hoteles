@@ -9,6 +9,15 @@ require_once __DIR__ . '/../models/ConciliacionFinanciera.php';
 
 class OperacionController extends Controller
 {
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). La conciliacion
+     * cruza cobros contra caja del hotel completo: va separada del tablero.
+     */
+    private const PERMISOS = [
+        'diaria'                 => 'operacion.view',
+        'conciliacionFinanciera' => 'operacion.conciliacion',
+    ];
+
     private $operacionModel;
     private $conciliacionModel;
 
@@ -30,6 +39,8 @@ class OperacionController extends Controller
         if (function_exists('require_hotel_module')) {
             require_hotel_module('tablero_ejecutivo');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

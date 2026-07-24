@@ -156,6 +156,16 @@ class DashboardController extends Controller {
                 'mensajes_whatsapp' => $mensajesWhatsApp
             ];
 
+            // Caja: solo quien tiene caja.view ve cifras de dinero. El tablero
+            // lo abren varios permisos (ver nav_puede_ver_dashboard), asi que un
+            // rol con reservaciones.view pero sin caja.view llega hasta aqui.
+            // Neutralizamos el dinero ANTES de renderizar -- no basta ocultarlo
+            // en la vista: hay que no enviarlo. (Auditoria de accesos, jul 2026.)
+            $data['puede_ver_caja'] = function_exists('can') ? can('caja.view') : true;
+            if (!$data['puede_ver_caja']) {
+                $data = $this->sinDatosDeCaja($data);
+            }
+
             // Renderizar vista
             View::renderTemplate('dashboard/index', $data);
             
@@ -178,6 +188,7 @@ class DashboardController extends Controller {
                 'notificaciones_resumen' => $this->getResumenNotificacionesVacio(),
                 'notificaciones_recientes' => [],
                 'guardian_resumen' => null,
+                'puede_ver_caja' => function_exists('can') ? can('caja.view') : true,
                 'error' => 'Error al cargar los datos del dashboard'
             ]);
         }
@@ -877,6 +888,33 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
     /**
      * Obtener estructura de estadísticas vacías
      */
+    /**
+     * Vacia del paquete del dashboard todo lo que expone dinero, dejando el
+     * resto (habitaciones, agenda, ocupacion) intacto. Para roles que abren el
+     * tablero sin caja.view. Pone a cero en vez de desarmar las claves para no
+     * romper los accesos directos de la vista ($stats['ingresos']['efectivo_dia']).
+     */
+    private function sinDatosDeCaja(array $data): array {
+        $cero = ['total_dia' => 0, 'efectivo_dia' => 0, 'tarjeta_dia' => 0, 'transferencia_dia' => 0];
+
+        if (isset($data['stats']) && is_array($data['stats'])) {
+            $data['stats']['ingresos'] = $cero + ['brutos_total_dia' => 0, 'reversos_total_dia' => 0, 'brutos_por_metodo' => [], 'reversos_por_metodo' => []];
+            $data['stats']['egresos'] = $cero + ['gastos_reales_total_dia' => 0];
+            $data['stats']['reversos'] = $cero;
+            $data['stats']['finanzas'] = ['entradas_brutas' => 0, 'reversos' => 0, 'ingreso_neto' => 0, 'gastos_reales' => 0, 'balance' => 0];
+        }
+
+        $data['caja_info'] = null;
+        $data['corte_actual'] = null;
+
+        // Los graficos incluyen ingresos por tipo de habitacion (dinero).
+        if (isset($data['graficos']) && is_array($data['graficos'])) {
+            unset($data['graficos']['ingresos_por_tipo']);
+        }
+
+        return $data;
+    }
+
     private function getEstadisticasVacias() {
         return [
             'habitaciones' => [
@@ -925,7 +963,10 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
         if (!$this->isAjax()) {
             $this->redirect('dashboard');
         }
-        
+
+        // Devuelve cifras de caja: mismo permiso que /api/dashboard/stats.
+        require_permission_or_403('caja.view');
+
         $stats = $this->getEstadisticasCompletas();
         $caja_info = $this->getCajaInfo();
         
@@ -946,7 +987,10 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
         if (!$this->isAjax()) {
             $this->redirect('dashboard');
         }
-        
+
+        // Las graficas del tablero incluyen ingresos.
+        require_permission_or_403('caja.view');
+
         $datos = $this->getDatosGraficos();
         
         View::renderJSON([

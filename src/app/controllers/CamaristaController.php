@@ -15,6 +15,20 @@ require_once __DIR__ . '/../models/Area.php';
 
 class CamaristaController extends Controller {
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Marcar y
+     * programar ES el trabajo del tablero, no un extra: por eso todas las
+     * acciones piden lo mismo que entrar. Se acepta cualquiera de los dos
+     * permisos (any-of), igual que el menu: la pantalla de Limpieza la abre
+     * tanto una camarista como quien gestiona tareas (ver config/navegacion.php).
+     */
+    private const PERMISOS = [
+        'index'      => ['camarista.view', 'tareas.view'],
+        'marcar'     => ['camarista.view', 'tareas.view'],
+        'programar'  => ['camarista.view', 'tareas.view'],
+        'marcarArea' => ['camarista.view', 'tareas.view'],
+    ];
+
     /** @var TareaOperativa */
     private $tareaModel;
     /** @var Area */
@@ -36,6 +50,8 @@ class CamaristaController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('camarista');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

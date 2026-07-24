@@ -15,12 +15,27 @@ class CopilotoIaController extends Controller {
     private const THROTTLE_MAX = 10;      // generaciones
     private const THROTTLE_VENTANA = 60;  // segundos
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). El gate del
+     * bloque lo resuelve cada accion mas abajo (permite la prueba gratis), pero
+     * el permiso se exige siempre. Aplicar una sugerencia de tarifa cambia
+     * precios: pide 'tarifas.edit', no el de usar la IA.
+     */
+    private const PERMISOS = [
+        'resena'        => 'copiloto_ia.usar',
+        'analisis'      => 'copiloto_ia.usar',
+        'tarifa'        => 'copiloto_ia.usar',
+        'aplicarTarifa' => 'tarifas.edit',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
         if (function_exists('require_hotel_context')) {
             require_hotel_context();
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }

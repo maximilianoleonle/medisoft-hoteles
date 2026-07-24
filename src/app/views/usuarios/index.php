@@ -1453,12 +1453,12 @@ html[data-theme="dark"] .usuarios-view .usr-tr .usr-avatar {
                                         </a>
                                         <?php if ($usuario['id'] != user_id()): ?>
                                             <?php if ($usuario['activo']): ?>
-                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, false, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                                <button type="button" onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, false, <?= htmlspecialchars(json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>, this)"
                                                         class="act-btn act-deact" title="Desactivar">
                                                     <i class="fas fa-user-slash"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, true, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                                <button type="button" onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, true, <?= htmlspecialchars(json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>, this)"
                                                         class="act-btn act-act" title="Activar">
                                                     <i class="fas fa-user-check"></i>
                                                 </button>
@@ -1547,12 +1547,12 @@ html[data-theme="dark"] .usuarios-view .usr-tr .usr-avatar {
                                     </a>
                                     <?php if ($usuarioId != user_id()): ?>
                                         <?php if ($usuario['activo']): ?>
-                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, false, <?= json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, false, <?= htmlspecialchars(json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>, this)"
                                                     class="usr-cardbtn act-deact" type="button">
                                                 <i class="fas fa-user-slash"></i> Desactivar
                                             </button>
                                         <?php else: ?>
-                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, true, <?= json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, true, <?= htmlspecialchars(json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>, this)"
                                                     class="usr-cardbtn act-act" type="button">
                                                 <i class="fas fa-user-check"></i> Activar
                                             </button>

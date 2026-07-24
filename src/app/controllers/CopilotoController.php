@@ -12,6 +12,19 @@ class CopilotoController extends Controller {
     private const THROTTLE_MAX = 20;      // preguntas
     private const THROTTLE_VENTANA = 60;  // segundos
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Preguntar es
+     * lectura; dejar que el asistente EJECUTE lo que se le confirma (limpieza,
+     * mantenimiento, gasto, cupon, pago) es otra cosa y lleva permiso propio
+     * — ademas del que el servicio revalida por tipo de accion.
+     */
+    private const PERMISOS = [
+        'preguntar' => 'copiloto.usar',
+        'feedback'  => 'copiloto.usar',
+        'accion'    => 'copiloto.acciones',
+        'valor'     => 'copiloto.valor',
+    ];
+
     protected function before() {
         $this->requireAuth();
 
@@ -22,6 +35,8 @@ class CopilotoController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('copiloto');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }
@@ -169,14 +184,10 @@ class CopilotoController extends Controller {
      * asistente para gerencia. Solo lectura sobre el log existente.
      */
     public function valorAction() {
-        // Mismo criterio de acceso que la pantalla de Configuracion: gerencia.
-        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-        if (!(is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true))) {
-            set_mensaje('No tiene permisos para acceder a esta sección', 'error');
-            $this->redirect('dashboard');
-            return;
-        }
-
+        // El acceso lo resuelve before() con 'copiloto.valor'. Antes se gateaba
+        // por rol-string, que no distingue los roles personalizados (todos se
+        // guardan como 'recepcionista'): un rol a la medida no podia entrar
+        // aunque el propietario se lo concediera.
         $hotelId = (int) obtenerHotelIdActualCompat();
         $servicio = new CopilotoService();
 

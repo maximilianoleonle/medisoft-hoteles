@@ -272,7 +272,14 @@ abstract class Controller {
     }
     
     /**
-     * Requerir rol específico
+     * Requerir rol específico.
+     *
+     * @deprecated Auditoría de accesos, 23 jul 2026. Gatear por rol-string no
+     * reconoce los roles personalizados: todos se guardan con el ENUM legacy
+     * 'recepcionista' (ver UsuarioController::resolverAsignacionRol), así que
+     * un rol a la medida nunca cumple aunque el propietario le dé el permiso.
+     * Usa requirePermissionForAction() o require_permission_or_403().
+     * Único llamador vivo: SetupController, cuya ruta está deshabilitada.
      */
     protected function requireRole($role) {
         require_role($role);
@@ -283,5 +290,50 @@ abstract class Controller {
      */
     protected function requirePermission($permission) {
         require_permission($permission);
+    }
+
+    /**
+     * Exigir el permiso que corresponde a la acción en curso, según un mapa
+     * 'accion' => 'permiso' (o lista any-of). Pensado para llamarse una sola
+     * vez desde el before() del controlador.
+     *
+     * CERRADO POR DEFECTO: si la acción no aparece en el mapa se deniega con
+     * 403. Es deliberado — una acción nueva que alguien olvide mapear se cae
+     * de inmediato en vez de quedar abierta sin que nadie se entere, que es
+     * exactamente como varios módulos llegaron a no tener ningún control
+     * (auditoría de accesos, 23 jul 2026).
+     *
+     * Responde 403 REAL (JSON en AJAX, página de error en HTML) vía
+     * deny_access_403(): nunca un redirect que se confunda con "ok".
+     *
+     * Valores admitidos en el mapa:
+     *   'permiso'            -> exige ese permiso
+     *   ['uno', 'otro']      -> basta con cualquiera (any-of)
+     *   true                 -> basta con la sesión; se usa SOLO para acciones
+     *                           que no exponen datos del hotel (p. ej. marcar
+     *                           una pantalla como favorita). Es explícito a
+     *                           propósito: obliga a decidirlo, no a olvidarlo.
+     *
+     * @param array<string, string|string[]|true> $mapa
+     */
+    protected function requirePermissionForAction(array $mapa, $mensaje = null) {
+        require_auth();
+
+        $accion = (string) ($this->route_params['action'] ?? '');
+        $permiso = $mapa[$accion] ?? null;
+
+        if ($permiso === null) {
+            deny_access_403($mensaje ?? 'Esta acción no está disponible.');
+        }
+
+        if ($permiso === true) {
+            return;
+        }
+
+        $concedido = is_array($permiso) ? can_any($permiso) : can($permiso);
+
+        if (!$concedido) {
+            deny_access_403($mensaje ?? 'No tienes permiso para esta acción. Pídele acceso a la persona administradora de tu hotel.');
+        }
     }
 }

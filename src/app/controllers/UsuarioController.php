@@ -525,6 +525,12 @@ class UsuarioController extends Controller {
             return null;
         }
 
+        // Los roles ocultos de la interfaz tampoco se asignan por POST directo:
+        // si no se ofrecen en el selector, no deben entrar por la puerta de atras.
+        if ($this->rolModel->estaOculto($rol['clave'] ?? '')) {
+            return null;
+        }
+
         // Anti-escalada de privilegios: nadie puede OTORGAR un rol de maximo
         // privilegio (comodin '*' / propietario / superadmin) si el propio actor
         // no lo posee. Sin esto, un 'administrador' del hotel podia asignarse el

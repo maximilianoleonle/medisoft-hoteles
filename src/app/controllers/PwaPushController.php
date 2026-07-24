@@ -7,6 +7,19 @@ require_once __DIR__ . '/../models/PwaPushSubscription.php';
 class PwaPushController extends Controller {
     private $pushService;
 
+    /**
+     * Permiso por accion (auditoria de accesos, 23 jul 2026). Suscribir el
+     * propio dispositivo es parte de recibir notificaciones; revocar el
+     * dispositivo de OTRA persona vive en Configuracion y pide su permiso.
+     */
+    private const PERMISOS = [
+        'publicKey'          => 'notificaciones.view',
+        'subscribe'          => 'notificaciones.view',
+        'unsubscribe'        => 'notificaciones.view',
+        'test'               => 'notificaciones.view',
+        'revocarDispositivo' => 'configuracion.edit',
+    ];
+
     public function __construct($route_params = []) {
         parent::__construct($route_params);
         $this->pushService = new PwaPushService();
@@ -22,6 +35,8 @@ class PwaPushController extends Controller {
         if (function_exists('require_hotel_module')) {
             require_hotel_module('notificaciones');
         }
+
+        $this->requirePermissionForAction(self::PERMISOS);
 
         return true;
     }
@@ -123,11 +138,8 @@ class PwaPushController extends Controller {
         }
 
         $this->validateCSRF();
-        if (!$this->puedeGestionarDispositivos()) {
-            set_mensaje('No tiene permisos para revocar dispositivos PWA.', 'error');
-            $this->redirect('configuracion');
-            return;
-        }
+        // El acceso lo resuelve before() con 'configuracion.edit'. Antes se
+        // gateaba por rol-string, que no distingue los roles personalizados.
 
         $model = new PwaPushSubscription();
         $ok = $model->desactivarPorIdHotel((int)$id, $this->hotelIdActual());
@@ -151,10 +163,4 @@ class PwaPushController extends Controller {
             : (int)($_SESSION['hotel_id'] ?? 0);
     }
 
-    private function puedeGestionarDispositivos(): bool {
-        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
-
-        return (function_exists('is_gerente') && is_gerente())
-            || in_array($rolHotel, ['gerente', 'administrador'], true);
-    }
 }

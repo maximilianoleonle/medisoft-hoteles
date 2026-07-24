@@ -426,10 +426,12 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
                     <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
                     <?= $msjSafe($msjHoy) ?>
                 </span>
+                <?php if (!function_exists('can') || can('mensajes.configurar')): /* configurar la cola = mensajes.configurar; recepción envía pero no configura */ ?>
                 <a class="msj-config-link" href="<?= url('mensajes/configuracion') ?>">
                     <i class="fa-solid fa-sliders" aria-hidden="true"></i>
                     Configuración
                 </a>
+                <?php endif; ?>
             </div>
         </section>
 
