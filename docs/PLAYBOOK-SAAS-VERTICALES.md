@@ -85,6 +85,11 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
    ticket bajo de entrada y ARPU creciente.
 4. **RBAC configurable por tenant** con presets editables desde el panel SaaS.
 5. **PWA mobile-first instalable** + push por rol + offline en lo operativo.
+   Push con activación AUTOMÁTICA al instalar (verificado jul 2026): pedir el
+   permiso al abrir la app instalada (en iOS con el primer toque, exige gesto),
+   suscribir en silencio si ya hay permiso, y respetar el apagado manual con un
+   marcador local. Sin este cero-toque, los dispositivos del personal nunca se
+   suscriben solos y el push por rol se queda sin audiencia.
 6. **Patrón "core agnóstico + adaptador por giro"** (ya existe en
    NominaAdaptadorGiro/Registry): el core no sabe de mascotas ni coches; los
    adaptadores sí.

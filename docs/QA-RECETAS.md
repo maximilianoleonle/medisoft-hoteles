@@ -124,6 +124,14 @@ Verificado E2E jul-2026 (localhost:8080, sesión QA en Los Cedros).
 2. Debe mostrar score determinista del hotel y ⬜ (secciones exactas del tablero).
 3. Si se tocó push: verificar que las notificaciones ruteen por clave de rol `dueno_remoto`.
 
+## Notificaciones push (activación automática por dispositivo)
+
+1. Local: el módulo `notificaciones` está `activo_global=0` → flippear a 1 en BD para el QA y RESTAURAR a 0 al final (en prod sigue activo). Sembrar sesión con endpoint temporal (incluir `csrf_token`+`csrf_token_time`).
+2. `/api/pwa-push/public-key` con `X-Requested-With` debe dar `enabled:true` y llave.
+3. El pane no muestra prompts nativos de permiso (queda `denied`): stubear `window.Notification` (getter `permission` + `requestPermission`) y `Object.defineProperty(ServiceWorkerRegistration.prototype,'pushManager',...)` con subscribe/getSubscription falsos, y llamar `window.PWA.autoActivarPush('arranque'|'appinstalled')`. Verificado jul-25 (12 asserts): suscripción silenciosa con permiso dado (POST real 200, fila con hotel/usuario correctos), fast-path sin red con marcador, opt-out respetado, no pide permiso fuera de la app instalada, `appinstalled` pide y suscribe, guard por sesión, iOS (requestPermission lanza sin gesto) → `pointerup` dispara y el listener es de un solo uso.
+4. Limpiar: borrar filas `pwa_push_subscriptions` con endpoint de QA, restaurar `activo_global`, borrar el endpoint temporal.
+5. ⬜ prueba real en teléfono (Android instalado y iPhone agregado a inicio): abrir la app → aceptar el permiso → mandar prueba desde el panel de /notificaciones y ver la notificación llegar.
+
 ## Copiloto (acciones por chat)
 
 1. Abrir widget del Copiloto (exento del difuminador de sidebar).
