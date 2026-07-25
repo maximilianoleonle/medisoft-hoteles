@@ -707,6 +707,7 @@
     const btn = document.getElementById('pwa-install-btn');
     if (btn) btn.classList.add('hidden');
     showToast('App instalada correctamente.', 'success');
+    autoActivarPushDispositivo('appinstalled');
   });
 
   window.triggerInstall = function () {
@@ -935,6 +936,9 @@
       subscription: subscription.toJSON(),
     });
 
+    safeLocalStorageRemove(PUSH_OPTOUT_KEY);
+    safeLocalStorageSet(PUSH_ENDPOINT_KEY, pushMarcadorRegistro(subscription));
+
     return subscription;
   }
 
@@ -947,6 +951,111 @@
         endpoint: subscription.endpoint,
       });
       await subscription.unsubscribe();
+    }
+
+    // Decisión explícita del usuario: la activación automática la respeta.
+    safeLocalStorageSet(PUSH_OPTOUT_KEY, '1');
+    safeLocalStorageRemove(PUSH_ENDPOINT_KEY);
+  }
+
+  // ── 8b. Activación automática por dispositivo ──
+  // Contrato: al abrir la app instalada (o recién instalarla) el dispositivo
+  // queda suscrito solo. Si el usuario apagó push a mano en este equipo
+  // (marcador local), la automática NO lo vuelve a prender.
+  const PUSH_OPTOUT_KEY = 'loscedros_push_optout';
+  const PUSH_ENDPOINT_KEY = 'loscedros_push_endpoint_registrado';
+  const PUSH_AUTO_SESSION_KEY = 'loscedros_push_auto_pedido';
+  let pushGestureArmado = false;
+
+  function pushMarcadorRegistro(subscription) {
+    const usuarioId = window.MEDISOFT_CONTEXT?.usuario_id || '';
+    return `${subscription.endpoint}|${usuarioId}`;
+  }
+
+  async function registrarPushEnServidor(subscription) {
+    await pushJson(`${BASE}/api/pwa-push/subscribe`, {
+      subscription: subscription.toJSON(),
+    });
+    safeLocalStorageSet(PUSH_ENDPOINT_KEY, pushMarcadorRegistro(subscription));
+  }
+
+  async function suscribirYRegistrarPush(registration, config) {
+    const existente = await registration.pushManager.getSubscription();
+    const subscription = existente || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(config.public_key),
+    });
+    await registrarPushEnServidor(subscription);
+    return subscription;
+  }
+
+  // Safari/iOS solo permite pedir el permiso dentro de un gesto del usuario:
+  // el primer toque en la app dispara la solicitud.
+  function armarActivacionPushPorGesto(registration, config) {
+    if (pushGestureArmado) return;
+    pushGestureArmado = true;
+
+    document.addEventListener('pointerup', async () => {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+        await suscribirYRegistrarPush(registration, config);
+        showToast('Notificaciones del hotel activadas en este dispositivo.', 'success');
+      } catch (err) {
+        console.warn('[PWA] Push: no se pudo activar tras el gesto:', err);
+      }
+    }, { capture: true, once: true });
+  }
+
+  async function autoActivarPushDispositivo(origen) {
+    try {
+      if (!pushSupported()) return;
+      if (!window.MEDISOFT_CONTEXT) return; // sin sesión de hotel no hay a quién suscribir
+      if (safeLocalStorageGet(PUSH_OPTOUT_KEY) === '1') return;
+      if (Notification.permission === 'denied') return;
+
+      const registration = await navigator.serviceWorker.ready;
+      const existente = await registration.pushManager.getSubscription();
+
+      // Ya suscrito y registrado para este usuario: nada que hacer (sin red).
+      if (existente && safeLocalStorageGet(PUSH_ENDPOINT_KEY) === pushMarcadorRegistro(existente)) {
+        return;
+      }
+
+      const config = await loadPushConfig(null);
+      if (!config || !config.enabled || !config.public_key) return;
+
+      if (existente || Notification.permission === 'granted') {
+        // Reinstalación, cambio de usuario o permiso ya concedido: en silencio.
+        await suscribirYRegistrarPush(registration, config);
+        return;
+      }
+
+      // Permiso aún no pedido: solo en la app instalada (o recién instalada).
+      if (!isStandalonePwa() && origen !== 'appinstalled') return;
+
+      if (safeSessionStorageGet(PUSH_AUTO_SESSION_KEY) === '1') return;
+
+      let permission = null;
+      try {
+        permission = await Notification.requestPermission();
+        // Guard por sesión solo si el navegador aceptó mostrar la solicitud.
+        safeSessionStorageSet(PUSH_AUTO_SESSION_KEY, '1');
+      } catch {
+        permission = null; // exige gesto (Safari/iOS): cae al plan B
+      }
+
+      if (permission === 'granted') {
+        await suscribirYRegistrarPush(registration, config);
+        showToast('Notificaciones del hotel activadas en este dispositivo.', 'success');
+        return;
+      }
+
+      if (permission === null && Notification.permission === 'default') {
+        armarActivacionPushPorGesto(registration, config);
+      }
+    } catch (err) {
+      console.warn('[PWA] Push automático no disponible:', err?.message || err);
     }
   }
 
@@ -996,7 +1105,10 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', initPushControls);
+  document.addEventListener('DOMContentLoaded', () => {
+    initPushControls();
+    autoActivarPushDispositivo('arranque');
+  });
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 8. HELPERS UI
@@ -1078,6 +1190,7 @@
     isOnline: () => _onlineConfirmado,
     initPushControls,
     refreshPushControls: () => document.querySelectorAll('[data-pwa-push-panel]').forEach(refreshPushPanel),
+    autoActivarPush: autoActivarPushDispositivo,
   };
 
 })();
