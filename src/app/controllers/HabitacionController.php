@@ -779,10 +779,11 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
             'title' => 'Nueva Habitación - ' . current_hotel_display_name(),
             'tipos' => $this->catalogoTiposHabitacion(),
             'pisos' => $this->catalogoPisosHabitacion(),
-            'amenidades' => $this->catalogoAmenidadesHabitacion()
+            'amenidades' => $this->catalogoAmenidadesHabitacion(),
+            'incluidos' => $this->catalogoIncluidosHabitacion()
         ]);
     }
-    
+
     /**
      * Guardar nueva habitación CON MÚLTIPLES IMÁGENES
      */
@@ -2515,6 +2516,38 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         ];
     }
 
+    /**
+     * Servicios que el hotel incluye en TODAS sus habitaciones (configurables
+     * en /configuracion → Habitaciones). Devuelve solo los activos, con el
+     * icono y color ya resueltos para que la vista no decida nada.
+     */
+    private function catalogoIncluidosHabitacion(): array
+    {
+        if (!function_exists('hotel_room_catalog_included_rows')) {
+            return [];
+        }
+
+        $filas = [];
+        foreach (hotel_room_catalog_included_rows($this->hotelIdActual(), false) as $row) {
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+
+            $icono = (string) ($row['icono'] ?? '');
+            $filas[] = [
+                'codigo' => (string) ($row['codigo'] ?? ''),
+                'label' => $label,
+                'icono' => $icono !== '' ? $icono : 'check-circle',
+                'color' => function_exists('hotel_room_included_icon_color')
+                    ? hotel_room_included_icon_color($icono)
+                    : '#64748b',
+            ];
+        }
+
+        return $filas;
+    }
+
     private function normalizarCaracteristicasSeleccionadas($seleccionadas): array
     {
         if (!is_array($seleccionadas)) {
@@ -3443,13 +3476,11 @@ public function liberarMultiplesAction() {
             }
         }
 
-        $base = ['bano', 'ventilador', 'agua caliente', 'Wifi', 'Cablevision', 'estacionamiento'];
-
-        if (!in_array('pantalla', $especiales, true)) {
-            array_unshift($base, 'TV normal');
+        // Lo que el hotel incluye en todas sus habitaciones sale del catalogo
+        // configurable, no de una lista fija (varia mucho entre hoteles).
+        foreach ($this->catalogoIncluidosHabitacion() as $incluido) {
+            $descripcion[] = $incluido['label'];
         }
-
-        $descripcion = array_merge($descripcion, $base);
 
         return implode(', ', $descripcion);
     }

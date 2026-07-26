@@ -1390,6 +1390,360 @@ if (!function_exists('hotel_room_catalog_sanitize_amenity_rows')) {
     }
 }
 
+if (!function_exists('hotel_room_included_icon_catalog')) {
+    /**
+     * Iconos disponibles para los servicios incluidos (Font Awesome 6 free solid).
+     * El color viaja aqui para cambiar la paleta en UN solo lugar.
+     */
+    function hotel_room_included_icon_catalog()
+    {
+        return [
+            // Habitacion
+            'wifi' => ['label' => 'Wi-Fi / Internet', 'color' => '#2563eb', 'grupo' => 'Habitación'],
+            'tv' => ['label' => 'TV / Cablevisión', 'color' => '#8b5a46', 'grupo' => 'Habitación'],
+            'fan' => ['label' => 'Ventilador', 'color' => '#0891b2', 'grupo' => 'Habitación'],
+            'snowflake' => ['label' => 'Aire acondicionado', 'color' => '#0ea5e9', 'grupo' => 'Habitación'],
+            'fire' => ['label' => 'Calefacción', 'color' => '#ea580c', 'grupo' => 'Habitación'],
+            'bed' => ['label' => 'Ropa de cama', 'color' => '#8b5a46', 'grupo' => 'Habitación'],
+            'couch' => ['label' => 'Sala o estancia', 'color' => '#b45309', 'grupo' => 'Habitación'],
+            'desktop' => ['label' => 'Escritorio', 'color' => '#475569', 'grupo' => 'Habitación'],
+            'lock' => ['label' => 'Caja fuerte', 'color' => '#475569', 'grupo' => 'Habitación'],
+            'plug' => ['label' => 'Contactos / Corriente', 'color' => '#f59e0b', 'grupo' => 'Habitación'],
+            'phone' => ['label' => 'Teléfono', 'color' => '#0891b2', 'grupo' => 'Habitación'],
+            'wine-bottle' => ['label' => 'Frigobar', 'color' => '#9d174d', 'grupo' => 'Habitación'],
+            'door-open' => ['label' => 'Balcón / Terraza', 'color' => '#16a34a', 'grupo' => 'Habitación'],
+
+            // Bano
+            'bath' => ['label' => 'Baño privado', 'color' => '#16a34a', 'grupo' => 'Baño'],
+            'shower' => ['label' => 'Agua caliente / Regadera', 'color' => '#dc2626', 'grupo' => 'Baño'],
+            'hot-tub' => ['label' => 'Jacuzzi', 'color' => '#0891b2', 'grupo' => 'Baño'],
+            'soap' => ['label' => 'Amenidades de baño', 'color' => '#0ea5e9', 'grupo' => 'Baño'],
+            'toilet' => ['label' => 'Sanitario', 'color' => '#64748b', 'grupo' => 'Baño'],
+
+            // Servicios
+            'car' => ['label' => 'Estacionamiento', 'color' => '#64748b', 'grupo' => 'Servicios'],
+            'concierge-bell' => ['label' => 'Servicio al cuarto', 'color' => '#c2410c', 'grupo' => 'Servicios'],
+            'broom' => ['label' => 'Limpieza diaria', 'color' => '#16a34a', 'grupo' => 'Servicios'],
+            'tshirt' => ['label' => 'Lavandería', 'color' => '#7c3aed', 'grupo' => 'Servicios'],
+            'utensils' => ['label' => 'Alimentos / Cocina', 'color' => '#b45309', 'grupo' => 'Servicios'],
+            'mug-hot' => ['label' => 'Café / Cafetera', 'color' => '#7c4a2d', 'grupo' => 'Servicios'],
+            'elevator' => ['label' => 'Elevador', 'color' => '#475569', 'grupo' => 'Servicios'],
+            'key' => ['label' => 'Acceso con llave', 'color' => '#a16207', 'grupo' => 'Servicios'],
+            'wheelchair' => ['label' => 'Accesible', 'color' => '#2563eb', 'grupo' => 'Servicios'],
+            'paw' => ['label' => 'Acepta mascotas', 'color' => '#a16207', 'grupo' => 'Servicios'],
+            'smoking-ban' => ['label' => 'Libre de humo', 'color' => '#dc2626', 'grupo' => 'Servicios'],
+
+            // Areas del hotel
+            'swimming-pool' => ['label' => 'Alberca', 'color' => '#0891b2', 'grupo' => 'Áreas'],
+            'dumbbell' => ['label' => 'Gimnasio', 'color' => '#4b5563', 'grupo' => 'Áreas'],
+            'spa' => ['label' => 'Spa', 'color' => '#db2777', 'grupo' => 'Áreas'],
+            'umbrella-beach' => ['label' => 'Terraza / Playa', 'color' => '#f59e0b', 'grupo' => 'Áreas'],
+            'tree' => ['label' => 'Jardín', 'color' => '#16a34a', 'grupo' => 'Áreas'],
+
+            // Generico
+            'check-circle' => ['label' => 'Genérico', 'color' => '#64748b', 'grupo' => 'Otros'],
+            'star' => ['label' => 'Destacado', 'color' => '#f59e0b', 'grupo' => 'Otros'],
+        ];
+    }
+}
+
+if (!function_exists('hotel_room_included_icon_color')) {
+    function hotel_room_included_icon_color($icono)
+    {
+        $catalogo = hotel_room_included_icon_catalog();
+        $icono = (string) $icono;
+
+        return $catalogo[$icono]['color'] ?? '#64748b';
+    }
+}
+
+if (!function_exists('hotel_room_included_icon_normalize')) {
+    /** Devuelve el icono si esta en el catalogo; '' si no (jamas se pinta clase libre). */
+    function hotel_room_included_icon_normalize($icono)
+    {
+        $icono = strtolower(trim((string) $icono));
+
+        if (strpos($icono, 'fas ') === 0) {
+            $icono = trim(substr($icono, 4));
+        }
+        if (strpos($icono, 'fa-') === 0) {
+            $icono = substr($icono, 3);
+        }
+
+        return isset(hotel_room_included_icon_catalog()[$icono]) ? $icono : '';
+    }
+}
+
+if (!function_exists('hotel_room_catalog_ascii_lower')) {
+    /** Minusculas sin acentos, deterministas (no depende del locale de iconv). */
+    function hotel_room_catalog_ascii_lower($texto)
+    {
+        $texto = (string) $texto;
+        $texto = function_exists('mb_strtolower') ? mb_strtolower($texto, 'UTF-8') : strtolower($texto);
+        $texto = strtr($texto, [
+            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+            'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+            'ñ' => 'n', 'ç' => 'c',
+        ]);
+
+        return trim((string) preg_replace('/\s+/', ' ', $texto));
+    }
+}
+
+if (!function_exists('hotel_room_included_icon_guess')) {
+    /**
+     * Adivina el icono por el nombre del servicio: el hotelero escribe
+     * "Aire acondicionado" y no tiene que elegir icono si no quiere.
+     */
+    function hotel_room_included_icon_guess($label)
+    {
+        $texto = hotel_room_catalog_ascii_lower($label);
+
+        if ($texto === '') {
+            return 'check-circle';
+        }
+
+        // El orden manda: lo mas especifico primero ("agua caliente" antes que "bano").
+        $reglas = [
+            'wifi' => ['wifi', 'wi fi', 'internet', 'inalambric'],
+            'tv' => ['tv', 'television', 'televisor', 'cable', 'cablevision', 'pantalla', 'streaming', 'netflix'],
+            'shower' => ['agua caliente', 'regadera', 'ducha', 'boiler'],
+            'hot-tub' => ['jacuzzi', 'hidromasaje', 'tina'],
+            'bath' => ['bano', 'sanitario privado'],
+            'soap' => ['amenidades', 'shampoo', 'jabon', 'toallas'],
+            'toilet' => ['sanitario', 'wc'],
+            'snowflake' => ['aire acondicionado', 'aire', 'clima', 'minisplit', 'a/c'],
+            'fan' => ['ventilador', 'abanico'],
+            'fire' => ['calefaccion', 'calefactor', 'chimenea'],
+            'car' => ['estacionamiento', 'parking', 'cochera', 'valet', 'pension'],
+            'wine-bottle' => ['frigobar', 'minibar', 'mini bar', 'refrigerador', 'nevera'],
+            'mug-hot' => ['cafe', 'cafetera', 'te de cortesia'],
+            'utensils' => ['desayuno', 'alimentos', 'cocina', 'cocineta', 'comedor', 'restaurante'],
+            'broom' => ['limpieza', 'aseo', 'camarista'],
+            'tshirt' => ['lavanderia', 'planchado', 'tintoreria'],
+            'concierge-bell' => ['servicio al cuarto', 'room service', 'conserje', 'recepcion'],
+            'lock' => ['caja fuerte', 'seguridad', 'vigilancia', 'camaras'],
+            'plug' => ['contacto', 'enchufe', 'corriente', 'energia', 'planta de luz'],
+            'phone' => ['telefono', 'extension'],
+            'desktop' => ['escritorio', 'computadora', 'area de trabajo'],
+            'elevator' => ['elevador', 'ascensor'],
+            'wheelchair' => ['accesible', 'discapacidad', 'silla de ruedas'],
+            'paw' => ['mascota', 'pet friendly', 'pet'],
+            'smoking-ban' => ['libre de humo', 'no fumar', 'sin fumar'],
+            'swimming-pool' => ['alberca', 'piscina', 'chapoteadero'],
+            'dumbbell' => ['gimnasio', 'gym'],
+            'spa' => ['spa', 'masaje', 'sauna', 'temazcal', 'vapor'],
+            'umbrella-beach' => ['terraza', 'playa', 'asoleadero', 'camastro'],
+            'tree' => ['jardin', 'area verde', 'patio'],
+            'door-open' => ['balcon'],
+            'bed' => ['ropa de cama', 'blancos', 'almohada', 'cama'],
+            'couch' => ['sala', 'sillon', 'estancia'],
+            'key' => ['llave', 'acceso'],
+            'star' => ['vip', 'premium', 'cortesia'],
+        ];
+
+        // Gana la palabra que aparece ANTES en el nombre: el hotelero escribe
+        // primero el servicio y despues el adjetivo ("Alberca climatizada" es
+        // alberca, no clima). A igual posicion manda el orden de las reglas.
+        $mejorIcono = 'check-circle';
+        $mejorPosicion = null;
+
+        foreach ($reglas as $icono => $palabras) {
+            foreach ($palabras as $palabra) {
+                if (!preg_match('/\b' . preg_quote($palabra, '/') . '/', $texto, $m, PREG_OFFSET_CAPTURE)) {
+                    continue;
+                }
+
+                $posicion = (int) $m[0][1];
+                if ($mejorPosicion === null || $posicion < $mejorPosicion) {
+                    $mejorPosicion = $posicion;
+                    $mejorIcono = $icono;
+                }
+            }
+        }
+
+        return $mejorIcono;
+    }
+}
+
+if (!function_exists('hotel_room_catalog_included_slug')) {
+    /** Clave tecnica derivada del nombre: el hotelero nunca teclea codigos. */
+    function hotel_room_catalog_included_slug($label)
+    {
+        $slug = hotel_room_catalog_ascii_lower($label);
+        $slug = trim((string) preg_replace('/[^a-z0-9]+/', '_', $slug), '_');
+
+        if ($slug === '') {
+            return '';
+        }
+
+        if (strlen($slug) > 30) {
+            $slug = rtrim(substr($slug, 0, 30), '_');
+        }
+
+        return strlen($slug) >= 2 ? $slug : '';
+    }
+}
+
+if (!function_exists('hotel_room_catalog_default_included_rows')) {
+    function hotel_room_catalog_default_included_rows()
+    {
+        return [
+            ['codigo' => 'wifi', 'label' => 'Wi-Fi', 'icono' => 'wifi', 'activo' => 1, 'orden' => 0],
+            ['codigo' => 'cablevision', 'label' => 'Cablevisión', 'icono' => 'tv', 'activo' => 1, 'orden' => 1],
+            ['codigo' => 'bano_privado', 'label' => 'Baño privado', 'icono' => 'bath', 'activo' => 1, 'orden' => 2],
+            ['codigo' => 'estacionamiento', 'label' => 'Estacionamiento', 'icono' => 'car', 'activo' => 1, 'orden' => 3],
+            ['codigo' => 'agua_caliente', 'label' => 'Agua caliente', 'icono' => 'shower', 'activo' => 1, 'orden' => 4],
+            ['codigo' => 'ventilador', 'label' => 'Ventilador', 'icono' => 'fan', 'activo' => 1, 'orden' => 5],
+        ];
+    }
+}
+
+if (!function_exists('hotel_room_catalog_included_rows')) {
+    function hotel_room_catalog_included_rows($hotelId = null, $includeInactive = true)
+    {
+        $storedRows = hotel_config_get('catalogos.habitacion_incluidos', null, $hotelId);
+
+        // Una lista vacia GUARDADA a proposito significa "este hotel no incluye
+        // nada"; solo la ausencia de la clave cae a los valores de fabrica.
+        $rows = is_array($storedRows)
+            ? hotel_room_catalog_sanitize_included_rows($storedRows)
+            : hotel_room_catalog_default_included_rows();
+
+        if ($includeInactive) {
+            return $rows;
+        }
+
+        return array_values(array_filter($rows, function ($row) {
+            return !empty($row['activo']);
+        }));
+    }
+}
+
+if (!function_exists('hotel_room_catalog_included')) {
+    /** codigo => nombre de los servicios activos (para descripciones y listados). */
+    function hotel_room_catalog_included($hotelId = null)
+    {
+        $incluidos = [];
+        foreach (hotel_room_catalog_included_rows($hotelId, false) as $row) {
+            $incluidos[$row['codigo']] = $row['label'];
+        }
+
+        return $incluidos;
+    }
+}
+
+if (!function_exists('hotel_room_catalog_sanitize_included_rows')) {
+    function hotel_room_catalog_sanitize_included_rows(array $rows)
+    {
+        $clean = [];
+        $seen = [];
+        $orden = 0;
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+
+            $codigo = strtolower(trim((string) ($row['codigo'] ?? '')));
+            if ($codigo === '' || !preg_match('/^[a-z0-9_]{2,30}$/', $codigo)) {
+                $codigo = hotel_room_catalog_included_slug($label);
+            }
+            if ($codigo === '') {
+                $codigo = 'servicio_' . ($orden + 1);
+            }
+            if (isset($seen[$codigo])) {
+                continue;
+            }
+
+            $icono = hotel_room_included_icon_normalize($row['icono'] ?? '');
+            if ($icono === '') {
+                $icono = hotel_room_included_icon_guess($label);
+            }
+
+            $seen[$codigo] = true;
+            $clean[] = [
+                'codigo' => $codigo,
+                'label' => $label,
+                'icono' => $icono,
+                'activo' => !empty($row['activo']) ? 1 : 0,
+                'orden' => (int) ($row['orden'] ?? $orden),
+            ];
+            $orden++;
+        }
+
+        usort($clean, function ($a, $b) {
+            return ((int) ($a['orden'] ?? 0)) <=> ((int) ($b['orden'] ?? 0));
+        });
+
+        return $clean;
+    }
+}
+
+if (!function_exists('hotel_room_catalog_normalize_included_payload')) {
+    function hotel_room_catalog_normalize_included_payload($rows)
+    {
+        $rows = is_array($rows) ? $rows : [];
+        $values = [];
+        $errors = [];
+        $seen = [];
+        $orden = 0;
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['label'] ?? ''));
+
+            // Fila sin nombre = fila vacia o borrada por el hotel: se ignora.
+            if ($label === '') {
+                continue;
+            }
+
+            if (hotel_room_catalog_text_length($label) > 70) {
+                $errors[] = 'El servicio incluido "' . $label . '" no debe exceder 70 caracteres.';
+                continue;
+            }
+
+            $codigo = hotel_room_catalog_included_slug($label);
+            if ($codigo === '') {
+                $codigo = 'servicio_' . ($orden + 1);
+            }
+
+            if (isset($seen[$codigo])) {
+                $errors[] = 'El servicio incluido "' . $label . '" esta repetido.';
+                continue;
+            }
+
+            $icono = hotel_room_included_icon_normalize($row['icono'] ?? '');
+            if ($icono === '') {
+                $icono = hotel_room_included_icon_guess($label);
+            }
+
+            $seen[$codigo] = true;
+            $values[] = [
+                'codigo' => $codigo,
+                'label' => $label,
+                'icono' => $icono,
+                'activo' => !empty($row['activo']) ? 1 : 0,
+                'orden' => $orden++,
+            ];
+        }
+
+        // Lista vacia es valida: hay hoteles que no incluyen nada de fabrica.
+        return ['values' => $values, 'errors' => $errors];
+    }
+}
+
 if (!function_exists('hotel_room_catalog_normalize_payload')) {
     function hotel_room_catalog_normalize_payload(array $payload)
     {
@@ -1397,13 +1751,24 @@ if (!function_exists('hotel_room_catalog_normalize_payload')) {
         $floorResult = hotel_room_catalog_normalize_floor_payload($payload['floors'] ?? []);
         $amenityResult = hotel_room_catalog_normalize_amenity_payload($payload['amenities'] ?? []);
 
+        $values = [
+            'types' => $typeResult['values'],
+            'floors' => $floorResult['values'],
+            'amenities' => $amenityResult['values'],
+        ];
+        $errors = array_merge($typeResult['errors'], $floorResult['errors'], $amenityResult['errors']);
+
+        // Solo se toca la lista de incluidos si el formulario la mando: un POST
+        // viejo sin esos campos no debe borrar los servicios del hotel.
+        if (array_key_exists('included', $payload)) {
+            $includedResult = hotel_room_catalog_normalize_included_payload($payload['included']);
+            $values['included'] = $includedResult['values'];
+            $errors = array_merge($errors, $includedResult['errors']);
+        }
+
         return [
-            'values' => [
-                'types' => $typeResult['values'],
-                'floors' => $floorResult['values'],
-                'amenities' => $amenityResult['values'],
-            ],
-            'errors' => array_merge($typeResult['errors'], $floorResult['errors'], $amenityResult['errors']),
+            'values' => $values,
+            'errors' => $errors,
         ];
     }
 }
@@ -1650,6 +2015,17 @@ if (!function_exists('hotel_room_catalog_save_values')) {
             'Amenidades configurables por hotel.',
             $hotelId
         );
+
+        if (array_key_exists('included', $values)) {
+            hotel_config_save_value(
+                'catalogos.habitacion_incluidos',
+                $values['included'],
+                'json',
+                'catalogos',
+                'Servicios incluidos en todas las habitaciones del hotel.',
+                $hotelId
+            );
+        }
 
         return true;
     }

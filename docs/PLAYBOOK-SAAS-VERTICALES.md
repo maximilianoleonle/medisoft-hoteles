@@ -648,6 +648,28 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     media jornada); lo que sobra del corte se pliega en acordeón — nunca se
     recorta —, los turnos cerrados llegan como cola y por eso se anuncian como
     "N movimientos recientes" con enlace al turno completo, jamás como su total.
+33. **Lo que "viene incluido en todo" también es catálogo del tenant
+    (verificado jul 2026).** Toda vertical tiene una lista de lo que su unidad
+    de venta trae de fábrica — habitación con Wi-Fi/agua caliente, consulta
+    veterinaria con desparasitante, servicio de taller con lavado —, y esa lista
+    se pinta como decorado fijo en el formulario porque "es igual para todos".
+    No lo es: es lo primero que cambia entre un tenant y el siguiente, y
+    hardcodeada obliga a tocar código por cliente. Patrón: mismo motor que los
+    catálogos que ya son configurables (lista JSON por tenant, saneado + activo
+    + orden), con tres reglas que evitan el retrabajo. (a) **El tenant no teclea
+    claves técnicas**: escribe el nombre y el código sale de un slug del nombre
+    (dedupe incluido); un catálogo que pide "código" se llena con basura o no se
+    llena. (b) **El ícono se adivina por el nombre** ("Aire acondicionado" →
+    copo de nieve) con override manual desde una lista CERRADA — el icono jamás
+    se guarda como texto libre porque termina en un `class=` del HTML; y cuando
+    varias palabras compiten gana la que aparece ANTES en el nombre ("Alberca
+    climatizada" es alberca, no clima). (c) **Vacío guardado ≠ nunca
+    configurado**: si `[]` cae de vuelta a los valores de fábrica, el tenant que
+    no incluye nada no puede decirlo; solo la ausencia de la llave hereda los
+    defaults, y un POST viejo sin esos campos no debe borrar la lista. Cierra el
+    círculo consumiendo el catálogo en TODO lo que derivaba de la lista fija
+    (en hoteles: la descripción automática de la habitación y el ejemplo del
+    campo libre), o la pantalla dice una cosa y el texto guardado otra.
 
 ---
 

@@ -106,6 +106,7 @@ class ConfiguracionController extends Controller {
             'roomTypeCatalog' => function_exists('hotel_room_catalog_type_rows') ? hotel_room_catalog_type_rows($hotelId, true) : [],
             'roomFloorCatalog' => function_exists('hotel_room_catalog_floor_rows') ? hotel_room_catalog_floor_rows($hotelId, true) : [],
             'roomAmenityCatalog' => function_exists('hotel_room_catalog_amenity_rows') ? hotel_room_catalog_amenity_rows($hotelId, true) : [],
+            'roomIncludedCatalog' => function_exists('hotel_room_catalog_included_rows') ? hotel_room_catalog_included_rows($hotelId, true) : [],
             'generalZoneCatalog' => function_exists('hotel_general_catalog_zone_rows') ? hotel_general_catalog_zone_rows($hotelId, true) : [],
             'generalParkingCatalog' => function_exists('hotel_general_catalog_parking_rows') ? hotel_general_catalog_parking_rows($hotelId, true) : [],
             'generalUnitCatalog' => function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows($hotelId, true) : [],

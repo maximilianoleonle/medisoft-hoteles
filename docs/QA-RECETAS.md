@@ -180,6 +180,15 @@ Verificado E2E en prod ✅ 2026-07-22 (Los Cedros vivo, con datos cambiando entr
 4. **Validaciones** (client + server, mismo mensaje): rango invertido, tope 500 por lote, número >10 caracteres (prefijo+relleno), negativos → el botón se deshabilita en el preview y el server las rechaza al formulario. Helper puro `HabitacionController::generarNumerosLote` con suite `HabitacionLoteTest.php` (12 asserts).
 5. Sin fotos ni características custom en el lote (eso es edición individual). ⬜ confirmar visual del preview en navegador real (el pane congelado no anima chips, se validó por `get_page_text`).
 
+## Habitaciones — servicios incluidos en TODAS las habitaciones (configurables)
+
+1. `/configuracion` → pestaña **Habitaciones** → caja "Servicios incluidos en todas las habitaciones" (arriba de Amenidades especiales). **Verificado E2E en navegador + PDO (jul-2026, Los Cedros)**: un hotel sin configurar muestra los 6 de fábrica (Wi-Fi, Cablevisión, Baño privado, Estacionamiento, Agua caliente, Ventilador) con su ícono; "Agregar servicio" clona la fila con índice nuevo, activo=sí y la muestra del ícono en gris (`fa-circle-plus`) hasta elegir uno.
+2. Escribir un servicio nuevo dejando el ícono en **Automático** y guardar → se guarda con el ícono adivinado por el nombre ("Aire acondicionado" → `snowflake`, "Alberca climatizada" → `swimming-pool`, no `snowflake`). Apagar el switch de uno existente lo conserva en la config pero deja de mostrarse en la habitación. Borrar el nombre y guardar = quitarlo.
+3. `/habitaciones/create` refleja exactamente los activos, en orden, con ícono y color; el placeholder del campo "Descripción completa de características" también los enumera. Sin ninguno configurado el bloque no se pinta (solo un aviso con enlace a Configuración, y ese enlace solo si el rol trae `configuracion.edit`).
+4. **Descripción automática**: al guardar la habitación (individual y lote) la descripción termina con los servicios del catálogo, no con la lista fija vieja — verificado por Reflection sobre `HabitacionController::generarDescripcionCaracteristicas`: `"2 camas matrimoniales, Pantalla, Wi-Fi, Baño privado, Estacionamiento, Agua caliente, Ventilador, Aire acondicionado"`.
+5. Contratos que vigila `HabitacionIncluidosTest.php` (46 asserts): ícono fuera del catálogo o con inyección (`wifi" onload=...`) se descarta; lista vacía GUARDADA se respeta (no revive la de fábrica); un POST de `room_catalog` sin la llave `included` no borra los servicios del hotel; duplicados por nombre avisan y no se guardan.
+6. ⬜ confirmar visual (pane congelado: se validó por asserts JS y `get_page_text`).
+
 ## Limpieza / camaristas
 
 1. Marcar habitación como limpia → debe EXIGIR quién limpió (personal obligatorio, contrato `personal_confirmado`/`trabajador_ids`/`sin_personal`).

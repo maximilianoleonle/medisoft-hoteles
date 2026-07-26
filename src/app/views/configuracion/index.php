@@ -68,6 +68,16 @@ $configRoomFloorRows = is_array($roomFloorCatalog ?? null)
 $configRoomAmenityRows = is_array($roomAmenityCatalog ?? null)
     ? array_values($roomAmenityCatalog)
     : (function_exists('hotel_room_catalog_amenity_rows') ? hotel_room_catalog_amenity_rows(null, true) : []);
+$configRoomIncludedRows = is_array($roomIncludedCatalog ?? null)
+    ? array_values($roomIncludedCatalog)
+    : (function_exists('hotel_room_catalog_included_rows') ? hotel_room_catalog_included_rows(null, true) : []);
+$configIncludedIconCatalog = function_exists('hotel_room_included_icon_catalog') ? hotel_room_included_icon_catalog() : [];
+$configIncludedIconGroups = [];
+$configIncludedIconColors = [];
+foreach ($configIncludedIconCatalog as $configIconKey => $configIconMeta) {
+    $configIncludedIconGroups[(string) ($configIconMeta['grupo'] ?? 'Otros')][(string) $configIconKey] = (string) ($configIconMeta['label'] ?? $configIconKey);
+    $configIncludedIconColors[(string) $configIconKey] = (string) ($configIconMeta['color'] ?? '#64748b');
+}
 $configGeneralZoneRows = is_array($generalZoneCatalog ?? null)
     ? array_values($generalZoneCatalog)
     : (function_exists('hotel_general_catalog_zone_rows') ? hotel_general_catalog_zone_rows(null, true) : []);
@@ -1410,6 +1420,32 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
 
 .hc-catalog-cell {
     min-width: 0;
+}
+
+/* Servicios incluidos: la muestra del icono viaja pegada a su selector. */
+.hc-included-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.hc-included-icon select {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.hc-included-icon-preview {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--hc-line);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--hc-brand) 4%, var(--hc-paper, #FFFFFD));
+    font-size: 1rem;
 }
 
 .hc-owner-preview {
@@ -5024,7 +5060,7 @@ html[data-theme="dark"] .hc-page {
                                 <i class="fas fa-user-check"></i>
                                 <strong>Huéspedes <span>Datos que se solicitan</span></strong>
                             </a>
-                            <a href="#hc-rooms" id="hc-tab-rooms" class="hc-nav-link" role="tab" aria-controls="hc-rooms" aria-selected="false" tabindex="-1" data-hc-search="habitaciones tipos pisos amenidades cuartos">
+                            <a href="#hc-rooms" id="hc-tab-rooms" class="hc-nav-link" role="tab" aria-controls="hc-rooms" aria-selected="false" tabindex="-1" data-hc-search="habitaciones tipos pisos amenidades cuartos servicios incluidos wifi estacionamiento">
                                 <i class="fas fa-bed"></i>
                                 <strong>Habitaciones <span>Tipos, pisos y amenidades</span></strong>
                             </a>
@@ -5593,12 +5629,91 @@ html[data-theme="dark"] .hc-page {
                                 </div>
                             </section>
 
+                            <?php $includedRowsForForm = $configAppendBlankRows($configRoomIncludedRows, 1); ?>
+                            <section class="hc-catalog-box">
+                                <div class="hc-catalog-head">
+                                    <div>
+                                        <h3 class="hc-catalog-title">
+                                            <i class="fas fa-circle-check"></i>
+                                            Servicios incluidos en todas las habitaciones
+                                        </h3>
+                                        <p class="hc-field-hint">Lo que este hotel da en cada habitacion (Wi-Fi, agua caliente, estacionamiento...). Se muestra al crear una habitacion y se suma a su descripcion automatica. Si dejas el icono en automatico, se elige por el nombre.</p>
+                                    </div>
+                                    <button type="button" class="hc-add-btn" data-catalog-add="included">
+                                        <i class="fas fa-plus"></i>
+                                        Agregar servicio
+                                    </button>
+                                </div>
+
+                                <div class="hc-catalog-list" data-catalog-list="included" data-next-index="<?= count($includedRowsForForm) ?>">
+                                    <?php foreach ($includedRowsForForm as $index => $row): ?>
+                                        <?php
+                                        $includedLabel = (string) ($row['label'] ?? '');
+                                        $includedIcon = (string) ($row['icono'] ?? '');
+                                        $includedActive = !array_key_exists('activo', $row) || !empty($row['activo']);
+                                        $includedColor = $configIncludedIconColors[$includedIcon] ?? '#64748b';
+                                        ?>
+                                        <div class="hc-catalog-row is-simple" data-catalog-row="included">
+                                            <div class="hc-catalog-cell">
+                                                <label>Icono</label>
+                                                <div class="hc-included-icon">
+                                                    <span class="hc-included-icon-preview" data-included-preview aria-hidden="true">
+                                                        <i class="fas fa-<?= htmlspecialchars($includedIcon !== '' ? $includedIcon : 'circle-plus', ENT_QUOTES, 'UTF-8') ?>"
+                                                           style="color: <?= htmlspecialchars($includedIcon !== '' ? $includedColor : '#94a3b8', ENT_QUOTES, 'UTF-8') ?>;"></i>
+                                                    </span>
+                                                    <select name="room_catalog[included][<?= $index ?>][icono]"
+                                                            class="form-input"
+                                                            data-included-icon
+                                                            aria-label="Icono del servicio incluido">
+                                                        <option value="">Automatico</option>
+                                                        <?php foreach ($configIncludedIconGroups as $iconGroupName => $iconGroupItems): ?>
+                                                            <optgroup label="<?= htmlspecialchars((string) $iconGroupName, ENT_QUOTES, 'UTF-8') ?>">
+                                                                <?php foreach ($iconGroupItems as $iconKey => $iconLabel): ?>
+                                                                    <option value="<?= htmlspecialchars((string) $iconKey, ENT_QUOTES, 'UTF-8') ?>"
+                                                                            <?= $includedIcon === (string) $iconKey ? 'selected' : '' ?>>
+                                                                        <?= htmlspecialchars((string) $iconLabel, ENT_QUOTES, 'UTF-8') ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </optgroup>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Servicio</label>
+                                                <input type="text"
+                                                       name="room_catalog[included][<?= $index ?>][label]"
+                                                       value="<?= htmlspecialchars($includedLabel, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="70"
+                                                       placeholder="Ej. Aire acondicionado"
+                                                       class="form-input"
+                                                       data-included-label>
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Activo</label>
+                                                <input type="hidden" name="room_catalog[included][<?= $index ?>][activo]" value="0">
+                                                <label class="hc-switch">
+                                                    <input type="checkbox"
+                                                           name="room_catalog[included][<?= $index ?>][activo]"
+                                                           value="1"
+                                                           <?= $includedActive ? 'checked' : '' ?>>
+                                                    <span class="hc-switch-ui" aria-hidden="true"></span>
+                                                    <span class="hc-switch-text"><strong>Si</strong></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <p class="hc-field-hint">Para quitar un servicio, borra su nombre y guarda.</p>
+                            </section>
+
                             <?php $amenityRowsForForm = $configAppendBlankRows($configRoomAmenityRows, 1); ?>
                             <section class="hc-catalog-box">
                                 <div class="hc-catalog-head">
                                     <div>
                                         <h3 class="hc-catalog-title">
-                                            <i class="fas fa-sparkles"></i>
+                                            <i class="fas fa-wand-magic-sparkles"></i>
                                             Amenidades especiales
                                         </h3>
                                         <p class="hc-field-hint">Estas opciones aparecen como checkboxes en crear y editar habitacion.</p>
@@ -7372,6 +7487,45 @@ document.querySelectorAll('[data-catalog-add]').forEach(button => {
         document.dispatchEvent(new CustomEvent('catalog-config-changed', { detail: { kind } }));
     });
 });
+
+// Servicios incluidos: la muestra del icono sigue al selector (tambien en filas clonadas).
+(() => {
+    const coloresIncluidos = <?= json_encode($configIncludedIconColors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+    const pintarIncluido = (row) => {
+        const select = row.querySelector('[data-included-icon]');
+        const preview = row.querySelector('[data-included-preview] i');
+
+        if (!select || !preview) {
+            return;
+        }
+
+        const icono = select.value || '';
+        preview.className = 'fas fa-' + (icono !== '' ? icono : 'circle-plus');
+        preview.style.color = icono !== '' ? (coloresIncluidos[icono] || '#64748b') : '#94a3b8';
+    };
+
+    const pintarIncluidos = () => {
+        document.querySelectorAll('[data-catalog-row="included"]').forEach(pintarIncluido);
+    };
+
+    document.addEventListener('change', (event) => {
+        const select = event.target?.closest?.('[data-included-icon]');
+        const row = select?.closest('[data-catalog-row="included"]');
+
+        if (row) {
+            pintarIncluido(row);
+        }
+    });
+
+    document.addEventListener('catalog-config-changed', (event) => {
+        if (event.detail?.kind === 'included') {
+            pintarIncluidos();
+        }
+    });
+
+    pintarIncluidos();
+})();
 
 (() => {
     const catalogPanel = document.querySelector('#hc-catalogs');

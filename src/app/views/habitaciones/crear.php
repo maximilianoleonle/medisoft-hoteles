@@ -461,27 +461,37 @@
                         </div>
 
                         <div class="create-room-card__body">
+                            <?php
+                            // Lo incluido en TODAS las habitaciones se configura por hotel
+                            // (/configuracion → Habitaciones): varia mucho de un hotel a otro.
+                            $caracteristicasBaseHabitacion = is_array($incluidos ?? null) ? $incluidos : [];
+                            $puedeConfigurarIncluidos = function_exists('can') && can('configuracion.edit');
+                            $urlConfigIncluidos = url('configuracion') . '#hc-rooms';
+                            ?>
                             <div>
-                                <p class="create-room-hint" style="font-size:.82rem;color:var(--room-ink);font-weight:600;margin-bottom:.6rem;">Características incluidas en todas las habitaciones:</p>
-                                <div class="create-room-row" style="grid-template-columns:repeat(2,1fr);">
-                                    <?php
-                                    $caracteristicasBaseHabitacion = [
-                                        ['icon' => 'wifi', 'label' => 'Wi-Fi', 'color' => '#2563eb'],
-                                        ['icon' => 'tv', 'label' => 'Cablevisión', 'color' => '#8b5a46'],
-                                        ['icon' => 'bath', 'label' => 'Baño Privado', 'color' => '#16a34a'],
-                                        ['icon' => 'car', 'label' => 'Estacionamiento', 'color' => '#64748b'],
-                                        ['icon' => 'shower', 'label' => 'Agua Caliente', 'color' => '#dc2626'],
-                                        ['icon' => 'fan', 'label' => 'Ventilador', 'color' => '#0891b2'],
-                                    ];
-                                    ?>
-                                    <?php foreach ($caracteristicasBaseHabitacion as $caracteristicaBase): ?>
-                                        <div class="create-room-standard-feature">
-                                            <i class="fas fa-<?= htmlspecialchars($caracteristicaBase['icon'], ENT_QUOTES, 'UTF-8') ?>"
-                                               style="color: <?= htmlspecialchars($caracteristicaBase['color'], ENT_QUOTES, 'UTF-8') ?>;"></i>
-                                            <span class="text-xs font-medium"><?= htmlspecialchars($caracteristicaBase['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                <?php if (!empty($caracteristicasBaseHabitacion)): ?>
+                                    <p class="create-room-hint" style="font-size:.82rem;color:var(--room-ink);font-weight:600;margin-bottom:.6rem;">Características incluidas en todas las habitaciones:</p>
+                                    <div class="create-room-row" style="grid-template-columns:repeat(2,1fr);">
+                                        <?php foreach ($caracteristicasBaseHabitacion as $caracteristicaBase): ?>
+                                            <div class="create-room-standard-feature">
+                                                <i class="fas fa-<?= htmlspecialchars((string) ($caracteristicaBase['icono'] ?? 'check-circle'), ENT_QUOTES, 'UTF-8') ?>"
+                                                   style="color: <?= htmlspecialchars((string) ($caracteristicaBase['color'] ?? '#64748b'), ENT_QUOTES, 'UTF-8') ?>;"></i>
+                                                <span class="text-xs font-medium"><?= htmlspecialchars((string) ($caracteristicaBase['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php if ($puedeConfigurarIncluidos): ?>
+                                        <p class="create-room-hint" style="margin-top:.55rem;">
+                                            Esta lista se ajusta en
+                                            <a href="<?= htmlspecialchars($urlConfigIncluidos, ENT_QUOTES, 'UTF-8') ?>" style="color:var(--room-ink);text-decoration:underline;">Configuración › Habitaciones</a>.
+                                        </p>
+                                    <?php endif; ?>
+                                <?php elseif ($puedeConfigurarIncluidos): ?>
+                                    <p class="create-room-hint" style="margin-bottom:.6rem;">
+                                        Este hotel no tiene servicios incluidos en todas las habitaciones.
+                                        <a href="<?= htmlspecialchars($urlConfigIncluidos, ENT_QUOTES, 'UTF-8') ?>" style="color:var(--room-ink);text-decoration:underline;">Configurarlos</a>.
+                                    </p>
+                                <?php endif; ?>
                             </div>
 
                             <div>
@@ -533,8 +543,15 @@
 
                             <div class="create-room-field">
                                 <label>Descripción completa de características</label>
+                                <?php
+                                $ejemploIncluidos = implode(', ', array_filter(array_map(static function ($item) {
+                                    return trim((string) ($item['label'] ?? ''));
+                                }, $caracteristicasBaseHabitacion)));
+                                $placeholderCaracteristicas = 'Ejemplo: 2 camas matrimoniales, pantalla, balcón'
+                                    . ($ejemploIncluidos !== '' ? ', ' . $ejemploIncluidos : '');
+                                ?>
                                 <textarea name="caracteristicas" rows="4"
-                                          placeholder="Ejemplo: 2 camas matrimoniales, pantalla, balcón, baño, ventilador, agua caliente, Wifi, Cablevisión, estacionamiento"><?= old('caracteristicas') ?></textarea>
+                                          placeholder="<?= htmlspecialchars($placeholderCaracteristicas, ENT_QUOTES, 'UTF-8') ?>"><?= old('caracteristicas') ?></textarea>
                                 <p class="create-room-hint">Esta descripción se genera automáticamente con el tipo y características seleccionadas, pero puede personalizarse.</p>
                             </div>
                         </div>
