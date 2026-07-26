@@ -623,7 +623,27 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     un `require_hotel_module('x')`, se estaba cobrando algo que nunca estuvo restringido
     (caso `pwa`, $149/mes), y revenderlo mañana exige ESCRIBIR los gates, no reponer la fila.
 
-30. **La excepción por PERSONA se guarda como DIFERENCIA, no como copia
+30-ter. **Antes de poner un bloque A LA VENTA, auditar que tenga candado (verificado
+    jul-25-2026: 3 de 9 bloques cobrables no lo tenían).** Poner `activo_global=1` hace que
+    el bloque APAREZCA como contratable y que se COBRE; no crea enforcement. El menú
+    (sidebar, catálogo de navegación) es solo visibilidad: esconde el enlace, no niega la
+    URL. El permiso RBAC tampoco sirve — `can()` no sabe de contratación. El único candado
+    es `require_hotel_module('<clave>')` en un `before()`, y va ANTES del gate de permiso
+    (quien no contrató no debe ni llegar a evaluar RBAC). Checklist por bloque:
+    (a) `grep -rn "require_hotel_module('<clave>')" src/` — si da 0, se está vendiendo aire;
+    (b) confirmar que TODAS las rutas del bloque las sirve un controller gateado (algunos se
+    reparten entre varios, y ahí el gate va por acción); (c) revisar el mapa modulo→acción de
+    la API, que es una superficie aparte; (d) probar la URL a mano con un hotel que NO lo
+    contrate — si carga, no es vendible. **Dos naturalezas de bloque, dos gates distintos**:
+    el bloque-PANTALLA se gatea con 403 en el `before()`; el bloque-FEATURE-FLAG (vive dentro
+    de pantallas del paquete base, sin ruta propia — caso `descuentos`) NO puede dar 403 sin
+    tumbar la pantalla anfitriona: su gate va en los puntos de entrada e IGNORA el campo en
+    silencio, conservando lo ya aplicado como historial. Cerrar siempre con una suite que
+    caracterice el candado: sin ella, el siguiente refactor lo borra sin que nadie se entere.
+    Distinguir el hueco de ACCESO (la pantalla carga sin contratar = no vendible) del hueco
+    SATÉLITE (la pantalla da 403 pero otra pantalla filtra metadata o crea datos del bloque
+    = deuda, no bloquea la venta).
+31. **La excepción por PERSONA se guarda como DIFERENCIA, no como copia
     (verificado jul 2026).** En cualquier giro, tarde o temprano el dueño pide
     "a Fulano sí déjalo hacer X, pero solo a él". Dos formas de resolverlo y una
     sola correcta: copiar los permisos del rol a la persona y editarlos ahí la
@@ -645,7 +665,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     No se cachea entre requests: quitar un permiso debe pegar en el siguiente clic,
     no cuando expire un TTL.
 
-31. **Una opción que anula a las demás no va en la misma lista (verificado jul
+32. **Una opción que anula a las demás no va en la misma lista (verificado jul
     2026).** En toda matriz de permisos hay un "control total del área" que vuelve
     irrelevantes a sus hermanos. Puesto como una casilla más al final de la lista
     se lee como una opción entre otras y el dueño no entiende qué gana marcarla
@@ -665,7 +685,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     un permiso legacy sin casilla que recepción perdía cada vez que se editaba
     su rol).
 
-32. **El feed de dinero explica sus propias cancelaciones (verificado jul 2026).**
+33. **El feed de dinero explica sus propias cancelaciones (verificado jul 2026).**
     Toda caja/ledger de cualquier giro acumula pares "cobré / lo devolví": un
     cobro y, minutos u horas después, su reverso. Pintados como dos filas
     independientes ("Entrada +$7,000" arriba, "Gasto −$7,000" abajo) el turno se
@@ -692,7 +712,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     media jornada); lo que sobra del corte se pliega en acordeón — nunca se
     recorta —, los turnos cerrados llegan como cola y por eso se anuncian como
     "N movimientos recientes" con enlace al turno completo, jamás como su total.
-33. **Lo que "viene incluido en todo" también es catálogo del tenant
+34. **Lo que "viene incluido en todo" también es catálogo del tenant
     (verificado jul 2026).** Toda vertical tiene una lista de lo que su unidad
     de venta trae de fábrica — habitación con Wi-Fi/agua caliente, consulta
     veterinaria con desparasitante, servicio de taller con lavado —, y esa lista

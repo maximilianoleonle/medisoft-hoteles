@@ -19,6 +19,16 @@ class TarifasController extends Controller {
     protected function before() {
         $this->requireAuth();
 
+        // CANDADO DE MODULO (2026-07-25): sin esto el bloque 'tarifas_dinamicas'
+        // se cobraba sin estar restringido -- el mismo agujero que tenia 'pwa'.
+        // Hasta hoy lo unico que escondia la pantalla era el MENU (sidebar.php y
+        // navegacion.php), asi que cualquier hotel con el permiso entraba
+        // escribiendo la URL a mano, contratado o no. El permiso NO suple al
+        // modulo: can() es RBAC puro, sin conciencia de contratacion.
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('tarifas_dinamicas');
+        }
+
         // RBAC intra-hotel: mismo permiso que gatea la entrada del menu
         // (config/navegacion.php -> 'tarifas.view'), resuelto por el rol del
         // usuario EN ESTE hotel. El gate anterior (is_gerente()/is_admin())
@@ -27,6 +37,27 @@ class TarifasController extends Controller {
         require_permission_or_403('tarifas.view');
 
         return true;
+    }
+
+    /**
+     * Clase de tarifa permitida segun la contratacion del hotel.
+     *
+     * 'descuento' es un bloque APARTE ('descuentos', $99) del que da acceso a la
+     * pantalla ('tarifas_dinamicas'): un hotel puede pagar tarifas dinamicas y no
+     * descuentos. Sin el bloque, una clase 'descuento' llegada por POST degrada a
+     * 'incremento' en vez de tronar (misma politica que descuentoHuespedDesdePost
+     * en HuespedController: el modulo ausente IGNORA el campo, no rompe el alta).
+     */
+    private function claseTarifaPermitida($claseCruda): string {
+        $clase = in_array($claseCruda, ['incremento', 'descuento'], true) ? $claseCruda : 'incremento';
+
+        if ($clase === 'descuento'
+            && function_exists('current_hotel_has_module')
+            && !current_hotel_has_module('descuentos')) {
+            return 'incremento';
+        }
+
+        return $clase;
     }
 
     private function hotelIdActual(): int {
@@ -290,7 +321,7 @@ class TarifasController extends Controller {
                 'nombre' => $nombre,
                 'descripcion' => $this->getPost('descripcion'),
                 'tipo_incremento' => $this->getPost('tipo_incremento'),
-                'clase' => in_array($this->getPost('clase'), ['incremento', 'descuento'], true) ? $this->getPost('clase') : 'incremento',
+                'clase' => $this->claseTarifaPermitida($this->getPost('clase')),
                 'valor_incremento' => $valor_incremento,
                 'alcance' => $this->getPost('alcance'),
                 'es_permanente' => $es_permanente,
@@ -427,7 +458,7 @@ class TarifasController extends Controller {
                 'nombre' => $nombre,
                 'descripcion' => $this->getPost('descripcion'),
                 'tipo_incremento' => $this->getPost('tipo_incremento'),
-                'clase' => in_array($this->getPost('clase'), ['incremento', 'descuento'], true) ? $this->getPost('clase') : 'incremento',
+                'clase' => $this->claseTarifaPermitida($this->getPost('clase')),
                 'valor_incremento' => $valor_incremento,
                 'alcance' => $this->getPost('alcance'),
                 'es_permanente' => $es_permanente,

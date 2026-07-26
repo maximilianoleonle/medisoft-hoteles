@@ -244,6 +244,16 @@ Verificado en local ✅ 2026-07-27 (Los Cedros, proyección al 01/08). Suite: `H
 6. **inventario/entrada + inventario/salida** — verificado (jul-2026): reescritas al sistema `lote-*` (form main + side con Vista previa dinámica + botón). Preview reescrito a clases tokenizadas (`.inv-pv-*`) en vez de utilidades tailwind para que voltee en dark; entrada tiene chips +10/+25/+50 (`.inv-qchip`), salida conserva validación de stock insuficiente (`.ms-form-invalid`, `#stock_error`, `validarStockSalida`) + preview `is-neg`/`is-down`. E2E OK: +3/−3 sobre Papel Higiénico (id 1) neto cero, movimientos ENTRADA/SALIDA registrados y luego borrados; dark = 0 fugas en ambas.
 7. **inventario (índice)** — es LISTADO ancho boutique (NO se toca su layout ni se mete al shell 1040 de lote; su canvas ancho es deliberado). Ya tenía dark (dark-theme.css:538 remapea `--inv-*` + cupertino.css §2251-2299 literales). HUECO hallado y arreglado (jul-2026): el layout MÓVIL (≤639px, `.producto-card-mobile`) fija blanco con `!important` (@≤767px .78 y base .86) que el remap de tokens NO alcanza → 23 tarjetas blancas en dark. Fix theme-agnóstico en dark-theme.css:538 `html[data-theme="dark"] .inv-page .producto-card-mobile{ background:var(--inv-surface)!important; border-color:var(--inv-line)!important }` (specificity 0,3,1 gana). Reescaneo = 0 fugas; claro intacto. GOTCHA general: al auditar dark de un listado, escanear con el pane en ANCHO MÓVIL (el pane se queda ~638px) revela las reglas @móvil con blancos hardcodeados que el desktop oculta.
 
+## Candado de un bloque a la venta (¿se puede cobrar?)
+
+Recorrido de 2 minutos por bloque, ANTES de ponerlo `activo_global=1`. Un bloque sin candado se cobra pero no restringe nada (pasó con `pwa`, `tarifas_dinamicas` y `descuentos`).
+
+1. `grep -rn "require_hotel_module('<clave>')" src/` → si da **0 coincidencias**, no es vendible: solo lo esconde el menú. Ojo: `hotel_menu_module_enabled` / `$menuModuloActivo` / la entrada de `navegacion.php` son visibilidad, NO enforcement.
+2. Confirmar que TODAS las rutas del bloque (`src/config/routes.php`) las sirve un controller cuyo `before()` tenga el gate; si se reparten entre varios controllers, el gate va por acción.
+3. Revisar el mapa `moduleForCurrentApiAction` de `ApiController` — la API es superficie aparte.
+4. **Prueba real** con endpoint temporal de sesión que acepte `?h=<hotel_id>`: elegir un hotel que NO contrate el bloque y pedir su ruta principal por curl. Esperado **302/403**; un **200** = no vendible. ✅ jul-25: `/configuracion/tarifas` → hotel 1 (contrata) **200**, hotel 3 y hotel 8 (no contratan) **302**. Antes del fix los tres daban 200.
+5. Bloque sin ruta propia (feature-flag dentro del paquete base, tipo `descuentos`): NO se prueba por HTTP, se caracteriza en suite — ver `GatesBloquesVentaTest` (16 asserts). GOTCHA del test: `hotel_active_module_keys` memoiza en un `static` por proceso, así que hay que usar DOS hoteles en vez de togglear uno.
+
 ## Clasificación comercial de módulos / Panel SaaS (base·opcional·interno·bloqueado)
 
 1. Catálogo real: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/saas/verificar_clasificacion_comercial.php` → TODO PASS (25 checks: base exacto, internos, motivos, reportes individuales, planes, preset Básico). Ejecutado ✅ 2026-07-24.

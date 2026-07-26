@@ -107,6 +107,32 @@ foreach ($reportes as $m) {
 }
 v_ok($reportesSanos, 'reportes individuales: opcionales, precio provisional 0, bloqueados con motivo');
 
+// 5-bis) Opcionales A LA VENTA: lista exacta autorizada por el owner (2026-07-25).
+//        Espeja la proteccion de $BASE: si un bloque se desbloquea o se bloquea
+//        sin decision comercial, este assert lo caza. Los reporte_* van aparte
+//        (bloque 5) y quedan excluidos de esta comparacion.
+$OPCIONALES_VENTA = ['inventario', 'facturacion', 'compras', 'documentos',
+    'reputacion', 'descuentos', 'tarifas_dinamicas', 'lealtad'];
+$venta = $pdo->query(
+    "SELECT clave, es_core, precio_mensual, motivo_bloqueo
+     FROM modulos
+     WHERE tipo_comercial = 'opcional' AND activo_global = 1 AND clave NOT LIKE 'reporte\\_%'
+     ORDER BY clave"
+)->fetchAll();
+$clavesVenta = array_column($venta, 'clave');
+sort($OPCIONALES_VENTA);
+v_ok($clavesVenta === $OPCIONALES_VENTA,
+    'opcionales a la venta = exactamente los ' . count($OPCIONALES_VENTA) . ' autorizados');
+$ventaSana = true;
+foreach ($venta as $m) {
+    // Un bloque vendible necesita precio > 0 (cobrar 0 es regalarlo) y no puede
+    // arrastrar motivo_bloqueo (el panel lo mostraria como "no disponible aun").
+    if ((int) $m['es_core'] !== 0 || (float) $m['precio_mensual'] <= 0.0 || !empty($m['motivo_bloqueo'])) {
+        $ventaSana = false;
+    }
+}
+v_ok($ventaSana, 'todo opcional a la venta: es_core=0, precio > 0, sin motivo de bloqueo');
+
 // 6) Ningun opcional bloqueado sin motivo; ninguno con es_core.
 $sinMotivo = (int) $pdo->query("SELECT COUNT(*) FROM modulos WHERE activo_global = 0 AND (motivo_bloqueo IS NULL OR motivo_bloqueo = '')")->fetchColumn();
 v_ok($sinMotivo === 0, 'todo modulo bloqueado tiene motivo');

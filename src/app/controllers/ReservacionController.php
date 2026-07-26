@@ -2533,7 +2533,27 @@ private function generarHTMLReservacionesPersonalizado(
         require_hotel_module('reservaciones');
         return true;
     }
-    
+
+    /**
+     * ¿El hotel puede APLICAR descuentos en una reservación?
+     *
+     * 'descuentos' es un bloque opcional ($99) que vive DENTRO de pantallas del
+     * paquete base, así que su gate no puede ser un 403 en el before(): eso
+     * tumbaría Reservaciones entero. El candado va en los puntos de entrada —
+     * aquí el override manual del operador — y sigue la política de
+     * HuespedController::descuentoHuespedDesdePost: sin el módulo el campo se
+     * IGNORA en silencio, no revienta el alta.
+     *
+     * Los descuentos YA aplicados a reservaciones existentes se conservan
+     * (historial congelado, mismo contrato que hotel_modulos y que
+     * TarifaImpactoService con descuento_total).
+     */
+    private function puedeAplicarDescuentos(): bool {
+        return !function_exists('current_hotel_has_module')
+            || current_hotel_has_module('descuentos');
+    }
+
+
     /**
      * Listado de reservaciones
      */
@@ -4712,7 +4732,13 @@ private function validarCancelacion($reservacion) {
 
         // Descuento ajustable: el operador pudo editar/quitar el descuento en el form.
         // Si viene vacio, el modelo aplica el descuento automatico (por tipo + huesped).
-        $descuentoAplicadoPost = $this->getPost('descuento_aplicado', null);
+        // GATE 'descuentos' (2026-07-25): sin el bloque contratado el override del
+        // operador se IGNORA (no truena: Reservaciones es paquete base y el alta debe
+        // seguir funcionando). Misma politica que descuentoHuespedDesdePost en
+        // HuespedController: el modulo ausente descarta el campo del POST.
+        $descuentoAplicadoPost = $this->puedeAplicarDescuentos()
+            ? $this->getPost('descuento_aplicado', null)
+            : null;
         if ($descuentoAplicadoPost !== null && $descuentoAplicadoPost !== '') {
             $data['descuento_aplicado'] = (float) str_replace(',', '', (string) $descuentoAplicadoPost);
         }
@@ -4887,7 +4913,11 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $habitaciones_ids = $this->getPost('habitaciones', []);
             $cortesias_ids  = $this->getPost('cortesias', []);
             $notas          = trim($this->getPost('notas', ''));
-            $descuentoAplicadoPost = $this->getPost('descuento_aplicado', null);
+            // Ver gate 'descuentos' en guardarAction: sin el bloque, el override
+            // manual del operador se ignora y manda el descuento automatico.
+            $descuentoAplicadoPost = $this->puedeAplicarDescuentos()
+                ? $this->getPost('descuento_aplicado', null)
+                : null;
             $descuentoAplicadoManual = null;
             if ($descuentoAplicadoPost !== null && trim((string)$descuentoAplicadoPost) !== '') {
                 $descuentoAplicadoManual = max(0, (float) str_replace(',', '', (string) $descuentoAplicadoPost));
