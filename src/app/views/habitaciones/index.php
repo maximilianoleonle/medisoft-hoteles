@@ -3536,12 +3536,12 @@ if ($tiene_doble_movimiento) {
                 $stateAccentColors = [
                     'disponible'       => '#1E9E63',
                     'disponible_fecha' => '#1E9E63',
-                    'por_llegar'       => '#5A57D2',
+                    'por_llegar'       => '#8039D0',
                     'ocupada'          => '#C2603C',
                     'ocupada_fecha'    => '#C2603C',
                     'mantenimiento'    => '#C2841C',
                     'limpieza'         => '#2F77E0',
-                    'doble'            => '#5A57D2',
+                    'doble'            => '#8039D0',
                     'limpieza-por-llegar' => '#2F77E0',
                 ];
                 $accentColor = $color_hab ?: ($stateAccentColors[$estado_principal] ?? ($stateAccentColors[$estado_actual] ?? '#1E9E63'));
@@ -4284,7 +4284,7 @@ if ($tiene_doble_movimiento) {
         --qv-line: color-mix(in srgb, var(--qv-primary) 11%, #eadfca);
         --qv-green: #149A62;
         --qv-occupied: #B75638;
-        --qv-purple: #6D5BD0;
+        --qv-purple: #8039D0;
         --qv-blue: #2F77D9;
         --qv-amber: #C98B18;
         background:
@@ -5660,7 +5660,7 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
   /* Estados (significado fijo) */
   --c-available:#1E9E63; --bg-available:#E7F4EC;
   --c-occupied:#C2603C;  --bg-occupied:#F8EAE1;   /* OCUPADA = terracota/rojo (preferencia del usuario sobre el slate del HTML) */
-  --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;
+  --c-arriving:#8039D0;  --bg-arriving:#EEE6FC;   /* POR LLEGAR = violeta franco (hue 268): el indigo #5A57D2 anterior se confundia con el azul de LIMPIEZA */
   --c-cleaning:#2F77E0;  --bg-cleaning:#E6EFFC;
   --c-maint:#C2841C;     --bg-maint:#FAF0DC;
   --c-critical:#D64539;  --bg-critical:#FBE9E7;
@@ -8358,7 +8358,7 @@ body.hb-modal-open{ overflow:hidden; }
   --hb-line-soft:#F3EEE4;
   --bg-available:#F0F8F3;
   --bg-occupied:#F8EAE1;
-  --bg-arriving:#F3F2FC;
+  --bg-arriving:#F2EAFD;
   --bg-cleaning:#EFF6FC;
   --bg-maint:#FBF3E3;
   --c-occupied:#C2603C;

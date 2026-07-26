@@ -29,7 +29,7 @@ if (count($ap_checkouts) + count($ap_checkins) + count($ap_tardias) <= 0) {
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
   --c-available:#1E9E63; --bg-available:#E7F4EC;
   --c-occupied:#C2603C;  --bg-occupied:#F8EAE1;
-  --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;
+  --c-arriving:#8039D0;  --bg-arriving:#EEE6FC;
   --c-cleaning:#2F77E0;  --bg-cleaning:#E6EFFC;
   --c-maint:#C2841C;     --bg-maint:#FAF0DC;
   --c-critical:#D64539;  --bg-critical:#FBE9E7;
