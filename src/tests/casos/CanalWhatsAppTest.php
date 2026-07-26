@@ -107,6 +107,11 @@ $itemsSinTel = array_values(array_filter($servicio->pendientesDeHoy($hotelA), fn
 t_eq(1, count($itemsSinTel), 'la reserva sin telefono igual espera accion en la cola');
 t_ok(count($itemsSinTel) === 1 && $itemsSinTel[0]['telefono_wa'] === null && stripos($itemsSinTel[0]['motivo_telefono'] ?? '', 'Sin teléfono') !== false, 'la cola explica por que no se puede enviar');
 
+// La tarjeta enlaza a la ficha del huesped para capturar el telefono: sin
+// huesped_id el link de arreglo no existe y el aviso se queda en queja.
+$huespedEsperado = (int) ($db->query("SELECT huesped_id FROM reservaciones WHERE id = ?", [$resSinTel])->fetch()['huesped_id'] ?? 0);
+t_ok($huespedEsperado > 0 && (int) ($itemsSinTel[0]['huesped_id'] ?? 0) === $huespedEsperado, 'el item trae huesped_id para enlazar a su ficha');
+
 $descarte = $servicio->descartar($hotelA, $resSinTel, 'confirmacion', $usuarioId);
 t_ok(!empty($descarte['success']), 'descarte manual aceptado');
 $filaDescarte = $db->query("SELECT estado, motivo FROM mensajes_whatsapp WHERE hotel_id = ? AND reservacion_id = ? AND tipo = 'confirmacion'", [$hotelA, $resSinTel])->fetch();

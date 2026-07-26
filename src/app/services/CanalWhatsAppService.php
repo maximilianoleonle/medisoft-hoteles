@@ -658,6 +658,7 @@ class CanalWhatsAppService
             $stmt = $this->db->query(
                 "SELECT r.id, r.fecha_entrada, r.fecha_salida, r.precio_total,
                         r.estado, r.created_at,
+                        h.id AS huesped_id,
                         h.nombre_completo AS huesped_nombre,
                         h.telefono AS huesped_telefono,
                         GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
@@ -688,6 +689,9 @@ class CanalWhatsAppService
         return [
             'reservacion_id' => (int) $fila['id'],
             'tipo' => $tipo,
+            // La cola enlaza a la ficha del huesped cuando falta capturar su
+            // telefono: sin el id no hay a donde mandar a recepcion.
+            'huesped_id' => (int) ($fila['huesped_id'] ?? 0),
             'huesped_nombre' => (string) ($fila['huesped_nombre'] ?? ''),
             'telefono' => (string) ($fila['huesped_telefono'] ?? ''),
             'telefono_wa' => $telefonoWa,

@@ -2345,5 +2345,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     updatePreview();
+
+    // Llegadas por deep link (#telefono desde la cola de Mensajes, etc.):
+    // el ancla ya scrollea, aqui solo se deja el cursor listo para escribir.
+    try {
+        // Un hash raro (o vacio) haria estallar a querySelector: se ignora.
+        const campoDelHash = location.hash.length > 1 ? form?.querySelector(location.hash + '.ge-control') : null;
+        if (campoDelHash && typeof campoDelHash.focus === 'function') {
+            campoDelHash.focus();
+            if (typeof campoDelHash.select === 'function') campoDelHash.select();
+        }
+    } catch (e) { /* hash no usable como selector */ }
 });
 </script>

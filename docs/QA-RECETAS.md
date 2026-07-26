@@ -104,6 +104,16 @@ Verificado E2E jul-2026 (localhost:8080, sesión QA en Los Cedros).
 4. **Reporte** `/reportes/procedencia`: panel "Procedencia internacional" con KPIs (extranjeros, % del total, nacionalidades, ingresos) + ranking por nacionalidad. Con dato de prueba (huésped con reserva en rango + nacionalidad) el panel se puebla; sin extranjeros muestra estado vacío que invita a activar el campo. Query = `Reporte::obtenerProcedenciaExtranjeros()` (`JSON_EXTRACT`), agrupa correcto (verificado: 1 extranjero, 2 reservaciones, $14,400).
 5. GOTCHA: la ruta del alta es `/huespedes/create` (no `/crear`). El screenshot del pane se cuelga → verificar por `javascript_tool` + asserts.
 
+## Mensajes / canal WhatsApp — enlaces de "lo que falta" en la cola
+
+Verificado en navegador jul-25 (localhost:8080, Los Cedros). El bloque `canal_whatsapp` NO está activo en la BD local: sin fila `hotel_modulos` (modulo_id 6749, `es_core=0`) toda la sección da 403 → activarla para la prueba y **borrar la fila al terminar** (si no existía antes, se borra; no se deja en `activo=0`).
+
+1. **Sembrar la cola** (PDO crudo, anotar ids para el rollback): huésped con `telefono=NULL` + reservación `confirmada` sin filas en `reservacion_habitaciones` → tarjeta con DOS faltas; segundo huésped con teléfono válido y `fecha_entrada` = mañana → recordatorio (usa `{link_maps}`, que el hotel no tiene capturado → falta de configuración). GOTCHA de fechas: `CURDATE()` del PDO va en UTC y de noche adelanta un día respecto a la app → sembrar fechas LITERALES (`'2026-07-26'`) o el recordatorio nace como confirmación.
+2. **Asserts de la cola** (`javascript_tool`, el screenshot del pane se cuelga): por cada `[data-msj-card]`, `[...card.querySelectorAll('.msj-falta')].map(f => ({tag: f.tagName, href: f.getAttribute('href')}))`. Esperado — teléfono → `/huespedes/{id}/edit#telefono`; sin habitación → `/reservaciones/editar-habitaciones/{id}` (solo en confirmación/recordatorio); configuración → `/mensajes/configuracion` (solo en el recordatorio, que es la plantilla que pide Maps). En la tarjeta con configuración incompleta **no debe existir** `[data-msj-enviar]`, y `#msjVacio.hidden === true` mientras haya tarjetas.
+3. **Los destinos abren de verdad**: `/huespedes/{id}/edit#telefono` → `document.activeElement.id === 'telefono'` (el foco por hash vive al final de `huespedes/editar.php`); `/reservaciones/editar-habitaciones/{id}` → título "Modificar Habitaciones" sin aviso de permiso.
+4. **Degradado por permiso**: entrar como **recepcionista** (`hu.rol='recepcionista'` con `role_id` NO nulo, hoy 29). Esperado: teléfono y habitación siguen siendo `A` (trae `huespedes.edit` y `reservaciones.edit`), la falta de configuración pasa a `SPAN.msj-falta.is-plain` ("Pídelo a gerencia") y el banner ámbar de arriba dice lo mismo sin enlace — recepción no tiene `mensajes.configurar` y enlazarla sería mandarla a un 403.
+5. **Oscuro y móvil**: cargar ya en dark (`localStorage['medisoft:theme']='dark'` + `?nc=N`) → `.msj-falta` con fondo luminancia ~51 y texto ~177 (los tokens `--msj-*` los remapea cupertino.css). A 375px: `scrollWidth === clientWidth` y las faltas envuelven a ~55px de alto.
+
 ## Caja (cortes y movimientos)
 
 1. `/caja` → abrir corte (solo puede existir UN corte abierto por caja — probar doble apertura debe fallar).

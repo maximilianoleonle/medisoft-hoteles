@@ -39,15 +39,24 @@ $msjFechaCorta = static function ($fecha) {
 
 $msjContexto = static function (array $item) use ($msjFechaCorta) {
     $hab = trim((string) ($item['habitaciones'] ?? ''));
-    $hab = $hab !== '' ? 'Hab. ' . $hab : 'Sin habitación asignada';
+
+    if ($hab !== '') {
+        $hab = ' · Hab. ' . $hab;
+    } elseif (in_array($item['tipo'], ['confirmacion', 'recordatorio'], true)) {
+        // La tarjeta ya reclama la habitación con su link para asignarla:
+        // repetirlo aquí seria decir dos veces lo mismo.
+        $hab = '';
+    } else {
+        $hab = ' · Sin habitación asignada';
+    }
 
     switch ($item['tipo']) {
         case 'recordatorio':
-            return 'Llega mañana · ' . $hab;
+            return 'Llega mañana' . $hab;
         case 'encuesta':
-            return 'Salió hoy · ' . $hab;
+            return 'Salió hoy' . $hab;
         default:
-            return 'Llega el ' . $msjFechaCorta($item['fecha_entrada']) . ' · ' . $hab;
+            return 'Llega el ' . $msjFechaCorta($item['fecha_entrada']) . $hab;
     }
 };
 
@@ -59,6 +68,96 @@ $msjFaltantesTexto = [];
 foreach ($configFaltante as $clave) {
     $msjFaltantesTexto[] = $msjNombresFaltantes[$clave] ?? $clave;
 }
+
+/**
+ * Lo que le falta a una tarjeta para poder salir, cada falta con el link que
+ * la arregla EXACTAMENTE donde se arregla (ficha del huésped, habitaciones de
+ * la reservación, configuración del canal). Lo que el rol no tiene permiso de
+ * arreglar se queda como aviso sin link: mandarlo a un 403 seria peor que no
+ * ofrecer nada.
+ */
+$msjPuede = static function ($permiso) {
+    return !function_exists('can') || can($permiso);
+};
+$msjPuedeEditarHuesped = $msjPuede('huespedes.edit');
+$msjPuedeVerHuesped = $msjPuede('huespedes.view');
+$msjPuedeEditarReserva = $msjPuede('reservaciones.edit');
+$msjPuedeVerReserva = $msjPuede('reservaciones.view');
+$msjPuedeConfigurar = $msjPuede('mensajes.configurar');
+
+$msjFaltasDe = static function (array $item) use (
+    $msjPuedeEditarHuesped,
+    $msjPuedeVerHuesped,
+    $msjPuedeEditarReserva,
+    $msjPuedeVerReserva,
+    $msjPuedeConfigurar,
+    $msjNombresFaltantes
+) {
+    $faltas = [];
+    $huespedId = (int) ($item['huesped_id'] ?? 0);
+    $reservacionId = (int) ($item['reservacion_id'] ?? 0);
+
+    // 1. Teléfono del huésped: sin él no hay WhatsApp que mandar.
+    if (($item['telefono_wa'] ?? null) === null) {
+        $sinNumero = trim((string) ($item['telefono'] ?? '')) === '';
+
+        if ($huespedId > 0 && $msjPuedeEditarHuesped) {
+            $url = url('huespedes/' . $huespedId . '/edit') . '#telefono';
+            $accion = $sinNumero ? 'Capturar su teléfono' : 'Corregir su teléfono';
+        } elseif ($huespedId > 0 && $msjPuedeVerHuesped) {
+            $url = url('huespedes/' . $huespedId);
+            $accion = 'Abrir la ficha del huésped';
+        } else {
+            $url = '';
+            $accion = 'Pide que lo capturen en la ficha del huésped';
+        }
+
+        $faltas[] = [
+            'icono' => 'fa-phone-slash',
+            'aviso' => (string) ($item['motivo_telefono'] ?? 'Teléfono no utilizable'),
+            'accion' => $accion,
+            'url' => $url,
+        ];
+    }
+
+    // 2. Habitación: el mensaje sale diciendo "por asignar". Solo se puede
+    //    arreglar mientras la reservación siga confirmada (los tipos de cola
+    //    confirmacion/recordatorio lo estan; la encuesta ya se fue).
+    if (trim((string) ($item['habitaciones'] ?? '')) === ''
+        && in_array($item['tipo'], ['confirmacion', 'recordatorio'], true)
+        && $reservacionId > 0) {
+
+        if ($msjPuedeEditarReserva) {
+            $url = url('reservaciones/editar-habitaciones/' . $reservacionId);
+            $accion = 'Asignar habitación';
+        } elseif ($msjPuedeVerReserva) {
+            $url = url('reservaciones/ver/' . $reservacionId);
+            $accion = 'Abrir la reservación';
+        } else {
+            $url = '';
+            $accion = 'Pide que asignen la habitación';
+        }
+
+        $faltas[] = [
+            'icono' => 'fa-bed',
+            'aviso' => 'Sin habitación asignada — el mensaje dirá «por asignar»',
+            'accion' => $accion,
+            'url' => $url,
+        ];
+    }
+
+    // 3. Datos del hotel que la plantilla necesita (depósito, Maps).
+    foreach ((array) ($item['faltantes'] ?? []) as $clave) {
+        $faltas[] = [
+            'icono' => 'fa-sliders',
+            'aviso' => 'Falta capturar ' . ($msjNombresFaltantes[$clave] ?? $clave),
+            'accion' => $msjPuedeConfigurar ? 'Completar configuración' : 'Pídelo a gerencia (Mensajes → Configuración)',
+            'url' => $msjPuedeConfigurar ? url('mensajes/configuracion') : '',
+        ];
+    }
+
+    return $faltas;
+};
 
 $msjDiasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 $msjMesesLargos = [1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -281,6 +380,37 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
 /* Los chips de aviso llevan frases: envuelven en vez de forzar el ancho del grid. */
 .msj-chip.is-warn, .msj-chip.is-muted { white-space: normal; text-align: left; line-height: 1.4; padding-top: 5px; padding-bottom: 5px; }
 .msj-card-tel { display: inline-flex; align-items: center; gap: 6px; color: var(--msj-muted); font-size: .8rem; font-weight: 560; }
+
+/* ── Lo que falta para poder mandar: cada aviso ES el link que lo arregla ── */
+.msj-faltas { display: grid; gap: 6px; }
+.msj-falta {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--msj-warning) 30%, transparent);
+    border-radius: 12px;
+    background: var(--msj-warning-bg);
+    color: color-mix(in srgb, var(--msj-warning) 80%, var(--msj-text));
+    font-size: .82rem;
+    font-weight: 560;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: transform .16s var(--msj-ease), box-shadow .16s var(--msj-ease), border-color .16s ease;
+}
+.msj-falta.is-plain { grid-template-columns: 20px minmax(0, 1fr); }
+.msj-falta-ico { display: grid; place-items: center; font-size: .82rem; }
+.msj-falta .accion { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.msj-falta-go { font-size: .72rem; opacity: .7; transition: transform .16s var(--msj-ease), opacity .16s ease; }
+a.msj-falta:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--msj-warning) 55%, transparent);
+    box-shadow: 0 10px 18px -14px color-mix(in srgb, var(--msj-warning) 70%, transparent);
+}
+a.msj-falta:hover .msj-falta-go { opacity: 1; transform: translateX(2px); }
+a.msj-falta:focus-visible { outline: 3px solid var(--msj-ring); outline-offset: 2px; }
 .msj-preview { border: 1px solid var(--msj-border); border-radius: 12px; background: var(--msj-surface-warm); }
 .msj-preview summary {
     display: flex;
@@ -450,7 +580,11 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                 <div>
                     Para que tus mensajes salgan completos falta capturar <?= $msjSafe(implode(' y ', $msjFaltantesTexto)) ?>.
-                    <a href="<?= url('mensajes/configuracion') ?>">Completar configuración</a>
+                    <?php if ($msjPuedeConfigurar): ?>
+                        <a href="<?= url('mensajes/configuracion') ?>">Completar configuración</a>
+                    <?php else: ?>
+                        Pídeselo a gerencia (Mensajes → Configuración).
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>
@@ -498,6 +632,7 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
                             <?php
                                 $telUsable = $item['telefono_wa'] !== null;
                                 $sinConfig = !empty($item['faltantes']);
+                                $msjFaltas = $msjFaltasDe($item);
                                 $linkWa = $telUsable
                                     ? 'https://wa.me/' . rawurlencode($item['telefono_wa']) . '?text=' . rawurlencode($item['texto'])
                                     : '';
@@ -520,8 +655,25 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
 
                                 <?php if ($telUsable): ?>
                                     <span class="msj-card-tel"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> <?= $msjSafe($item['telefono']) ?></span>
-                                <?php else: ?>
-                                    <span class="msj-chip is-warn"><i class="fa-solid fa-phone-slash" aria-hidden="true"></i> <?= $msjSafe($item['motivo_telefono']) ?> — revisa la ficha del huésped</span>
+                                <?php endif; ?>
+
+                                <?php if ($msjFaltas): ?>
+                                    <div class="msj-faltas">
+                                        <?php foreach ($msjFaltas as $falta): ?>
+                                            <?php if ($falta['url'] !== ''): ?>
+                                                <a class="msj-falta" href="<?= $msjSafe($falta['url']) ?>">
+                                                    <span class="msj-falta-ico" aria-hidden="true"><i class="fa-solid <?= $msjSafe($falta['icono']) ?>"></i></span>
+                                                    <span><?= $msjSafe($falta['aviso']) ?> · <span class="accion"><?= $msjSafe($falta['accion']) ?></span></span>
+                                                    <i class="fa-solid fa-arrow-right msj-falta-go" aria-hidden="true"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="msj-falta is-plain">
+                                                    <span class="msj-falta-ico" aria-hidden="true"><i class="fa-solid <?= $msjSafe($falta['icono']) ?>"></i></span>
+                                                    <span><?= $msjSafe($falta['aviso']) ?> · <?= $msjSafe($falta['accion']) ?></span>
+                                                </span>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php endif; ?>
 
                                 <details class="msj-preview">
@@ -530,14 +682,7 @@ $msjHoy = ucfirst($msjDiasSemana[(int) date('w')]) . ' ' . (int) date('j') . ' d
                                 </details>
 
                                 <div class="msj-card-foot">
-                                    <?php if ($sinConfig): ?>
-                                        <span class="msj-chip is-warn">
-                                            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                                            Falta configuración — <a href="<?= url('mensajes/configuracion') ?>" style="color: inherit;">completar</a>
-                                        </span>
-                                    <?php else: ?>
-                                        <span></span>
-                                    <?php endif; ?>
+                                    <span></span>
                                     <div class="msj-acciones">
                                         <button type="button" class="msj-btn sec" data-msj-descartar>
                                             Descartar
