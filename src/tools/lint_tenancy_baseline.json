@@ -1,10 +1,7 @@
 {
     "app/controllers/ApiController.php|habitaciones": 2,
     "app/controllers/ApiController.php|reservacion_habitaciones": 1,
-    "app/controllers/HuespedController.php|habitaciones": 1,
     "app/controllers/HuespedController.php|huesped_vehiculos": 1,
-    "app/controllers/HuespedController.php|inventario_productos": 2,
-    "app/controllers/HuespedController.php|movimientos_inventario": 2,
     "app/controllers/InventarioController.php|habitaciones": 2,
     "app/controllers/InventarioController.php|inventario_productos": 2,
     "app/controllers/InventarioController.php|movimientos_inventario": 3,
