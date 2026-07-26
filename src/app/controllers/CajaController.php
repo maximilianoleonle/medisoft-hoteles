@@ -468,18 +468,29 @@ public function arqueoMetodosAction() {
             'fecha_fin' => $this->getQuery('fecha_fin'),
             'buscar' => $this->getQuery('buscar')
         ];
+
+        // Los conceptos del SISTEMA (anticipos, cobros CxC, pagos a personal,
+        // devoluciones...) no tienen fila en el catalogo: viajan como
+        // "txt:<nombre>" para poder filtrarlos por texto.
+        if (is_string($filtros['categoria_id']) && strpos($filtros['categoria_id'], 'txt:') === 0) {
+            $filtros['categoria_texto'] = substr($filtros['categoria_id'], 4);
+            $filtros['categoria_id'] = null;
+        }
         
         // Si no hay fecha_fin y hay fecha_inicio, usar la misma fecha
         if ($filtros['fecha_inicio'] && !$filtros['fecha_fin']) {
             $filtros['fecha_fin'] = $filtros['fecha_inicio'];
         }
         
-        // Obtener corte actual
+        // Obtener corte actual. El libro se acota al turno abierto SOLO mientras
+        // nadie filtre por fecha: antes se forzaba siempre y los campos "desde /
+        // hasta" no hacian absolutamente nada (se veia igual el corte actual).
         $corteActual = $this->cajaModel->obtenerCorteActual();
-        if ($corteActual) {
+        $filtraPorFecha = !empty($filtros['fecha_inicio']) || !empty($filtros['fecha_fin']);
+        if ($corteActual && !$filtraPorFecha) {
             $filtros['corte_id'] = $corteActual['id'];
         }
-        
+
         // Obtener movimientos
         $movimientos = $this->movimientoModel->obtenerMovimientosDetallados($filtros);
         
@@ -502,18 +513,79 @@ public function arqueoMetodosAction() {
         
         // Obtener categorías para filtros (solo las del hotel actual)
         $categorias = $this->categoriaModel->obtenerPorTipo();
-        
+
+        // Lectura humana del libro: mismo presentador que el panel de Caja.
+        // Las cancelaciones se traen de una ventana MAS AMPLIA que el filtro
+        // porque una devolucion suele registrarse en un corte posterior: sin
+        // ellas, un cobro ya devuelto se leeria como dinero vivo.
+        $emparejados = CajaMovimientosFeed::emparejar(
+            array_merge($movimientos, $this->cancelacionesParaEmparejar($movimientos))
+        );
+        // Las cancelaciones de apoyo ya marcaron a su original: no se pintan.
+        $movimientosVisibles = array_values(array_filter(
+            $emparejados,
+            static function ($mov) { return empty($mov['solo_para_emparejar']); }
+        ));
+
         View::renderTemplate('caja/movimientos', [
             'title' => 'Movimientos de Caja - ' . current_hotel_display_name(),
-            'movimientos' => $movimientos,
+            'movimientos' => $movimientosVisibles,
             'filtros' => $filtros,
             'totales' => $totales,
             'categorias' => $categorias,
+            'conceptos_sistema' => $this->movimientoModel->conceptosDelSistema(),
             'metodos_pago' => MovimientoCaja::getMetodosPago(),
             'tipos' => MovimientoCaja::getTipos()
         ]);
     }
     
+    /**
+     * Contexto invisible para que el libro no mienta por omisión. El listado
+     * viene filtrado (por corte, tipo, fecha...) y un par cobro/devolución casi
+     * nunca cae completo dentro del filtro, así que se traen las dos mitades que
+     * faltan: las cancelaciones POSTERIORES de lo que se ve (o un cobro ya
+     * devuelto se leería como dinero vivo) y los originales ANTERIORES de las
+     * cancelaciones visibles (el caso típico: la devolución de un corte cerrado).
+     * Todo va marcado `solo_para_emparejar`: marca, no se pinta ni se suma.
+     */
+    private function cancelacionesParaEmparejar(array $movimientos) {
+        if (empty($movimientos)) {
+            return [];
+        }
+
+        $fechas = array_filter(array_column($movimientos, 'created_at'));
+        if (empty($fechas)) {
+            return [];
+        }
+
+        $visibles = array_flip(array_map('intval', array_column($movimientos, 'id')));
+        $desde = min($fechas);
+        $hasta = date('Y-m-d H:i:s', strtotime(max($fechas) . ' +60 days'));
+
+        $cancelaciones = $this->movimientoModel->obtenerCancelacionesEntre($desde, $hasta);
+
+        // Originales de las cancelaciones que SÍ están a la vista.
+        $visiblesCancelacion = array_filter($movimientos, function ($mov) {
+            return CajaMovimientosFeed::esCancelacion($mov);
+        });
+        $originales = $visiblesCancelacion
+            ? $this->movimientoModel->obtenerCandidatosOriginales($visiblesCancelacion)
+            : [];
+
+        $extras = [];
+        foreach (array_merge($cancelaciones, $originales) as $fila) {
+            $id = (int)($fila['id'] ?? 0);
+            if (isset($visibles[$id])) {
+                continue;
+            }
+            $visibles[$id] = true; // sin duplicados entre las dos consultas
+            $fila['solo_para_emparejar'] = true;
+            $extras[] = $fila;
+        }
+
+        return $extras;
+    }
+
     /**
      * Vista de corte de caja
      */

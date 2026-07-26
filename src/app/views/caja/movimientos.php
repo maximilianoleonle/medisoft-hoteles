@@ -62,7 +62,7 @@ $total_flujo = max(1, $ingresos_total + $gastos_total);
 $ingresos_pct = min(100, max(0, round(($ingresos_total / $total_flujo) * 100)));
 $gastos_pct = min(100, max(0, 100 - $ingresos_pct));
 
-$user_filter_keys = ['tipo', 'metodo_pago', 'categoria_id', 'fecha_inicio', 'fecha_fin', 'buscar'];
+$user_filter_keys = ['tipo', 'metodo_pago', 'categoria_id', 'categoria_texto', 'fecha_inicio', 'fecha_fin', 'buscar'];
 $active_filter_count = 0;
 foreach ($user_filter_keys as $key) {
     if (!empty($filtros[$key])) {
@@ -541,6 +541,41 @@ $balance_es_positivo = $balance_total >= 0;
     font-size: .78rem;
     font-weight: 750;
 }
+/* Estado de la fila: Entrada / Salida / Cancelación (mismo idioma que el panel de Caja) */
+.cash-state-tag {
+    width: fit-content;
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: var(--row-color) !important;
+    background: color-mix(in srgb, var(--row-color) 11%, transparent);
+    font-size: .72rem !important;
+    font-weight: 850;
+    letter-spacing: .01em;
+}
+/* Nota del par: qué deshizo esto, o quién lo deshizo */
+.cash-cancel-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px !important;
+    padding: 6px 9px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, #B45309 22%, transparent);
+    background: color-mix(in srgb, #B45309 8%, transparent);
+    color: color-mix(in srgb, #B45309 72%, var(--cash-text)) !important;
+    font-size: .74rem !important;
+    font-weight: 800 !important;
+    line-height: 1.35;
+}
+.cash-cancel-note i { margin-top: 2px; font-size: .68rem; }
+/* Cancelado: sigue en el libro (es historia), pero deja de gritar dinero */
+.cash-move-row.is-anulado .cash-amount {
+    color: var(--cash-muted);
+    text-decoration: line-through;
+}
+.cash-move-row.is-anulado .cash-move-description strong { color: var(--cash-muted); }
+.cash-move-row.is-anulado .cash-type-mark { opacity: .55; filter: grayscale(.7); }
+
 .cash-meta-stack {
     display: grid;
     gap: 5px;
@@ -2335,14 +2370,31 @@ $balance_es_positivo = $balance_total >= 0;
                 </div>
 
                 <div class="cash-field">
-                    <label>Categoria</label>
-                    <select name="categoria" class="cash-input">
-                        <option value="">Todas</option>
-                        <?php foreach ($categorias as $cat): ?>
-                            <option value="<?= caja_mov_safe($cat['id'] ?? '') ?>" <?= (($filtros['categoria_id'] ?? '') == ($cat['id'] ?? null)) ? 'selected' : '' ?>>
-                                <?= caja_mov_safe($cat['nombre'] ?? '') ?>
-                            </option>
-                        <?php endforeach; ?>
+                    <label>Concepto</label>
+                    <select name="categoria" class="cash-input" data-ms-combo="Todos los conceptos">
+                        <option value="">Todos</option>
+                        <?php if (!empty($categorias)): ?>
+                        <optgroup label="Conceptos del hotel">
+                            <?php foreach ($categorias as $cat): ?>
+                                <option value="<?= caja_mov_safe($cat['id'] ?? '') ?>" <?= (($filtros['categoria_id'] ?? '') == ($cat['id'] ?? null)) ? 'selected' : '' ?>>
+                                    <?= caja_mov_safe(CajaMovimientosFeed::etiquetaConcepto($cat['nombre'] ?? '')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                        <?php endif; ?>
+                        <?php // Los movimientos de los servicios (anticipos, cobros de cuenta,
+                              // pagos al personal, devoluciones) no tienen fila en el catálogo:
+                              // antes no había manera de filtrarlos. Viajan como "txt:<nombre>". ?>
+                        <?php if (!empty($conceptos_sistema)): ?>
+                        <optgroup label="Movimientos del sistema">
+                            <?php foreach ($conceptos_sistema as $cs): ?>
+                                <?php $csValor = 'txt:' . ($cs['categoria'] ?? ''); ?>
+                                <option value="<?= caja_mov_safe($csValor) ?>" <?= (($filtros['categoria_texto'] ?? '') === ($cs['categoria'] ?? '') ? 'selected' : '') ?>>
+                                    <?= caja_mov_safe(CajaMovimientosFeed::etiquetaConcepto($cs['categoria'] ?? '')) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                        <?php endif; ?>
                     </select>
                 </div>
 
@@ -2468,19 +2520,24 @@ $balance_es_positivo = $balance_total >= 0;
                                 // Misma lectura que el panel de Caja: una devolucion se
                                 // llama "Cancelación", no "Ingreso"/"Gasto" a secas.
                                 $cash_lectura = CajaMovimientosFeed::clasificar($mov);
+                                // Anulado = otra fila (visible o no) ya lo deshizo; la nota lo explica.
+                                $cash_anulado = !empty($mov['anulado_por']);
+                                $cash_nota = CajaMovimientosFeed::notaDePar($mov);
                                 $row_color = $cash_lectura['es_cancelacion']
                                     ? '#B45309'
                                     : ($es_ingreso ? '#16824E' : '#C24135');
                                 $method_key = $mov['metodo_pago'] ?? '';
                                 $method_meta = $metodos_pago[$method_key] ?? ['label' => ucfirst((string)$method_key), 'icon' => 'dollar-sign', 'color' => 'gray'];
                                 $method_color = caja_mov_method_color($method_key);
-                                $category_icon = $mov['categoria_icono'] ?? 'fas fa-tag';
+                                $category_icon = trim((string)($mov['categoria_icono'] ?? '')) !== ''
+                                    ? $mov['categoria_icono']
+                                    : $cash_lectura['icono'];
                                 $category_color = $mov['categoria_color'] ?? '#64748B';
                                 $can_edit = (($mov['corte_id'] ?? null) == ($corteActual['id'] ?? 0) && empty($mov['editado']));
                                 // Destino al clic en toda la fila: solo si el movimiento esta ligado a una reservacion real.
                                 $row_href = !empty($mov['reservacion_id']) ? url('reservaciones/ver/' . (int)$mov['reservacion_id']) : '';
                             ?>
-                            <article class="cash-move-row<?= $row_href !== '' ? ' is-linked' : '' ?>" data-id="<?= caja_mov_safe($mov['id'] ?? '') ?>"<?= $row_href !== '' ? ' data-href="' . caja_mov_safe($row_href) . '" role="link" tabindex="0" title="Ir a la Reserva #' . (int)$mov['reservacion_id'] . '"' : '' ?> style="--row-color: <?= $row_color ?>;">
+                            <article class="cash-move-row<?= $row_href !== '' ? ' is-linked' : '' ?><?= $cash_anulado ? ' is-anulado' : '' ?>" data-id="<?= caja_mov_safe($mov['id'] ?? '') ?>"<?= $row_href !== '' ? ' data-href="' . caja_mov_safe($row_href) . '" role="link" tabindex="0" title="Ir a la Reserva #' . (int)$mov['reservacion_id'] . '"' : '' ?> style="--row-color: <?= $row_color ?>;">
                                 <div class="cash-move-date">
                                     <strong><?= caja_mov_safe(caja_mov_date($mov['created_at'] ?? null)) ?></strong>
                                     <span><?= caja_mov_safe(caja_mov_date($mov['created_at'] ?? null, 'H:i:s')) ?></span>
@@ -2488,15 +2545,24 @@ $balance_es_positivo = $balance_total >= 0;
 
                                 <div class="cash-move-main">
                                     <span class="cash-type-mark">
-                                        <i class="fas fa-arrow-<?= $es_ingreso ? 'down' : 'up' ?>"></i>
+                                        <i class="fas fa-<?= $cash_lectura['es_cancelacion'] ? 'rotate-left' : 'arrow-' . ($es_ingreso ? 'down' : 'up') ?>"></i>
                                     </span>
                                     <div class="cash-move-description">
                                         <strong><?= caja_mov_safe($cash_lectura['titulo'] ?? ($mov['descripcion'] ?? '')) ?></strong>
-                                        <span><?= caja_mov_safe($cash_lectura['etiqueta'] ?? ($tipos[$tipo_key]['label'] ?? ucfirst((string)$tipo_key))) ?></span>
+                                        <span class="cash-state-tag"><?= caja_mov_safe($cash_lectura['etiqueta'] ?? ($tipos[$tipo_key]['label'] ?? ucfirst((string)$tipo_key))) ?></span>
+                                        <?php if (!empty($cash_lectura['contexto'])): ?>
+                                            <span><?= caja_mov_safe($cash_lectura['contexto']) ?></span>
+                                        <?php endif; ?>
                                         <?php // El texto original se conserva cuando aporta algo que el
                                               // titulo humano no dice (esto es un libro contable). ?>
                                         <?php if (!empty($cash_lectura['detalle_extra'])): ?>
                                             <span><?= caja_mov_safe($cash_lectura['detalle_extra']) ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($cash_nota !== ''): ?>
+                                            <span class="cash-cancel-note">
+                                                <i class="fas fa-rotate-left"></i>
+                                                <?= caja_mov_safe($cash_nota) ?>
+                                            </span>
                                         <?php endif; ?>
                                         <?php if (!empty($mov['editado'])): ?>
                                             <span class="cash-edited-note">
@@ -2508,17 +2574,12 @@ $balance_es_positivo = $balance_total >= 0;
                                 </div>
 
                                 <div class="cash-meta-stack">
-                                    <?php if (!empty($mov['categoria_nombre'])): ?>
-                                        <span class="cash-meta-pill" style="--pill-color: <?= caja_mov_safe($category_color) ?>;">
-                                            <i class="<?= caja_mov_safe($category_icon) ?>"></i>
-                                            <?= caja_mov_safe($mov['categoria_nombre']) ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="cash-meta-pill">
-                                            <i class="fas fa-tag"></i>
-                                            Sin categoria
-                                        </span>
-                                    <?php endif; ?>
+                                    <?php // El concepto pasa SIEMPRE por el presentador: los movimientos de
+                                          // los servicios no tienen fila en el catalogo y salian "Sin categoria". ?>
+                                    <span class="cash-meta-pill" style="--pill-color: <?= caja_mov_safe($category_color) ?>;">
+                                        <i class="<?= caja_mov_safe($category_icon) ?>"></i>
+                                        <?= caja_mov_safe(CajaMovimientosFeed::concepto($mov)) ?>
+                                    </span>
 
                                     <?php if (!empty($mov['proveedor'])): ?>
                                         <span class="cash-ref">
@@ -2800,7 +2861,7 @@ foreach ($movimientos as $mov_det) {
         'monto' => ($det_es_ingreso ? '+' : '-') . caja_mov_money($mov_det['monto'] ?? 0),
         'descripcion' => trim((string)($mov_det['descripcion'] ?? '')) !== '' ? trim((string)$mov_det['descripcion']) : '-',
         'fecha' => caja_mov_date($mov_det['created_at'] ?? null, 'd/m/Y H:i:s'),
-        'categoria' => trim((string)($mov_det['categoria_nombre'] ?? '')) !== '' ? trim((string)$mov_det['categoria_nombre']) : 'Sin categoria',
+        'categoria' => CajaMovimientosFeed::concepto($mov_det),
         'metodo' => $metodos_pago[$det_metodo_key]['label'] ?? ($det_metodo_key !== '' ? ucfirst($det_metodo_key) : '-'),
         'referencia' => trim((string)($mov_det['referencia'] ?? '')) !== '' ? trim((string)$mov_det['referencia']) : '-',
         'comprobante' => trim((string)($mov_det['comprobante'] ?? '')),

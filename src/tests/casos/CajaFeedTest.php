@@ -289,6 +289,36 @@ t_eq('fas fa-undo', $f['icono'], 'un icono ya completo se respeta');
 $f = CajaMovimientosFeed::clasificar(cf_mov(['categoria' => 'Otros', 'categoria_icono' => 'star', 'reservacion_id' => 0]));
 t_eq('fas fa-star', $f['icono'], 'un icono a secas se completa');
 
+// ── Concepto: la cadena de respaldo que arregla el "Sin categoria" ──
+// Los servicios (anticipos, cobros CxC, pagos, reversos) guardan categoria_id
+// NULL: sin respaldo al texto, el libro los pintaba sin concepto.
+t_eq('Anticipo de reservación', CajaMovimientosFeed::concepto([
+    'categoria' => 'Anticipo reservacion',
+    'categoria_nombre' => null,
+]), 'un anticipo sin fila de catalogo SI tiene concepto');
+t_eq('Devolución al huésped', CajaMovimientosFeed::concepto([
+    'categoria' => 'Devoluciones',
+    'categoria_nombre' => null,
+]), 'una devolucion sin catalogo tambien');
+t_eq('Cobro de cuenta pendiente', CajaMovimientosFeed::concepto([
+    'categoria' => 'Cobro CxC',
+    'categoria_nombre' => '',
+]), 'CxC nunca se le muestra al usuario');
+t_eq('Mantenimiento', CajaMovimientosFeed::concepto([
+    'categoria' => 'Gasto',
+    'categoria_nombre' => 'Mantenimiento',
+]), 'si hay concepto del hotel, ese manda');
+t_eq('Sin concepto', CajaMovimientosFeed::concepto([
+    'categoria' => '',
+    'categoria_nombre' => null,
+]), 'sin nada, se dice sin concepto (no vacio)');
+
+// ── Nota del par para filas sueltas (libro de movimientos) ──
+$parLibro = CajaMovimientosFeed::emparejar([$devolucion, $pago]);
+t_ok(strpos(CajaMovimientosFeed::notaDePar($parLibro[1]), '21:05') !== false, 'el libro sabe decir cuando se cancelo la fila');
+t_ok(strpos(CajaMovimientosFeed::notaDePar($parLibro[0]), '20:40') !== false, 'y que movimiento deshace la cancelacion');
+t_eq('', CajaMovimientosFeed::notaDePar(cf_mov()), 'un movimiento suelto no inventa nota');
+
 t_eq('Sin concepto', CajaMovimientosFeed::etiquetaConcepto(''), 'concepto vacio tiene nombre');
 t_eq('Devolución al huésped', CajaMovimientosFeed::etiquetaConcepto('Devoluciones'), 'el panel de conceptos habla igual que el feed');
 t_eq('Cobro de cuenta pendiente', CajaMovimientosFeed::etiquetaConcepto('Cobro CxC'), 'CxC fuera de la vista del usuario');

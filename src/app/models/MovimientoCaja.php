@@ -222,9 +222,13 @@ public function registrarMovimiento($data) {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         
-        $sql = "SELECT 
+        // COALESCE del concepto: los movimientos que crean los servicios
+        // (anticipos, cobros CxC, pagos a personal/proveedor, reversos) traen
+        // categoria_id NULL y solo el texto en mc.categoria — con el JOIN pelado
+        // salian como "Sin categoria" en el libro y en los cortes.
+        $sql = "SELECT
         mc.*,
-        cm.nombre as categoria_nombre,
+        COALESCE(cm.nombre, NULLIF(TRIM(mc.categoria), '')) as categoria_nombre,
         cm.icono as categoria_icono,
         cm.color as categoria_color,
         u.nombre_completo as usuario_nombre,
@@ -267,6 +271,12 @@ public function registrarMovimiento($data) {
         if (!empty($filtros['categoria_id'])) {
             $sql .= " AND mc.categoria_id = ?";
             $params[] = $filtros['categoria_id'];
+        }
+
+        // Conceptos del sistema: no viven en el catalogo, se filtran por texto.
+        if (!empty($filtros['categoria_texto'])) {
+            $sql .= " AND mc.categoria = ? AND mc.categoria_id IS NULL";
+            $params[] = $filtros['categoria_texto'];
         }
         
         if (!empty($filtros['fecha_inicio'])) {
@@ -567,6 +577,106 @@ $sql .= " ORDER BY mc.created_at $orden";
         }
 
         return $this->normalizarTipos(array_merge($actuales, $anteriores));
+    }
+
+    /**
+     * Conceptos del SISTEMA presentes en el hotel (los que no tienen fila en el
+     * catalogo: anticipos, cobros CxC, pagos a personal/proveedor, reversos).
+     * Alimentan el filtro del libro, donde antes eran invisibles e infiltrables.
+     */
+    public function conceptosDelSistema() {
+        $stmt = $this->db->query(
+            "SELECT DISTINCT TRIM(categoria) AS categoria
+             FROM {$this->table}
+             WHERE hotel_id = ?
+               AND categoria_id IS NULL
+               AND TRIM(COALESCE(categoria, '')) <> ''
+             ORDER BY categoria",
+            [$this->hotelIdActual()]
+        );
+
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
+    /**
+     * Cancelaciones del hotel en una ventana de fechas.
+     *
+     * El libro esta filtrado (por corte, tipo, fecha...) y una devolucion suele
+     * caer en un corte POSTERIOR al que se esta viendo: sin esta consulta, un
+     * cobro ya devuelto se veria vivito en la lista. Solo sirve para marcar, no
+     * se pinta ni se suma.
+     */
+    public function obtenerCancelacionesEntre($desde, $hasta, $tope = 300) {
+        $desde = trim((string)$desde);
+        $hasta = trim((string)$hasta);
+        if ($desde === '' || $hasta === '') {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT mc.id, mc.tipo, mc.categoria, mc.descripcion, mc.monto,
+                    mc.metodo_pago, mc.referencia, mc.proveedor, mc.reservacion_id,
+                    mc.corte_id, mc.created_at
+             FROM {$this->table} mc
+             WHERE mc.hotel_id = ?
+               AND mc.created_at BETWEEN ? AND ?
+               AND (
+                    LOWER(COALESCE(mc.categoria, '')) LIKE 'devoluc%'
+                 OR LOWER(COALESCE(mc.categoria, '')) LIKE 'reverso%'
+                 OR LOWER(COALESCE(mc.categoria, '')) LIKE 'reversion%'
+               )
+             ORDER BY mc.created_at ASC
+             LIMIT ?",
+            [$this->hotelIdActual(), $desde, $hasta, (int)$tope]
+        );
+
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
+    /**
+     * Posibles ORIGINALES de unas cancelaciones que si se ven.
+     *
+     * El caso comun del libro (filtrado al corte abierto): la devolucion esta a
+     * la vista y el cobro que deshace quedo en un corte anterior. Se acota por
+     * monto exacto y ventana de tiempo hacia atras; el emparejado fino lo decide
+     * CajaMovimientosFeed. Solo sirve para marcar: no se pinta ni se suma.
+     */
+    public function obtenerCandidatosOriginales(array $cancelaciones, $diasAtras = 90, $tope = 300) {
+        $montos = [];
+        $fechas = [];
+        foreach ($cancelaciones as $c) {
+            $montos[(string)round((float)($c['monto'] ?? 0), 2)] = true;
+            if (!empty($c['created_at'])) {
+                $fechas[] = (string)$c['created_at'];
+            }
+        }
+        if (empty($montos) || empty($fechas)) {
+            return [];
+        }
+
+        $montos = array_keys($montos);
+        $marcas = implode(',', array_fill(0, count($montos), '?'));
+        $desde = date('Y-m-d H:i:s', strtotime(min($fechas) . ' -' . max(1, (int)$diasAtras) . ' days'));
+        $hasta = max($fechas);
+
+        $params = array_merge([$this->hotelIdActual()], $montos, [$desde, $hasta, (int)$tope]);
+        $stmt = $this->db->query(
+            "SELECT mc.id, mc.tipo, mc.categoria, mc.descripcion, mc.monto,
+                    mc.metodo_pago, mc.referencia, mc.proveedor, mc.reservacion_id,
+                    mc.corte_id, mc.created_at
+             FROM {$this->table} mc
+             WHERE mc.hotel_id = ?
+               AND mc.monto IN ({$marcas})
+               AND mc.created_at BETWEEN ? AND ?
+               AND LOWER(COALESCE(mc.categoria, '')) NOT LIKE 'devoluc%'
+               AND LOWER(COALESCE(mc.categoria, '')) NOT LIKE 'reverso%'
+               AND LOWER(COALESCE(mc.categoria, '')) NOT LIKE 'reversion%'
+             ORDER BY mc.created_at ASC
+             LIMIT ?",
+            $params
+        );
+
+        return $stmt ? $stmt->fetchAll() : [];
     }
 
     /**

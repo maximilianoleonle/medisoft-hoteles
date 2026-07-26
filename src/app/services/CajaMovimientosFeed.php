@@ -98,6 +98,27 @@ class CajaMovimientosFeed
     }
 
     /**
+     * Nombre del concepto de UN movimiento, con toda la cadena de respaldo:
+     * catalogo del hotel (`categorias_movimientos`) -> concepto del sistema
+     * (texto en `movimientos_caja.categoria`) -> "Sin concepto".
+     *
+     * Los movimientos que crean los SERVICIOS (anticipos, cobros CxC, pagos a
+     * personal/proveedor y TODOS los reversos) guardan `categoria_id = NULL` y
+     * solo el texto: leer nada mas el JOIN los pintaba "Sin categoria" (queja
+     * real jul-25). Cualquier pantalla que muestre el concepto pasa por aqui.
+     */
+    public static function concepto(array $mov): string
+    {
+        foreach ([$mov['categoria_nombre'] ?? '', $mov['categoria'] ?? ''] as $valor) {
+            if (trim((string)$valor) !== '') {
+                return self::etiquetaConcepto($valor);
+            }
+        }
+
+        return 'Sin concepto';
+    }
+
+    /**
      * ¿Este movimiento deshace a otro? (devolucion, reverso, reversion)
      */
     public static function esCancelacion(array $mov): bool
@@ -306,6 +327,19 @@ class CajaMovimientosFeed
         }
 
         return array_values($grupos);
+    }
+
+    /**
+     * Frase del par para un movimiento YA pasado por emparejar() (la usa el
+     * libro de movimientos, que pinta filas sueltas y no grupos por turno).
+     */
+    public static function notaDePar(array $mov): string
+    {
+        $fila = self::clasificar($mov);
+        $fila['anulado_por'] = $mov['anulado_por'] ?? null;
+        $fila['anula'] = $mov['anula'] ?? null;
+
+        return self::nota($fila);
     }
 
     // ─────────────────────────── internos ───────────────────────────

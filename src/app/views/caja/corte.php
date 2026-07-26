@@ -900,14 +900,12 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <?php if (!empty($mov['categoria_nombre'])): ?>
-                                                    <span class="ccx-method">
-                                                        <i class="<?= safe_html($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= safe_html($mov['categoria_color'] ?? '#94a3b8') ?>"></i>
-                                                        <?= safe_html($mov['categoria_nombre']) ?>
-                                                    </span>
-                                                <?php else: ?>
-                                                    <span class="text-gray-400">-</span>
-                                                <?php endif; ?>
+                                                <?php // Concepto vía presentador: los movimientos de los servicios
+                                                      // (anticipos, cobros, reversos) no tienen fila en el catálogo. ?>
+                                                <span class="ccx-method">
+                                                    <i class="<?= safe_html($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= safe_html($mov['categoria_color'] ?? '#94a3b8') ?>"></i>
+                                                    <?= safe_html(CajaMovimientosFeed::concepto($mov)) ?>
+                                                </span>
                                             </td>
                                             <td>
                                                 <span class="ccx-method">

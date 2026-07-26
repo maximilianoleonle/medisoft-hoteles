@@ -101,7 +101,8 @@ $metodo_counts = ['efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0];
 foreach ($movimientos as $mov) {
     $tipo = (string)($mov['tipo'] ?? '');
     $es_ingreso = ($tipo === 'ingreso');
-    $cat = trim((string)($mov['categoria_nombre'] ?? '')) ?: 'Sin categoria';
+    // Concepto humano con respaldo al texto del sistema (anticipos, cobros, reversos).
+    $cat = CajaMovimientosFeed::concepto($mov);
     $icono = trim((string)($mov['categoria_icono'] ?? '')) ?: 'fas fa-tag';
     $color = cut_clean_color($mov['categoria_color'] ?? '#64748B');
     $monto = (float)($mov['monto'] ?? 0);
@@ -1357,7 +1358,7 @@ if ($diferencia > 0) {
                             }
                             $texto_busqueda = trim(implode(' ', [
                                 $mov['descripcion'] ?? '',
-                                $mov['categoria_nombre'] ?? '',
+                                CajaMovimientosFeed::concepto($mov),
                                 $mov['usuario_nombre'] ?? '',
                                 $mov['metodo_pago'] ?? '',
                                 $origen_ingreso['label'] ?? '',
@@ -1374,11 +1375,11 @@ if ($diferencia > 0) {
                                         <?php endif; ?>
                                         <span class="cut-chip"><i class="fas fa-<?= cut_h($method_info['icon'] ?? 'circle') ?>"></i><?= cut_h($method_info['label'] ?? ucfirst($metodo_key)) ?></span>
                                     </div>
-                                    <h3 class="cut-movement-title"><?= cut_h($mov['descripcion'] ?? 'Movimiento sin descripcion') ?></h3>
+                                    <h3 class="cut-movement-title"><?= cut_h(CajaMovimientosFeed::humanizar($mov['descripcion'] ?? '') ?: 'Movimiento sin descripcion') ?></h3>
                                     <div class="cut-movement-meta">
                                         <span><i class="far fa-clock"></i><?= cut_h(cut_date_label($mov['created_at'] ?? null)) ?></span>
                                         <?php if (!empty($mov['usuario_nombre'])): ?><span><i class="fas fa-user"></i><?= cut_h($mov['usuario_nombre']) ?></span><?php endif; ?>
-                                        <?php if (!empty($mov['categoria_nombre'])): ?><span><i class="<?= cut_h($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= cut_h(cut_clean_color($mov['categoria_color'] ?? '#64748B')) ?>"></i><?= cut_h($mov['categoria_nombre']) ?></span><?php endif; ?>
+                                        <span><i class="<?= cut_h($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= cut_h(cut_clean_color($mov['categoria_color'] ?? '#64748B')) ?>"></i><?= cut_h(CajaMovimientosFeed::concepto($mov)) ?></span>
                                         <?php if (!empty($mov['referencia'])): ?><span><i class="fas fa-hashtag"></i><?= cut_h($mov['referencia']) ?></span><?php endif; ?>
                                         <?php if (!empty($mov['reservacion_id'])): ?><a href="<?= url('reservaciones/ver/' . (int)$mov['reservacion_id']) ?>"><i class="fas fa-bed"></i>Reserva #<?= (int)$mov['reservacion_id'] ?></a><?php endif; ?>
                                         <?php if (!empty($mov['habitaciones_detalle'])): ?><span><i class="fas fa-door-open"></i><?= cut_h($mov['habitaciones_detalle']) ?></span><?php endif; ?>
