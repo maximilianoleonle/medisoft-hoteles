@@ -5,6 +5,9 @@
 
 require_once __DIR__ . '/../services/ReporteEntregaService.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
+// El autoloader web NO cubre app/services (solo core/controllers/models):
+// las vistas de Caja usan esta clase, asi que se carga aqui a proposito.
+require_once __DIR__ . '/../services/CajaMovimientosFeed.php';
 require_once __DIR__ . '/../models/ArqueoMetodosPago.php';
 
 class CajaController extends Controller {
@@ -63,9 +66,13 @@ class CajaController extends Controller {
     // Debug: Ver el resumen
     error_log("Resumen de caja: " . json_encode($resumen));
     
-    // Obtener últimos movimientos incluyendo egresos
-    $ultimosMovimientos = $this->movimientoModel->obtenerUltimosMovimientos(10);
-    
+    // Feed del panel: el turno ABIERTO va completo (el tope de 10 escondia
+    // movimientos del dia) + una cola de turnos anteriores, que ademas sirve
+    // para emparejar cancelaciones que deshacen cobros de un corte cerrado.
+    $feedTope = 400;
+    $ultimosMovimientos = $this->movimientoModel->obtenerFeedDelTurno($corteActual['id'], 12, $feedTope);
+    $movimientosDelCorte = $this->movimientoModel->contarPorCorte($corteActual['id']);
+
     // Obtener movimientos por categoría (actualizado para incluir egresos como gastos)
     $movimientosPorCategoria = [
         'ingresos' => $this->cajaModel->obtenerMovimientosPorCategoria($corteActual['id'], 'ingreso'),
@@ -123,6 +130,8 @@ class CajaController extends Controller {
         'corte' => $corteActual,
         'resumen' => $resumen,
         'ultimos_movimientos' => $ultimosMovimientos,
+        'movimientos_corte_total' => $movimientosDelCorte,
+        'feed_tope' => $feedTope,
         'movimientos_categoria' => $movimientosPorCategoria,
         'categorias' => $categorias,
         'metodos_pago' => MovimientoCaja::getMetodosPago(),

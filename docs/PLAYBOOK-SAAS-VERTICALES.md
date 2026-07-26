@@ -621,6 +621,34 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     un permiso legacy sin casilla que recepción perdía cada vez que se editaba
     su rol).
 
+32. **El feed de dinero explica sus propias cancelaciones (verificado jul 2026).**
+    Toda caja/ledger de cualquier giro acumula pares "cobré / lo devolví": un
+    cobro y, minutos u horas después, su reverso. Pintados como dos filas
+    independientes ("Entrada +$7,000" arriba, "Gasto −$7,000" abajo) el turno se
+    lee como un revoltijo y recepción llama por teléfono a preguntar qué pasó.
+    Patrón: un presentador PURO (sin BD ni sesión, con suite propia) entre el
+    modelo y la vista que hace tres cosas. (a) **Traduce**: la categoría técnica
+    (`Reversion Cobro CxC`, `Reverso anticipo`) nunca llega a la pantalla; título
+    humano + contexto estructurado (a quién/qué pertenece), y si el concepto es
+    libre del tenant manda el texto que escribió la persona. (b) **Tres estados,
+    no dos**: entrada, salida y CANCELACIÓN con color propio (ámbar) — incluidas
+    las que devuelven dinero A la caja (el reverso de un pago es un ingreso que
+    NO es venta; pintado de verde miente). (c) **Empareja**: la cancelación dice
+    qué deshace ("Devuelve el movimiento de las 20:40") y el original queda
+    tachado con "Se canceló a las 21:05: este dinero ya no cuenta", con un salto
+    de uno a otro. Cuando no hay columna que ligue el par (lo normal en sistemas
+    que crecieron), se resuelve por evidencia ordenada — referencia canónica
+    (`REV-` + la del original) > mismo cliente/proveedor + monto + método > mismo
+    cliente — siempre sobre movimientos ANTERIORES y sin reusar un original ya
+    emparejado. Es información de PANTALLA: un empate mal resuelto no mueve un
+    peso, y por eso jamás se recalculan totales aquí (los sigue derivando el
+    modelo, y el aviso de cabecera se alimenta de ESA misma cifra o el panel se
+    contradice solo). Regla de alcance que pidió el dueño y aplica a todos:
+    **el turno abierto se muestra COMPLETO** (un tope de "últimos 10" esconde
+    media jornada); lo que sobra del corte se pliega en acordeón — nunca se
+    recorta —, los turnos cerrados llegan como cola y por eso se anuncian como
+    "N movimientos recientes" con enlace al turno completo, jamás como su total.
+
 ---
 
 ## §4. LO PROHIBIDO (errores pagados una vez; no se pagan dos)

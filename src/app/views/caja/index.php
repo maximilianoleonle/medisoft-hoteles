@@ -66,45 +66,16 @@ if (!function_exists('caja_form_error_attrs')) {
         return ' aria-invalid="true" aria-describedby="' . caja_form_safe($errorId) . '"';
     }
 }
+// Nombres humanos de conceptos: una sola fuente de verdad (la que usa el feed).
 if (!function_exists('cj_finance_label')) {
     function cj_finance_label($value) {
-        $text = trim((string)($value ?? ''));
-        if ($text === '') {
-            return 'Sin concepto';
-        }
-
-        $key = strtolower($text);
-        $labels = [
-            'cobro cxc' => 'Cobro de cuenta pendiente',
-            'reversion cobro cxc' => 'Cancelacion de cobro pendiente',
-            'anticipo reservacion' => 'Anticipo de reservacion',
-            'reverso anticipo' => 'Cancelacion de anticipo',
-            'reverso de anticipo' => 'Cancelacion de anticipo',
-            'devolucion' => 'Dinero devuelto',
-            'devoluciones' => 'Dinero devuelto',
-            'hospedaje' => 'Pago de hospedaje',
-            'pago proveedor' => 'Pago a proveedor',
-            'reversion pago proveedor' => 'Cancelacion de pago a proveedor',
-            'pago laboral' => 'Pago al personal',
-            'reversion pago laboral' => 'Cancelacion de pago al personal',
-        ];
-
-        return $labels[$key] ?? str_replace(['CxC', 'CXC', 'CxP', 'CXP'], ['cuenta pendiente', 'cuenta pendiente', 'cuenta por pagar', 'cuenta por pagar'], $text);
+        return CajaMovimientosFeed::etiquetaConcepto($value);
     }
 }
 
 if (!function_exists('cj_finance_sentence')) {
     function cj_finance_sentence($value) {
-        $text = trim((string)($value ?? ''));
-        if ($text === '') {
-            return '';
-        }
-
-        return str_ireplace(
-            ['Cobro CxC', 'Reversion Cobro CxC', 'Anticipo reservacion', 'Reverso de anticipo', 'Reverso anticipo', 'Devoluciones'],
-            ['Cobro de cuenta pendiente', 'Cancelacion de cobro pendiente', 'Anticipo de reservacion', 'Cancelacion de anticipo', 'Cancelacion de anticipo', 'Dinero devuelto'],
-            $text
-        );
+        return CajaMovimientosFeed::humanizar($value);
     }
 }
 ?>
@@ -126,6 +97,8 @@ if (!function_exists('cj_finance_sentence')) {
     --cj-red:    #D64539;
     --cj-blue:   #2F77E0;
     --cj-purple: #5A57D2;
+    /* Ámbar = "esto se canceló": ni ingreso ni gasto normal (feed de movimientos) */
+    --cj-amber:  #B45309;
     --cj-r-xs:8px; --cj-r-sm:11px; --cj-r:15px; --cj-r-lg:20px; --cj-r-xl:26px; --cj-r-pill:999px;
     --cj-shadow-sm: 0 1px 3px rgba(17,24,39,.06);
     --cj-shadow:    0 4px 16px -6px rgba(17,24,39,.11), 0 1px 3px rgba(17,24,39,.05);
@@ -133,6 +106,10 @@ if (!function_exists('cj_finance_sentence')) {
     --cj-serif: 'Cormorant Garamond', Georgia, serif;
     --cj-sans:  'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* Modo oscuro: el ámbar de "cancelado" se aclara o se pierde contra el lienzo
+   (dark-theme.css remapea --cj-surface/-line/-muted, pero no conoce este token). */
+html[data-theme="dark"] .cj-page { --cj-amber:#E8A33D; }
 
 /* ── Page shell ── */
 .cj-page {
@@ -465,138 +442,185 @@ if (!function_exists('cj_finance_sentence')) {
     color:var(--cj-navy); font-size:.78rem;
 }
 
-/* ── Movements feed ── */
-.cj-mov-list { display:flex; flex-direction:column; }
-.cj-cut-divider {
-    position:relative;
+/* ── Movements feed ──
+   Tres estados, no dos: entra dinero, sale dinero y "se canceló" (ámbar). Las
+   cancelaciones se emparejan con el movimiento que deshacen (CajaMovimientosFeed)
+   para que el turno no se lea como un revoltijo. */
+.cj-mov-list { display:flex; flex-direction:column; gap:12px; }
+
+/* Aviso de cabecera cuando el turno tiene cancelaciones */
+.cj-feed-note {
+    display:flex; align-items:flex-start; gap:10px;
+    margin-bottom:14px; padding:11px 13px;
+    border-radius:var(--cj-r-sm);
+    border:1px solid color-mix(in srgb, var(--cj-amber) 26%, var(--cj-line));
+    background:color-mix(in srgb, var(--cj-amber) 8%, var(--cj-surface));
+}
+.cj-feed-note i { margin-top:2px; color:var(--cj-amber); font-size:.8rem; }
+.cj-feed-note strong { display:block; font-size:.8rem; color:var(--cj-text); }
+.cj-feed-note span { display:block; margin-top:2px; font-size:.72rem; color:var(--cj-muted); line-height:1.4; }
+
+/* Turno (acordeón) */
+.cj-turno {
+    border:1px solid var(--cj-line);
+    border-radius:var(--cj-r);
+    background:var(--cj-surface);
+    overflow:hidden;
+}
+.cj-turno.is-current { border-color:color-mix(in srgb, var(--cj-green) 34%, var(--cj-line)); }
+.cj-turno-head {
     display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:center;
-    gap:12px;
-    margin:18px -20px 12px;
-    padding:14px 18px 14px 54px;
-    border-top:2px solid color-mix(in srgb, var(--cj-navy) 36%, var(--cj-line));
-    border-bottom:1px solid color-mix(in srgb, var(--cj-navy) 10%, var(--cj-line));
-    border-radius:0;
-    background:
-        linear-gradient(90deg, color-mix(in srgb, var(--cj-navy) 9%, var(--cj-surface)), var(--cj-surface) 68%),
-        var(--cj-surface);
+    grid-template-columns:28px minmax(0,1fr) auto;
+    align-items:center; gap:11px;
+    padding:12px 14px;
+    cursor:pointer;
+    list-style:none;
+    background:color-mix(in srgb, var(--cj-navy) 4%, var(--cj-surface));
+    transition:background .15s ease;
 }
-/* El primer divisor abre el feed pegado al encabezado: sube el padding superior del cuerpo (mismo valor que su sangrado lateral) y cede la linea divisoria al header. */
-.cj-mov-list > .cj-cut-divider:first-child {
-    margin-top:-20px;
-    border-top:0;
-}
-.cj-cut-divider.is-current {
-    border-top-color:color-mix(in srgb, var(--cj-green) 50%, var(--cj-line));
-    background:
-        linear-gradient(90deg, color-mix(in srgb, var(--cj-green) 10%, var(--cj-surface)), var(--cj-surface) 68%),
-        var(--cj-surface);
-}
-.cj-cut-mark {
-    position:absolute;
-    left:18px;
-    top:50%;
-    width:24px;
-    height:24px;
-    display:grid;
-    place-items:center;
-    transform:translateY(-50%);
-    border-radius:8px;
-    color:#fff;
+.cj-turno-head::-webkit-details-marker { display:none; }
+.cj-turno-head:hover { background:color-mix(in srgb, var(--cj-navy) 7%, var(--cj-surface)); }
+.cj-turno.is-current .cj-turno-head { background:color-mix(in srgb, var(--cj-green) 9%, var(--cj-surface)); }
+.cj-turno-mark {
+    width:28px; height:28px; display:grid; place-items:center;
+    border-radius:9px; font-size:.66rem; color:var(--cj-on-dark);
     background:var(--cj-navy);
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--cj-navy) 9%, transparent);
-    font-size:.66rem;
 }
-.cj-cut-divider.is-current .cj-cut-mark {
-    background:var(--cj-green);
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--cj-green) 12%, transparent);
+.cj-turno.is-current .cj-turno-mark { background:var(--cj-green); }
+.cj-turno-info { min-width:0; }
+.cj-turno-title {
+    display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+    font-size:.85rem; font-weight:700; color:var(--cj-text); line-height:1.25;
 }
-.cj-cut-info { min-width:0; flex:1; }
-.cj-cut-eyebrow {
-    display:flex;
-    align-items:center;
-    gap:6px;
-    margin-bottom:4px;
-    font-size:.62rem;
-    font-weight:700;
-    letter-spacing:.12em;
-    text-transform:uppercase;
-    color:var(--cj-navy);
+.cj-turno-when { font-size:.72rem; font-weight:600; color:var(--cj-muted); }
+.cj-turno-sum {
+    display:flex; flex-wrap:wrap; gap:4px 10px;
+    margin-top:4px; font-size:.71rem; font-weight:600; color:var(--cj-muted);
 }
-.cj-cut-divider.is-current .cj-cut-eyebrow { color:var(--cj-green); }
-.cj-cut-title {
-    font-size:.9rem;
-    font-weight:700;
-    color:var(--cj-text);
-    line-height:1.2;
-}
-.cj-cut-note {
-    margin-top:3px;
-    font-size:.72rem;
-    font-weight:600;
-    color:var(--cj-muted);
-    line-height:1.25;
-}
-.cj-cut-chip {
-    justify-self:end;
-    align-self:center;
-    padding:5px 9px;
-    border-radius:var(--cj-r-pill);
+.cj-turno-sum b { font-variant-numeric:tabular-nums; }
+.cj-turno-sum .is-in  { color:var(--cj-green); }
+.cj-turno-sum .is-out { color:var(--cj-red); }
+.cj-turno-sum .is-can { color:var(--cj-amber); }
+.cj-turno-chip {
+    padding:4px 9px; border-radius:var(--cj-r-pill);
     border:1px solid color-mix(in srgb, var(--cj-navy) 16%, var(--cj-line));
-    background:color-mix(in srgb, var(--cj-navy) 5%, #fff);
+    background:color-mix(in srgb, var(--cj-navy) 5%, var(--cj-surface));
     color:var(--cj-navy);
-    font-size:.66rem;
-    font-weight:700;
-    white-space:nowrap;
+    font-size:.65rem; font-weight:700; white-space:nowrap;
 }
-.cj-cut-divider.is-current .cj-cut-chip {
+.cj-turno.is-current .cj-turno-chip {
     color:var(--cj-green);
-    border-color:color-mix(in srgb, var(--cj-green) 20%, var(--cj-line));
-    background:color-mix(in srgb, var(--cj-green) 7%, #fff);
+    border-color:color-mix(in srgb, var(--cj-green) 26%, var(--cj-line));
+    background:color-mix(in srgb, var(--cj-green) 9%, var(--cj-surface));
 }
+.cj-turno-tail { display:flex; align-items:center; gap:8px; }
+.cj-turno-caret { color:var(--cj-muted); font-size:.7rem; transition:transform .18s ease; }
+.cj-turno[open] .cj-turno-caret { transform:rotate(90deg); }
+.cj-turno-body { padding:2px 14px 6px; }
+
+/* Filas */
 .cj-mov {
     display:grid;
-    grid-template-columns:36px minmax(0,1fr) auto;
-    gap:11px; align-items:start;
-    padding:12px 0;
-    border-bottom:1px solid var(--cj-line);
+    grid-template-columns:34px minmax(0,1fr) auto;
+    gap:10px; align-items:start;
+    padding:11px 0;
+    border-bottom:1px solid color-mix(in srgb, var(--cj-line) 65%, transparent);
+    scroll-margin:90px;
+    transition:background .25s ease, box-shadow .25s ease;
 }
-.cj-mov:first-child { padding-top:0; }
-.cj-mov:last-child  { border-bottom:none; padding-bottom:0; }
-.cj-mov.is-linked { cursor:pointer; border-radius:10px; margin:0 -8px; padding-left:8px; padding-right:8px; transition:background .15s ease; }
+.cj-mov:last-child { border-bottom:none; }
+.cj-mov.is-linked { cursor:pointer; border-radius:10px; margin:0 -8px; padding-left:8px; padding-right:8px; }
 .cj-mov.is-linked:hover { background:color-mix(in srgb, var(--cj-blue, #2563EB) 6%, transparent); }
 .cj-mov.is-linked:focus-visible { outline:2px solid color-mix(in srgb, var(--cj-blue, #2563EB) 45%, transparent); outline-offset:-2px; }
+.cj-mov.is-oculto { display:none; }
+.cj-turno.is-abierto .cj-mov.is-oculto { display:grid; }
+.cj-mov.is-destacado {
+    background:color-mix(in srgb, var(--cj-amber) 13%, transparent);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--cj-amber) 34%, transparent);
+    border-radius:10px;
+}
 .cj-mov-ico {
-    width:36px; height:36px;
+    width:34px; height:34px;
     display:grid; place-items:center;
-    border-radius:var(--cj-r-sm); font-size:.76rem;
+    border-radius:var(--cj-r-sm); font-size:.74rem;
 }
-.cj-mov-ico.is-income  { background:color-mix(in srgb, var(--cj-green) 11%, transparent); color:var(--cj-green); border:1px solid color-mix(in srgb, var(--cj-green) 22%, transparent); }
-.cj-mov-ico.is-expense { background:color-mix(in srgb, var(--cj-red)   9%,  transparent); color:var(--cj-red);   border:1px solid color-mix(in srgb, var(--cj-red)   19%, transparent); }
+.cj-mov-ico.is-entrada { background:color-mix(in srgb, var(--cj-green) 11%, transparent); color:var(--cj-green); border:1px solid color-mix(in srgb, var(--cj-green) 22%, transparent); }
+.cj-mov-ico.is-salida  { background:color-mix(in srgb, var(--cj-red)   9%,  transparent); color:var(--cj-red);   border:1px solid color-mix(in srgb, var(--cj-red)   19%, transparent); }
+.cj-mov-ico.is-cancelacion { background:color-mix(in srgb, var(--cj-amber) 12%, transparent); color:var(--cj-amber); border:1px solid color-mix(in srgb, var(--cj-amber) 26%, transparent); }
 .cj-mov-body { min-width:0; }
-.cj-mov-title { font-size:.86rem; font-weight:600; color:var(--cj-text); line-height:1.3; }
-.cj-mov-sub {
-    font-size:.74rem; color:var(--cj-muted); margin-top:3px;
-    display:flex; flex-wrap:wrap; gap:5px; align-items:center;
+.cj-mov-title { font-size:.85rem; font-weight:700; color:var(--cj-text); line-height:1.3; }
+.cj-mov-ctx {
+    margin-top:2px; font-size:.75rem; font-weight:600; color:var(--cj-text);
+    opacity:.72; line-height:1.3;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.cj-mov-sub span { display:flex; align-items:center; gap:4px; }
+.cj-mov-meta {
+    font-size:.71rem; color:var(--cj-muted); margin-top:4px;
+    display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center;
+}
+.cj-mov-meta span { display:inline-flex; align-items:center; gap:4px; }
+.cj-mov-meta i { font-size:.6rem; opacity:.75; }
+.cj-mov-link { color:var(--cj-blue); text-decoration:none; font-weight:700; }
+.cj-mov-link:hover { text-decoration:underline; }
 .cj-badge {
     display:inline-flex; align-items:center;
     padding:1px 7px; border-radius:var(--cj-r-pill);
-    font-size:.66rem; font-weight:700;
+    font-size:.65rem; font-weight:700;
 }
-.cj-badge.income  { background:color-mix(in srgb, var(--cj-green) 12%, transparent); color:var(--cj-green); }
-.cj-badge.expense { background:color-mix(in srgb, var(--cj-red)   10%, transparent); color:var(--cj-red); }
+.cj-badge.entrada { background:color-mix(in srgb, var(--cj-green) 12%, transparent); color:var(--cj-green); }
+.cj-badge.salida  { background:color-mix(in srgb, var(--cj-red)   10%, transparent); color:var(--cj-red); }
+.cj-badge.cancelacion { background:color-mix(in srgb, var(--cj-amber) 14%, transparent); color:var(--cj-amber); }
+.cj-mov-nota {
+    display:flex; align-items:flex-start; gap:6px; flex-wrap:wrap;
+    margin-top:6px; padding:6px 9px;
+    border-radius:9px;
+    border:1px solid color-mix(in srgb, var(--cj-amber) 22%, transparent);
+    background:color-mix(in srgb, var(--cj-amber) 9%, transparent);
+    font-size:.71rem; font-weight:600; line-height:1.35;
+    color:color-mix(in srgb, var(--cj-amber) 70%, var(--cj-text));
+}
+.cj-mov-nota i { margin-top:2px; font-size:.62rem; }
+.cj-mov-verpar {
+    border:0; background:none; padding:0;
+    color:var(--cj-blue); font:inherit; font-weight:700;
+    text-decoration:underline; cursor:pointer;
+}
 .cj-mov-amount {
     font-family:var(--cj-sans);
     font-size:1rem; font-weight:700;
     letter-spacing:-.01em;
     font-variant-numeric:tabular-nums; white-space:nowrap;
-    padding-top:3px;
+    padding-top:2px; text-align:right;
 }
-.cj-mov-amount.is-income  { color:var(--cj-green); }
-.cj-mov-amount.is-expense { color:var(--cj-red); }
+.cj-mov-amount.is-entrada { color:var(--cj-green); }
+.cj-mov-amount.is-salida  { color:var(--cj-red); }
+.cj-mov-amount.is-cancelacion { color:var(--cj-amber); }
+/* Cancelado: sigue en la lista (es historia), pero deja de gritar dinero */
+.cj-mov.is-anulado .cj-mov-title { color:var(--cj-muted); }
+.cj-mov.is-anulado .cj-mov-ico { opacity:.55; filter:grayscale(.7); }
+.cj-mov.is-anulado .cj-mov-amount { color:var(--cj-muted); text-decoration:line-through; opacity:.7; }
+.cj-mov.is-anulado .cj-badge { opacity:.6; }
+
+/* Ver el resto del turno sin salir de la tarjeta */
+.cj-vermas {
+    width:100%; margin:10px 0 4px;
+    padding:9px 12px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    border:1px dashed color-mix(in srgb, var(--cj-navy) 24%, var(--cj-line));
+    border-radius:var(--cj-r-sm);
+    background:color-mix(in srgb, var(--cj-navy) 3%, var(--cj-surface));
+    color:var(--cj-navy);
+    font-size:.76rem; font-weight:700; font-family:var(--cj-sans);
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+}
+.cj-vermas:hover { background:color-mix(in srgb, var(--cj-navy) 7%, var(--cj-surface)); border-style:solid; }
+.cj-turno.is-abierto .cj-vermas i { transform:rotate(180deg); }
+.cj-vermas i { transition:transform .2s ease; font-size:.7rem; }
+.cj-feed-tope {
+    margin-top:8px; text-align:center;
+    font-size:.71rem; font-weight:600; color:var(--cj-muted);
+}
 
 /* ── Empty state ── */
 .cj-empty {
@@ -869,19 +893,16 @@ if (!function_exists('cj_finance_sentence')) {
     .cj-kpi-value { font-size:1.25rem; letter-spacing:-.01em; }
     .cj-cats      { grid-template-columns:1fr; }
     .cj-shortcuts { grid-template-columns:1fr; }
-    .cj-cut-divider {
-        grid-template-columns:1fr;
-        align-items:start;
-        gap:8px;
-        margin:16px -16px 10px;
-        padding:12px 14px 12px 46px;
-    }
-    .cj-mov-list > .cj-cut-divider:first-child { margin-top:-16px; }
-    .cj-cut-mark { left:14px; width:22px; height:22px; font-size:.62rem; }
-    .cj-cut-eyebrow { font-size:.58rem; letter-spacing:.1em; }
-    .cj-cut-title { font-size:.82rem; }
-    .cj-cut-note { font-size:.68rem; }
-    .cj-cut-chip { justify-self:start; padding:4px 8px; font-size:.62rem; }
+    .cj-turno-head { grid-template-columns:24px minmax(0,1fr) auto; gap:9px; padding:11px 12px; }
+    .cj-turno-mark { width:24px; height:24px; font-size:.6rem; }
+    .cj-turno-title { font-size:.82rem; }
+    .cj-turno-sum { font-size:.68rem; gap:3px 8px; }
+    .cj-turno-chip { padding:3px 7px; font-size:.6rem; }
+    .cj-turno-body { padding:2px 12px 6px; }
+    .cj-mov { grid-template-columns:30px minmax(0,1fr) auto; gap:9px; }
+    .cj-mov-ico { width:30px; height:30px; font-size:.68rem; }
+    .cj-mov-amount { font-size:.92rem; }
+    .cj-mov-ctx { white-space:normal; }
     #modalIngreso, #modalGasto { padding:10px; }
     #modalIngreso .cash-modal-shell, #modalGasto .cash-modal-shell { place-items:end center; }
     #modalIngreso .cash-modal-dialog, #modalGasto .cash-modal-dialog {
@@ -1348,109 +1369,171 @@ $cash_methods = [
             </div><!-- /left col -->
 
             <!-- Right column: movements feed -->
+            <?php
+            // El feed lo arma CajaMovimientosFeed: traduce cada movimiento al
+            // idioma de recepción y empareja las cancelaciones con lo que anulan.
+            $cjCorteId = (int)($corte['id'] ?? 0);
+            $cjGrupos = CajaMovimientosFeed::agrupar($ultimos_movimientos ?? [], $cjCorteId);
+            $cjVisiblesPorTurno = 20; // el resto queda a un clic, nunca se pierde
+
+            // Cancelaciones del turno: se toman del MISMO resumen que pintan el KPI
+            // "Devuelto/cancelado" y el panel "Dinero devuelto" — jamás de un
+            // conteo propio, o el aviso y las cifras dirían cosas distintas.
+            $cjCancelTotal = $cash_reversos_total;
+            $cjCancelCant = 0;
+            foreach (['efectivo', 'tarjeta', 'transferencia'] as $cjMetodo) {
+                $cjCancelCant += (int)($resumen['reversos'][$cjMetodo]['cantidad'] ?? 0);
+            }
+            $cjTotalTurno = (int)($movimientos_corte_total ?? 0);
+            $cjTope = (int)($feed_tope ?? 0);
+            ?>
             <div class="cj-col">
                 <div class="cj-card">
                     <div class="cj-card-head">
                         <div class="cj-card-ico"><i class="fas fa-stream"></i></div>
-                        <h2>Últimos movimientos</h2>
+                        <h2>Movimientos del turno</h2>
                         <div class="cj-card-tail">
                             <a href="<?= url('caja/movimientos') ?>">Ver todos</a>
                         </div>
                     </div>
                     <div class="cj-card-body">
-                        <?php if (!empty($ultimos_movimientos)): ?>
+                        <?php if (!empty($cjGrupos)): ?>
+
+                        <?php if ($cjCancelCant > 0): ?>
+                        <div class="cj-feed-note">
+                            <i class="fas fa-rotate-left"></i>
+                            <div>
+                                <strong>
+                                    <?= $cjCancelCant ?> <?= $cjCancelCant === 1 ? 'cancelación' : 'cancelaciones' ?>
+                                    en este turno · $<?= number_format($cjCancelTotal, 2) ?> devueltos
+                                </strong>
+                                <span>El movimiento cancelado se queda en la lista tachado y la devolución dice a cuál corresponde. Los totales del turno ya lo descuentan.</span>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="cj-mov-list">
-                            <?php $cj_last_cut_key = null; ?>
-                            <?php foreach ($ultimos_movimientos as $mov):
-                                $cj_current_cut_id = (int)($corte['id'] ?? 0);
-                                $cj_mov_cut_id = (int)($mov['corte_id'] ?? 0);
-                                $cj_cut_key = $cj_mov_cut_id > 0 ? (string)$cj_mov_cut_id : 'sin-corte';
-                                $cj_is_current_cut = $cj_mov_cut_id > 0 && $cj_mov_cut_id === $cj_current_cut_id;
-                                $cj_cut_date = !empty($mov['created_at']) ? date('d/m/Y', strtotime($mov['created_at'])) : '';
-                                $cj_cut_eyebrow = $cj_is_current_cut
-                                    ? 'Movimientos del corte actual'
-                                    : ($cj_mov_cut_id > 0 ? 'Aquí empieza otro corte' : 'Movimientos fuera de corte');
-                                $cj_cut_title = $cj_mov_cut_id > 0
-                                    ? 'Corte #' . $cj_mov_cut_id
-                                    : 'Movimientos sin corte asignado';
-                                $cj_cut_note = $cj_is_current_cut
-                                    ? 'Turno que esta abierto ahora'
-                                    : 'Los siguientes movimientos pertenecen a otro turno de caja';
-                                if ($cj_cut_date !== '') {
-                                    $cj_cut_note .= ' - ' . $cj_cut_date;
-                                }
-                                $cj_cut_chip = $cj_is_current_cut ? 'Activo' : ($cj_mov_cut_id > 0 ? 'Corte anterior' : 'Sin corte');
-                                $es_ingreso = ($mov['tipo'] ?? '') === 'ingreso';
-                                $cj_mov_categoria = strtolower(trim((string)($mov['categoria_nombre'] ?? ($mov['categoria'] ?? ''))));
-                                $cj_mov_desc = strtolower(trim((string)($mov['descripcion'] ?? '')));
-                                $es_reverso = !$es_ingreso && (
-                                    strpos($cj_mov_categoria, 'devoluc') === 0 ||
-                                    strpos($cj_mov_categoria, 'reverso anticipo') === 0 ||
-                                    strpos($cj_mov_categoria, 'reverso de anticipo') === 0 ||
-                                    strpos($cj_mov_categoria, 'reversion cobro cxc') === 0 ||
-                                    strpos($cj_mov_desc, 'reverso de anticipo') === 0 ||
-                                    strpos($cj_mov_desc, 'reversion cobro cxc') === 0
-                                );
-                                $cj_mov_label = $es_ingreso ? 'Entrada' : ($es_reverso ? 'Devuelto/cancelado' : 'Gasto');
-                                // Destino al clic: reservacion -> su detalle; pago laboral -> ficha del trabajador.
-                                $cj_mov_href = '';
-                                if (!empty($mov['reservacion_id'])) {
-                                    $cj_mov_href = url('reservaciones/ver/' . (int)$mov['reservacion_id']);
-                                } elseif (!empty($mov['trabajador_id'])) {
-                                    $cj_mov_href = url('trabajadores/' . (int)$mov['trabajador_id']);
-                                }
+                            <?php foreach ($cjGrupos as $cjGrupo):
+                                $cjMovs = $cjGrupo['movimientos'];
+                                $cjCuantos = count($cjMovs);
+                                $cjSobran = $cjGrupo['actual'] ? max(0, $cjCuantos - $cjVisiblesPorTurno) : 0;
                             ?>
-                            <?php if ($cj_cut_key !== $cj_last_cut_key): ?>
-                            <div class="cj-cut-divider<?= $cj_is_current_cut ? ' is-current' : '' ?>">
-                                <div class="cj-cut-mark" aria-hidden="true"><i class="fas fa-cash-register"></i></div>
-                                <div class="cj-cut-info">
-                                    <div class="cj-cut-eyebrow"><?= htmlspecialchars($cj_cut_eyebrow) ?></div>
-                                    <div class="cj-cut-title"><?= htmlspecialchars($cj_cut_title) ?></div>
-                                    <div class="cj-cut-note"><?= htmlspecialchars($cj_cut_note) ?></div>
-                                </div>
-                                <div class="cj-cut-chip"><?= htmlspecialchars($cj_cut_chip) ?></div>
-                            </div>
-                            <?php $cj_last_cut_key = $cj_cut_key; ?>
-                            <?php endif; ?>
-                            <div class="cj-mov<?= $cj_mov_href !== '' ? ' is-linked' : '' ?>"<?= $cj_mov_href !== '' ? ' data-href="' . htmlspecialchars($cj_mov_href, ENT_QUOTES, 'UTF-8') . '" role="link" tabindex="0" title="Abrir detalle"' : '' ?>>
-                                <div class="cj-mov-ico <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
-                                    <i class="fas fa-<?= !empty($mov['categoria_icono']) ? htmlspecialchars($mov['categoria_icono']) : ($es_ingreso ? 'plus' : 'minus') ?>"></i>
-                                </div>
-                                <div class="cj-mov-body">
-                                    <div class="cj-mov-title"><?= htmlspecialchars(cj_finance_sentence($mov['descripcion'] ?? '')) ?></div>
-                                    <div class="cj-mov-sub">
-                                        <span class="cj-badge <?= $es_ingreso ? 'income' : 'expense' ?>">
-                                            <?= $cj_mov_label ?>
-                                        </span>
-                                        <?php if (!empty($mov['categoria_nombre'])): ?>
-                                        <span><?= htmlspecialchars(cj_finance_label($mov['categoria_nombre'])) ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($mov['metodo_pago'])): ?>
-                                        <span><i class="fas fa-credit-card" style="font-size:.6rem"></i> <?= htmlspecialchars(ucfirst($mov['metodo_pago'])) ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($mov['created_at'])): ?>
-                                        <span><i class="fas fa-clock" style="font-size:.6rem"></i> <?= date('H:i', strtotime($mov['created_at'])) ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($mov['reservacion_id'])): ?>
-                                        <span>
-                                            <a href="<?= url('reservaciones/ver/' . (int)$mov['reservacion_id']) ?>"
-                                               style="color:var(--cj-blue);text-decoration:none">
-                                                Res. #<?= (int)$mov['reservacion_id'] ?>
-                                            </a>
-                                        </span>
-                                        <?php endif; ?>
+                            <details class="cj-turno<?= $cjGrupo['actual'] ? ' is-current' : '' ?>"<?= $cjGrupo['actual'] ? ' open' : '' ?>>
+                                <summary class="cj-turno-head">
+                                    <div class="cj-turno-mark" aria-hidden="true"><i class="fas fa-cash-register"></i></div>
+                                    <div class="cj-turno-info">
+                                        <div class="cj-turno-title">
+                                            <?= htmlspecialchars($cjGrupo['titulo']) ?>
+                                            <?php if ($cjGrupo['fecha_texto'] !== ''): ?>
+                                            <span class="cj-turno-when"><?= htmlspecialchars($cjGrupo['fecha_texto']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="cj-turno-sum">
+                                            <?php // De los turnos cerrados solo viaja una cola: no se anuncia como el total. ?>
+                                            <span><?= $cjCuantos ?> <?= $cjCuantos === 1 ? 'movimiento' : 'movimientos' ?><?= $cjGrupo['actual'] ? '' : ' reciente' . ($cjCuantos === 1 ? '' : 's') ?></span>
+                                            <?php // Las sumas solo se muestran del turno abierto: de los cerrados
+                                                  // aquí vive una cola, y sumarla parecería el total del turno. ?>
+                                            <?php if ($cjGrupo['actual']): ?>
+                                                <?php if ($cjGrupo['entradas']['cantidad'] > 0): ?>
+                                                <span class="is-in">Entró <b>$<?= number_format($cjGrupo['entradas']['total'], 2) ?></b></span>
+                                                <?php endif; ?>
+                                                <?php if ($cjGrupo['salidas']['cantidad'] > 0): ?>
+                                                <span class="is-out">Salió <b>$<?= number_format($cjGrupo['salidas']['total'], 2) ?></b></span>
+                                                <?php endif; ?>
+                                                <?php if ($cjGrupo['cancelaciones']['cantidad'] > 0): ?>
+                                                <span class="is-can"><?= $cjGrupo['cancelaciones']['cantidad'] ?> cancelado<?= $cjGrupo['cancelaciones']['cantidad'] === 1 ? '' : 's' ?></span>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
+                                    <div class="cj-turno-tail">
+                                        <span class="cj-turno-chip"><?= htmlspecialchars($cjGrupo['chip']) ?></span>
+                                        <i class="fas fa-chevron-right cj-turno-caret" aria-hidden="true"></i>
+                                    </div>
+                                </summary>
+                                <div class="cj-turno-body">
+                                    <?php foreach ($cjMovs as $cjIndice => $cjFila):
+                                        // Destino al clic: reservación -> su detalle; pago laboral -> ficha del trabajador.
+                                        $cjHref = '';
+                                        if ($cjFila['reservacion_id'] > 0) {
+                                            $cjHref = url('reservaciones/ver/' . $cjFila['reservacion_id']);
+                                        } elseif ($cjFila['trabajador_id'] > 0) {
+                                            $cjHref = url('trabajadores/' . $cjFila['trabajador_id']);
+                                        }
+                                        $cjEstado = $cjFila['es_cancelacion'] ? 'cancelacion' : $cjFila['flujo'];
+                                        $cjOculto = $cjSobran > 0 && $cjIndice >= $cjVisiblesPorTurno;
+                                        $cjPar = $cjFila['anulado_por']['id'] ?? ($cjFila['anula']['id'] ?? 0);
+                                    ?>
+                                    <div class="cj-mov<?= $cjHref !== '' ? ' is-linked' : '' ?><?= $cjFila['anulado'] ? ' is-anulado' : '' ?><?= $cjOculto ? ' is-oculto' : '' ?>"
+                                         data-mov="<?= $cjFila['id'] ?>"
+                                         title="<?= htmlspecialchars($cjFila['descripcion_original'], ENT_QUOTES, 'UTF-8') ?>"
+                                         <?= $cjHref !== '' ? 'data-href="' . htmlspecialchars($cjHref, ENT_QUOTES, 'UTF-8') . '" role="link" tabindex="0"' : '' ?>>
+                                        <div class="cj-mov-ico is-<?= $cjEstado ?>">
+                                            <i class="<?= htmlspecialchars($cjFila['icono']) ?>"></i>
+                                        </div>
+                                        <div class="cj-mov-body">
+                                            <div class="cj-mov-title"><?= htmlspecialchars($cjFila['titulo']) ?></div>
+                                            <?php if ($cjFila['contexto'] !== ''): ?>
+                                            <div class="cj-mov-ctx"><?= htmlspecialchars($cjFila['contexto']) ?></div>
+                                            <?php endif; ?>
+                                            <div class="cj-mov-meta">
+                                                <span class="cj-badge <?= $cjEstado ?>"><?= htmlspecialchars($cjFila['etiqueta']) ?></span>
+                                                <?php if ($cjFila['metodo'] !== ''): ?>
+                                                <span><i class="fas fa-wallet"></i> <?= htmlspecialchars($cjFila['metodo']) ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($cjFila['hora'] !== ''): ?>
+                                                <span><i class="fas fa-clock"></i> <?= htmlspecialchars($cjFila['hora']) ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($cjFila['usuario'] !== ''): ?>
+                                                <span><i class="fas fa-user"></i> <?= htmlspecialchars($cjFila['usuario']) ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($cjFila['reservacion_id'] > 0): ?>
+                                                <a class="cj-mov-link" href="<?= url('reservaciones/ver/' . $cjFila['reservacion_id']) ?>">Ver reservación</a>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if ($cjFila['nota'] !== ''): ?>
+                                            <div class="cj-mov-nota">
+                                                <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                                                <span><?= htmlspecialchars($cjFila['nota']) ?></span>
+                                                <?php if ($cjPar > 0): ?>
+                                                <button type="button" class="cj-mov-verpar" data-ver-par="<?= (int)$cjPar ?>">Ver cuál</button>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="cj-mov-amount is-<?= $cjEstado ?>">
+                                            <?= $cjFila['signo'] ?>$<?= number_format($cjFila['monto'], 2) ?>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+
+                                    <?php if ($cjSobran > 0): ?>
+                                    <button type="button" class="cj-vermas" data-ver-mas
+                                            data-mas="Ver los <?= $cjSobran ?> movimientos anteriores de este turno"
+                                            data-menos="Mostrar solo los <?= $cjVisiblesPorTurno ?> más recientes">
+                                        <i class="fas fa-chevron-down"></i>
+                                        <span>Ver los <?= $cjSobran ?> movimientos anteriores de este turno</span>
+                                    </button>
+                                    <?php endif; ?>
+
+                                    <?php if ($cjGrupo['actual'] && $cjTope > 0 && $cjTotalTurno > $cjTope): ?>
+                                    <p class="cj-feed-tope">
+                                        Se muestran los <?= $cjTope ?> más recientes de <?= $cjTotalTurno ?> movimientos del turno ·
+                                        <a class="cj-mov-link" href="<?= url('caja/movimientos') ?>">ver el libro completo</a>
+                                    </p>
+                                    <?php elseif (!$cjGrupo['actual'] && $cjGrupo['corte_id'] > 0): ?>
+                                    <p class="cj-feed-tope">
+                                        <a class="cj-mov-link" href="<?= url('caja/corte/' . $cjGrupo['corte_id']) ?>">Ver el turno completo (Corte #<?= $cjGrupo['corte_id'] ?>)</a>
+                                    </p>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="cj-mov-amount <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
-                                    <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
-                                </div>
-                            </div>
+                            </details>
                             <?php endforeach; ?>
                         </div>
                         <?php else: ?>
                         <div class="cj-empty">
                             <i class="fas fa-inbox"></i>
-                            No hay movimientos en este turno
+                            Todavía no hay movimientos en este turno
                         </div>
                         <?php endif; ?>
                     </div>
@@ -2022,6 +2105,46 @@ setInterval(function() {
         window.location.href = row.getAttribute('data-href');
     });
 })();
+
+// Feed del turno: "ver el resto" y saltar al movimiento emparejado.
+(function () {
+    document.addEventListener('click', function (e) {
+        const mas = e.target.closest && e.target.closest('[data-ver-mas]');
+        if (mas) {
+            const turno = mas.closest('.cj-turno');
+            if (!turno) return;
+            const abierto = turno.classList.toggle('is-abierto');
+            const texto = mas.querySelector('span');
+            if (texto) {
+                texto.textContent = abierto
+                    ? (mas.getAttribute('data-menos') || texto.textContent)
+                    : (mas.getAttribute('data-mas') || texto.textContent);
+            }
+            return;
+        }
+
+        const par = e.target.closest && e.target.closest('[data-ver-par]');
+        if (!par) return;
+        const id = par.getAttribute('data-ver-par');
+        const fila = document.querySelector('.cj-mov[data-mov="' + id + '"]');
+        if (!fila) return;
+
+        // El par puede estar en un turno plegado o en la parte oculta del turno.
+        const turno = fila.closest('.cj-turno');
+        if (turno) {
+            turno.open = true;
+            if (fila.classList.contains('is-oculto')) {
+                turno.classList.add('is-abierto');
+                const boton = turno.querySelector('[data-ver-mas] span');
+                const raiz = turno.querySelector('[data-ver-mas]');
+                if (boton && raiz) boton.textContent = raiz.getAttribute('data-menos') || boton.textContent;
+            }
+        }
+        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fila.classList.add('is-destacado');
+        setTimeout(function () { fila.classList.remove('is-destacado'); }, 2400);
+    });
+})();
 </script>
 
 <?php clear_old_input(); ?>
@@ -2088,36 +2211,32 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-act-btn{
     box-shadow:inset 0 1px 0 rgba(255,255,255,.32), 0 8px 16px -10px rgba(17,24,39,.4);
 }
 
-/* ── Separador de corte: tira de cristal (verde = actual, marca = anterior) ── */
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider{
+/* ── Cabecera de turno: tira de cristal (verde = abierto, marca = cerrado) ── */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-turno-head{
     background:
         radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
         linear-gradient(165deg,
             color-mix(in srgb, var(--cj-navy, #1B2746) 8%, #FFFFFF) 0%,
             color-mix(in srgb, var(--cj-navy, #1B2746) 15%, #FFFFFF) 100%);
-    border-top:1px solid color-mix(in srgb, var(--cj-navy, #1B2746) 24%, rgba(255,255,255,.9));
-    border-bottom:1px solid color-mix(in srgb, var(--cj-navy, #1B2746) 12%, rgba(17,24,39,.05));
     box-shadow:inset 0 1px 1px rgba(255,255,255,.85);
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider.is-current{
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-turno.is-current .cj-turno-head{
     background:
         radial-gradient(40% 170% at 97% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%),
         linear-gradient(165deg,
             color-mix(in srgb, var(--cj-green, #1E9E63) 12%, #FFFFFF) 0%,
             color-mix(in srgb, var(--cj-green, #1E9E63) 24%, #FFFFFF) 100%);
-    border-top-color:color-mix(in srgb, var(--cj-green, #1E9E63) 38%, rgba(255,255,255,.9));
-    border-bottom-color:color-mix(in srgb, var(--cj-green, #1E9E63) 16%, rgba(17,24,39,.05));
 }
 
-/* Chip del corte (Activo / Corte anterior): lechoso con tinta */
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-chip{
+/* Chip del turno (En curso / Cerrado): lechoso con tinta */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-turno-chip{
     background:rgba(255,255,255,.7);
     border:1px solid rgba(255,255,255,.9);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 3px rgba(17,24,39,.08);
 }
 
-html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-cut-divider.is-current .cj-cut-chip{
+html[data-tema="cupertino"]:not([data-theme="dark"]) .cj-turno.is-current .cj-turno-chip{
     background:rgba(255,255,255,.72);
     border-color:color-mix(in srgb, var(--cj-green, #1E9E63) 30%, rgba(255,255,255,.9));
     color:#15803D;

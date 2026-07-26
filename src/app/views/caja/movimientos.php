@@ -2465,7 +2465,12 @@ $balance_es_positivo = $balance_total >= 0;
                             <?php
                                 $tipo_key = $mov['tipo'] ?? 'gasto';
                                 $es_ingreso = $tipo_key === 'ingreso';
-                                $row_color = $es_ingreso ? '#16824E' : '#C24135';
+                                // Misma lectura que el panel de Caja: una devolucion se
+                                // llama "Cancelación", no "Ingreso"/"Gasto" a secas.
+                                $cash_lectura = CajaMovimientosFeed::clasificar($mov);
+                                $row_color = $cash_lectura['es_cancelacion']
+                                    ? '#B45309'
+                                    : ($es_ingreso ? '#16824E' : '#C24135');
                                 $method_key = $mov['metodo_pago'] ?? '';
                                 $method_meta = $metodos_pago[$method_key] ?? ['label' => ucfirst((string)$method_key), 'icon' => 'dollar-sign', 'color' => 'gray'];
                                 $method_color = caja_mov_method_color($method_key);
@@ -2486,8 +2491,13 @@ $balance_es_positivo = $balance_total >= 0;
                                         <i class="fas fa-arrow-<?= $es_ingreso ? 'down' : 'up' ?>"></i>
                                     </span>
                                     <div class="cash-move-description">
-                                        <strong><?= caja_mov_safe($mov['descripcion'] ?? '') ?></strong>
-                                        <span><?= caja_mov_safe($tipos[$tipo_key]['label'] ?? ucfirst((string)$tipo_key)) ?></span>
+                                        <strong><?= caja_mov_safe($cash_lectura['titulo'] ?? ($mov['descripcion'] ?? '')) ?></strong>
+                                        <span><?= caja_mov_safe($cash_lectura['etiqueta'] ?? ($tipos[$tipo_key]['label'] ?? ucfirst((string)$tipo_key))) ?></span>
+                                        <?php // El texto original se conserva cuando aporta algo que el
+                                              // titulo humano no dice (esto es un libro contable). ?>
+                                        <?php if (!empty($cash_lectura['detalle_extra'])): ?>
+                                            <span><?= caja_mov_safe($cash_lectura['detalle_extra']) ?></span>
+                                        <?php endif; ?>
                                         <?php if (!empty($mov['editado'])): ?>
                                             <span class="cash-edited-note">
                                                 <i class="fas fa-edit"></i>
@@ -2784,7 +2794,8 @@ foreach ($movimientos as $mov_det) {
     $det_es_ingreso = $det_tipo_key === 'ingreso';
     $det_metodo_key = (string)($mov_det['metodo_pago'] ?? '');
     $caja_mov_detalles[(string)($mov_det['id'] ?? '')] = [
-        'tipo' => $tipos[$det_tipo_key]['label'] ?? ucfirst((string)$det_tipo_key),
+        'tipo' => CajaMovimientosFeed::clasificar($mov_det)['etiqueta']
+            ?: ($tipos[$det_tipo_key]['label'] ?? ucfirst((string)$det_tipo_key)),
         'es_ingreso' => $det_es_ingreso,
         'monto' => ($det_es_ingreso ? '+' : '-') . caja_mov_money($mov_det['monto'] ?? 0),
         'descripcion' => trim((string)($mov_det['descripcion'] ?? '')) !== '' ? trim((string)$mov_det['descripcion']) : '-',

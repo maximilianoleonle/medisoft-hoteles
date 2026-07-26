@@ -524,13 +524,118 @@ $sql .= " ORDER BY mc.created_at $orden";
     }
     
     /**
+     * Feed de Caja del panel: TODO el turno abierto (sin recortar a 10) mas una
+     * cola de turnos anteriores.
+     *
+     * Los previos no son adorno: una cancelacion del turno de hoy puede estar
+     * deshaciendo un cobro de un corte ya cerrado (Reservacion::cancelar lo
+     * registra asi) y sin esa cola el feed no puede emparejarlos.
+     *
+     * @param int $corteId  corte abierto; 0 = sin corte, cae a los mas recientes
+     * @param int $previos  cuantos movimientos de turnos anteriores traer
+     * @param int $tope     tope duro del turno actual (red anti-lista infinita)
+     */
+    public function obtenerFeedDelTurno($corteId, $previos = 12, $tope = 400) {
+        $corteId = (int)$corteId;
+        $previos = max(0, (int)$previos);
+        $tope = max(1, (int)$tope);
+
+        if ($corteId <= 0) {
+            return $this->obtenerUltimosMovimientos($previos > 0 ? $previos : 10);
+        }
+
+        $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
+
+        // El turno abierto va COMPLETO (hasta el tope duro).
+        $stmt = $db->query(
+            $this->sqlFeedMovimientos('mc.hotel_id = ? AND mc.corte_id = ?', 'LIMIT ?'),
+            [$hotel_id, $corteId, $tope]
+        );
+        $actuales = $stmt ? $stmt->fetchAll() : [];
+
+        $anteriores = [];
+        if ($previos > 0) {
+            $stmt = $db->query(
+                $this->sqlFeedMovimientos(
+                    'mc.hotel_id = ? AND (mc.corte_id IS NULL OR mc.corte_id <> ?)',
+                    'LIMIT ?'
+                ),
+                [$hotel_id, $corteId, $previos]
+            );
+            $anteriores = $stmt ? $stmt->fetchAll() : [];
+        }
+
+        return $this->normalizarTipos(array_merge($actuales, $anteriores));
+    }
+
+    /**
+     * Cuantos movimientos tiene un corte (para avisar si el tope los recorta).
+     */
+    public function contarPorCorte($corteId) {
+        $stmt = $this->db->query(
+            "SELECT COUNT(*) AS total FROM {$this->table} WHERE hotel_id = ? AND corte_id = ?",
+            [$this->hotelIdActual(), (int)$corteId]
+        );
+        $fila = $stmt ? $stmt->fetch() : null;
+
+        return (int)($fila['total'] ?? 0);
+    }
+
+    /**
+     * SELECT compartido del feed (mismas columnas para panel y turno completo).
+     */
+    private function sqlFeedMovimientos($where, $limite) {
+        return "SELECT
+        mc.*,
+        cm.nombre as categoria_nombre,
+        cm.icono as categoria_icono,
+        cm.color as categoria_color,
+        u.nombre_completo as usuario_nombre,
+        GROUP_CONCAT(
+            CONCAT('Hab. ', hab.numero, ' - ', hab.tipo)
+            ORDER BY hab.numero
+            SEPARATOR ', '
+        ) as habitaciones_detalle,
+        tpc.trabajador_id as trabajador_id
+        FROM movimientos_caja mc
+        LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
+        LEFT JOIN usuarios u ON mc.usuario_id = u.id
+        LEFT JOIN reservacion_habitaciones rh
+            ON mc.reservacion_id = rh.reservacion_id AND rh.hotel_id = mc.hotel_id
+        LEFT JOIN habitaciones hab
+            ON rh.habitacion_id = hab.id AND hab.hotel_id = mc.hotel_id
+        LEFT JOIN trabajador_pagos_caja tpc
+            ON tpc.movimiento_caja_id = mc.id AND tpc.hotel_id = mc.hotel_id
+        WHERE {$where}
+        GROUP BY mc.id
+        ORDER BY mc.created_at DESC, mc.id DESC
+        {$limite}";
+    }
+
+    /**
+     * Normalizar tipo para la vista (egreso = gasto especial).
+     */
+    private function normalizarTipos($movimientos) {
+        foreach ($movimientos as &$mov) {
+            if (($mov['tipo'] ?? '') == 'egreso') {
+                $mov['tipo_display'] = 'egreso';
+                $mov['tipo'] = 'egreso';
+            }
+        }
+        unset($mov);
+
+        return $movimientos;
+    }
+
+    /**
      * Obtener últimos movimientos
      */
     public function obtenerUltimosMovimientos($limite = 10) {
     $db = Database::getInstance();
     $hotel_id = $this->hotelIdActual();
-    
-    $sql = "SELECT 
+
+    $sql = "SELECT
         mc.*,
         cm.nombre as categoria_nombre,
         cm.icono as categoria_icono,
