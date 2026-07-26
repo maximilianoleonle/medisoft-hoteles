@@ -423,6 +423,14 @@ class NotificacionReglasService {
     }
 
     private function moduloActivo(string $clave): bool {
+        // Se resuelve contra el hotel que recibio el servicio, NO contra el de la
+        // sesion: hotel_menu_module_enabled/current_hotel_has_module leen
+        // current_hotel_id() y en CLI (crons) o al evaluar otro hotel darian el
+        // resultado del hotel equivocado.
+        if (function_exists('hotel_has_module')) {
+            return hotel_has_module($clave, $this->hotelId);
+        }
+
         if (function_exists('hotel_menu_module_enabled')) {
             return hotel_menu_module_enabled($clave);
         }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Activos del hotel con mantenimiento preventivo (bloque mantenimiento_plus).
+ * Activos del hotel con mantenimiento preventivo (bloque mantenimiento).
  *
  * "Boiler principal: servicio cada 180 dias". El cron genera el mantenimiento
  * preventivo al vencer proximo_servicio y el cierre del mantenimiento

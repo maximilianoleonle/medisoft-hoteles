@@ -304,7 +304,7 @@ if (
     && strpos($controllerCode, "require_hotel_module('reportes')") !== false
     && strpos($controllerCode, '../views/reportes/mantenimiento.php') !== false
 ) {
-    mantPfOk('ReportesController protege mantenimiento con sesion, permisos y modulo reportes.');
+    mantPfOk('ReportesController protege el reporte basico con sesion, permisos y modulo Reportes.');
 } else {
     mantPfError('ReportesController no muestra guardas completas para mantenimiento.', 'Validar sesion, permisos, modulo reportes y vista de mantenimiento.');
 }

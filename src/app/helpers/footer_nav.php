@@ -82,14 +82,6 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'modules_any' => ['caja'],
                 'descripcion' => 'Ingresos, gastos y cortes de caja.',
             ],
-            'cuentas_por_cobrar' => [
-                'label' => 'Cuentas por cobrar',
-                'short' => 'Por cobrar',
-                'icon' => 'fa-hand-holding-dollar',
-                'path' => 'cuentas-por-cobrar',
-                'modules_any' => ['reservaciones', 'facturacion'],
-                'descripcion' => 'Saldos pendientes de huéspedes y clientes.',
-            ],
             'facturacion' => [
                 'label' => 'Facturación',
                 'short' => 'Facturas',
@@ -97,14 +89,6 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'path' => 'facturacion',
                 'modules_any' => ['facturacion'],
                 'descripcion' => 'Solicitudes y emisión de facturas.',
-            ],
-            'tareas' => [
-                'label' => 'Tareas',
-                'short' => 'Tareas',
-                'icon' => 'fa-tasks',
-                'path' => 'tareas',
-                'modules_any' => ['habitaciones', 'limpieza', 'mantenimiento'],
-                'descripcion' => 'Limpieza, mantenimiento y pendientes.',
             ],
             'inventario' => [
                 'label' => 'Inventarios',
@@ -135,7 +119,7 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'short' => 'Reportes',
                 'icon' => 'fa-chart-line',
                 'path' => 'reportes',
-                'modules_any' => ['reportes'],
+                'modules_any' => ['reporte_ingresos_egresos', 'reporte_procedencia', 'reporte_habitaciones_rentables', 'reporte_ocupacion', 'reporte_promedio_estancia', 'mantenimiento', 'camarista', 'limpieza', 'tablero_ejecutivo'],
                 'descripcion' => 'Indicadores e informes del hotel.',
             ],
             'mensajes' => [

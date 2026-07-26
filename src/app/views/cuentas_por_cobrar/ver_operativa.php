@@ -6,6 +6,7 @@ $cobroCaja = $cobroCaja ?? [];
 $cobroToken = $cobroToken ?? null;
 $reversionesCobro = $reversionesCobro ?? [];
 $reversionTokens = $reversionTokens ?? [];
+$puedeGestionarCobros = !empty($puedeGestionarCobros);
 $cxcFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 $cxcOldInput = isset($_SESSION['old_input']) && is_array($_SESSION['old_input']) ? $_SESSION['old_input'] : [];
 $movimientosCobro = array_values(array_filter($movimientos, static function ($movimiento) {
@@ -284,6 +285,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
             </section>
         <?php endif; ?>
 
+        <?php if ($puedeGestionarCobros): ?>
         <div class="cx-panel p-5">
             <h2 class="cx-panel-title mb-4">Datos de la cuenta</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -455,6 +457,8 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                 </div>
             <?php endif; ?>
         </div>
+
+        <?php endif; ?>
 
         <div class="cx-panel overflow-hidden">
             <div class="cx-panel-head">

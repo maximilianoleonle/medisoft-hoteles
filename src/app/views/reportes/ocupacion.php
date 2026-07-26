@@ -5,6 +5,7 @@ $ocupacionPorDia = $ocupacionPorDia ?? [];
 $tipo = $tipo ?? 'diario';
 $fecha_inicio = $fecha_inicio ?? date('Y-m-01');
 $fecha_fin = $fecha_fin ?? date('Y-m-d');
+$detalleEtiqueta = $tipo === 'diario' ? 'Habitaciones ocupadas' : 'Noches ocupadas';
 
 if (!function_exists('occ_safe')) {
     function occ_safe($value, $fallback = '-') {
@@ -65,7 +66,7 @@ if (!function_exists('occ_date')) {
         <section class="occ-grid">
             <article class="occ-metric"><span>Dias</span><strong><?= number_format((float)($estadisticas['dias_periodo'] ?? 0), 0) ?></strong></article>
             <article class="occ-metric"><span>Disponibles</span><strong><?= number_format((float)($estadisticas['habitaciones_disponibles'] ?? 0), 0) ?></strong></article>
-            <article class="occ-metric"><span>Noches vendidas</span><strong><?= number_format((float)($estadisticas['habitaciones_ocupadas'] ?? 0), 0) ?></strong></article>
+            <article class="occ-metric"><span>Noches ocupadas</span><strong><?= number_format((float)($estadisticas['habitaciones_ocupadas'] ?? 0), 0) ?></strong></article>
             <article class="occ-metric"><span>Ocupacion</span><strong><?= number_format((float)($estadisticas['porcentaje_ocupacion'] ?? 0), 1) ?>%</strong></article>
         </section>
 
@@ -79,7 +80,7 @@ if (!function_exists('occ_date')) {
                         <thead>
                             <tr>
                                 <th>Periodo</th>
-                                <th class="num">Habitaciones ocupadas</th>
+                                <th class="num"><?= occ_safe($detalleEtiqueta) ?></th>
                                 <th class="num">Ocupacion</th>
                             </tr>
                         </thead>
@@ -113,7 +114,7 @@ if (!function_exists('occ_date')) {
                 <div class="occ-table-wrap">
                     <table class="occ-table">
                         <thead>
-                            <tr><th>Dia</th><th class="num">Ocupadas</th><th class="num">Precio promedio</th></tr>
+                            <tr><th>Día</th><th class="num">Noches ocupadas</th><th class="num">Tarifa promedio por noche</th></tr>
                         </thead>
                         <tbody>
                         <?php foreach ($ocupacionPorDia as $row): ?>

@@ -177,8 +177,11 @@ class ReportesController extends Controller {
             exit;
         }
 
-        require_hotel_module('reportes');
-        
+        // El Centro de Reportes aparece si el hotel tiene >=1 reporte permitido
+        // (cada pantalla ademas gatea su propio modulo reporte_* o incluido).
+        // El modulo `reportes` es contenedor interno y ya no da acceso.
+        require_hotel_reports_center();
+
         // Incluir modelos necesarios
         require_once __DIR__ . '/../models/Reporte.php';
         require_once __DIR__ . '/../models/Reservacion.php';
@@ -468,7 +471,8 @@ private function condicionReversoIngresoCaja(string $alias = 'mc'): string {
 
 public function ingresosGastosAction() {
     $this->requireAuth();
-    
+    require_hotel_report('ingresos-gastos');
+
     $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
     $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
     
@@ -584,10 +588,23 @@ private function getUsuariosActivos() {
 // Método modificado para exportarPdfAction - agregar nuevos tipos
 public function exportarPdfAction() {
     $this->requireAuth();
+    // Descargar exige el bloque de exportaciones Y el reporte especifico.
     require_hotel_module('exportaciones');
-    
+
     $tipo = $this->getQuery('tipo');
-    
+
+    $pantallaPorTipo = [
+        'ingresos-gastos' => 'ingresos-gastos',
+        'ingresos-gastos-usuario' => 'ingresos-gastos',
+        'ingresos-totales' => 'ingresos-gastos',
+        'procedencia' => 'procedencia',
+        'habitaciones-rentables' => 'habitaciones-rentables',
+    ];
+
+    if (isset($pantallaPorTipo[$tipo])) {
+        require_hotel_report($pantallaPorTipo[$tipo]);
+    }
+
     switch ($tipo) {
         case 'ingresos-gastos':
             $this->exportarIngresosGastosPdf();
@@ -2254,6 +2271,7 @@ private function exportarIngresosTotalesPdf() {
  * Reporte read-only de limpieza operativa.
  */
 public function limpiezaAction() {
+    require_hotel_report('limpieza');
     $hotelId = (int)$this->hotelIdActual();
     $reporte = $this->reporteLimpiezaOperativa($hotelId);
 
@@ -2415,6 +2433,8 @@ private function tablaExisteReporte(Database $db, string $tabla): bool {
  * Preview read-only de mantenimiento programado vencido/proximo.
  */
 public function mantenimientoProgramadoAction() {
+    require_hotel_module('mantenimiento');
+
     $dias = (int)$this->getQuery('dias', 30);
     $dias = max(0, min(90, $dias));
 
@@ -2448,6 +2468,8 @@ public function mantenimientoProgramadoAction() {
  * Reporte de Mantenimiento de Habitaciones
  */
 public function mantenimientoAction() {
+    require_hotel_module('mantenimiento');
+
     $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
     $fecha_fin    = $this->getQuery('fecha_fin',    date('Y-m-d'));
     $tipo_filtro  = $this->getQuery('tipo', '');
@@ -2461,11 +2483,11 @@ public function mantenimientoAction() {
     $realizadoPorTop          = $this->reporteModel->obtenerTopResponsablesMantenimiento($fecha_inicio, $fecha_fin);
     $ultimosMantenimientos    = $this->reporteModel->obtenerRegistroMantenimientos($tipo_filtro);
 
-    // Mantenimiento Plus: costos del periodo por activo + aviso de bloque
-    // activo sin activos registrados. Defensivo: sin el bloque no consulta.
+    // Mantenimiento: costos del periodo por activo + aviso cuando aun no hay
+    // activos registrados. Defensivo: sin el bloque no consulta.
     $costosPorActivo = [];
     $activosRegistrados = null;
-    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')) {
+    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')) {
         try {
             $costosPorActivo = $this->reporteModel->obtenerCostosMantenimientoPorActivo($fecha_inicio, $fecha_fin);
             $db = Database::getInstance();
@@ -2492,6 +2514,7 @@ public function mantenimientoAction() {
      * Reporte de Procedencia de Huéspedes
      */
     public function procedenciaAction() {
+        require_hotel_report('procedencia');
         $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-d', strtotime('-1 month')));
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         
@@ -2500,6 +2523,8 @@ public function mantenimientoAction() {
         $porCiudad = $this->reporteModel->obtenerProcedenciaPorCiudad($fecha_inicio, $fecha_fin);
         $evolucionMensual = $this->reporteModel->obtenerEvolucionProcedencia($fecha_inicio, $fecha_fin);
         $porNacionalidad = $this->reporteModel->obtenerProcedenciaExtranjeros($fecha_inicio, $fecha_fin);
+        $rankingEstados = $this->reporteModel->obtenerRankingEstados($fecha_inicio, $fecha_fin);
+        $comparativaEstados = $this->reporteModel->obtenerComparativaEstados($fecha_inicio, $fecha_fin);
 
         // Top 10 estados
         $topEstados = array_slice($porEstado, 0, 10);
@@ -2511,6 +2536,8 @@ public function mantenimientoAction() {
             'porCiudad' => $porCiudad,
             'evolucionMensual' => $evolucionMensual,
             'porNacionalidad' => $porNacionalidad,
+            'rankingEstados' => $rankingEstados,
+            'comparativaEstados' => $comparativaEstados,
             'fecha_inicio' => $fecha_inicio,
             'fecha_fin' => $fecha_fin
         ]);
@@ -2520,6 +2547,7 @@ public function mantenimientoAction() {
      * Reporte de Habitaciones Rentables
      */
     public function habitacionesRentablesAction() {
+        require_hotel_report('habitaciones-rentables');
         $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         
@@ -2542,6 +2570,7 @@ public function mantenimientoAction() {
      * Reporte de Tasa de Ocupación
      */
     public function ocupacionAction() {
+        require_hotel_report('ocupacion');
         $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         $tipo = $this->getQuery('tipo', 'diario'); // diario, semanal, mensual
@@ -2579,6 +2608,7 @@ public function mantenimientoAction() {
      * Reporte de Promedio de Estancia
      */
     public function estanciaAction() {
+        require_hotel_report('estancia');
         $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         
@@ -2605,22 +2635,17 @@ public function mantenimientoAction() {
      * Reporte de Ranking de Estados
      */
     public function rankingEstadosAction() {
+        require_hotel_report('ranking-estados');
         $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
-        
-        // Obtener datos
-        $ranking = $this->reporteModel->obtenerRankingEstados($fecha_inicio, $fecha_fin);
-        $evolucion = $this->reporteModel->obtenerEvolucionEstados($fecha_inicio, $fecha_fin);
-        $comparativa = $this->reporteModel->obtenerComparativaEstados($fecha_inicio, $fecha_fin);
-        
-        View::renderTemplate('reportes/ranking-estados', [
-            'title' => 'Ranking de Estados Visitantes - ' . current_hotel_display_name(),
-            'ranking' => $ranking,
-            'evolucion' => $evolucion,
-            'comparativa' => $comparativa,
+
+        // El ranking ahora vive dentro de Procedencia. Conservamos esta ruta
+        // para no romper enlaces guardados ni accesos internos existentes.
+        $query = http_build_query([
             'fecha_inicio' => $fecha_inicio,
             'fecha_fin' => $fecha_fin
         ]);
+        $this->redirect('reportes/procedencia?' . $query . '#ranking-comparativa');
     }
     
     /**
@@ -2638,6 +2663,19 @@ public function mantenimientoAction() {
         }
         
         $tipo = $this->getQuery('tipo');
+
+        // Cada grafica pertenece a un reporte contratable: mismo gate que su
+        // pantalla (responde JSON 403 si el hotel no lo tiene).
+        $pantallaPorTipo = [
+            'ingresos-gastos' => 'ingresos-gastos',
+            'ocupacion' => 'ocupacion',
+            'procedencia' => 'procedencia',
+        ];
+
+        if (isset($pantallaPorTipo[$tipo])) {
+            require_hotel_report($pantallaPorTipo[$tipo]);
+        }
+
         $default_fecha_inicio = $tipo === 'procedencia' ? date('Y-m-d', strtotime('-1 month')) : date('Y-m-01');
         $fecha_inicio = $this->getQuery('fecha_inicio', $default_fecha_inicio);
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));

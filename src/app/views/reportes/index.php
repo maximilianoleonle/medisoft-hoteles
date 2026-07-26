@@ -1,8 +1,23 @@
 <?php
 // Centro de Reportes — rediseño boutique (Claude Design reportes.html, lenguaje Deleite Sereno).
-$repTieneDistribucion = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('reportes_distribucion');
+// Distribucion de reportes queda congelada para una posible version
+// empresarial futura. Se conserva su implementacion, pero no se ofrece.
+$repTieneDistribucion = false;
 $repTieneTablero = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('tablero_ejecutivo');
-$repAreas = 4 + ($repTieneDistribucion ? 1 : 0) + ($repTieneTablero ? 2 : 0);
+$repTieneMantenimiento = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('mantenimiento');
+// Reportes analiticos contratables individualmente: cada tarjeta aparece solo
+// si el hotel tiene su modulo reporte_* (gate de servidor en ReportesController).
+$repPuedeReporte = static function ($pantalla) {
+    return !function_exists('hotel_report_screen_allowed') || hotel_report_screen_allowed($pantalla);
+};
+$repTieneIngresos = $repPuedeReporte('ingresos-gastos');
+$repTieneProcedencia = $repPuedeReporte('procedencia');
+$repTieneRentables = $repPuedeReporte('habitaciones-rentables');
+$repTieneOcupacion = $repPuedeReporte('ocupacion');
+$repTieneEstancia = $repPuedeReporte('estancia');
+$repAreas = ($repTieneIngresos ? 1 : 0) + ($repTieneProcedencia ? 1 : 0) + ($repTieneRentables ? 1 : 0)
+    + ($repTieneOcupacion ? 1 : 0) + ($repTieneEstancia ? 1 : 0)
+    + ($repTieneMantenimiento ? 1 : 0) + ($repTieneDistribucion ? 1 : 0) + ($repTieneTablero ? 2 : 0);
 $repRol = function_exists('user_role') ? trim((string) user_role()) : '';
 if ($repRol !== '') {
     $repRol = function_exists('mb_convert_case') ? mb_convert_case($repRol, MB_CASE_TITLE, 'UTF-8') : ucfirst($repRol);
@@ -124,6 +139,7 @@ if ($repRol !== '') {
 .rp-card:nth-child(5) { animation-delay: .29s; }
 .rp-card:nth-child(6) { animation-delay: .35s; }
 .rp-card:nth-child(7) { animation-delay: .41s; }
+.rp-card:nth-child(8) { animation-delay: .47s; }
 
 .rp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .rp-ic {
@@ -275,6 +291,7 @@ if ($repRol !== '') {
         <!-- Tarjetas -->
         <div class="rp-grid">
 
+            <?php if ($repTieneIngresos): ?>
             <!-- Financiero: limpieza azul semántico -->
             <div class="rp-card" style="--cc:#2F77E0;--cb:#E6EFFC;">
                 <div class="rp-top">
@@ -293,6 +310,9 @@ if ($repRol !== '') {
                 </div>
             </div>
 
+            <?php endif; ?>
+
+            <?php if ($repTieneProcedencia): ?>
             <!-- Geográfico: verde disponible/éxito -->
             <div class="rp-card" style="--cc:#1E9E63;--cb:#E7F4EC;">
                 <div class="rp-top">
@@ -311,6 +331,9 @@ if ($repRol !== '') {
                 </div>
             </div>
 
+            <?php endif; ?>
+
+            <?php if ($repTieneRentables): ?>
             <!-- Performance: ámbar mantenimiento -->
             <div class="rp-card" style="--cc:#C2841C;--cb:#FAF0DC;">
                 <div class="rp-top">
@@ -329,7 +352,51 @@ if ($repRol !== '') {
                 </div>
             </div>
 
-            <!-- Operativo: slate ocupada -->
+            <?php endif; ?>
+
+            <?php if ($repTieneOcupacion): ?>
+            <!-- Ocupación: noches realmente ocupadas dentro del periodo -->
+            <div class="rp-card" style="--cc:#287A8C;--cb:#E5F2F4;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-gauge"/></svg></div>
+                    <span class="rp-cat">Ocupación</span>
+                </div>
+                <h3>Tasa de Ocupación</h3>
+                <p class="rp-desc">Mide las noches realmente ocupadas frente a la capacidad disponible del hotel.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Vista diaria, semanal y mensual</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Porcentaje sobre capacidad real</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Comportamiento por día de la semana</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/ocupacion') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-report"/></svg> Abrir reporte</a>
+                </div>
+            </div>
+
+            <?php endif; ?>
+
+            <?php if ($repTieneEstancia): ?>
+            <!-- Estadía: duración y comportamiento de las reservaciones -->
+            <div class="rp-card" style="--cc:#7A5FC0;--cb:#F0EBFA;">
+                <div class="rp-top">
+                    <div class="rp-ic"><svg><use href="#rp-i-cal"/></svg></div>
+                    <span class="rp-cat">Estadía</span>
+                </div>
+                <h3>Promedio de Estancia</h3>
+                <p class="rp-desc">Analiza cuántas noches permanecen los huéspedes y cómo cambia la duración de sus reservaciones.</p>
+                <ul class="rp-list">
+                    <li><svg><use href="#rp-i-check"/></svg> Promedio, mínimo y máximo</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Por tipo de habitación y procedencia</li>
+                    <li><svg><use href="#rp-i-check"/></svg> Distribución y tendencia mensual</li>
+                </ul>
+                <div class="rp-acts">
+                    <a href="<?= url('reportes/estancia') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-report"/></svg> Abrir reporte</a>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($repTieneMantenimiento): ?>
+            <!-- Operativo: mantenimiento correctivo, programado y preventivo -->
             <div class="rp-card" style="--cc:#5B6B86;--cb:#ECEFF4;">
                 <div class="rp-top">
                     <div class="rp-ic"><svg><use href="#rp-i-wrench"/></svg></div>
@@ -345,9 +412,9 @@ if ($repRol !== '') {
                 <div class="rp-acts">
                     <a href="<?= url('reportes/mantenimiento') ?>" class="rp-btn primary"><span class="rp-btn__shine" aria-hidden="true"></span><svg><use href="#rp-i-wrench"/></svg> Abrir reporte</a>
                     <a href="<?= url('reportes/mantenimiento-programado') ?>" class="rp-btn ghost"><svg><use href="#rp-i-cal"/></svg> Ver programados</a>
-                    <a href="<?= url('reportes/limpieza') ?>" class="rp-btn ghost"><svg><use href="#rp-i-broom"/></svg> Ver limpieza</a>
                 </div>
             </div>
+            <?php endif; ?>
 
             <?php if ($repTieneDistribucion): ?>
             <!-- Seguridad: cian información -->

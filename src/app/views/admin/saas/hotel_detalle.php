@@ -22,7 +22,11 @@ $modulosActivosCount = count(array_filter($modulosHotel, function ($modulo) {
     return !empty($modulo['activo_hotel']);
 }));
 $bloquesExtraActivos = count(array_filter($modulosHotel, function ($modulo) {
-    return empty($modulo['es_core']) && !empty($modulo['activo_hotel']);
+    // Solo opcionales contratables cuentan como "bloques extra" (los internos
+    // Medisoft no se venden ni se cobran).
+    return empty($modulo['es_core'])
+        && (($modulo['tipo_comercial'] ?? 'opcional') === 'opcional')
+        && !empty($modulo['activo_hotel']);
 }));
 $estadoAuditoria = $auditoriaPlan['estado'] ?? 'sin_plan';
 $estadoStyle = [
@@ -804,6 +808,36 @@ if (empty($planActual['id'])) {
         animation: none;
     }
 }
+
+/* Secciones contraibles (bloqueados/internos): mismo patron del catalogo. */
+.ms-admin-scope .ms-cat-summary {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: 1rem 1.5rem;
+    min-height: 44px;
+    cursor: pointer;
+    list-style: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.ms-admin-scope .ms-cat-summary::-webkit-details-marker { display: none; }
+.ms-admin-scope .ms-cat-summary:focus-visible {
+    outline: 2px solid var(--ms-primary);
+    outline-offset: -2px;
+    border-radius: .5rem;
+}
+.ms-admin-scope .ms-cat-summary .ms-cat-chevron {
+    margin-left: auto;
+    color: var(--ms-muted);
+    transition: transform .15s ease;
+    flex-shrink: 0;
+}
+.ms-admin-scope details[open] > .ms-cat-summary .ms-cat-chevron { transform: rotate(180deg); }
+.ms-admin-scope details[open] > .ms-cat-summary { border-bottom: 1px solid var(--ms-border); }
+@media (prefers-reduced-motion: reduce) {
+    .ms-admin-scope .ms-cat-summary .ms-cat-chevron { transition: none; }
+}
 </style>
 
 <div class="saas-hotel-detail max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1170,25 +1204,81 @@ if (empty($planActual['id'])) {
             <?php
             $precioBaseCobro = isset($resumenCobro['precio_base']) ? (float) $resumenCobro['precio_base'] : 0.0;
             $monedaHotel = $hotel['moneda_codigo'] ?? 'MXN';
-            $modulosBasicos = array_filter($modulosHotel, function ($m) { return !empty($m['es_core']); });
-            $modulosOpcionalesHotel = array_filter($modulosHotel, function ($m) { return empty($m['es_core']); });
+            // Paquete basico = tipo_comercial 'base' (los internos Medisoft son
+            // es_core pero NO se muestran como beneficio comercial del paquete).
+            $modulosBasicos = array_filter($modulosHotel, function ($m) {
+                return ($m['tipo_comercial'] ?? (empty($m['es_core']) ? 'opcional' : 'base')) === 'base';
+            });
+            // Seleccion de contratacion = solo opcionales (disponibles o
+            // bloqueados con motivo); los internos quedan fuera del form.
+            $modulosOpcionalesHotel = array_filter($modulosHotel, function ($m) {
+                return empty($m['es_core'])
+                    && (($m['tipo_comercial'] ?? 'opcional') === 'opcional');
+            });
+            $modulosInternos = array_filter($modulosHotel, function ($m) {
+                return ($m['tipo_comercial'] ?? '') === 'interno';
+            });
             ?>
 
+            <?php
+            // Subgrupos de opcionales para la jerarquia visual (solo lectura de
+            // los mismos datos). Un reporte que se desbloquee en el futuro pasa
+            // solo a "disponibles" y se vuelve contratable sin rediseño.
+            $esReporteIndividualHotel = function (array $m): bool {
+                return strpos((string) ($m['clave'] ?? ''), 'reporte_') === 0;
+            };
+            $opContratados = array_filter($modulosOpcionalesHotel, function ($m) {
+                return !empty($m['activo_global']) && !empty($m['activo_hotel']);
+            });
+            $opPorContratar = array_filter($modulosOpcionalesHotel, function ($m) {
+                return !empty($m['activo_global']) && empty($m['activo_hotel']);
+            });
+            $opReportesBloqueados = array_filter($modulosOpcionalesHotel, function ($m) use ($esReporteIndividualHotel) {
+                return empty($m['activo_global']) && $esReporteIndividualHotel($m);
+            });
+            $opBloqueados = array_filter($modulosOpcionalesHotel, function ($m) use ($esReporteIndividualHotel) {
+                return empty($m['activo_global']) && !$esReporteIndividualHotel($m);
+            });
+            $totalCobradoInicial = isset($resumenCobro['total_modulos']) ? (float) $resumenCobro['total_modulos'] : 0.0;
+            ?>
+
+            <!-- A. Resumen del cobro mensual -->
             <div class="px-6 py-4 border-b border-gray-200" style="background:rgba(37,99,235,.04);">
-                <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cobro mensual estimado</div>
+                <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
-                        <p class="text-sm font-semibold" style="color:var(--ms-text);"><i class="fas fa-lock text-xs mr-1.5" style="color:var(--ms-primary);"></i>Paquete básico — siempre incluido</p>
-                        <p class="mt-0.5 text-xs text-gray-500">Lo mínimo para operar un hotel. No se puede apagar y ya está cubierto por el precio base.</p>
+                        <div class="text-xs" style="color:var(--ms-muted);">Paquete básico</div>
+                        <div class="text-lg font-semibold" style="color:var(--ms-text);">$<span id="cobro-base"><?= number_format($precioBaseCobro, 2) ?></span></div>
                     </div>
-                    <span class="text-sm font-semibold" style="color:var(--ms-primary);">$<?= number_format($precioBaseCobro, 2) ?> / mes</span>
+                    <div>
+                        <div class="text-xs" style="color:var(--ms-muted);">Bloques contratados (<span id="cobro-conteo"><?= count($opContratados) ?></span>)</div>
+                        <div class="text-lg font-semibold" style="color:var(--ms-text);">$<span id="cobro-modulos"><?= number_format($totalCobradoInicial, 2) ?></span></div>
+                    </div>
+                    <div>
+                        <div class="text-xs" style="color:var(--ms-muted);">Total mensual</div>
+                        <div class="text-lg font-bold" style="color:var(--ms-primary);">$<span id="cobro-total"><?= number_format($precioBaseCobro + $totalCobradoInicial, 2) ?></span> <span class="text-xs font-semibold" style="color:var(--ms-muted);"><?= htmlspecialchars($monedaHotel, ENT_QUOTES, 'UTF-8') ?></span></div>
+                    </div>
                 </div>
-                <div class="mt-3 flex flex-wrap gap-1.5">
+                <p class="mt-2 text-xs" style="color:var(--ms-muted);">Se recalcula al marcar bloques o cambiar precios especiales, antes de guardar. Los módulos en pausa y las funciones internas no suman.</p>
+            </div>
+
+            <!-- B. Paquete base incluido (lectura) -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-sm font-semibold" style="color:var(--ms-text);"><i class="fas fa-lock text-xs mr-1.5" aria-hidden="true" style="color:var(--ms-primary);"></i>Paquete base — incluido</p>
+                    <span class="text-xs" style="color:var(--ms-muted);">Cubierto por el precio del paquete</span>
+                </div>
+                <ul class="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
                     <?php foreach ($modulosBasicos as $modulo): ?>
-                        <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium" style="border-color:var(--ms-border);background:#fff;color:var(--ms-text);">
-                            <?= $escapeCopy($modulo['nombre'] ?? '') ?>
-                        </span>
+                        <li class="flex items-center gap-2 rounded-lg border px-2.5 py-2" style="border-color:var(--ms-border);background:#fff;">
+                            <i class="fas fa-circle-check text-xs flex-shrink-0" aria-hidden="true" style="color:var(--ms-primary);"></i>
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-medium" style="color:var(--ms-text);"><?= $escapeCopy($modulo['nombre'] ?? '') ?></span>
+                                <span class="block text-[11px]" style="color:var(--ms-muted);">Incluido en el paquete base</span>
+                            </span>
+                        </li>
                     <?php endforeach; ?>
-                </div>
+                </ul>
             </div>
 
             <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/modulos') ?>" id="form-modulos-hotel">
@@ -1202,30 +1292,22 @@ if (empty($planActual['id'])) {
                     <div class="saas-module-search-wrap" style="max-width:24rem;">
                         <i class="fas fa-search text-xs" aria-hidden="true"></i>
                         <label for="module-search" class="sr-only">Buscar bloque</label>
-                        <input type="search" id="module-search" class="saas-module-search" placeholder="Buscar bloque por nombre o descripción" autocomplete="off">
+                        <input type="search" id="module-search" class="saas-module-search" placeholder="Buscar por nombre, clave, categoría o motivo" autocomplete="off">
                         <p class="mt-1 text-right text-[11px]" style="color:var(--ms-muted);"><span id="module-visible-count"><?= count($modulosOpcionalesHotel) ?></span> de <?= count($modulosOpcionalesHotel) ?> bloques</p>
                     </div>
                 </div>
 
-                <div class="saas-table-wrap">
-                    <table class="saas-detail-table is-responsive saas-modules-table">
-                        <thead>
-                            <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contratado</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bloque</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio de lista</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio especial</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($modulosOpcionalesHotel as $modulo): ?>
-                                <?php
-                                $globalActivo = !empty($modulo['activo_global']);
-                                $precioCatalogo = (float) ($modulo['precio_mensual'] ?? 0);
-                                $precioOverride = $modulo['precio_override'] ?? null;
-                                $precioAplicado = $precioOverride !== null && $precioOverride !== '' ? (float) $precioOverride : $precioCatalogo;
-                                ?>
-                                <tr data-module-row data-module-name="<?= htmlspecialchars(strtolower($copyVisible(($modulo['nombre'] ?? '') . ' ' . ($modulo['descripcion'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>" class="<?= $globalActivo ? '' : 'bg-gray-50 text-gray-400' ?>">
+                <?php
+                // Fila contratable (checkbox habilitado + precio especial). Se usa
+                // en "Contratados" y "Disponibles": mismo contrato del formulario.
+                $renderFilaOpcional = function (array $modulo) use ($escapeCopy, $copyVisible) {
+                    $precioCatalogo = (float) ($modulo['precio_mensual'] ?? 0);
+                    $precioOverride = $modulo['precio_override'] ?? null;
+                    $tieneOverride = $precioOverride !== null && $precioOverride !== '';
+                    $precioAplicado = $tieneOverride ? (float) $precioOverride : $precioCatalogo;
+                    $textoBusqueda = strtolower($copyVisible(($modulo['nombre'] ?? '') . ' ' . ($modulo['descripcion'] ?? '') . ' ' . ($modulo['clave'] ?? '') . ' ' . ($modulo['categoria'] ?? '')));
+                    ?>
+                                <tr data-module-row data-module-name="<?= htmlspecialchars($textoBusqueda, ENT_QUOTES, 'UTF-8') ?>">
                                     <td data-label="Contratado" class="text-sm">
                                         <input type="checkbox"
                                                name="modulos[]"
@@ -1233,15 +1315,11 @@ if (empty($planActual['id'])) {
                                                aria-label="Contratar <?= $escapeCopy($modulo['nombre'] ?? '') ?>"
                                                data-precio="<?= number_format($precioAplicado, 2, '.', '') ?>"
                                                <?= !empty($modulo['activo_hotel']) ? 'checked' : '' ?>
-                                               <?= $globalActivo ? '' : 'disabled' ?>
                                                class="modulo-toggle h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900">
                                     </td>
                                     <td data-label="Bloque" class="saas-module-name text-sm text-gray-900">
                                         <div class="flex items-center gap-2">
                                             <span class="font-medium"><?= $escapeCopy($modulo['nombre'] ?? '') ?></span>
-                                            <?php if (!$globalActivo): ?>
-                                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold" style="background:rgba(100,116,139,.10);color:var(--ms-muted);">No disponible aún</span>
-                                            <?php endif; ?>
                                         </div>
                                         <?php if (!empty($modulo['descripcion'])): ?>
                                             <div class="mt-1 text-xs text-gray-500"><?= $escapeCopy($modulo['descripcion']) ?></div>
@@ -1252,44 +1330,216 @@ if (empty($planActual['id'])) {
                                         <input type="number" step="0.01" min="0"
                                                inputmode="decimal"
                                                name="precio_override[<?= (int) $modulo['id'] ?>]"
-                                               value="<?= $precioOverride !== null && $precioOverride !== '' ? number_format((float) $precioOverride, 2, '.', '') : '' ?>"
+                                               value="<?= $tieneOverride ? number_format((float) $precioOverride, 2, '.', '') : '' ?>"
                                                placeholder="<?= number_format($precioCatalogo, 2, '.', '') ?>"
                                                data-modulo="<?= (int) $modulo['id'] ?>"
                                                data-precio-catalogo="<?= number_format($precioCatalogo, 2, '.', '') ?>"
                                                class="precio-override w-24 rounded-md border-gray-300 text-sm focus:ring-gray-900 focus:border-gray-900"
-                                               <?= $globalActivo ? '' : 'disabled' ?>>
+                                               aria-label="Precio especial de <?= $escapeCopy($modulo['nombre'] ?? '') ?>">
+                                    </td>
+                                    <td data-label="Precio aplicado" class="text-sm whitespace-nowrap">
+                                        <span class="font-semibold" style="color:var(--ms-text);" data-aplicado-de="<?= (int) $modulo['id'] ?>">$<?= number_format($precioAplicado, 2) ?></span>
+                                        <span class="block text-[11px]" style="color:var(--ms-muted);" data-aplicado-tipo-de="<?= (int) $modulo['id'] ?>"><?= $tieneOverride ? 'Precio especial' : 'Precio de lista' ?></span>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <?php
+                };
+
+                $theadOpcionales = '<thead><tr>'
+                    . '<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contratado</th>'
+                    . '<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bloque</th>'
+                    . '<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio de lista</th>'
+                    . '<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio especial</th>'
+                    . '<th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio aplicado</th>'
+                    . '</tr></thead>';
+                ?>
+
+                <!-- C. Contratados -->
+                <div class="px-6 pt-4 pb-1">
+                    <h3 class="text-sm font-semibold" style="color:var(--ms-text);">
+                        <i class="fas fa-circle-check mr-1.5 text-xs" aria-hidden="true" style="color:var(--ms-success);"></i>
+                        Contratados
+                        <span class="ml-1 font-normal" style="color:var(--ms-muted);">(<?= count($opContratados) ?>)</span>
+                    </h3>
                 </div>
+                <?php if (empty($opContratados)): ?>
+                    <div class="px-6 pb-4 text-sm text-gray-600">Este hotel aún no tiene bloques opcionales contratados.</div>
+                <?php else: ?>
+                    <div class="saas-table-wrap">
+                        <table class="saas-detail-table is-responsive saas-modules-table">
+                            <?= $theadOpcionales ?>
+                            <tbody>
+                                <?php foreach ($opContratados as $modulo) { $renderFilaOpcional($modulo); } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+
+                <!-- D. Disponibles para contratar -->
+                <div class="border-t border-gray-100 px-6 pt-4 pb-1">
+                    <h3 class="text-sm font-semibold" style="color:var(--ms-text);">
+                        <i class="fas fa-plus mr-1.5 text-xs" aria-hidden="true" style="color:var(--ms-primary);"></i>
+                        Disponibles para contratar
+                        <span class="ml-1 font-normal" style="color:var(--ms-muted);">(<?= count($opPorContratar) ?>)</span>
+                    </h3>
+                </div>
+                <?php if (empty($opPorContratar)): ?>
+                    <div class="px-6 pb-4 text-sm text-gray-600">Sin más opcionales disponibles por ahora.</div>
+                <?php else: ?>
+                    <div class="saas-table-wrap">
+                        <table class="saas-detail-table is-responsive saas-modules-table">
+                            <?= $theadOpcionales ?>
+                            <tbody>
+                                <?php foreach ($opPorContratar as $modulo) { $renderFilaOpcional($modulo); } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+
+                <!-- E. Reportes individuales (bloqueados hasta tener precio) -->
+                <?php if (!empty($opReportesBloqueados)): ?>
+                    <div class="border-t border-gray-100 px-6 pt-4 pb-1">
+                        <h3 class="text-sm font-semibold" style="color:var(--ms-text);">
+                            <i class="fas fa-chart-line mr-1.5 text-xs" aria-hidden="true" style="color:var(--ms-muted);"></i>
+                            Reportes individuales
+                            <span class="ml-1 font-normal" style="color:var(--ms-muted);">(<?= count($opReportesBloqueados) ?>)</span>
+                        </h3>
+                        <p class="mt-0.5 text-xs text-gray-500">Se contratarán por separado cuando tengan precio autorizado; hoy no suman al cobro. Ranking y comparativa de estados está incluido en Procedencia.</p>
+                    </div>
+                    <ul>
+                        <?php foreach ($opReportesBloqueados as $modulo): ?>
+                            <li class="flex flex-col gap-1.5 border-t border-gray-100 px-6 py-3 sm:flex-row sm:items-center sm:justify-between"
+                                data-module-row
+                                data-module-name="<?= htmlspecialchars(strtolower($copyVisible(($modulo['nombre'] ?? '') . ' ' . ($modulo['descripcion'] ?? '') . ' ' . ($modulo['clave'] ?? '') . ' ' . ($modulo['categoria'] ?? '') . ' ' . ($modulo['motivo_bloqueo'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-medium text-gray-700"><?= $escapeCopy($modulo['nombre'] ?? '') ?></div>
+                                    <?php if (!empty($modulo['motivo_bloqueo'])): ?>
+                                        <div class="mt-0.5 text-xs" style="color:var(--ms-warning);"><i class="fas fa-circle-info text-[10px] mr-1" aria-hidden="true"></i><?= $escapeCopy($modulo['motivo_bloqueo']) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="inline-flex w-fit flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" style="background:rgba(245,158,11,.12);color:#92400E;">
+                                    <i class="fas fa-circle-pause text-[10px]" aria-hidden="true"></i>
+                                    Pendiente de precio
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+
+                <!-- F. No disponibles todavia (contraida) -->
+                <?php if (!empty($opBloqueados)): ?>
+                    <details class="border-t border-gray-200" id="detalle-bloqueados">
+                        <summary class="ms-cat-summary">
+                            <i class="fas fa-circle-pause text-sm" aria-hidden="true" style="color:var(--ms-warning);"></i>
+                            <h3 class="min-w-0 flex-1 text-sm font-semibold" style="color:var(--ms-text);">
+                                No disponibles todavía
+                                <span class="ml-1 font-normal" style="color:var(--ms-muted);">(<?= count($opBloqueados) ?> módulos)</span>
+                                <span class="block text-xs font-normal" style="color:var(--ms-muted);">Conservan su registro y contratación histórica, pero no dan acceso ni suman al cobro.</span>
+                            </h3>
+                            <i class="fas fa-chevron-down text-xs ms-cat-chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="saas-table-wrap">
+                            <table class="saas-detail-table is-responsive saas-modules-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Módulo</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoría</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($opBloqueados as $modulo): ?>
+                                        <tr data-module-row
+                                            data-module-name="<?= htmlspecialchars(strtolower($copyVisible(($modulo['nombre'] ?? '') . ' ' . ($modulo['descripcion'] ?? '') . ' ' . ($modulo['clave'] ?? '') . ' ' . ($modulo['categoria'] ?? '') . ' ' . ($modulo['motivo_bloqueo'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>">
+                                            <td data-label="Módulo" class="saas-module-name text-sm">
+                                                <span class="font-medium text-gray-700"><?= $escapeCopy($modulo['nombre'] ?? '') ?></span>
+                                                <?php if (!empty($modulo['descripcion'])): ?>
+                                                    <div class="mt-1 text-xs text-gray-500"><?= $escapeCopy($modulo['descripcion']) ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td data-label="Categoría" class="text-sm text-gray-500"><?= $escapeCopy($modulo['categoria'] ?: '-') ?></td>
+                                            <td data-label="Estado" class="text-sm">
+                                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" style="background:rgba(100,116,139,.10);color:var(--ms-muted);">
+                                                    <i class="fas fa-circle-pause text-[10px]" aria-hidden="true"></i>
+                                                    No disponible aún
+                                                </span>
+                                                <?php if (!empty($modulo['activo_hotel'])): ?>
+                                                    <span class="mt-1 block text-[11px]" style="color:var(--ms-muted);">Contratación en pausa (se conserva)</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td data-label="Motivo" class="text-sm">
+                                                <span class="text-xs" style="color:var(--ms-warning);"><?= $escapeCopy($modulo['motivo_bloqueo'] ?? '') ?></span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                <?php endif; ?>
+
                 <div id="module-empty-search" class="saas-detail-empty-search" role="status">
                     <i class="fas fa-search mr-1.5" aria-hidden="true"></i>No hay bloques que coincidan con esa búsqueda.
+                    <button type="button" id="module-search-clear" class="ml-1 font-medium underline" style="color:var(--ms-primary);">Limpiar búsqueda</button>
                 </div>
 
                 <div class="saas-detail-panel-footer">
-                    <div class="text-sm" style="color:var(--ms-text);">
-                        <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Cobro mensual estimado</div>
-                        <div class="mt-0.5">
-                            Paquete básico $<span id="cobro-base"><?= number_format($precioBaseCobro, 2) ?></span>
-                            + bloques $<span id="cobro-modulos">0.00</span>
-                            = <span class="text-lg font-bold">$<span id="cobro-total">0.00</span> <?= htmlspecialchars($monedaHotel, ENT_QUOTES, 'UTF-8') ?></span>
-                        </div>
-                        <div class="text-xs" style="color:var(--ms-muted);">Se recalcula al activar/desactivar bloques o cambiar precios especiales. Precios editables en <a href="<?= url('admin/saas/modulos') ?>" class="underline">Bloques y precios</a>.</div>
+                    <div class="text-xs" style="color:var(--ms-muted);">
+                        El total estimado se actualiza arriba, en el resumen del cobro. Precios de lista editables en <a href="<?= url('admin/saas/modulos') ?>" class="underline">Catálogo comercial</a>.
                     </div>
-                    <button type="submit" class="saas-detail-button is-primary">
+                    <button type="submit" class="saas-detail-button is-primary" id="btn-guardar-modulos">
                         <i class="fas fa-floppy-disk text-xs" aria-hidden="true"></i>
-                        Guardar bloques y cobro
+                        <span data-texto-guardar>Guardar bloques y cobro</span>
                     </button>
                 </div>
             </form>
+
+            <!-- G. Funciones internas Medisoft (informativo, contraido) -->
+            <?php if (!empty($modulosInternos)): ?>
+                <details class="border-t border-gray-200">
+                    <summary class="ms-cat-summary">
+                        <i class="fas fa-screwdriver-wrench text-sm" aria-hidden="true" style="color:var(--ms-muted);"></i>
+                        <h3 class="min-w-0 flex-1 text-sm font-semibold" style="color:var(--ms-text);">
+                            Funciones internas Medisoft
+                            <span class="ml-1 font-normal" style="color:var(--ms-muted);">(<?= count($modulosInternos) ?>)</span>
+                            <span class="block text-xs font-normal" style="color:var(--ms-muted);">Infraestructura del sistema: sin costo para el hotel, sin contratación.</span>
+                        </h3>
+                        <i class="fas fa-chevron-down text-xs ms-cat-chevron" aria-hidden="true"></i>
+                    </summary>
+                    <ul class="divide-y divide-gray-100">
+                        <?php foreach ($modulosInternos as $modulo): ?>
+                            <li class="flex flex-col gap-1 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-medium text-gray-700"><?= $escapeCopy($modulo['nombre'] ?? '') ?></div>
+                                    <?php if (empty($modulo['activo_global']) && !empty($modulo['motivo_bloqueo'])): ?>
+                                        <div class="mt-0.5 text-xs" style="color:var(--ms-warning);"><?= $escapeCopy($modulo['motivo_bloqueo']) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="flex flex-shrink-0 items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style="background:rgba(100,116,139,.08);color:var(--ms-muted);">
+                                        <i class="fas fa-screwdriver-wrench text-[10px]" aria-hidden="true"></i>
+                                        Uso interno
+                                    </span>
+                                    <?php if (empty($modulo['activo_global'])): ?>
+                                        <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" style="background:rgba(245,158,11,.12);color:#92400E;">
+                                            <i class="fas fa-circle-pause text-[10px]" aria-hidden="true"></i>
+                                            En pausa
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
 
             <script>
             (function () {
                 var form = document.getElementById('form-modulos-hotel');
                 if (!form) return;
                 var base = <?= json_encode(round($precioBaseCobro, 2)) ?>;
+                var fmt = function (n) { return n.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
 
                 function precioDeModulo(toggle) {
                     var override = form.querySelector('.precio-override[data-modulo="' + toggle.value + '"]');
@@ -1299,12 +1549,29 @@ if (empty($planActual['id'])) {
                     return parseFloat(toggle.getAttribute('data-precio')) || 0;
                 }
 
+                // Refleja por fila el precio que aplicaria (especial o de lista).
+                function actualizarAplicadoPorFila(toggle) {
+                    var celda = document.querySelector('[data-aplicado-de="' + toggle.value + '"]');
+                    var tipo = document.querySelector('[data-aplicado-tipo-de="' + toggle.value + '"]');
+                    if (!celda) return;
+                    var override = form.querySelector('.precio-override[data-modulo="' + toggle.value + '"]');
+                    var usaEspecial = override && override.value !== '' && !isNaN(parseFloat(override.value));
+                    celda.textContent = '$' + fmt(precioDeModulo(toggle));
+                    if (tipo) tipo.textContent = usaEspecial ? 'Precio especial' : 'Precio de lista';
+                }
+
                 function recalcular() {
                     var totalModulos = 0;
-                    form.querySelectorAll('.modulo-toggle:checked:not(:disabled)').forEach(function (toggle) {
-                        totalModulos += precioDeModulo(toggle);
+                    var contratados = 0;
+                    form.querySelectorAll('.modulo-toggle:not(:disabled)').forEach(function (toggle) {
+                        actualizarAplicadoPorFila(toggle);
+                        if (toggle.checked) {
+                            totalModulos += precioDeModulo(toggle);
+                            contratados += 1;
+                        }
                     });
-                    var fmt = function (n) { return n.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}); };
+                    var conteo = document.getElementById('cobro-conteo');
+                    if (conteo) conteo.textContent = String(contratados);
                     document.getElementById('cobro-modulos').textContent = fmt(totalModulos);
                     document.getElementById('cobro-total').textContent = fmt(base + totalModulos);
                 }
@@ -1312,6 +1579,19 @@ if (empty($planActual['id'])) {
                 form.addEventListener('change', recalcular);
                 form.addEventListener('input', recalcular);
                 recalcular();
+
+                // Estado de guardado (el anti doble-submit global de app.js aplica;
+                // aqui solo se comunica visualmente el envio en curso).
+                form.addEventListener('submit', function () {
+                    var boton = document.getElementById('btn-guardar-modulos');
+                    var texto = boton ? boton.querySelector('[data-texto-guardar]') : null;
+                    if (!boton || boton.dataset.enviando === '1') return;
+                    boton.dataset.enviando = '1';
+                    boton.setAttribute('aria-busy', 'true');
+                    if (texto) texto.textContent = 'Guardando…';
+                    var icono = boton.querySelector('i.fas');
+                    if (icono) icono.className = 'fas fa-spinner fa-spin text-xs';
+                });
             })();
             </script>
         <?php endif; ?>
@@ -1701,23 +1981,40 @@ if (empty($planActual['id'])) {
     var rows = Array.prototype.slice.call(document.querySelectorAll('[data-module-row]'));
     var count = document.getElementById('module-visible-count');
     var empty = document.getElementById('module-empty-search');
+    var limpiar = document.getElementById('module-search-clear');
+    var detalleBloqueados = document.getElementById('detalle-bloqueados');
 
     function filtrar() {
         var query = input.value.trim().toLocaleLowerCase('es-MX');
         var visibles = 0;
+        var visiblesEnBloqueados = 0;
 
         rows.forEach(function (row) {
             var contenido = (row.getAttribute('data-module-name') || row.textContent || '').toLocaleLowerCase('es-MX');
             var coincide = query === '' || contenido.indexOf(query) !== -1;
             row.hidden = !coincide;
-            if (coincide) visibles += 1;
+            if (coincide) {
+                visibles += 1;
+                if (detalleBloqueados && detalleBloqueados.contains(row)) visiblesEnBloqueados += 1;
+            }
         });
+
+        // Si la búsqueda encuentra módulos dentro de la sección contraída,
+        // se abre para que el resultado sea visible.
+        if (detalleBloqueados && query !== '' && visiblesEnBloqueados > 0) {
+            detalleBloqueados.open = true;
+        }
 
         if (count) count.textContent = String(visibles);
         if (empty) empty.style.display = query !== '' && visibles === 0 ? 'block' : 'none';
     }
 
     input.addEventListener('input', filtrar);
+    if (limpiar) limpiar.addEventListener('click', function () {
+        input.value = '';
+        filtrar();
+        input.focus();
+    });
     filtrar();
 })();
 

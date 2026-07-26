@@ -158,12 +158,12 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
                 <div>
                     <p class="cx-kicker">Cobros a hu&eacute;spedes</p>
                     <h1 class="cx-title">Cuentas operativas</h1>
-                    <p class="cx-subtitle">Cuentas por cobrar ya generadas. Revisa saldo, vencimiento y entra al detalle para cobrar o auditar movimientos.</p>
+                    <p class="cx-subtitle">Historial de cuentas generadas anteriormente. Consulta saldos y movimientos; las acciones de cobro dependen del permiso asignado a tu rol.</p>
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
                 <div class="flex flex-wrap gap-2">
-                    <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-cobrar') ?>"><i class="fas fa-file-circle-plus"></i> Generar desde reservaci&oacute;n</a>
+                    <a class="cx-btn cx-btn-muted" href="<?= url('reservaciones#saldos-pendientes') ?>"><i class="fas fa-calendar-check"></i> Saldos de reservaciones</a>
                     <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-cobrar/simulador-caja') ?>"><i class="fas fa-cash-register"></i> Simulador de cobros</a>
                 </div>
             <?php endif; ?>
@@ -173,8 +173,8 @@ $saldoVencido = (float)($resumen['saldo_vencido'] ?? 0);
             <section class="cx-notice">
                 <i class="fas fa-circle-info"></i>
                 <div>
-                    <strong>Esta secci&oacute;n todav&iacute;a no est&aacute; activada.</strong>
-                    <p>P&iacute;dele al administrador del sistema que la habilite para llevar tus cuentas por cobrar.</p>
+                    <strong>El historial anterior no est&aacute; disponible en esta instalaci&oacute;n.</strong>
+                    <p>Los saldos actuales contin&uacute;an disponibles dentro de Reservaciones.</p>
                 </div>
             </section>
         <?php else: ?>

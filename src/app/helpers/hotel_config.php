@@ -334,7 +334,10 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'label' => 'Permitir notificaciones PWA',
                 'type' => 'boolean',
                 'input' => 'checkbox',
-                'default' => true,
+                // Opt-in desde 2026-07-25: Notificaciones es paquete base, asi que
+                // el modulo ya no funciona como candado. Sin este default en false,
+                // un hotel nuevo suscribiria los telefonos de su personal sin pedirlo.
+                'default' => false,
                 'grupo' => 'notificaciones',
                 'descripcion' => 'Permite que usuarios del hotel activen avisos push en sus dispositivos instalados o compatibles.',
                 'required' => false,

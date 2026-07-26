@@ -4528,7 +4528,9 @@ button.parking-more-note:hover {
                     <div class="hotel-switch">
                         <span><?= dashboard_safe($hotel_display_name, 'Medisoft Hoteles') ?></span>
                     </div>
-                    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones')): ?>
+                    <?php // Módulo + permiso: 'notificaciones' es paquete base desde 2026-07-25, el gate real es el permiso. ?>
+                    <?php if ((!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones'))
+                        && (!function_exists('can') || can('notificaciones.view'))): ?>
                     <div class="notification-bell-shell" data-notification-quick>
                         <button type="button"
                                 class="glass-button <?= $notificaciones_pendientes > 0 ? 'has-notifications' : '' ?>"

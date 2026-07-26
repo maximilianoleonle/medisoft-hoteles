@@ -18,14 +18,26 @@ class ConfiguracionController extends Controller {
      */
     protected function before() {
         $this->requireAuth();
-        
+
+        // Decision de la duena (2026-07-24): la Configuracion del sistema la
+        // manipula SOLO el equipo Medisoft (saas_admins). Gate de servidor:
+        // ocultar el enlace no basta. El branding/parametros del hotel se
+        // siguen administrando desde el Panel SaaS; los datos guardados no se
+        // tocan. Tarifas y Roles viven en sus propios controllers y siguen
+        // siendo del hotel.
+        if (!function_exists('isSaasAdmin') || !isSaasAdmin()) {
+            set_mensaje('Esta sección la administra el equipo Medisoft.', 'error');
+            $this->redirect(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard');
+            return false;
+        }
+
         // Acceso administrativo del hotel actual.
         if (!$this->puedeGestionarConfiguracionHotel()) {
             set_mensaje('No tiene permisos para acceder a esta sección', 'error');
             $this->redirect('dashboard');
             return false;
         }
-        
+
         return true;
     }
 

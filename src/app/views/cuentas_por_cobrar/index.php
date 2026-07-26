@@ -230,7 +230,7 @@ $visibles = count($cuentas);
                 <div>
                     <p class="cx-kicker">Cobros a hu&eacute;spedes</p>
                     <h1 class="cx-title ms-glass-title">Cuentas por cobrar</h1>
-                    <p class="cx-subtitle">Lo que te deben tus hu&eacute;spedes, seg&uacute;n sus reservaciones, pagos y facturas. Aqu&iacute; generas la cuenta cuando queda saldo pendiente.</p>
+                    <p class="cx-subtitle">Consulta hist&oacute;rica de cuentas generadas anteriormente. Los saldos actuales se consultan desde Reservaciones.</p>
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
@@ -342,15 +342,10 @@ $visibles = count($cuentas);
                                                     <?php if ($facturaId > 0): ?>
                                                         <a class="cx-act" href="<?= url('facturacion/ver/' . $facturaId) ?>"><i class="fas fa-file-invoice"></i> Factura</a>
                                                     <?php endif; ?>
-                                                    <?php if (!empty($cuenta['es_elegible_generacion_cxc'])): ?>
-                                                        <form method="POST" action="<?= url('cuentas-por-cobrar/generar-desde-reservacion/' . $reservacionId) ?>">
-                                                            <?= csrf_field() ?>
-                                                            <button class="cx-act cx-act-gen" type="submit" title="<?= cxc_safe($cuenta['motivo_generacion_cxc'] ?? null, 'Generar cuenta por cobrar') ?>"><i class="fas fa-file-circle-plus"></i> Generar cuenta</button>
-                                                        </form>
-                                                    <?php elseif (!empty($cuenta['cxc_operativa_id'])): ?>
+                                                    <?php if (!empty($cuenta['cxc_operativa_id'])): ?>
                                                         <a class="cx-act" href="<?= url('cuentas-por-cobrar/operativas/' . (int)$cuenta['cxc_operativa_id']) ?>"><i class="fas fa-table-list"></i> Cuenta #<?= (int)$cuenta['cxc_operativa_id'] ?></a>
                                                     <?php else: ?>
-                                                        <span class="cx-act" title="<?= cxc_safe($cuenta['motivo_bloqueo_generacion_cxc'] ?? null, 'No disponible') ?>" style="cursor:default"><i class="fas fa-ban"></i> No disponible</span>
+                                                        <a class="cx-act" href="<?= $reservacionUrl ?>"><i class="fas fa-calendar-check"></i> Ver saldo</a>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -410,15 +405,10 @@ $visibles = count($cuentas);
                                         <?php if ($facturaId > 0): ?>
                                             <a class="cx-act" href="<?= url('facturacion/ver/' . $facturaId) ?>"><i class="fas fa-file-invoice"></i> Factura</a>
                                         <?php endif; ?>
-                                        <?php if (!empty($cuenta['es_elegible_generacion_cxc'])): ?>
-                                            <form method="POST" action="<?= url('cuentas-por-cobrar/generar-desde-reservacion/' . $reservacionId) ?>">
-                                                <?= csrf_field() ?>
-                                                <button class="cx-act cx-act-gen" type="submit" title="<?= cxc_safe($cuenta['motivo_generacion_cxc'] ?? null, 'Generar cuenta por cobrar') ?>"><i class="fas fa-file-circle-plus"></i> Generar cuenta</button>
-                                            </form>
-                                        <?php elseif (!empty($cuenta['cxc_operativa_id'])): ?>
+                                        <?php if (!empty($cuenta['cxc_operativa_id'])): ?>
                                             <a class="cx-act" href="<?= url('cuentas-por-cobrar/operativas/' . (int)$cuenta['cxc_operativa_id']) ?>"><i class="fas fa-table-list"></i> Cuenta #<?= (int)$cuenta['cxc_operativa_id'] ?></a>
                                         <?php else: ?>
-                                            <span class="cx-act" title="<?= cxc_safe($cuenta['motivo_bloqueo_generacion_cxc'] ?? null, 'No disponible') ?>" style="cursor:default"><i class="fas fa-ban"></i> No disponible</span>
+                                            <a class="cx-act" href="<?= $reservacionUrl ?>"><i class="fas fa-calendar-check"></i> Ver saldo</a>
                                         <?php endif; ?>
                                     </div>
                                 </article>

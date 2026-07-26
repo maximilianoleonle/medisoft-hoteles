@@ -1040,7 +1040,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                         <i class="fas fa-list-ul"></i>
                         Ver registro
                     </a>
-                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')): ?>
                         <a href="<?= url('mantenimientos/activos') ?>" class="mant-btn is-soft">
                             <i class="fas fa-toolbox"></i>
                             Activos y preventivo
@@ -1107,11 +1107,11 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
         </section>
 
         <?php if (isset($activosRegistrados) && $activosRegistrados === 0): ?>
-        <!-- Aviso: bloque Mantenimiento Plus activo sin activos registrados -->
+        <!-- Aviso: modulo Mantenimiento activo sin activos registrados -->
         <section role="status" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#FAF0DC;border:1px solid rgba(194,132,28,.35);border-radius:14px;padding:13px 16px;">
             <i class="fas fa-triangle-exclamation" style="color:#C2841C;font-size:1.1rem;"></i>
             <div style="flex:1 1 260px;min-width:0;font-size:.86rem;color:#6B4A0E;">
-                <strong style="color:#8A5D12;font-weight:700;">Tienes Mantenimiento Plus, pero sin activos registrados.</strong>
+                <strong style="color:#8A5D12;font-weight:700;">A&uacute;n no tienes activos registrados en Mantenimiento.</strong>
                 Registra tu boiler, bombas o aires con su periodicidad y el preventivo (recordatorios, tarea y costo por activo) se programa solo.
             </div>
             <a href="<?= url('mantenimientos/activos') ?>" style="display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:11px;background:#C2841C;color:#FFF;text-decoration:none;font-weight:700;font-size:.8rem;white-space:nowrap;">
@@ -1177,11 +1177,11 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
         </section>
 
         <?php if (!empty($costosPorActivo)): ?>
-        <!-- Mantenimiento Plus: costo del periodo por activo -->
+        <!-- Mantenimiento: costo del periodo por activo -->
         <section class="mant-panel">
             <div class="mant-section-head">
                 <div>
-                    <span class="mant-section-kicker">Mantenimiento Plus</span>
+                    <span class="mant-section-kicker">Mantenimiento</span>
                     <h2>Costo del periodo por activo</h2>
                     <p>Cu&aacute;nto te ha costado cada equipo (cierres completados del periodo).</p>
                 </div>
@@ -1578,7 +1578,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                                     <th>Responsable</th>
                                     <th>Costo</th>
                                     <th>Estado</th>
-                                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                                    <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')): ?>
                                         <th></th>
                                     <?php endif; ?>
                                 </tr>
@@ -1653,7 +1653,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
                                                 <?= mant_safe($state['label']) ?>
                                             </span>
                                         </td>
-                                        <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+                                        <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')): ?>
                                             <td>
                                                 <a href="<?= url('mantenimientos/' . (int)($mantenimiento['id'] ?? 0)) ?>" class="mant-btn is-soft" title="Ver evidencia y detalle">
                                                     <i class="fas fa-camera"></i> Detalle

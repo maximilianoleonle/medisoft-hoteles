@@ -90,7 +90,9 @@ $visibles = count($documentos);
 
 // Subir es escritura: exige 'documentos.all' en DocumentoController. Sin este
 // corte el boton seguia visible para quien solo consulta y terminaba en 403.
-$puedeSubirDocumento = !function_exists('can') || can('documentos.all');
+// El listado lo ven tambien roles de solo-lectura ('documentos.view'), que NO
+// deben ver el CTA. Fail-closed: sin can() no se ofrece la escritura.
+$puedeSubirDocumento = function_exists('can') && can('documentos.all');
 ?>
 
 <style>

@@ -47,6 +47,13 @@ function nav_normalizar_ruta($ruta) {
  * el servidor luego rechazaba. Ver la cabecera de config/navegacion.php.
  */
 function nav_pantalla_visible(array $pantalla) {
+    // Pantallas exclusivas del equipo Medisoft (saas_admins): invisibles para
+    // usuarios del hotel aunque su rol tenga el permiso (p. ej. Configuracion).
+    if (!empty($pantalla['solo_medisoft'])
+        && (!function_exists('isSaasAdmin') || !isSaasAdmin())) {
+        return false;
+    }
+
     // Requisito de modulo (string o lista en OR)
     $modulos = $pantalla['modulo'] ?? null;
 

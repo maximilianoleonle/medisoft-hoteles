@@ -4,6 +4,23 @@
  */
 
 class Modulo extends Model {
+    // Dictamen del owner (2026-07-24): los bloques retirados (cuentas_cobrar)
+    // se MUESTRAN en las consultas internas del Panel Medisoft como bloqueados
+    // (activo_global=0), nunca escondidos. Su exclusion del cobro mensual se
+    // conserva por clave en resumenCobroMensual como cinturon adicional, y el
+    // sistema del hotel jamas los ve (listarActivosDeHotel filtra activo_global).
+
+    /**
+     * Clasificacion comercial (modulos.tipo_comercial). VARCHAR validado aqui
+     * (gotcha: un enum invalido no truena en MySQL).
+     * - base: incluido en el paquete basico; es_core=1, precio 0, no apagable.
+     * - opcional: contratable por hotel cuando activo_global=1.
+     * - interno: funcion Medisoft; jamas vendible, cobrable ni togglable.
+     */
+    public const TIPO_BASE = 'base';
+    public const TIPO_OPCIONAL = 'opcional';
+    public const TIPO_INTERNO = 'interno';
+
     protected $table = 'modulos';
     protected $fillable = [
         'clave',
@@ -11,15 +28,17 @@ class Modulo extends Model {
         'descripcion',
         'categoria',
         'es_core',
+        'tipo_comercial',
         'precio_mensual',
         'activo_global',
+        'motivo_bloqueo',
         'orden',
         'icono',
         'ruta_base'
     ];
 
     public function listarGlobales($soloActivos = false) {
-        $sql = "SELECT id, clave, nombre, descripcion, categoria, es_core, precio_mensual, activo_global, orden, icono, ruta_base
+        $sql = "SELECT id, clave, nombre, descripcion, categoria, es_core, tipo_comercial, precio_mensual, activo_global, motivo_bloqueo, orden, icono, ruta_base
                 FROM {$this->table}";
         $params = [];
 
@@ -41,8 +60,10 @@ class Modulo extends Model {
                     m.descripcion,
                     m.categoria,
                     m.es_core,
+                    m.tipo_comercial,
                     m.precio_mensual,
                     m.activo_global,
+                    m.motivo_bloqueo,
                     m.orden,
                     m.icono,
                     m.ruta_base,
@@ -190,7 +211,26 @@ class Modulo extends Model {
                 $this->db->safeBeginTransaction();
             }
 
-            foreach ($idsValidos as $moduloId) {
+            foreach ($modulos as $modulo) {
+                $moduloId = (int) $modulo['id'];
+
+                // Base/core: siempre activos (no se pueden apagar).
+                if (!empty($modulo['es_core'])) {
+                    if (!$this->activarModuloParaHotel($hotelId, $moduloId, $enabledBy)) {
+                        throw new Exception('No se pudo asegurar el modulo core ' . $moduloId . ' para el hotel.');
+                    }
+                    continue;
+                }
+
+                // Internos y bloqueados globalmente quedan CONGELADOS: la
+                // seleccion comercial no puede contratarlos ni apagarlos (un
+                // POST manipulado con su ID tampoco los reactiva), y su fila
+                // en hotel_modulos se conserva como historial.
+                $tipo = (string) ($modulo['tipo_comercial'] ?? self::TIPO_OPCIONAL);
+                if ($tipo !== self::TIPO_OPCIONAL || empty($modulo['activo_global'])) {
+                    continue;
+                }
+
                 $ok = isset($idsActivosLookup[$moduloId])
                     ? $this->activarModuloParaHotel($hotelId, $moduloId, $enabledBy)
                     : $this->desactivarModuloParaHotel($hotelId, $moduloId, $enabledBy);
@@ -276,7 +316,7 @@ class Modulo extends Model {
                 $stmt = $this->db->query(
                     "UPDATE {$this->table}
                      SET precio_mensual = ?, updated_at = NOW()
-                     WHERE id = ? AND es_core = 0",
+                     WHERE id = ? AND es_core = 0 AND tipo_comercial = 'opcional'",
                     [round((float) $precio, 2), $moduloId]
                 );
 
@@ -309,7 +349,9 @@ class Modulo extends Model {
                    AND hm.hotel_id = ?
                  WHERE m.activo_global = 1
                    AND m.es_core = 0
+                   AND m.tipo_comercial = 'opcional'
                    AND hm.activo = 1
+                   AND m.clave NOT IN ('cuentas_cobrar')
                  ORDER BY m.orden ASC, m.nombre ASC",
                 [$hotelId]
             );
@@ -338,6 +380,38 @@ class Modulo extends Model {
             'total_modulos' => $totalModulos,
             'total' => (float) $precioBase + $totalModulos
         ];
+    }
+
+    /**
+     * Bloqueo/desbloqueo GLOBAL de un modulo (activo_global) con motivo.
+     * Invalida el cache de modulos de TODOS los hoteles al instante para que
+     * los gates de servidor reflejen el bloqueo sin esperar el TTL de APCu.
+     * No toca hotel_modulos: las contrataciones se conservan como historial.
+     */
+    public function setActivoGlobalPorClave($clave, $activo, $motivo = null) {
+        $stmt = $this->db->query(
+            "UPDATE {$this->table}
+             SET activo_global = ?, motivo_bloqueo = ?, updated_at = NOW()
+             WHERE clave = ?",
+            [$activo ? 1 : 0, $motivo !== null ? (string) $motivo : null, (string) $clave]
+        );
+
+        if ($stmt === false) {
+            return false;
+        }
+
+        if (function_exists('ms_cache_forget')) {
+            try {
+                $hoteles = $this->query("SELECT id FROM hoteles");
+                foreach ($hoteles as $hotel) {
+                    ms_cache_forget('modulos_hotel_' . (int) $hotel['id']);
+                }
+            } catch (Throwable $e) {
+                error_log('No se pudo invalidar cache de modulos por hotel: ' . $e->getMessage());
+            }
+        }
+
+        return true;
     }
 
     private function obtenerIdPorClave($clave) {

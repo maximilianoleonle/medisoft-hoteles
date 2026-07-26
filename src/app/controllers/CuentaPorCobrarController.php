@@ -30,13 +30,8 @@ class CuentaPorCobrarController extends Controller
             require_hotel_context();
         }
 
-        if (function_exists('require_hotel_module')) {
-            require_hotel_module('cuentas_cobrar');
-        }
-
-        // Acceso base de lectura. Las acciones de dinero (registrar/revertir
-        // cobro, generar CxC) piden cuentas_por_cobrar.cobrar, configurable por
-        // rol desde el editor de roles del hotel.
+        // CxC se retiro de la oferta comercial. Este controlador permanece
+        // accesible por permiso para consultar y liquidar cuentas historicas.
         if (function_exists('require_permission')) {
             require_permission('cuentas_por_cobrar.view');
         }
@@ -46,24 +41,9 @@ class CuentaPorCobrarController extends Controller
 
     public function indexAction(): void
     {
-        $hotelId = $this->hotelIdActual();
-        $filtros = [
-            'buscar' => $this->getQuery('buscar', ''),
-            'estado_reservacion' => $this->getQuery('estado_reservacion', 'todas'),
-            'estado_saldo' => $this->getQuery('estado_saldo', 'pendiente'),
-            'vigencia' => $this->getQuery('vigencia', 'vigentes'),
-        ];
-
-        $tablaDisponible = $this->cuentaModel->tablasDisponibles();
-        $cuentas = $tablaDisponible ? $this->cuentaModel->listarDerivadasPorHotel($hotelId, $filtros, 300) : [];
-
-        View::renderTemplate('cuentas_por_cobrar/index', [
-            'title' => 'Cuentas por cobrar - ' . current_hotel_display_name(),
-            'cuentas' => $cuentas,
-            'resumen' => $this->cuentaModel->resumenPorCuentas($cuentas),
-            'filtros' => $filtros,
-            'tablaDisponible' => $tablaDisponible,
-        ]);
+        // Compatibilidad con favoritos antiguos: la portada retirada lleva al
+        // historial operativo, nunca vuelve a ofrecer saldos derivados nuevos.
+        $this->redirect('cuentas-por-cobrar/operativas');
     }
 
     public function operativasAction(): void
@@ -104,6 +84,7 @@ class CuentaPorCobrarController extends Controller
     {
         $id = (int)($this->route_params['id'] ?? 0);
         $hotelId = $this->hotelIdActual();
+        $puedeGestionarCobros = function_exists('can') && can('cuentas_por_cobrar.cobrar');
         $cuenta = $this->cuentaModel->buscarOperativaPorIdHotel($id, $hotelId);
 
         if (!$cuenta) {
@@ -120,19 +101,21 @@ class CuentaPorCobrarController extends Controller
             'monto_maximo' => '0.00',
         ];
         $cobroToken = null;
-        try {
-            $cobroCaja = $this->cobroService->evaluarCobro($hotelId, $id);
-            if (!empty($cobroCaja['elegible'])) {
-                $cobroToken = $this->generarCobroToken($id);
+        if ($puedeGestionarCobros) {
+            try {
+                $cobroCaja = $this->cobroService->evaluarCobro($hotelId, $id);
+                if (!empty($cobroCaja['elegible'])) {
+                    $cobroToken = $this->generarCobroToken($id);
+                }
+            } catch (Throwable $e) {
+                $cobroCaja['motivo_bloqueo'] = $e->getMessage();
             }
-        } catch (Throwable $e) {
-            $cobroCaja['motivo_bloqueo'] = $e->getMessage();
         }
 
         $movimientos = $this->cuentaModel->movimientosOperativosPorCuenta($id, $hotelId, 100);
         $reversionesCobro = [];
         $reversionTokens = [];
-        foreach ($movimientos as $movimiento) {
+        foreach ($puedeGestionarCobros ? $movimientos : [] as $movimiento) {
             if ((string)($movimiento['tipo_movimiento'] ?? '') !== 'COBRO') {
                 continue;
             }
@@ -165,6 +148,7 @@ class CuentaPorCobrarController extends Controller
             'cobroToken' => $cobroToken,
             'reversionesCobro' => $reversionesCobro,
             'reversionTokens' => $reversionTokens,
+            'puedeGestionarCobros' => $puedeGestionarCobros,
         ]);
     }
 
@@ -195,38 +179,6 @@ class CuentaPorCobrarController extends Controller
             'filtros' => $filtros,
             'tablaDisponible' => $tablaDisponible,
         ]);
-    }
-
-    public function generarDesdeReservacionAction(): void
-    {
-        if (function_exists('require_permission')) {
-            require_permission('cuentas_por_cobrar.cobrar');
-        }
-        if (!$this->isPost()) {
-            $this->redirect('cuentas-por-cobrar');
-            return;
-        }
-
-        $this->validateCSRF();
-
-        $reservacionId = (int)($this->route_params['id'] ?? 0);
-        try {
-            $resultado = $this->cuentaModel->generarDesdeReservacionElegible(
-                $this->hotelIdActual(),
-                $reservacionId,
-                $this->usuarioIdActual()
-            );
-
-            $cxcId = (int)($resultado['cxc_id'] ?? 0);
-            set_mensaje(
-                'Cuenta por cobrar #' . $cxcId . ' generada desde reservacion #' . $reservacionId . '.',
-                'success'
-            );
-            $this->redirect('cuentas-por-cobrar/operativas/' . $cxcId);
-        } catch (Throwable $e) {
-            set_mensaje_error_op($e, 'generar la cuenta por cobrar');
-            $this->redirect('cuentas-por-cobrar');
-        }
     }
 
     public function registrarCobroCajaAction(): void

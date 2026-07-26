@@ -212,6 +212,10 @@ class DocumentoController extends Controller
             return;
         }
 
+        // Subir/crear un documento es ESCRITURA: exige control total del modulo.
+        // documentos.view solo lee; subir con solo-lectura era un hueco de RBAC.
+        require_permission_or_403('documentos.all');
+
         $this->validateCSRF();
 
         $datos = $this->datosUpload();

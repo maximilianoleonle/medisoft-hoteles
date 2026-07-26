@@ -1,6 +1,6 @@
 <?php
 /**
- * Historial de servicios de un activo (bloque mantenimiento_plus):
+ * Historial de servicios de un activo (bloque mantenimiento):
  * fechas, fotos, costo por servicio y costo acumulado por anio.
  */
 

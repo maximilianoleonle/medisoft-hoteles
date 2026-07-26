@@ -12,7 +12,7 @@ require_once __DIR__ . '/../services/NotificacionService.php';
 require_once __DIR__ . '/../services/MantenimientoPreventivoService.php';
 
 /**
- * Detalle de mantenimiento (bloque mantenimiento_plus).
+ * Detalle de mantenimiento (bloque mantenimiento).
  *
  * El flujo correctivo basico (iniciar/finalizar desde habitaciones) NO vive
  * aqui y sigue libre; este controlador agrega la capa premium: evidencia
@@ -40,7 +40,7 @@ class MantenimientoController extends Controller
             require_hotel_context();
         }
 
-        require_hotel_module('mantenimiento_plus');
+        require_hotel_module('mantenimiento');
 
         if (function_exists('require_permission')) {
             require_permission('habitaciones.view');

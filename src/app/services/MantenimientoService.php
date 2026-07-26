@@ -418,7 +418,7 @@ class MantenimientoService
 
     /**
      * Activos preventivos ligados a mantenimientos abiertos. Si la migracion
-     * de Mantenimiento Plus no existe aun, el flujo basico sigue cerrando.
+     * de activos no existe aun, el flujo de mantenimiento sigue cerrando.
      */
     private function activosServidosEnProceso(int $hotelId, int $habitacionId): array
     {

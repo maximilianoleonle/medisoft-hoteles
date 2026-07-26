@@ -1126,7 +1126,7 @@ $estadoReservacionLabels = [
         </div>
         <div class="op-daily-alert">
             CxC es estimada y read-only. Para revisar el detalle usa
-            <a class="op-daily-link" href="<?= url('cuentas-por-cobrar') ?>">Cuentas por cobrar</a>.
+            <a class="op-daily-link" href="<?= url('reservaciones#saldos-pendientes') ?>">Saldos pendientes de reservaciones</a>.
         </div>
     </section>
 

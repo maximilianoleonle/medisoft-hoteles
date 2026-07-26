@@ -2658,7 +2658,21 @@ public function indexAction() {
     );
     $habitaciones_llegan_hoy = (int)(($stmtCuartosHoy ? $stmtCuartosHoy->fetch() : [])['total'] ?? 0);
 
-    View::renderTemplate('reservaciones/index', [
+    $saldosPendientes = [];
+    $resumenSaldosPendientes = ['total' => 0, 'saldo_estimado' => 0.0];
+    try {
+        $cuentasLectura = new CuentaPorCobrar();
+        $saldosPendientes = $cuentasLectura->listarDerivadasPorHotel($this->hotelIdActual(), [
+            'estado_reservacion' => 'todas',
+            'estado_saldo' => 'pendiente',
+            'vigencia' => 'todas',
+        ], 300);
+        $resumenSaldosPendientes = $cuentasLectura->resumenPorCuentas($saldosPendientes);
+    } catch (Throwable $errorSaldos) {
+         error_log('No se pudieron cargar los saldos pendientes de reservaciones: ' . $errorSaldos->getMessage());
+     }
+
+     View::renderTemplate('reservaciones/index', [
         'title' => 'Reservaciones - ' . current_hotel_display_name(),
         'reservaciones' => $reservaciones,
         'proximas_reservaciones' => $proximas_reservaciones,
@@ -2672,7 +2686,9 @@ public function indexAction() {
         'habitaciones_llegan_hoy' => $habitaciones_llegan_hoy,
         'checkins_pendientes' => $alertasPendientes['checkins'],
         'checkouts_vencidos' => $alertasPendientes['checkouts'],
-        'llegadas_tardias' => $alertasPendientes['llegadas_tardias']
+        'llegadas_tardias' => $alertasPendientes['llegadas_tardias'],
+        'saldos_pendientes' => $saldosPendientes,
+        'resumen_saldos_pendientes' => $resumenSaldosPendientes
     ]);
 }
 
@@ -3833,7 +3849,7 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
                 $resumenPosterior = $this->reservacionModel->resumenPagos((int)$id, (int)($reservacion['hotel_id'] ?? $this->hotelIdActual()));
                 $saldoPosterior = (float)($resumenPosterior['saldo'] ?? 0);
                 if ($saldoPosterior > 0.004) {
-                    $mensaje .= sprintf('. Saldo pendiente: $%s. Aparecera en Cuentas por cobrar.', number_format($saldoPosterior, 2));
+                    $mensaje .= sprintf('. Saldo pendiente: $%s. Puedes consultarlo en Reservaciones.', number_format($saldoPosterior, 2));
                 }
                 set_mensaje($mensaje, 'success');
                 $checkInOk = true;
@@ -4231,7 +4247,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
                 );
             } catch (Throwable $syncError) {
                 error_log('No se pudo sincronizar CxC con pago de reservacion #' . $id . ': ' . $syncError->getMessage());
-                $advertenciaCxc = ' No se pudo sincronizar CxC automaticamente; revisa Cuentas por cobrar.';
+                $advertenciaCxc = ' No se pudo actualizar el historial anterior de cobranza; revisa el detalle de la reservacion.';
             }
 
             if ($requiereFactura === 'si') {
@@ -4306,7 +4322,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
                 );
             } catch (Throwable $syncError) {
                 error_log('No se pudo restaurar CxC al revertir abono #' . $abonoId . ' de reservacion #' . $id . ': ' . $syncError->getMessage());
-                $advertenciaCxc = ' No se pudo restaurar la cuenta por cobrar automaticamente; revisa Cuentas por cobrar.';
+                $advertenciaCxc = ' No se pudo restaurar el historial anterior de cobranza; revisa el detalle de la reservacion.';
             }
 
             $advertenciaFactura = '';
@@ -4336,7 +4352,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             }
             $msg = 'Anticipo revertido correctamente.';
             if (!empty($restauracionCxc['cuentas_actualizadas'])) {
-                $msg .= ' Saldo restaurado en Cuentas por cobrar: $'
+                $msg .= ' Saldo pendiente restaurado: $'
                     . number_format((float)$restauracionCxc['monto_restaurado'], 2) . '.';
             }
             $msg .= $advertenciaCxc . $advertenciaFactura;

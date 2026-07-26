@@ -1,6 +1,6 @@
 <?php
 /**
- * Cron de mantenimiento preventivo (bloque mantenimiento_plus): recorre los
+ * Cron de mantenimiento preventivo (bloque mantenimiento): recorre los
  * hoteles con el bloque contratado y genera los mantenimientos preventivos
  * de activos vencidos (proximo_servicio <= hoy), con su tarea vinculada y
  * aviso push. Idempotente: un activo con mantenimiento abierto no genera otro.
@@ -68,14 +68,14 @@ $stmt = $db->query(
     "SELECT h.id, h.nombre
      FROM hoteles h
      INNER JOIN hotel_modulos hm ON hm.hotel_id = h.id AND hm.activo = 1
-     INNER JOIN modulos m ON m.id = hm.modulo_id AND m.clave = 'mantenimiento_plus'
+     INNER JOIN modulos m ON m.id = hm.modulo_id AND m.clave = 'mantenimiento'
      WHERE h.activo = 1
      ORDER BY h.id"
 );
 $hoteles = $stmt ? $stmt->fetchAll() : [];
 
 if (empty($hoteles)) {
-    echo "  Sin hoteles con el bloque mantenimiento_plus activo.\n";
+    echo "  Sin hoteles con el bloque mantenimiento activo.\n";
     exit;
 }
 

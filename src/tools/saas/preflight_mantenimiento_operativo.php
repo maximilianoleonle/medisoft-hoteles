@@ -168,6 +168,7 @@ $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/HabitacionController.php';
 $reportesControllerPath = $appRoot . '/app/controllers/ReportesController.php';
 $taskControllerPath = $appRoot . '/app/controllers/TareaController.php';
+$servicePath = $appRoot . '/app/services/MantenimientoService.php';
 $modelPath = $appRoot . '/app/models/Mantenimiento.php';
 $taskModelPath = $appRoot . '/app/models/TareaOperativa.php';
 $viewPath = $appRoot . '/app/views/habitaciones/ver.php';
@@ -381,6 +382,7 @@ if (mantOpRoutePatternExists($routes, '/^tareas\/desde-mantenimiento\/\{id:[^}]+
 $controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';
 $reportesControllerCode = is_file($reportesControllerPath) ? (string) file_get_contents($reportesControllerPath) : '';
 $taskControllerCode = is_file($taskControllerPath) ? (string) file_get_contents($taskControllerPath) : '';
+$serviceCode = is_file($servicePath) ? (string) file_get_contents($servicePath) : '';
 $modelCode = is_file($modelPath) ? (string) file_get_contents($modelPath) : '';
 $taskModelCode = is_file($taskModelPath) ? (string) file_get_contents($taskModelPath) : '';
 $viewCode = is_file($viewPath) ? (string) file_get_contents($viewPath) : '';
@@ -392,16 +394,21 @@ if (
     && strpos($mantBody, 'validateCSRF()') !== false
     && strpos($mantBody, "requirePermission('habitaciones.mantenimiento')") !== false
     && strpos($mantBody, "['iniciar', 'finalizar']") !== false
-    && strpos($mantBody, 'Mantenimiento::getTipos()') !== false
-    && strpos($mantBody, 'Mantenimiento::getPrioridades()') !== false
-    && strpos($mantBody, '$motivo ===') !== false
-    && strpos($mantBody, 'SELECT COUNT(*) FROM mantenimientos_habitaciones') !== false
+    && strpos($mantBody, 'MantenimientoService') !== false
+    && strpos($mantBody, 'iniciarParaHotel') !== false
+    && strpos($mantBody, 'finalizarParaHotel') !== false
+    && strpos($serviceCode, 'Mantenimiento::getTipos()') !== false
+    && strpos($serviceCode, 'Mantenimiento::getPrioridades()') !== false
+    && strpos($serviceCode, "\$motivo === ''") !== false
+    && strpos($serviceCode, 'SELECT COUNT(*) FROM mantenimientos_habitaciones') !== false
+    && strpos($serviceCode, 'WHERE id = ? AND hotel_id = ?') !== false
     && strpos($mantBody, '$hotelId') !== false
+    && strpos($serviceCode, 'movimientos_caja') === false
     && strpos($mantBody, 'movimientos_caja') === false
 ) {
-    mantOpOk('HabitacionController::mantenimientoAction tiene CSRF, permiso, validaciones, bloqueo de duplicados y hotel_id.');
+    mantOpOk('HabitacionController delega a MantenimientoService con CSRF, permiso, validaciones, bloqueo de duplicados y hotel_id.');
 } else {
-    mantOpError('HabitacionController::mantenimientoAction no muestra todas las guardas MANT-B.', 'Revisar CSRF, permiso, accion whitelist, tipo/prioridad/motivo, duplicados y hotel_id.');
+    mantOpError('HabitacionController/MantenimientoService no muestran todas las guardas MANT-B.', 'Revisar CSRF, permiso, delegacion, tipo/prioridad/motivo, duplicados y hotel_id.');
 }
 
 $programarBody = mantOpMethodBody($controllerCode, 'programarMantenimientoAction');
@@ -458,15 +465,16 @@ $activateControllerBody = mantOpMethodBody($controllerCode, 'activarMantenimient
 $activateModelBody = mantOpMethodBody($modelCode, 'activarProgramadoManual');
 if (
     $previewControllerBody !== ''
+    && strpos($previewControllerBody, "require_hotel_module('mantenimiento')") !== false
     && strpos($previewControllerBody, 'previewProgramados') !== false
     && strpos($previewControllerBody, 'TareaOperativa') !== false
     && strpos($previewControllerBody, "listarPorEntidadHotel(\$hotelId, 'mantenimiento'") !== false
     && stripos($previewControllerBody, 'activarMantenimientosPendientes') === false
     && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $previewControllerBody)
 ) {
-    mantOpOk('ReportesController::mantenimientoProgramadoAction es GET/read-only, anexa tareas MANT-G-B-A y no activa pendientes.');
+    mantOpOk('ReportesController::mantenimientoProgramadoAction exige Mantenimiento, es GET/read-only, anexa tareas y no activa pendientes.');
 } else {
-    mantOpError('ReportesController::mantenimientoProgramadoAction no muestra contrato read-only MANT-D-A/MANT-G-A.', 'Revisar previewProgramados, tareas vinculadas read-only y ausencia de escrituras.');
+    mantOpError('ReportesController::mantenimientoProgramadoAction no muestra contrato Mantenimiento/read-only MANT-D-A/MANT-G-A.', 'Revisar gate mantenimiento, previewProgramados, tareas vinculadas read-only y ausencia de escrituras.');
 }
 
 if (

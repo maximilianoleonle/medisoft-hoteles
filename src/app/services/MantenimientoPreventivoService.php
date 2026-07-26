@@ -1,6 +1,6 @@
 <?php
 /**
- * Generador de mantenimiento preventivo por activo (bloque mantenimiento_plus).
+ * Generador de mantenimiento preventivo por activo (bloque mantenimiento).
  *
  * Al vencer proximo_servicio de un activo crea el mantenimiento preventivo
  * REUTILIZANDO el flujo correctivo existente (mantenimientos_habitaciones +

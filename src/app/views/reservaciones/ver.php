@@ -1885,6 +1885,8 @@ $rdRoomCount = count($rdRooms);
 $rdRoomCountLabel = $rdRoomCount . ' habitacion' . ($rdRoomCount === 1 ? '' : 'es');
 $rdPayments = is_array($pagos ?? null) ? $pagos : [];
 $rdNotes = is_array($notas ?? null) ? $notas : [];
+$rdDocumentosActivo = function_exists('hotel_menu_module_enabled')
+    && hotel_menu_module_enabled('documentos');
 $rdDocuments = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 $rdGuestDocuments = is_array($documentosHuesped ?? null) ? $documentosHuesped : [];
 $rdDocsContext = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
@@ -4602,10 +4604,12 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                             </div>
                         </section>
 
+                        <?php if ($rdDocumentosActivo): ?>
                         <?php View::partial('documentos_entidad', [
                             'documentosEntidad' => $documentosEntidad ?? [],
                             'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
                         ]); ?>
+                        <?php endif; ?>
                     </div>
 
                     <aside class="rdv3-right" aria-label="Panel lateral de reservacion">
@@ -5512,6 +5516,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
     </div>
 </div>
 <!-- ── Lightbox del documento del huésped (ver imagen sin salir de la vista) ── -->
+<?php if ($rdDocumentosActivo): ?>
 <div id="rdv3DocLightbox" class="rdv3-doc-lightbox" hidden role="dialog" aria-modal="true" aria-label="Documento del huesped en pantalla completa">
     <figure class="rdv3-doc-lightbox-frame">
         <img id="rdv3DocLightboxImg" src="" alt="" draggable="false" oncontextmenu="return false;">
@@ -5593,6 +5598,7 @@ document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape') rdv3CerrarDocLightbox();
 });
 </script>
+<?php endif; ?>
 <script>
 function mostrarAvisoReservacion(mensaje, tipo = 'info', duracion = 5200) {
     let aviso = document.getElementById('rdv3InlineToast');

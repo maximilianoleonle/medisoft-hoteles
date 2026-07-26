@@ -416,9 +416,15 @@ class PwaPushService {
             return false;
         }
 
+        // OPT-IN (2026-07-25): el fallback es false a proposito. hotel_config_get
+        // devuelve el $default que se le PASA aqui; NO consulta el 'default' del
+        // catalogo de helpers/hotel_config.php. Con true, un hotel sin fila (uno
+        // creado despues de la migracion 20260725_001) suscribia los telefonos de
+        // su personal sin que nadie lo pidiera, porque 'notificaciones' ya es
+        // paquete base y no hay 403 que lo frene. Encenderlo es decision del hotel.
         return function_exists('hotel_config_get')
-            ? (bool)hotel_config_get('notificaciones.pwa_push_activo', true, $hotelId)
-            : true;
+            ? (bool)hotel_config_get('notificaciones.pwa_push_activo', false, $hotelId)
+            : false;
     }
 
     private function estaConfigurado(): bool {

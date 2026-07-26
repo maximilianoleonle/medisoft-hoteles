@@ -1,6 +1,6 @@
 <?php
 /**
- * Detalle de mantenimiento (bloque mantenimiento_plus).
+ * Detalle de mantenimiento (bloque mantenimiento).
  * Mobile-first: quien lo usa esta frente al problema con el celular.
  */
 

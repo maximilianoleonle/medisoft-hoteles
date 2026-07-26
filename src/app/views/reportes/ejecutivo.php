@@ -380,8 +380,8 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
     <div class="exec-metrics">
         <div class="exec-metric"><span>Ingresos</span><strong><?= exec_money($resumen['ingresos_periodo'] ?? 0) ?></strong><small><?= exec_safe($filtros['fecha_desde'] ?? '') ?> a <?= exec_safe($filtros['fecha_hasta'] ?? '') ?></small></div>
         <div class="exec-metric"><span>Gastos</span><strong><?= exec_money($resumen['gastos_periodo'] ?? 0) ?></strong><small>Neto <?= exec_money($resumen['neto_periodo'] ?? 0) ?></small></div>
-        <div class="exec-metric"><span>Por cobrar (CxC)</span><strong><?= exec_money($resumen['saldo_cxc'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxc_pendientes'] ?? 0) ?> cuentas</small></div>
-        <div class="exec-metric"><span>Por pagar (CxP)</span><strong><?= exec_money($resumen['saldo_cxp'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxp_pendientes'] ?? 0) ?> cuentas</small></div>
+        <div class="exec-metric"><span>Saldos pendientes</span><strong><?= exec_money($resumen['saldo_cxc'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxc_pendientes'] ?? 0) ?> reservaciones</small></div>
+        <div class="exec-metric"><span>CxP pendiente</span><strong><?= exec_money($resumen['saldo_cxp'] ?? 0) ?></strong><small><?= exec_num($finanzas['cxp_pendientes'] ?? 0) ?> cuentas</small></div>
         <div class="exec-metric"><span>Ocupacion</span><strong><?= exec_pct($operacion['ocupacion_pct'] ?? 0) ?></strong><small><?= exec_num($operacion['habitaciones_ocupadas'] ?? 0) ?> de <?= exec_num($operacion['habitaciones_total'] ?? 0) ?> habitaciones</small></div>
         <div class="exec-metric"><span>Alertas</span><strong><?= exec_num(($totalesAlertas['warning'] ?? 0) + ($totalesAlertas['error'] ?? 0)) ?></strong><small><?= $schemaOk ? 'Información completa' : 'Faltan algunos datos' ?></small></div>
     </div>
@@ -437,7 +437,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Advertencias', '
                 </div>
                 <div class="exec-panel-body">
                     <div class="exec-stat-grid">
-                        <div class="exec-stat"><span>CxC vencidas</span><strong><?= exec_num($finanzas['cxc_vencidas'] ?? 0) ?></strong></div>
+                        <div class="exec-stat"><span>Saldos atrasados</span><strong><?= exec_num($finanzas['cxc_vencidas'] ?? 0) ?></strong></div>
                         <div class="exec-stat"><span>CxP vencidas</span><strong><?= exec_num($finanzas['cxp_vencidas'] ?? 0) ?></strong></div>
                         <div class="exec-stat"><span>Cortes abiertos</span><strong><?= exec_num($resumen['cortes_abiertos'] ?? 0) ?></strong></div>
                         <div class="exec-stat"><span>Cortes con diferencia</span><strong><?= exec_num($finanzas['cortes_con_diferencia'] ?? 0) ?></strong></div>

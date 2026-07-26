@@ -3,6 +3,8 @@ $porEstado = $porEstado ?? [];
 $topEstados = $topEstados ?? array_slice($porEstado, 0, 10);
 $porCiudad = $porCiudad ?? [];
 $evolucionMensual = $evolucionMensual ?? [];
+$rankingEstados = $rankingEstados ?? [];
+$comparativaEstados = $comparativaEstados ?? [];
 $fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-d', strtotime('-1 month'));
 $fecha_fin = !empty($fecha_fin) ? $fecha_fin : date('Y-m-d');
 
@@ -916,6 +918,45 @@ foreach ($porEstado as $estadoDato) {
     max-height: 460px;
 }
 
+.geo-ranking-comparison-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr);
+    gap: 18px;
+    margin-bottom: 18px;
+    scroll-margin-top: 24px;
+}
+
+.geo-ranking-comparison-grid .geo-section {
+    min-width: 0;
+}
+
+.geo-ranking-comparison-grid .geo-table {
+    min-width: 760px;
+}
+
+.geo-ranking-comparison-grid .geo-comparison-table {
+    min-width: 520px;
+}
+
+.geo-trend-value {
+    font-weight: 800;
+    color: var(--geo-text);
+}
+
+.geo-trend-value.is-positive {
+    color: #18794e;
+}
+
+.geo-trend-value.is-negative {
+    color: #b42318;
+}
+
+@media (max-width: 980px) {
+    .geo-ranking-comparison-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .geo-progress {
     height: 7px;
     margin-top: 6px;
@@ -1355,6 +1396,105 @@ foreach ($porEstado as $estadoDato) {
                     <div class="geo-chart-box">
                         <canvas id="graficaEvolucion"></canvas>
                     </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="geo-ranking-comparison-grid" id="ranking-comparativa" aria-labelledby="ranking-comparativa-title">
+            <article class="geo-section">
+                <div class="geo-section-head">
+                    <div>
+                        <span class="geo-section-kicker">Detalle geográfico</span>
+                        <h2 id="ranking-comparativa-title">Ranking y comparativa</h2>
+                    </div>
+                    <span class="geo-label"><?= number_format(count($rankingEstados)) ?> estados</span>
+                </div>
+                <div class="geo-section-body">
+                    <?php if (!empty($rankingEstados)): ?>
+                        <div class="geo-table-wrap" tabindex="0" aria-label="Ranking completo de estados">
+                            <table class="geo-table">
+                                <thead>
+                                    <tr>
+                                        <th>Estado</th>
+                                        <th>Huéspedes</th>
+                                        <th>Reservaciones</th>
+                                        <th>Ingresos</th>
+                                        <th>Ticket promedio</th>
+                                        <th>Estancia prom.</th>
+                                        <th>% total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($rankingEstados as $estado): ?>
+                                        <tr>
+                                            <td><strong><?= proc_geo_safe($estado['estado'] ?? 'Sin estado') ?></strong></td>
+                                            <td><?= number_format((float)($estado['total_huespedes'] ?? 0), 0) ?></td>
+                                            <td><?= number_format((float)($estado['total_reservaciones'] ?? 0), 0) ?></td>
+                                            <td><?= proc_geo_money($estado['ingresos_totales'] ?? 0) ?></td>
+                                            <td><?= proc_geo_money($estado['ticket_promedio'] ?? 0) ?></td>
+                                            <td><?= number_format((float)($estado['estancia_promedio'] ?? 0), 1) ?> noches</td>
+                                            <td><?= number_format((float)($estado['porcentaje_del_total'] ?? 0), 1) ?>%</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="geo-empty">
+                            <div>
+                                <i class="fas fa-ranking-star"></i>
+                                <p>No hay datos suficientes para generar el ranking en este periodo.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="geo-section">
+                <div class="geo-section-head">
+                    <div>
+                        <span class="geo-section-kicker">Cambio de demanda</span>
+                        <h3>Contra el periodo anterior</h3>
+                    </div>
+                    <span class="geo-label">Reservaciones</span>
+                </div>
+                <div class="geo-section-body">
+                    <?php if (!empty($comparativaEstados)): ?>
+                        <div class="geo-table-wrap" tabindex="0" aria-label="Comparativa de estados contra el periodo anterior">
+                            <table class="geo-table geo-comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th>Estado</th>
+                                        <th>Actual</th>
+                                        <th>Anterior</th>
+                                        <th>Variación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($comparativaEstados as $estado): ?>
+                                        <?php $variacion = (float)($estado['variacion_porcentaje'] ?? 0); ?>
+                                        <tr>
+                                            <td><strong><?= proc_geo_safe($estado['estado'] ?? 'Sin estado') ?></strong></td>
+                                            <td><?= number_format((float)($estado['total_actual'] ?? 0), 0) ?></td>
+                                            <td><?= number_format((float)($estado['total_anterior'] ?? 0), 0) ?></td>
+                                            <td>
+                                                <span class="geo-trend-value <?= $variacion > 0 ? 'is-positive' : ($variacion < 0 ? 'is-negative' : '') ?>">
+                                                    <?= $variacion > 0 ? '+' : '' ?><?= number_format($variacion, 1) ?>%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="geo-empty">
+                            <div>
+                                <i class="fas fa-chart-line"></i>
+                                <p>No hay un periodo anterior comparable con los filtros seleccionados.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </article>
         </section>

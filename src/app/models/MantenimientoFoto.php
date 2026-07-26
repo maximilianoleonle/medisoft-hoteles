@@ -1,6 +1,6 @@
 <?php
 /**
- * Modelo de evidencia fotografica de mantenimientos (bloque mantenimiento_plus).
+ * Modelo de evidencia fotografica de mantenimientos (bloque mantenimiento).
  *
  * Calca el patron de subida de uploads/habitaciones (mismas validaciones de
  * tipo/tamano y optimizacion GD), con nombres prefijados por hotel y limite

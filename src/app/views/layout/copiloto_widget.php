@@ -70,7 +70,6 @@ $copOpcionales = [
     'nomina_avanzada' => ['nomina' => $copU('nomina')],
     'compras' => ['compras' => $copU('compras')],
     'facturacion' => ['facturacion' => $copU('facturacion')],
-    'cuentas_cobrar' => ['cuentas por cobrar' => $copU('cuentas-por-cobrar')],
     'documentos' => ['documentos' => $copU('documentos')],
     'tarifas_dinamicas' => ['precios y temporadas' => $copU('configuracion/tarifas'), 'tarifas dinamicas' => $copU('configuracion/tarifas')],
     'checkin_digital' => ['check-in digital' => $copU('checkin-digital')],

@@ -51,6 +51,7 @@ try {
                 cxc.saldo,
                 cxc.estado,
                 cxc.total,
+                cxc.fecha_vencimiento,
                 cc.id AS corte_id
          FROM cuentas_por_cobrar cxc
          INNER JOIN cortes_caja cc
@@ -85,6 +86,14 @@ try {
     $hotelId = (int)$cuenta['hotel_id'];
     $saldoAntes = (string)$cuenta['saldo'];
     $estadoAntes = (string)$cuenta['estado'];
+    $saldoAntesFloat = (float)$saldoAntes;
+    $totalAntesFloat = (float)$cuenta['total'];
+    $fechaVencimientoAntes = trim((string)($cuenta['fecha_vencimiento'] ?? ''));
+    $estadoSemanticoEsperado = $saldoAntesFloat <= 0.004
+        ? 'liquidada'
+        : (($fechaVencimientoAntes !== '' && $fechaVencimientoAntes < date('Y-m-d'))
+            ? 'vencida'
+            : ($saldoAntesFloat >= $totalAntesFloat - 0.004 ? 'pendiente' : 'parcial'));
 
     $cxcMovsAntes = cxcReversalCountRows($pdo, 'cuentas_por_cobrar_movimientos');
     $cobrosAntes = cxcReversalCountRows($pdo, 'cuentas_por_cobrar_movimientos', "tipo_movimiento = 'COBRO'");
@@ -146,8 +155,12 @@ try {
             throw new RuntimeException('No se registro auditoria dentro de la transaccion.');
         }
 
-        if ((float)$saldoDurante !== (float)$saldoAntes || (string)$estadoDurante !== $estadoAntes) {
-            throw new RuntimeException('El saldo/estado dentro de la transaccion no regreso al valor inicial tras cobrar y revertir.');
+        if ((float)$saldoDurante !== (float)$saldoAntes || (string)$estadoDurante !== $estadoSemanticoEsperado) {
+            throw new RuntimeException(
+                'El saldo/estado dentro de la transaccion no regreso al valor semantico esperado tras cobrar y revertir. '
+                . 'Antes=' . $saldoAntes . '/' . $estadoAntes
+                . ', despues=' . (string)$saldoDurante . '/' . (string)$estadoDurante . '.'
+            );
         }
 
         if ($tipoCobroDurante !== 'COBRO') {
@@ -170,7 +183,7 @@ try {
             ], 1);
             throw new RuntimeException('La doble reversion fue aceptada indebidamente.');
         } catch (Throwable $duplicado) {
-            if (strpos($duplicado->getMessage(), 'reversion') === false) {
+            if (stripos($duplicado->getMessage(), 'revert') === false) {
                 throw $duplicado;
             }
             cxcReversalTestLine('OK', 'Doble reversion bloqueada limpiamente dentro de la transaccion.');

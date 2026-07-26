@@ -28,10 +28,6 @@ class TareaController extends Controller
             require_hotel_context();
         }
 
-        if (function_exists('require_hotel_module')) {
-            require_hotel_module('tareas');
-        }
-
         if (function_exists('require_permission')) {
             require_permission('habitaciones.view');
         }
@@ -41,22 +37,8 @@ class TareaController extends Controller
 
     public function indexAction(): void
     {
-        $hotelId = $this->hotelIdActual();
-        $tablaDisponible = $this->tareaModel->tablaDisponible();
-        $trabajadorActual = $tablaDisponible ? $this->trabajadorActualParaHotel($hotelId) : null;
-        $filtroPersonalAuto = false;
-        $filtros = $this->filtrosIndexTareas($trabajadorActual, $filtroPersonalAuto);
-
-        View::renderTemplate('tareas/index', [
-            'title' => 'Tareas operativas - ' . current_hotel_display_name(),
-            'tareas' => $tablaDisponible ? $this->tareaModel->listarPorHotel($hotelId, $filtros, 200) : [],
-            'resumen' => $tablaDisponible ? $this->tareaModel->resumenPorHotel($hotelId) : $this->resumenVacio(),
-            'filtros' => $filtros,
-            'trabajadores' => $tablaDisponible ? $this->tareaModel->trabajadoresActivosOpciones($hotelId) : [],
-            'trabajadorActual' => $trabajadorActual,
-            'filtroPersonalAuto' => $filtroPersonalAuto,
-            'tablaDisponible' => $tablaDisponible,
-        ]);
+        set_mensaje('La seccion independiente de Tareas no esta disponible.', 'error');
+        $this->redirect('dashboard');
     }
 
     public function reporteAction(): void
@@ -511,7 +493,7 @@ class TareaController extends Controller
 
     private function documentosDeTarea(int $tareaId, int $hotelId): array
     {
-        if ($tareaId <= 0 || $hotelId <= 0) {
+        if ($tareaId <= 0 || $hotelId <= 0 || !documentos_entidad_visible()) {
             return [];
         }
 

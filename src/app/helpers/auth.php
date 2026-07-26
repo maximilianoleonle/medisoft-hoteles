@@ -378,7 +378,7 @@ function primary_landing_route() {
     $candidatas = [
         ['camarista',             'camarista',          ['camarista.view', 'tareas.view']],
         ['tareas',                'tareas',             ['tareas.view']],
-        ['mantenimientos/activos','mantenimiento_plus', ['tareas.view', 'habitaciones.mantenimiento']],
+        ['mantenimientos/activos','mantenimiento', ['tareas.view', 'habitaciones.mantenimiento']],
         ['habitaciones',          'habitaciones',       ['habitaciones.view']],
         ['reservaciones',         'reservaciones',      ['reservaciones.view']],
         ['huespedes',             'huespedes',          ['huespedes.view']],

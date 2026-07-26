@@ -168,12 +168,25 @@ grupo de rutas) DEBE integrarse a este sistema. No hay features "sueltas".
 Checklist obligatorio para implementar algo nuevo:
 
 1. **Registrar el bloque en el catálogo** (migración SQL):
-   `INSERT INTO modulos (clave, nombre, descripcion, categoria, orden, icono, ruta_base, precio_mensual)`.
-   - `es_core = 0` salvo decisión explícita del owner. Los core actuales son:
-     dashboard, habitaciones, reservaciones, huespedes, caja, usuarios, configuracion.
+   `INSERT INTO modulos (clave, nombre, descripcion, categoria, orden, icono, ruta_base, precio_mensual, tipo_comercial, activo_global, motivo_bloqueo)`.
+   - Declarar SIEMPRE `tipo_comercial` ('base'|'opcional'|'interno'; default
+     'opcional') y `activo_global` (0 = bloqueado con `motivo_bloqueo` visible
+     en el panel; un bloque nuevo SIN precio autorizado por la dueña nace en 0).
+   - `es_core = 0` salvo decisión explícita del owner. El paquete base actual
+     (10 bloques, jul-25-2026): dashboard, habitaciones, reservaciones,
+     huespedes, caja, usuarios, roles_avanzados ("Roles y permisos"),
+     mantenimiento, notificaciones y pwa. Internos no vendibles:
+     configuracion, anticipos, reportes (contenedor del centro).
+   - PROMOVER un opcional a base no es solo el UPDATE de catálogo: actualizar
+     `$BASE` del verificador (lista exacta, si no falla), revisar los crons que
+     filtran por `INNER JOIN hotel_modulos` (es_core no crea filas → dejan fuera
+     a todos los hoteles) y darle a la pantalla su permiso propio, porque el
+     módulo deja de ser el candado.
    - Poner precio default; será editable en `/admin/saas/modulos`.
    - Si el bloque reemplaza algo que ya era visible, activarlo retroactivamente
      en hoteles existentes (`fuente = 'migracion'`) para no cambiar comportamiento.
+   - Verificar el catálogo tras la migración:
+     `docker exec medisoft_hoteles_app php /var/www/html/tools/saas/verificar_clasificacion_comercial.php`.
 
 2. **Gate de servidor**: en el `before()` del controlador (o al inicio de la
    acción) llamar `require_hotel_module('clave')`. Para endpoints JSON usar

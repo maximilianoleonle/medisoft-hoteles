@@ -205,7 +205,7 @@ if (!function_exists('sidebar_novedades')) {
         // Lavanderia: pedidos de huesped activos (recibidos, en proceso o listos por entregar).
         $count('lavanderia', 'lavanderia_pedidos', "estado IN ('recibido', 'en_proceso', 'listo')", []);
         // Mantenimiento preventivo por atender: activos vencidos o por vencer
-        // en 7 dias (bloque mantenimiento_plus; sin tabla no hay burbuja).
+        // en 7 dias (bloque mantenimiento; sin tabla no hay burbuja).
         $count('mantenimientos/activos', 'activos_hotel', "activo = 1 AND proximo_servicio IS NOT NULL AND proximo_servicio <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)", []);
         // Cuentas por pagar pendientes.
         $count('cuentas-por-pagar', 'cuentas_por_pagar', "estado IN ('pendiente', 'parcial', 'vencida')", []);
@@ -264,8 +264,14 @@ if (!function_exists('sidebar_novedades')) {
             }
         }
 
-        // Notificaciones sin leer (respeta rol/usuario via el modelo).
-        if (_sidebar_novedades_tabla_existe($db, 'notificaciones')) {
+        // Notificaciones sin leer (respeta rol/usuario via el modelo). El gate de
+        // modulo va explicito por simetria con canal_whatsapp: hoy 'notificaciones'
+        // es paquete base y siempre pasa, pero si algun dia se revirtiera, sin esta
+        // linea la burbuja seguiria contando avisos de un bloque apagado.
+        if (
+            _sidebar_novedades_tabla_existe($db, 'notificaciones')
+            && (!function_exists('hotel_has_module') || hotel_has_module('notificaciones', $hotelId))
+        ) {
             try {
                 require_once APP_PATH . '/models/Notificacion.php';
                 $resumen = (new Notificacion())->resumenPorHotel(

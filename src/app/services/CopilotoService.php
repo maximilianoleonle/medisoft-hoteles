@@ -67,7 +67,7 @@ class CopilotoService
         'cupones_activos' => ['Cupones activos', '¿Qué cupones tengo activos?', 'promociones'],
         'inventario_bajo' => ['Por agotarse', '¿Qué productos están por agotarse?', 'inventario'],
         'cxp_debo' => ['¿Cuánto debo?', '¿Cuánto debo a proveedores?', 'compras'],
-        'cxc_deben' => ['¿Quién me debe?', '¿Quién me debe?', 'cuentas_cobrar'],
+        'cxc_deben' => ['¿Quién me debe?', '¿Quién me debe?', 'reservaciones'],
         'nomina_periodo' => ['Nómina del periodo', '¿Cuánto es la nómina de este periodo?', 'nomina_avanzada'],
     ];
 
@@ -651,10 +651,10 @@ class CopilotoService
         if ($tiene(['esta semana', 'proximos dias', 'fin de semana', 'ocupacion de la semana', 'como pinta la semana', 'proximos 7'])) {
             return 'ocupacion_semana';
         }
-        // Mantenimiento Plus: va ANTES que 'habitaciones_estado' para que
+        // Mantenimiento: va ANTES que 'habitaciones_estado' para que
         // "que mantenimientos vienen" no caiga en el estado de cuartos.
         if (($tiene(['que mantenimientos vienen', 'mantenimientos que vienen', 'proximos mantenimientos', 'mantenimientos proximos', 'mantenimiento preventivo', 'preventivos', 'que servicios vienen', 'proximos servicios', 'servicio del boiler', 'vence el boiler', 'mantenimientos pendientes', 'incidencias abiertas']))
-            && $this->tieneModulo('mantenimiento_plus', $hotelId)) {
+            && $this->tieneModulo('mantenimiento', $hotelId)) {
             return 'mantenimientos_proximos';
         }
         if ($tiene(['mantenimiento', 'habitaciones sucias', 'en limpieza', 'fuera de servicio', 'cuartos sucios', 'estado de las habitaciones', 'estado de habitaciones'])) {
@@ -687,8 +687,7 @@ class CopilotoService
             && $this->tieneModulo('compras', $hotelId)) {
             return 'cxp_debo';
         }
-        if (($tiene(['quien me debe', 'quienes me deben', 'me deben', 'cuanto me deben', 'por cobrar', 'deudas de clientes']))
-            && $this->tieneModulo('cuentas_cobrar', $hotelId)) {
+        if ($tiene(['quien me debe', 'quienes me deben', 'me deben', 'cuanto me deben', 'por cobrar', 'deudas de clientes'])) {
             return 'cxc_deben';
         }
         if (($tiene(['nomina del periodo', 'cuanto de nomina', 'cuanto llevo de nomina', 'total de nomina', 'nomina de este periodo', 'cuanto es la nomina', 'cuanto pago de nomina']))
@@ -1262,13 +1261,13 @@ class CopilotoService
             case 'cxc_deben':
                 $cxc = $this->porCobrar($hotelId);
                 if ($cxc['n'] === 0) {
-                    return ['texto' => 'Nadie te debe ahorita; no tienes cuentas por cobrar pendientes. ✔', 'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ver cuentas por cobrar']];
+                    return ['texto' => 'No hay reservaciones con saldo pendiente en este momento. ✔', 'enlace' => ['url' => 'reservaciones#saldos-pendientes', 'texto' => 'Ver reservaciones']];
                 }
                 $vtxtC = $cxc['vencidas'] > 0 ? " ({$cxc['vencidas']} vencida(s))" : '';
                 return [
-                    'texto' => "Te deben **\${$cxc['saldo']}** en **{$cxc['n']} cuenta(s) por cobrar**{$vtxtC}.",
-                    'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ver cuentas por cobrar'],
-                    'acciones' => [['label' => 'Ver quien te debe', 'url' => 'cuentas-por-cobrar']],
+                    'texto' => "Hay **\${$cxc['saldo']}** pendientes en **{$cxc['n']} reservacion(es)**{$vtxtC}.",
+                    'enlace' => ['url' => 'reservaciones#saldos-pendientes', 'texto' => 'Ver saldos pendientes'],
+                    'acciones' => [['label' => 'Ver quien debe', 'url' => 'reservaciones#saldos-pendientes']],
                 ];
 
             case 'nomina_periodo':
@@ -1780,7 +1779,7 @@ class CopilotoService
             return null;
         }
 
-        // Mismo permiso que gatea el modulo de tareas operativas.
+        // Mismo permiso que protege la infraestructura de tareas operativas.
         if (function_exists('can') && !can('habitaciones.view')) {
             return ['intent' => 'accion:limpieza_perm', 'respuesta' => [
                 'texto' => 'Tu rol no tiene permiso para programar limpiezas. Pidele el acceso a tu gerente.',
@@ -4838,7 +4837,7 @@ class CopilotoService
     }
 
     /**
-     * Mantenimiento Plus: proximos preventivos (vencidos o en 30 dias) e
+     * Mantenimiento: proximos preventivos (vencidos o en 30 dias) e
      * incidencias abiertas. Defensivo: sin las tablas del bloque no truena.
      */
     private function mantenimientosProximos(int $hotelId): array
@@ -5095,7 +5094,7 @@ class CopilotoService
         return ['n' => $n, 'saldo' => number_format($saldo, 2), 'vencidas' => $venc];
     }
 
-    /** Saldo pendiente por cobrar a clientes (bloque cuentas_cobrar). */
+    /** Saldo pendiente calculado desde reservaciones, pagos y anticipos. */
     private function porCobrar(int $hotelId): array
     {
         $n = 0;
@@ -5103,16 +5102,45 @@ class CopilotoService
         $venc = 0;
         try {
             $stmt = $this->pdo->prepare(
-                "SELECT COUNT(*) n, COALESCE(SUM(saldo), 0) saldo, SUM(estado = 'vencida') venc
-                 FROM cuentas_por_cobrar WHERE hotel_id = ? AND estado IN ('pendiente', 'parcial', 'vencida')"
+                "SELECT COUNT(*) AS n,
+                        COALESCE(SUM(x.saldo), 0) AS saldo,
+                        COALESCE(SUM(x.fecha_salida < CURDATE()), 0) AS venc
+                 FROM (
+                    SELECT r.fecha_salida,
+                           GREATEST(r.precio_total
+                               - COALESCE(p.total, 0)
+                               - COALESCE(a.total, 0)
+                               - GREATEST(COALESCE(cxc.total, 0), 0), 0) AS saldo
+                    FROM reservaciones r
+                    LEFT JOIN (
+                        SELECT reservacion_id, SUM(monto) AS total
+                        FROM reservacion_pagos WHERE hotel_id = ? GROUP BY reservacion_id
+                    ) p ON p.reservacion_id = r.id
+                    LEFT JOIN (
+                        SELECT reservacion_id, SUM(monto) AS total
+                        FROM reservacion_abonos WHERE hotel_id = ? GROUP BY reservacion_id
+                    ) a ON a.reservacion_id = r.id
+                    LEFT JOIN (
+                        SELECT COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END) AS reservacion_id,
+                               SUM(CASE WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                                        WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto ELSE 0 END) AS total
+                        FROM cuentas_por_cobrar c
+                        INNER JOIN cuentas_por_cobrar_movimientos m
+                            ON m.cuenta_por_cobrar_id = c.id AND m.hotel_id = c.hotel_id
+                        WHERE c.hotel_id = ?
+                        GROUP BY COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END)
+                    ) cxc ON cxc.reservacion_id = r.id
+                    WHERE r.hotel_id = ? AND r.estado NOT IN ('cancelada', 'cancelado')
+                 ) x
+                 WHERE x.saldo > 0.004"
             );
-            $stmt->execute([$hotelId]);
+            $stmt->execute([$hotelId, $hotelId, $hotelId, $hotelId]);
             $f = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $n = (int) ($f['n'] ?? 0);
             $saldo = (float) ($f['saldo'] ?? 0);
             $venc = (int) ($f['venc'] ?? 0);
         } catch (Throwable $e) {
-            error_log('Copiloto: error cxc: ' . $e->getMessage());
+            error_log('Copiloto: error saldos de reservaciones: ' . $e->getMessage());
         }
         return ['n' => $n, 'saldo' => number_format($saldo, 2), 'vencidas' => $venc];
     }
@@ -5229,7 +5257,7 @@ class CopilotoService
              'palabras' => ['como veo mi inventario', 'cuanto stock tengo', 'como registro un movimiento de inventario', 'existencias', 'productos del inventario'],
              'texto' => 'En **Inventario** ves tus productos, existencias y movimientos. Ahí registras entradas, salidas y ajustes, y el sistema te alerta cuando algo baja del mínimo.',
              'enlace' => ['url' => 'inventario', 'texto' => 'Ir a Inventario']],
-            ['clave' => 'tareas', 'modulo' => 'tareas', 'nombre' => 'Tareas operativas',
+            ['clave' => 'tareas', 'modulo' => null, 'nombre' => 'Tareas operativas',
              'palabras' => ['como creo una tarea', 'asignar una tarea', 'tareas del personal', 'pendientes del equipo'],
              'texto' => 'En **Tareas** creas pendientes operativos y los asignas a tu personal (limpieza, mantenimiento, encargos). Cada quien ve su agenda y va marcando avance.',
              'enlace' => ['url' => 'tareas', 'texto' => 'Ir a Tareas']],
@@ -5243,12 +5271,12 @@ class CopilotoService
              'enlace' => ['url' => 'compras', 'texto' => 'Ir a Compras']],
             ['clave' => 'facturacion', 'modulo' => 'facturacion', 'nombre' => 'Facturación',
              'palabras' => ['como facturo', 'solicitud de factura', 'el huesped quiere factura', 'datos fiscales'],
-             'texto' => 'En **Facturación** llevas las solicitudes de factura de tus huéspedes: capturas datos fiscales, marcas en proceso y completas cuando emites la factura.',
-             'enlace' => ['url' => 'facturacion', 'texto' => 'Ir a Facturación']],
-            ['clave' => 'cxc', 'modulo' => 'cuentas_cobrar', 'nombre' => 'Crédito a clientes (CxC)',
-             'palabras' => ['cuentas por cobrar', 'credito a un cliente', 'quien me debe', 'cobrar una deuda'],
-             'texto' => 'En **Cuentas por cobrar** ves los créditos a clientes y registras sus cobros a Caja, con reversión controlada si algo se capturó mal.',
-             'enlace' => ['url' => 'cuentas-por-cobrar', 'texto' => 'Ir a CxC']],
+              'texto' => 'En **Facturación** llevas las solicitudes de factura de tus huéspedes: capturas datos fiscales, marcas en proceso y completas cuando emites la factura.',
+              'enlace' => ['url' => 'facturacion', 'texto' => 'Ir a Facturación']],
+             ['clave' => 'cxc', 'modulo' => 'reservaciones', 'nombre' => 'Saldos pendientes',
+              'palabras' => ['cuentas por cobrar', 'credito a un cliente', 'quien me debe', 'cobrar una deuda'],
+              'texto' => 'En **Reservaciones** ves los saldos pendientes calculados con el total de la estancia, sus pagos y anticipos.',
+              'enlace' => ['url' => 'reservaciones#saldos-pendientes', 'texto' => 'Ver saldos pendientes']],
             ['clave' => 'documentos', 'modulo' => 'documentos', 'nombre' => 'Centro documental',
              'palabras' => ['donde subo documentos', 'guardar un documento', 'archivos del hotel', 'centro documental'],
              'texto' => 'En **Documentos** guardas los archivos del hotel (contratos, identificaciones, evidencias) ligados a huéspedes, reservaciones o personal, con descarga segura.',
@@ -5749,7 +5777,6 @@ class CopilotoService
             'nomina_avanzada' => "- Nomina avanzada (calculo del periodo, prenomina y recibos): seccion Nomina.",
             'compras' => "- Compras, proveedores y cuentas por pagar: seccion Compras.",
             'facturacion' => "- Solicitudes de factura de huespedes: seccion Facturacion.",
-            'cuentas_cobrar' => "- Credito a clientes y sus cobros: seccion Cuentas por cobrar.",
             'documentos' => "- Archivos del hotel ligados a huespedes/reservas/personal: seccion Documentos.",
             'tarifas_dinamicas' => "- Precios por temporada o dia de la semana: Configuracion > Precios y temporadas.",
             'checkin_digital' => "- Pre-registro del huesped antes de llegar (link con token): seccion Check-in digital.",

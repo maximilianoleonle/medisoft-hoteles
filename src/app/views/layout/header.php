@@ -1161,10 +1161,13 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
         <!-- Acciones: notificaciones + sync + install -->
         <div class="mobile-header-actions" style="display:flex;align-items:center;gap:6px;">
             <?php
-            // Campana de notificaciones: mismo gating por módulo que la sidebar
-            // y misma fuente del conteo (sidebar_novedades, cacheado en sesión).
+            // Campana de notificaciones: mismo gating por módulo Y permiso que la
+            // sidebar y misma fuente del conteo (sidebar_novedades, cacheado en
+            // sesión). El permiso es obligatorio desde que 'notificaciones' es
+            // paquete base: el módulo ya no esconde la campana de ningún rol.
             $headerBellVisible = $layoutOfflineHoteleroActivo
-                && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones'));
+                && (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('notificaciones'))
+                && (!function_exists('can') || can('notificaciones.view'));
             $headerBellCount = 0;
             if ($headerBellVisible && $layoutPathSegment !== 'notificaciones') {
                 require_once APP_PATH . '/helpers/sidebar_novedades.php';

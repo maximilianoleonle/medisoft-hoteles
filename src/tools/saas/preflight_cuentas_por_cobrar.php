@@ -417,10 +417,10 @@ if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/simulador-caja', 'get')) {
     cxcPfError('No esta registrada GET /cuentas-por-cobrar/simulador-caja.', 'Registrar solo ruta GET/read-only para 7B-D-A.');
 }
 
-if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}', 'post')) {
-    cxcPfOk('Ruta generacion CxC registrada: POST /cuentas-por-cobrar/generar-desde-reservacion/{id}.');
+if (!cxcPfRouteExists($routes, 'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}', 'post')) {
+    cxcPfOk('Retiro seguro: no existe una ruta para generar nuevas CxC.');
 } else {
-    cxcPfError('No esta registrada POST /cuentas-por-cobrar/generar-desde-reservacion/{id}.', 'Registrar la ruta POST controlada para 7B-C-A.');
+    cxcPfError('La ruta de generacion CxC sigue activa.', 'Retirar el POST; los saldos nuevos viven en Reservaciones.');
 }
 
 if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja', 'post')) {
@@ -436,7 +436,6 @@ if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas/{id:[0-9]+}/movimie
 }
 
 $allowedCxcPostRoutes = [
-    'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}',
     'cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja',
     'cuentas-por-cobrar/operativas/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-cobro-caja',
 ];
@@ -483,7 +482,7 @@ if (
     && strpos($modelCode, 'AuditService::record') !== false
     && !cxcPfContainsForbiddenWrites($modelCode)
 ) {
-    cxcPfOk('Modelo CxC deriva por hotel, lee base operativa y genera CxC manual sin escrituras sensibles.');
+    cxcPfOk('Modelo CxC conserva lectura y compatibilidad transaccional del historial anterior.');
 } else {
     cxcPfError('Modelo CxC no cumple contrato 7B-C-A.', 'Revisar CuentaPorCobrar.php: solo debe insertar CxC, movimiento CxC y auditoria.');
 }
@@ -491,16 +490,15 @@ if (
 if (
     $controllerCode !== ''
     && strpos($controllerCode, 'require_hotel_context') !== false
-    && strpos($controllerCode, "require_hotel_module('reservaciones')") !== false
     && strpos($controllerCode, 'indexAction') !== false
     && strpos($controllerCode, 'operativasAction') !== false
     && strpos($controllerCode, 'verOperativaAction') !== false
     && strpos($controllerCode, 'simuladorCajaAction') !== false
-    && strpos($controllerCode, 'generarDesdeReservacionAction') !== false
+    && strpos($controllerCode, 'generarDesdeReservacionAction') === false
     && strpos($controllerCode, 'registrarCobroCajaAction') !== false
     && strpos($controllerCode, 'revertirCobroCajaAction') !== false
     && strpos($controllerCode, 'validateCSRF') !== false
-    && strpos($controllerCode, 'generarDesdeReservacionElegible') !== false
+    && strpos($controllerCode, 'generarDesdeReservacionElegible') === false
     && strpos($controllerCode, 'simuladorCajaCliente') !== false
     && strpos($controllerCode, 'registrarCobro') !== false
     && strpos($controllerCode, 'revertirCobro') !== false
@@ -511,9 +509,9 @@ if (
     && strpos($controllerCode, "require_hotel_module('caja')") !== false
     && !cxcPfContainsForbiddenWrites($controllerCode)
 ) {
-    cxcPfOk('Controller CxC expone GET protegidos, generacion manual, cobro y reversion Caja con CSRF/token.');
+    cxcPfOk('Controller CxC conserva historia protegida, sin generacion nueva, y permite liquidar cuentas anteriores.');
 } else {
-    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, modulo reservaciones, CSRF, tokens y Caja solo en POST controlados.');
+    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, ausencia de generacion nueva y Caja solo en POST historicos controlados.');
 }
 
 if (
@@ -559,9 +557,7 @@ if (
 if (
     $viewCode !== ''
     && strpos($viewCode, 'method="GET"') !== false
-    && strpos($viewCode, 'method="POST"') !== false
-    && strpos($viewCode, 'csrf_field()') !== false
-    && strpos($viewCode, 'generar-desde-reservacion') !== false
+    && strpos($viewCode, 'generar-desde-reservacion') === false
     && (
         stripos($viewCode, 'saldo estimado') !== false
         || stripos($viewCode, 'Saldo por cobrar') !== false
@@ -570,7 +566,7 @@ if (
     && strpos($viewCode, 'registrar-cobro-caja') === false
     && strpos($viewCode, 'movimientos_caja') === false
 ) {
-    cxcPfOk('Vista CxC conserva filtro GET y agrega POST con CSRF para generacion manual.');
+    cxcPfOk('Vista CxC conserva consulta historica y no permite generar cuentas nuevas.');
 } else {
     cxcPfWarning('Vista CxC no muestra contrato 7B-C-A completo.', 'Revisar texto, formularios y CSRF.');
 }
@@ -579,8 +575,8 @@ if (
     $operativasViewCode !== ''
     && strpos($operativasViewCode, 'method="GET"') !== false
     && (
-        stripos($operativasViewCode, 'Solo lectura') !== false
-        || stripos($operativasViewCode, 'Los cobros se registran desde el detalle') !== false
+        stripos($operativasViewCode, 'Historial de cuentas generadas anteriormente') !== false
+        || stripos($operativasViewCode, 'acciones de cobro dependen del permiso') !== false
     )
     && strpos($operativasViewCode, 'registrar-cobro-caja') === false
     && strpos($operativasViewCode, 'method="POST"') === false
@@ -603,9 +599,10 @@ if (
     && strpos($operativaDetailViewCode, 'revertir-cobro-caja') !== false
     && strpos($operativaDetailViewCode, 'reversion_token') !== false
     && (
-        strpos($operativaDetailViewCode, 'Reversion de cobros') !== false
-        || strpos($operativaDetailViewCode, 'Revertir un cobro') !== false
+        strpos($operativaDetailViewCode, 'Revertir cobros registrados') !== false
+        || strpos($operativaDetailViewCode, 'Revertir este cobro') !== false
     )
+    && strpos($operativaDetailViewCode, 'if ($puedeGestionarCobros)') !== false
 ) {
     cxcPfOk('Detalle CxC operativa integra cobro y reversion Caja con POST, CSRF y token.');
 } else {
@@ -628,10 +625,10 @@ if (
     cxcPfWarning('Vista simulador Caja CxC requiere revision manual.', 'Asegurar GET/read-only, sin POST y sin cobros reales.');
 }
 
-if ($sidebarCode !== '' && strpos($sidebarCode, 'cuentas-por-cobrar') !== false) {
-    cxcPfOk('Sidebar enlaza CxC read-only.');
+if ($sidebarCode !== '' && strpos($sidebarCode, '$mostrarCuentasPorCobrar = false') !== false) {
+    cxcPfOk('Sidebar oculta CxC como modulo comercial.');
 } else {
-    cxcPfWarning('Sidebar no enlaza CxC.', 'Agregar navegacion solo si es segura para el hotel.');
+    cxcPfWarning('No se confirmo el retiro de CxC en sidebar.', 'Mantener oculto el acceso comercial y preservar rutas historicas.');
 }
 
 if (

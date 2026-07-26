@@ -2271,7 +2271,7 @@ private function guardarFotosReporteMantenimientoPlus(int $hotelId, int $manteni
         return '';
     }
 
-    if (!function_exists('current_hotel_has_module') || !current_hotel_has_module('mantenimiento_plus')) {
+    if (!function_exists('current_hotel_has_module') || !current_hotel_has_module('mantenimiento')) {
         return '';
     }
 

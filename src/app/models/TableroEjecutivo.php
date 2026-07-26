@@ -224,6 +224,8 @@ class TableroEjecutivo extends Model
         $tablas = [
             'hoteles',
             'reservaciones',
+            'reservacion_pagos',
+            'reservacion_abonos',
             'reservacion_habitaciones',
             'habitaciones',
             'tipos_habitacion',
@@ -290,16 +292,9 @@ class TableroEjecutivo extends Model
             $resumen['neto_periodo'] = $resumen['ingresos_periodo'] - $resumen['gastos_periodo'];
         }
 
-        if ($fuentes['cuentas_por_cobrar'] ?? false) {
-            $row = $this->fetchOne(
-                "SELECT COALESCE(SUM(saldo), 0) AS saldo
-                 FROM cuentas_por_cobrar
-                 WHERE hotel_id = ?
-                   AND saldo > 0
-                   AND estado NOT IN ('pagada', 'liquidada', 'cancelada', 'incobrable')",
-                [$hotelId]
-            );
-            $resumen['saldo_cxc'] = (float)($row['saldo'] ?? 0);
+        if (($fuentes['reservaciones'] ?? false) && ($fuentes['reservacion_pagos'] ?? false) && ($fuentes['reservacion_abonos'] ?? false)) {
+            $saldosReservaciones = $this->resumenSaldosReservaciones($hotelId);
+            $resumen['saldo_cxc'] = (float)$saldosReservaciones['saldo'];
         }
 
         if ($fuentes['cuentas_por_pagar'] ?? false) {
@@ -393,19 +388,10 @@ class TableroEjecutivo extends Model
     {
         $finanzas = $this->finanzasBase();
 
-        if ($fuentes['cuentas_por_cobrar'] ?? false) {
-            $row = $this->fetchOne(
-                "SELECT
-                    COUNT(*) AS pendientes,
-                    SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURDATE() THEN 1 ELSE 0 END) AS vencidas
-                 FROM cuentas_por_cobrar
-                 WHERE hotel_id = ?
-                   AND saldo > 0
-                   AND estado NOT IN ('pagada', 'liquidada', 'cancelada', 'incobrable')",
-                [$hotelId]
-            );
-            $finanzas['cxc_pendientes'] = (int)($row['pendientes'] ?? 0);
-            $finanzas['cxc_vencidas'] = (int)($row['vencidas'] ?? 0);
+        if (($fuentes['reservaciones'] ?? false) && ($fuentes['reservacion_pagos'] ?? false) && ($fuentes['reservacion_abonos'] ?? false)) {
+            $saldosReservaciones = $this->resumenSaldosReservaciones($hotelId);
+            $finanzas['cxc_pendientes'] = (int)$saldosReservaciones['pendientes'];
+            $finanzas['cxc_vencidas'] = (int)$saldosReservaciones['vencidas'];
         }
 
         if ($fuentes['cuentas_por_cobrar_movimientos'] ?? false) {
@@ -481,6 +467,50 @@ class TableroEjecutivo extends Model
         }
 
         return $finanzas;
+    }
+
+    private function resumenSaldosReservaciones(int $hotelId): array
+    {
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS pendientes,
+                    COALESCE(SUM(x.saldo), 0) AS saldo,
+                    COALESCE(SUM(x.fecha_salida < CURDATE()), 0) AS vencidas
+             FROM (
+                SELECT r.fecha_salida,
+                       GREATEST(r.precio_total
+                           - COALESCE(p.total, 0)
+                           - COALESCE(a.total, 0)
+                           - GREATEST(COALESCE(cxc.total, 0), 0), 0) AS saldo
+                FROM reservaciones r
+                LEFT JOIN (
+                    SELECT reservacion_id, SUM(monto) AS total
+                    FROM reservacion_pagos WHERE hotel_id = ? GROUP BY reservacion_id
+                ) p ON p.reservacion_id = r.id
+                LEFT JOIN (
+                    SELECT reservacion_id, SUM(monto) AS total
+                    FROM reservacion_abonos WHERE hotel_id = ? GROUP BY reservacion_id
+                ) a ON a.reservacion_id = r.id
+                LEFT JOIN (
+                    SELECT COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END) AS reservacion_id,
+                           SUM(CASE WHEN m.tipo_movimiento = 'COBRO' THEN m.monto
+                                    WHEN m.tipo_movimiento = 'CANCELACION' THEN -m.monto ELSE 0 END) AS total
+                    FROM cuentas_por_cobrar c
+                    INNER JOIN cuentas_por_cobrar_movimientos m
+                        ON m.cuenta_por_cobrar_id = c.id AND m.hotel_id = c.hotel_id
+                    WHERE c.hotel_id = ?
+                    GROUP BY COALESCE(c.reservacion_id, CASE WHEN c.origen_tipo = 'reservacion' THEN c.origen_id END)
+                ) cxc ON cxc.reservacion_id = r.id
+                WHERE r.hotel_id = ? AND r.estado NOT IN ('cancelada', 'cancelado')
+             ) x
+             WHERE x.saldo > 0.004",
+            [$hotelId, $hotelId, $hotelId, $hotelId]
+        );
+
+        return [
+            'pendientes' => (int)($row['pendientes'] ?? 0),
+            'saldo' => (float)($row['saldo'] ?? 0),
+            'vencidas' => (int)($row['vencidas'] ?? 0),
+        ];
     }
 
     private function inventario(int $hotelId, array $filtros, array $fuentes): array
@@ -666,7 +696,7 @@ class TableroEjecutivo extends Model
             $alertas[] = $this->alerta('operacion', 'warning', 'Habitaciones en limpieza', 'Hay habitaciones pendientes de limpieza.', (int)$op['habitaciones_limpieza'], 'habitaciones?estado=limpieza');
         }
         if (($fin['cxc_vencidas'] ?? 0) > 0) {
-            $alertas[] = $this->alerta('finanzas', 'warning', 'CxC vencidas', 'Hay cuentas por cobrar con vencimiento anterior a hoy.', (int)$fin['cxc_vencidas'], 'cuentas-por-cobrar');
+            $alertas[] = $this->alerta('finanzas', 'warning', 'Saldos atrasados', 'Hay reservaciones con saldo cuya fecha de salida ya paso.', (int)$fin['cxc_vencidas'], 'reservaciones#saldos-pendientes');
         }
         if (($fin['cxp_vencidas'] ?? 0) > 0) {
             $alertas[] = $this->alerta('finanzas', 'warning', 'CxP vencidas', 'Hay cuentas por pagar con vencimiento anterior a hoy.', (int)$fin['cxp_vencidas'], 'cuentas-por-pagar');

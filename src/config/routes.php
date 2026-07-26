@@ -414,7 +414,6 @@ $router->get('/cuentas-por-cobrar', ['controller' => 'CuentaPorCobrar', 'action'
 $router->get('/cuentas-por-cobrar/operativas', ['controller' => 'CuentaPorCobrar', 'action' => 'operativas']);
 $router->get('/cuentas-por-cobrar/simulador-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'simuladorCaja']);
 $router->get('/cuentas-por-cobrar/operativas/{id:[0-9]+}', ['controller' => 'CuentaPorCobrar', 'action' => 'verOperativa']);
-$router->post('/cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}', ['controller' => 'CuentaPorCobrar', 'action' => 'generarDesdeReservacion']);
 $router->post('/cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'registrarCobroCaja']);
 $router->post('/cuentas-por-cobrar/operativas/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-cobro-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'revertirCobroCaja']);
 
@@ -488,13 +487,13 @@ $router->post('/tareas/{id:[0-9]+}/completar', ['controller' => 'Tarea', 'action
 $router->post('/tareas/{id:[0-9]+}/cancelar', ['controller' => 'Tarea', 'action' => 'cancelar']);
 $router->get('/tareas/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'ver']);
 
-// Mantenimiento Plus: detalle con evidencia fotografica (el correctivo basico sigue en /habitaciones).
+// Mantenimiento: detalle con evidencia fotografica.
 $router->get('/mantenimientos/{id:[0-9]+}', ['controller' => 'Mantenimiento', 'action' => 'ver']);
 $router->post('/mantenimientos/{id:[0-9]+}/fotos', ['controller' => 'Mantenimiento', 'action' => 'subirFotos']);
-// Mantenimiento Plus F2: cierre con costo real y egreso por el flujo existente de caja.
+// Mantenimiento: cierre con costo real y egreso por el flujo existente de caja.
 $router->post('/mantenimientos/{id:[0-9]+}/cerrar', ['controller' => 'Mantenimiento', 'action' => 'cerrar']);
 $router->post('/mantenimientos/{id:[0-9]+}/registrar-gasto', ['controller' => 'Mantenimiento', 'action' => 'registrarGasto']);
-// Mantenimiento Plus F3: activos del hotel con preventivo ("boiler cada 6 meses").
+// Mantenimiento: activos del hotel con preventivo ("boiler cada 6 meses").
 $router->get('/mantenimientos/activos', ['controller' => 'Mantenimiento', 'action' => 'activos']);
 $router->get('/mantenimientos/activos/{id:[0-9]+}', ['controller' => 'Mantenimiento', 'action' => 'activo']);
 $router->post('/mantenimientos/activos/guardar', ['controller' => 'Mantenimiento', 'action' => 'guardarActivo']);

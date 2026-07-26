@@ -33,17 +33,28 @@ $mostrarCompras = $menuModuloActivo('compras') && $puede('compras.view');
 $mostrarProveedores = $menuModuloActivo('compras') && $puede('proveedores.view');
 $mostrarCuentasPorPagar = $menuModuloActivo('compras') && $puede('cuentas_por_pagar.view');
 $mostrarDocumentos = $menuModuloActivo('documentos') && $puede('documentos.view');
-$mostrarTareas = $menuModuloActivo('tareas') && $puede('tareas.view');
-$mostrarMantenimientoPlus = $menuModuloActivo('mantenimiento_plus') && $puede('tareas.view', 'habitaciones.mantenimiento');
+$mostrarTareas = false; // Infraestructura interna; no se publica como seccion autonoma.
+$mostrarMantenimiento = $menuModuloActivo('mantenimiento') && $puede('tareas.view', 'habitaciones.mantenimiento');
 $mostrarLavanderia = $menuModuloActivo('lavanderia') && $puede('lavanderia.view');
 $mostrarFacturacion = $menuModuloActivo('facturacion') && $puede('facturacion.view');
-$mostrarCuentasPorCobrar = $menuModuloActivo('cuentas_cobrar') && $puede('cuentas_por_cobrar.view');
-$mostrarReportes = $menuModuloActivo('reportes') && $puede('reportes.view');
+$mostrarCuentasPorCobrar = false; // Retirado comercialmente; historial accesible desde Reservaciones.
+// Centro de Reportes: aparece si el hotel tiene >=1 reporte permitido (cada
+// reporte analitico es un modulo reporte_* o viene incluido con su modulo
+// operativo). El modulo `reportes` es contenedor interno y ya no da acceso.
+$mostrarReportes = $puede('reportes.view') && (
+    (function_exists('hotel_menu_should_filter_modules') && !hotel_menu_should_filter_modules())
+    || (function_exists('hotel_reports_center_available') && hotel_reports_center_available())
+);
 $mostrarUsuariosModulo = $menuModuloActivo('usuarios');
 $mostrarConfiguracionModulo = $menuModuloActivo('configuracion');
 $mostrarTarifasModulo = $menuModuloActivo('tarifas_dinamicas') || $menuModuloActivo('tarifas');
 $sidebarPuedeUsuarios = can('usuarios.view');
-$sidebarPuedeConfiguracion = can('configuracion.view');
+// Configuracion del sistema: exclusiva del equipo Medisoft (saas_admins); para
+// usuarios del hotel se oculta y el servidor la bloquea (ConfiguracionController).
+// OJO: /configuracion/tarifas y /configuracion/roles son controllers PROPIOS y
+// siguen siendo del hotel; esto solo tapa el index/update/backup.
+$sidebarPuedeConfiguracion = (function_exists('isSaasAdmin') && isSaasAdmin())
+    && can('configuracion.view');
 // Tarifas: gatear por permiso del HOTEL, nunca por is_gerente()/is_admin()
 // (leen usuarios.rol GLOBAL, ajeno al hotel actual: un camarista cuyo usuario
 // tenga rol global 'gerente' NO debe ver Tarifas).
@@ -76,7 +87,7 @@ $mostrarLealtad = $menuModuloActivo('lealtad') && $puede('lealtad.view');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
-$mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimientoPlus || $mostrarLavanderia || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
+$mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimiento || $mostrarLavanderia || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarMensajes || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
 $mostrarConfigSeccion = $mostrarConfiguracion || $mostrarTarifas || $mostrarRoles;
@@ -160,7 +171,7 @@ if (!$sidebarEsPanelSaas) {
 // dashboard y la del header movil; los datos salen de notificaciones_quick()
 // (cacheado ~60s en sesion) porque aqui no hay controlador que los inyecte.
 $sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
-$sidebarNotifActivo = !$sidebarEsPanelSaas && $menuModuloActivo('notificaciones');
+$sidebarNotifActivo = !$sidebarEsPanelSaas && $menuModuloActivo('notificaciones') && $puede('notificaciones.view');
 $sidebarNotifPendientes = 0;
 $sidebarNotifRecientes = [];
 if ($sidebarNotifActivo) {
@@ -601,7 +612,7 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
             </a>
             <?php endif; ?>
 
-            <?php if ($mostrarMantenimientoPlus): ?>
+            <?php if ($mostrarMantenimiento): ?>
             <a href="<?= url('mantenimientos/activos') ?>"
                class="nav-item <?= $sidebarActiveMantenimientos ? 'active' : '' ?>"
                title="Reparaciones y servicio preventivo de equipos">

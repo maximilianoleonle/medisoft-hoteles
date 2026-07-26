@@ -97,10 +97,10 @@ class CajaController extends Controller {
         $categorias['egreso'] ?? []
     );
     
-    // Cola de gastos de mantenimiento POR REGISTRAR (bloque mantenimiento_plus):
+    // Cola de gastos de mantenimiento POR REGISTRAR (bloque mantenimiento):
     // cierres con costo real que encontraron la caja cerrada. Nunca rompe Caja.
     $gastosMantenimientoPendientes = [];
-    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')) {
+    if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')) {
         try {
             $db = Database::getInstance();
             $stmt = $db->query(

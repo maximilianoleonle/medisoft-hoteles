@@ -214,7 +214,15 @@ class NotificacionController extends Controller {
         $id = (int)($this->route_params['id'] ?? 0);
         $hotelId = $this->hotelIdActual();
 
-        if ($id <= 0 || !$this->notificacionModel->buscarPorIdHotel($id, $hotelId)) {
+        // La visibilidad por rol se comprueba igual que en abrirAction() y en
+        // archivarPendientesVisibles(): sin ella, cualquier usuario del hotel podia
+        // resolver/descartar por POST un aviso que ni siquiera puede leer (p. ej.
+        // los de caja desde un rol de limpieza).
+        $notificacion = $id > 0 ? $this->notificacionModel->buscarPorIdHotel($id, $hotelId) : null;
+        $rolUsuario = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+        $usuarioId = function_exists('user_id') ? user_id() : null;
+
+        if (!$notificacion || !$this->notificacionModel->visibleParaUsuario($notificacion, $rolUsuario, $usuarioId)) {
             if ($this->isAjax()) {
                 View::renderJSON(['success' => false, 'message' => 'Notificacion no encontrada.'], 404);
                 return;

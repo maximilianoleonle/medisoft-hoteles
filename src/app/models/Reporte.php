@@ -958,29 +958,73 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
     public function obtenerRentabilidadHabitaciones($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
-        
-        $sql = "SELECT 
-                h.id,
-                h.numero,
-                h.tipo,
-                h.piso,
-                COUNT(DISTINCT r.id) as total_reservaciones,
-                COUNT(DISTINCT DATE(r.fecha_entrada)) as dias_ocupada,
-                SUM(rh.precio) as ingresos_totales,
-                AVG(rh.precio) as precio_promedio,
-                ROUND(COUNT(DISTINCT DATE(r.fecha_entrada)) * 100.0 / DATEDIFF(?, ?), 2) as porcentaje_ocupacion
-                FROM habitaciones h
-                LEFT JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
-                    AND rh.hotel_id = h.hotel_id
-                LEFT JOIN reservaciones r ON rh.reservacion_id = r.id
-                    AND r.hotel_id = h.hotel_id
-                WHERE h.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado = 'checked_out'
-                GROUP BY h.id, h.numero, h.tipo, h.piso
+
+        $sql = "SELECT
+                estancia.habitacion_id as id,
+                estancia.numero,
+                estancia.tipo,
+                estancia.piso,
+                COUNT(DISTINCT estancia.reservacion_id) as total_reservaciones,
+                LEAST(estancia.dias_periodo, SUM(estancia.noches_en_periodo)) as dias_ocupada,
+                ROUND(SUM(estancia.ingreso_en_periodo), 2) as ingresos_totales,
+                CASE
+                    WHEN SUM(estancia.noches_en_periodo) > 0
+                    THEN ROUND(SUM(estancia.ingreso_en_periodo) / SUM(estancia.noches_en_periodo), 2)
+                    ELSE 0
+                END as precio_promedio,
+                CASE
+                    WHEN estancia.dias_periodo > 0
+                    THEN ROUND(
+                        LEAST(estancia.dias_periodo, SUM(estancia.noches_en_periodo)) * 100.0
+                        / estancia.dias_periodo,
+                        2
+                    )
+                    ELSE 0
+                END as porcentaje_ocupacion
+                FROM (
+                    SELECT
+                        h.id as habitacion_id,
+                        h.numero,
+                        h.tipo,
+                        h.piso,
+                        r.id as reservacion_id,
+                        DATEDIFF(periodo.fecha_fin, periodo.fecha_inicio) + 1 as dias_periodo,
+                        GREATEST(
+                            0,
+                            DATEDIFF(
+                                LEAST(r.fecha_salida, DATE_ADD(periodo.fecha_fin, INTERVAL 1 DAY)),
+                                GREATEST(r.fecha_entrada, periodo.fecha_inicio)
+                            )
+                        ) as noches_en_periodo,
+                        CASE
+                            WHEN DATEDIFF(r.fecha_salida, r.fecha_entrada) > 0
+                            THEN rh.precio * GREATEST(
+                                0,
+                                DATEDIFF(
+                                    LEAST(r.fecha_salida, DATE_ADD(periodo.fecha_fin, INTERVAL 1 DAY)),
+                                    GREATEST(r.fecha_entrada, periodo.fecha_inicio)
+                                )
+                            ) / DATEDIFF(r.fecha_salida, r.fecha_entrada)
+                            ELSE 0
+                        END as ingreso_en_periodo
+                    FROM habitaciones h
+                    INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                        AND rh.hotel_id = h.hotel_id
+                    INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                        AND r.hotel_id = h.hotel_id
+                    CROSS JOIN (
+                        SELECT CAST(? AS DATE) as fecha_inicio, CAST(? AS DATE) as fecha_fin
+                    ) periodo
+                    WHERE h.hotel_id = ?
+                    AND r.fecha_entrada <= periodo.fecha_fin
+                    AND r.fecha_salida > periodo.fecha_inicio
+                    AND r.estado = 'checked_out'
+                ) estancia
+                WHERE estancia.noches_en_periodo > 0
+                GROUP BY estancia.habitacion_id, estancia.numero, estancia.tipo, estancia.piso, estancia.dias_periodo
                 ORDER BY ingresos_totales DESC";
-        
-        $stmt = $db->query($sql, [$fecha_fin, $fecha_inicio, $hotel_id, $fecha_inicio, $fecha_fin]);
+
+        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $hotel_id]);
         return $stmt->fetchAll();
     }
     
@@ -990,25 +1034,57 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
     public function obtenerOcupacionPorTipo($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
-        
-        $sql = "SELECT 
-                h.tipo,
-                COUNT(DISTINCT h.id) as total_habitaciones,
-                COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as dias_ocupadas,
-                SUM(rh.precio) as ingresos_totales,
-                AVG(rh.precio) as precio_promedio
-                FROM habitaciones h
-                LEFT JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
-                    AND rh.hotel_id = h.hotel_id
-                LEFT JOIN reservaciones r ON rh.reservacion_id = r.id
-                    AND r.hotel_id = h.hotel_id
-                WHERE h.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado NOT IN ('cancelada', 'no_show')
-                GROUP BY h.tipo
+
+        $sql = "SELECT
+                estancia.tipo,
+                COUNT(DISTINCT estancia.habitacion_id) as total_habitaciones,
+                SUM(estancia.noches_en_periodo) as dias_ocupadas,
+                ROUND(SUM(estancia.ingreso_en_periodo), 2) as ingresos_totales,
+                CASE
+                    WHEN SUM(estancia.noches_en_periodo) > 0
+                    THEN ROUND(SUM(estancia.ingreso_en_periodo) / SUM(estancia.noches_en_periodo), 2)
+                    ELSE 0
+                END as precio_promedio
+                FROM (
+                    SELECT
+                        h.id as habitacion_id,
+                        h.tipo,
+                        GREATEST(
+                            0,
+                            DATEDIFF(
+                                LEAST(r.fecha_salida, DATE_ADD(periodo.fecha_fin, INTERVAL 1 DAY)),
+                                GREATEST(r.fecha_entrada, periodo.fecha_inicio)
+                            )
+                        ) as noches_en_periodo,
+                        CASE
+                            WHEN DATEDIFF(r.fecha_salida, r.fecha_entrada) > 0
+                            THEN rh.precio * GREATEST(
+                                0,
+                                DATEDIFF(
+                                    LEAST(r.fecha_salida, DATE_ADD(periodo.fecha_fin, INTERVAL 1 DAY)),
+                                    GREATEST(r.fecha_entrada, periodo.fecha_inicio)
+                                )
+                            ) / DATEDIFF(r.fecha_salida, r.fecha_entrada)
+                            ELSE 0
+                        END as ingreso_en_periodo
+                    FROM habitaciones h
+                    INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                        AND rh.hotel_id = h.hotel_id
+                    INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                        AND r.hotel_id = h.hotel_id
+                    CROSS JOIN (
+                        SELECT CAST(? AS DATE) as fecha_inicio, CAST(? AS DATE) as fecha_fin
+                    ) periodo
+                    WHERE h.hotel_id = ?
+                    AND r.fecha_entrada <= periodo.fecha_fin
+                    AND r.fecha_salida > periodo.fecha_inicio
+                    AND r.estado = 'checked_out'
+                ) estancia
+                WHERE estancia.noches_en_periodo > 0
+                GROUP BY estancia.tipo
                 ORDER BY ingresos_totales DESC";
-        
-        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
+
+        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $hotel_id]);
         return $stmt->fetchAll();
     }
     
@@ -1043,140 +1119,133 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      * Obtener ocupación diaria
      */
     public function obtenerOcupacionDiaria($fecha_inicio, $fecha_fin) {
-        $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         $total_habitaciones_activas = $this->totalHabitacionesActivasHotel($hotel_id);
-        
-        $sql = "SELECT 
-                fecha,
-                COUNT(DISTINCT habitacion_id) as habitaciones_ocupadas,
-                CASE
-                    WHEN ? > 0 THEN ROUND(COUNT(DISTINCT habitacion_id) * 100.0 / ?, 2)
-                    ELSE 0
-                END as porcentaje_ocupacion
-                FROM (
-                    SELECT 
-                        DATE(r.fecha_entrada) as fecha,
-                        rh.habitacion_id
-                    FROM reservaciones r
-                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                        AND rh.hotel_id = r.hotel_id
-                    WHERE r.hotel_id = ?
-                    AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                    AND r.estado NOT IN ('cancelada', 'no_show')
-                ) as ocupacion
-                GROUP BY fecha
-                ORDER BY fecha";
-        
-        $stmt = $db->query($sql, [
-            $total_habitaciones_activas,
-            $total_habitaciones_activas,
-            $hotel_id,
-            $fecha_inicio,
-            $fecha_fin
-        ]);
-        return $stmt->fetchAll();
+        $noches = $this->obtenerNochesOcupadasEnPeriodo($hotel_id, $fecha_inicio, $fecha_fin);
+        $porFecha = [];
+
+        foreach ($noches as $noche) {
+            $porFecha[$noche['fecha']][$noche['habitacion_id']] = true;
+        }
+
+        ksort($porFecha);
+        $resultado = [];
+        foreach ($porFecha as $fecha => $habitaciones) {
+            $ocupadas = count($habitaciones);
+            $resultado[] = [
+                'fecha' => $fecha,
+                'habitaciones_ocupadas' => $ocupadas,
+                'porcentaje_ocupacion' => $total_habitaciones_activas > 0
+                    ? round($ocupadas * 100 / $total_habitaciones_activas, 2)
+                    : 0,
+            ];
+        }
+
+        return $resultado;
     }
     
     /**
      * Obtener ocupación semanal
      */
     public function obtenerOcupacionSemanal($fecha_inicio, $fecha_fin) {
-        $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         $total_habitaciones_activas = $this->totalHabitacionesActivasHotel($hotel_id);
-        
-        $sql = "SELECT 
-                YEARWEEK(r.fecha_entrada, 1) as semana,
-                MIN(DATE(r.fecha_entrada)) as fecha_inicio_semana,
-                MAX(DATE(r.fecha_entrada)) as fecha_fin_semana,
-                COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas_dias,
-                CASE
-                    WHEN ? > 0 THEN ROUND(COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) * 100.0 / (? * 7), 2)
-                    ELSE 0
-                END as porcentaje_ocupacion
-                FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    AND rh.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado NOT IN ('cancelada', 'no_show')
-                GROUP BY YEARWEEK(r.fecha_entrada, 1)
-                ORDER BY semana";
-        
-        $stmt = $db->query($sql, [
-            $total_habitaciones_activas,
-            $total_habitaciones_activas,
-            $hotel_id,
-            $fecha_inicio,
-            $fecha_fin
-        ]);
-        return $stmt->fetchAll();
+        $noches = $this->obtenerNochesOcupadasEnPeriodo($hotel_id, $fecha_inicio, $fecha_fin);
+        $inicioPeriodo = new DateTimeImmutable($fecha_inicio);
+        $finPeriodo = new DateTimeImmutable($fecha_fin);
+        $semanas = [];
+
+        foreach ($noches as $noche) {
+            $fecha = new DateTimeImmutable($noche['fecha']);
+            $clave = $fecha->format('oW');
+            if (!isset($semanas[$clave])) {
+                $lunes = $fecha->modify('monday this week');
+                $domingo = $lunes->modify('+6 days');
+                $inicioSemana = $lunes > $inicioPeriodo ? $lunes : $inicioPeriodo;
+                $finSemana = $domingo < $finPeriodo ? $domingo : $finPeriodo;
+                $semanas[$clave] = [
+                    'semana' => (int)$clave,
+                    'fecha_inicio_semana' => $inicioSemana->format('Y-m-d'),
+                    'fecha_fin_semana' => $finSemana->format('Y-m-d'),
+                    'dias_periodo' => (int)$inicioSemana->diff($finSemana)->days + 1,
+                    'ocupadas' => [],
+                ];
+            }
+            $semanas[$clave]['ocupadas'][$noche['fecha'] . '|' . $noche['habitacion_id']] = true;
+        }
+
+        ksort($semanas);
+        return array_values(array_map(function (array $semana) use ($total_habitaciones_activas): array {
+            $ocupadas = count($semana['ocupadas']);
+            $capacidad = $total_habitaciones_activas * $semana['dias_periodo'];
+            unset($semana['ocupadas'], $semana['dias_periodo']);
+            $semana['habitaciones_ocupadas_dias'] = $ocupadas;
+            $semana['porcentaje_ocupacion'] = $capacidad > 0 ? round($ocupadas * 100 / $capacidad, 2) : 0;
+            return $semana;
+        }, $semanas));
     }
     
     /**
      * Obtener ocupación mensual
      */
     public function obtenerOcupacionMensual($fecha_inicio, $fecha_fin) {
-        $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         $total_habitaciones_activas = $this->totalHabitacionesActivasHotel($hotel_id);
-        
-        $sql = "SELECT 
-                DATE_FORMAT(r.fecha_entrada, '%Y-%m') as mes,
-                COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas_dias,
-                CASE
-                    WHEN ? > 0 THEN ROUND(COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) * 100.0 /
-                        (? * DAY(LAST_DAY(MIN(r.fecha_entrada)))), 2)
-                    ELSE 0
-                END as porcentaje_ocupacion
-                FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    AND rh.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado NOT IN ('cancelada', 'no_show')
-                GROUP BY DATE_FORMAT(r.fecha_entrada, '%Y-%m')
-                ORDER BY mes";
-        
-        $stmt = $db->query($sql, [
-            $total_habitaciones_activas,
-            $total_habitaciones_activas,
-            $hotel_id,
-            $fecha_inicio,
-            $fecha_fin
-        ]);
-        return $stmt->fetchAll();
+        $noches = $this->obtenerNochesOcupadasEnPeriodo($hotel_id, $fecha_inicio, $fecha_fin);
+        $inicioPeriodo = new DateTimeImmutable($fecha_inicio);
+        $finPeriodo = new DateTimeImmutable($fecha_fin);
+        $meses = [];
+
+        foreach ($noches as $noche) {
+            $fecha = new DateTimeImmutable($noche['fecha']);
+            $clave = $fecha->format('Y-m');
+            if (!isset($meses[$clave])) {
+                $primerDia = $fecha->modify('first day of this month');
+                $ultimoDia = $fecha->modify('last day of this month');
+                $inicioMes = $primerDia > $inicioPeriodo ? $primerDia : $inicioPeriodo;
+                $finMes = $ultimoDia < $finPeriodo ? $ultimoDia : $finPeriodo;
+                $meses[$clave] = [
+                    'mes' => $clave,
+                    'dias_periodo' => (int)$inicioMes->diff($finMes)->days + 1,
+                    'ocupadas' => [],
+                ];
+            }
+            $meses[$clave]['ocupadas'][$noche['fecha'] . '|' . $noche['habitacion_id']] = true;
+        }
+
+        ksort($meses);
+        return array_values(array_map(function (array $mes) use ($total_habitaciones_activas): array {
+            $ocupadas = count($mes['ocupadas']);
+            $capacidad = $total_habitaciones_activas * $mes['dias_periodo'];
+            unset($mes['ocupadas'], $mes['dias_periodo']);
+            $mes['habitaciones_ocupadas_dias'] = $ocupadas;
+            $mes['porcentaje_ocupacion'] = $capacidad > 0 ? round($ocupadas * 100 / $capacidad, 2) : 0;
+            return $mes;
+        }, $meses));
     }
     
     /**
      * Obtener estadísticas de ocupación
      */
     public function obtenerEstadisticasOcupacion($fecha_inicio, $fecha_fin) {
-        $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
         $total_habitaciones_activas = $this->totalHabitacionesActivasHotel($hotel_id);
         
         // Total de días en el período
-        $dias_periodo = (strtotime($fecha_fin) - strtotime($fecha_inicio)) / 86400 + 1;
+        $inicio = new DateTimeImmutable($fecha_inicio);
+        $fin = new DateTimeImmutable($fecha_fin);
+        $dias_periodo = $inicio <= $fin ? (int)$inicio->diff($fin)->days + 1 : 0;
         $habitaciones_disponibles = $total_habitaciones_activas > 0
             ? $total_habitaciones_activas * $dias_periodo
             : 0;
         
         // Habitaciones ocupadas
-        $sql = "SELECT 
-                COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas_dias
-                FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    AND rh.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado NOT IN ('cancelada', 'no_show')";
-        
-        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
-        $resultado = $stmt->fetch();
-        
-        $habitaciones_ocupadas = (int)($resultado['habitaciones_ocupadas_dias'] ?? 0);
+        $noches = $this->obtenerNochesOcupadasEnPeriodo($hotel_id, $fecha_inicio, $fecha_fin);
+        $ocupacionUnica = [];
+        foreach ($noches as $noche) {
+            $ocupacionUnica[$noche['fecha'] . '|' . $noche['habitacion_id']] = true;
+        }
+        $habitaciones_ocupadas = count($ocupacionUnica);
         $porcentaje_ocupacion = $habitaciones_disponibles > 0
             ? round(($habitaciones_ocupadas / $habitaciones_disponibles) * 100, 2)
             : 0;
@@ -1193,33 +1262,96 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      * Obtener ocupación por día de la semana
      */
     public function obtenerOcupacionPorDiaSemana($fecha_inicio, $fecha_fin) {
-        $db = Database::getInstance();
         $hotel_id = $this->hotelIdActual();
-        
-        $sql = "SELECT 
-                DAYOFWEEK(r.fecha_entrada) as dia_semana,
-                MIN(CASE DAYOFWEEK(r.fecha_entrada)
-                    WHEN 1 THEN 'Domingo'
-                    WHEN 2 THEN 'Lunes'
-                    WHEN 3 THEN 'Martes'
-                    WHEN 4 THEN 'Miércoles'
-                    WHEN 5 THEN 'Jueves'
-                    WHEN 6 THEN 'Viernes'
-                    WHEN 7 THEN 'Sábado'
-                END) as nombre_dia,
-                COUNT(DISTINCT CONCAT(rh.habitacion_id, DATE(r.fecha_entrada))) as habitaciones_ocupadas,
-                ROUND(AVG(rh.precio), 2) as precio_promedio
-                FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    AND rh.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
-                AND r.estado NOT IN ('cancelada', 'no_show')
-                GROUP BY DAYOFWEEK(r.fecha_entrada)
-                ORDER BY dia_semana";
-        
-        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
-        return $stmt ? $stmt->fetchAll() : [];
+        $noches = $this->obtenerNochesOcupadasEnPeriodo($hotel_id, $fecha_inicio, $fecha_fin);
+        $nombres = [
+            1 => 'Domingo', 2 => 'Lunes', 3 => 'Martes', 4 => 'Miércoles',
+            5 => 'Jueves', 6 => 'Viernes', 7 => 'Sábado',
+        ];
+        $dias = [];
+
+        foreach ($noches as $noche) {
+            $fecha = new DateTimeImmutable($noche['fecha']);
+            $numeroDia = (int)$fecha->format('w') + 1;
+            if (!isset($dias[$numeroDia])) {
+                $dias[$numeroDia] = [
+                    'dia_semana' => $numeroDia,
+                    'nombre_dia' => $nombres[$numeroDia],
+                    'ocupadas' => [],
+                    'tarifas' => [],
+                ];
+            }
+            $dias[$numeroDia]['ocupadas'][$noche['fecha'] . '|' . $noche['habitacion_id']] = true;
+            $dias[$numeroDia]['tarifas'][] = $noche['precio_noche'];
+        }
+
+        ksort($dias);
+        return array_values(array_map(function (array $dia): array {
+            $dia['habitaciones_ocupadas'] = count($dia['ocupadas']);
+            $dia['precio_promedio'] = count($dia['tarifas']) > 0
+                ? round(array_sum($dia['tarifas']) / count($dia['tarifas']), 2)
+                : 0;
+            unset($dia['ocupadas'], $dia['tarifas']);
+            return $dia;
+        }, $dias));
+    }
+
+    /**
+     * Expande cada reservación vigente a sus noches reales dentro del periodo.
+     * La salida es exclusiva: entrada lunes y salida viernes son cuatro noches.
+     */
+    private function obtenerNochesOcupadasEnPeriodo(int $hotel_id, string $fecha_inicio, string $fecha_fin): array {
+        $inicio = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha_inicio);
+        $fin = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha_fin);
+        if (!$inicio || !$fin || $inicio > $fin
+            || $inicio->format('Y-m-d') !== $fecha_inicio
+            || $fin->format('Y-m-d') !== $fecha_fin) {
+            return [];
+        }
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT
+                r.id as reservacion_id,
+                r.fecha_entrada,
+                r.fecha_salida,
+                rh.habitacion_id,
+                rh.precio
+             FROM reservaciones r
+             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                AND rh.hotel_id = r.hotel_id
+             WHERE r.hotel_id = ?
+             AND r.fecha_entrada <= ?
+             AND r.fecha_salida > ?
+             AND r.estado <> 'cancelada'",
+            [$hotel_id, $fecha_fin, $fecha_inicio]
+        );
+
+        $limiteExclusivo = $fin->modify('+1 day');
+        $noches = [];
+        foreach ($stmt->fetchAll() as $reservacion) {
+            $entrada = new DateTimeImmutable($reservacion['fecha_entrada']);
+            $salida = new DateTimeImmutable($reservacion['fecha_salida']);
+            if ($salida <= $entrada) {
+                continue;
+            }
+
+            $desde = $entrada > $inicio ? $entrada : $inicio;
+            $hasta = $salida < $limiteExclusivo ? $salida : $limiteExclusivo;
+            $nochesTotales = max(1, (int)$entrada->diff($salida)->days);
+            $precioNoche = (float)$reservacion['precio'] / $nochesTotales;
+
+            for ($fecha = $desde; $fecha < $hasta; $fecha = $fecha->modify('+1 day')) {
+                $noches[] = [
+                    'fecha' => $fecha->format('Y-m-d'),
+                    'habitacion_id' => (int)$reservacion['habitacion_id'],
+                    'reservacion_id' => (int)$reservacion['reservacion_id'],
+                    'precio_noche' => $precioNoche,
+                ];
+            }
+        }
+
+        return $noches;
     }
     
     /**
@@ -1796,7 +1928,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
     }
 
     /**
-     * Mantenimiento Plus: costo del periodo agrupado por activo (los
+     * Mantenimiento: costo del periodo agrupado por activo (los
      * mantenimientos sin activo se agrupan como correctivo/incidencias).
      */
     public function obtenerCostosMantenimientoPorActivo($fecha_inicio, $fecha_fin) {

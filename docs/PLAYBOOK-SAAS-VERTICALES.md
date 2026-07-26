@@ -578,6 +578,50 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     Regla de datos: guardar el NOMBRE canónico (no el gentilicio) para que el reporte
     agrupe solo; permitir escribir fuera del catálogo (`data-ms-combo-free`) o la
     captura se traba con el caso raro.
+30. **Clasificación comercial explícita del catálogo (verificado jul 2026).** `es_core`
+    solo no alcanza para operar la venta à la carte: el catálogo necesita
+    `tipo_comercial` (base|opcional|interno, VARCHAR validado en PHP — nunca enum MySQL)
+    + `activo_global` (0 = bloqueado temporal) + `motivo_bloqueo` (texto que ve el panel
+    interno). Reglas que se copian tal cual: (a) el cobro mensual SOLO suma
+    `tipo='opcional' AND activo_global=1 AND hm.activo=1` — internos, bloqueados y base
+    jamás; (b) el guardado de contratación por hotel CONGELA internos y bloqueados (ni
+    los activa un POST manipulado ni los desactiva su ausencia — el checkbox disabled
+    NO viaja en el POST y sin este candado el guardar borraba la contratación histórica
+    del bloqueado); (c) bloquear global corta rutas al instante (los gates ya filtran
+    `activo_global=1`) pero conserva `hotel_modulos` como historial congelado; (d) los
+    presets de plan no aplican internos ni bloqueados y los planes retirados se apagan
+    con `planes.activo=0` conservando `plan_modulos`; (e) retirar un módulo del
+    catálogo = re-registrarlo interno/bloqueado con motivo (trazabilidad), no DELETE;
+    (f) los reportes analíticos se venden como módulos `reporte_*` individuales con un
+    MAPA central pantalla→módulo(s) (any-of) en helpers — gate por acción
+    (`require_hotel_report`), el centro aparece con ≥1 permitido, y los reportes
+    "incluidos" apuntan al módulo operativo que los regala (mantenimiento→base ⇒ todo
+    hotel conserva su centro); exportar exige el reporte Y `exportaciones`. Verificador
+    de catálogo con PASS/FAIL (`tools/saas/verificar_clasificacion_comercial.php`) para
+    correr tras cada migración comercial.
+
+30-bis. **PROMOVER un opcional al paquete base no es un UPDATE, son cuatro cosas
+    (verificado jul-25-2026, caso notificaciones+pwa).** Mover una fila a
+    `tipo_comercial='base' + es_core=1` cambia la SEMÁNTICA del módulo — deja de existir
+    como candado — y eso rompe cosas que el UPDATE no toca: (a) **el verificador tiene la
+    lista base hardcodeada** con comparación exacta (`===`) y alimenta 2 asserts (catálogo
+    y preset del plan); si no se actualiza, el CI queda rojo con la migración correcta.
+    (b) **Los crons que filtran con `INNER JOIN hotel_modulos` dejan fuera a TODOS los
+    hoteles**: `es_core` NO crea filas, así que `EXISTS(hotel_modulos … activo=1)` pasa a
+    ser siempre falso — el filtro correcto es `activo_global=1 AND (es_core=1 OR EXISTS
+    hotel_modulos)`. Es un apagón silencioso: el cron no truena, simplemente procesa 0
+    hoteles. (c) **La pantalla se queda sin gate de servidor**: si su `before()` solo tenía
+    `require_hotel_module` y su entrada de navegación tenía `permiso => null`, al volverse
+    base la ve y la opera todo rol — hay que fijarle su permiso en AMBOS lados. Al hacerlo
+    aparecen los huecos que el módulo tapaba: aquí, un POST que resolvía/descartaba avisos
+    sin comprobar visibilidad por rol. (d) **Todo lo que el bloque encendía se enciende de
+    golpe para todos**: si eso incluye algo que sale del sistema (push a teléfonos, correo,
+    WhatsApp), la promoción se acompaña de una siembra **opt-in** en la config por hotel
+    (`0` solo donde la clave no existe, respetando a quien ya la tenía en `1`) MÁS el
+    cambio del default del catálogo, porque la siembra no cubre los tenants futuros.
+    Corolario comercial: antes de promover, `grep` los gates del bloque — si no aparece ni
+    un `require_hotel_module('x')`, se estaba cobrando algo que nunca estuvo restringido
+    (caso `pwa`, $149/mes), y revenderlo mañana exige ESCRIBIR los gates, no reponer la fila.
 
 30. **La excepción por PERSONA se guarda como DIFERENCIA, no como copia
     (verificado jul 2026).** En cualquier giro, tarde o temprano el dueño pide

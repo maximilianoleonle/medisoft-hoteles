@@ -1322,7 +1322,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 <span class="hdv-tile-value"><?= room_detail_safe($mantenimiento_actual['motivo'] ?? '', 'No especificado') ?></span>
                             </div>
                         </div>
-                        <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus') && !empty($mantenimiento_actual['id'])): ?>
+                        <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento') && !empty($mantenimiento_actual['id'])): ?>
                             <a href="<?= url('mantenimientos/' . (int)$mantenimiento_actual['id']) ?>" class="hdv-btn hdv-btn-info hdv-btn-full" style="margin-top:12px;">
                                 <i class="fas fa-camera"></i> Evidencia y detalle
                             </a>
@@ -1842,7 +1842,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                 <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." class="hdv-modal-input">
             </div>
 
-            <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento_plus')): ?>
+            <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')): ?>
             <div>
                 <label class="hdv-modal-label">Fotos del problema <span style="font-weight:400;color:var(--muted,#828B99);">(opcional, m&aacute;x 3)</span></label>
                 <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border:1px dashed rgba(189,148,65,.5);border-radius:12px;cursor:pointer;background:rgba(189,148,65,.06);font-weight:700;font-size:.84rem;">

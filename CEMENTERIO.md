@@ -24,6 +24,8 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 
 ## Backend / datos
 
+- **Apagar un flag por hotel cambiando su `'default'` en el catálogo de `helpers/hotel_config.php`** → NO apaga nada en runtime: `hotel_config_get($clave, $default, $hotelId)` devuelve el `$default` que le pasa **quien la llama**, jamás consulta el catálogo (el `'default'` de ahí solo pinta el form de `/configuracion`) → hay que cambiar el literal en el CALLER (caso jul-25: `PwaPushService::estaActivoParaHotel` pasaba `true` y dejaba el push encendido para todo hotel sin fila, aunque el catálogo ya dijera `false`). Al tocar un default: `grep -rn "'<clave>'" src/` y arreglar cada llamada.
+- **Sembrar un flag por hotel con `WHERE NOT EXISTS (… AND clave = X)` sin filtrar `activo`** → `hotel_config_get` lee SOLO filas `activo = 1` (carga en lote y lectura individual), así que una fila con `activo=0` es invisible en runtime (el hotel cae al default) pero SÍ bloquea la siembra → el guard va con `AND hc.activo = 1` y el `ON DUPLICATE` debe reactivar (`valor='0', activo=1`).
 - **Arreglar cache de navegación tocando headers PHP** → Apache (.htaccess) pisa los headers de PHP → el freno vive en `.htaccess`; revisar ahí primero.
 - **Verificar cifras de dinero con mysql CLI por fecha** → timezone de sesión distinto al de la app, no cuadra jamás → validar por PDO (script PHP en el contenedor).
 - **Confiar en que MySQL rechaza un enum inválido** → no truena, inserta vacío/trunca (caso 'egreso' duplicando conceptos de caja) → validar enums en PHP antes del INSERT.

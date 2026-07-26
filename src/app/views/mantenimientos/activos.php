@@ -1,6 +1,6 @@
 <?php
 /**
- * Activos del hotel con mantenimiento preventivo (bloque mantenimiento_plus).
+ * Activos del hotel con mantenimiento preventivo (bloque mantenimiento).
  * Mobile-first: alta rapida y semaforo de vencimiento.
  */
 

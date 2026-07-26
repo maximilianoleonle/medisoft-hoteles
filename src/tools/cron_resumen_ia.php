@@ -39,16 +39,22 @@ require_once __DIR__ . '/../app/services/NotificacionService.php';
 
 $db = Database::getInstance();
 
-// Hoteles activos con AMBOS bloques contratados (ia_ejecutiva + notificaciones).
-// En CLI hotel_has_module no existe, asi que el filtro va aqui en SQL.
+// Hoteles activos con el bloque ia_ejecutiva contratado. En CLI hotel_has_module
+// no existe, asi que el filtro va aqui en SQL.
+// GOTCHA (2026-07-25): 'notificaciones' paso al paquete base (es_core=1) y ya no
+// necesita fila en hotel_modulos, asi que el EXISTS que lo exigia dejaba fuera a
+// TODOS los hoteles. Un modulo base se comprueba con es_core, no con hotel_modulos.
 $stmt = $db->query(
     "SELECT h.id, h.nombre
      FROM hoteles h
      WHERE h.activo = 1
        AND EXISTS (SELECT 1 FROM hotel_modulos hm INNER JOIN modulos m ON m.id = hm.modulo_id
                    WHERE hm.hotel_id = h.id AND hm.activo = 1 AND m.clave = 'ia_ejecutiva' AND m.activo_global = 1)
-       AND EXISTS (SELECT 1 FROM hotel_modulos hm2 INNER JOIN modulos m2 ON m2.id = hm2.modulo_id
-                   WHERE hm2.hotel_id = h.id AND hm2.activo = 1 AND m2.clave = 'notificaciones' AND m2.activo_global = 1)
+       AND EXISTS (SELECT 1 FROM modulos m2
+                   WHERE m2.clave = 'notificaciones' AND m2.activo_global = 1
+                     AND (m2.es_core = 1
+                          OR EXISTS (SELECT 1 FROM hotel_modulos hm2
+                                     WHERE hm2.hotel_id = h.id AND hm2.modulo_id = m2.id AND hm2.activo = 1)))
      ORDER BY h.id"
 );
 $hoteles = $stmt ? $stmt->fetchAll() : [];

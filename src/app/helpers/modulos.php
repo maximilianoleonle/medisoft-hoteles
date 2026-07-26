@@ -58,6 +58,22 @@ function current_hotel_has_module($clave) {
     return hotel_has_module($clave, current_hotel_id());
 }
 
+/**
+ * ¿Debe mostrarse/cargarse el bloque documental de una entidad host
+ * (huésped, reservación, proveedor, compra, cuenta por pagar, trabajador,
+ * tarea)? Espeja EXACTAMENTE el gate del Centro Documental
+ * (DocumentoController::before): módulo `documentos` contratado en el hotel
+ * actual Y permiso `documentos.view`. Fail-closed si faltan los helpers.
+ * Único punto de verdad para ocultar y NO cargar metadata documental fuera
+ * del propio módulo cuando no está contratado o el usuario no tiene permiso.
+ */
+function documentos_entidad_visible(): bool {
+    return function_exists('current_hotel_has_module')
+        && current_hotel_has_module('documentos')
+        && function_exists('can')
+        && can('documentos.view');
+}
+
 function require_hotel_module_api($clave) {
     if (!$clave || !has_hotel_context()) {
         return true;
@@ -110,6 +126,120 @@ function hotel_menu_modules_unconfigured() {
     return is_array($clavesActivas) && empty($clavesActivas);
 }
 
+/**
+ * Centro de Reportes: cada pantalla analitica se contrata como modulo propio
+ * (reporte_*) o viene incluida con un modulo operativo. El modulo `reportes`
+ * es solo el contenedor interno: NO da acceso por si mismo.
+ * Clave = pantalla (slug de la ruta /reportes/<slug>), valor = modulos que la
+ * otorgan (any-of).
+ */
+function hotel_report_screen_modules() {
+    return [
+        'ingresos-gastos'          => ['reporte_ingresos_egresos'],
+        'procedencia'              => ['reporte_procedencia'],
+        // Ranking y comparativa de estados pertenece a Procedencia.
+        'ranking-estados'          => ['reporte_procedencia'],
+        'habitaciones-rentables'   => ['reporte_habitaciones_rentables'],
+        'ocupacion'                => ['reporte_ocupacion'],
+        'estancia'                 => ['reporte_promedio_estancia'],
+        // Reportes incluidos con modulos operativos.
+        'mantenimiento'            => ['mantenimiento'],
+        'mantenimiento-programado' => ['mantenimiento'],
+        'limpieza'                 => ['camarista', 'limpieza'],
+        'ejecutivo'                => ['tablero_ejecutivo'],
+        'gerencial-diario'         => ['tablero_ejecutivo'],
+    ];
+}
+
+/** Una pantalla del Centro de Reportes esta permitida si el hotel tiene
+ *  activo alguno de los modulos que la otorgan. Pantalla desconocida = cerrada. */
+function hotel_report_screen_allowed($pantalla, $hotelId = null) {
+    $mapa = hotel_report_screen_modules();
+
+    if (!isset($mapa[$pantalla])) {
+        return false;
+    }
+
+    foreach ($mapa[$pantalla] as $clave) {
+        if (hotel_has_module($clave, $hotelId)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** El Centro de Reportes aparece si existe al menos un reporte permitido. */
+function hotel_reports_center_available($hotelId = null) {
+    foreach (array_keys(hotel_report_screen_modules()) as $pantalla) {
+        if (hotel_report_screen_allowed($pantalla, $hotelId)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** Gate de servidor por pantalla de reporte (mismo contrato que
+ *  require_hotel_module: bypass en /admin/saas, JSON en AJAX, redirect web). */
+function require_hotel_report($pantalla) {
+    if (!has_hotel_context()) {
+        return true;
+    }
+
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+
+    if (strpos($path, '/admin/saas') === 0) {
+        return true;
+    }
+
+    if (hotel_report_screen_allowed($pantalla, current_hotel_id())) {
+        return true;
+    }
+
+    $mensaje = 'Este reporte no esta incluido en los modulos contratados por el hotel.';
+
+    if (is_ajax()) {
+        json_response([
+            'success' => false,
+            'message' => $mensaje,
+            'report' => (string) $pantalla
+        ], 403);
+    }
+
+    set_mensaje($mensaje, 'error');
+    redirect(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard');
+}
+
+/** Gate del index del Centro de Reportes: al menos un reporte permitido. */
+function require_hotel_reports_center() {
+    if (!has_hotel_context()) {
+        return true;
+    }
+
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+
+    if (strpos($path, '/admin/saas') === 0) {
+        return true;
+    }
+
+    if (hotel_reports_center_available(current_hotel_id())) {
+        return true;
+    }
+
+    $mensaje = 'El hotel no tiene reportes contratados.';
+
+    if (is_ajax()) {
+        json_response([
+            'success' => false,
+            'message' => $mensaje
+        ], 403);
+    }
+
+    set_mensaje($mensaje, 'error');
+    redirect(function_exists('home_route_for_current_user') ? home_route_for_current_user() : 'dashboard');
+}
+
 function require_hotel_module($clave) {
     if (!$clave || !has_hotel_context()) {
         return true;
@@ -160,11 +290,13 @@ function require_hotel_module($clave) {
  * si estuviera protegida por DocumentoController.
  */
 function puede_ver_documentos_vinculados() {
-    if (function_exists('hotel_menu_module_enabled') && !hotel_menu_module_enabled('documentos')) {
-        return false;
-    }
-
-    return !function_exists('can') || can('documentos.view');
+    // Un solo punto de verdad (integracion 26 jul 2026): las dos ramas llegaron
+    // con su propio helper para el MISMO gate. Se conserva este nombre porque lo
+    // usan los 7 controllers host, pero delega en documentos_entidad_visible(),
+    // que es fail-CLOSED (exige modulo contratado + permiso, y niega si falta
+    // cualquiera de los dos helpers) en vez de fail-open. Para metadata con PII
+    // la degradacion correcta es ocultar, no mostrar.
+    return documentos_entidad_visible();
 }
 
 /**

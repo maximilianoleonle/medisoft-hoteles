@@ -12,6 +12,8 @@ $proximas_reservaciones = $proximas_reservaciones ?? [];
 $checkins_pendientes = isset($checkins_pendientes) && is_array($checkins_pendientes) ? $checkins_pendientes : [];
 $checkouts_vencidos  = isset($checkouts_vencidos) && is_array($checkouts_vencidos) ? $checkouts_vencidos : [];
 $llegadas_tardias    = isset($llegadas_tardias) && is_array($llegadas_tardias) ? $llegadas_tardias : [];
+$saldos_pendientes   = isset($saldos_pendientes) && is_array($saldos_pendientes) ? $saldos_pendientes : [];
+$resumen_saldos_pendientes = isset($resumen_saldos_pendientes) && is_array($resumen_saldos_pendientes) ? $resumen_saldos_pendientes : [];
 $total_reservaciones = $total_reservaciones ?? count($reservaciones);
 $estados             = $estados             ?? [];
 $buscar              = $buscar              ?? '';
@@ -4530,6 +4532,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
         </section>
 
         <?php include APP_PATH . '/views/partials/reservaciones_alertas_pendientes.php'; ?>
+        <?php include APP_PATH . '/views/partials/reservaciones_saldos_pendientes.php'; ?>
 
         <section class="res-filterbar no-print" aria-label="Filtros de reservaciones">
             <div class="res-tabs">
@@ -5052,7 +5055,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         <span class="res-ci-pending-icon"><i class="fas fa-clock"></i></span>
                         <span>
                             <strong>Dejar saldo pendiente</strong>
-                            <small>Permite hacer check-in con pago parcial. Lo que falte aparecera en Cuentas por cobrar.</small>
+                            <small>Permite hacer check-in con pago parcial. Lo que falte aparecera en Saldos pendientes de Reservaciones.</small>
                         </span>
                     </label>
 
@@ -6372,7 +6375,7 @@ function calcularTotales(options = {}) {
         }
 
         if (permitirPendiente && totalPagadoFinal > 0) {
-            mostrarMensaje('Se hara check-in y el saldo restante quedara en Cuentas por cobrar.', 'info');
+            mostrarMensaje('Se hara check-in y el saldo restante quedara en Reservaciones como saldo pendiente.', 'info');
             if (btnConfirmar) btnConfirmar.disabled = false;
         } else {
             mostrarMensaje('Falta completar el pago. Si el huesped pagara despues, activa Dejar saldo pendiente.', 'warning');

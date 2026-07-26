@@ -6829,7 +6829,7 @@ if (!is_file($routesPath)) {
         && strpos($mantControllerCode, "require_hotel_module('reportes')") !== false
         && strpos($mantControllerCode, '../views/reportes/mantenimiento.php') !== false
     ) {
-        hcOk('ReportesController MANT-A usa sesion, permisos, modulo reportes y vista read-only existente.');
+        hcOk('ReportesController MANT-A usa sesion, permisos, Reportes y vista read-only; Plus se reserva para extensiones avanzadas.');
     } else {
         hcWarning(
             'ReportesController MANT-A no muestra guardas completas.',
@@ -7081,6 +7081,7 @@ if (!is_file($routesPath)) {
     $mantPreviewControllerBody = hcMethodBody($mantControllerCode, 'mantenimientoProgramadoAction');
     if (
         $mantPreviewControllerBody !== ''
+        && strpos($mantPreviewControllerBody, "require_hotel_module('mantenimiento')") !== false
         && strpos($mantPreviewControllerBody, 'previewProgramados') !== false
         && strpos($mantPreviewControllerBody, 'TareaOperativa') !== false
         && strpos($mantPreviewControllerBody, "listarPorEntidadHotel(\$hotelId, 'mantenimiento'") !== false
@@ -7088,11 +7089,11 @@ if (!is_file($routesPath)) {
         && strpos($mantPreviewControllerBody, 'activarMantenimientosPendientes') === false
         && hcCodeBodyIsReadOnly($mantPreviewControllerBody)
     ) {
-        hcOk('ReportesController MANT-D-A/MANT-G-A expone preview GET/read-only con tareas vinculadas sin activar pendientes.');
+        hcOk('ReportesController MANT-D-A/MANT-G-A exige Mantenimiento y expone preview GET/read-only sin activar pendientes.');
     } else {
         hcError(
-            'ReportesController MANT-D-A/MANT-G-A no muestra contrato read-only completo.',
-            'Mantener previewProgramados, tareas vinculadas read-only, render de vista y ausencia de activacion/escrituras.'
+            'ReportesController MANT-D-A/MANT-G-A no muestra contrato Plus/read-only completo.',
+            'Exigir mantenimiento y mantener previewProgramados, tareas vinculadas read-only, render y ausencia de escrituras.'
         );
     }
 

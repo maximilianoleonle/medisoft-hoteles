@@ -73,6 +73,7 @@ class Plan extends Model {
                         m.nombre,
                         m.descripcion,
                         m.categoria,
+                        m.tipo_comercial,
                         m.activo_global,
                         m.orden,
                         m.icono,
@@ -83,6 +84,7 @@ class Plan extends Model {
                  WHERE pm.plan_id = ?
                    AND pm.incluido = 1
                    AND m.activo_global = 1
+                   AND m.clave NOT IN ('cuentas_cobrar')
                  ORDER BY m.orden ASC, m.nombre ASC",
                 [(int) $planId]
             );
@@ -94,6 +96,14 @@ class Plan extends Model {
 
     public function moduloIdsDelPlan($planId) {
         $modulos = $this->listarModulosDelPlan($planId);
+
+        // Al APLICAR un preset solo viajan modulos contratables: los internos
+        // Medisoft no se activan/desactivan desde la seleccion comercial (los
+        // bloqueados ya quedan fuera por el filtro activo_global de arriba).
+        $modulos = array_filter($modulos, static function ($modulo) {
+            return (string) ($modulo['tipo_comercial'] ?? Modulo::TIPO_OPCIONAL) !== Modulo::TIPO_INTERNO;
+        });
+
         return array_values(array_unique(array_map('intval', array_column($modulos, 'id'))));
     }
 

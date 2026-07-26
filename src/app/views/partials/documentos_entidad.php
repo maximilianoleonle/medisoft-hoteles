@@ -1,10 +1,12 @@
 <?php
-// Gate del panel. La ficha anfitriona (huesped, reservacion, trabajador,
-// compra, proveedor, cuenta por pagar, tarea) tiene su propio permiso, que no
-// dice nada sobre documentos: sin este corte se filtraban titulos de archivos
-// ("INE de Juan Perez") a hoteles sin el modulo contratado y a usuarios sin
-// 'documentos.view'. La descarga ya estaba protegida; la lista no.
-if (function_exists('puede_ver_documentos_vinculados') && !puede_ver_documentos_vinculados()) {
+// Gate del panel: no renderizar NADA (ni siquiera la metadata: nombre, tipo,
+// quién/cuándo subió) si el módulo `documentos` no está contratado en el hotel
+// actual o el usuario no tiene `documentos.view`. La ficha anfitriona (huésped,
+// reservación, trabajador, compra, proveedor, cuenta por pagar, tarea) tiene su
+// propio permiso, que no dice nada sobre documentos: sin este corte se filtraban
+// títulos de archivos ("INE de Juan Perez"). La descarga ya la protegía
+// DocumentoController; la lista no. Fail-closed si el helper no está cargado.
+if (!function_exists('documentos_entidad_visible') || !documentos_entidad_visible()) {
     return;
 }
 
@@ -12,10 +14,11 @@ $documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad :
 $documentosEntidadContexto = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
 $documentosEntidadPermiteVerTodos = (bool)($documentosEntidadPermiteVerTodos ?? true);
 
-// La ficha puede pedir el boton de vincular, pero subir es escritura del
-// centro documental: exige 'documentos.all' igual que editar/archivar/borrar.
+// La ficha puede pedir el botón de vincular, pero subir es escritura del centro
+// documental: exige 'documentos.all' igual que editar/archivar/borrar.
 $documentosEntidadPermiteVincular = (bool)($documentosEntidadPermiteVincular ?? true)
     && (!function_exists('puede_vincular_documentos') || puede_vincular_documentos());
+$documentosEntidadPuedeGestionar = function_exists('can') && can('documentos.all');
 
 if (!function_exists('doc_entity_safe')) {
     function doc_entity_safe($value, string $fallback = '-'): string
@@ -143,7 +146,7 @@ $entityQuery = $hasEntityContext
                     Ver todos
                 </a>
             <?php endif; ?>
-            <?php if ($hasEntityContext && $documentosEntidadPermiteVincular): ?>
+            <?php if ($hasEntityContext && $documentosEntidadPermiteVincular && $documentosEntidadPuedeGestionar): ?>
                 <a class="de-action" href="<?= url('documentos/subir' . $entityQuery) ?>">
                     <i class="fas fa-paperclip"></i>
                     Vincular documento
