@@ -5875,6 +5875,46 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
 .habitaciones-view .chip-maint,     .habitaciones-view .hb-mobile-lg[data-estado="mantenimiento"]{ --chip-c:var(--c-maint); }
 .habitaciones-view .hb-filter-right{ display:flex; align-items:center; gap:6px; margin-left:auto; }
 @media (max-width:760px){ .habitaciones-view .hb-filter-right{ margin-left:0; } .habitaciones-view .hb-search{ max-width:none; } }
+/* Escritorio: la barra va en UNA sola linea. Con flex-wrap:wrap el grupo de
+   fecha/Hoy/Limpiar saltaba a un segundo renglon y, por su margin-left:auto,
+   quedaba flotando solo a la derecha (se veia como una barra partida en dos).
+   Ahora los chips son el elemento elastico: absorben el espacio libre y, si de
+   verdad no cabe, scrollean en horizontal — mismo recurso que ya usa el layout
+   movil — en vez de empujar a nadie a otra fila. */
+@media (min-width:768px){
+  .habitaciones-view .hb-filterbar{ flex-wrap:nowrap; }
+  /* Factor de shrink ALTO: el reparto de flex es base x factor, y la base de los
+     chips (~685px) aplasta a la del buscador (200px). Con un factor normal los
+     chips se comian casi todo el recorte y siempre quedaba uno cortado; con 100
+     el buscador se lleva ~97% del ajuste y cede hasta su min-width antes de que
+     los chips pierdan un pixel. */
+  .habitaciones-view .hb-search{ flex:0 100 200px; min-width:128px; }
+  .habitaciones-view .hb-chips{
+    /* shrink NORMAL (no 0): si los chips se niegan a ceder, una vez que el
+       buscador toca su min-width el sobrante empuja al grupo Hoy/Limpiar FUERA
+       de la tarjeta (medido a 1024px: 111px de desborde). Cediendo, el sobrante
+       se convierte en scroll horizontal de los chips y nada se sale. */
+    flex:1 1 auto;
+    min-width:0;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scrollbar-width:none;
+    gap:5px;
+  }
+  .habitaciones-view .hb-chips::-webkit-scrollbar{ height:0; }
+  .habitaciones-view .hb-chip{ flex:0 0 auto; padding:7px 9px; }
+  .habitaciones-view .hb-filter-right{ flex:0 0 auto; margin-left:0; gap:5px; }
+  .habitaciones-view .hb-filter-right .filter-date{ font-size:.76rem; }
+}
+/* La barra NO mide lo que el viewport: la sidebar se come ~370px, asi que a
+   1440 quedan ~1067px y los 6 chips con etiqueta completa no caben junto al
+   buscador y los 3 controles. Debajo de 1600 los botones Hoy/Limpiar van solo
+   con icono (conservan su title) — es el mismo recurso que ya usa el layout
+   movil con las clases .hidden sm:inline del marcado. */
+@media (min-width:768px) and (max-width:1599px){
+  .habitaciones-view .hb-filter-right .filter-btn span{ display:none; }
+  .habitaciones-view .hb-filter-right .filter-btn{ padding-left:10px; padding-right:10px; }
+}
 
 /* ════ Animación "hoja de acciones que sube" (como Medisoft Habitaciones.html) ════
    La tarjeta NO se expande: queda a altura fija y la hoja (reverso) se desliza
