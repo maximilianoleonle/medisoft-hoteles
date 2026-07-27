@@ -10,6 +10,10 @@ class Documento extends Model
 
     private const MAX_UPLOAD_BYTES = 10485760;
 
+    // Ventana de retencion tras "dar de baja": el archivo sigue en disco y
+    // es recuperable hasta que el cron de purga lo borre de verdad.
+    public const RETENCION_ELIMINADOS_DIAS = 30;
+
     private const MIME_PERMITIDOS = [
         'application/pdf' => ['pdf'],
         'image/jpeg' => ['jpg', 'jpeg'],
@@ -88,7 +92,8 @@ class Documento extends Model
                     SUM(CASE WHEN estado = 'activo' THEN 1 ELSE 0 END) AS activos,
                     SUM(CASE WHEN estado = 'archivado' THEN 1 ELSE 0 END) AS archivados,
                     SUM(CASE WHEN estado = 'eliminado' THEN 1 ELSE 0 END) AS eliminados,
-                    COALESCE(SUM(size_bytes), 0) AS bytes_total
+                    COALESCE(SUM(CASE WHEN estado <> 'eliminado' THEN size_bytes ELSE 0 END), 0) AS bytes_total,
+                    COALESCE(SUM(CASE WHEN estado = 'eliminado' AND purgado_en IS NULL THEN size_bytes ELSE 0 END), 0) AS bytes_pendientes_purga
              FROM documentos
              WHERE hotel_id = ?",
             [$hotelId]
@@ -101,6 +106,7 @@ class Documento extends Model
             'archivados' => (int)($row['archivados'] ?? 0),
             'eliminados' => (int)($row['eliminados'] ?? 0),
             'bytes_total' => (int)($row['bytes_total'] ?? 0),
+            'bytes_pendientes_purga' => (int)($row['bytes_pendientes_purga'] ?? 0),
         ];
     }
 
@@ -618,10 +624,13 @@ class Documento extends Model
             throw new Exception('Transicion de estado documental no permitida');
         }
 
+        $marcarEliminadoEn = $nuevoEstado === 'eliminado' ? ', eliminado_en = NOW()' : '';
+
         $stmt = $this->db->query(
             "UPDATE documentos
              SET estado = ?,
                  updated_at = NOW()
+                 {$marcarEliminadoEn}
              WHERE id = ?
                AND hotel_id = ?
                AND estado = ?",
@@ -642,6 +651,144 @@ class Documento extends Model
             'estado_antes' => $estadoAntes,
             'estado_despues' => $nuevoEstado,
         ];
+    }
+
+    /**
+     * Purga (unlink fisico + purgado_en) los documentos 'eliminado' cuya
+     * ventana de retencion ya vencio. Pensado para correr desde un cron;
+     * cada documento se purga en su propia transaccion para que un error
+     * puntual no tumbe el lote completo.
+     */
+    public function purgarElegibles(?int $diasRetencion = null, int $limite = 200): array
+    {
+        $diasRetencion = $diasRetencion ?? self::RETENCION_ELIMINADOS_DIAS;
+        $candidatos = $this->documentosElegiblesParaPurga($diasRetencion, $limite);
+
+        $purgados = 0;
+        $bytesLiberados = 0;
+        $errores = [];
+
+        foreach ($candidatos as $documento) {
+            try {
+                if ($this->purgarDocumento((int)$documento['id'], (int)$documento['hotel_id'])) {
+                    $purgados++;
+                    $bytesLiberados += (int)($documento['size_bytes'] ?? 0);
+                }
+            } catch (Throwable $e) {
+                $errores[] = 'Documento #' . $documento['id'] . ': ' . $e->getMessage();
+            }
+        }
+
+        return [
+            'candidatos' => count($candidatos),
+            'purgados' => $purgados,
+            'bytes_liberados' => $bytesLiberados,
+            'errores' => $errores,
+        ];
+    }
+
+    public function documentosElegiblesParaPurga(int $diasRetencion, int $limite = 200): array
+    {
+        if (!$this->tablaExiste('documentos')) {
+            return [];
+        }
+
+        $diasRetencion = max(1, $diasRetencion);
+        $limite = max(1, min(1000, $limite));
+
+        $stmt = $this->db->query(
+            "SELECT id, hotel_id, storage_path, nombre_original, size_bytes, eliminado_en
+             FROM documentos
+             WHERE estado = 'eliminado'
+               AND eliminado_en IS NOT NULL
+               AND eliminado_en <= DATE_SUB(NOW(), INTERVAL ? DAY)
+               AND purgado_en IS NULL
+             ORDER BY eliminado_en ASC
+             LIMIT {$limite}",
+            [$diasRetencion]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    /** Purga un documento puntual. Devuelve false si ya no es elegible (carrera con otro proceso). */
+    public function purgarDocumento(int $id, int $hotelId): bool
+    {
+        $id = $this->validarId($id, 'Documento invalido');
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+
+        $pdo = $this->db->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT id, hotel_id, storage_path, nombre_original, size_bytes, estado, purgado_en
+                 FROM documentos
+                 WHERE id = ?
+                   AND hotel_id = ?
+                 FOR UPDATE"
+            );
+            $stmt->execute([$id, $hotelId]);
+            $documento = $stmt->fetch();
+
+            if (!$documento || $documento['estado'] !== 'eliminado' || $documento['purgado_en'] !== null) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $ruta = null;
+            try {
+                $ruta = $this->resolverRutaPrivada($documento);
+            } catch (Throwable $e) {
+                // Archivo ya ausente o ruta invalida: no bloquea la purga logica.
+                $ruta = null;
+            }
+
+            if ($ruta !== null && is_file($ruta)) {
+                @unlink($ruta);
+            }
+
+            $update = $pdo->prepare(
+                "UPDATE documentos
+                 SET purgado_en = NOW(),
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?"
+            );
+            $update->execute([$id, $hotelId]);
+
+            $pdo->commit();
+
+            $this->auditarPurga($hotelId, $id, $documento);
+
+            return true;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    private function auditarPurga(int $hotelId, int $documentoId, array $documento): void
+    {
+        try {
+            AuditService::record('documentos.purgado', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => null,
+                'entidad_tipo' => 'documento',
+                'entidad_id' => (string)$documentoId,
+                'descripcion' => 'Archivo fisico purgado tras vencer la ventana de retencion',
+                'datos_despues' => [
+                    'documento_id' => $documentoId,
+                    'nombre_original' => $documento['nombre_original'] ?? null,
+                    'size_bytes' => (int)($documento['size_bytes'] ?? 0),
+                    'storage_privado' => true,
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar purga documental: ' . $e->getMessage());
+        }
     }
 
     public function normalizarEntidadTipo(?string $entidadTipo): ?string
@@ -697,6 +844,7 @@ class Documento extends Model
             'archivados' => 0,
             'eliminados' => 0,
             'bytes_total' => 0,
+            'bytes_pendientes_purga' => 0,
         ];
     }
 

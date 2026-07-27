@@ -424,6 +424,7 @@ class DocumentoController extends Controller
             'archivados' => 0,
             'eliminados' => 0,
             'bytes_total' => 0,
+            'bytes_pendientes_purga' => 0,
         ];
     }
 
