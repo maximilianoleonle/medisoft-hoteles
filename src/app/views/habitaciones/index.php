@@ -2647,6 +2647,35 @@ document.addEventListener('DOMContentLoaded', function() {
         .habitaciones-view .hb-alerts-toggle:hover{
             background: color-mix(in srgb, var(--hb-late, #C9322B) 4%, transparent);
         }
+        /* Variante estatica (proyectando a otra fecha): informa, no se despliega.
+           Sin cursor de clic ni hover, porque no hay nada que abrir. */
+        .habitaciones-view .hb-alerts.is-static .hb-alerts-toggle{ cursor: default; }
+        .habitaciones-view .hb-alerts.is-static .hb-alerts-toggle:hover{ background: transparent; }
+        .habitaciones-view .hb-alerts-goto-hoy{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
+            padding: 6px 11px;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 10%, #FFF);
+            color: color-mix(in srgb, var(--hb-late, #C9322B) 72%, var(--hb-primary, #1B2746));
+            font-size: .72rem;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .habitaciones-view .hb-alerts-goto-hoy:hover{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 18%, #FFF);
+        }
+        html[data-theme="dark"] .habitaciones-view .hb-alerts-goto-hoy{
+            background: color-mix(in srgb, var(--hb-late, #C9322B) 26%, #1C1C1E);
+            color: #F5F5F7;
+        }
+        @media (max-width:640px){
+            .habitaciones-view .hb-alerts-goto-hoy span{ display: none; }
+            .habitaciones-view .hb-alerts-goto-hoy{ padding: 6px 9px; }
+        }
         .habitaciones-view .hb-alerts-toggle .hb-move-title strong{
             color: color-mix(in srgb, var(--hb-late, #C9322B) 46%, var(--hb-primary, #1B2746));
         }
@@ -2879,13 +2908,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         </style>
 
-        <div class="hb-move-card hb-alerts" id="hbAlertsCard" role="region" aria-label="Alertas pendientes">
+        <?php
+            // Proyectando a otra fecha el panel se vuelve ESTATICO: las 3 alertas se
+            // calculan contra CURDATE() (nadie tiene un "check-out vencido del 17 de
+            // septiembre"), asi que re-anclarlas a la fecha consultada no significa
+            // nada. Se conserva la senal —un huesped que no se ha ido es urgente
+            // aunque estes planeando septiembre— y se quita la ACCION: resolver
+            // pendientes de hoy desde la vista de otro dia es el mismo tropiezo que
+            // el boton de check-out, que ya se oculta al proyectar. La salida es
+            // "Volver a hoy", que lleva a donde si se puede actuar.
+            $hbAlertasEstaticas = $hbFechaProyectada !== '';
+        ?>
+        <div class="hb-move-card hb-alerts<?= $hbAlertasEstaticas ? ' is-static' : '' ?>" id="hbAlertsCard" role="region" aria-label="Alertas pendientes">
+            <?php if ($hbAlertasEstaticas): ?>
+            <div class="hb-alerts-toggle">
+                <span class="hb-move-title">
+            <?php else: ?>
             <button type="button"
                     class="hb-alerts-toggle"
                     aria-expanded="false"
                     aria-controls="hbAlertsCollapse"
                     onclick="hbToggleAlertas()">
                 <span class="hb-move-title">
+            <?php endif; ?>
                     <span class="hb-alerts-mark-wrap"><i class="fas fa-exclamation-triangle"></i></span>
                     <span>
                         <strong>Alertas pendientes</strong>
@@ -2911,10 +2956,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-clock"></i><?= count($llegadas_tardias) ?> <em>hoy</em>
                     </span>
                     <?php endif; ?>
+                    <?php if ($hbAlertasEstaticas): ?>
+                    <a href="<?= url('habitaciones') ?>" class="hb-alerts-goto-hoy">
+                        <i class="fas fa-rotate-left" aria-hidden="true"></i><span>Volver a hoy</span>
+                    </a>
+                    <?php else: ?>
                     <span class="hb-alerts-chev"><i class="fas fa-chevron-down"></i></span>
+                    <?php endif; ?>
                 </span>
-            </button>
+            <?= $hbAlertasEstaticas ? '</div>' : '</button>' ?>
 
+            <?php if (!$hbAlertasEstaticas): ?>
             <div class="hb-alerts-collapse" id="hbAlertsCollapse">
             <div class="hb-alerts-collapse-inner">
             <div class="hb-move-body hb-alerts-body">
@@ -3018,6 +3070,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             </div>
             </div>
+            <?php endif; ?>
         </div>
 
         <script>
