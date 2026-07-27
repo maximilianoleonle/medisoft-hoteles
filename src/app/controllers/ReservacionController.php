@@ -245,6 +245,69 @@ class ReservacionController extends Controller {
         ];
     }
 
+    /**
+     * Líneas de texto (una por vehículo) con solo los campos que el huésped
+     * realmente llenó en el formulario de vehículo (marca/modelo/placas/color/tipo).
+     */
+    private function cotizacionPdfVehiculos(int $huespedId, int $hotelId): array {
+        if ($huespedId <= 0 || $hotelId <= 0) {
+            return [];
+        }
+        if (!class_exists('HuespedVehiculo')) {
+            require_once __DIR__ . '/../models/HuespedVehiculo.php';
+        }
+
+        $vehiculos = (new HuespedVehiculo())->porHuespedHotel($huespedId, $hotelId);
+        if (empty($vehiculos)) {
+            return [];
+        }
+
+        $tipoOpciones = [
+            'auto' => 'Auto',
+            'camioneta' => 'Camioneta',
+            'motocicleta' => 'Motocicleta',
+            'van' => 'Van',
+            'otro' => 'Otro',
+        ];
+
+        $lineas = [];
+        foreach ($vehiculos as $vehiculo) {
+            $extras = function_exists('hotel_guest_decode_extra_json')
+                ? hotel_guest_decode_extra_json($vehiculo['datos_extra_json'] ?? null)
+                : [];
+            $tipoCodigo = trim((string) ($extras['vehiculo_tipo'] ?? ''));
+            $tipoLabel = $tipoCodigo !== '' ? ($tipoOpciones[$tipoCodigo] ?? $tipoCodigo) : '';
+
+            $partes = [];
+            if ($tipoLabel !== '') {
+                $partes[] = $tipoLabel;
+            }
+            $marcaModelo = trim(trim((string) ($vehiculo['marca'] ?? '')) . ' ' . trim((string) ($vehiculo['modelo'] ?? '')));
+            if ($marcaModelo !== '') {
+                $partes[] = $marcaModelo;
+            }
+            $placas = trim((string) ($vehiculo['placas'] ?? ''));
+            if ($placas !== '') {
+                $partes[] = 'Placas ' . $placas;
+            }
+            $color = trim((string) ($vehiculo['color'] ?? ''));
+            if ($color !== '') {
+                $partes[] = 'Color ' . $color;
+            }
+
+            if (empty($partes)) {
+                continue;
+            }
+            $linea = implode(' · ', $partes);
+            if (mb_strlen($linea) > 95) {
+                $linea = mb_substr($linea, 0, 94) . '…';
+            }
+            $lineas[] = $linea;
+        }
+
+        return $lineas;
+    }
+
     private function cotizacionPdfTerminosDefault(string $fechaEntradaTexto, string $checkinTexto, string $checkoutTexto): array {
         return [
             'El alojamiento es por la noche del ' . $fechaEntradaTexto . ' con salida conforme al horario de check-out configurado.',
@@ -543,15 +606,16 @@ class ReservacionController extends Controller {
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
  
-            // Alto fijo de la caja del huésped (el bloque de vehículos/placas se retiró jul-22)
-            $huespedBoxH = 18;
- 
+            // Alto de la caja del huésped: crece si el huésped tiene vehículo(s) registrado(s)
+            $vehiculoLineas = $this->cotizacionPdfVehiculos((int) ($huesped['id'] ?? 0), (int) $hotel_id);
+            $huespedBoxH = 18 + (count($vehiculoLineas) * 5);
+
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY = $pdf->GetY();
             $pdf->Rect($margin, $boxY, $contentW, $huespedBoxH, 'F');
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
             $pdf->Rect($margin, $boxY, $contentW, $huespedBoxH, 'D');
- 
+
             // Fila 1: Nombre + Teléfono
             $pdf->SetXY($margin + 4, $boxY + 3);
             $pdf->SetFont('Helvetica', 'B', 9);
@@ -559,12 +623,12 @@ class ReservacionController extends Controller {
             $pdf->Cell(18, 5, $u('Nombre:'), 0, 0, 'L');
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->Cell(70, 5, $u($huesped['nombre_completo'] ?? 'N/A'), 0, 0, 'L');
- 
+
             $pdf->SetFont('Helvetica', 'B', 9);
             $pdf->Cell(22, 5, $u('Teléfono:'), 0, 0, 'L');
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->Cell(50, 5, $u($huesped['telefono'] ?? 'No registrado'), 0, 1, 'L');
- 
+
             // Fila 2: Procedencia
             $pdf->SetX($margin + 4);
             $pdf->SetFont('Helvetica', 'B', 9);
@@ -572,6 +636,17 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', '', 9);
             $procedencia = $huesped['procedencia_estado'] ?? ($huesped['procedencia'] ?? 'No especificada');
             $pdf->Cell(60, 5, $u($procedencia), 0, 0, 'L');
+
+            // Filas siguientes: un vehículo por línea (solo campos que sí se llenaron)
+            foreach ($vehiculoLineas as $i => $vehiculoLinea) {
+                $pdf->SetXY($margin + 4, $boxY + 8 + (($i + 1) * 5));
+                $pdf->SetFont('Helvetica', 'B', 9);
+                $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
+                $etiqueta = count($vehiculoLineas) > 1 ? ('Vehículo ' . ($i + 1) . ':') : 'Vehículo:';
+                $pdf->Cell(26, 5, $u($etiqueta), 0, 0, 'L');
+                $pdf->SetFont('Helvetica', '', 9);
+                $pdf->Cell($contentW - 34, 5, $u($vehiculoLinea), 0, 1, 'L');
+            }
 
             // ═══════════════════════════════════════════════════════
             // DATOS DE LA ESTANCIA
@@ -721,9 +796,8 @@ class ReservacionController extends Controller {
                     $fecha_actual->modify('+1 day');
                 }
  
-                // Precio base por noche (sin incremento, para mostrar en columna)
-                // Si hay incremento, el total será mayor que base * noches
-                $precioPorNoche = floatval($hab['precio_base']);
+                // Precio por noche YA con incremento (promedio, consistente con el total)
+                $precioPorNoche = $noches > 0 ? ($precioTotalHab / $noches) : floatval($hab['precio_base']);
  
                 $subtotal += $precioTotalHab;
  
@@ -4943,12 +5017,15 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
 
-            // Caja de datos del huésped
+            // Caja de datos del huésped (crece si el huésped tiene vehículo(s) registrado(s))
+            $vehiculoLineas = $this->cotizacionPdfVehiculos((int) $huesped_id, (int) $hotel_id);
+            $huespedBoxH = 18 + (count($vehiculoLineas) * 5);
+
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY = $pdf->GetY();
-            $pdf->Rect($margin, $boxY, $contentW, 18, 'F');
+            $pdf->Rect($margin, $boxY, $contentW, $huespedBoxH, 'F');
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-            $pdf->Rect($margin, $boxY, $contentW, 18, 'D');
+            $pdf->Rect($margin, $boxY, $contentW, $huespedBoxH, 'D');
 
             $pdf->SetXY($margin + 4, $boxY + 3);
             $pdf->SetFont('Helvetica', 'B', 9);
@@ -4969,10 +5046,21 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $procedencia = $huesped['procedencia_estado'] ?? ($huesped['procedencia'] ?? 'No especificada');
             $pdf->Cell(60, 5, $u($procedencia), 0, 0, 'L');
 
+            // Filas siguientes: un vehículo por línea (solo campos que sí se llenaron)
+            foreach ($vehiculoLineas as $i => $vehiculoLinea) {
+                $pdf->SetXY($margin + 4, $boxY + 8 + (($i + 1) * 5));
+                $pdf->SetFont('Helvetica', 'B', 9);
+                $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
+                $etiqueta = count($vehiculoLineas) > 1 ? ('Vehículo ' . ($i + 1) . ':') : 'Vehículo:';
+                $pdf->Cell(26, 5, $u($etiqueta), 0, 0, 'L');
+                $pdf->SetFont('Helvetica', '', 9);
+                $pdf->Cell($contentW - 34, 5, $u($vehiculoLinea), 0, 1, 'L');
+            }
+
             // ═══════════════════════════════════════════════════════
             // DATOS DE LA ESTANCIA
             // ═══════════════════════════════════════════════════════
-            $y = $boxY + 24;
+            $y = $boxY + $huespedBoxH + 6;
             $pdf->SetY($y);
 
             $pdf->SetFont('Helvetica', 'B', 10);
