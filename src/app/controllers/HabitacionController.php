@@ -139,6 +139,15 @@ public function indexAction() {
     $tipoFiltroSolicitado = strtolower(trim((string)($filtros['tipo'] ?? '')));
     $tipoFiltroTecnico = $tipoFiltroSolicitado !== '' && isset($this->tiposAlmacenamientoCompatibles()[$tipoFiltroSolicitado]);
     
+    // Elegir HOY en el selector NO debe mandarte a la proyeccion por fecha: para el
+    // dia en curso la verdad es el estado fisico (llegadas reales, limpieza real),
+    // no la disponibilidad derivada de fechas. Antes el mismo dia daba dos numeros
+    // distintos segun como llegaras a la pantalla. Conservamos fecha_consulta para
+    // que el input siga marcado; solo apagamos el desvio.
+    if (!empty($filtros['fecha_consulta']) && $filtros['fecha_consulta'] === date('Y-m-d')) {
+        $filtros['mostrar_disponibilidad'] = '';
+    }
+
     // Verificar si se está filtrando por fecha específica
     if (!empty($filtros['fecha_consulta']) && !empty($filtros['mostrar_disponibilidad'])) {
         $this->mostrarDisponibilidadPorFecha($filtros);
@@ -465,19 +474,22 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         $habitacion['incrementos_aplicados'] = $precio_info['incrementos_aplicados'];
         $habitacion['tiene_incremento'] = ($precio_info['incremento_total'] > 0);
         
-        // Determinar estado
+        // Determinar estado. Una habitacion comprometida en la fecha no es una sola
+        // cosa: la que ENTRA ese dia se pinta 'por_llegar' (violeta, mismo estado
+        // que la vista de hoy) y solo la estancia que viene de antes queda
+        // 'ocupada_fecha'. Ambas siguen siendo no vendibles esa noche.
         if ($habitacion['estado'] == 'mantenimiento') {
-    $habitacion['estado_display'] = $habitacion['estado'];
-            error_log("Hab {$habitacion['numero']}: {$habitacion['estado']}");
+            $habitacion['estado_display'] = $habitacion['estado'];
         } elseif (isset($ocupadas[$habitacion['id']])) {
             $habitacion['info_ocupacion'] = $ocupadas[$habitacion['id']];
-            $habitacion['estado_display'] = 'ocupada_fecha';
+            $habitacion['estado_display'] = self::estadoDisplayCompromisoEnFecha(
+                $ocupadas[$habitacion['id']]['fecha_entrada'] ?? null,
+                $fecha_consulta
+            );
             $ocupadas_count++;
-            error_log("Hab {$habitacion['numero']}: OCUPADA - {$ocupadas[$habitacion['id']]['huesped']}");
         } else {
             $habitacion['estado_display'] = 'disponible_fecha';
             $disponibles++;
-            error_log("Hab {$habitacion['numero']}: DISPONIBLE");
         }
         
         $habitaciones_procesadas[] = $habitacion;
@@ -502,23 +514,13 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         return strnatcmp($a['numero'], $b['numero']);
     });
     
-    // Estadísticas
-    $estadisticas = [
-        'total' => count($habitaciones_procesadas),
-        'disponibles' => count(array_filter($habitaciones_procesadas, function($h) { 
-            return $h['estado_display'] == 'disponible_fecha'; 
-        })),
-        'ocupadas' => count(array_filter($habitaciones_procesadas, function($h) { 
-            return $h['estado_display'] == 'ocupada_fecha'; 
-        })),
-        'por_llegar' => 0,
-        'limpieza' => count(array_filter($habitaciones_procesadas, function($h) { 
-            return $h['estado_display'] == 'limpieza'; 
-        })),
-        'mantenimiento' => count(array_filter($habitaciones_procesadas, function($h) { 
-            return $h['estado_display'] == 'mantenimiento'; 
-        }))
-    ];
+    // Estadisticas: particion EXCLUYENTE derivada de lo que el grid ya pinto, para
+    // que ficha, chip y grid no puedan discrepar. 'por_llegar' antes iba forzado a 0
+    // y 'limpieza' contaba un estado_display que esta rama jamas produce.
+    $estadisticas = self::derivarEstadisticasParaFecha(array_map(
+        function ($h) { return (string)($h['estado_display'] ?? ''); },
+        $habitaciones_procesadas
+    ));
     
     error_log("=== FIN DISPONIBILIDAD ===");
     
@@ -526,6 +528,8 @@ private function mostrarDisponibilidadPorFecha($filtros) {
     $estados = Habitacion::getEstados();
     $estados['disponible_fecha'] = ['label' => 'Disponible', 'color' => 'green', 'icon' => 'check-circle'];
     $estados['ocupada_fecha'] = ['label' => 'Ocupada', 'color' => 'red', 'icon' => 'user'];
+    // Mismo estado (y mismo violeta) que la vista de hoy: la llegada del dia consultado.
+    $estados['por_llegar'] = ['label' => 'Por llegar', 'color' => 'purple', 'icon' => 'clock'];
     $alertasPendientes = $this->obtenerAlertasPendientesHabitaciones($hotelId);
     
     View::renderTemplate('habitaciones/index', [
@@ -965,6 +969,80 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
             'por_llegar_en_limpieza' => $enLimpieza,
             'libres_hoy' => max(0, $disponiblesFisicas - $listas),
             'reservas_llegan_hoy' => count($reservas),
+        ];
+    }
+
+    /**
+     * Estado a pintar para una habitacion COMPROMETIDA en la fecha consultada.
+     * PURA (sin BD).
+     *
+     * Las dos hacen el cuarto no vendible esa noche, pero el hotelero necesita
+     * distinguirlas: la que ENTRA ese dia hay que recibirla (llega con maletas),
+     * la que viene de antes ya esta adentro. Antes ambas caian en 'ocupada_fecha'
+     * (rojo) y la ficha "Por llegar" mostraba 0 aunque hubiera llegadas ese dia.
+     *
+     * @param string|null $fechaEntrada fecha_entrada de la reservacion que cubre la fecha
+     * @param string $fechaConsulta     fecha consultada (Y-m-d)
+     * @return string 'por_llegar' | 'ocupada_fecha'
+     */
+    public static function estadoDisplayCompromisoEnFecha(?string $fechaEntrada, string $fechaConsulta): string
+    {
+        $entrada = substr(trim((string)$fechaEntrada), 0, 10);
+        $consulta = substr(trim($fechaConsulta), 0, 10);
+
+        if ($entrada === '' || $consulta === '') {
+            return 'ocupada_fecha';
+        }
+
+        return $entrada === $consulta ? 'por_llegar' : 'ocupada_fecha';
+    }
+
+    /**
+     * Particion EXCLUYENTE de las fichas para una FECHA consultada (proyeccion).
+     * PURA (sin BD). Hermana de derivarEstadisticasLlegadas(), que es la de HOY
+     * (aquella si conoce el estado fisico: limpieza, llegadas con cuarto sucio).
+     *
+     * Invariante: total == disponibles + ocupadas + por_llegar + limpieza +
+     * mantenimiento, para que ficha, chip y grid no puedan discrepar.
+     *
+     * 'limpieza' va en 0 a proposito: limpieza es un estado de AHORA, no se puede
+     * proyectar a otra fecha (y esta rama solo corre para fechas != hoy).
+     * Un estado desconocido se cuenta como ocupada, nunca como disponible: inflar
+     * lo vendible es lo unico que puede provocar sobreventa.
+     *
+     * @param string[] $estadosDisplay un estado_display por habitacion ya clasificada
+     */
+    public static function derivarEstadisticasParaFecha(array $estadosDisplay): array
+    {
+        $disponibles = 0;
+        $porLlegar = 0;
+        $mantenimiento = 0;
+        $ocupadas = 0;
+
+        foreach ($estadosDisplay as $estado) {
+            switch ((string)$estado) {
+                case 'disponible_fecha':
+                    $disponibles++;
+                    break;
+                case 'por_llegar':
+                    $porLlegar++;
+                    break;
+                case 'mantenimiento':
+                    $mantenimiento++;
+                    break;
+                default:
+                    $ocupadas++;
+                    break;
+            }
+        }
+
+        return [
+            'total' => count($estadosDisplay),
+            'disponibles' => $disponibles,
+            'ocupadas' => $ocupadas,
+            'por_llegar' => $porLlegar,
+            'limpieza' => 0,
+            'mantenimiento' => $mantenimiento,
         ];
     }
 

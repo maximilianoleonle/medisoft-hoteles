@@ -5,6 +5,12 @@ $hotel_id_actual = obtenerHotelIdActualCompat();
 $checkins_pendientes = isset($checkins_pendientes) && is_array($checkins_pendientes) ? $checkins_pendientes : [];
 $checkouts_vencidos = isset($checkouts_vencidos) && is_array($checkouts_vencidos) ? $checkouts_vencidos : [];
 $llegadas_tardias = isset($llegadas_tardias) && is_array($llegadas_tardias) ? $llegadas_tardias : [];
+// Proyeccion a OTRA fecha: las fichas dejan de decir "hoy" (mentian al consultar
+// otro dia). Vacio = estamos viendo el dia en curso. Los 4 consumidores del label
+// (fichas hb-stat, $hbMobileSegments, $hbChips, $quickLegend) leen de aqui.
+$hbFechaProyectada = !empty($mostrar_disponibilidad_fecha) ? (string) ($fecha_consultada ?? '') : '';
+$hbFechaCorta = $hbFechaProyectada !== '' ? format_date($hbFechaProyectada, 'd/m') : '';
+$hbLabelLibres = $hbFechaProyectada !== '' ? 'Libres' : 'Libres hoy';
 $hb_hotel_checkin_hora = function_exists('hotel_config_get')
     ? (string) hotel_config_get('operacion.checkin_hora', '15:00', $hotel_id_actual)
     : '15:00';
@@ -12,6 +18,15 @@ $hb_hotel_checkin_hora = substr(trim($hb_hotel_checkin_hora), 0, 5);
 if (!preg_match('/^\d{2}:\d{2}$/', $hb_hotel_checkin_hora)) {
     $hb_hotel_checkin_hora = '15:00';
 }
+// El panel de check-outs decia "Hasta 12:00 PM" fijo; la hora es por hotel.
+$hb_hotel_checkout_hora = function_exists('hotel_config_get')
+    ? (string) hotel_config_get('operacion.checkout_hora', '12:00', $hotel_id_actual)
+    : '12:00';
+$hb_hotel_checkout_hora = substr(trim($hb_hotel_checkout_hora), 0, 5);
+if (!preg_match('/^\d{2}:\d{2}$/', $hb_hotel_checkout_hora)) {
+    $hb_hotel_checkout_hora = '12:00';
+}
+$hb_hotel_checkout_label = date('g:i A', strtotime('2000-01-01 ' . $hb_hotel_checkout_hora));
 $colores_habitacion = [
     'MOKA'      => '#6F4E37',
     'PURPURA'   => '#800080',
@@ -2484,29 +2499,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-l">Total</span>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--available" data-estado="disponible" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones libres (sin llegada hoy)">
+            <div class="hb-stat hb-stat--available" data-estado="disponible" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="<?= $hbFechaProyectada !== '' ? 'Filtrar habitaciones vendibles el ' . htmlspecialchars($hbFechaCorta) : 'Filtrar habitaciones libres (sin llegada hoy)' ?>">
                 <span class="hb-stat-ic"><i class="fas fa-check-circle"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0) ?></span>
-                <span class="hb-stat-l">Libres hoy</span>
+                <span class="hb-stat-l"><?= $hbLabelLibres ?></span>
+                <?php if ($hbFechaProyectada !== ''): ?>
+                <span class="hb-stat-sub">vendibles el <?= htmlspecialchars($hbFechaCorta) ?></span>
+                <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
             <div class="hb-stat hb-stat--occupied" data-estado="ocupada" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones ocupadas">
                 <span class="hb-stat-ic"><i class="fas fa-bed"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['ocupadas'] ?? 0 ?></span>
                 <span class="hb-stat-l">Ocupada</span>
+                <?php if ($hbFechaProyectada !== ''): ?>
+                <span class="hb-stat-sub">estancias que vienen de antes</span>
+                <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar llegadas de hoy con cuarto listo">
+            <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="<?= $hbFechaProyectada !== '' ? 'Filtrar reservaciones que entran el ' . htmlspecialchars($hbFechaCorta) : 'Filtrar llegadas de hoy con cuarto listo' ?>">
                 <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
                 <span class="hb-stat-l">Por llegar</span>
+                <?php if ($hbFechaProyectada !== ''): ?>
+                <span class="hb-stat-sub">entran el <?= htmlspecialchars($hbFechaCorta) ?></span>
+                <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
             <div class="hb-stat hb-stat--cleaning" data-estado="limpieza" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones en limpieza">
                 <span class="hb-stat-ic"><i class="fas fa-broom"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
                 <span class="hb-stat-l">Limpieza</span>
-                <?php if (!empty($estadisticas['por_llegar_en_limpieza'])): ?>
+                <?php if ($hbFechaProyectada !== ''): ?>
+                <span class="hb-stat-sub">no aplica en otra fecha</span>
+                <?php elseif (!empty($estadisticas['por_llegar_en_limpieza'])): ?>
                 <span class="hb-stat-sub"><?= (int)$estadisticas['por_llegar_en_limpieza'] ?> para llegadas de hoy</span>
                 <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
@@ -2515,13 +2541,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-ic"><i class="fas fa-wrench"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['mantenimiento'] ?? 0 ?></span>
                 <span class="hb-stat-l">Mantenimiento</span>
+                <?php if ($hbFechaProyectada !== ''): ?>
+                <span class="hb-stat-sub">estado de hoy, no proyectado</span>
+                <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
         </div>
         <?php
         $estadoActual = $filtros['estado'] ?? '';
         $hbMobileSegments = [
-            ['Libres hoy', (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--c-available)', 'disponible'],
+            [$hbLabelLibres, (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--c-available)', 'disponible'],
             ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--c-occupied)', 'ocupada'],
             ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--c-arriving)', 'por_llegar'],
             ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--c-cleaning)', 'limpieza'],
@@ -2835,7 +2864,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="hb-alerts-mark-wrap"><i class="fas fa-exclamation-triangle"></i></span>
                     <span>
                         <strong>Alertas pendientes</strong>
-                        <small>Toca para revisar el detalle</small>
+                        <?php // Se calculan contra CURDATE(): al proyectar hay que decir de cuando son. ?>
+                        <small><?= $hbFechaProyectada !== ''
+                            ? 'De hoy, no del ' . htmlspecialchars($hbFechaCorta)
+                            : 'Toca para revisar el detalle' ?></small>
                     </span>
                 </span>
                 <span class="hb-alerts-sum">
@@ -3051,7 +3083,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php
         $hbChips = [
             ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
-            'disponible'    => ['Libres hoy',    (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'available'],
+            'disponible'    => [$hbLabelLibres,  (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'available'],
             'ocupada'       => ['Ocupada',       (int)($estadisticas['ocupadas'] ?? 0),      'occupied'],
             'por_llegar'    => ['Por llegar',    (int)($estadisticas['por_llegar'] ?? 0),    'arriving'],
             'limpieza'      => ['Limpieza',      (int)($estadisticas['limpieza'] ?? 0),      'cleaning'],
@@ -3110,6 +3142,8 @@ document.addEventListener('DOMContentLoaded', function(){
         $fecha_consulta = !empty($filtros['fecha_consulta']) ? $filtros['fecha_consulta'] : date('Y-m-d');
         $mostrar_movimientos = !empty($filtros['mostrar_disponibilidad']) || !empty($filtros['fecha_consulta']) || $fecha_consulta == date('Y-m-d');
         $es_filtro_fecha = !empty($filtros['fecha_consulta']) && $filtros['fecha_consulta'] != date('Y-m-d');
+        // "Hoy," solo cuando de verdad es hoy: los paneles rotulaban "Hoy, 01/08/2026".
+        $hb_mov_prefijo = $fecha_consulta === date('Y-m-d') ? 'Hoy, ' : '';
         ?>
         <?php if ($mostrar_movimientos): ?>
             <?php
@@ -3132,24 +3166,30 @@ document.addEventListener('DOMContentLoaded', function(){
                             ORDER BY r.hora_llegada_estimada";
             $stmt = $db->query($sql_checkins, [$hotel_id_actual, $fecha_consulta]);
             $checkins_dia = $stmt->fetchAll();
-            // Check-outs del día - Solo si NO es un filtro de fecha (solo para día actual)
-            $checkouts_dia = [];
-            if (!$es_filtro_fecha) {
-                $sql_checkouts = "SELECT r.*, h.nombre_completo, h.telefono,
-                                 GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
-                                 GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ',') as habitaciones_ids
-                                 FROM reservaciones r
-                                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
-                                 INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
-                                 WHERE r.hotel_id = ?
-                                 AND DATE(r.fecha_salida) = ?
-                                 AND r.estado = 'checked_in'
-                                 GROUP BY r.id
-                                 ORDER BY r.hora_entrada";
-                $stmt = $db->query($sql_checkouts, [$hotel_id_actual, $fecha_consulta]);
-                $checkouts_dia = $stmt->fetchAll();
-            }
+            // Check-outs del dia. Antes se suprimian ENTEROS al filtrar por fecha y el
+            // panel mentia "No hay check-outs programados" sin haber consultado nada.
+            // HOY conserva su criterio exacto ('checked_in' = cola de trabajo real, la
+            // unica con boton de accion); en OTRA fecha es una proyeccion, con el mismo
+            // juego de estados que la consulta de ocupadas: las confirmadas que terminan
+            // ese dia (aun no llegan, pero saldran) y, hacia atras, las ya cerradas.
+            $checkouts_estados = $es_filtro_fecha
+                ? ['confirmada', 'checked_in', 'checked_out']
+                : ['checked_in'];
+            $checkouts_in = implode(',', array_fill(0, count($checkouts_estados), '?'));
+            $sql_checkouts = "SELECT r.*, h.nombre_completo, h.telefono,
+                             GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
+                             GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ',') as habitaciones_ids
+                             FROM reservaciones r
+                             INNER JOIN huespedes h ON r.huesped_id = h.id
+                             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                             INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                             WHERE r.hotel_id = ?
+                             AND DATE(r.fecha_salida) = ?
+                             AND r.estado IN ($checkouts_in)
+                             GROUP BY r.id
+                             ORDER BY r.hora_entrada";
+            $stmt = $db->query($sql_checkouts, array_merge([$hotel_id_actual, $fecha_consulta], $checkouts_estados));
+            $checkouts_dia = $stmt->fetchAll();
 
             // Crear mapa de habitaciones con doble movimiento
             $habitaciones_doble_movimiento = [];
@@ -3177,7 +3217,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                 <i class="fas fa-sign-in-alt mr-2"></i>
                                 <span>
                                     <strong>Check-ins</strong>
-                                    <small>Hoy, <?= format_date($fecha_consulta) ?></small>
+                                    <small><?= $hb_mov_prefijo ?><?= format_date($fecha_consulta) ?></small>
                                 </span>
                             </span>
                             <span class="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -3226,7 +3266,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                 <i class="fas fa-sign-out-alt mr-2"></i>
                                 <span>
                                     <strong>Check-outs</strong>
-                                    <small>Hoy, <?= format_date($fecha_consulta) ?></small>
+                                    <small><?= $hb_mov_prefijo ?><?= format_date($fecha_consulta) ?></small>
                                 </span>
                             </span>
                             <span class="bg-yellow-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -3247,14 +3287,25 @@ document.addEventListener('DOMContentLoaded', function(){
                                             </p>
                                             <p class="text-xs text-gray-600">
                                                 <i class="fas fa-bed mr-1"></i><?= htmlspecialchars($checkout['habitaciones_numeros']) ?>
-                                                • Hasta 12:00 PM
+                                                • Hasta <?= htmlspecialchars($hb_hotel_checkout_label) ?>
                                             </p>
                                         </div>
-                                        <?php if ($checkout['estado'] == 'checked_in'): ?>
+                                        <?php if (!$es_filtro_fecha && $checkout['estado'] == 'checked_in'): ?>
                                             <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)"
                                                     class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600 transition-colors ml-2">
                                                 Check-out
                                             </button>
+                                        <?php elseif ($es_filtro_fecha): ?>
+                                            <?php
+                                            // Proyeccion: no se puede cerrar HOY una salida de otra fecha.
+                                            // En su lugar, en que va esa reservacion (sin enum crudo).
+                                            $hb_estado_salida = [
+                                                'confirmada'  => 'Aún no llega',
+                                                'checked_in'  => 'Hospedado',
+                                                'checked_out' => 'Ya salió',
+                                            ][$checkout['estado']] ?? 'Programada';
+                                            ?>
+                                            <span class="text-xs text-gray-500 ml-2 whitespace-nowrap"><?= htmlspecialchars($hb_estado_salida) ?></span>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
@@ -3434,6 +3485,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     $estado_principal = $estado_fisico;
                 }
                 $tieneEstadoLimpiezaOperativa = $estado_fisico === 'limpieza' && !$esta_consultando_disponibilidad_fecha;
+                // En modo fecha la reservacion que cubre el dia viaja en info_ocupacion,
+                // sea estancia en curso ('ocupada_fecha') o llegada de ese dia
+                // ('por_llegar'): las dos pintan huesped, fechas y enlace a la reserva.
+                $tieneCompromisoEnFecha = $esta_consultando_disponibilidad_fecha
+                    && in_array($estado_actual, ['ocupada_fecha', 'por_llegar'], true)
+                    && isset($habitacion['info_ocupacion']);
+                $esLlegadaEnFecha = $tieneCompromisoEnFecha && $estado_actual === 'por_llegar';
                 $estadoInfo = $estados[$estado_actual] ?? ['label' => 'Desconocido', 'color' => 'gray', 'icon' => 'question'];
                 $estadoInfoPrincipal = $estados[$estado_principal] ?? $estadoInfo;
 
@@ -3462,8 +3520,11 @@ if ($tieneEstadoLimpiezaOperativa && isset($habitacion['reservacion_pendiente'])
                 $tiene_checkout_vencido = false;
                 $info_checkout_vencido = null;
 
-                // Primero verificar si está en el array de check-outs vencidos
-                if (isset($habitaciones_con_checkout_vencido[$habitacion['id']])) {
+                // Primero verificar si está en el array de check-outs vencidos.
+                // "Vencido" se calcula contra CURDATE(): es un hecho de HOY y NO debe
+                // repintar la tarjeta cuando estas proyectando a otra fecha (el aviso
+                // sigue vivo en el panel de alertas, ahi rotulado como de hoy).
+                if (!$esta_consultando_disponibilidad_fecha && isset($habitaciones_con_checkout_vencido[$habitacion['id']])) {
                     $tiene_checkout_vencido = true;
                     $info_checkout_vencido = $habitaciones_con_checkout_vencido[$habitacion['id']];
                 } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
@@ -3479,8 +3540,11 @@ if ($tieneEstadoLimpiezaOperativa && isset($habitacion['reservacion_pendiente'])
                 $es_checkin_vencido = false;
                 $info_checkin_vencido = null;
 
-                // Primero verificar si está en el array de check-ins vencidos
-                if (isset($habitaciones_con_checkin_vencido[$habitacion['id']])) {
+                // Idem check-in vencido: hecho de HOY (DATEDIFF contra CURDATE()). Sin
+                // este candado, en la proyeccion ganaba a $tieneCompromisoEnFecha en la
+                // cadena de faceGuest y la tarjeta mostraba al huesped atrasado de hoy
+                // en vez de quien ocupa el cuarto en la fecha consultada.
+                if (!$esta_consultando_disponibilidad_fecha && isset($habitaciones_con_checkin_vencido[$habitacion['id']])) {
                     $es_checkin_vencido = true;
                     $info_checkin_vencido = $habitaciones_con_checkin_vencido[$habitacion['id']];
                 } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
@@ -3559,7 +3623,7 @@ if ($tiene_doble_movimiento) {
                     $reservacion_detalle_id = $info_checkout_vencido['reservacion_id'] ?? null;
                 } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
                     $reservacion_detalle_id = $habitacion['reservacion_pendiente']['reservacion_id'] ?? ($habitacion['reservacion_pendiente']['id'] ?? null);
-                } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id'])) {
+                } elseif ($tieneCompromisoEnFecha && isset($habitacion['info_ocupacion']['reservacion_id'])) {
                     $reservacion_detalle_id = $habitacion['info_ocupacion']['reservacion_id'];
                 } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
                     $reservacion_detalle_id = $habitacion['ocupacion_actual']['id'] ?? ($habitacion['ocupacion_actual']['reservacion_id'] ?? null);
@@ -3691,9 +3755,9 @@ if ($tiene_doble_movimiento) {
                                 if ($tiene_checkout_vencido) { $faceMeta = 'Check-out vencido'; }
                                 elseif ($tiene_checkout_hoy) { $faceMeta = 'Sale hoy'; }
                                 else { $faceMeta = 'Sale ' . format_date($habitacion['ocupacion_actual']['fecha_salida']); }
-                            } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])) {
-                                $faceGuest = $habitacion['info_ocupacion']['huesped'] ?? 'Ocupada';
-                                $faceMeta = 'No disponible en la fecha';
+                            } elseif ($tieneCompromisoEnFecha) {
+                                $faceGuest = $habitacion['info_ocupacion']['huesped'] ?? ($esLlegadaEnFecha ? 'Llegada' : 'Ocupada');
+                                $faceMeta = $esLlegadaEnFecha ? 'Llega ese día' : 'No disponible en la fecha';
                             } elseif ($estado_principal == 'limpieza') {
                                 if ($es_checkin_vencido && $info_checkin_vencido) {
                                     $faceGuest = $info_checkin_vencido['nombre'];
@@ -3908,14 +3972,14 @@ if ($tiene_doble_movimiento) {
                                         </div>
                                     <?php endif; ?>
 
-                                <?php elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])): ?>
+                                <?php elseif ($tieneCompromisoEnFecha): ?>
                                     <div class="info-item">
                                         <i class="fas fa-user"></i>
                                         <span><?= htmlspecialchars($habitacion['info_ocupacion']['huesped'] ?? 'Reservacion') ?></span>
                                     </div>
                                     <div class="info-item">
-                                        <i class="fas fa-calendar-check"></i>
-                                        <span>Ocupada en la fecha consultada</span>
+                                        <i class="fas fa-<?= $esLlegadaEnFecha ? 'clock' : 'calendar-check' ?>"></i>
+                                        <span><?= $esLlegadaEnFecha ? 'Llega ese d&iacute;a · falta recibirla' : 'Ocupada en la fecha consultada' ?></span>
                                     </div>
                                     <?php if (!empty($habitacion['info_ocupacion']['fecha_entrada']) && !empty($habitacion['info_ocupacion']['fecha_salida'])): ?>
                                         <div class="info-item">
@@ -3978,7 +4042,7 @@ if ($tiene_doble_movimiento) {
                             </div>
 
                             <div class="action-buttons">
-    <?php if ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id'])): ?>
+    <?php if ($tieneCompromisoEnFecha && isset($habitacion['info_ocupacion']['reservacion_id'])): ?>
         <!-- Botón Ver Reservación cuando hay filtro de fecha -->
         <a href="<?= url('reservaciones/ver/' . $habitacion['info_ocupacion']['reservacion_id']) ?>" class="btn-action btn-primary" onclick="event.stopPropagation();" title="Ver detalle de la reservación">
             <i class="fas fa-eye mr-1"></i>Ver Reservación
@@ -3990,7 +4054,7 @@ if ($tiene_doble_movimiento) {
         </a>
      <?php endif; ?>
 
-    <?php if ($reservacion_detalle_id && !($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id']))): ?>
+    <?php if ($reservacion_detalle_id && !($tieneCompromisoEnFecha && isset($habitacion['info_ocupacion']['reservacion_id']))): ?>
         <a href="<?= url('reservaciones/ver/' . $reservacion_detalle_id) ?>" class="btn-action" onclick="event.stopPropagation();" title="Ver detalle de la reservación">
             <i class="fas fa-file-alt mr-1"></i>Reservacion
         </a>
@@ -5024,7 +5088,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
                 <h4 class="hb-quick-aside-title">Estados</h4>
                 <?php
                 $quickLegend = [
-                    ['Libres hoy', (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--qv-green)'],
+                    [$hbLabelLibres, (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--qv-green)'],
                     ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--qv-purple)'],
                     ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--qv-occupied)'],
                     ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--qv-blue)'],

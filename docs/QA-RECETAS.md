@@ -183,6 +183,20 @@ Verificado E2E en prod ✅ 2026-07-22 (Los Cedros vivo, con datos cambiando entr
 4. Ficha Limpieza con llegadas pendientes muestra sub-etiqueta "K para llegadas de hoy" — cubierto por suite (en vivo quedó 0 al terminar las camaristas).
 5. `/reservaciones`: metric "Llegadas hoy" agrega "· M cuartos" solo cuando M > reservas (reserva grupal) — verificado ("Llegadas hoy · 33 cuartos = 10").
 
+## Habitaciones — index en MODO FECHA (proyección a otro día)
+
+Verificado en local ✅ 2026-07-27 (Los Cedros, proyección al 01/08). Suite: `HabitacionFechaStatsTest.php`.
+
+1. `/habitaciones?fecha_consulta=<futuro>&mostrar_disponibilidad=1`: la reservación que **entra** ese día sale con `data-estado="por_llegar"` (violeta, `--sheet-c: #8039D0`, badge "Por llegar"), NO como "Ocupada" — verificado (hab AMBAR, 01/08).
+2. Las 5 fichas suman el Total y cada chip filtra exactamente su número (los 6: Todas 49 / Libres 48 / Ocupada 0 / Por llegar 1 / Limpieza 0 / Mantenimiento 0 → 49/48/0/1/0/0 tarjetas visibles) — verificado.
+3. Ningún texto dice "hoy" al proyectar: fichas "Libres" + subs ("vendibles el 01/08", "estancias que vienen de antes", "entran el 01/08", "no aplica en otra fecha") y paneles "Check-ins 01/08/2026" sin el prefijo "Hoy," — verificado.
+4. Reverso de la tarjeta de una llegada: nombre del huésped + "Llega ese día · falta recibirla" + rango de fechas + botón "Ver Reservación" — verificado.
+5. Elegir **hoy** en el selector NO entra a la proyección: título "Habitaciones - …" (no "Disponibilidad …"), labels vuelven a "Libres hoy", tarjetas con estado físico (`disponible`/`ocupada`, sin sufijo `_fecha`), input con la fecha y en `is-active`; los números deben ser **idénticos** a `/habitaciones` sin parámetros — verificado (49/48/1/0/0/0 en ambas).
+6. ✅ Check-outs en modo fecha (Ola 3, 2026-07-27): el panel ya consulta la fecha en vez de mentir "No hay check-outs programados". Verificado en 3 fechas de Los Cedros — futura con salida `confirmada` (02/08, hab AMBAR → "Aún no llega"), futura con `checked_in` (17/09, CORAL → "Hospedado") y **pasada** con `checked_out` (11/09, VINO → "Ya salió"). En las tres: `0` botones de acción (no se cierra hoy una salida de otro día).
+7. Hoy sin regresión: `/habitaciones` sigue rotulando "Check-ins/outs **Hoy**, dd/mm/aaaa", fichas sin sub-etiquetas y labels "Libres hoy" — verificado. ⬜ El botón "Check-out" del panel de hoy NO quedó ejercitado en vivo (Los Cedros no tiene salidas hoy en local); su condición es `!$es_filtro_fecha && estado=='checked_in'`, y en la vista de hoy la bandera es false, así que se reduce a la condición original.
+8. "Hasta HH:MM" del panel sale de `operacion.checkout_hora` (ya no fijo "12:00 PM") — verificado con el default del hotel.
+9. ✅ Alertas "vencidas" no contaminan la proyección (2026-07-27). A/B con el mismo cuarto (MOKA, check-in atrasado 2 días hoy): en `/habitaciones` sigue con clase `has-checkin-vencido`, `--sheet-c: #D64539` y cara "SIN CHECK-IN · 2 días"; proyectado a 17/09 la MISMA tarjeta va limpia (`--sheet-c: #1E9E63`, badge "Disponible", "Sin huésped") y la vista entera reporta **0 tarjetas** con `has-checkin-vencido`/`has-checkout-vencido`. El panel de alertas se conserva en ambas, con `<small>` = "Toca para revisar el detalle" hoy vs "De hoy, no del 17/09" al proyectar, y el chip "1 sin check-in" intacto.
+
 ## Habitaciones — alta masiva (lote)
 
 1. `/habitaciones/lote` (botón "En lote" en el listado y en el estado vacío de onboarding; gate `habitaciones.create`). **Verificado en navegador + PDO (jul-2026)**: define piso/tipo/precio comunes + rango `numero_desde`–`numero_hasta` (prefijo y relleno de ceros opcionales). El preview lateral en vivo lista los números en chips, muestra el conteo y el botón refleja el total ("Crear 20 habitaciones").
