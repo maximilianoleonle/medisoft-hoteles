@@ -522,7 +522,7 @@ $totalCheckouts = count($filas);
                 <div>
                     <p class="rep-kicker">Reputaci&oacute;n del hotel</p>
                     <h1 class="rep-title">Opiniones y encuestas</h1>
-                    <p class="rep-subtitle">Manda la encuesta a tus checkouts recientes; las buenas calificaciones van a Google y las bajas te llegan a ti primero.</p>
+                    <p class="rep-subtitle">Manda la encuesta a tus checkouts recientes: concentra las opiniones, te avisa cuando alguien queda insatisfecho e invita a dejar rese&ntilde;a en Google.</p>
                 </div>
             </div>
             <span class="rep-status-pill">
@@ -709,7 +709,7 @@ $totalCheckouts = count($filas);
                         </button>
                     </div>
                 </div>
-                <p class="rep-hint">Al huesped que califica con 4-5 estrellas se le invita a dejar resena en Google con este link. Las calificaciones bajas generan una notificacion interna para el gerente si el bloque de notificaciones esta disponible.</p>
+                <p class="rep-hint">A todo huesped que responde la encuesta se le ofrece este link para dejar su resena en Google, califique como califique: la politica de Google Maps prohibe invitar solo a los que califican bien, y filtrarlo pone en riesgo el perfil del hotel. Aparte de eso, las calificaciones bajas generan una notificacion interna para el gerente si el bloque de notificaciones esta disponible.</p>
             </form>
         </section>
     </div>

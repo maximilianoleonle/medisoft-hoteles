@@ -8,7 +8,8 @@ require_once __DIR__ . '/../models/ConfiguracionHotelRegistry.php';
  *
  * Encuestas post-estancia: recepcion genera un link con token por reservacion
  * con checkout; el huesped califica su estancia (1-5), NPS opcional y comentario.
- * Calificacion alta -> se le invita a dejar resena en Google (link por hotel);
+ * A TODO el que responde se le ofrece el link de resena en Google si el hotel
+ * lo configuro (sin filtrar por calificacion: ver puedeInvitarResena);
  * calificacion baja -> alerta interna via NotificacionService (best-effort,
  * gateada por el bloque notificaciones). No toca el flujo de check-out.
  */
@@ -121,7 +122,7 @@ class ReputacionService
             return ['success' => false, 'message' => 'Link no valido.', 'mostrar_google' => false];
         }
         if ($encuesta['estado'] === 'respondida') {
-            return ['success' => true, 'message' => 'Ya habiamos recibido tu opinion. ¡Gracias!', 'mostrar_google' => $this->calificaBien((int) $encuesta['calificacion'], $hotelId)];
+            return ['success' => true, 'message' => 'Ya habiamos recibido tu opinion. ¡Gracias!', 'mostrar_google' => $this->puedeInvitarResena($hotelId)];
         }
         if ($encuesta['estado'] === 'expirada') {
             return ['success' => false, 'message' => 'Esta encuesta ya expiro. ¡Gracias de todos modos!', 'mostrar_google' => false];
@@ -160,7 +161,7 @@ class ReputacionService
         return [
             'success' => true,
             'message' => '¡Gracias por tu opinion!',
-            'mostrar_google' => $this->calificaBien($calificacion, $hotelId),
+            'mostrar_google' => $this->puedeInvitarResena($hotelId),
         ];
     }
 
@@ -301,10 +302,19 @@ class ReputacionService
 
     // ───────────────────────── Helpers ─────────────────────────
 
-    private function calificaBien(int $calificacion, int $hotelId): bool
+    /**
+     * ¿Hay enlace de resena configurado para este hotel?
+     *
+     * NO depende de la calificacion a proposito. La politica de contenido de
+     * Google Maps prohibe pedir resenas de forma selectiva (invitar solo a
+     * quien califica bien es "review gating" y expone al hotel a sancion del
+     * perfil). Hasta jul-26 esto exigia calificacion >= 4; se quito. Quien
+     * responde la encuesta ve la invitacion, califique como califique.
+     */
+    private function puedeInvitarResena(int $hotelId): bool
     {
         $url = trim((string) ConfiguracionHotelRegistry::get('reputacion.google_review_url', '', $hotelId));
-        return $calificacion >= 4 && $url !== '';
+        return $url !== '';
     }
 
     /** Alerta interna de calificacion baja. Best-effort: jamas rompe la respuesta del huesped. */

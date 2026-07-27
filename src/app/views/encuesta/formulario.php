@@ -19,8 +19,10 @@ $logoUrl = function_exists('hotel_branding_asset_url') ? hotel_branding_asset_ur
 
 $respondida = ($encuesta['estado'] ?? '') === 'respondida';
 $expirada = ($encuesta['estado'] ?? '') === 'expirada';
-$mostrarGoogle = ($respondida && (int) ($encuesta['calificacion'] ?? 0) >= 4 && $googleUrl !== '')
-    || (!empty($resultado['mostrar_google']) && $googleUrl !== '');
+// La invitacion a Google NO depende de la calificacion: filtrarla seria review
+// gating, prohibido por la politica de contenido de Google Maps. Basta con que
+// el hotel haya configurado su enlace. (Antes exigia calificacion >= 4.)
+$mostrarGoogle = ($respondida || !empty($resultado['mostrar_google'])) && $googleUrl !== '';
 $nombreHuesped = trim((string) ($encuesta['nombre_completo'] ?? ''));
 $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
 ?><!DOCTYPE html>
@@ -86,11 +88,10 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
                 <div class="ico" aria-hidden="true">💛</div>
                 <h2>¡Gracias<?= $primerNombre !== '' ? ', ' . $enSafe($primerNombre) : '' ?>!</h2>
                 <p>Recibimos tu opinión sobre tu estancia en <?= $nombreHotel ?>.</p>
+                <p>Esperamos verte pronto de nuevo. ¡Buen viaje!</p>
                 <?php if ($mostrarGoogle): ?>
-                    <p>¿Nos ayudas con una reseña? A otros viajeros les sirve muchísimo.</p>
-                    <p style="margin-top:14px;"><a class="en-btn-google" href="<?= $enSafe($googleUrl) ?>" rel="noopener">⭐ Dejar reseña en Google</a></p>
-                <?php else: ?>
-                    <p>Esperamos verte pronto de nuevo. ¡Buen viaje!</p>
+                    <p style="margin-top:18px;">Si quieres, también puedes publicar tu experiencia en Google.</p>
+                    <p style="margin-top:10px;"><a class="en-btn-google" href="<?= $enSafe($googleUrl) ?>" rel="noopener">Escribir mi reseña en Google</a></p>
                 <?php endif; ?>
             </div>
         <?php elseif ($expirada): ?>
@@ -131,7 +132,7 @@ $primerNombre = $nombreHuesped !== '' ? explode(' ', $nombreHuesped)[0] : '';
         <?php endif; ?>
     </div>
 
-    <p class="en-footer">Tu opinión se comparte solo con <?= $nombreHotel ?> · Impulsado por Medisoft Hoteles</p>
+    <p class="en-footer">Tus respuestas llegan directo a <?= $nombreHotel ?> · Impulsado por Medisoft Hoteles</p>
 </div>
 </body>
 </html>

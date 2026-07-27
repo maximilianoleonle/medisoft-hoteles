@@ -106,7 +106,7 @@ class ConfiguracionHotelRegistry
         'reputacion.google_review_url' => [
             'type' => 'string',
             'default' => '',
-            'description' => 'Link para dejar resena en Google (se muestra al huesped que califica bien).',
+            'description' => 'Link para dejar resena en Google (se ofrece a todo huesped que responde la encuesta).',
         ],
         'reputacion.umbral_alerta' => [
             'type' => 'integer',
