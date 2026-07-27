@@ -264,6 +264,29 @@ Recorrido de 2 minutos por bloque, ANTES de ponerlo `activo_global=1`. Un bloque
 6. Smoke post-bloqueo masivo: dashboard, /habitaciones y /caja cargan sin 500 con gerente y el log del día queda limpio. ✅ 2026-07-24
 7. ⬜ POST real de "Guardar bloques y cobro" en el panel (no se ejecutó para no alterar contrataciones del hotel QA; la lógica está cubierta por suite) y revisión visual humana del panel (los checks fueron por asserts JS).
 
+## Reputación — encuesta pública sin review gating (jul-26)
+
+El módulo no tenía receta. Lo que se verifica es que la invitación a Google se ofrezca a TODO el que responde: filtrarla por calificación viola la política de Google Maps y arriesga el perfil del hotel.
+
+1. Suite: `run.php ReputacionTest` → 28/28. Cubre las 5 calificaciones, sin URL configurada, alerta interna, independencia de umbrales, tenancy y respuesta repetida. ✅ 2026-07-26
+2. **Prueba pública real, sin sesión** (la encuesta es anónima por token, no necesita login ni CSRF): en dev hay dos encuestas sembradas en Los Cedros — token `aabbccddeeff00112233445566778899` con **calificación 2** y `11223344556677889900aabbccddeeff` con 5.
+   `curl -s "http://localhost:8080/h/los-cedros/encuesta/<token>" | grep -oE "(Escribir mi rese[^<]*|href=\"https://g\.page[^\"]*)"`
+   Esperado en AMBAS: aparece el enlace y el botón. Si la de calificación 2 NO lo muestra, el gating volvió. ✅ 2026-07-26 (la de 2 estrellas sí lo muestra)
+3. Requisito del paso 2: el hotel debe tener `reputacion.google_review_url` en `hotel_configuracion` (hotel 1 ya la tiene). Sin URL, lo correcto es que NO aparezca.
+4. GOTCHA: el gating vivía en DOS lugares (servicio + vista). Tras el POST la vista relee la encuesta y evaluaba el umbral por su cuenta ⇒ verificar SIEMPRE por HTTP, no solo con la suite del servicio.
+5. ⬜ Envío por correo: NO se prueba porque no funciona (no hay MTA en la imagen); la encuesta se comparte copiando el enlace.
+
+## Captura offline apagada (escrituras que no llegaban al servidor)
+
+Desde jul-26 la app NO acepta capturas sin conexión (ver CLAUDE.md). Verificar que el candado sigue puesto:
+
+1. Flag en el navegador: entrar con sesión y `curl … | grep -oE "MEDISOFT_OFFLINE_(ENABLED|ESCRITURAS) = [a-z]+"` → esperado `ENABLED = true` y **`ESCRITURAS = false`**. ✅ 2026-07-26. GOTCHA: `/login` es standalone y NO incluye header.php → ahí el grep sale vacío y parece que el flag no existe; probar en `/dashboard` con sesión.
+2. Candado duro: `window.OfflineData.encolarOperacion('x',{})` desde la consola debe **rechazar** con `OFFLINE_ESCRITURAS_DESHABILITADAS`.
+3. Simular corte de red (DevTools → Offline) e intentar un movimiento de caja: debe salir "Sin conexión … no quedó guardado", NUNCA "se enviará al volver internet". Idem check-in/out en Habitaciones y alta de huésped.
+4. En Reservaciones offline no deben pintarse los botones de check-in/check-out en las tarjetas.
+5. La cola vieja NO se borra: si un dispositivo tiene pendientes, al sincronizar recibe 423 y un aviso para capturarlas a mano. `/offline/pendientes` debe seguir listándolas.
+6. ⬜ Prueba en dispositivo real de Los Cedros (revisar si hay capturas atoradas de antes del apagado — son la única copia de esos datos).
+
 ## Dinero E2E (regresión global)
 
 - Suite: `MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tests/run.php` (recrea la BD de prueba; filtrar por nombre para iterar rápido).
