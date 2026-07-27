@@ -37,6 +37,27 @@
   // 1. INSTALACIÓN DE INTERCEPTORES
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /**
+   * Aviso honesto cuando no hay internet y la captura offline está apagada.
+   * No prometemos "se enviará después": /api/sync está cerrado, así que esa
+   * operación no se guardaría en ningún lado.
+   */
+  function _avisarSinCaptura(accion) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Sin conexión',
+      html: `<p>No se puede ${accion} en este momento.</p>
+             <p class="text-sm text-gray-500 mt-2">Vuelve a intentarlo cuando regrese el internet: el cambio <strong>no</strong> quedó guardado.</p>`,
+      confirmButtonColor: '#6B7280',
+      confirmButtonText: 'Entendido',
+    });
+  }
+
+  /** ¿Podemos capturar escrituras sin conexión? Hoy no (ver offline-data.js). */
+  function _capturaOfflineActiva() {
+    return window.OfflineData?.escriturasHabilitadas?.() === true;
+  }
+
   function _instalarInterceptores() {
 
     // ── liberarHabitacion(id) ─────────────────────────────────────────────
@@ -46,6 +67,7 @@
 
       window.liberarHabitacion = function (id) {
         if (navigator.onLine) return _orig(id);
+        if (!_capturaOfflineActiva()) return _avisarSinCaptura('liberar la habitación');
 
         // OFFLINE: preguntar y encolar
         Swal.fire({
@@ -85,6 +107,7 @@
 
       window.ejecutarCheckOutRapido = function (reservacionId) {
         if (navigator.onLine) return _orig(reservacionId);
+        if (!_capturaOfflineActiva()) return _avisarSinCaptura('registrar el check-out');
 
         Swal.fire({
           icon:                'question',
@@ -127,6 +150,7 @@
 
       window.hacerCheckInRapido = function (reservacionId) {
         if (navigator.onLine) return _orig(reservacionId);
+        if (!_capturaOfflineActiva()) return _avisarSinCaptura('registrar el check-in');
 
         Swal.fire({
           icon:                'question',

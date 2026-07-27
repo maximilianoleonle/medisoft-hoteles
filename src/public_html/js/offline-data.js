@@ -802,7 +802,26 @@
    * @param {string} [label]  - Descripción legible para mostrar en UI
    * @returns {string}        - UUID de la operación creada
    */
+  /**
+   * ¿Se permite capturar escrituras sin conexión?
+   *
+   * El layout publica window.MEDISOFT_OFFLINE_ESCRITURAS. Hoy va en false
+   * porque /api/sync responde 423: encolar sería prometer un envío que nunca
+   * ocurre. Si la variable no existe (página vieja en caché), asumimos
+   * APAGADO — fallar cerrado es lo correcto cuando hay dinero de por medio.
+   */
+  function escriturasHabilitadas() {
+    return window.MEDISOFT_OFFLINE_ESCRITURAS === true;
+  }
+
   async function encolarOperacion(tipo, payload, label = '') {
+    // Candado único: cubre a todos los interceptores actuales y a cualquiera
+    // que se agregue después. No moverlo a los llamadores.
+    if (!escriturasHabilitadas()) {
+      console.warn(`[OfflineData] Captura offline deshabilitada: se rechazó "${tipo}".`);
+      throw new Error('OFFLINE_ESCRITURAS_DESHABILITADAS');
+    }
+
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       throw new Error('No se puede encolar operacion offline sin contexto de hotel');
@@ -963,6 +982,22 @@
       if (res.status === 401) {
         console.warn('[OfflineData] Sync detenido: sesión expirada. La cola queda intacta.');
         _avisarSesionExpirada();
+        return;
+      }
+
+      // 423 = el servidor tiene la sincronización deshabilitada a propósito.
+      // No es un error temporal: reintentar no la va a arreglar. Estas
+      // operaciones quedaron capturadas cuando la captura offline aún estaba
+      // encendida y NUNCA llegaron al sistema. Hay que capturarlas a mano.
+      // La cola se CONSERVA intacta: es la única copia de esos datos.
+      if (res.status === 423) {
+        console.warn('[OfflineData] Sync deshabilitado en el servidor (423). La cola se conserva para captura manual.');
+        window.PWA?.showToast(
+          `Tienes ${pendientes.length} captura(s) sin conexión que el sistema no puede enviar. ` +
+          'Ábrelas en "Cambios sin enviar" y regístralas a mano: no se guardaron.',
+          'warning',
+          12000
+        );
         return;
       }
 
@@ -1156,6 +1191,7 @@
     obtenerMetaSync,
 
     // Cola
+    escriturasHabilitadas,
     encolarOperacion,
     obtenerPendientes,
     obtenerTodasOperaciones,

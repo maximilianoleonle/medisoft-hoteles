@@ -38,6 +38,17 @@
   });
 
   async function _guardarHuespedOffline(form) {
+    // Captura offline apagada (/api/sync cerrado): el alta no llegaria al
+    // servidor. Mejor avisar que dar por registrado a un huesped que no existe.
+    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+      _avisar(
+        'warning',
+        'Sin conexión',
+        'No se puede registrar al huésped ahora. Inténtalo cuando regrese el internet: <strong>no quedó guardado</strong>.'
+      );
+      return;
+    }
+
     if (!window.OfflineData) {
       _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
       return;

@@ -76,6 +76,18 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   async function _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel) {
+    // Captura offline apagada (/api/sync cerrado): un movimiento de caja
+    // encolado aqui NUNCA llegaria al corte. Es dinero: se avisa y no se
+    // finge que quedo guardado.
+    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+      _avisar(
+        'warning',
+        'Sin conexión',
+        'No se puede registrar el movimiento ahora. Anótalo y captúralo en cuanto regrese el internet: <strong>no quedó guardado</strong>.'
+      );
+      return;
+    }
+
     if (!window.OfflineData) {
       _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
       return;

@@ -206,11 +206,15 @@
     const syncBadge = r.offline_pendiente
       ? `<span class="badge-estado" style="background:#FFF7ED;color:#9A3412;">PENDIENTE SYNC</span>`
       : '';
-    const accionHtml = estado === 'confirmada'
+    // Sin captura offline no se pintan los botones de acción: harían creer que
+    // el check-in quedó registrado cuando /api/sync no puede recibirlo. La
+    // consulta de la lista (que sí funciona en caché) se conserva intacta.
+    const puedeCapturar = window.OfflineData?.escriturasHabilitadas?.() === true;
+    const accionHtml = (puedeCapturar && estado === 'confirmada')
       ? `<button type="button" class="btn-ticket-full" data-offline-res-action="checkin" data-res-id="${_esc(idReservacion)}" style="background:#2563EB;">
            <i class="fas fa-user-check"></i> check-in
          </button>`
-      : (estado === 'checked_in'
+      : ((puedeCapturar && estado === 'checked_in')
           ? `<button type="button" class="btn-ticket-full" data-offline-res-action="checkout" data-res-id="${_esc(idReservacion)}" style="background:#EA580C;">
                <i class="fas fa-person-walking-arrow-right"></i> check-out
              </button>`
@@ -336,7 +340,11 @@
       _renderizarTarjetas(reservaciones, _estadoFiltroActivo(), (document.getElementById('buscarReservacion')?.value || '').trim());
     } catch (err) {
       console.error('[ReservacionesOffline] No se pudo registrar accion:', err);
-      window.PWA?.showToast('No se pudo guardar la accion offline.', 'error');
+      window.PWA?.showToast(
+        'No se pudo guardar sin conexión. Inténtalo cuando regrese el internet: no quedó registrado.',
+        'error',
+        8000
+      );
     }
   }
 

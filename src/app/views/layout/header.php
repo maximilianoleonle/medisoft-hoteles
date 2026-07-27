@@ -392,6 +392,16 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
         window.API_URL = '<?= url('api') ?>';
         window.MEDISOFT_FIELD_ERRORS = <?= json_encode($layoutFieldErrors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
         window.MEDISOFT_OFFLINE_ENABLED = <?= $layoutOfflineHoteleroActivo ? 'true' : 'false' ?>;
+        /* Captura de ESCRITURAS sin conexion (cobros, check-in/out, altas).
+           APAGADA desde jul-26 por decision del owner: /api/sync responde HTTP
+           423 desde hace meses, asi que todo lo que se encolaba sin internet
+           jamas llegaba al servidor — la app decia "se enviara al recuperar la
+           conexion" y el cobro se perdia. Mientras el endpoint siga cerrado, es
+           preferible avisar que no se puede guardar. El cache de LECTURA y la
+           app instalable siguen activos (eso si funciona). Para reactivarlo:
+           reabrir /api/sync (auditando idempotencia y cortes de caja) y poner
+           esto en true. Ver ApiController::syncAction. */
+        window.MEDISOFT_OFFLINE_ESCRITURAS = false;
         <?php if ($medisoftContext): ?>
         window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
         window.USUARIO_ID = window.MEDISOFT_CONTEXT.usuario_id;
