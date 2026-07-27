@@ -217,4 +217,45 @@ t_ok(hotel_reports_center_available($hotelB), 'hotel B conserva el centro por lo
 $resumenB = $moduloModel->resumenCobroMensual($hotelB, 999.00);
 t_eq(0.0, (float) $resumenB['total_modulos'], 'hotel B no hereda cobros de otro hotel');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Inventario se vende SOLO: contratarlo no arrastra Compras
+// ─────────────────────────────────────────────────────────────────────────────
+// Pendiente 1 de la auditoria comercial (jul-26). La oferta vende Inventario
+// como bloque independiente y deja fuera Compras/proveedores/cuentas por pagar.
+// El catalogo NO modela dependencias entre bloques, asi que hoy nada las
+// propaga — pero nada lo impedia tampoco. Esto lo fija por COMPORTAMIENTO
+// (no por strpos): se contrata inventario y se comprueba que compras no quedo
+// activo ni se colo al cobro. Ojo: la relacion real es la inversa (Compras si
+// depende de Inventario por FK en compra_detalles.producto_id), y por eso el
+// riesgo de que alguien "resuelva" la dependencia activando el par.
+$idCompras = cmt_sembrar_modulo($db, 'compras', 'opcional', 0, 1, 199.00, null, 45);
+
+$moduloModel->actualizarModulosHotel($hotelB, [$idInventario]);
+
+t_ok($moduloModel->hotelTieneModulo($hotelB, 'inventario'),
+    'contratar Inventario deja Inventario activo');
+t_ok(!$moduloModel->hotelTieneModulo($hotelB, 'compras'),
+    'contratar Inventario NO activa Compras');
+
+$filaCompras = $db->query(
+    "SELECT COUNT(*) AS n FROM hotel_modulos hm
+     JOIN modulos m ON m.id = hm.modulo_id
+     WHERE hm.hotel_id = ? AND m.clave = 'compras' AND hm.activo = 1",
+    [$hotelB]
+)->fetch();
+t_eq(0, (int) $filaCompras['n'], 'no se crea fila activa de Compras al contratar Inventario');
+
+$resumenSolo = $moduloModel->resumenCobroMensual($hotelB, 0.00);
+$clavesCobradas = array_column($resumenSolo['modulos'], 'clave');
+t_ok(in_array('inventario', $clavesCobradas, true), 'el cobro incluye Inventario');
+t_ok(!in_array('compras', $clavesCobradas, true), 'el cobro NO incluye Compras');
+t_eq(310.00, (float) $resumenSolo['total_modulos'],
+    'contratar solo Inventario cobra solo Inventario (sin los $199 de Compras)');
+
+// Y al reves: quien contrata ambos a proposito los conserva (los hoteles que
+// ya venian con Compras contratado no deben perderla en silencio).
+$moduloModel->actualizarModulosHotel($hotelB, [$idInventario, $idCompras]);
+t_ok($moduloModel->hotelTieneModulo($hotelB, 'compras'),
+    'contratar Compras explicitamente si la activa (hoteles heredados la conservan)');
+
 t_fin();
