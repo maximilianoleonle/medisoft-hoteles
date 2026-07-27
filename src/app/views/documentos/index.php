@@ -676,9 +676,35 @@ $puedeSubirDocumento = function_exists('can') && can('documentos.all');
                 </div>
                 <div class="dc-summary-item">
                     <p class="dc-summary-label">Espacio usado</p>
+                    <?php $alm = $almacenamiento ?? null; ?>
                     <p class="dc-summary-value"><?= doc_bytes($resumen['bytes_total'] ?? 0) ?></p>
+                    <?php if ($alm): ?>
+                        <p class="dc-summary-hint" style="margin-top:4px;font-size:.78rem;color:var(--brand-muted,#6B7280);">
+                            de <?= htmlspecialchars($alm['cuota_legible'], ENT_QUOTES, 'UTF-8') ?> incluidos
+                        </p>
+                    <?php endif; ?>
                 </div>
             </section>
+
+            <?php if (!empty($alm['cerca_del_limite'])): ?>
+                <?php /* Aviso al 80%: da margen para depurar antes del bloqueo. */ ?>
+                <div class="dc-panel p-3 md:p-4" style="margin-bottom:14px;border-left:4px solid <?= !empty($alm['lleno']) ? '#DC2626' : '#D97706' ?>;">
+                    <p style="margin:0;font-weight:600;color:<?= !empty($alm['lleno']) ? '#991B1B' : '#92400E' ?>;">
+                        <i class="fas fa-<?= !empty($alm['lleno']) ? 'circle-exclamation' : 'triangle-exclamation' ?>" aria-hidden="true"></i>
+                        <?= !empty($alm['lleno'])
+                            ? 'Se agot&oacute; el espacio del Centro documental'
+                            : 'Te queda poco espacio en el Centro documental' ?>
+                    </p>
+                    <p style="margin:6px 0 0;font-size:.86rem;color:var(--brand-muted,#4B5563);">
+                        Llevas <?= htmlspecialchars($alm['usado_legible'], ENT_QUOTES, 'UTF-8') ?>
+                        de <?= htmlspecialchars($alm['cuota_legible'], ENT_QUOTES, 'UTF-8') ?>
+                        (<?= htmlspecialchars((string) $alm['porcentaje'], ENT_QUOTES, 'UTF-8') ?>%).
+                        <?= !empty($alm['lleno'])
+                            ? 'No se pueden subir m&aacute;s archivos hasta liberar espacio: da de baja los documentos que ya no ocupes.'
+                            : 'Da de baja los documentos que ya no ocupes para liberar espacio.' ?>
+                    </p>
+                </div>
+            <?php endif; ?>
 
             <?php if (!$esEntidad): ?>
                 <section class="dc-panel dc-filter-panel p-3 md:p-4">

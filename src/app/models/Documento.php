@@ -14,6 +14,22 @@ class Documento extends Model
     // es recuperable hasta que el cron de purga lo borre de verdad.
     public const RETENCION_ELIMINADOS_DIAS = 30;
 
+    /**
+     * Cuota de almacenamiento incluida por hotel (2 GB).
+     *
+     * Decision comercial del owner (jul-26): el Centro documental se vende con
+     * 2 GB incluidos. Antes NO habia tope por hotel — solo 10 MB por archivo —
+     * asi que un hotel podia llenar el disco del VPS sin que nada lo frenara.
+     *
+     * Cuenta el peso de los documentos activos Y archivados, porque archivar
+     * es baja logica: el archivo sigue ocupando disco. Los marcados como
+     * 'eliminado' NO se cobran contra la cuota (el hotelero libera espacio al
+     * dar de baja sin depender de soporte); el cron de purga
+     * (tools/cron_purga_documentos.php) los borra del disco de verdad al
+     * vencer RETENCION_ELIMINADOS_DIAS.
+     */
+    private const CUOTA_HOTEL_BYTES = 2147483648;
+
     private const MIME_PERMITIDOS = [
         'application/pdf' => ['pdf'],
         'image/jpeg' => ['jpg', 'jpeg'],
@@ -427,6 +443,7 @@ class Documento extends Model
 
         $tipo = $this->resolverTipoDocumento($hotelId, (int)($datos['documento_tipo_id'] ?? 0));
         $validado = $this->validarArchivoSubido($archivo, $tipo);
+        $this->validarCuotaHotel($hotelId, (int)$validado['size_bytes']);
         $entidad = $this->resolverEntidad($hotelId, $datos);
         $storage = $this->prepararStoragePrivado($hotelId, $validado['extension']);
         $movedFile = null;
@@ -1065,6 +1082,81 @@ class Documento extends Model
         return array_values(array_filter(array_map('trim', explode(',', $value))));
     }
 
+    /**
+     * Espacio ocupado por el hotel, en bytes.
+     *
+     * Suma activos + archivados (archivar no libera disco). Excluye los dados
+     * de baja: son la valvula de escape del hotelero para liberar cuota.
+     */
+    public function espacioUsado(int $hotelId): int
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+
+        if (!$this->tablasDisponibles()) {
+            return 0;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT COALESCE(SUM(size_bytes), 0) AS usado
+             FROM {$this->table}
+             WHERE hotel_id = ?
+               AND estado IN ('activo', 'archivado')",
+            [$hotelId]
+        );
+
+        $fila = $stmt ? $stmt->fetch() : null;
+
+        return (int)($fila['usado'] ?? 0);
+    }
+
+    /**
+     * Resumen de almacenamiento para pintarlo en pantalla: cuanto lleva, cuanto
+     * le queda y si ya conviene avisarle. La vista no deberia recalcular esto.
+     */
+    public function resumenAlmacenamiento(int $hotelId): array
+    {
+        $usado = $this->espacioUsado($hotelId);
+        $cuota = self::CUOTA_HOTEL_BYTES;
+        $disponible = max(0, $cuota - $usado);
+        $porcentaje = $cuota > 0 ? min(100, round(($usado / $cuota) * 100, 1)) : 0.0;
+
+        return [
+            'usado_bytes' => $usado,
+            'cuota_bytes' => $cuota,
+            'disponible_bytes' => $disponible,
+            'porcentaje' => $porcentaje,
+            'usado_legible' => $this->formatBytes($usado),
+            'cuota_legible' => $this->formatBytes($cuota),
+            'disponible_legible' => $this->formatBytes($disponible),
+            // Avisar al 80% da margen para pedir limpieza antes del bloqueo.
+            'cerca_del_limite' => $porcentaje >= 80.0,
+            'lleno' => $disponible <= 0,
+        ];
+    }
+
+    /**
+     * Corta la subida si el archivo no cabe en la cuota del hotel. Mensaje
+     * accionable: decir "no cabe" sin decir cuanto queda obliga a adivinar.
+     */
+    private function validarCuotaHotel(int $hotelId, int $bytesNuevos): void
+    {
+        $usado = $this->espacioUsado($hotelId);
+
+        if (($usado + $bytesNuevos) <= self::CUOTA_HOTEL_BYTES) {
+            return;
+        }
+
+        $disponible = max(0, self::CUOTA_HOTEL_BYTES - $usado);
+
+        throw new Exception(
+            'No hay espacio suficiente: el hotel usa ' . $this->formatBytes($usado)
+            . ' de ' . $this->formatBytes(self::CUOTA_HOTEL_BYTES)
+            . ' y este archivo pesa ' . $this->formatBytes($bytesNuevos)
+            . ' (disponible: ' . $this->formatBytes($disponible) . ').'
+            . ' Da de baja documentos que ya no ocupes o solicita ampliar el espacio.'
+        );
+    }
+
     private function maxBytesParaTipo(?array $tipo): int
     {
         $maxBytes = self::MAX_UPLOAD_BYTES;
@@ -1139,6 +1231,12 @@ class Documento extends Model
 
     private function formatBytes(int $bytes): string
     {
+        // GB primero: con la cuota por hotel en 2 GB, cortar en MB imprimia
+        // "2048.00 MB" en los mensajes de espacio agotado.
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        }
+
         if ($bytes >= 1048576) {
             return number_format($bytes / 1048576, 2) . ' MB';
         }

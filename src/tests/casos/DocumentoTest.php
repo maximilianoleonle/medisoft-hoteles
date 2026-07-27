@@ -180,4 +180,72 @@ t_ok(strpos($partial, 'documentos_entidad_visible') !== false, 'GATE: el partial
 t_ok(function_exists('documentos_entidad_visible'), 'existe el helper documentos_entidad_visible()');
 t_ok(documentos_entidad_visible() === false, 'sin el modulo documentos contratado => bloque host OCULTO (false)');
 
+/* ── 9. Cuota de almacenamiento por hotel (2 GB) ─────────────────────────── */
+// Antes de jul-26 solo existia el tope de 10 MB por ARCHIVO: nada impedia que
+// un hotel llenara el disco del servidor subiendo miles. La cuota se vende
+// como "2 GB incluidos", asi que el numero es un compromiso comercial.
+
+t_eq(2147483648, $refDoc->getConstant('CUOTA_HOTEL_BYTES'), 'cuota por hotel = 2 GB');
+
+// El contador ignora las bajas logicas (valvula del hotelero para liberar) y
+// SI cuenta lo archivado (archivar no borra el archivo del disco).
+$hotelCuota = $base['hotel_id'];
+$insertarDoc = function (string $estado, int $bytes) use ($db, $hotelCuota): void {
+    $db->query(
+        "INSERT INTO documentos
+            (hotel_id, nombre_original, nombre_archivo, storage_path, mime_type,
+             size_bytes, estado, created_at)
+         VALUES (?, 'x.pdf', 'x.pdf', 'docs/x.pdf', 'application/pdf', ?, ?, NOW())",
+        [$hotelCuota, $bytes, $estado]
+    );
+};
+
+// Este hotel ya trae documentos de las secciones anteriores del caso, asi que
+// se mide el INCREMENTO, no un absoluto: un assert contra 0 se rompe en cuanto
+// alguien agrega un fixture mas arriba.
+$usadoAntes = $model->espacioUsado($hotelCuota);
+
+$insertarDoc('activo', 1048576);      // 1 MB
+$insertarDoc('archivado', 2097152);   // 2 MB — archivar NO libera disco
+$insertarDoc('eliminado', 5242880);   // 5 MB — baja logica: no se cobra
+
+$usadoDespues = $model->espacioUsado($hotelCuota);
+t_eq(3145728, $usadoDespues - $usadoAntes, 'suma activos + archivados, ignora eliminados');
+
+$resumen = $model->resumenAlmacenamiento($hotelCuota);
+t_eq(2147483648, $resumen['cuota_bytes'], 'el resumen reporta la cuota completa');
+t_eq(2147483648 - $usadoDespues, $resumen['disponible_bytes'], 'el resumen calcula el disponible');
+t_ok($resumen['cerca_del_limite'] === false, 'con 3 MB usados no esta cerca del limite');
+t_ok($resumen['lleno'] === false, 'con 3 MB usados no esta lleno');
+t_ok(strpos($resumen['cuota_legible'], 'GB') !== false, 'la cuota se lee en GB, no en 2048 MB');
+
+// Hotel al tope: el aviso del 80% y el bloqueo deben encenderse.
+$baseTope = t_seed_base('doc-tope');
+$hotelTope = $baseTope['hotel_id'];
+$db->query(
+    "INSERT INTO documentos
+        (hotel_id, nombre_original, nombre_archivo, storage_path, mime_type,
+         size_bytes, estado, created_at)
+     VALUES (?, 'lleno.pdf', 'lleno.pdf', 'docs/lleno.pdf', 'application/pdf', ?, 'activo', NOW())",
+    [$hotelTope, 2147483648]
+);
+$resumenTope = $model->resumenAlmacenamiento($hotelTope);
+t_ok($resumenTope['lleno'] === true, 'hotel en la cuota exacta se reporta lleno');
+t_ok($resumenTope['cerca_del_limite'] === true, 'hotel lleno tambien esta cerca del limite');
+t_eq(0, $resumenTope['disponible_bytes'], 'hotel lleno no tiene bytes disponibles');
+
+// El candado real: validarCuotaHotel corta la subida antes de escribir nada.
+$mCuota = new ReflectionMethod('Documento', 'validarCuotaHotel');
+$mCuota->setAccessible(true);
+t_throws(
+    fn() => $mCuota->invoke($model, $hotelTope, 1024),
+    'espacio',
+    'subir con la cuota agotada se rechaza con mensaje de espacio'
+);
+$mCuota->invoke($model, $hotelCuota, 1024);
+t_ok(true, 'subir dentro de la cuota no lanza');
+
+// El aislamiento por hotel importa: la cuota de uno no consume la del otro.
+t_eq($usadoDespues, $model->espacioUsado($hotelCuota), 'el hotel lleno no altero el consumo del otro hotel');
+
 t_fin();

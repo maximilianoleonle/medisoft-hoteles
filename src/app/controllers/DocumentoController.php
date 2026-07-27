@@ -49,6 +49,9 @@ class DocumentoController extends Controller
             'filtros' => $filtros,
             'tablaDisponible' => $tablaDisponible,
             'contextoEntidad' => null,
+            // Cuota contratada (2 GB): el hotelero debe ver cuanto lleva ANTES
+            // de que una subida se rechace, no enterarse al chocar con el tope.
+            'almacenamiento' => $tablaDisponible ? $this->documentoModel->resumenAlmacenamiento($hotelId) : null,
         ]);
     }
 
