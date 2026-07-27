@@ -2381,6 +2381,31 @@ document.addEventListener('DOMContentLoaded', function() {
 .estado-ocupada_fecha .estado-icon::after{box-shadow:0 0 8px var(--state-occupied) !important;}
 </style>
 <div class="habitaciones-view">
+    <?php if ($hbFechaProyectada !== ''): ?>
+    <?php
+        // Barra de contexto temporal. Solo existe cuando NO estas viendo hoy.
+        // Va PEGADA (sticky, no fixed) para no sumar un flotante mas a esta vista
+        // (ya compiten el topbar ms-vtb, el nav inferior movil y el FAB del
+        // copiloto, y los modales viven dentro de .container con z-index atrapado).
+        $hbFechaLarga = format_date($hbFechaProyectada, 'l, d \d\e F \d\e Y');
+        $hbFechaEsPasada = $hbFechaProyectada < date('Y-m-d');
+    ?>
+    <div class="hb-datebar" role="status">
+        <span class="hb-datebar__ic" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
+        <span class="hb-datebar__txt">
+            <strong>
+                <span class="hb-datebar__full"><?= htmlspecialchars($hbFechaLarga) ?></span>
+                <span class="hb-datebar__short"><?= htmlspecialchars($hbFechaCorta) ?></span>
+            </strong>
+            <small><?= $hbFechaEsPasada
+                ? 'Est&aacute;s viendo una fecha pasada, no hoy'
+                : 'Est&aacute;s viendo otra fecha, no hoy' ?></small>
+        </span>
+        <a href="<?= url('habitaciones') ?>" class="hb-datebar__back">
+            <i class="fas fa-rotate-left" aria-hidden="true"></i><span>Volver a hoy</span>
+        </a>
+    </div>
+    <?php endif; ?>
     <!-- Header desktop original -->
     <div class="modern-header" id="mainHeader">
         <div class="container mx-auto px-4 py-3">
@@ -17458,6 +17483,80 @@ document.addEventListener('DOMContentLoaded', function() {
    z-index alto queda atrapado en ese contexto de apilamiento y cualquier elemento
    externo con z>1 — este header (z-index:40) — les pintaba encima. */
 body.ms-modal-abierto .habitaciones-view .modern-header{
+  z-index:0!important;
+  pointer-events:none!important;
+}
+
+/* ── Barra de contexto temporal ────────────────────────────────────────────
+   Aparece SOLO al consultar una fecha distinta de hoy. Va sticky (no fixed):
+   se queda a la vista al hacer scroll sin sumar otro flotante a una pantalla
+   que ya tiene topbar pegada, nav inferior movil y el FAB del copiloto.
+   Se ancla en top:0 del scroller real, que es main.main-content (NO el window:
+   medido, la topbar .ms-vtb no llega a fijarse ahi y se va con el scroll, asi
+   que descontar su alto solo dejaba un hueco por el que pasaba el contenido).
+   z-index 31 > 30 de .ms-vtb: si en algun tema esa barra si llegara a fijarse,
+   gana la de fecha — saber que NO estas viendo hoy pesa mas que la flechita,
+   que sigue a un scroll de distancia.
+   COLOR: grafito neutro a proposito. En esta vista TODOS los matices utiles ya
+   son un estado de habitacion (verde=libre, terracota=ocupada, violeta=por
+   llegar, azul=limpieza, ambar=mantenimiento); pintarla de color la haria leer
+   como un estado mas. El grafito lee como "modo del sistema". */
+.habitaciones-view .hb-datebar{
+  position:sticky;
+  top:0;
+  z-index:31;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0 0 12px;
+  padding:10px 16px;
+  border-radius:12px;
+  background:#2B2E33;
+  color:#F5F5F7;
+  box-shadow:0 10px 24px -18px rgba(0,0,0,.75);
+}
+.habitaciones-view .hb-datebar__ic{
+  display:grid; place-items:center;
+  width:30px; height:30px; flex:0 0 30px;
+  border-radius:9px;
+  background:rgba(255,255,255,.13);
+  font-size:.85rem;
+}
+.habitaciones-view .hb-datebar__txt{ display:flex; flex-direction:column; gap:1px; min-width:0; flex:1 1 auto; }
+.habitaciones-view .hb-datebar__txt strong{
+  font-size:.9rem; font-weight:700; line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.habitaciones-view .hb-datebar__txt small{ font-size:.72rem; color:rgba(245,245,247,.72); line-height:1.2; }
+.habitaciones-view .hb-datebar__short{ display:none; }
+.habitaciones-view .hb-datebar__back{
+  display:inline-flex; align-items:center; gap:7px;
+  flex:0 0 auto;
+  padding:7px 13px;
+  border-radius:9px;
+  background:#F5F5F7;
+  color:#2B2E33;
+  font-size:.78rem; font-weight:700;
+  text-decoration:none;
+  transition:transform .15s ease, background .15s ease;
+}
+.habitaciones-view .hb-datebar__back:hover{ background:#FFF; transform:translateY(-1px); }
+.habitaciones-view .hb-datebar__back:focus-visible{ outline:2px solid #F5F5F7; outline-offset:2px; }
+/* En oscuro el grafito se aclara para despegarse del fondo negro de Cupertino */
+html[data-theme="dark"] .habitaciones-view .hb-datebar{
+  background:#3A3D42;
+  box-shadow:0 10px 24px -18px rgba(0,0,0,.9);
+}
+@media (max-width:640px){
+  .habitaciones-view .hb-datebar{ gap:10px; padding:9px 12px; border-radius:10px; }
+  .habitaciones-view .hb-datebar__full{ display:none; }
+  .habitaciones-view .hb-datebar__short{ display:inline; }
+  .habitaciones-view .hb-datebar__back span{ display:none; }
+  .habitaciones-view .hb-datebar__back{ padding:8px 10px; }
+}
+/* Mismo candado que el header: con un modal abierto baja de z-index para que el
+   backdrop la cubra (los modales de esta vista quedan atrapados en .container). */
+body.ms-modal-abierto .habitaciones-view .hb-datebar{
   z-index:0!important;
   pointer-events:none!important;
 }
