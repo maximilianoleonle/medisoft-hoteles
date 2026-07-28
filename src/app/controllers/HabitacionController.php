@@ -372,7 +372,11 @@ private function anexarResumenTareasHabitaciones(int $hotelId, array $habitacion
 
 private function mostrarDisponibilidadPorFecha($filtros) {
     $fecha_consulta = $filtros['fecha_consulta'];
-    
+    // Consultar HACIA ATRAS es otro eje: la pantalla deja de responder "que puedo
+    // vender" y pasa a responder "como se vendio esa noche". Se decide aqui arriba
+    // porque manda tanto en la clasificacion como en los rotulos.
+    $esFechaPasada = $fecha_consulta < date('Y-m-d');
+
     $db = Database::getInstance();
     
     // Obtener TODAS las habitaciones activas primero
@@ -415,6 +419,7 @@ private function mostrarDisponibilidadPorFecha($filtros) {
                      r.fecha_entrada, 
                      r.fecha_salida, 
                      r.estado as estado_reservacion,
+                     rh.es_cortesia,
                      h.nombre_completo
             FROM reservacion_habitaciones rh
             INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
@@ -444,7 +449,11 @@ private function mostrarDisponibilidadPorFecha($filtros) {
             'reservacion_id' => $row['reservacion_id'],
             'fecha_entrada' => $row['fecha_entrada'],
             'fecha_salida' => $row['fecha_salida'],
-            'huesped' => $row['nombre_completo']
+            'huesped' => $row['nombre_completo'],
+            // Se consultaba y se tiraba. Hacia atras es EL dato: una reserva que
+            // quedo en 'confirmada' sobre una fecha pasada no durmio nadie ahi.
+            'estado_reservacion' => $row['estado_reservacion'],
+            'es_cortesia' => (int) ($row['es_cortesia'] ?? 0),
         ];
     }
     
@@ -474,16 +483,25 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         $habitacion['incrementos_aplicados'] = $precio_info['incrementos_aplicados'];
         $habitacion['tiene_incremento'] = ($precio_info['incremento_total'] > 0);
         
-        // Determinar estado. Una habitacion comprometida en la fecha no es una sola
-        // cosa: la que ENTRA ese dia se pinta 'por_llegar' (violeta, mismo estado
-        // que la vista de hoy) y solo la estancia que viene de antes queda
-        // 'ocupada_fecha'. Ambas siguen siendo no vendibles esa noche.
-        if ($habitacion['estado'] == 'mantenimiento') {
+        // Determinar estado. Hacia ADELANTE el eje es operativo: la que entra ese
+        // dia se pinta 'por_llegar' y la estancia que viene de antes 'ocupada_fecha'
+        // (ambas no vendibles), y un cuarto en mantenimiento manda porque es "no lo
+        // vendas". Hacia ATRAS el eje es el RESULTADO de la noche y manda lo que
+        // paso: el mantenimiento de HOY no puede borrar una venta del 25 de julio.
+        $compromiso = $ocupadas[$habitacion['id']] ?? null;
+
+        if ($esFechaPasada && $compromiso !== null) {
+            $habitacion['info_ocupacion'] = $compromiso;
+            $habitacion['estado_display'] = self::estadoDisplayCompromisoPasado(
+                (string) ($compromiso['estado_reservacion'] ?? '')
+            );
+            $ocupadas_count++;
+        } elseif ($habitacion['estado'] == 'mantenimiento') {
             $habitacion['estado_display'] = $habitacion['estado'];
-        } elseif (isset($ocupadas[$habitacion['id']])) {
-            $habitacion['info_ocupacion'] = $ocupadas[$habitacion['id']];
+        } elseif ($compromiso !== null) {
+            $habitacion['info_ocupacion'] = $compromiso;
             $habitacion['estado_display'] = self::estadoDisplayCompromisoEnFecha(
-                $ocupadas[$habitacion['id']]['fecha_entrada'] ?? null,
+                $compromiso['fecha_entrada'] ?? null,
                 $fecha_consulta
             );
             $ocupadas_count++;
@@ -521,22 +539,42 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         function ($h) { return (string)($h['estado_display'] ?? ''); },
         $habitaciones_procesadas
     ));
+
+    // Titular de una noche ya ocurrida: cuanto del inventario se rento. Las
+    // cortesias SE OCUPAN pero NO se rentan, por eso viajan aparte y solo se
+    // muestran si las hay.
+    if ($esFechaPasada) {
+        $estadisticas['ocupacion_pct'] = $estadisticas['total'] > 0
+            ? (int) round($estadisticas['ocupadas'] * 100 / $estadisticas['total'])
+            : 0;
+        $estadisticas['cortesias'] = count(array_filter(
+            $habitaciones_procesadas,
+            function ($h) {
+                return ($h['estado_display'] ?? '') === 'ocupada_fecha'
+                    && !empty($h['info_ocupacion']['es_cortesia']);
+            }
+        ));
+    }
     
     error_log("=== FIN DISPONIBILIDAD ===");
     
     // Estados para la vista
-    // Consultar HACIA ATRAS es un tiempo verbal distinto: "Disponible"/"Por llegar"
-    // sobre el 25 de julio se lee como si aun pudieras vender o recibir esa noche.
-    $esFechaPasada = $fecha_consulta < date('Y-m-d');
+    // Rotulos: unica fuente. De aqui comen las fichas, los chips, la leyenda movil
+    // y la Vista Rapida — si alguno los repite a mano, se desincronizan.
     $estados = Habitacion::getEstados();
     $estados['disponible_fecha'] = [
         'label' => $esFechaPasada ? 'Sin ocupar' : 'Disponible',
         'color' => 'green', 'icon' => 'check-circle',
     ];
-    $estados['ocupada_fecha'] = ['label' => 'Ocupada', 'color' => 'red', 'icon' => 'user'];
-    // Mismo estado (y mismo violeta) que la vista de hoy: la llegada del dia consultado.
+    $estados['ocupada_fecha'] = [
+        'label' => $esFechaPasada ? 'Se rentó' : 'Ocupada',
+        'color' => 'red', 'icon' => 'user',
+    ];
+    // En pasado esta cubeta deja de ser "llega" y pasa a ser "la reserva se quedo en
+    // confirmada": el sistema sabe que NO se registro el check-in, no que la persona
+    // no llego (este hotel tiene alertas de check-in vencido justamente por eso).
     $estados['por_llegar'] = [
-        'label' => $esFechaPasada ? 'Entró' : 'Por llegar',
+        'label' => $esFechaPasada ? 'Sin check-in' : 'Por llegar',
         'color' => 'purple', 'icon' => 'clock',
     ];
     $alertasPendientes = $this->obtenerAlertasPendientesHabitaciones($hotelId);
@@ -1004,6 +1042,27 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
         }
 
         return $entrada === $consulta ? 'por_llegar' : 'ocupada_fecha';
+    }
+
+    /**
+     * Estado a pintar para una habitacion comprometida en una fecha YA OCURRIDA.
+     * PURA (sin BD).
+     *
+     * Hacia atras la pregunta no es "llega o ya esta adentro" sino "se rento o no".
+     * Una reserva que sobre una fecha pasada sigue en 'confirmada' es una que nunca
+     * registro check-in: contarla como rentada inventa una venta que no cuadra con
+     * caja, y llamarla "Entro" contradice al panel de abajo, que la marca "Sin
+     * check-in". Un estado desconocido cuenta como rentada: es lo conservador aqui
+     * (no inflar el "sin ocupar", que es lo que se lee como inventario perdido).
+     *
+     * @param string $estadoReservacion estado de la reservacion que cubre la fecha
+     * @return string 'ocupada_fecha' (se rento) | 'por_llegar' (sin check-in)
+     */
+    public static function estadoDisplayCompromisoPasado(string $estadoReservacion): string
+    {
+        return trim(strtolower($estadoReservacion)) === 'confirmada'
+            ? 'por_llegar'
+            : 'ocupada_fecha';
     }
 
     /**

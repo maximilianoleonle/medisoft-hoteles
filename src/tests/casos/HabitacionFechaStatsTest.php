@@ -84,6 +84,53 @@ t_eq(
     'particion se sostiene con estados basura'
 );
 
+// ── PASADO: el eje deja de ser "llega o ya esta dentro" y pasa a ser el
+//    RESULTADO de la noche. Una reserva que sobre una fecha ya ocurrida sigue en
+//    'confirmada' es una que NUNCA registro check-in: contarla como rentada
+//    inventa una venta, y llamarla "Entro" contradice al panel, que la marca
+//    "Sin check-in". ────────────────────────────────────────────────────────
+t_eq(
+    'ocupada_fecha',
+    HabitacionController::estadoDisplayCompromisoPasado('checked_out'),
+    'checked_out => se rento esa noche'
+);
+t_eq(
+    'ocupada_fecha',
+    HabitacionController::estadoDisplayCompromisoPasado('checked_in'),
+    'checked_in => se rento esa noche'
+);
+t_eq(
+    'por_llegar',
+    HabitacionController::estadoDisplayCompromisoPasado('confirmada'),
+    'confirmada sobre fecha pasada => sin check-in, NUNCA rentada'
+);
+t_eq(
+    'por_llegar',
+    HabitacionController::estadoDisplayCompromisoPasado('CONFIRMADA'),
+    'el estado se compara sin importar mayusculas'
+);
+t_eq(
+    'ocupada_fecha',
+    HabitacionController::estadoDisplayCompromisoPasado(''),
+    'estado desconocido cuenta como rentada, no infla el "sin ocupar"'
+);
+
+// ── La particion del pasado tambien suma el total ──────────────────────────
+$r = HabitacionController::derivarEstadisticasParaFecha(array_merge(
+    array_fill(0, 29, 'ocupada_fecha'),
+    array_fill(0, 2, 'por_llegar'),
+    array_fill(0, 18, 'disponible_fecha')
+));
+t_eq(49, $r['total'], 'noche pasada: total');
+t_eq(29, $r['ocupadas'], 'se rentaron');
+t_eq(2, $r['por_llegar'], 'sin check-in');
+t_eq(18, $r['disponibles'], 'sin ocupar');
+t_eq(
+    $r['total'],
+    $r['disponibles'] + $r['ocupadas'] + $r['por_llegar'] + $r['limpieza'] + $r['mantenimiento'],
+    'particion del pasado suma el total'
+);
+
 // ── Hotel vacio no truena ──────────────────────────────────────────────────
 $r = HabitacionController::derivarEstadisticasParaFecha([]);
 t_eq(0, $r['total'], 'sin cuartos: total 0');
