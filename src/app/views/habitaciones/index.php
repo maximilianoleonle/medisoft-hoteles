@@ -10,7 +10,13 @@ $llegadas_tardias = isset($llegadas_tardias) && is_array($llegadas_tardias) ? $l
 // (fichas hb-stat, $hbMobileSegments, $hbChips, $quickLegend) leen de aqui.
 $hbFechaProyectada = !empty($mostrar_disponibilidad_fecha) ? (string) ($fecha_consultada ?? '') : '';
 $hbFechaCorta = $hbFechaProyectada !== '' ? format_date($hbFechaProyectada, 'd/m') : '';
-$hbLabelLibres = $hbFechaProyectada !== '' ? 'Libres' : 'Libres hoy';
+// TRES tiempos verbales, no dos: hoy, proyeccion a futuro y CONSULTA DE PASADO.
+// El pasado heredaba el vocabulario del futuro y quedaba al reves ("Por llegar"
+// sobre una reserva que ya entro y ya salio, "vendibles" sobre una noche que ya
+// no se vende). Todo lo que cambia de tiempo cuelga de esta bandera.
+$hbFechaEsPasada = $hbFechaProyectada !== '' && $hbFechaProyectada < date('Y-m-d');
+$hbLabelLibres = $hbFechaEsPasada ? 'Sin ocupar' : ($hbFechaProyectada !== '' ? 'Libres' : 'Libres hoy');
+$hbLabelPorLlegar = $hbFechaEsPasada ? 'Entraron' : 'Por llegar';
 $hb_hotel_checkin_hora = function_exists('hotel_config_get')
     ? (string) hotel_config_get('operacion.checkin_hora', '15:00', $hotel_id_actual)
     : '15:00';
@@ -2388,7 +2394,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // (ya compiten el topbar ms-vtb, el nav inferior movil y el FAB del
         // copiloto, y los modales viven dentro de .container con z-index atrapado).
         $hbFechaLarga = format_date($hbFechaProyectada, 'l, d \d\e F \d\e Y');
-        $hbFechaEsPasada = $hbFechaProyectada < date('Y-m-d');
     ?>
     <div class="hb-datebar" role="status">
         <span class="hb-datebar__ic" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
@@ -2529,7 +2534,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-n"><?= $estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0) ?></span>
                 <span class="hb-stat-l"><?= $hbLabelLibres ?></span>
                 <?php if ($hbFechaProyectada !== ''): ?>
-                <span class="hb-stat-sub">vendibles el <?= htmlspecialchars($hbFechaCorta) ?></span>
+                <span class="hb-stat-sub"><?= $hbFechaEsPasada
+                    ? 'esa noche'
+                    : 'vendibles el ' . htmlspecialchars($hbFechaCorta) ?></span>
                 <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
@@ -2538,16 +2545,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-n"><?= $estadisticas['ocupadas'] ?? 0 ?></span>
                 <span class="hb-stat-l">Ocupada</span>
                 <?php if ($hbFechaProyectada !== ''): ?>
-                <span class="hb-stat-sub">estancias que vienen de antes</span>
+                <span class="hb-stat-sub"><?= $hbFechaEsPasada
+                    ? 'venían de antes'
+                    : 'estancias que vienen de antes' ?></span>
                 <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
             <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="<?= $hbFechaProyectada !== '' ? 'Filtrar reservaciones que entran el ' . htmlspecialchars($hbFechaCorta) : 'Filtrar llegadas de hoy con cuarto listo' ?>">
                 <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
-                <span class="hb-stat-l">Por llegar</span>
+                <span class="hb-stat-l"><?= $hbLabelPorLlegar ?></span>
                 <?php if ($hbFechaProyectada !== ''): ?>
-                <span class="hb-stat-sub">entran el <?= htmlspecialchars($hbFechaCorta) ?></span>
+                <span class="hb-stat-sub"><?= $hbFechaEsPasada ? 'entraron el ' : 'entran el ' ?><?= htmlspecialchars($hbFechaCorta) ?></span>
                 <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
@@ -2556,7 +2565,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
                 <span class="hb-stat-l">Limpieza</span>
                 <?php if ($hbFechaProyectada !== ''): ?>
-                <span class="hb-stat-sub">no aplica en otra fecha</span>
+                <span class="hb-stat-sub"><?= $hbFechaEsPasada
+                    ? 'no queda registro hacia atrás'
+                    : 'no aplica en otra fecha' ?></span>
                 <?php elseif (!empty($estadisticas['por_llegar_en_limpieza'])): ?>
                 <span class="hb-stat-sub"><?= (int)$estadisticas['por_llegar_en_limpieza'] ?> para llegadas de hoy</span>
                 <?php endif; ?>
@@ -2567,7 +2578,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="hb-stat-n"><?= $estadisticas['mantenimiento'] ?? 0 ?></span>
                 <span class="hb-stat-l">Mantenimiento</span>
                 <?php if ($hbFechaProyectada !== ''): ?>
-                <span class="hb-stat-sub">estado de hoy, no proyectado</span>
+                <span class="hb-stat-sub"><?= $hbFechaEsPasada
+                    ? 'estado de hoy, no el de ese día'
+                    : 'estado de hoy, no proyectado' ?></span>
                 <?php endif; ?>
                 <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
@@ -2577,7 +2590,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $hbMobileSegments = [
             [$hbLabelLibres, (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--c-available)', 'disponible'],
             ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--c-occupied)', 'ocupada'],
-            ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--c-arriving)', 'por_llegar'],
+            [$hbLabelPorLlegar, (int)($estadisticas['por_llegar'] ?? 0), 'var(--c-arriving)', 'por_llegar'],
             ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--c-cleaning)', 'limpieza'],
             ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'var(--c-maint)', 'mantenimiento'],
         ];
@@ -3163,7 +3176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
             'disponible'    => [$hbLabelLibres,  (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'available'],
             'ocupada'       => ['Ocupada',       (int)($estadisticas['ocupadas'] ?? 0),      'occupied'],
-            'por_llegar'    => ['Por llegar',    (int)($estadisticas['por_llegar'] ?? 0),    'arriving'],
+            'por_llegar'    => [$hbLabelPorLlegar, (int)($estadisticas['por_llegar'] ?? 0),    'arriving'],
             'limpieza'      => ['Limpieza',      (int)($estadisticas['limpieza'] ?? 0),      'cleaning'],
             'mantenimiento' => ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'maint'],
         ];
@@ -3229,7 +3242,14 @@ document.addEventListener('DOMContentLoaded', function(){
             // Establecer zona horaria de MySQL a México
             $db->query("SET time_zone = '-06:00'");
 
-            // Check-ins del día
+            // Check-ins del dia. HOY conserva su criterio ('confirmada' = los que
+            // faltan por recibir, la cola de trabajo). En OTRA fecha ese filtro
+            // MENTIA: solo dejaba ver las reservas que nunca hicieron check-in y las
+            // pintaba como llegadas normales, escondiendo a las que si llegaron.
+            $checkins_estados = $es_filtro_fecha
+                ? ['confirmada', 'checked_in', 'checked_out']
+                : ['confirmada'];
+            $checkins_in = implode(',', array_fill(0, count($checkins_estados), '?'));
             $sql_checkins = "SELECT r.*, h.nombre_completo, h.telefono,
                             GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
                             GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ',') as habitaciones_ids
@@ -3239,10 +3259,10 @@ document.addEventListener('DOMContentLoaded', function(){
                             INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
                             WHERE r.hotel_id = ?
                             AND DATE(r.fecha_entrada) = ?
-                            AND r.estado = 'confirmada'
+                            AND r.estado IN ($checkins_in)
                             GROUP BY r.id
                             ORDER BY r.hora_llegada_estimada";
-            $stmt = $db->query($sql_checkins, [$hotel_id_actual, $fecha_consulta]);
+            $stmt = $db->query($sql_checkins, array_merge([$hotel_id_actual, $fecha_consulta], $checkins_estados));
             $checkins_dia = $stmt->fetchAll();
             // Check-outs del dia. Antes se suprimian ENTEROS al filtrar por fecha y el
             // panel mentia "No hay check-outs programados" sin haber consultado nada.
@@ -3321,9 +3341,23 @@ document.addEventListener('DOMContentLoaded', function(){
                                             </p>
                                             <p class="text-xs text-gray-600">
                                                 <i class="fas fa-bed mr-1"></i><?= htmlspecialchars($checkin['habitaciones_numeros']) ?>
-                                                • <?= substr($checkin['hora_llegada_estimada'], 0, 5) ?>
+                                                <?php // Sin hora estimada quedaba una viñeta colgando ("MOKA •"). ?>
+                                                <?php $hbHoraCheckin = substr((string)($checkin['hora_llegada_estimada'] ?? ''), 0, 5); ?>
+                                                <?= $hbHoraCheckin !== '' ? '• ' . htmlspecialchars($hbHoraCheckin) : '' ?>
                                             </p>
                                         </div>
+                                        <?php if ($es_filtro_fecha): ?>
+                                            <?php
+                                            // En otra fecha el estado es el dato util: distingue al que
+                                            // llego del que NUNCA se presento (queda en 'confirmada').
+                                            $hbEstadoLlegada = [
+                                                'confirmada'  => $hbFechaEsPasada ? 'Sin check-in' : 'Aún no llega',
+                                                'checked_in'  => 'Hospedado',
+                                                'checked_out' => 'Ya salió',
+                                            ][$checkin['estado']] ?? 'Programada';
+                                            ?>
+                                            <span class="text-xs text-gray-500 ml-2 whitespace-nowrap"><?= htmlspecialchars($hbEstadoLlegada) ?></span>
+                                        <?php endif; ?>
                                         <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
                                            class="text-purple-600 hover:text-purple-800 ml-2 hb-move-action"
                                            tabindex="-1" aria-hidden="true">
@@ -3835,7 +3869,11 @@ if ($tiene_doble_movimiento) {
                                 else { $faceMeta = 'Sale ' . format_date($habitacion['ocupacion_actual']['fecha_salida']); }
                             } elseif ($tieneCompromisoEnFecha) {
                                 $faceGuest = $habitacion['info_ocupacion']['huesped'] ?? ($esLlegadaEnFecha ? 'Llegada' : 'Ocupada');
-                                $faceMeta = $esLlegadaEnFecha ? 'Llega ese día' : 'No disponible en la fecha';
+                                if ($esLlegadaEnFecha) {
+                                    $faceMeta = $hbFechaEsPasada ? 'Entró ese día' : 'Llega ese día';
+                                } else {
+                                    $faceMeta = $hbFechaEsPasada ? 'Ocupada ese día' : 'No disponible en la fecha';
+                                }
                             } elseif ($estado_principal == 'limpieza') {
                                 if ($es_checkin_vencido && $info_checkin_vencido) {
                                     $faceGuest = $info_checkin_vencido['nombre'];
@@ -4008,7 +4046,8 @@ if ($tiene_doble_movimiento) {
                                 <?php elseif ($estado_actual == 'disponible' || $estado_actual == 'disponible_fecha'): ?>
                                     <div class="info-item">
                                         <i class="fas fa-check-circle"></i>
-                                        <span>Lista para reservar</span>
+                                        <?php // Hacia atras no se invita a reservar: esa noche ya no se vende. ?>
+                                        <span><?= $hbFechaEsPasada ? 'No se ocup&oacute; esa noche' : 'Lista para reservar' ?></span>
                                     </div>
                                     <div class="info-item">
                                         <i class="fas fa-bed"></i>
@@ -4057,7 +4096,13 @@ if ($tiene_doble_movimiento) {
                                     </div>
                                     <div class="info-item">
                                         <i class="fas fa-<?= $esLlegadaEnFecha ? 'clock' : 'calendar-check' ?>"></i>
-                                        <span><?= $esLlegadaEnFecha ? 'Llega ese d&iacute;a · falta recibirla' : 'Ocupada en la fecha consultada' ?></span>
+                                        <span><?php
+                                            if ($esLlegadaEnFecha) {
+                                                echo $hbFechaEsPasada ? 'Entr&oacute; ese d&iacute;a' : 'Llega ese d&iacute;a · falta recibirla';
+                                            } else {
+                                                echo 'Ocupada en la fecha consultada';
+                                            }
+                                        ?></span>
                                     </div>
                                     <?php if (!empty($habitacion['info_ocupacion']['fecha_entrada']) && !empty($habitacion['info_ocupacion']['fecha_salida'])): ?>
                                         <div class="info-item">
@@ -4146,7 +4191,14 @@ if ($tiene_doble_movimiento) {
 
                                  <?php if ($estado_actual == 'disponible' || $estado_actual == 'disponible_fecha'): ?>
                                     <?php if ($estado_actual == 'disponible_fecha'): ?>
-                                        <a href="javascript:void(0)" onclick="return hbReservarDesdeHabitacion(event, <?= $habitacion['id'] ?>, '<?= $filtros['fecha_consulta'] ?>')" class="btn-action btn-primary hb-reserve-action" title="Reservar esta habitación en la fecha seleccionada">
+                                        <?php
+                                            // Con fecha PASADA no se precarga la fecha: pasar '2026-07-25' abria
+                                            // el alta con entrada/salida en el pasado (verificado en
+                                            // crearReservacionConFecha). Sin fecha cae en el alta normal
+                                            // (obtenerDatosReservaDefault = hoy -> manana).
+                                            $hbFechaReserva = $hbFechaEsPasada ? '' : ($filtros['fecha_consulta'] ?? '');
+                                        ?>
+                                        <a href="javascript:void(0)" onclick="return hbReservarDesdeHabitacion(event, <?= $habitacion['id'] ?>, '<?= $hbFechaReserva ?>')" class="btn-action btn-primary hb-reserve-action" title="<?= $hbFechaEsPasada ? 'Reservar esta habitación (la fecha se elige en el formulario)' : 'Reservar esta habitación en la fecha seleccionada' ?>">
                                             <i class="fas fa-plus mr-1"></i>Reservar
                                         </a>
                                     <?php else: ?>
@@ -5167,7 +5219,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
                 <?php
                 $quickLegend = [
                     [$hbLabelLibres, (int)($estadisticas['libres_hoy'] ?? ($estadisticas['disponibles'] ?? 0)), 'var(--qv-green)'],
-                    ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--qv-purple)'],
+                    [$hbLabelPorLlegar, (int)($estadisticas['por_llegar'] ?? 0), 'var(--qv-purple)'],
                     ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--qv-occupied)'],
                     ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--qv-blue)'],
                     ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'var(--qv-amber)'],

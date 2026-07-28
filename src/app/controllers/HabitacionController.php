@@ -525,11 +525,20 @@ private function mostrarDisponibilidadPorFecha($filtros) {
     error_log("=== FIN DISPONIBILIDAD ===");
     
     // Estados para la vista
+    // Consultar HACIA ATRAS es un tiempo verbal distinto: "Disponible"/"Por llegar"
+    // sobre el 25 de julio se lee como si aun pudieras vender o recibir esa noche.
+    $esFechaPasada = $fecha_consulta < date('Y-m-d');
     $estados = Habitacion::getEstados();
-    $estados['disponible_fecha'] = ['label' => 'Disponible', 'color' => 'green', 'icon' => 'check-circle'];
+    $estados['disponible_fecha'] = [
+        'label' => $esFechaPasada ? 'Sin ocupar' : 'Disponible',
+        'color' => 'green', 'icon' => 'check-circle',
+    ];
     $estados['ocupada_fecha'] = ['label' => 'Ocupada', 'color' => 'red', 'icon' => 'user'];
     // Mismo estado (y mismo violeta) que la vista de hoy: la llegada del dia consultado.
-    $estados['por_llegar'] = ['label' => 'Por llegar', 'color' => 'purple', 'icon' => 'clock'];
+    $estados['por_llegar'] = [
+        'label' => $esFechaPasada ? 'Entró' : 'Por llegar',
+        'color' => 'purple', 'icon' => 'clock',
+    ];
     $alertasPendientes = $this->obtenerAlertasPendientesHabitaciones($hotelId);
     
     View::renderTemplate('habitaciones/index', [
