@@ -5148,7 +5148,11 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
 }
 </style>
 
-<div id="vistaRapidaModal" class="hb-quick-modal fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div id="vistaRapidaModal"
+     class="hb-quick-modal fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="vistaRapidaTitulo">
     <div class="hb-quick-dialog bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
         <div class="hb-quick-header text-white p-3 flex justify-between items-center">
             <div class="hb-quick-title-row">
@@ -5157,7 +5161,7 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .hb-reserve-swal .hb-reserv
                 </div>
                 <div>
                     <span class="hb-quick-eyebrow">Mapa operativo</span>
-                    <h3 class="hb-quick-title text-lg font-bold">Vista Rápida de Habitaciones</h3>
+                    <h3 id="vistaRapidaTitulo" class="hb-quick-title text-lg font-bold">Vista Rápida de Habitaciones</h3>
                     <p class="hb-quick-subtitle">Consulta estados y abre la acción principal de cada habitación sin salir del tablero.</p>
                 </div>
             </div>
@@ -16868,13 +16872,24 @@ function finalizarMantenimiento(id) {
     });
 }
 
+let hbVistaRapidaTrigger = null;
+
 function mostrarVistaRapida() {
-    const sidebar = document.getElementById('sidebar');
-    const mainHeader = document.getElementById('mainHeader');
     const modal = document.getElementById('vistaRapidaModal');
-    if (sidebar) sidebar.style.display = 'none';
-    if (mainHeader) mainHeader.style.display = 'none';
-    if (modal) modal.classList.remove('hidden');
+    if (!modal) return;
+
+    hbVistaRapidaTrigger = document.activeElement;
+
+    // El modal se renderiza dentro de la vista, cuyo contenedor puede crear un
+    // containing block. Montarlo bajo body garantiza que fixed/inset-0 tome el
+    // viewport completo y no el espacio restante a la derecha de la sidebar.
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    modal.classList.remove('hidden');
+    const closeButton = modal.querySelector('.hb-quick-close');
+    if (closeButton) closeButton.focus({ preventScroll: true });
     document.body.classList.add('hb-modal-open');
     document.body.style.overflow = 'hidden';
 }
@@ -16898,13 +16913,13 @@ function hbSincronizarBloqueoModales() {
 }
 
 function cerrarVistaRapida() {
-    const sidebar = document.getElementById('sidebar');
-    const mainHeader = document.getElementById('mainHeader');
     const modal = document.getElementById('vistaRapidaModal');
-    if (sidebar) sidebar.style.display = '';
-    if (mainHeader) mainHeader.style.display = '';
     if (modal) modal.classList.add('hidden');
     hbSincronizarBloqueoModales();
+    if (hbVistaRapidaTrigger && hbVistaRapidaTrigger.isConnected) {
+        hbVistaRapidaTrigger.focus({ preventScroll: true });
+    }
+    hbVistaRapidaTrigger = null;
 }
 // Función para recepción rápida de control remoto desde el índice de habitaciones
 function recibirRemotoRapido(habitacionId, reservacionId) {
