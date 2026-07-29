@@ -11,6 +11,10 @@ $total_reservaciones = (int)($total_reservaciones ?? 0);
 $total_gastado = (float)($total_gastado ?? 0);
 $gasto_promedio = $total_reservaciones > 0 ? $total_gastado / $total_reservaciones : 0;
 $vehiculos_count = count($vehiculos);
+// Bloque 'vehiculos': el panel de vehículos ya se gateaba (linea ~2290), pero
+// las 2 fichas contador y la tarjeta "Vehículo anterior" (columnas LEGACY
+// huespedes.vehiculo_*) quedaban fuera y sobrevivían a todo el gate.
+$guestVerParkingActivo = !function_exists('hotel_parking_visible') || hotel_parking_visible();
 $reservaciones_count = count($reservaciones);
 $perfilOperativo = is_array($perfilOperativo ?? null) ? $perfilOperativo : [];
 $perfilReservaciones = is_array($perfilOperativo['reservaciones'] ?? null) ? $perfilOperativo['reservaciones'] : [];
@@ -2008,10 +2012,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                 <span>Promedio</span>
                 <strong><?= format_money($gasto_promedio) ?></strong>
             </article>
+            <?php if ($guestVerParkingActivo): ?>
             <article class="guest-metric" style="--metric-color: #64748B;">
                 <span>Vehículos</span>
                 <strong><?= number_format($vehiculos_count) ?></strong>
             </article>
+            <?php endif; ?>
         </section>
 
         <section class="guest-panel guest-readonly-profile" aria-label="Perfil operativo del huesped">
@@ -2126,7 +2132,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                     <strong><?= guest_detail_safe($descLabelVer) ?></strong>
                                 </div>
                             </article>
-                            <?php if (!empty($huesped['vehiculo_marca']) || !empty($huesped['vehiculo_placas'])): ?>
+                            <?php if ($guestVerParkingActivo && (!empty($huesped['vehiculo_marca']) || !empty($huesped['vehiculo_placas']))): ?>
                                 <article class="guest-info-card">
                                     <i class="fas fa-car-side"></i>
                                     <div>
@@ -2465,10 +2471,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                             <span>Gasto promedio</span>
                             <strong><?= format_money($gasto_promedio) ?></strong>
                         </div>
+                        <?php if ($guestVerParkingActivo): ?>
                         <div>
                             <span>Vehículos</span>
                             <strong><?= number_format($vehiculos_count) ?></strong>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </section>
 

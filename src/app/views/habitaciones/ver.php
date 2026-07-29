@@ -1261,6 +1261,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 <span class="hdv-tile-label">Tel&eacute;fono</span>
                                 <span class="hdv-tile-value"><?= room_detail_safe($ocupacion_actual['telefono'] ?? '', 'No registrado') ?></span>
                             </div>
+                            <?php if (!function_exists('hotel_parking_visible') || hotel_parking_visible()): ?>
                             <div class="hdv-tile">
                                 <span class="hdv-tile-label">Veh&iacute;culos</span>
                                 <?php
@@ -1285,6 +1286,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                     <span class="hdv-tile-value">Sin veh&iacute;culos</span>
                                 <?php endif; ?>
                             </div>
+                            <?php endif; ?>
                         </div>
                         <div style="margin-top:12px;">
                             <a href="<?= url('reservaciones/ver/' . ($ocupacion_actual['id'] ?? 0)) ?>" class="hdv-btn hdv-btn-info">

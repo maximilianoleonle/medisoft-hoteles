@@ -1,7 +1,11 @@
 <?php
 $huespedes = $huespedes ?? [];
 $guestRows = [];
-$vehiculoModel = !empty($huespedes) ? new HuespedVehiculo() : null;
+// Bloque 'vehiculos': sin contratar no se consulta ni se pinta nada de placas.
+// De paso ahorra la consulta POR CADA huésped de la página (N+1 preexistente:
+// matarlo de verdad exige precargar en lote, y eso es cambio aparte).
+$guestParkingActivo = !function_exists('hotel_parking_visible') || hotel_parking_visible();
+$vehiculoModel = (!empty($huespedes) && $guestParkingActivo) ? new HuespedVehiculo() : null;
 
 foreach ($huespedes as $huesped) {
     $vehiculos = $vehiculoModel ? $vehiculoModel->porHuespedHotel($huesped['id']) : [];
@@ -1151,7 +1155,8 @@ select.guest-control {
                                             <span class="guest-muted">Origen no especificado</span>
                                         <?php endif; ?>
 
-                                        <?php if ($total_vehiculos > 0): ?>
+                                        <?php if ($guestParkingActivo): ?>
+                                            <?php if ($total_vehiculos > 0): ?>
                                             <div class="guest-meta-line">
                                                 <i class="fas fa-car text-slate-400"></i>
                                                 <span>
@@ -1161,8 +1166,9 @@ select.guest-control {
                                                     <?php endif; ?>
                                                 </span>
                                             </div>
-                                        <?php else: ?>
+                                            <?php else: ?>
                                             <span class="guest-muted">Sin vehículo</span>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -1292,6 +1298,7 @@ select.guest-control {
                                 <span class="guest-chip">Origen no especificado</span>
                             <?php endif; ?>
 
+                            <?php if ($guestParkingActivo): ?>
                             <?php if ($total_vehiculos > 0): ?>
                                 <span class="guest-chip">
                                     <i class="fas fa-car"></i>
@@ -1299,6 +1306,7 @@ select.guest-control {
                                 </span>
                             <?php else: ?>
                                 <span class="guest-chip">Sin vehículo</span>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
 

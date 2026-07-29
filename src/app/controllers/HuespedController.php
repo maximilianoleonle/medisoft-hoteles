@@ -917,8 +917,12 @@ public function actualizarAction() {
     // Obtener historial de reservaciones
     $reservaciones = $this->huespedModel->getReservacionesPorHotel($id, $hotelId);
     
-    // Obtener vehículos del huésped
-    $vehiculos = $this->huespedModel->getVehiculosPorHotel($id, $hotelId);
+    // Obtener vehículos del huésped (bloque 'vehiculos': sin contratar no se
+    // consultan placas, que es PII que la ficha ya no pinta — el panel de
+    // vehículos de la vista lleva su propio gate de módulo).
+    $vehiculos = (!function_exists('hotel_parking_visible') || hotel_parking_visible($hotelId))
+        ? $this->huespedModel->getVehiculosPorHotel($id, $hotelId)
+        : [];
     $perfilOperativo = $this->huespedModel->perfilOperativoReadOnlyPorHotel($id, $hotelId);
 
     $documentosEntidad = [];
@@ -1333,9 +1337,16 @@ public function guardarAction() {
         $errores[] = 'Ya existe un huésped registrado con ese número de teléfono';
     }
     
-    // Obtener vehículos del formulario
+    // Obtener vehículos del formulario. CUARTO punto de escritura del bloque
+    // 'vehiculos' y el único que estaba sin candado: los otros 3 (agregar,
+    // actualizar, eliminar) son AJAX y ya cortan con require_hotel_module. Aquí
+    // el alta es del paquete base, así que el campo se IGNORA en silencio en vez
+    // de tronar — sin el bloque la vista no renderiza inputs vehiculos[], de
+    // modo que solo puede llegar por un POST fabricado.
     $fieldErrors = [];
-    $vehiculos = $this->getPost('vehiculos', []);
+    $vehiculos = (!function_exists('hotel_parking_visible') || hotel_parking_visible($hotelId))
+        ? $this->getPost('vehiculos', [])
+        : [];
     $vehiculosValidos = [];
     
     // VALIDACION MEJORADA DE VEHICULOS

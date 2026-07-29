@@ -560,7 +560,14 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
     }
 }
 
-$estado_estacionamiento_dashboard = get_estado_estacionamiento_dashboard();
+// Estacionamiento = bloque 'vehiculos' ($99). Sin contratar, el tablero no
+// consulta nada (son 2 consultas + N vehículos con placas) ni pinta la tarjeta:
+// hotel_parking_visible() es el punto único, ver helpers/modulos.php. El arreglo
+// $empty de la función vive DENTRO de ella, así que aquí va su equivalente.
+$parking_activo_dashboard = !function_exists('hotel_parking_visible') || hotel_parking_visible();
+$estado_estacionamiento_dashboard = $parking_activo_dashboard
+    ? get_estado_estacionamiento_dashboard()
+    : ['vehiculos' => [], 'resumen' => [], 'limite' => 0, 'ocupados' => 0, 'apartados' => 0, 'usados' => 0];
 $lista_vehiculos_estacionamiento = $estado_estacionamiento_dashboard['vehiculos'] ?? [];
 $resumen_estacionamientos_dashboard = $estado_estacionamiento_dashboard['resumen'] ?? [];
 $limite_estacionamiento = (int)($estado_estacionamiento_dashboard['limite'] ?? 0);
@@ -4999,6 +5006,7 @@ button.parking-more-note:hover {
             <?php endif; ?>
             </section>
             </div>
+            <?php if ($parking_activo_dashboard): ?>
             <article class="card card-pad dashboard-parking-card <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                 <div class="section-head">
                     <h2>Estacionamiento</h2>
@@ -5159,6 +5167,7 @@ button.parking-more-note:hover {
                     </div>
                 </div>
             </article>
+            <?php endif; ?>
         </section>
 
         <!-- ════════════════════════════════════════════════════════════
@@ -5196,6 +5205,7 @@ button.parking-more-note:hover {
                     </div>
                 </div>
 
+                <?php if ($parking_activo_dashboard): ?>
                 <div class="dm-sec"><span>Estacionamiento</span><?= $dashConfigAbrir('dm-sec-note', 'Ajustar cupos de estacionamiento en Configuración') ?><?= dashboard_safe($nota_cabeza_estacionamiento) ?><?= $dashConfigCerrar ?></div>
                 <div class="dm-card dm-park <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                     <div class="dm-occ dm-park-top">
@@ -5274,6 +5284,7 @@ button.parking-more-note:hover {
                         <div class="parking-forecast-detail" data-pf-detail hidden></div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <?php if ($puede_ver_caja): ?>
                 <div class="dm-sec"><span>Movimientos del día</span></div>

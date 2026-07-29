@@ -643,7 +643,11 @@
                             </span>
                             <?php endif; ?>
                             
-                            <?php if (!empty($reservacion['vehiculos']) && $reservacion['vehiculos'] > 0): ?>
+                            <?php // El chip cuenta desde la columna legacy huespedes.vehiculo_marca,
+                            // no desde huesped_vehiculos, pero sigue siendo dato de estacionamiento:
+                            // sin el bloque 'vehiculos' tampoco se pinta. ?>
+                            <?php if ((!function_exists('hotel_parking_visible') || hotel_parking_visible())
+                                && !empty($reservacion['vehiculos']) && $reservacion['vehiculos'] > 0): ?>
                             <span class="history-vehicle inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-700 font-bold">
                                 <i class="fas fa-car mr-1"></i>
                                 <?= $reservacion['vehiculos'] > 1 ? $reservacion['vehiculos'] . ' veh.' : '1 veh.' ?>

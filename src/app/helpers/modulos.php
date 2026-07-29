@@ -74,6 +74,42 @@ function documentos_entidad_visible(): bool {
         && can('documentos.view');
 }
 
+/**
+ * ¿Se muestra y opera el ESTACIONAMIENTO en este hotel (vehículos del huésped,
+ * tarjeta de proyección del tablero, bloque de vehículos del PDF de cotización)?
+ *
+ * Punto ÚNICO de verdad: el bloque `vehiculos` ($99). Ya era el interruptor de
+ * la mitad de la función —HuespedController 629/990/1061 y el mapa de
+ * ApiController lo exigen para registrar placas— mientras la otra mitad (el
+ * indicador del tablero, el POST del alta, el PDF, los chips del listado)
+ * quedaba encendida para cualquier hotel: la incoherencia asimétrica que este
+ * helper cierra. Con un solo predicado, contratar o cancelar el bloque prende y
+ * apaga la función COMPLETA.
+ *
+ * Sin $hotelId responde por el hotel de la sesión con la semántica de menú
+ * (fail-open si el catálogo no se pudo consultar, y `true` bajo /admin/saas
+ * donde el panel muestra todo); con $hotelId explícito consulta ese hotel, que
+ * es obligatorio en el panel SaaS porque `current_hotel_id()` lee solo
+ * `$_SESSION` y devolvería el hotel del admin.
+ *
+ * Estacionamiento se GATEA, jamás se 403ea: vive dentro de pantallas del
+ * paquete base (tablero, huéspedes, habitaciones, reservaciones), así que el
+ * criterio es el de `descuentos` — el dato no se pinta y el POST se ignora.
+ *
+ * Si algún día el hotelero necesita apagarlo teniéndolo contratado (hotel sin
+ * cajones), el ajuste por hotel se ANDea AQUÍ, en una línea, sin volver a
+ * recorrer los ~15 consumidores.
+ */
+function hotel_parking_visible($hotelId = null): bool {
+    if ($hotelId !== null) {
+        return !function_exists('hotel_has_module')
+            || hotel_has_module('vehiculos', (int) $hotelId);
+    }
+
+    return !function_exists('hotel_menu_module_enabled')
+        || hotel_menu_module_enabled('vehiculos');
+}
+
 function require_hotel_module_api($clave) {
     if (!$clave || !has_hotel_context()) {
         return true;

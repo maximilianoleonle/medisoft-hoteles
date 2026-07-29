@@ -253,6 +253,12 @@ class ReservacionController extends Controller {
         if ($huespedId <= 0 || $hotelId <= 0) {
             return [];
         }
+        // Un solo punto cubre las DOS acciones de cotización: sin el bloque
+        // 'vehiculos' el PDF que se entrega al huésped no lleva placas y la caja
+        // "DATOS DEL HUÉSPED" encoge sola (su alto es 18 + 5*N).
+        if (function_exists('hotel_parking_visible') && !hotel_parking_visible($hotelId)) {
+            return [];
+        }
         if (!class_exists('HuespedVehiculo')) {
             require_once __DIR__ . '/../models/HuespedVehiculo.php';
         }
@@ -1479,9 +1485,12 @@ public function obtenerNotasAction() {
         $stmt->execute([$hotel_id, $fecha, $fecha]);
         $reservaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Vehículos
+        // Vehículos (bloque 'vehiculos': sin contratar, el PDF exportado no
+        // lleva marca/modelo/color del huésped — la columna queda "Sin vehiculo",
+        // que además es cierto porque no pueden registrarlos).
         $vehiculos_por_huesped = [];
-        if (!empty($reservaciones)) {
+        if (!empty($reservaciones)
+            && (!function_exists('hotel_parking_visible') || hotel_parking_visible($hotel_id))) {
             $huespedes_ids = array_unique(array_column($reservaciones, 'huesped_id'));
             if (!empty($huespedes_ids)) {
                 $placeholders = str_repeat('?,', count($huespedes_ids) - 1) . '?';
@@ -1648,9 +1657,10 @@ public function obtenerNotasAction() {
             $stmt->execute([$hotel_id, $fecha, $fecha]);
             $reservaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Obtener vehículos
+            // Obtener vehículos (mismo gate que el export a PDF de arriba)
             $vehiculos_por_huesped = [];
-            if (!empty($reservaciones)) {
+            if (!empty($reservaciones)
+                && (!function_exists('hotel_parking_visible') || hotel_parking_visible($hotel_id))) {
                 $huespedes_ids = array_unique(array_column($reservaciones, 'huesped_id'));
                 if (!empty($huespedes_ids)) {
                     $placeholders = str_repeat('?,', count($huespedes_ids) - 1) . '?';
@@ -3079,9 +3089,13 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
         // Obtener información del huésped
         $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $this->hotelIdActual());
         
-        // Obtener vehículos
+        // Obtener vehículos (bloque 'vehiculos': sin contratar no se consultan
+        // placas — son PII que la vista ya no pinta). El guard preguntaba por
+        // getVehiculos e invocaba getVehiculosPorHotel; se corrige de paso.
         $vehiculos = [];
-        if (method_exists($this->huespedModel, 'getVehiculos')) {
+        $parkingVisible = !function_exists('hotel_parking_visible')
+            || hotel_parking_visible($this->hotelIdActual());
+        if ($parkingVisible && method_exists($this->huespedModel, 'getVehiculosPorHotel')) {
             $vehiculos = $this->huespedModel->getVehiculosPorHotel($reservacion['huesped_id'], $this->hotelIdActual());
         }
         

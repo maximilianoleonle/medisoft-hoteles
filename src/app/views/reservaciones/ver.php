@@ -1895,6 +1895,10 @@ $rdDocuments = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 $rdGuestDocuments = is_array($documentosHuesped ?? null) ? $documentosHuesped : [];
 $rdDocsContext = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
 $rdVehicles = is_array($vehiculos ?? null) ? $vehiculos : [];
+// Estacionamiento = bloque 'vehiculos'; mismo criterio que $rdDocumentosActivo
+// de arriba. Sin el bloque no se pinta la lista NI el botón Agregar (que hoy
+// llevaba a un panel de huéspedes ya oculto: callejón sin salida).
+$rdParkingActivo = !function_exists('hotel_parking_visible') || hotel_parking_visible();
 $rdPaymentSummary = is_array($resumenPagos ?? null) ? $resumenPagos : null;
 $rdTotal = (float)($rdPaymentSummary['total'] ?? ($reservacion['precio_total'] ?? 0));
 $rdTotalPaid = 0.0;
@@ -4584,6 +4588,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                 </section>
                                 <?php endif; ?>
 
+                                <?php if ($rdParkingActivo): ?>
                                 <div class="rdv3-subhead rdv3-subhead--stack">
                                     <div class="rdv3-subhead-copy">
                                         <span><i class="fas fa-car-side rdv3-car-accent"></i>Vehiculos registrados</span>
@@ -4610,6 +4615,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                     <?php endif; ?>
                                 </div>
                                 <div id="vehiculoStatus" class="rdv3-vehicle-status" aria-live="polite"></div>
+                                <?php endif; ?>
                             </div>
                         </section>
 
@@ -7390,9 +7396,14 @@ function cargarVehiculos() {
             }
         })
         .catch(error => {
+            // JAMÁS pisar la lista que el servidor ya pintó desde $rdVehicles:
+            // este fetch solo la MEJORA (agrega editar/eliminar). Antes, un 403
+            // del bloque 'vehiculos' o una red intermitente reemplazaba los
+            // vehículos reales por "Error al cargar vehículos" en cada carga.
             console.error('Error:', error);
-            listaVehiculos.innerHTML =
-                '<p class="text-center text-gray-500 text-sm">Error al cargar vehículos</p>';
+            if (typeof setVehiculoStatus === 'function') {
+                setVehiculoStatus('No se pudo actualizar la lista de vehiculos.', 'error');
+            }
         });
 }
 

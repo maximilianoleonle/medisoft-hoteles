@@ -134,7 +134,11 @@ class ApiController extends Controller {
         $map = [
             'alertasDashboard' => 'dashboard',
             'calcularPrecio' => 'reservaciones',
-            'estacionamientoProyeccion' => 'dashboard',
+            // La proyección de estacionamiento es del bloque 'vehiculos', no del
+            // tablero: mapeada a 'dashboard' (paquete base) la alcanzaba
+            // cualquier hotel, incluso los que no registran placas porque
+            // 'vehiculosHuesped' sí exige el bloque dos líneas abajo.
+            'estacionamientoProyeccion' => 'vehiculos',
             'estadisticasDashboard' => 'dashboard',
             'habitacionesDisponibles' => 'habitaciones',
             'informacionImagen' => 'habitaciones',
