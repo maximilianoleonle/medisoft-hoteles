@@ -249,6 +249,11 @@ class ReportesController extends Controller {
     public function gerencialDiarioPdfAction() {
         $this->requireAuth();
         require_hotel_module('tablero_ejecutivo');
+        // Un PDF que además se registra como entrega distribuible ES una
+        // exportación: mismo contrato que exportarPdfAction (linea 592) y que
+        // los 12 sitios de Caja/Nomina/Trabajadores/Inventario/Reservaciones.
+        // Este se habia quedado atras: bastaba el bloque tablero_ejecutivo.
+        require_hotel_module('exportaciones');
 
         $fecha = trim((string)$this->getQuery('fecha', date('Y-m-d')));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {

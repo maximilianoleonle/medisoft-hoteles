@@ -344,10 +344,12 @@ $riesgoRows = [
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     Reportes
                 </a>
+                <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
                 <a href="<?= url('reportes/gerencial-diario/pdf?fecha=' . urlencode($fecha)) ?>" class="gd-btn">
                     <i class="fas fa-file-pdf" aria-hidden="true"></i>
                     Descargar PDF
                 </a>
+                <?php endif; ?>
             </div>
         </section>
 
