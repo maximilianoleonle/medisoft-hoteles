@@ -64,6 +64,10 @@ src/storage/reportes/
 # Migraciones SQL versionadas del proyecto
 !migrations/*.sql
 
+# Tooling de migracion legacy: el SQL ES el codigo fuente (la version de Los
+# Cedros nunca viajo por git y hubo que reconstruirla desde cero en otra PC)
+!tools/migracion_sannicolas/*.sql
+
 # Paquetes locales de despliegue
 dist/
 
