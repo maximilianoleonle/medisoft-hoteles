@@ -149,8 +149,16 @@ html[data-theme="dark"] .roles-view .rv-people-empty { color: var(--rv-muted); }
 
 <div class="roles-view">
     <div class="rv-wrap">
-        <?php $back_arrow_href = back_url('configuracion'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
-        <a href="<?= url('configuracion') ?>" class="rv-back"><i class="fas fa-arrow-left"></i> Volver a Configuración</a>
+        <?php
+        // La configuracion del hotel es de Medisoft: quien no puede abrirla
+        // regresa al dashboard, no a un rebote.
+        $rvConfigUrl = function_exists('config_hotel_url') ? config_hotel_url() : null;
+        $back_arrow_href = back_url($rvConfigUrl ? 'configuracion' : 'dashboard');
+        include APP_PATH . '/views/partials/back_arrow.php';
+        ?>
+        <a href="<?= htmlspecialchars($rvConfigUrl ?: url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rv-back">
+            <i class="fas fa-arrow-left"></i> <?= $rvConfigUrl ? 'Volver a Configuración' : 'Volver al inicio' ?>
+        </a>
 
         <div class="rv-hero">
             <div>

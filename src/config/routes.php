@@ -553,6 +553,9 @@ $router->post('/admin/saas/hoteles/{id:[0-9]+}/usuarios', ['controller' => 'Saas
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/modulos', ['controller' => 'SaasAdmin', 'action' => 'actualizarModulosHotel']);
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/plan', ['controller' => 'SaasAdmin', 'action' => 'actualizarPlanHotel']);
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/branding', ['controller' => 'SaasAdmin', 'action' => 'actualizarBrandingHotel']);
+// Configuracion operativa del hotel cliente (solo Medisoft; el hotel ya no la edita).
+$router->get('/admin/saas/hoteles/{id:[0-9]+}/configuracion', ['controller' => 'SaasAdmin', 'action' => 'configuracionHotel']);
+$router->post('/admin/saas/hoteles/{id:[0-9]+}/configuracion', ['controller' => 'SaasAdmin', 'action' => 'guardarConfiguracionHotel']);
 
 // APIs del Dashboard para actualizaciÃ³n en tiempo real
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);

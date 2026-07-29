@@ -25,6 +25,22 @@ if (!function_exists('dashboard_safe')) {
     }
 }
 
+// Los ajustes del hotel los administra Medisoft: si quien mira no puede
+// abrirlos, el aviso se queda como texto en vez de enlazar a un rebote.
+$dashConfigCatalogos = function_exists('config_hotel_url') ? config_hotel_url('#hc-catalogs') : null;
+$dashConfigAbrir = function ($clase = '', $titulo = '') use ($dashConfigCatalogos) {
+    $claseAttr = $clase !== '' ? ' class="' . htmlspecialchars($clase, ENT_QUOTES, 'UTF-8') . '"' : '';
+
+    if (!$dashConfigCatalogos) {
+        return '<span' . $claseAttr . '>';
+    }
+
+    return '<a' . $claseAttr
+        . ' href="' . htmlspecialchars($dashConfigCatalogos, ENT_QUOTES, 'UTF-8') . '"'
+        . ' title="' . htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8') . '">';
+};
+$dashConfigCerrar = $dashConfigCatalogos ? '</a>' : '</span>';
+
 if (!function_exists('dashboard_format_date')) {
     function dashboard_format_date($value, $format = 'd/m/Y') {
         if (empty($value)) {
@@ -4986,7 +5002,7 @@ button.parking-more-note:hover {
             <article class="card card-pad dashboard-parking-card <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                 <div class="section-head">
                     <h2>Estacionamiento</h2>
-                    <a class="parking-head-note" href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos de estacionamiento en Configuración"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></a>
+                    <?= $dashConfigAbrir('parking-head-note', 'Ajustar cupos de estacionamiento en Configuración') ?><?= dashboard_safe($nota_cabeza_estacionamiento) ?><?= $dashConfigCerrar ?>
                 </div>
                 <div class="park-ring">
                     <div class="ring-box">
@@ -5024,9 +5040,13 @@ button.parking-more-note:hover {
                         <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
                         <div class="soft-note">
                             <?php if (!$estacionamiento_tiene_cupo): ?>
-                                <a href="<?= url('configuracion') ?>#hc-catalogs" title="Abrir la configuración de estacionamientos">Configura el cupo activo en Configuracion</a> para medir disponibilidad real.
+                                <?php if ($dashConfigCatalogos): ?>
+                                    <a href="<?= htmlspecialchars($dashConfigCatalogos, ENT_QUOTES, 'UTF-8') ?>" title="Abrir la configuración de estacionamientos">Configura el cupo activo en Configuracion</a> para medir disponibilidad real.
+                                <?php else: ?>
+                                    Sin cupo configurado: pídele a Medisoft registrar los estacionamientos para medir disponibilidad real.
+                                <?php endif; ?>
                             <?php elseif ($espacios_excedidos > 0): ?>
-                                <?= $espacios_excedidos ?> espacios sobre el <a href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos en Configuración">limite configurado</a>
+                                <?= $espacios_excedidos ?> espacios sobre el <?= $dashConfigAbrir('', 'Ajustar cupos en Configuración') ?>limite configurado<?= $dashConfigCerrar ?>
                             <?php else: ?>
                                 <?= $espacios_disp ?> espacios disponibles
                             <?php endif; ?>
@@ -5056,15 +5076,13 @@ button.parking-more-note:hover {
                                     $parkingDetail .= ' · +' . $parkingOver . ' sobre cupo';
                                 }
                                 ?>
-                                <a class="<?= implode(' ', $parkingClasses) ?>"
-                                   href="<?= url('configuracion') ?>#hc-catalogs"
-                                   title="Ajustar el cupo de <?= dashboard_safe($parkingItem['label'] ?? 'este estacionamiento') ?> en Configuración">
+                                <?= $dashConfigAbrir(implode(' ', $parkingClasses), 'Ajustar el cupo de ' . ($parkingItem['label'] ?? 'este estacionamiento') . ' en Configuración') ?>
                                     <span>
                                         <?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?>
                                         <small><?= dashboard_safe($parkingDetail) ?></small>
                                     </span>
                                     <strong><?= $parkingCapacity > 0 ? ($parkingTotal . '/' . $parkingCapacity) : $parkingTotal ?></strong>
-                                </a>
+                                <?= $dashConfigCerrar ?>
                             <?php endforeach; ?>
                         </div>
                         <div class="parking-forecast" id="parkingForecast"
@@ -5178,7 +5196,7 @@ button.parking-more-note:hover {
                     </div>
                 </div>
 
-                <div class="dm-sec"><span>Estacionamiento</span><a class="dm-sec-note" href="<?= url('configuracion') ?>#hc-catalogs" title="Ajustar cupos de estacionamiento en Configuración"><?= dashboard_safe($nota_cabeza_estacionamiento) ?></a></div>
+                <div class="dm-sec"><span>Estacionamiento</span><?= $dashConfigAbrir('dm-sec-note', 'Ajustar cupos de estacionamiento en Configuración') ?><?= dashboard_safe($nota_cabeza_estacionamiento) ?><?= $dashConfigCerrar ?></div>
                 <div class="dm-card dm-park <?= dashboard_safe($estado_visual_estacionamiento) ?>">
                     <div class="dm-occ dm-park-top">
                         <div class="dm-ring dm-park-ring">
@@ -5209,9 +5227,13 @@ button.parking-more-note:hover {
                         <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
                         <div class="dm-park-note">
                             <?php if (!$estacionamiento_tiene_cupo): ?>
-                                <a href="<?= url('configuracion') ?>#hc-catalogs">Configura el cupo en Configuración</a> para medir disponibilidad.
+                                <?php if ($dashConfigCatalogos): ?>
+                                    <a href="<?= htmlspecialchars($dashConfigCatalogos, ENT_QUOTES, 'UTF-8') ?>">Configura el cupo en Configuración</a> para medir disponibilidad.
+                                <?php else: ?>
+                                    Sin cupo configurado: pídelo a Medisoft para medir disponibilidad.
+                                <?php endif; ?>
                             <?php elseif ($espacios_excedidos > 0): ?>
-                                <?= $espacios_excedidos ?> sobre el <a href="<?= url('configuracion') ?>#hc-catalogs">límite</a>
+                                <?= $espacios_excedidos ?> sobre el <?= $dashConfigAbrir('', 'Ajustar cupos en Configuración') ?>límite<?= $dashConfigCerrar ?>
                             <?php else: ?>
                                 <?= $espacios_disp ?> espacios disponibles
                             <?php endif; ?>
@@ -5239,11 +5261,10 @@ button.parking-more-note:hover {
                                 if ($pOver > 0) { $pDetail .= ' · +' . $pOver . ' sobre cupo'; }
                                 $pBadge = $pCupo > 0 ? ($pTotal . '/' . $pCupo) : (string)$pTotal;
                                 ?>
-                                <a class="<?= $pClass ?>" href="<?= url('configuracion') ?>#hc-catalogs"
-                                   title="Ajustar el cupo de <?= dashboard_safe($parkingItem['label'] ?? 'este estacionamiento') ?> en Configuración">
+                                <?= $dashConfigAbrir($pClass, 'Ajustar el cupo de ' . ($parkingItem['label'] ?? 'este estacionamiento') . ' en Configuración') ?>
                                     <span class="nm"><?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?><small><?= dashboard_safe($pDetail) ?></small></span>
                                     <strong class="ct"><?= dashboard_safe($pBadge) ?></strong>
-                                </a>
+                                <?= $dashConfigCerrar ?>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>

@@ -33,7 +33,7 @@ class ConfiguracionController extends Controller {
 
         // Acceso administrativo del hotel actual.
         if (!$this->puedeGestionarConfiguracionHotel()) {
-            set_mensaje('No tiene permisos para acceder a esta sección', 'error');
+            set_mensaje('La configuración del hotel la administra Medisoft. Escríbenos si necesitas un cambio.', 'error');
             $this->redirect('dashboard');
             return false;
         }
@@ -42,10 +42,14 @@ class ConfiguracionController extends Controller {
     }
 
     private function puedeGestionarConfiguracionHotel() {
-        // RBAC intra-hotel: mismo permiso que gatea la entrada del menu
-        // (config/navegacion.php -> 'configuracion.view'), resuelto por el rol
-        // del usuario EN ESTE hotel. El gate anterior usaba is_gerente()
-        // (usuarios.rol GLOBAL, ajeno al hotel actual).
+        // La configuracion del hotel es responsabilidad de Medisoft: se opera
+        // desde /admin/saas/hoteles/{id}/configuracion (SaasAdminController).
+        // Un hotel inquilino ya no la edita ni la ve, aunque su rol traiga
+        // configuracion.view (el permiso sigue existiendo para el catalogo RBAC).
+        if (!isSaasAdmin()) {
+            return false;
+        }
+
         return can('configuracion.view');
     }
     

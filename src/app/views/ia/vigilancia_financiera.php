@@ -571,8 +571,12 @@ $linkCaso = static function (array $caso) use ($vgfSafe): string {
                     El Guardi&aacute;n est&aacute; usando el horario estándar
                     (<?= $vgfSafe($patrones['config']['horario_inicio'] ?? '06:00') ?> a <?= $vgfSafe($patrones['config']['horario_fin'] ?? '23:59') ?>).
                     Si tu recepci&oacute;n opera de noche, movimientos nocturnos leg&iacute;timos aparecer&aacute;n como patr&oacute;n a revisar.
-                    P&iacute;delo en <a href="<?= url('configuracion') ?>">Configuraci&oacute;n</a> o a tu asesor Medisoft
-                   .
+                    <?php $vgfConfigUrl = function_exists('config_hotel_url') ? config_hotel_url() : null; ?>
+                    <?php if ($vgfConfigUrl): ?>
+                        P&iacute;delo en <a href="<?= htmlspecialchars($vgfConfigUrl, ENT_QUOTES, 'UTF-8') ?>">Configuraci&oacute;n</a>.
+                    <?php else: ?>
+                        P&iacute;deselo a tu asesor Medisoft.
+                    <?php endif; ?>
                 </span>
             </div>
         <?php endif; ?>

@@ -465,8 +465,11 @@
                             // Lo incluido en TODAS las habitaciones se configura por hotel
                             // (/configuracion → Habitaciones): varia mucho de un hotel a otro.
                             $caracteristicasBaseHabitacion = is_array($incluidos ?? null) ? $incluidos : [];
-                            $puedeConfigurarIncluidos = function_exists('can') && can('configuracion.edit');
-                            $urlConfigIncluidos = url('configuracion') . '#hc-rooms';
+                            // Solo Medisoft edita esta lista (Panel SaaS): para el
+                            // hotel se muestra sin enlace.
+                            $urlConfigIncluidos = function_exists('config_hotel_url') ? config_hotel_url('#hc-rooms') : null;
+                            $puedeConfigurarIncluidos = $urlConfigIncluidos !== null
+                                && function_exists('can') && can('configuracion.edit');
                             ?>
                             <div>
                                 <?php if (!empty($caracteristicasBaseHabitacion)): ?>

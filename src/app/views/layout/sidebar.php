@@ -65,7 +65,9 @@ $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtra
 // Personal tiene su propio permiso; antes colgaba del de Usuarios.
 $mostrarPersonal = $menuModuloActivo('personal') && $puede('personal.view');
 $mostrarNomina = $menuModuloActivo('nomina_avanzada') && can('nomina.view');
-$mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
+// La configuracion del hotel la administra Medisoft desde el Panel SaaS
+// (/admin/saas/hoteles/{id}/configuracion). El hotel ya no la edita.
+$mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion && function_exists('isSaasAdmin') && isSaasAdmin();
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarRoles = function_exists('can') && can('roles.manage') && $menuModuloActivo('roles_avanzados');
 $mostrarAuditoria = $menuModuloActivo('auditoria') && $puede('auditoria.view');

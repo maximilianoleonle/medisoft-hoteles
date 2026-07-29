@@ -249,7 +249,12 @@ class SaasAdminController extends Controller {
         }
         $cobrosHotel = (new SaasCobroService())->cobrosPorHotel((int) $hotel['id'], 12);
 
+        if (!class_exists('HotelConfiguracionService')) {
+            require_once __DIR__ . '/../services/HotelConfiguracionService.php';
+        }
+
         View::renderTemplate('admin/saas/hotel_detalle', [
+            'fondoSistemaHotel' => HotelConfiguracionService::fondoGuardado((int) $hotel['id']),
             'title' => 'Panel Medisoft interno - Detalle de hotel',
             'hotel' => $hotel,
             'usuariosHotel' => $usuariosHotel,
@@ -524,9 +529,160 @@ class SaasAdminController extends Controller {
             $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
         }
 
+        // El fondo del sistema vive en hotel_configuracion, no en hotel_branding,
+        // pero es identidad visual: se edita aqui junto al resto de la marca.
+        $this->guardarFondoSistema((int) $hotel['id'], $_POST['hotel_appearance'] ?? null);
+
         clear_old_input();
         set_mensaje('Branding basico actualizado correctamente.', 'success');
         $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+    }
+
+    /**
+     * Configuracion operativa de un hotel cliente (la pantalla que antes vivia
+     * en /configuracion). Reusa la vista completa apuntandola al hotel objetivo
+     * via TenantContext, sin tocar la sesion del admin SaaS.
+     */
+    public function configuracionHotelAction($id) {
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $hotelId = (int) $hotel['id'];
+
+        $this->activarContextoHotel($hotel);
+
+        if (!class_exists('HotelConfiguracionService')) {
+            require_once __DIR__ . '/../services/HotelConfiguracionService.php';
+        }
+
+        $datos = HotelConfiguracionService::datosDeVista($hotelId);
+        $branding = $this->brandingModel->resolverParaHotel($hotelId, $hotel);
+
+        View::renderTemplate('configuracion/index', array_merge($datos, [
+            'title' => 'Panel Medisoft interno - Configuracion de ' . ($hotel['nombre_comercial'] ?? $hotel['nombre'] ?? 'hotel'),
+            // La tabla legacy `configuracion` es global (sin hotel_id): no se lee
+            // aqui o mostrariamos datos de otro hotel.
+            'config' => ['hotel' => [], 'tarifas' => [], 'inventario' => [], 'sistema' => [], 'upload' => []],
+            'hotelBranding' => $branding,
+            'hotelBackgroundColor' => '#F5F5F7',
+            'hotelBackgroundStored' => HotelConfiguracionService::fondoGuardado($hotelId),
+            'pwaPushDevices' => $this->dispositivosPwaPush($hotelId),
+            'ultimo_backup' => null,
+            'espacio' => null,
+            'configContextoSaas' => [
+                'id' => $hotelId,
+                'nombre' => $branding['nombre_visual'] ?? ($hotel['nombre_comercial'] ?? $hotel['nombre'] ?? ''),
+                'slug' => $hotel['slug'] ?? '',
+                'activo' => !empty($hotel['activo']),
+                'url_detalle' => url('admin/saas/hoteles/' . $hotelId),
+                'url_marca' => url('admin/saas/hoteles/' . $hotelId . '#branding'),
+            ],
+            'configFormAction' => url('admin/saas/hoteles/' . $hotelId . '/configuracion'),
+            'configCancelUrl' => url('admin/saas/hoteles/' . $hotelId),
+        ]));
+    }
+
+    public function guardarConfiguracionHotelAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/hoteles/' . (int) $id . '/configuracion');
+        }
+
+        $this->validateCSRF();
+
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $hotelId = (int) $hotel['id'];
+        $destino = 'admin/saas/hoteles/' . $hotelId . '/configuracion';
+
+        $this->activarContextoHotel($hotel);
+
+        if (!class_exists('HotelConfiguracionService')) {
+            require_once __DIR__ . '/../services/HotelConfiguracionService.php';
+        }
+
+        $normalizado = HotelConfiguracionService::normalizarPayload($_POST);
+
+        if (!empty($normalizado['errors'])) {
+            set_mensaje(implode('<br>', $normalizado['errors']), 'error');
+            $this->redirect($destino);
+        }
+
+        $db = null;
+
+        try {
+            $db = Database::getInstance();
+            $db->safeBeginTransaction();
+
+            HotelConfiguracionService::guardar($normalizado['values'], $hotelId);
+
+            $db->safeCommit();
+
+            set_mensaje('Configuración del hotel actualizada correctamente.', 'success');
+        } catch (Throwable $e) {
+            if ($db && method_exists($db, 'safeRollBack')) {
+                $db->safeRollBack();
+            }
+
+            error_log('Error al actualizar configuracion de hotel desde panel SaaS: ' . $e->getMessage());
+            set_mensaje('No se pudo actualizar la configuración del hotel.', 'error');
+        }
+
+        $this->redirect($destino);
+    }
+
+    /**
+     * Apunta los helpers hotel_* al hotel cliente durante este request.
+     * No toca $_SESSION: el admin SaaS conserva su propio contexto.
+     */
+    private function activarContextoHotel(array $hotel) {
+        if (class_exists('TenantContext')) {
+            TenantContext::setHotel($hotel);
+        }
+
+        if (function_exists('hotel_config_cache_invalidar')) {
+            hotel_config_cache_invalidar((int) $hotel['id']);
+        }
+    }
+
+    private function guardarFondoSistema($hotelId, $payload) {
+        if (!is_array($payload) || !function_exists('hotel_config_save_value')) {
+            return;
+        }
+
+        if (!class_exists('HotelConfiguracionService')) {
+            require_once __DIR__ . '/../services/HotelConfiguracionService.php';
+        }
+
+        $resultado = HotelConfiguracionService::normalizarApariencia($payload);
+
+        if (!empty($resultado['errors'])) {
+            return;
+        }
+
+        try {
+            hotel_config_save_value(
+                'apariencia.fondo_sistema',
+                $resultado['values']['background_color'],
+                'string',
+                'apariencia',
+                'Color de fondo global de las vistas operativas del hotel en modo claro.',
+                (int) $hotelId
+            );
+        } catch (Throwable $e) {
+            error_log('No se pudo guardar el fondo del sistema desde el panel SaaS: ' . $e->getMessage());
+        }
+    }
+
+    private function dispositivosPwaPush($hotelId) {
+        $hotelId = (int) $hotelId;
+
+        if ($hotelId <= 0 || !class_exists('PwaPushSubscription')) {
+            return [];
+        }
+
+        try {
+            return (new PwaPushSubscription())->listarPorHotel($hotelId, 40);
+        } catch (Throwable $e) {
+            error_log('No se pudieron listar dispositivos PWA Push (panel SaaS): ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function modulosCatalogoAction() {
@@ -659,6 +815,8 @@ class SaasAdminController extends Controller {
             'color_accent' => trim($this->getPost('color_accent', '')),
             'sidebar_style' => trim($this->getPost('sidebar_style', 'default')),
             'login_style' => trim($this->getPost('login_style', 'default')),
+            // Vacio = conserva el tema actual del hotel (normalizarTema del modelo).
+            'tema' => trim($this->getPost('tema', '')),
             'activo' => (int) $this->getPost('activo', 1) === 1 ? 1 : 0,
         ];
     }

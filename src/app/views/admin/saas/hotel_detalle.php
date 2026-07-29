@@ -426,6 +426,17 @@ if (empty($planActual['id'])) {
     box-shadow: inset 0 0 0 1px var(--ms-detail-blue-border);
 }
 
+/* Enlace que sale del detalle (Configuracion del hotel). */
+.ms-admin-scope .saas-detail-nav a.saas-detail-nav-out {
+    color: var(--ms-primary);
+    box-shadow: inset 0 0 0 1px var(--ms-detail-blue-border);
+}
+
+.ms-admin-scope .saas-detail-nav-out-icon {
+    font-size: .6875rem;
+    opacity: .7;
+}
+
 .ms-admin-scope .saas-detail-section {
     scroll-margin-top: 6.5rem;
     margin-top: 2rem;
@@ -948,6 +959,8 @@ if (empty($planActual['id'])) {
             <a href="#modulos" id="tab-modulos" role="tab" aria-controls="modulos" aria-selected="false" tabindex="-1"><i class="fas fa-list-check" aria-hidden="true"></i><span>Bloques y cobro</span></a>
             <a href="#usuarios" id="tab-usuarios" role="tab" aria-controls="usuarios" aria-selected="false" tabindex="-1"><i class="fas fa-user-shield" aria-hidden="true"></i><span>Accesos</span></a>
             <a href="#branding" id="tab-branding" role="tab" aria-controls="branding" aria-selected="false" tabindex="-1"><i class="fas fa-palette" aria-hidden="true"></i><span>Marca</span></a>
+            <?php // Sin role="tab": sale de esta pagina, no es un panel de aqui. ?>
+            <a href="<?= url('admin/saas/hoteles/' . (int) ($hotel['id'] ?? 0) . '/configuracion') ?>" class="saas-detail-nav-out"><i class="fas fa-sliders-h" aria-hidden="true"></i><span>Configuración</span><i class="fas fa-arrow-up-right-from-square saas-detail-nav-out-icon" aria-hidden="true"></i></a>
         </nav>
     </div>
 
@@ -1755,219 +1768,1277 @@ if (empty($planActual['id'])) {
             </span>
         </div>
 
-    <div class="saas-detail-panel overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-200">
-            <h3 class="text-sm font-semibold" style="color:var(--ms-text);">Identidad visual</h3>
-            <p class="mt-1 text-xs leading-relaxed" style="color:var(--ms-muted);">Usa colores en formato hexadecimal y archivos optimizados. No se admite código CSS, HTML ni JavaScript.</p>
+    <?php
+    // ── Marca del hotel: taller visual ────────────────────────────────────
+    // Reemplaza al formulario plano anterior y recupera (mejorandolo) lo que
+    // vivia en /configuracion → Marca: vista previa en vivo del sistema y del
+    // login, selector de tema, y estado de cada archivo. Nuevo aqui: paletas
+    // listas, aviso de contraste, colores tomados del logo, validacion de
+    // medidas antes de subir y semaforo de completitud.
+    $sbTemas = class_exists('HotelBranding') ? HotelBranding::temasDisponibles() : ['cupertino' => 'Cupertino'];
+    $sbTemaActual = trim((string) ($brandingHotel['tema'] ?? ''));
+    if (!array_key_exists($sbTemaActual, $sbTemas)) {
+        $sbTemaActual = array_key_exists('cupertino', $sbTemas) ? 'cupertino' : (string) array_key_first($sbTemas);
+    }
+    $sbTemaNotas = [
+        'deleite' => 'Boutique clásico: crema, tinta profunda y detalles dorados.',
+        'cupertino' => 'Minimal premium: gris perla, tarjetas blancas y azul de acción.',
+    ];
+    $sbPrimario = trim((string) ($brandingHotel['color_primary'] ?? ''));
+    $sbSecundario = trim((string) ($brandingHotel['color_secondary'] ?? ''));
+    $sbAcento = trim((string) ($brandingHotel['color_accent'] ?? ''));
+    $sbHex = function ($valor, $fallback) {
+        $valor = strtoupper(trim((string) $valor));
+        return preg_match('/^#[0-9A-F]{6}$/', $valor) ? $valor : $fallback;
+    };
+    $sbFondo = trim((string) ($fondoSistemaHotel ?? ''));
+    $sbFondoModo = preg_match('/^#[0-9A-Fa-f]{6}$/', $sbFondo) ? 'custom' : 'default';
+    $sbFondoValor = $sbFondoModo === 'custom' ? strtoupper($sbFondo) : '#F5F5F7';
+    $sbSidebarStyle = (string) ($brandingHotel['sidebar_style'] ?? 'default');
+    $sbLoginStyle = (string) ($brandingHotel['login_style'] ?? 'default');
+    $sbInicial = strtoupper(mb_substr((string) $brandingNombrePreview, 0, 1, 'UTF-8'));
+
+    // Semaforo de entrega: que le falta a esta marca para verse terminada.
+    $sbChecklist = [
+        ['clave' => 'nombre', 'label' => 'Nombre visual', 'ok' => trim((string) ($brandingHotel['nombre_visual'] ?? '')) !== ''],
+        ['clave' => 'colores', 'label' => 'Colores de marca', 'ok' => $sbPrimario !== '' && $sbSecundario !== ''],
+        ['clave' => 'logo', 'label' => 'Logo', 'ok' => !empty($brandingLogoPreview)],
+        ['clave' => 'favicon', 'label' => 'Favicon', 'ok' => !empty($brandingFaviconPreview)],
+        ['clave' => 'login', 'label' => 'Fondo de acceso', 'ok' => !empty($brandingLoginBgPreview)],
+        ['clave' => 'pwa', 'label' => 'Íconos instalables', 'ok' => !empty($brandingPwaIcon192Preview) && !empty($brandingPwaIcon512Preview)],
+    ];
+    $sbListos = count(array_filter($sbChecklist, function ($item) { return $item['ok']; }));
+    $sbTotal = count($sbChecklist);
+
+    $sbArchivos = [
+        [
+            'campo' => 'logo', 'label' => 'Logo', 'input' => 'logo_file', 'url' => 'logo_url',
+            'preview' => $brandingLogoPreview, 'accept' => '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
+            'hint' => 'PNG, JPG o WebP · hasta 2 MB', 'max' => 2 * 1024 * 1024, 'w' => 0, 'h' => 0,
+            'placeholder' => '/img/logo.png',
+        ],
+        [
+            'campo' => 'favicon', 'label' => 'Favicon', 'input' => 'favicon_file', 'url' => 'favicon_url',
+            'preview' => $brandingFaviconPreview, 'accept' => '.ico,.png,image/x-icon,image/vnd.microsoft.icon,image/png',
+            'hint' => 'ICO o PNG · hasta 512 KB', 'max' => 512 * 1024, 'w' => 0, 'h' => 0,
+            'placeholder' => '/img/favicon.png',
+        ],
+        [
+            'campo' => 'login_bg', 'label' => 'Fondo de acceso', 'input' => 'login_background_file', 'url' => 'login_background_url',
+            'preview' => $brandingLoginBgPreview, 'accept' => '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
+            'hint' => 'PNG, JPG o WebP · hasta 4 MB', 'max' => 4 * 1024 * 1024, 'w' => 0, 'h' => 0,
+            'placeholder' => '/uploads/branding/hotel/fondo.webp',
+        ],
+        [
+            'campo' => 'pwa192', 'label' => 'Ícono instalable 192', 'input' => 'pwa_icon_192_file', 'url' => 'pwa_icon_192_url',
+            'preview' => $brandingPwaIcon192Preview, 'accept' => '.png,.webp,image/png,image/webp',
+            'hint' => 'PNG o WebP · exactamente 192×192 · hasta 1 MB', 'max' => 1024 * 1024, 'w' => 192, 'h' => 192,
+            'placeholder' => '/uploads/branding/hotel/pwa-icons/icon-192.png',
+        ],
+        [
+            'campo' => 'pwa512', 'label' => 'Ícono instalable 512', 'input' => 'pwa_icon_512_file', 'url' => 'pwa_icon_512_url',
+            'preview' => $brandingPwaIcon512Preview, 'accept' => '.png,.webp,image/png,image/webp',
+            'hint' => 'PNG o WebP · exactamente 512×512 · hasta 1 MB', 'max' => 1024 * 1024, 'w' => 512, 'h' => 512,
+            'placeholder' => '/uploads/branding/hotel/pwa-icons/icon-512.png',
+        ],
+    ];
+    ?>
+
+    <style>
+    .ms-admin-scope .sb-shell { display: grid; gap: 1rem; }
+    .ms-admin-scope .sb-progress {
+        display: flex; align-items: center; gap: .875rem; flex-wrap: wrap;
+        padding: .875rem 1.125rem; border: 1px solid var(--ms-border); border-radius: .75rem;
+        background: #FFFFFF; box-shadow: var(--ms-detail-shadow);
+    }
+    .ms-admin-scope .sb-progress-meter { display: flex; align-items: center; gap: .625rem; }
+    .ms-admin-scope .sb-progress-ring {
+        --sb-pct: 0;
+        width: 44px; height: 44px; border-radius: 50%; flex: none;
+        background: conic-gradient(var(--ms-primary) calc(var(--sb-pct) * 1%), rgba(148,163,184,.22) 0);
+        display: grid; place-items: center;
+    }
+    .ms-admin-scope .sb-progress-ring span {
+        width: 34px; height: 34px; border-radius: 50%; background: #FFFFFF;
+        display: grid; place-items: center; font-size: .6875rem; font-weight: 700; color: var(--ms-text);
+    }
+    .ms-admin-scope .sb-progress-copy strong { display: block; font-size: .875rem; color: var(--ms-text); }
+    .ms-admin-scope .sb-progress-copy small { color: var(--ms-muted); font-size: .75rem; }
+    .ms-admin-scope .sb-flags { display: flex; gap: .375rem; flex-wrap: wrap; margin-left: auto; }
+    .ms-admin-scope .sb-flag {
+        display: inline-flex; align-items: center; gap: .375rem; padding: .3rem .625rem;
+        border-radius: 999px; font-size: .75rem; font-weight: 600;
+        background: rgba(148,163,184,.14); color: var(--ms-muted);
+    }
+    .ms-admin-scope .sb-flag.is-ok { background: rgba(22,163,74,.12); color: var(--ms-success); }
+
+    .ms-admin-scope .sb-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 1.25rem; }
+    @media (max-width: 1100px) { .ms-admin-scope .sb-grid { grid-template-columns: minmax(0, 1fr); } }
+    .ms-admin-scope .sb-main { display: grid; gap: 1rem; min-width: 0; }
+    .ms-admin-scope .sb-block {
+        border: 1px solid var(--ms-border); border-radius: .75rem; background: #FFFFFF; overflow: hidden;
+    }
+    .ms-admin-scope .sb-block-head {
+        display: flex; align-items: flex-start; gap: .625rem; padding: .875rem 1rem;
+        border-bottom: 1px solid var(--ms-border); background: var(--ms-detail-soft);
+    }
+    .ms-admin-scope .sb-block-head i { color: var(--ms-primary); margin-top: .125rem; }
+    .ms-admin-scope .sb-block-head h4 { margin: 0; font-size: .8125rem; font-weight: 700; color: var(--ms-text); }
+    .ms-admin-scope .sb-block-head p { margin: .125rem 0 0; font-size: .75rem; color: var(--ms-muted); line-height: 1.45; }
+    .ms-admin-scope .sb-block-body { padding: 1rem; display: grid; gap: .875rem; }
+    .ms-admin-scope .sb-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .875rem; }
+    @media (max-width: 700px) { .ms-admin-scope .sb-row { grid-template-columns: minmax(0, 1fr); } }
+    .ms-admin-scope .sb-label { display: block; font-size: .75rem; font-weight: 650; color: var(--ms-text); margin-bottom: .3rem; }
+    .ms-admin-scope .sb-input {
+        width: 100%; border: 1px solid #d1d5db; border-radius: .5rem; padding: .5rem .625rem;
+        font-size: .8125rem; color: var(--ms-text); background: #FFFFFF;
+    }
+    .ms-admin-scope .sb-input:focus { outline: 2px solid rgba(37,99,235,.35); outline-offset: 1px; border-color: var(--ms-primary); }
+    .ms-admin-scope .sb-hint { margin: .3rem 0 0; font-size: .6875rem; color: var(--ms-muted); line-height: 1.45; }
+
+    .ms-admin-scope .sb-color { display: flex; align-items: center; gap: .5rem; }
+    .ms-admin-scope .sb-color input[type="color"] {
+        width: 42px; height: 38px; padding: 0; border: 1px solid #d1d5db; border-radius: .5rem;
+        background: #FFFFFF; cursor: pointer; flex: none;
+    }
+    .ms-admin-scope .sb-color .sb-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .ms-admin-scope .sb-contrast {
+        display: inline-flex; align-items: center; gap: .375rem; margin-top: .375rem;
+        font-size: .6875rem; font-weight: 600; padding: .2rem .5rem; border-radius: 999px;
+        background: rgba(148,163,184,.14); color: var(--ms-muted);
+    }
+    .ms-admin-scope .sb-contrast.is-ok { background: rgba(22,163,74,.12); color: var(--ms-success); }
+    .ms-admin-scope .sb-contrast.is-warn { background: rgba(245,158,11,.16); color: #92400e; }
+
+    .ms-admin-scope .sb-palettes { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .ms-admin-scope .sb-palette {
+        display: inline-flex; align-items: center; gap: .5rem; padding: .375rem .625rem;
+        border: 1px solid var(--ms-border); border-radius: .625rem; background: #FFFFFF;
+        font-size: .75rem; font-weight: 600; color: var(--ms-text); cursor: pointer;
+    }
+    .ms-admin-scope .sb-palette:hover { border-color: var(--ms-detail-blue-border); background: var(--ms-detail-blue-soft); }
+    .ms-admin-scope .sb-palette-dots { display: inline-flex; }
+    .ms-admin-scope .sb-palette-dots i {
+        width: 13px; height: 13px; border-radius: 50%; display: inline-block;
+        box-shadow: 0 0 0 1.5px #FFFFFF; margin-left: -4px;
+    }
+    .ms-admin-scope .sb-palette-dots i:first-child { margin-left: 0; }
+
+    .ms-admin-scope .sb-seg { display: flex; gap: .25rem; padding: .25rem; border: 1px solid var(--ms-border); border-radius: .625rem; background: var(--ms-detail-soft); }
+    .ms-admin-scope .sb-seg label {
+        flex: 1 1 0; text-align: center; padding: .4rem .5rem; border-radius: .5rem;
+        font-size: .75rem; font-weight: 650; color: var(--ms-muted); cursor: pointer;
+    }
+    .ms-admin-scope .sb-seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .ms-admin-scope .sb-seg input:checked + span { color: var(--ms-primary); }
+    .ms-admin-scope .sb-seg label:has(input:checked) { background: #FFFFFF; color: var(--ms-primary); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+    .ms-admin-scope .sb-seg label:focus-within { outline: 2px solid rgba(37,99,235,.35); outline-offset: 1px; }
+
+    .ms-admin-scope .sb-themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .625rem; }
+    .ms-admin-scope .sb-theme {
+        position: relative; border: 1px solid var(--ms-border); border-radius: .75rem; padding: .75rem;
+        cursor: pointer; background: #FFFFFF; display: grid; gap: .375rem;
+    }
+    .ms-admin-scope .sb-theme:has(input:checked) { border-color: var(--ms-primary); box-shadow: inset 0 0 0 1px var(--ms-detail-blue-border); background: var(--ms-detail-blue-soft); }
+    .ms-admin-scope .sb-theme input { position: absolute; opacity: 0; pointer-events: none; }
+    .ms-admin-scope .sb-theme strong { font-size: .8125rem; color: var(--ms-text); }
+    .ms-admin-scope .sb-theme small { font-size: .6875rem; color: var(--ms-muted); line-height: 1.4; }
+
+    .ms-admin-scope .sb-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .75rem; }
+    .ms-admin-scope .sb-file {
+        border: 1px solid var(--ms-border); border-radius: .75rem; padding: .75rem; background: #FFFFFF;
+        display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: .75rem; align-items: start;
+    }
+    .ms-admin-scope .sb-file-thumb {
+        width: 52px; height: 52px; border-radius: .625rem; border: 1px solid var(--ms-border);
+        background: var(--ms-detail-soft) center/cover no-repeat; display: grid; place-items: center;
+        color: var(--ms-muted); font-size: .875rem; overflow: hidden;
+    }
+    .ms-admin-scope .sb-file-thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .ms-admin-scope .sb-file-name { font-size: .75rem; font-weight: 700; color: var(--ms-text); }
+    .ms-admin-scope .sb-file-state { font-size: .6875rem; color: var(--ms-muted); margin-top: .125rem; }
+    .ms-admin-scope .sb-file-state.is-error { color: #b91c1c; font-weight: 600; }
+    .ms-admin-scope .sb-file-state.is-ready { color: var(--ms-success); font-weight: 600; }
+    .ms-admin-scope .sb-file input[type="file"] { margin-top: .5rem; width: 100%; font-size: .6875rem; color: var(--ms-muted); }
+    .ms-admin-scope .sb-file input[type="file"]::file-selector-button {
+        margin-right: .5rem; border: 0; border-radius: .375rem; padding: .3rem .6rem;
+        background: var(--ms-primary); color: #FFFFFF; font-size: .6875rem; font-weight: 600; cursor: pointer;
+    }
+    .ms-admin-scope .sb-file .sb-input { margin-top: .5rem; font-size: .6875rem; }
+    .ms-admin-scope .sb-file-clear {
+        margin-top: .375rem; background: none; border: 0; padding: 0; cursor: pointer;
+        font-size: .6875rem; font-weight: 600; color: var(--ms-muted); text-decoration: underline;
+    }
+
+    .ms-admin-scope .sb-side { min-width: 0; }
+    .ms-admin-scope .sb-preview-wrap { position: sticky; top: 5.5rem; display: grid; gap: .75rem; }
+    .ms-admin-scope .sb-preview {
+        --sb-primary: #1B2746; --sb-secondary: #0F172A; --sb-accent: #BD9441; --sb-bg: #F5F5F7; --sb-on-primary: #FFFFFF;
+        border: 1px solid var(--ms-border); border-radius: .875rem; overflow: hidden; background: #FFFFFF;
+        box-shadow: var(--ms-detail-shadow);
+    }
+    .ms-admin-scope .sb-preview-bar {
+        display: flex; align-items: center; gap: .5rem; padding: .625rem .75rem;
+        border-bottom: 1px solid var(--ms-border); background: var(--ms-detail-soft);
+    }
+    .ms-admin-scope .sb-preview-tabs { display: flex; gap: .25rem; }
+    .ms-admin-scope .sb-preview-tab {
+        border: 0; background: none; padding: .3rem .625rem; border-radius: .5rem;
+        font-size: .6875rem; font-weight: 650; color: var(--ms-muted); cursor: pointer;
+    }
+    .ms-admin-scope .sb-preview-tab.is-active { background: #FFFFFF; color: var(--ms-primary); box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+    .ms-admin-scope .sb-dirty { margin-left: auto; font-size: .6875rem; font-weight: 600; color: var(--ms-muted); }
+    .ms-admin-scope .sb-dirty.is-dirty { color: #92400e; }
+    .ms-admin-scope .sb-stage { padding: .75rem; background: var(--sb-bg); min-height: 250px; }
+    .ms-admin-scope .sb-view[hidden] { display: none; }
+
+    .ms-admin-scope .sb-app { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: .5rem; }
+    .ms-admin-scope .sb-app-side {
+        background: var(--sb-primary); color: var(--sb-on-primary); border-radius: .625rem;
+        padding: .625rem .5rem; display: grid; gap: .5rem; align-content: start;
+    }
+    .ms-admin-scope .sb-app-brand { display: grid; gap: .375rem; justify-items: center; text-align: center; }
+    .ms-admin-scope .sb-app-mark {
+        width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.18);
+        display: grid; place-items: center; overflow: hidden; font-size: .75rem; font-weight: 700;
+    }
+    .ms-admin-scope .sb-app-mark img { width: 100%; height: 100%; object-fit: contain; }
+    .ms-admin-scope .sb-app-name { font-size: .5625rem; font-weight: 700; line-height: 1.2; word-break: break-word; }
+    .ms-admin-scope .sb-app-nav { display: grid; gap: .25rem; }
+    .ms-admin-scope .sb-app-nav span {
+        display: flex; align-items: center; gap: .3rem; font-size: .5625rem; padding: .25rem .3rem;
+        border-radius: .375rem; opacity: .78;
+    }
+    .ms-admin-scope .sb-app-nav span.is-active { background: rgba(255,255,255,.16); opacity: 1; font-weight: 700; }
+    .ms-admin-scope .sb-app-body { display: grid; gap: .5rem; align-content: start; }
+    .ms-admin-scope .sb-app-top {
+        background: #FFFFFF; border: 1px solid rgba(15,23,42,.08); border-radius: .625rem;
+        padding: .5rem .625rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    }
+    .ms-admin-scope .sb-app-top strong { font-size: .6875rem; color: #0f172a; }
+    .ms-admin-scope .sb-app-chip {
+        font-size: .5625rem; font-weight: 700; padding: .2rem .45rem; border-radius: 999px;
+        background: var(--sb-accent); color: #1f2937;
+    }
+    .ms-admin-scope .sb-app-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .375rem; }
+    .ms-admin-scope .sb-app-metric {
+        background: #FFFFFF; border: 1px solid rgba(15,23,42,.08); border-radius: .5rem;
+        padding: .375rem; text-align: center;
+    }
+    .ms-admin-scope .sb-app-metric b { display: block; font-size: .8125rem; color: var(--sb-primary); }
+    .ms-admin-scope .sb-app-metric span { font-size: .5rem; color: #64748b; }
+    .ms-admin-scope .sb-app-cta {
+        background: var(--sb-secondary); color: #FFFFFF; border-radius: .5rem; padding: .4rem .625rem;
+        font-size: .625rem; font-weight: 700; text-align: center;
+    }
+
+    .ms-admin-scope .sb-login {
+        border-radius: .625rem; min-height: 226px; display: grid; place-items: center; padding: 1rem;
+        background: linear-gradient(135deg, var(--sb-primary), var(--sb-secondary));
+        background-size: cover; background-position: center;
+    }
+    .ms-admin-scope .sb-login-card {
+        width: 100%; max-width: 220px; background: rgba(255,255,255,.96); border-radius: .75rem;
+        padding: .875rem; text-align: center; box-shadow: 0 12px 30px rgba(15,23,42,.22);
+    }
+    .ms-admin-scope .sb-login-mark {
+        width: 40px; height: 40px; border-radius: 50%; margin: 0 auto .5rem; overflow: hidden;
+        background: var(--sb-primary); color: var(--sb-on-primary); display: grid; place-items: center;
+        font-weight: 700; font-size: .875rem;
+    }
+    .ms-admin-scope .sb-login-mark img { width: 100%; height: 100%; object-fit: contain; background: #FFFFFF; }
+    .ms-admin-scope .sb-login-card strong { display: block; font-size: .75rem; color: #0f172a; }
+    .ms-admin-scope .sb-login-field { height: 24px; border-radius: .375rem; background: rgba(15,23,42,.07); margin-top: .5rem; }
+    .ms-admin-scope .sb-login-btn {
+        margin-top: .5rem; border-radius: .375rem; padding: .35rem; font-size: .625rem; font-weight: 700;
+        background: var(--sb-primary); color: var(--sb-on-primary);
+    }
+
+    .ms-admin-scope .sb-install { display: grid; gap: .625rem; justify-items: center; padding: .5rem 0; }
+    .ms-admin-scope .sb-install-row { display: flex; gap: .875rem; }
+    .ms-admin-scope .sb-install-item { display: grid; gap: .3rem; justify-items: center; font-size: .5625rem; color: #475569; }
+    .ms-admin-scope .sb-install-icon {
+        width: 46px; height: 46px; border-radius: 12px; overflow: hidden; background: var(--sb-primary);
+        color: var(--sb-on-primary); display: grid; place-items: center; font-weight: 700;
+        box-shadow: 0 6px 14px rgba(15,23,42,.18);
+    }
+    .ms-admin-scope .sb-install-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .ms-admin-scope .sb-install-tab {
+        display: flex; align-items: center; gap: .375rem; background: #FFFFFF; border: 1px solid rgba(15,23,42,.1);
+        border-radius: .5rem .5rem 0 0; padding: .3rem .5rem; font-size: .5625rem; color: #475569; min-width: 132px;
+    }
+    .ms-admin-scope .sb-install-fav { width: 14px; height: 14px; border-radius: 3px; background: var(--sb-accent); overflow: hidden; }
+    .ms-admin-scope .sb-install-fav img { width: 100%; height: 100%; object-fit: contain; }
+    .ms-admin-scope .sb-note {
+        border: 1px solid var(--ms-border); border-radius: .625rem; padding: .625rem .75rem;
+        font-size: .6875rem; color: var(--ms-muted); background: #FFFFFF; line-height: 1.5;
+    }
+    </style>
+
+    <div class="sb-shell">
+        <div class="sb-progress">
+            <div class="sb-progress-meter">
+                <div class="sb-progress-ring" data-sb-ring style="--sb-pct: <?= $sbTotal > 0 ? (int) round($sbListos * 100 / $sbTotal) : 0 ?>">
+                    <span data-sb-ring-text><?= (int) $sbListos ?>/<?= (int) $sbTotal ?></span>
+                </div>
+                <div class="sb-progress-copy">
+                    <strong>Marca <?= $sbListos === $sbTotal ? 'lista para entregar' : 'en preparación' ?></strong>
+                    <small><?= $sbListos === $sbTotal ? 'Este hotel ya tiene todo lo que se ve en el acceso y en la app.' : 'Completa lo que falta antes de entregar el sistema al hotel.' ?></small>
+                </div>
+            </div>
+            <div class="sb-flags">
+                <?php foreach ($sbChecklist as $item): ?>
+                    <span class="sb-flag<?= $item['ok'] ? ' is-ok' : '' ?>" data-sb-flag="<?= htmlspecialchars($item['clave'], ENT_QUOTES, 'UTF-8') ?>">
+                        <i class="fas <?= $item['ok'] ? 'fa-circle-check' : 'fa-circle-dashed' ?>" aria-hidden="true"></i>
+                        <?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                <?php endforeach; ?>
+            </div>
         </div>
 
-        <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/branding') ?>" enctype="multipart/form-data">
-            <?= csrf_field() ?>
+        <div class="saas-detail-panel overflow-hidden">
+            <form method="POST"
+                  action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/branding') ?>"
+                  enctype="multipart/form-data"
+                  id="sbForm"
+                  data-sb-form
+                  data-sb-base="<?= htmlspecialchars(rtrim((string) url(''), '/'), ENT_QUOTES, 'UTF-8') ?>">
+                <?= csrf_field() ?>
 
-            <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="saas-branding-group-title">Identidad principal</div>
-                    <div class="md:col-span-2">
-                        <label for="nombre_visual" class="block text-sm font-medium text-gray-700">Nombre visual</label>
-                        <input type="text" id="nombre_visual" name="nombre_visual" maxlength="150"
-                               value="<?= $brandingCampo('nombre_visual', $hotel['nombre'] ?? '') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="Hotel Demo SaaS">
-                    </div>
-
-                    <div>
-                        <label for="color_primary" class="block text-sm font-medium text-gray-700">Color primario</label>
-                        <input type="text" id="color_primary" name="color_primary"
-                               value="<?= $brandingCampo('color_primary') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="#0F766E">
-                    </div>
-
-                    <div>
-                        <label for="color_secondary" class="block text-sm font-medium text-gray-700">Color secundario</label>
-                        <input type="text" id="color_secondary" name="color_secondary"
-                               value="<?= $brandingCampo('color_secondary') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="#115E59">
-                    </div>
-
-                    <div>
-                        <label for="color_accent" class="block text-sm font-medium text-gray-700">Color acento</label>
-                        <input type="text" id="color_accent" name="color_accent"
-                               value="<?= $brandingCampo('color_accent') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="#F59E0B">
-                    </div>
-
-                    <div>
-                        <label for="sidebar_style" class="block text-sm font-medium text-gray-700">Estilo sidebar</label>
-                        <select id="sidebar_style" name="sidebar_style"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
-                            <?php foreach (['default' => 'Default', 'solid' => 'Sólido', 'dark' => 'Oscuro'] as $value => $label): ?>
-                                <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= ($brandingHotel['sidebar_style'] ?? 'default') === $value ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="saas-branding-group-title">Logo</div>
-                    <div class="md:col-span-2">
-                        <label for="logo_url" class="block text-sm font-medium text-gray-700">Logo URL/ruta</label>
-                        <input type="text" id="logo_url" name="logo_url"
-                               value="<?= $brandingCampo('logo_url') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/img/logo.png">
-                        <label for="logo_file" class="mt-3 block text-sm font-medium text-gray-700">Subir logo</label>
-                        <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
-                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Máximo 2 MB. No SVG.</p>
-                    </div>
-
-                    <div class="saas-branding-group-title">Acceso y navegador</div>
-                    <div>
-                        <label for="favicon_url" class="block text-sm font-medium text-gray-700">Favicon URL/ruta</label>
-                        <input type="text" id="favicon_url" name="favicon_url"
-                               value="<?= $brandingCampo('favicon_url') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/img/favicon.png">
-                        <label for="favicon_file" class="mt-3 block text-sm font-medium text-gray-700">Subir favicon</label>
-                        <input type="file" id="favicon_file" name="favicon_file" accept=".ico,.png,image/x-icon,image/vnd.microsoft.icon,image/png"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
-                        <p class="mt-1 text-xs text-gray-500">ICO o PNG. Máximo 512 KB.</p>
-                    </div>
-
-                    <div>
-                        <label for="login_background_url" class="block text-sm font-medium text-gray-700">Fondo login URL/ruta</label>
-                        <input type="text" id="login_background_url" name="login_background_url"
-                               value="<?= $brandingCampo('login_background_url') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/uploads/branding/hotel/fondo.webp">
-                        <label for="login_background_file" class="mt-3 block text-sm font-medium text-gray-700">Subir fondo login</label>
-                        <input type="file" id="login_background_file" name="login_background_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
-                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Máximo 4 MB. No SVG.</p>
-                    </div>
-
-                    <div>
-                        <label for="login_style" class="block text-sm font-medium text-gray-700">Estilo login</label>
-                        <select id="login_style" name="login_style"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
-                            <?php foreach (['default' => 'Default', 'soft' => 'Suave', 'image' => 'Con imagen'] as $value => $label): ?>
-                                <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= ($brandingHotel['login_style'] ?? 'default') === $value ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="saas-branding-group-title">Aplicación instalable</div>
-                    <div>
-                        <label for="pwa_icon_192_url" class="block text-sm font-medium text-gray-700">Ícono PWA 192 URL/ruta</label>
-                        <input type="text" id="pwa_icon_192_url" name="pwa_icon_192_url"
-                               value="<?= $brandingCampo('pwa_icon_192_url') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/uploads/branding/hotel/pwa-icons/icon-192.png">
-                        <label for="pwa_icon_192_file" class="mt-3 block text-sm font-medium text-gray-700">Subir ícono PWA 192x192</label>
-                        <input type="file" id="pwa_icon_192_file" name="pwa_icon_192_file" accept=".png,.webp,image/png,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
-                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 192x192 px. Máximo 1 MB. No SVG.</p>
-                    </div>
-
-                    <div>
-                        <label for="pwa_icon_512_url" class="block text-sm font-medium text-gray-700">Ícono PWA 512 URL/ruta</label>
-                        <input type="text" id="pwa_icon_512_url" name="pwa_icon_512_url"
-                               value="<?= $brandingCampo('pwa_icon_512_url') ?>"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/uploads/branding/hotel/pwa-icons/icon-512.png">
-                        <label for="pwa_icon_512_file" class="mt-3 block text-sm font-medium text-gray-700">Subir ícono PWA 512x512</label>
-                        <input type="file" id="pwa_icon_512_file" name="pwa_icon_512_file" accept=".png,.webp,image/png,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
-                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 512x512 px. Máximo 1 MB. No SVG.</p>
-                    </div>
-
-                    <label class="mt-2 flex items-center gap-2 text-sm text-gray-700 md:col-span-2">
-                        <input type="checkbox" name="activo" value="1"
-                               <?= $brandingActivo ? 'checked' : '' ?>
-                               class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
-                        Branding activo
-                    </label>
-                </div>
-
-                <div class="lg:col-span-1">
-                    <div class="saas-brand-preview">
-                        <div style="background:linear-gradient(135deg, <?= htmlspecialchars($brandingHotel['color_primary'] ?? '#9CA777', ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars($brandingHotel['color_secondary'] ?? '#7A8B5C', ENT_QUOTES, 'UTF-8') ?>);" class="px-4 py-8 text-center text-white">
-                            <?php if ($brandingLogoPreview): ?>
-                                <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?>" class="mx-auto h-16 w-16 rounded-full bg-white object-contain p-2">
-                            <?php else: ?>
-                                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
-                                    <?= htmlspecialchars(strtoupper(substr((string) $brandingNombrePreview, 0, 1)), ENT_QUOTES, 'UTF-8') ?>
-                                </div>
-                            <?php endif; ?>
-                            <div class="mt-3 text-sm font-semibold"><?= htmlspecialchars($brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></div>
-                            <div class="mt-1 text-xs opacity-80">Vista previa básica</div>
-                        </div>
-                        <div class="p-4 text-xs text-gray-600">
-                            Los valores se imprimen como CSS variables sanitizadas:
-                            <span class="font-mono">--brand-primary</span>,
-                            <span class="font-mono">--brand-secondary</span> y
-                            <span class="font-mono">--brand-accent</span>.
-                        </div>
-                        <div class="border-t border-gray-200 p-4">
-                            <div class="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                <div class="p-5 sb-grid">
+                    <div class="sb-main">
+                        <section class="sb-block">
+                            <div class="sb-block-head">
+                                <i class="fas fa-signature" aria-hidden="true"></i>
                                 <div>
-                                    <div class="font-semibold text-gray-700">Favicon</div>
-                                    <?php if ($brandingFaviconPreview): ?>
-                                        <img src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Favicon" class="mt-2 h-8 w-8 object-contain">
-                                    <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Sin favicon</div>
-                                    <?php endif; ?>
-                                </div>
-                                <div>
-                                    <div class="font-semibold text-gray-700">Fondo login</div>
-                                    <?php if ($brandingLoginBgPreview): ?>
-                                        <div class="mt-2 h-12 rounded bg-cover bg-center" style="background-image:url('<?= htmlspecialchars($brandingLoginBgPreview, ENT_QUOTES, 'UTF-8') ?>')"></div>
-                                    <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Sin fondo</div>
-                                    <?php endif; ?>
+                                    <h4>Identidad</h4>
+                                    <p>El nombre y el tema con los que el hotel ve su propio sistema.</p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="border-t border-gray-200 p-4">
-                            <div class="font-semibold text-gray-700 text-xs">Íconos PWA del manifest</div>
-                            <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                            <div class="sb-block-body">
                                 <div>
-                                    <div class="font-medium text-gray-700">192x192</div>
-                                    <?php if ($brandingPwaIcon192Preview): ?>
-                                        <img src="<?= htmlspecialchars($brandingPwaIcon192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Ícono PWA 192" class="mt-2 h-12 w-12 rounded object-contain">
-                                    <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Fallback estático</div>
-                                    <?php endif; ?>
+                                    <label class="sb-label" for="nombre_visual">Nombre visual</label>
+                                    <input type="text" id="nombre_visual" name="nombre_visual" maxlength="150"
+                                           class="sb-input" data-sb-name
+                                           value="<?= $brandingCampo('nombre_visual', $hotel['nombre'] ?? '') ?>"
+                                           placeholder="<?= htmlspecialchars((string) ($hotel['nombre'] ?? 'Hotel'), ENT_QUOTES, 'UTF-8') ?>">
+                                    <p class="sb-hint">Aparece en el menú, en el acceso y en el nombre de la app instalada.</p>
                                 </div>
+
                                 <div>
-                                    <div class="font-medium text-gray-700">512x512</div>
-                                    <?php if ($brandingPwaIcon512Preview): ?>
-                                        <img src="<?= htmlspecialchars($brandingPwaIcon512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Ícono PWA 512" class="mt-2 h-12 w-12 rounded object-contain">
-                                    <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Fallback estático</div>
-                                    <?php endif; ?>
+                                    <span class="sb-label">Tema base</span>
+                                    <div class="sb-themes">
+                                        <?php foreach ($sbTemas as $slug => $nombreTema): ?>
+                                            <label class="sb-theme">
+                                                <input type="radio" name="tema" value="<?= htmlspecialchars((string) $slug, ENT_QUOTES, 'UTF-8') ?>"
+                                                       <?= $sbTemaActual === $slug ? 'checked' : '' ?>>
+                                                <strong><?= htmlspecialchars((string) $nombreTema, ENT_QUOTES, 'UTF-8') ?></strong>
+                                                <small><?= htmlspecialchars($sbTemaNotas[$slug] ?? 'Estilo visual del sistema.', ENT_QUOTES, 'UTF-8') ?></small>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <p class="sb-hint">Define la piel completa del sistema. Los colores de abajo se aplican encima.</p>
                                 </div>
                             </div>
-                            <p class="mt-3 text-xs text-gray-500">El manifest usa íconos del hotel solo cuando existen 192 y 512 válidos.</p>
+                        </section>
+
+                        <section class="sb-block">
+                            <div class="sb-block-head">
+                                <i class="fas fa-droplet" aria-hidden="true"></i>
+                                <div>
+                                    <h4>Colores</h4>
+                                    <p>Se escriben como variables CSS sanitizadas. Deja un campo vacío para usar el color del tema.</p>
+                                </div>
+                            </div>
+                            <div class="sb-block-body">
+                                <div class="sb-palettes" aria-label="Paletas listas">
+                                    <?php
+                                    $sbPaletas = [
+                                        ['nombre' => 'Boutique', 'p' => '#1B2746', 's' => '#0F172A', 'a' => '#BD9441'],
+                                        ['nombre' => 'Playa', 'p' => '#0F766E', 's' => '#115E59', 'a' => '#F59E0B'],
+                                        ['nombre' => 'Colonial', 'p' => '#7C2D12', 's' => '#9A3412', 'a' => '#D6A756'],
+                                        ['nombre' => 'Bosque', 'p' => '#14532D', 's' => '#166534', 'a' => '#A3B18A'],
+                                        ['nombre' => 'Urbano', 'p' => '#1F2937', 's' => '#111827', 'a' => '#38BDF8'],
+                                        ['nombre' => 'Lavanda', 'p' => '#4C1D95', 's' => '#5B21B6', 'a' => '#C4B5FD'],
+                                    ];
+                                    foreach ($sbPaletas as $paleta): ?>
+                                        <button type="button" class="sb-palette"
+                                                data-sb-palette="<?= htmlspecialchars($paleta['p'] . '|' . $paleta['s'] . '|' . $paleta['a'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="sb-palette-dots">
+                                                <i style="background:<?= $paleta['p'] ?>"></i>
+                                                <i style="background:<?= $paleta['s'] ?>"></i>
+                                                <i style="background:<?= $paleta['a'] ?>"></i>
+                                            </span>
+                                            <?= htmlspecialchars($paleta['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                                        </button>
+                                    <?php endforeach; ?>
+                                    <button type="button" class="sb-palette" data-sb-from-logo hidden>
+                                        <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                                        Tomar del logo
+                                    </button>
+                                </div>
+
+                                <div class="sb-row">
+                                    <div>
+                                        <label class="sb-label" for="color_primary">Color principal</label>
+                                        <div class="sb-color">
+                                            <input type="color" aria-label="Elegir color principal"
+                                                   data-sb-swatch="primary"
+                                                   value="<?= htmlspecialchars($sbHex($sbPrimario, '#1B2746'), ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="text" id="color_primary" name="color_primary" class="sb-input"
+                                                   data-sb-hex="primary" maxlength="7" placeholder="#1B2746"
+                                                   value="<?= $brandingCampo('color_primary') ?>">
+                                        </div>
+                                        <span class="sb-contrast" data-sb-contrast="primary"></span>
+                                    </div>
+                                    <div>
+                                        <label class="sb-label" for="color_secondary">Color secundario</label>
+                                        <div class="sb-color">
+                                            <input type="color" aria-label="Elegir color secundario"
+                                                   data-sb-swatch="secondary"
+                                                   value="<?= htmlspecialchars($sbHex($sbSecundario, '#0F172A'), ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="text" id="color_secondary" name="color_secondary" class="sb-input"
+                                                   data-sb-hex="secondary" maxlength="7" placeholder="#0F172A"
+                                                   value="<?= $brandingCampo('color_secondary') ?>">
+                                        </div>
+                                        <span class="sb-contrast" data-sb-contrast="secondary"></span>
+                                    </div>
+                                    <div>
+                                        <label class="sb-label" for="color_accent">Color de acento</label>
+                                        <div class="sb-color">
+                                            <input type="color" aria-label="Elegir color de acento"
+                                                   data-sb-swatch="accent"
+                                                   value="<?= htmlspecialchars($sbHex($sbAcento, '#BD9441'), ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="text" id="color_accent" name="color_accent" class="sb-input"
+                                                   data-sb-hex="accent" maxlength="7" placeholder="#BD9441"
+                                                   value="<?= $brandingCampo('color_accent') ?>">
+                                        </div>
+                                        <p class="sb-hint">Detalles, chips y estados destacados.</p>
+                                    </div>
+                                    <div>
+                                        <label class="sb-label" for="fondo_sistema">Fondo del sistema</label>
+                                        <input type="hidden" name="hotel_appearance[background_mode]" id="fondo_sistema_modo"
+                                               value="<?= htmlspecialchars($sbFondoModo, ENT_QUOTES, 'UTF-8') ?>">
+                                        <div class="sb-color">
+                                            <input type="color" id="fondo_sistema" name="hotel_appearance[background_color]"
+                                                   data-sb-background
+                                                   value="<?= htmlspecialchars($sbFondoValor, ENT_QUOTES, 'UTF-8') ?>">
+                                            <button type="button" class="sb-palette" data-sb-background-default>Usar el del tema</button>
+                                        </div>
+                                        <p class="sb-hint" data-sb-background-state><?= $sbFondoModo === 'custom' ? 'Personalizado para este hotel.' : 'Predeterminado del tema.' ?></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="sb-block">
+                            <div class="sb-block-head">
+                                <i class="fas fa-table-columns" aria-hidden="true"></i>
+                                <div>
+                                    <h4>Menú y acceso</h4>
+                                    <p>Cómo se ve la barra lateral del sistema y la pantalla de entrada del hotel.</p>
+                                </div>
+                            </div>
+                            <div class="sb-block-body">
+                                <div class="sb-row">
+                                    <div>
+                                        <span class="sb-label">Estilo del menú</span>
+                                        <div class="sb-seg" data-sb-seg>
+                                            <?php foreach (['default' => 'Default', 'solid' => 'Sólido', 'dark' => 'Oscuro'] as $valor => $etiqueta): ?>
+                                                <label>
+                                                    <input type="radio" name="sidebar_style" value="<?= $valor ?>" data-sb-sidebar
+                                                           <?= $sbSidebarStyle === $valor ? 'checked' : '' ?>>
+                                                    <span><?= $etiqueta ?></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="sb-label">Estilo del acceso</span>
+                                        <div class="sb-seg" data-sb-seg>
+                                            <?php foreach (['default' => 'Default', 'soft' => 'Suave', 'image' => 'Con imagen'] as $valor => $etiqueta): ?>
+                                                <label>
+                                                    <input type="radio" name="login_style" value="<?= $valor ?>" data-sb-login
+                                                           <?= $sbLoginStyle === $valor ? 'checked' : '' ?>>
+                                                    <span><?= $etiqueta ?></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <p class="sb-hint">"Con imagen" necesita un fondo de acceso cargado.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="sb-block">
+                            <div class="sb-block-head">
+                                <i class="fas fa-images" aria-hidden="true"></i>
+                                <div>
+                                    <h4>Imágenes</h4>
+                                    <p>Se revisan el peso y las medidas antes de enviar. La ruta manual sigue disponible por si el archivo ya está en el servidor.</p>
+                                </div>
+                            </div>
+                            <div class="sb-block-body">
+                                <div class="sb-files">
+                                    <?php foreach ($sbArchivos as $archivo): ?>
+                                        <div class="sb-file" data-sb-file="<?= htmlspecialchars($archivo['campo'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="sb-file-thumb" data-sb-thumb>
+                                                <?php if (!empty($archivo['preview'])): ?>
+                                                    <img src="<?= htmlspecialchars($archivo['preview'], ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                                <?php else: ?>
+                                                    <i class="fas fa-image" aria-hidden="true"></i>
+                                                <?php endif; ?>
+                                            </span>
+                                            <div class="min-w-0">
+                                                <div class="sb-file-name"><?= htmlspecialchars($archivo['label'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                <div class="sb-file-state" data-sb-file-state
+                                                     data-default="<?= !empty($archivo['preview']) ? 'Cargado' : 'Sin archivo' ?>">
+                                                    <?= !empty($archivo['preview']) ? 'Cargado' : 'Sin archivo' ?>
+                                                </div>
+                                                <input type="file"
+                                                       name="<?= htmlspecialchars($archivo['input'], ENT_QUOTES, 'UTF-8') ?>"
+                                                       accept="<?= htmlspecialchars($archivo['accept'], ENT_QUOTES, 'UTF-8') ?>"
+                                                       data-sb-file-input
+                                                       data-max="<?= (int) $archivo['max'] ?>"
+                                                       data-w="<?= (int) $archivo['w'] ?>"
+                                                       data-h="<?= (int) $archivo['h'] ?>">
+                                                <input type="text"
+                                                       name="<?= htmlspecialchars($archivo['url'], ENT_QUOTES, 'UTF-8') ?>"
+                                                       class="sb-input"
+                                                       data-sb-file-url
+                                                       value="<?= $brandingCampo($archivo['url']) ?>"
+                                                       placeholder="<?= htmlspecialchars($archivo['placeholder'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <p class="sb-hint"><?= htmlspecialchars($archivo['hint'], ENT_QUOTES, 'UTF-8') ?></p>
+                                                <?php if (!empty($archivo['preview'])): ?>
+                                                    <button type="button" class="sb-file-clear" data-sb-file-clear>Quitar esta imagen</button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <label class="flex items-center gap-2 text-sm" style="color:var(--ms-text);">
+                                    <input type="checkbox" name="activo" value="1" <?= $brandingActivo ? 'checked' : '' ?>
+                                           class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                                    Marca activa (si se apaga, el hotel vuelve a la identidad Medisoft)
+                                </label>
+                            </div>
+                        </section>
+                    </div>
+
+                    <aside class="sb-side" aria-label="Vista previa de la marca">
+                        <div class="sb-preview-wrap">
+                            <div class="sb-preview" data-sb-preview>
+                                <div class="sb-preview-bar">
+                                    <div class="sb-preview-tabs" role="tablist" aria-label="Qué previsualizar">
+                                        <button type="button" class="sb-preview-tab is-active" data-sb-view="sistema">Sistema</button>
+                                        <button type="button" class="sb-preview-tab" data-sb-view="acceso">Acceso</button>
+                                        <button type="button" class="sb-preview-tab" data-sb-view="app">App</button>
+                                    </div>
+                                    <span class="sb-dirty" data-sb-dirty>Sin cambios</span>
+                                </div>
+
+                                <div class="sb-stage">
+                                    <div class="sb-view" data-sb-view-panel="sistema">
+                                        <div class="sb-app">
+                                            <div class="sb-app-side">
+                                                <div class="sb-app-brand">
+                                                    <span class="sb-app-mark" data-sb-mark>
+                                                        <?php if (!empty($brandingLogoPreview)): ?>
+                                                            <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>" alt="" data-sb-logo>
+                                                        <?php else: ?>
+                                                            <span data-sb-initial><?= htmlspecialchars($sbInicial, ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    <span class="sb-app-name" data-sb-name-out><?= htmlspecialchars((string) $brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></span>
+                                                </div>
+                                                <div class="sb-app-nav">
+                                                    <span class="is-active"><i class="fas fa-compass"></i> Inicio</span>
+                                                    <span><i class="fas fa-bed"></i> Cuartos</span>
+                                                    <span><i class="fas fa-wallet"></i> Caja</span>
+                                                </div>
+                                            </div>
+                                            <div class="sb-app-body">
+                                                <div class="sb-app-top">
+                                                    <strong>Operación de hoy</strong>
+                                                    <span class="sb-app-chip">Recepción</span>
+                                                </div>
+                                                <div class="sb-app-metrics">
+                                                    <div class="sb-app-metric"><b>18</b><span>Libres</span></div>
+                                                    <div class="sb-app-metric"><b>7</b><span>Ocupadas</span></div>
+                                                    <div class="sb-app-metric"><b>3</b><span>Llegadas</span></div>
+                                                </div>
+                                                <div class="sb-app-cta">Registrar llegada</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="sb-view" data-sb-view-panel="acceso" hidden>
+                                        <div class="sb-login" data-sb-login>
+                                            <div class="sb-login-card">
+                                                <span class="sb-login-mark" data-sb-mark>
+                                                    <?php if (!empty($brandingLogoPreview)): ?>
+                                                        <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>" alt="" data-sb-logo>
+                                                    <?php else: ?>
+                                                        <span data-sb-initial><?= htmlspecialchars($sbInicial, ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
+                                                </span>
+                                                <strong data-sb-name-out><?= htmlspecialchars((string) $brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></strong>
+                                                <div class="sb-login-field"></div>
+                                                <div class="sb-login-field"></div>
+                                                <div class="sb-login-btn">Entrar</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="sb-view" data-sb-view-panel="app" hidden>
+                                        <div class="sb-install">
+                                            <div class="sb-install-row">
+                                                <div class="sb-install-item">
+                                                    <span class="sb-install-icon" data-sb-install="192">
+                                                        <?php if (!empty($brandingPwaIcon192Preview)): ?>
+                                                            <img src="<?= htmlspecialchars($brandingPwaIcon192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                                        <?php else: ?>
+                                                            <span data-sb-initial><?= htmlspecialchars($sbInicial, ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    En el teléfono
+                                                </div>
+                                                <div class="sb-install-item">
+                                                    <span class="sb-install-icon" data-sb-install="512">
+                                                        <?php if (!empty($brandingPwaIcon512Preview)): ?>
+                                                            <img src="<?= htmlspecialchars($brandingPwaIcon512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                                        <?php else: ?>
+                                                            <span data-sb-initial><?= htmlspecialchars($sbInicial, ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    Pantalla de inicio
+                                                </div>
+                                            </div>
+                                            <div class="sb-install-tab">
+                                                <span class="sb-install-fav" data-sb-favicon>
+                                                    <?php if (!empty($brandingFaviconPreview)): ?>
+                                                        <img src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                                    <?php endif; ?>
+                                                </span>
+                                                <span data-sb-name-out><?= htmlspecialchars((string) $brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></span>
+                                            </div>
+                                            <p class="sb-hint" style="text-align:center;">El manifest usa los íconos del hotel solo cuando existen 192 y 512 válidos.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="sb-note">
+                                Es una maqueta: refleja colores, logo y nombre, no el diseño exacto de cada pantalla.
+                                <?php if ($hotelLoginUrl): ?>
+                                    Para verlo real, abre <a href="<?= htmlspecialchars($hotelLoginUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" style="color:var(--ms-primary);font-weight:600;">el acceso del hotel</a> en una ventana privada.
+                                <?php endif; ?>
+                            </p>
                         </div>
+                    </aside>
+                </div>
+
+                <div class="saas-detail-panel-footer">
+                    <p class="text-xs leading-relaxed" style="color:var(--ms-muted);">
+                        Los cambios se aplican únicamente a la experiencia visual de este hotel.
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="saas-detail-button" data-sb-reset disabled>
+                            <i class="fas fa-rotate-left text-xs" aria-hidden="true"></i>
+                            Restablecer
+                        </button>
+                        <button type="submit" class="saas-detail-button is-primary">
+                            <i class="fas fa-floppy-disk text-xs" aria-hidden="true"></i>
+                            Guardar marca
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="saas-detail-panel-footer">
-                <p class="text-xs leading-relaxed" style="color:var(--ms-muted);">Los cambios se aplican únicamente a la experiencia visual de este hotel.</p>
-                <button type="submit" class="saas-detail-button is-primary">
-                    <i class="fas fa-floppy-disk text-xs" aria-hidden="true"></i>
-                    Guardar marca
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
+
+    <script>
+    // Taller de marca del hotel: previsualiza en vivo, avisa de contraste y
+    // revisa peso/medidas de cada imagen ANTES de enviar (el servidor vuelve a
+    // validar; esto solo evita el viaje perdido).
+    (function () {
+        var form = document.querySelector('[data-sb-form]');
+        if (!form) { return; }
+
+        var preview = form.querySelector('[data-sb-preview]');
+        var dirtyLabel = form.querySelector('[data-sb-dirty]');
+        var resetBtn = form.querySelector('[data-sb-reset]');
+        var nameInput = form.querySelector('[data-sb-name]');
+        var backgroundInput = form.querySelector('[data-sb-background]');
+        var backgroundMode = document.getElementById('fondo_sistema_modo');
+        var backgroundState = form.querySelector('[data-sb-background-state]');
+        var loginStage = form.querySelector('[data-sb-login]');
+        var fromLogoBtn = form.querySelector('[data-sb-from-logo]');
+
+        var DEFAULTS = { primary: '#1B2746', secondary: '#0F172A', accent: '#BD9441' };
+        var estadoInicial = new FormData(form);
+        var urlsIniciales = {};
+
+        function normalizarHex(valor) {
+            valor = String(valor || '').trim();
+            if (valor === '') { return ''; }
+            if (valor.charAt(0) !== '#') { valor = '#' + valor; }
+            if (/^#[0-9a-fA-F]{3}$/.test(valor)) {
+                valor = '#' + valor.charAt(1) + valor.charAt(1) + valor.charAt(2)
+                      + valor.charAt(2) + valor.charAt(3) + valor.charAt(3);
+            }
+            return /^#[0-9a-fA-F]{6}$/.test(valor) ? valor.toUpperCase() : '';
+        }
+
+        function luminancia(hex) {
+            var r = parseInt(hex.substr(1, 2), 16) / 255;
+            var g = parseInt(hex.substr(3, 2), 16) / 255;
+            var b = parseInt(hex.substr(5, 2), 16) / 255;
+            var canal = function (c) { return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+            return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+        }
+
+        function contrasteConBlanco(hex) {
+            return (1.05) / (luminancia(hex) + 0.05);
+        }
+
+        function mezclar(hexA, hexB, proporcion) {
+            var canal = function (hex, desde) { return parseInt(hex.substr(desde, 2), 16); };
+            var mezcla = [1, 3, 5].map(function (desde) {
+                var valor = Math.round(canal(hexA, desde) * (1 - proporcion) + canal(hexB, desde) * proporcion);
+                return ('0' + Math.max(0, Math.min(255, valor)).toString(16)).slice(-2);
+            });
+            return ('#' + mezcla.join('')).toUpperCase();
+        }
+
+        function colorDe(clave) {
+            var campo = form.querySelector('[data-sb-hex="' + clave + '"]');
+            return normalizarHex(campo ? campo.value : '') || DEFAULTS[clave];
+        }
+
+        function pintarContraste(clave) {
+            var chip = form.querySelector('[data-sb-contrast="' + clave + '"]');
+            if (!chip) { return; }
+
+            var hex = colorDe(clave);
+            var ratio = contrasteConBlanco(hex);
+            chip.className = 'sb-contrast ' + (ratio >= 4.5 ? 'is-ok' : 'is-warn');
+            chip.textContent = ratio >= 4.5
+                ? 'Texto blanco legible encima (' + ratio.toFixed(1) + ':1)'
+                : 'Muy claro: el texto blanco encima se lee mal (' + ratio.toFixed(1) + ':1)';
+        }
+
+        function aplicarColores() {
+            if (!preview) { return; }
+
+            var primario = colorDe('primary');
+            preview.style.setProperty('--sb-primary', primario);
+            preview.style.setProperty('--sb-secondary', colorDe('secondary'));
+            preview.style.setProperty('--sb-accent', colorDe('accent'));
+            preview.style.setProperty('--sb-on-primary', contrasteConBlanco(primario) >= 3 ? '#FFFFFF' : '#111827');
+
+            var modo = backgroundMode ? backgroundMode.value : 'default';
+            var fondo = modo === 'custom' && backgroundInput ? normalizarHex(backgroundInput.value) : '';
+            preview.style.setProperty('--sb-bg', fondo || '#F5F5F7');
+
+            pintarContraste('primary');
+            pintarContraste('secondary');
+        }
+
+        function aplicarNombre() {
+            var visual = nameInput && nameInput.value.trim() !== ''
+                ? nameInput.value.trim()
+                : (nameInput ? nameInput.placeholder : 'Hotel');
+
+            form.querySelectorAll('[data-sb-name-out]').forEach(function (nodo) {
+                nodo.textContent = visual;
+            });
+            form.querySelectorAll('[data-sb-initial]').forEach(function (nodo) {
+                nodo.textContent = visual.charAt(0).toUpperCase();
+            });
+        }
+
+        function aplicarLogin() {
+            if (!loginStage) { return; }
+
+            var estilo = (form.querySelector('[data-sb-login-style]:checked') || {}).value
+                || (form.querySelector('input[name="login_style"]:checked') || {}).value
+                || 'default';
+            var fondo = urlActual('login_bg');
+
+            if (estilo === 'image' && fondo) {
+                loginStage.style.backgroundImage = 'linear-gradient(rgba(15,23,42,.45), rgba(15,23,42,.45)), url("' + fondo + '")';
+            } else if (estilo === 'soft') {
+                loginStage.style.backgroundImage = 'linear-gradient(135deg, color-mix(in srgb, var(--sb-primary) 22%, #FFFFFF), color-mix(in srgb, var(--sb-secondary) 14%, #FFFFFF))';
+            } else {
+                loginStage.style.backgroundImage = 'linear-gradient(135deg, var(--sb-primary), var(--sb-secondary))';
+            }
+        }
+
+        // ── Imagenes ──────────────────────────────────────────────────────
+        var tarjetas = Array.prototype.slice.call(form.querySelectorAll('[data-sb-file]'));
+
+        // Las rutas guardadas son relativas a la raiz publica ("uploads/..."):
+        // desde /admin/saas/hoteles/{id} el navegador las resolveria contra esa
+        // carpeta y la imagen saldria rota. Se anclan a la base de la app.
+        function resolverUrl(valor) {
+            valor = String(valor || '').trim();
+            if (valor === '') { return ''; }
+            if (/^(data:|https?:|\/\/)/i.test(valor)) { return valor; }
+
+            var base = form.dataset.sbBase || '';
+            return base + '/' + valor.replace(/^\/+/, '');
+        }
+
+        function urlActual(campo) {
+            var tarjeta = form.querySelector('[data-sb-file="' + campo + '"]');
+            if (!tarjeta) { return ''; }
+            if (tarjeta.dataset.sbLocal) { return tarjeta.dataset.sbLocal; }
+            var url = tarjeta.querySelector('[data-sb-file-url]');
+            return url && url.value.trim() !== '' ? resolverUrl(url.value) : '';
+        }
+
+        // Una ruta guardada puede apuntar a un archivo que ya no existe: si la
+        // imagen no carga volvemos a la inicial en vez de dejar el icono roto.
+        function pintarMarca(caja, fuente) {
+            if (!caja) { return; }
+
+            var img = caja.querySelector('img');
+            var inicial = caja.querySelector('[data-sb-initial]');
+
+            if (!fuente) {
+                if (img) { img.hidden = true; }
+                if (inicial) { inicial.hidden = false; }
+                return;
+            }
+
+            if (!img) {
+                img = document.createElement('img');
+                img.alt = '';
+                caja.appendChild(img);
+            }
+
+            img.onerror = function () {
+                img.hidden = true;
+                if (inicial) { inicial.hidden = false; }
+            };
+            img.onload = function () {
+                img.hidden = false;
+                if (inicial) { inicial.hidden = true; }
+            };
+            img.src = fuente;
+        }
+
+        function pintarImagenes() {
+            var logo = urlActual('logo');
+            form.querySelectorAll('[data-sb-mark]').forEach(function (marca) {
+                pintarMarca(marca, logo);
+            });
+
+            [['192', 'pwa192'], ['512', 'pwa512']].forEach(function (par) {
+                pintarMarca(form.querySelector('[data-sb-install="' + par[0] + '"]'), urlActual(par[1]));
+            });
+
+            var favCaja = form.querySelector('[data-sb-favicon]');
+            if (favCaja) {
+                var favicon = urlActual('favicon');
+                var favImg = favCaja.querySelector('img');
+                if (favicon) {
+                    if (!favImg) { favImg = document.createElement('img'); favImg.alt = ''; favCaja.appendChild(favImg); }
+                    favImg.src = favicon;
+                    favImg.hidden = false;
+                } else if (favImg) {
+                    favImg.hidden = true;
+                }
+            }
+
+            if (fromLogoBtn) { fromLogoBtn.hidden = urlActual('logo') === ''; }
+            aplicarLogin();
+            pintarBanderas();
+        }
+
+        function pintarMiniatura(tarjeta, fuente) {
+            var thumb = tarjeta.querySelector('[data-sb-thumb]');
+            if (!thumb) { return; }
+
+            var img = thumb.querySelector('img');
+            var icono = thumb.querySelector('i');
+
+            if (!fuente) {
+                if (img) { img.remove(); }
+                if (icono) { icono.hidden = false; }
+                return;
+            }
+
+            if (!img) { img = document.createElement('img'); img.alt = ''; thumb.appendChild(img); }
+            img.onerror = function () {
+                img.hidden = true;
+                if (icono) { icono.hidden = false; }
+            };
+            img.onload = function () {
+                img.hidden = false;
+                if (icono) { icono.hidden = true; }
+            };
+            img.src = fuente;
+        }
+
+        function estadoTarjeta(tarjeta, texto, clase) {
+            var estado = tarjeta.querySelector('[data-sb-file-state]');
+            if (!estado) { return; }
+            estado.textContent = texto;
+            estado.className = 'sb-file-state' + (clase ? ' ' + clase : '');
+        }
+
+        function kb(bytes) {
+            return bytes >= 1048576
+                ? (bytes / 1048576).toFixed(1) + ' MB'
+                : Math.round(bytes / 1024) + ' KB';
+        }
+
+        tarjetas.forEach(function (tarjeta) {
+            var campo = tarjeta.dataset.sbFile;
+            var entrada = tarjeta.querySelector('[data-sb-file-input]');
+            var urlCampo = tarjeta.querySelector('[data-sb-file-url]');
+            var limpiar = tarjeta.querySelector('[data-sb-file-clear]');
+
+            urlsIniciales[campo] = urlCampo ? urlCampo.value : '';
+
+            if (entrada) {
+                entrada.addEventListener('change', function () {
+                    var archivo = entrada.files && entrada.files[0];
+                    delete tarjeta.dataset.sbLocal;
+
+                    if (!archivo) {
+                        estadoTarjeta(tarjeta, tarjeta.querySelector('[data-sb-file-state]').dataset.default || 'Sin archivo', '');
+                        pintarMiniatura(tarjeta, resolverUrl(urlCampo ? urlCampo.value : ''));
+                        pintarImagenes();
+                        marcarSucio();
+                        return;
+                    }
+
+                    var tope = parseInt(entrada.dataset.max || '0', 10);
+                    if (tope > 0 && archivo.size > tope) {
+                        estadoTarjeta(tarjeta, 'Pesa ' + kb(archivo.size) + ': el máximo es ' + kb(tope), 'is-error');
+                        entrada.value = '';
+                        return;
+                    }
+
+                    var lector = new FileReader();
+                    lector.onload = function (evento) {
+                        var fuente = evento.target.result;
+                        var anchoPedido = parseInt(entrada.dataset.w || '0', 10);
+                        var altoPedido = parseInt(entrada.dataset.h || '0', 10);
+
+                        var img = new Image();
+                        img.onload = function () {
+                            if (anchoPedido > 0 && (img.naturalWidth !== anchoPedido || img.naturalHeight !== altoPedido)) {
+                                estadoTarjeta(
+                                    tarjeta,
+                                    'Mide ' + img.naturalWidth + '×' + img.naturalHeight + ': debe ser ' + anchoPedido + '×' + altoPedido,
+                                    'is-error'
+                                );
+                                entrada.value = '';
+                                pintarMiniatura(tarjeta, resolverUrl(urlCampo ? urlCampo.value : ''));
+                                pintarImagenes();
+                                return;
+                            }
+
+                            tarjeta.dataset.sbLocal = fuente;
+                            estadoTarjeta(tarjeta, 'Listo para subir · ' + img.naturalWidth + '×' + img.naturalHeight + ' · ' + kb(archivo.size), 'is-ready');
+                            pintarMiniatura(tarjeta, fuente);
+                            pintarImagenes();
+                            marcarSucio();
+                        };
+                        img.onerror = function () {
+                            estadoTarjeta(tarjeta, 'No se pudo leer la imagen', 'is-error');
+                            entrada.value = '';
+                        };
+                        img.src = fuente;
+                    };
+                    lector.readAsDataURL(archivo);
+                });
+            }
+
+            if (urlCampo) {
+                urlCampo.addEventListener('input', function () {
+                    delete tarjeta.dataset.sbLocal;
+                    pintarMiniatura(tarjeta, resolverUrl(urlCampo.value));
+                    pintarImagenes();
+                    marcarSucio();
+                });
+            }
+
+            if (limpiar) {
+                limpiar.addEventListener('click', function () {
+                    if (urlCampo) { urlCampo.value = ''; }
+                    if (entrada) { entrada.value = ''; }
+                    delete tarjeta.dataset.sbLocal;
+                    estadoTarjeta(tarjeta, 'Se quitará al guardar', '');
+                    pintarMiniatura(tarjeta, '');
+                    pintarImagenes();
+                    marcarSucio();
+                });
+            }
+        });
+
+        // ── Semaforo de completitud ───────────────────────────────────────
+        function pintarBanderas() {
+            var listas = {
+                nombre: nameInput ? nameInput.value.trim() !== '' : false,
+                colores: normalizarHex((form.querySelector('[data-sb-hex="primary"]') || {}).value) !== ''
+                      && normalizarHex((form.querySelector('[data-sb-hex="secondary"]') || {}).value) !== '',
+                logo: urlActual('logo') !== '',
+                favicon: urlActual('favicon') !== '',
+                login: urlActual('login_bg') !== '',
+                pwa: urlActual('pwa192') !== '' && urlActual('pwa512') !== ''
+            };
+
+            var listos = 0;
+            var total = 0;
+
+            Object.keys(listas).forEach(function (clave) {
+                var chip = document.querySelector('[data-sb-flag="' + clave + '"]');
+                total += 1;
+                if (listas[clave]) { listos += 1; }
+                if (!chip) { return; }
+                chip.classList.toggle('is-ok', listas[clave]);
+                var icono = chip.querySelector('i');
+                if (icono) { icono.className = 'fas ' + (listas[clave] ? 'fa-circle-check' : 'fa-circle-dashed'); }
+            });
+
+            var anillo = document.querySelector('[data-sb-ring]');
+            var texto = document.querySelector('[data-sb-ring-text]');
+            if (anillo) { anillo.style.setProperty('--sb-pct', total > 0 ? Math.round(listos * 100 / total) : 0); }
+            if (texto) { texto.textContent = listos + '/' + total; }
+        }
+
+        // ── Cambios sin guardar ───────────────────────────────────────────
+        function marcarSucio() {
+            if (!dirtyLabel) { return; }
+
+            var actual = new FormData(form);
+            var cambios = 0;
+            actual.forEach(function (valor, clave) {
+                if (clave === 'csrf_token' || valor instanceof File) { return; }
+                if (String(estadoInicial.get(clave) === null ? '' : estadoInicial.get(clave)) !== String(valor)) {
+                    cambios += 1;
+                }
+            });
+
+            form.querySelectorAll('[data-sb-file-input]').forEach(function (entrada) {
+                if (entrada.files && entrada.files.length > 0) { cambios += 1; }
+            });
+
+            dirtyLabel.textContent = cambios === 0
+                ? 'Sin cambios'
+                : (cambios === 1 ? '1 cambio sin guardar' : cambios + ' cambios sin guardar');
+            dirtyLabel.classList.toggle('is-dirty', cambios > 0);
+            if (resetBtn) { resetBtn.disabled = cambios === 0; }
+        }
+
+        // ── Colores: swatch <-> hex ───────────────────────────────────────
+        form.querySelectorAll('[data-sb-swatch]').forEach(function (swatch) {
+            var clave = swatch.dataset.sbSwatch;
+            var hexInput = form.querySelector('[data-sb-hex="' + clave + '"]');
+
+            swatch.addEventListener('input', function () {
+                if (hexInput) { hexInput.value = swatch.value.toUpperCase(); }
+                aplicarColores();
+                pintarBanderas();
+                marcarSucio();
+            });
+
+            if (hexInput) {
+                hexInput.addEventListener('input', function () {
+                    var hex = normalizarHex(hexInput.value);
+                    if (hex) { swatch.value = hex; }
+                    aplicarColores();
+                    pintarBanderas();
+                    marcarSucio();
+                });
+                hexInput.addEventListener('blur', function () {
+                    var hex = normalizarHex(hexInput.value);
+                    if (hex) { hexInput.value = hex; }
+                });
+            }
+        });
+
+        form.querySelectorAll('[data-sb-palette]').forEach(function (boton) {
+            boton.addEventListener('click', function () {
+                var partes = String(boton.dataset.sbPalette || '').split('|');
+                [['primary', partes[0]], ['secondary', partes[1]], ['accent', partes[2]]].forEach(function (par) {
+                    var hex = normalizarHex(par[1]);
+                    if (!hex) { return; }
+                    var campo = form.querySelector('[data-sb-hex="' + par[0] + '"]');
+                    var swatch = form.querySelector('[data-sb-swatch="' + par[0] + '"]');
+                    if (campo) { campo.value = hex; }
+                    if (swatch) { swatch.value = hex; }
+                });
+                aplicarColores();
+                pintarBanderas();
+                marcarSucio();
+            });
+        });
+
+        if (backgroundInput) {
+            backgroundInput.addEventListener('input', function () {
+                if (backgroundMode) { backgroundMode.value = 'custom'; }
+                if (backgroundState) { backgroundState.textContent = 'Personalizado para este hotel.'; }
+                aplicarColores();
+                marcarSucio();
+            });
+        }
+
+        var backgroundDefault = form.querySelector('[data-sb-background-default]');
+        if (backgroundDefault) {
+            backgroundDefault.addEventListener('click', function () {
+                if (backgroundMode) { backgroundMode.value = 'default'; }
+                if (backgroundInput) { backgroundInput.value = '#F5F5F7'; }
+                if (backgroundState) { backgroundState.textContent = 'Predeterminado del tema.'; }
+                aplicarColores();
+                marcarSucio();
+            });
+        }
+
+        // Colores tomados del logo (mismo origen: el canvas no se contamina).
+        if (fromLogoBtn) {
+            fromLogoBtn.addEventListener('click', function () {
+                var fuente = urlActual('logo');
+                if (!fuente) { return; }
+
+                var img = new Image();
+                img.onload = function () {
+                    try {
+                        var lienzo = document.createElement('canvas');
+                        var lado = 40;
+                        lienzo.width = lado;
+                        lienzo.height = lado;
+                        var ctx = lienzo.getContext('2d');
+                        ctx.drawImage(img, 0, 0, lado, lado);
+                        var datos = ctx.getImageData(0, 0, lado, lado).data;
+                        var cubos = {};
+
+                        for (var i = 0; i < datos.length; i += 4) {
+                            if (datos[i + 3] < 200) { continue; }
+                            var r = datos[i], g = datos[i + 1], b = datos[i + 2];
+                            var max = Math.max(r, g, b), min = Math.min(r, g, b);
+                            // Fuera el lienzo: blancos, cremas y grises claros de
+                            // fondo. Sin esto un logo sobre papel devuelve tres
+                            // tonos casi blancos y la marca queda ilegible.
+                            if (max > 232) { continue; }
+                            if (max - min < 26 && max > 190) { continue; }
+                            var llave = (r >> 4) + '-' + (g >> 4) + '-' + (b >> 4);
+                            if (!cubos[llave]) { cubos[llave] = { n: 0, r: 0, g: 0, b: 0 }; }
+                            cubos[llave].n += 1;
+                            cubos[llave].r += r;
+                            cubos[llave].g += g;
+                            cubos[llave].b += b;
+                        }
+
+                        var lista = Object.keys(cubos).map(function (llave) {
+                            var c = cubos[llave];
+                            return {
+                                n: c.n,
+                                hex: '#' + [Math.round(c.r / c.n), Math.round(c.g / c.n), Math.round(c.b / c.n)].map(function (v) {
+                                    return ('0' + v.toString(16)).slice(-2);
+                                }).join('').toUpperCase()
+                            };
+                        }).sort(function (a, b) { return b.n - a.n; }).slice(0, 3);
+
+                        if (lista.length === 0) {
+                            if (fromLogoBtn) {
+                                fromLogoBtn.textContent = 'El logo no tiene un color dominante claro';
+                                setTimeout(function () {
+                                    fromLogoBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Tomar del logo';
+                                }, 2600);
+                            }
+                            return;
+                        }
+
+                        lista.sort(function (a, b) { return luminancia(a.hex) - luminancia(b.hex); });
+
+                        // Con un solo tono util se derivan los otros dos en vez
+                        // de repetir el mismo color tres veces.
+                        var base = lista[0].hex;
+                        var elegidos = {
+                            primary: base,
+                            secondary: lista[1] ? lista[1].hex : mezclar(base, '#000000', 0.35),
+                            accent: lista[2] ? lista[2].hex : mezclar(base, '#FFFFFF', 0.45)
+                        };
+
+                        Object.keys(elegidos).forEach(function (clave) {
+                            var campo = form.querySelector('[data-sb-hex="' + clave + '"]');
+                            var swatch = form.querySelector('[data-sb-swatch="' + clave + '"]');
+                            if (campo) { campo.value = elegidos[clave]; }
+                            if (swatch) { swatch.value = elegidos[clave]; }
+                        });
+
+                        aplicarColores();
+                        pintarBanderas();
+                        marcarSucio();
+                    } catch (e) {
+                        // Un logo servido desde otro dominio contamina el canvas: se ignora.
+                    }
+                };
+                img.src = fuente;
+            });
+        }
+
+        if (nameInput) {
+            nameInput.addEventListener('input', function () {
+                aplicarNombre();
+                pintarBanderas();
+                marcarSucio();
+            });
+        }
+
+        form.querySelectorAll('input[name="sidebar_style"], input[name="login_style"], input[name="tema"], input[name="activo"]').forEach(function (entrada) {
+            entrada.addEventListener('change', function () {
+                aplicarLogin();
+                marcarSucio();
+            });
+        });
+
+        form.querySelectorAll('[data-sb-view]').forEach(function (boton) {
+            boton.addEventListener('click', function () {
+                var vista = boton.dataset.sbView;
+                form.querySelectorAll('[data-sb-view]').forEach(function (otro) {
+                    otro.classList.toggle('is-active', otro === boton);
+                });
+                form.querySelectorAll('[data-sb-view-panel]').forEach(function (panel) {
+                    panel.hidden = panel.dataset.sbViewPanel !== vista;
+                });
+            });
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                form.reset();
+                tarjetas.forEach(function (tarjeta) {
+                    delete tarjeta.dataset.sbLocal;
+                    var estado = tarjeta.querySelector('[data-sb-file-state]');
+                    if (estado) { estadoTarjeta(tarjeta, estado.dataset.default || 'Sin archivo', ''); }
+                    pintarMiniatura(tarjeta, resolverUrl(urlsIniciales[tarjeta.dataset.sbFile] || ''));
+                });
+                form.querySelectorAll('[data-sb-swatch]').forEach(function (swatch) {
+                    var hexInput = form.querySelector('[data-sb-hex="' + swatch.dataset.sbSwatch + '"]');
+                    var hex = normalizarHex(hexInput ? hexInput.value : '');
+                    if (hex) { swatch.value = hex; }
+                });
+                aplicarColores();
+                aplicarNombre();
+                pintarImagenes();
+                marcarSucio();
+            });
+        }
+
+        aplicarColores();
+        aplicarNombre();
+        pintarImagenes();
+        marcarSucio();
+    })();
+    </script>
     </section>
 
 </div>

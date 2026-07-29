@@ -10,11 +10,36 @@ if (!is_array($configBranding)) {
     $configBranding = [];
 }
 
-$configHotelNombre = function_exists('current_hotel_display_name')
-    ? current_hotel_display_name($configHotel['nombre'] ?? 'Medisoft Hoteles')
-    : ($configHotel['nombre'] ?? 'Medisoft Hoteles');
-$configHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() : ($_SESSION['hotel_slug'] ?? '');
-$configHotelId = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
+// Contexto: por defecto el hotel de la sesion. El Panel Medisoft inyecta
+// $configContextoSaas para configurar a un hotel cliente desde fuera.
+$configContextoSaas = is_array($configContextoSaas ?? null) ? $configContextoSaas : null;
+$configEsSaas = $configContextoSaas !== null;
+$configFormAction = $configFormAction ?? url('configuracion/update');
+$configCancelUrl = $configCancelUrl ?? url('dashboard');
+
+$configHotelNombre = $configEsSaas
+    ? (string) ($configContextoSaas['nombre'] ?? 'Hotel')
+    : (function_exists('current_hotel_display_name')
+        ? current_hotel_display_name($configHotel['nombre'] ?? 'Medisoft Hoteles')
+        : ($configHotel['nombre'] ?? 'Medisoft Hoteles'));
+$configHotelSlug = $configEsSaas
+    ? (string) ($configContextoSaas['slug'] ?? '')
+    : (function_exists('current_hotel_slug') ? current_hotel_slug() : ($_SESSION['hotel_slug'] ?? ''));
+$configHotelId = $configEsSaas
+    ? (int) ($configContextoSaas['id'] ?? 0)
+    : (function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null));
+
+// Secciones que NO aplican cuando Medisoft configura a un cliente:
+// - apariencia: tema y vibracion del dispositivo de quien mira (localStorage).
+// - brand: la marca se edita en la pestaña Marca del panel (editor unico).
+// - system: sesion y respaldos son globales de la instalacion, no del hotel.
+$configSeccionVisible = function ($seccion) use ($configEsSaas) {
+    if (!$configEsSaas) {
+        return true;
+    }
+
+    return !in_array($seccion, ['hc-appearance', 'hc-brand', 'hc-system'], true);
+};
 
 $configHotelLogo = '';
 if (function_exists('hotel_branding_asset_url')) {
@@ -4929,11 +4954,97 @@ html[data-theme="dark"] .hc-page {
     .hc-page .hc-switch .hc-switch-ui::after,
     .hc-config-map-card { transition: none; }
 }
+
+/* Panel Medisoft: contexto de "estas configurando a otro hotel". */
+.hc-saas-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border: 1px solid rgba(37, 99, 235, .22);
+    background: rgba(37, 99, 235, .07);
+    border-radius: 14px;
+    color: #1e3a8a;
+    font-size: .92rem;
+}
+
+.hc-saas-bar .hc-saas-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    background: #FFFFFF;
+    border: 1px solid rgba(37, 99, 235, .22);
+    color: #1d4ed8;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.hc-saas-bar .hc-saas-back:hover { background: rgba(37, 99, 235, .08); }
+
+.hc-saas-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.hc-saas-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, .14);
+    color: #92400e;
+    font-weight: 600;
+}
+
+.hc-nav-link-out .hc-nav-out-icon {
+    margin-left: auto;
+    font-size: .72rem;
+    opacity: .65;
+}
+
+html[data-theme="dark"] .hc-saas-bar {
+    background: rgba(37, 99, 235, .16);
+    border-color: rgba(96, 165, 250, .32);
+    color: #dbeafe;
+}
+
+html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
+    background: rgba(15, 23, 42, .55);
+    border-color: rgba(96, 165, 250, .32);
+    color: #bfdbfe;
+}
 </style>
 
-<div class="hc-page" data-active-section="hc-readonly">
+<div class="hc-page<?= $configEsSaas ? ' is-saas' : '' ?>" data-active-section="hc-readonly">
     <main class="hc-shell">
-        <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <?php if ($configEsSaas): ?>
+            <div class="hc-saas-bar" role="note">
+                <a href="<?= htmlspecialchars($configContextoSaas['url_detalle'] ?? '#', ENT_QUOTES, 'UTF-8') ?>" class="hc-saas-back">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    <span>Volver al hotel</span>
+                </a>
+                <div class="hc-saas-context">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i>
+                    <span>
+                        Estás configurando <strong><?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?></strong>
+                        como Medisoft. El hotel no puede cambiar esto por su cuenta.
+                    </span>
+                </div>
+                <?php if (empty($configContextoSaas['activo'])): ?>
+                    <span class="hc-saas-flag"><i class="fas fa-circle-pause" aria-hidden="true"></i> Hotel inactivo</span>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <?php include APP_PATH . '/views/partials/back_arrow.php'; ?>
+        <?php endif; ?>
         <header class="hc-top" aria-labelledby="config-page-title">
             <section class="hc-top-main">
                 <div class="hc-title-lockup">
@@ -5034,10 +5145,12 @@ html[data-theme="dark"] .hc-page {
                                 <i class="fas fa-clipboard-check"></i>
                                 <strong>Vista general <span>Lo importante del hotel</span></strong>
                             </a>
-                            <a href="#hc-appearance" id="hc-tab-appearance" class="hc-nav-link" role="tab" aria-controls="hc-appearance" aria-selected="false" tabindex="-1" data-hc-search="apariencia tema color claro oscuro dispositivo vibracion">
-                                <i class="fas fa-circle-half-stroke"></i>
-                                <strong>Apariencia <span>Tema de este dispositivo</span></strong>
-                            </a>
+                            <?php if ($configSeccionVisible('hc-appearance')): ?>
+                                <a href="#hc-appearance" id="hc-tab-appearance" class="hc-nav-link" role="tab" aria-controls="hc-appearance" aria-selected="false" tabindex="-1" data-hc-search="apariencia tema color claro oscuro dispositivo vibracion">
+                                    <i class="fas fa-circle-half-stroke"></i>
+                                    <strong>Apariencia <span>Tema de este dispositivo</span></strong>
+                                </a>
+                            <?php endif; ?>
                             <?php if (!empty($configGroupedHotelSettings)): ?>
                                 <a href="#hc-settings" id="hc-tab-settings" class="hc-nav-link" role="tab" aria-controls="hc-settings" aria-selected="false" tabindex="-1" data-hc-search="ajustes operacion contacto horarios documentos reservaciones reportes textos pwa">
                                     <i class="fas fa-sliders-h"></i>
@@ -5078,10 +5191,18 @@ html[data-theme="dark"] .hc-page {
                     <div class="hc-nav-group" data-hc-nav-group role="presentation">
                         <p class="hc-nav-group-title">Experiencia digital</p>
                         <div class="hc-nav-group-list" role="presentation">
-                            <a href="#hc-brand" id="hc-tab-brand" class="hc-nav-link" role="tab" aria-controls="hc-brand" aria-selected="false" tabindex="-1" data-hc-search="marca identidad logo colores login iconos pwa">
-                                <i class="fas fa-palette"></i>
-                                <strong>Marca <span>Logo, colores y acceso</span></strong>
-                            </a>
+                            <?php if ($configSeccionVisible('hc-brand')): ?>
+                                <a href="#hc-brand" id="hc-tab-brand" class="hc-nav-link" role="tab" aria-controls="hc-brand" aria-selected="false" tabindex="-1" data-hc-search="marca identidad logo colores login iconos pwa">
+                                    <i class="fas fa-palette"></i>
+                                    <strong>Marca <span>Logo, colores y acceso</span></strong>
+                                </a>
+                            <?php else: ?>
+                                <a href="<?= htmlspecialchars($configContextoSaas['url_marca'] ?? '#', ENT_QUOTES, 'UTF-8') ?>" class="hc-nav-link hc-nav-link-out" data-hc-search="marca identidad logo colores login iconos pwa fondo">
+                                    <i class="fas fa-palette"></i>
+                                    <strong>Marca <span>Se edita en la ficha del hotel</span></strong>
+                                    <i class="fas fa-arrow-up-right-from-square hc-nav-out-icon" aria-hidden="true"></i>
+                                </a>
+                            <?php endif; ?>
                             <?php if (!empty($configFooterNavCatalog)): ?>
                                 <a href="#hc-footer-nav" id="hc-tab-footer-nav" class="hc-nav-link" role="tab" aria-controls="hc-footer-nav" aria-selected="false" tabindex="-1" data-hc-search="barra inferior atajos aplicacion app navegacion movil">
                                     <i class="fas fa-grip"></i>
@@ -5095,15 +5216,17 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </div>
 
-                    <div class="hc-nav-group" data-hc-nav-group role="presentation">
-                        <p class="hc-nav-group-title">Administración técnica</p>
-                        <div class="hc-nav-group-list" role="presentation">
-                            <a href="#hc-system" id="hc-tab-system" class="hc-nav-link" role="tab" aria-controls="hc-system" aria-selected="false" tabindex="-1" data-hc-search="sistema sesion estancia respaldos backup frecuencia retencion">
-                                <i class="fas fa-server"></i>
-                                <strong>Sistema <span>Sesión y respaldos</span></strong>
-                            </a>
+                    <?php if ($configSeccionVisible('hc-system')): ?>
+                        <div class="hc-nav-group" data-hc-nav-group role="presentation">
+                            <p class="hc-nav-group-title">Administración técnica</p>
+                            <div class="hc-nav-group-list" role="presentation">
+                                <a href="#hc-system" id="hc-tab-system" class="hc-nav-link" role="tab" aria-controls="hc-system" aria-selected="false" tabindex="-1" data-hc-search="sistema sesion estancia respaldos backup frecuencia retencion">
+                                    <i class="fas fa-server"></i>
+                                    <strong>Sistema <span>Sesión y respaldos</span></strong>
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </nav>
 
                 <div class="hc-nav-empty" data-hc-nav-empty hidden role="status">
@@ -5177,26 +5300,49 @@ html[data-theme="dark"] .hc-page {
                                 </span>
                                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
                             </a>
-                            <a href="#hc-brand" class="hc-config-map-card" data-hc-section-trigger>
-                                <span class="hc-config-map-icon"><i class="fas fa-palette" aria-hidden="true"></i></span>
-                                <span>
-                                    <strong>Marca y aplicación</strong>
-                                    <small>Logo, colores, acceso y navegación de la app.</small>
-                                </span>
-                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                            </a>
-                            <a href="#hc-system" class="hc-config-map-card" data-hc-section-trigger>
-                                <span class="hc-config-map-icon"><i class="fas fa-server" aria-hidden="true"></i></span>
-                                <span>
-                                    <strong>Sistema y dispositivos</strong>
-                                    <small>Sesión, respaldos y equipos con avisos Push.</small>
-                                </span>
-                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                            </a>
+                            <?php if ($configSeccionVisible('hc-brand')): ?>
+                                <a href="#hc-brand" class="hc-config-map-card" data-hc-section-trigger>
+                                    <span class="hc-config-map-icon"><i class="fas fa-palette" aria-hidden="true"></i></span>
+                                    <span>
+                                        <strong>Marca y aplicación</strong>
+                                        <small>Logo, colores, acceso y navegación de la app.</small>
+                                    </span>
+                                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            <?php else: ?>
+                                <a href="<?= htmlspecialchars($configContextoSaas['url_marca'] ?? '#', ENT_QUOTES, 'UTF-8') ?>" class="hc-config-map-card">
+                                    <span class="hc-config-map-icon"><i class="fas fa-palette" aria-hidden="true"></i></span>
+                                    <span>
+                                        <strong>Marca del hotel</strong>
+                                        <small>Logo, colores y fondo se editan en la ficha del hotel.</small>
+                                    </span>
+                                    <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if ($configSeccionVisible('hc-system')): ?>
+                                <a href="#hc-system" class="hc-config-map-card" data-hc-section-trigger>
+                                    <span class="hc-config-map-icon"><i class="fas fa-server" aria-hidden="true"></i></span>
+                                    <span>
+                                        <strong>Sistema y dispositivos</strong>
+                                        <small>Sesión, respaldos y equipos con avisos Push.</small>
+                                    </span>
+                                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            <?php else: ?>
+                                <a href="#hc-devices" class="hc-config-map-card" data-hc-section-trigger>
+                                    <span class="hc-config-map-icon"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
+                                    <span>
+                                        <strong>Dispositivos del hotel</strong>
+                                        <small>Equipos que reciben avisos Push.</small>
+                                    </span>
+                                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </section>
 
+                <?php if ($configSeccionVisible('hc-appearance')): ?>
                 <section id="hc-appearance" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-appearance" tabindex="0" hidden>
                     <div class="hc-panel-header">
                         <div>
@@ -5249,17 +5395,20 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </div>
                 </section>
+                <?php endif; ?>
 
-                <form method="POST" action="<?= url('configuracion/update') ?>" id="configForm" enctype="multipart/form-data" data-form-guard="off">
+                <form method="POST" action="<?= htmlspecialchars($configFormAction, ENT_QUOTES, 'UTF-8') ?>" id="configForm" enctype="multipart/form-data" data-form-guard="off">
                     <?= csrf_field() ?>
 
                     <section class="hc-save-dock" aria-label="Acciones de guardado">
                         <div class="hc-save-copy">
                             <i class="fas fa-circle-info"></i>
-                            Revisa las secciones y guarda cuando todo este listo.
+                            <?= $configEsSaas
+                                ? 'Estos ajustes son del hotel cliente. Revisa y guarda cuando todo este listo.'
+                                : 'Revisa las secciones y guarda cuando todo este listo.' ?>
                         </div>
                         <div class="hc-actions">
-                            <a href="<?= url('dashboard') ?>" class="hc-link-btn">
+                            <a href="<?= htmlspecialchars($configCancelUrl, ENT_QUOTES, 'UTF-8') ?>" class="hc-link-btn">
                                 <i class="fas fa-times"></i>
                                 Cancelar
                             </a>
@@ -6293,6 +6442,7 @@ html[data-theme="dark"] .hc-page {
                         </div>
                     </section>
 
+                    <?php if ($configSeccionVisible('hc-brand')): ?>
                     <section id="hc-brand" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-brand" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
@@ -6775,6 +6925,7 @@ html[data-theme="dark"] .hc-page {
                             </div>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <?php if (!empty($configFooterNavCatalog)): ?>
                     <section id="hc-footer-nav" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-footer-nav" tabindex="0" hidden>
@@ -7185,6 +7336,7 @@ html[data-theme="dark"] .hc-page {
                     </script>
                     <?php endif; ?>
 
+                    <?php if ($configSeccionVisible('hc-system')): ?>
                     <section id="hc-system" class="hc-panel" data-hc-section role="tabpanel" aria-labelledby="hc-tab-system" tabindex="0" hidden>
                         <div class="hc-panel-header">
                             <div>
@@ -7285,7 +7437,9 @@ html[data-theme="dark"] .hc-page {
                             </section>
                         </div>
                     </section>
+                    <?php endif; ?>
 
+                    <?php if ($configSeccionVisible('hc-system')): ?>
                     <div class="hc-hidden-compat" aria-hidden="true">
                         <input type="hidden"
                                id="hotel_nombre"
@@ -7327,6 +7481,7 @@ html[data-theme="dark"] .hc-page {
                                name="inventario_auto_jabon"
                                value="<?= htmlspecialchars((string) ($config['inventario']['auto_jabon'] ?? 2), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
+                    <?php endif; ?>
 
                     <section class="hc-bottom-actions" aria-label="Confirmar cambios">
                         <div class="hc-bottom-note">
@@ -7334,7 +7489,7 @@ html[data-theme="dark"] .hc-page {
                             Los cambios editables se aplicaran cuando confirmes el guardado.
                         </div>
                         <div class="hc-actions">
-                            <a href="<?= url('dashboard') ?>" class="hc-link-btn">
+                            <a href="<?= htmlspecialchars($configCancelUrl, ENT_QUOTES, 'UTF-8') ?>" class="hc-link-btn">
                                 <i class="fas fa-times"></i>
                                 Cancelar
                             </a>
@@ -7398,7 +7553,9 @@ html[data-theme="dark"] .hc-page {
                                         </div>
                                     </div>
                                     <div class="hc-device-actions">
-                                        <?php if ($deviceActive && $deviceId > 0): ?>
+                                        <?php // Revocar vive en /configuracion/pwa-push (contexto del hotel de la sesion):
+                                              // desde el panel SaaS solo se muestra el estado. ?>
+                                        <?php if ($deviceActive && $deviceId > 0 && !$configEsSaas): ?>
                                             <form method="POST"
                                                   action="<?= url('configuracion/pwa-push/' . $deviceId . '/revocar') ?>"
                                                   class="hc-device-form">
@@ -8380,6 +8537,17 @@ const filterConfigNavigation = function() {
     let visibleCount = 0;
 
     navLinks.forEach(link => {
+        const content = ((link.dataset.hcSearch || '') + ' ' + (link.textContent || '')).toLocaleLowerCase('es-MX');
+        const isVisible = query === '' || content.includes(query);
+        link.hidden = !isVisible;
+        if (isVisible) {
+            visibleCount += 1;
+        }
+    });
+
+    // Enlaces que salen de esta pantalla (ej. Marca en el Panel Medisoft):
+    // no son tabs, pero el buscador debe filtrarlos igual.
+    document.querySelectorAll('.hc-nav-link-out').forEach(link => {
         const content = ((link.dataset.hcSearch || '') + ' ' + (link.textContent || '')).toLocaleLowerCase('es-MX');
         const isVisible = query === '' || content.includes(query);
         link.hidden = !isVisible;

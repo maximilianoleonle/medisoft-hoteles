@@ -46,6 +46,22 @@ function nav_normalizar_ruta($ruta) {
  * distinguia los roles personalizados y ademas abria el menu a pantallas que
  * el servidor luego rechazaba. Ver la cabecera de config/navegacion.php.
  */
+/**
+ * URL de la pantalla de configuracion del hotel actual, o null si quien mira no
+ * puede abrirla (todo hotel inquilino: la administra Medisoft).
+ *
+ * Las vistas que enlazaban ajustes ("configura el cupo en Configuración") deben
+ * usar esto y degradar a texto plano cuando devuelve null, en vez de mandar al
+ * hotelero a un rebote.
+ */
+function config_hotel_url($fragmento = '') {
+    if (!function_exists('isSaasAdmin') || !isSaasAdmin()) {
+        return null;
+    }
+
+    return url('configuracion') . $fragmento;
+}
+
 function nav_pantalla_visible(array $pantalla) {
     // Pantallas exclusivas del equipo Medisoft (saas_admins): invisibles para
     // usuarios del hotel aunque su rol tenga el permiso (p. ej. Configuracion).
