@@ -39,7 +39,9 @@ echo "== 2/4 Staging con el sistema viejo =="
 # El nombre del esquema sale de DATABASE(), no incrustado: evita comillas anidadas frágiles.
 TABLAS=$("${V[@]}" "docker exec medisoft_hoteles_db sh -c 'mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" -N $SRC -e \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()\"' 2>&1 | grep -av 'Using a password'")
 TABLAS=$(echo "$TABLAS" | tr -cd '0-9')
-echo "staging cargado: $TABLAS tablas (esperadas 39)"
+# El dump crea 39 tablas + hasta 2 vistas (que fallan de origen y a veces dejan
+# su tabla-marcador de phpMyAdmin): 39 o 40 son ambas correctas.
+echo "staging cargado: $TABLAS tablas (mínimo esperado 39)"
 [ "$TABLAS" -ge 39 ] || { echo "El dump no cargó completo. NO se migró nada." >&2; exit 1; }
 
 echo "== 3/4 Migrando a hotel 3 =="
@@ -51,9 +53,16 @@ SALIDA=$(sed -e "s/@@SRC@@/${SRC}/g" -e "s/@@DST@@/${DST}/g" verificar.sql \
   | "${V[@]}" "$MYSQL_REMOTO" 2>&1 | grep -av 'Using a password')
 echo "$SALIDA"
 
-if echo "$SALIDA" | grep -q 'FAIL'; then
+# El conteo sale del renglón de resumen, NO de buscar la palabra "FAIL" suelta:
+# ese renglón dice "FAIL: 0" y un grep simple se alarma con su propio resumen.
+FALLAS=$(echo "$SALIDA" | sed -n 's/.*FAIL: *\([0-9][0-9]*\).*/\1/p' | head -1)
+if [ -z "$FALLAS" ] || [ "$FALLAS" != "0" ]; then
   echo "" >&2
-  echo "== VERIFICACIÓN CON FALLAS: NO entregues el hotel ==" >&2
+  if [ -z "$FALLAS" ]; then
+    echo "== LA VERIFICACIÓN NO LLEGÓ A SU RESUMEN (se cortó a media corrida) ==" >&2
+  else
+    echo "== VERIFICACIÓN CON $FALLAS FALLAS: NO entregues el hotel ==" >&2
+  fi
   echo "Revertir con: ssh -i $LLAVE $HOST \"gunzip -c $RESPALDO | docker exec -i medisoft_hoteles_db sh -c 'mysql -uroot -p\\\"\\\$MYSQL_ROOT_PASSWORD\\\" $DST'\"" >&2
   exit 1
 fi

@@ -24,7 +24,12 @@ esac
 SALIDA=$(sed -e "s/@@SRC@@/${SRC}/g" -e "s/@@DST@@/${DST}/g" "$ARCHIVO" | eval "$MYSQL_CMD" 2>&1 | grep -av "Using a password")
 echo "$SALIDA"
 
-if [ "$ACCION" = "verificar" ] && echo "$SALIDA" | grep -q "FAIL"; then
-  echo "== VERIFICACION CON FALLAS ==" >&2
-  exit 1
+# El conteo sale del renglón de resumen ("FAIL: N"), no de buscar la palabra
+# suelta: ese mismo renglón la contiene y un grep simple se alarma solo.
+if [ "$ACCION" = "verificar" ]; then
+  FALLAS=$(echo "$SALIDA" | sed -n 's/.*FAIL: *\([0-9][0-9]*\).*/\1/p' | head -1)
+  if [ -z "$FALLAS" ] || [ "$FALLAS" != "0" ]; then
+    echo "== VERIFICACION CON FALLAS (o cortada antes del resumen) ==" >&2
+    exit 1
+  fi
 fi

@@ -1,5 +1,12 @@
 # Migración legacy San Nicolás → hotel_id=3 (producción)
 
+> **EJECUTADA EN PRODUCCIÓN el 2026-07-29** (40 checks, 0 FAIL). Hotel 3 vivo con
+> 66 habitaciones, 2,401 reservaciones, 1,958 huéspedes, 1,761 movimientos de caja,
+> 143 cortes y 7 accesos; Los Cedros intacto (49/2,056). Respaldo previo:
+> `/opt/medisoft/backups/pre_migracion_sn_20260729_0127.sql.gz`. Si el hotel siguió
+> capturando en el sistema viejo, `dia_d.sh` se vuelve a correr con dump fresco —
+> **pero eso BORRA lo que se haya capturado en el multihotel desde entonces**.
+
 Migra TODO el sistema viejo monohotel (Hostinger, `u377797534_hotel_san_nico`) al hotel 3
 del multihotel en el VPS. **Re-ejecutable**: cada corrida borra lo importado por la anterior
 (mapas + registro de usuarios creados en el esquema staging) y reimporta — el día del corte
@@ -56,6 +63,16 @@ docker exec medisoft_hoteles_db mysql -uroot -proot_pass -e "DROP DATABASE IF EX
 ./correr.sh migrar    sannicolas_legacy medisoft_prod_clone
 ./correr.sh verificar sannicolas_legacy medisoft_prod_clone
 ```
+
+## Día del corte, en un solo comando (desde **Git Bash**, nunca CMD)
+
+```bash
+cd /c/Proyectos/medisoft-hoteles && ./tools/migracion_sannicolas/dia_d.sh "/ruta/al/dump_fresco.sql"
+```
+
+Respalda producción, recrea el staging, migra y verifica; se corta al primer error y
+si la verificación no cierra en 0 fallas imprime el comando de rollback. El desglose
+manual de esos mismos pasos queda abajo.
 
 ## Día del corte (switchover definitivo)
 
