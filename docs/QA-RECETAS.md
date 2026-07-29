@@ -265,6 +265,18 @@ Recorrido de 2 minutos por bloque, ANTES de ponerlo `activo_global=1`. Un bloque
 6. Smoke post-bloqueo masivo: dashboard, /habitaciones y /caja cargan sin 500 con gerente y el log del día queda limpio. ✅ 2026-07-24
 7. ⬜ POST real de "Guardar bloques y cobro" en el panel (no se ejecutó para no alterar contrataciones del hotel QA; la lógica está cubierta por suite) y revisión visual humana del panel (los checks fueron por asserts JS).
 
+## Configuración de un hotel desde el Panel SaaS (`/admin/saas/hoteles/{id}/configuracion`)
+
+Lo que se cuida: que la vista del hotel renderizada contra OTRO hotel no se equivoque de hotel al leer ni al guardar. Todo por curl con `-c jar -b jar` en cada request (la app regenera el session id).
+
+1. Suite: `php src/tests/run.php SaasConfiguracionHotel` → 24 PASS. Cubre normalización, tenancy del guardado y que la tabla legacy `configuracion` no se escriba. ✅ 2026-07-29
+2. Render apuntado a otro hotel: GET `/admin/saas/hoteles/{otro}/configuracion` con sesión saas admin → 200 y `<title>` con el nombre del **hotel objetivo**, no el de la sesión. Las 3 secciones que el modo SaaS oculta NO deben existir en el HTML: `grep -c 'id="hc-appearance"'` / `hc-brand` / `hc-system` = 0, y `hc-catalogs`/`hc-rooms` = 1. ✅ 2026-07-29 (hotel 4 desde sesión del hotel 1)
+3. Guardado real sin armar el POST a mano: el form tiene ~19 KB de campos y `hotel_config_normalize_editable_payload` valida TODOS los obligatorios juntos (un payload parcial devuelve 13 errores). Receta: guardar el HTML del GET y extraer los campos con un PHP temporal que lo lea con `DOMDocument` + XPath `//form[@id="configForm"]//input|select|textarea` (saltando checkbox/radio sin `checked` y los `type=file`), imprimirlos como querystring, cambiar UN valor distintivo y postear con `--data @archivo`. Esperado: **303** al mismo panel. ✅ 2026-07-29
+4. Tenancy del guardado (el assert que importa): tras el POST, `SELECT hotel_id,clave,valor FROM hotel_configuracion WHERE clave='contacto.telefono' AND hotel_id IN (1,4)` → el valor nuevo SOLO en el hotel objetivo y el `updated_at` del otro hotel intacto; `SELECT COUNT(*) FROM configuracion` igual antes y después (esa tabla es GLOBAL, sin `hotel_id`). ✅ 2026-07-29
+5. Gates con usuario del hotel (no `saas_admins`): GET `/configuracion` → 303 a dashboard; GET y **POST** `/admin/saas/hoteles/{id}/configuracion` → 302 a dashboard (probar el POST aparte: el GET gateado no prueba la escritura); y en cualquier vista del hotel `grep -c 'href="[^"]*/configuracion"'` = 0. ✅ 2026-07-29 (recepcionista user 16)
+6. Degradación de los enlaces (gerente NO Medisoft, p.ej. user 15): `/dashboard` carga 200 con 0 enlaces a `/configuracion` (las 7 menciones de estacionamiento salen como `<span>`) y `/configuracion/roles` muestra "Volver al inicio". ✅ 2026-07-29
+7. Sabido, NO es regresión de esta pantalla: la flecha y la miga de `view_topbar.php` en `/configuracion/roles` siguen apuntando a `/configuracion` (las deriva de la sección, `back_url($vtbRoot)`) → para el gerente rebotan al dashboard. ⬜ pendiente si se decide arreglarlo en el topbar genérico.
+
 ## Reputación — encuesta pública sin review gating (jul-26)
 
 El módulo no tenía receta. Lo que se verifica es que la invitación a Google se ofrezca a TODO el que responde: filtrarla por calificación viola la política de Google Maps y arriesga el perfil del hotel.
