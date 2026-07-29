@@ -103,7 +103,10 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'short' => 'Compras',
                 'icon' => 'fa-clipboard-list',
                 'path' => 'compras',
-                'modules_any' => ['inventario'],
+                // Compras es bloque vendible propio ($199): el atajo debe seguir
+                // SU contratación, no la de Inventario (CompraController exige
+                // require_hotel_module('compras') y el proxy mandaba a un 403).
+                'modules_any' => ['compras'],
                 'descripcion' => 'Órdenes y registro de compras.',
             ],
             'documentos' => [
@@ -111,7 +114,10 @@ if (!function_exists('hotel_footer_nav_catalog')) {
                 'short' => 'Docs',
                 'icon' => 'fa-folder-open',
                 'path' => 'documentos',
-                'modules_any' => ['inventario', 'huespedes', 'reservaciones'],
+                // huespedes/reservaciones son paquete base: con ese proxy el
+                // atajo aparecía para TODOS los hoteles aunque no contrataran
+                // el bloque, y DocumentoController::before() los rebotaba.
+                'modules_any' => ['documentos'],
                 'descripcion' => 'Archivos y documentos del hotel.',
             ],
             'reportes' => [

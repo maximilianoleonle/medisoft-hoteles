@@ -18,6 +18,10 @@ $total_reservaciones = $total_reservaciones ?? count($reservaciones);
 $estados             = $estados             ?? [];
 $buscar              = $buscar              ?? '';
 $fecha_filtro        = $fecha_filtro        ?? date('Y-m-d');
+// Bloque 'facturacion' opcional: sin él, el modal de check-in del listado no
+// pregunta por factura (mismo contrato que $rvModuloFacturacion en ver.php;
+// el servidor también ignora el campo — ReservacionController::puedeRegistrarFacturas).
+$resModuloFacturacion = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('facturacion');
 $res_hotel_checkin_hora = function_exists('hotel_config_get')
     ? (string) hotel_config_get('operacion.checkin_hora', '15:00')
     : '15:00';
@@ -5150,6 +5154,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     </div>
                 </section>
 
+                <?php if ($resModuloFacturacion): ?>
                 <section class="res-ci-section" data-ci-step="2">
                     <div class="res-ci-section-head">
                         <h4><i class="fas fa-file-invoice"></i>Factura</h4>
@@ -5184,6 +5189,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                         El pago con tarjeta o transferencia quedara en facturacion para uso interno.
                     </div>
                 </section>
+                <?php endif; ?>
 
                 <section class="res-ci-summary" data-ci-step="2">
                     <h5>Resumen de pago</h5>
@@ -5858,6 +5864,12 @@ function validarFacturaCheckIn() {
     const facturaSi = document.getElementById('factura_si');
     const facturaNo = document.getElementById('factura_no');
     const validacion = document.getElementById('facturaValidacion');
+
+    // Sin el bloque de facturación la pregunta no se pinta: no hay nada que validar.
+    if (!facturaSi || !facturaNo) {
+        if (validacion) validacion.classList.add('hidden');
+        return true;
+    }
 
     if (!facturaSi?.checked && !facturaNo?.checked) {
         if (validacion) validacion.classList.remove('hidden');

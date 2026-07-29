@@ -2553,6 +2553,25 @@ private function generarHTMLReservacionesPersonalizado(
             || current_hotel_has_module('descuentos');
     }
 
+    /**
+     * ¿El hotel puede REGISTRAR solicitudes de factura?
+     *
+     * 'facturacion' es un bloque opcional ($249) cuyo flujo productor vive en
+     * pantallas del paquete base (anticipos, check-in, cambio de pago), así que
+     * —igual que descuentos— su gate no puede ser un 403: sin el módulo, el
+     * campo requiere_factura se IGNORA en silencio y no se crea solicitud
+     * alguna (ni de uso interno). La vista tampoco pinta la pregunta
+     * ($rvModuloFacturacion en reservaciones/ver.php).
+     *
+     * Las solicitudes YA creadas se conservan (historial congelado) y el
+     * ajuste NEGATIVO al revertir un anticipo facturado sigue pasando: solo
+     * corrige una solicitud que nació con el módulo activo.
+     */
+    private function puedeRegistrarFacturas(): bool {
+        return !function_exists('current_hotel_has_module')
+            || current_hotel_has_module('facturacion');
+    }
+
 
     /**
      * Listado de reservaciones
@@ -4239,7 +4258,10 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
         try {
             require_once __DIR__ . '/../services/AnticipoService.php';
             $hotelId = obtenerHotelIdActualCompat();
-            $requiereFactura = ($this->getPost('requiere_factura') === 'si') ? 'si' : 'no';
+            // Sin el bloque 'facturacion' el campo se ignora Y se guarda 'no'
+            // en el abono: una reversión futura no debe intentar ajustar una
+            // factura que nunca existió.
+            $requiereFactura = ($this->puedeRegistrarFacturas() && $this->getPost('requiere_factura') === 'si') ? 'si' : 'no';
             $modoSolicitudFactura = $this->modoSolicitudFactura($this->getPost('factura_modo', 'acumular'));
             $conceptoCobro = trim((string)$this->getPost('concepto'));
             $esPagoPendiente = stripos($conceptoCobro, 'pago pendiente') !== false;
@@ -5434,6 +5456,16 @@ $cortesias_ids = $this->getPost('cortesias', []);
     try {
         $hotel_id = $this->hotelIdActual();
 
+        // Bloque 'inventario' opcional: apagado, el check-in JAMÁS descuenta
+        // stock aunque sobrevivan filas activas de inventario_config_habitacion
+        // de cuando estuvo contratado. La devolución por cancelación no pasa
+        // por aquí (Reservacion::devolverInventarioCancelacion lee
+        // movimientos_inventario directo), así que el consumo histórico sigue
+        // siendo reversible con el bloque apagado.
+        if (function_exists('hotel_has_module') && !hotel_has_module('inventario', $hotel_id)) {
+            return;
+        }
+
         // Verificar si hay configuración de inventario activa
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) as total FROM inventario_config_habitacion WHERE hotel_id = ? AND activo = 1"
@@ -6029,6 +6061,12 @@ public function checkOutRapidoAction() {
      */
     private function procesarSolicitudFactura($reservacion_id, $pagos, $monto_total, $requiere_factura = null, string $modoMonto = 'acumular', ?string $modoSolicitud = null) {
         try {
+            // Sin el bloque 'facturacion' no se crea NINGUNA solicitud (ni de
+            // uso interno), aunque un POST artesanal mande requiere_factura.
+            if (!$this->puedeRegistrarFacturas()) {
+                return;
+            }
+
             $monto_total = round((float)$monto_total, 2);
             if ($monto_total <= 0.004) {
                 return;

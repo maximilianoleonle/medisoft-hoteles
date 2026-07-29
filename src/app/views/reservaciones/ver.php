@@ -7,6 +7,10 @@ header('Content-Type: text/html; charset=UTF-8');
 
 $estado_info = $estados[$reservacion['estado']] ?? ['label' => 'Desconocido', 'color' => 'gray'];
 $pagos = $pagos ?? [];
+// Bloque 'facturacion' opcional: sin él, NINGUNA pregunta de factura se pinta
+// (anticipos, check-in, tardío, cambio de pago) y el servidor ignora el campo
+// (ReservacionController::puedeRegistrarFacturas). Ausente, no deshabilitado.
+$rvModuloFacturacion = !function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('facturacion');
 $remotos_info = is_array($remotos_info ?? null) ? $remotos_info : [];
 $ticketBranding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
 if (!is_array($ticketBranding)) {
@@ -3988,6 +3992,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                         </div>
                                     </section>
                                     <section class="rda-stage" data-rda-stage="2" hidden>
+                                        <?php if ($rvModuloFacturacion): ?>
                                         <div class="rda-inv-q"><i class="fas fa-file-invoice" aria-hidden="true"></i> ¿El huésped requiere factura?</div>
                                         <label class="rda-radio-card">
                                             <input type="radio" name="requiere_factura" value="si" data-rda-factura>
@@ -4007,11 +4012,12 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                                 <label class="rda-radio-card sm"><input type="radio" name="factura_modo" value="separada" checked><span class="rc-dot"></span><span class="rc-txt"><strong>Crear factura separada</strong></span></label>
                                             </div>
                                         <?php endif; ?>
+                                        <?php endif; ?>
                                         <div class="rda-summary">
                                             <div class="rda-summary-h">Resumen del anticipo</div>
                                             <div class="rda-summary-row"><span>Monto</span><b data-rda-sum-monto>$0.00</b></div>
                                             <div class="rda-summary-row"><span>Método</span><b data-rda-sum-metodo>—</b></div>
-                                            <div class="rda-summary-row"><span>Factura</span><b data-rda-sum-factura>Sin factura</b></div>
+                                            <?php if ($rvModuloFacturacion): ?><div class="rda-summary-row"><span>Factura</span><b data-rda-sum-factura>Sin factura</b></div><?php endif; ?>
                                             <div class="rda-summary-row is-total"><span>Saldo restante</span><b data-rda-sum-saldo>$0.00</b></div>
                                         </div>
                                     </section>
@@ -4229,12 +4235,15 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                 var after = saldo - m; if (after < 0) after = 0;
                                 sheet.querySelector('[data-rda-sum-monto]').textContent = money(m);
                                 sheet.querySelector('[data-rda-sum-metodo]').textContent = metodoLabel();
-                                sheet.querySelector('[data-rda-sum-factura]').textContent = facturaLabel();
+                                var sumFactura = sheet.querySelector('[data-rda-sum-factura]');
+                                if (sumFactura) sumFactura.textContent = facturaLabel();
                                 sheet.querySelector('[data-rda-sum-saldo]').textContent = money(after);
                             }
                             function updateGate() {
                                 if (!btnSubmit) return;
-                                var chosen = !!sheet.querySelector('input[name="requiere_factura"]:checked');
+                                // Sin el bloque de facturación los radios no existen: el envío queda libre.
+                                var chosen = !sheet.querySelector('input[name="requiere_factura"]')
+                                    || !!sheet.querySelector('input[name="requiere_factura"]:checked');
                                 btnSubmit.disabled = !chosen;
                                 btnSubmit.classList.toggle('is-wait', !chosen);
                                 btnSubmit.innerHTML = chosen ? submitHTML : 'Continuar';
@@ -5904,6 +5913,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
 
                 <section class="rv-invoice-section rv-checkin-stage" data-checkin-stage="3" aria-labelledby="rvFacturaTitle" aria-hidden="true">
                     <div class="rv-final-grid">
+                        <?php if ($rvModuloFacturacion): ?>
                         <div class="rv-final-invoice">
                             <h4 id="rvFacturaTitle"><i class="far fa-file-alt"></i> ¿El huésped requiere factura? <span>*</span></h4>
 
@@ -5961,6 +5971,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 <p><i class="fas fa-info-circle"></i> El pago con tarjeta o transferencia se guardar&aacute; solo para el control del hotel</p>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <section class="rv-checkin-summary" aria-label="Resumen de pago">
                             <h5>Resumen final</h5>
@@ -6173,6 +6184,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
             </div>
 
             <!-- ========== SECCIÓN DE FACTURA CP ========== -->
+            <?php if ($rvModuloFacturacion): ?>
             <div style="margin-top: 1rem; margin-bottom: 0.5rem;">
                 <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
                     <i class="fas fa-file-invoice" style="color: #2563EB; margin-right: 0.375rem;"></i>
@@ -6234,6 +6246,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                     </p>
                 </div>
             </div>
+            <?php endif; ?>
             <!-- ========== FIN SECCIÓN DE FACTURA CP ========== -->
 
             <!-- Resumen -->
@@ -6556,6 +6569,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                     </div>
                 </div>
 
+                <?php if ($rvModuloFacturacion): ?>
                 <div>
                     <div class="xpm-sec"><i class="fas fa-file-invoice"></i> ¿Requiere factura?</div>
                     <div id="facturaContainerTardio" class="xpm-inv-row rv-invoice-grid" style="margin-top:8px;">
@@ -6585,6 +6599,7 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
                     <div id="facturaValidacionTardio" class="xpm-inv-note is-err rv-checkin-message hidden"><i class="fas fa-exclamation-circle"></i> Indica si el cliente requiere factura</div>
                     <div id="facturaInfoInternaTardio" class="xpm-inv-note is-info rv-checkin-note hidden"><i class="fas fa-info-circle"></i> Tarjeta/transferencia se registra en facturación interna</div>
                 </div>
+                <?php endif; ?>
 
                 <div class="xpm-field rv-notes-section">
                     <label class="xpm-lbl"><i class="fas fa-note-sticky"></i> Notas <span style="font-weight:400;color:#9CA3AF;font-size:.7rem">(opcional)</span></label>
@@ -6874,6 +6889,12 @@ function validarFacturaCheckIn() {
     const facturaSi = document.getElementById('factura_si');
     const facturaNo = document.getElementById('factura_no');
     const validacion = document.getElementById('facturaValidacion');
+
+    // Sin el bloque de facturación la pregunta no se pinta: no hay nada que validar.
+    if (!facturaSi || !facturaNo) {
+        if (validacion) validacion.classList.add('hidden');
+        return true;
+    }
 
     if (checkInSinCobroNuevo()) {
         if (validacion) validacion.classList.add('hidden');
@@ -7197,6 +7218,12 @@ function validarFacturaTardio() {
     const facturaSi = document.getElementById('factura_si_tardio');
     const facturaNo = document.getElementById('factura_no_tardio');
     const validacion = document.getElementById('facturaValidacionTardio');
+
+    // Sin el bloque de facturación la pregunta no se pinta: no hay nada que validar.
+    if (!facturaSi || !facturaNo) {
+        if (validacion) validacion.classList.add('hidden');
+        return true;
+    }
 
     if (!facturaSi.checked && !facturaNo.checked) {
         if (validacion) validacion.classList.remove('hidden');
@@ -9775,7 +9802,8 @@ function confirmarCambioPago() {
     }
     resetConfirmacionCambioPago();
 
-    const requiereFactura = document.querySelector('input[name="requiere_factura_cp"]:checked').value;
+    const facturaSeleccionCP = document.querySelector('input[name="requiere_factura_cp"]:checked');
+    const requiereFactura = facturaSeleccionCP ? facturaSeleccionCP.value : '';
 
     // Enviar AJAX
     const btnConfirmar = document.getElementById('btnConfirmarCambio');
@@ -9876,6 +9904,12 @@ function validarFacturaCP() {
     const facturaSi = document.getElementById('factura_si_cp');
     const facturaNo = document.getElementById('factura_no_cp');
     const validacion = document.getElementById('facturaValidacionCP');
+
+    // Sin el bloque de facturación la pregunta no se pinta: no hay nada que validar.
+    if (!facturaSi || !facturaNo) {
+        if (validacion) validacion.classList.add('hidden');
+        return true;
+    }
 
     if (!facturaSi.checked && !facturaNo.checked) {
         if (validacion) validacion.classList.remove('hidden');
