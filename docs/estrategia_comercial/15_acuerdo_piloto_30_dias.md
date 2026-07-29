@@ -11,7 +11,7 @@ Este formato es comercial/operativo y debe revisarse legalmente antes de utiliza
 - Cierre:
 - Reunión de decisión:
 - Precio mensual posterior:
-- Depósito acreditable, si aplica:
+- Costo del piloto: $0 MXN.
 
 ## Problema a validar
 
@@ -29,6 +29,8 @@ Este formato es comercial/operativo y debe revisarse legalmente antes de utiliza
 - registrar la operación acordada;
 - informar incidentes;
 - asistir a revisiones.
+
+Estos compromisos no generan obligación de compra. Permiten que el piloto sea una prueba real y no solamente una cuenta sin utilizar.
 
 ## Compromisos de Medisoft
 
@@ -75,3 +77,5 @@ Si no continúa:
 Hotel: __________________  
 Medisoft: _______________  
 Fecha: __________________
+
+La firma de este acuerdo confirma el alcance de la prueba y el tratamiento de la información; no obliga al hotel a contratar al finalizar.

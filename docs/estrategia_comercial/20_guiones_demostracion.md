@@ -26,7 +26,7 @@ MSYS_NO_PATHCONV=1 docker exec medisoft_hoteles_app php /var/www/html/tools/saas
 ## Reglas de la demostración
 
 1. **Un solo opcional por visita**, el que corresponda al dolor que el hotelero ya confirmó. Recorrer todo satura y diluye.
-2. **Primero el núcleo** (8-12 min): Inicio → Habitaciones → Reservaciones → Huéspedes → Caja. Luego el opcional.
+2. **Primero el núcleo** (6 min): Inicio → Habitaciones → Reservaciones → Huéspedes → Caja. Luego, si existe interés, un opcional. El recorrido exacto está en `22_manual_demostracion_express.md`.
 3. **No tocar lo que no se vende.** Compras, proveedores, cuentas por pagar y Huésped frecuente están fuera de la oferta: no abrirlos ni mencionarlos.
 4. **Si algo falla en vivo, se dice.** Nunca improvisar una explicación de una pantalla que no cargó.
 5. Cada guion trae su **frontera**: lo que hay que decir en voz alta para no crear una expectativa falsa. No es letra chica, es parte del guion.

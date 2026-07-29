@@ -39,7 +39,7 @@
 
 1. Apertura con referencia local vs. apertura con problema.
 2. Demo presencial de 3 min vs. video breve.
-3. Piloto con depósito acreditable vs. sin depósito, solo cuando sea viable.
+3. Piloto gratuito presentado después de una microdemostración vs. presentado ante una objeción de confianza.
 4. Precio por habitaciones: registrar reacción sin descuento inmediato.
 
 No cambiar dos variables a la vez con el mismo prospecto.

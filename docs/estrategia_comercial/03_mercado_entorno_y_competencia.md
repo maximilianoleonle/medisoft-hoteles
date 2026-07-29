@@ -54,16 +54,11 @@ Estas metas son **P** y deben ajustarse al número real de días.
 3. Las tarifas dinámicas tienen valor potencial donde existen temporadas claras, pero no deben describirse como inteligencia automática.
 4. En temporada baja el argumento puede ser control y preparación; en temporada alta, visibilidad y reducción de confusión.
 
-## PESTEL orientado a decisiones
+## PESTEL
 
-| Factor | Evidencia/hipótesis | Implicación |
-|---|---|---|
-| Político | Pueblo Mágico y promoción turística oficial. **DV** | El destino mantiene visibilidad institucional; no garantiza demanda para cada hotel. |
-| Económico | Predominan categorías bajas y “otros”. **DV** | Alta sensibilidad al precio; conviene entrada simple y costo predecible. |
-| Social | Peregrinación, grupos y estacionalidad religiosa. **DV/I** | Hablar de operación en picos y familiaridad, no de lujo tecnológico. |
-| Tecnológico | Nivel de digitalización hotel por hotel no disponible. **Dato no disponible** | Debe diagnosticarse; no asumir que “todos usan libreta”. |
-| Ecológico | Geografía y conectividad vial pueden afectar acceso. **I** | Soporte remoto y plan de contingencia de internet deben explicarse. |
-| Legal | Los hoteles y Medisoft tratan datos personales; aplica la LFPDPPP vigente. **DV** | Aviso de privacidad, responsabilidades y medidas de seguridad son requisito previo al escalamiento. |
+El PESTEL resumido anterior fue sustituido por un análisis independiente, con evidencia, riesgos, oportunidades, decisiones y una sección legal ampliada:
+
+[Abrir PESTEL profundo](03A_pestel_profundo.md).
 
 ## Competencia
 

@@ -6,19 +6,19 @@ Estos son los únicos temas que requieren respuesta humana antes de convertir pr
 
 1. Razón/nombre legal que contratará, forma de facturación e IVA.
 2. Cuenta y medio autorizado para recibir pagos.
-3. Aprobación de precios provisionales.
+3. Construcción y aprobación de precios definitivos; las cifras actuales son hipótesis internas.
 4. Contrato, aviso de privacidad y responsabilidades de tratamiento de datos revisados por profesional legal.
 
 ## Max debe confirmar antes de prometer
 
-1. Hosting productivo y responsable.
-2. Respaldos realmente activos, último éxito y prueba de restauración.
-3. horario/canal de soporte y primera respuesta sostenible;
-4. capacidad de instalaciones simultáneas;
-5. navegadores/dispositivos soportados;
-6. procedimiento ante caída de internet/servidor;
-7. qué carga inicial y personalización se incluye;
-8. límite de almacenamiento del Centro documental.
+1. Configurar y comprobar copia externa de respaldos fuera del VPS.
+2. Conservar evidencia de la última verificación de restauración y aclarar la contradicción con la respuesta “no se ha probado”.
+3. Instalar monitor externo con alerta inmediata.
+4. Convertir “respuesta inmediata” en un tiempo objetivo sostenible por prioridad.
+5. Definir cuántas altas simultáneas puede atender el equipo, independientemente de la capacidad del servidor.
+6. Definir qué volumen/formato de migración se incluye sin costo.
+7. Definir personalizaciones excluidas y cuáles se cotizan.
+8. Política de ampliación, conservación y purga física del Centro documental.
 
 ## Producto
 

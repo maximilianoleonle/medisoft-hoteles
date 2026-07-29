@@ -605,3 +605,57 @@ La etapa interna puede considerarse suficientemente completa para iniciar invest
 - Se conocen las incógnitas que no puede resolver el código.
 
 Las preguntas de Max y clientes no bloquean el inicio de la investigación de mercado, pero deberán resolverse antes de cerrar oferta, precio, contrato y promesa de soporte.
+
+## 24. Respuestas proporcionadas por Max — actualización 27 de julio de 2026
+
+### Alojamiento actual
+
+- Hotel San Nicolás continúa en hosting exclusivo; fue el hotel base anterior a la arquitectura multihotel.
+- Hotel Los Cedros opera/probará la versión multihotel en el VPS.
+
+### Configuración
+
+- Max estima que crear y configurar inicialmente un hotel, con presencia del dueño para asignar datos, toma menos de 10 minutos.
+- Este tiempo no incluye necesariamente depuración/migración de datos, configuración detallada, capacitación, pruebas y acompañamiento.
+
+### Migración
+
+- Max declaró que puede migrar cualquier dato sin costo.
+- Comercialmente debe revisarse formato, volumen y calidad antes de prometer alcance ilimitado.
+
+### Compatibilidad
+
+- Navegadores oficialmente indicados: Chrome y Microsoft Edge.
+
+### Disponibilidad y fallas
+
+- Docker reinicia aplicación/base ante ciertas fallas.
+- Reinicio completo estimado: 1–2 minutos.
+- Existe vigilancia interna diaria, pero no monitor externo con aviso inmediato.
+- Durante una caída recepción trabaja temporalmente en papel y captura después.
+
+### Respaldos
+
+- Se declaró respaldo diario aproximadamente a las 3:30.
+- Se reportó una verificación reciente de restauración de 126 tablas en aproximadamente cinco segundos.
+- La cifra debe conservarse con evidencia técnica antes de utilizarse comercialmente.
+- Los respaldos permanecen en el mismo VPS.
+- La copia externa mediante Backblaze/rclone está preparada, pero faltan credenciales/configuración.
+- La pérdida completa del VPS sigue siendo el riesgo crítico.
+
+### Soporte
+
+- Canal: WhatsApp.
+- Horario: 10:00 a 20:00.
+- Max indicó respuesta “inmediata”; antes de convertirlo en promesa debe definirse un tiempo objetivo sostenible y excepciones.
+
+### Capacidad
+
+- Estimación del servidor: aproximadamente 25–30 hoteles.
+- La carga de 100 usuarios se probó en desarrollo, no contra el VPS.
+- La capacidad de soporte humano probablemente limitará antes que la base de datos.
+- El código actual sí contiene cuota documental de 2 GB, aviso al 80% y bloqueo de nuevas cargas; la afirmación de que no existía estaba desactualizada.
+
+### Personalizaciones
+
+- Exclusiones todavía no definidas.

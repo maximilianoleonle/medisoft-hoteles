@@ -169,7 +169,7 @@ Construir:
 - Mensajes por segmento.
 - Precio basado en mercado, valor y sostenibilidad.
 
-**Estado:** completado como propuesta utilizable y experimental en `docs/estrategia_comercial/07_posicionamiento_oferta_y_precio.md`. Precio, impuestos, contrato y soporte requieren las confirmaciones imprescindibles listadas.
+**Estado:** reabierto y corregido después de revisión comercial. Se eliminó el depósito, el piloto quedó gratuito y orientado a ganar confianza, y el precio permanece como hipótesis interna no aprobada. La etapa sigue sujeta a revisión de la responsable comercial.
 
 ## 8. Proceso de venta consultiva
 
@@ -188,7 +188,7 @@ Embudo:
 11. Capacitación.
 12. Retención y referidos.
 
-**Estado:** completado en `docs/estrategia_comercial/08_proceso_venta_consultiva.md`.
+**Estado:** reabierto por revisión comercial. Para las visitas inmediatas, el proceso fue sustituido por una ruta más cálida y conversacional en `docs/estrategia_comercial/21_capacitacion_venta_presencial_manana.md`.
 
 ## 9. Herramientas comerciales
 
@@ -210,7 +210,7 @@ Preparar:
 - Solicitud de referidos.
 - Contenido por etapa del embudo.
 
-**Estado:** kit textual completado en `docs/estrategia_comercial/09_herramientas_comerciales.md`. La producción gráfica y audiovisual depende de identidad/activos y no bloquea visitas.
+**Estado:** el manual detallado se conserva como biblioteca de consulta, pero su tono fue moderado y condensado para uso real en `docs/estrategia_comercial/21_capacitacion_venta_presencial_manana.md`. Incluye rutas separadas para recomendación y visita en frío.
 
 ## 10. Capacitación y práctica
 

@@ -91,21 +91,28 @@ foreach ($motivos as $clave => $motivo) {
         "{$clave} bloqueado con su motivo exacto");
 }
 
-// 5) Reportes individuales.
+// 5) Reportes individuales: A LA VENTA desde 20260728_001 (owner, 2026-07-28).
+//    Precio de lista autorizado $49.00 c/u. Antes de esa fecha el contrato era el
+//    inverso (bloqueados, precio provisional 0, con motivo); si alguien los vuelve
+//    a bloquear o les borra el precio, este bloque lo caza.
 $REPORTES = ['reporte_ingresos_egresos', 'reporte_procedencia', 'reporte_habitaciones_rentables', 'reporte_ocupacion', 'reporte_promedio_estancia'];
-$stmt = $pdo->query("SELECT clave, tipo_comercial, activo_global, precio_mensual, motivo_bloqueo FROM modulos WHERE clave LIKE 'reporte\\_%' ORDER BY clave");
+$stmt = $pdo->query("SELECT clave, tipo_comercial, es_core, activo_global, precio_mensual, motivo_bloqueo FROM modulos WHERE clave LIKE 'reporte\\_%' ORDER BY clave");
 $reportes = $stmt->fetchAll();
 $clavesReportes = array_column($reportes, 'clave');
 sort($REPORTES);
 v_ok($clavesReportes === $REPORTES, 'existen exactamente los 5 reportes individuales autorizados');
 $reportesSanos = true;
 foreach ($reportes as $m) {
-    if ($m['tipo_comercial'] !== 'opcional' || (int) $m['activo_global'] !== 0
-        || (float) $m['precio_mensual'] != 0.0 || empty($m['motivo_bloqueo'])) {
+    // Mismo criterio que $OPCIONALES_VENTA: vendible = opcional, no core, gate
+    // abierto, precio > 0 (cobrar 0 es regalarlo) y sin motivo_bloqueo arrastrado
+    // (el panel lo pintaria como "no disponible aun" estando a la venta).
+    if ($m['tipo_comercial'] !== 'opcional' || (int) $m['es_core'] !== 0
+        || (int) $m['activo_global'] !== 1
+        || (float) $m['precio_mensual'] <= 0.0 || !empty($m['motivo_bloqueo'])) {
         $reportesSanos = false;
     }
 }
-v_ok($reportesSanos, 'reportes individuales: opcionales, precio provisional 0, bloqueados con motivo');
+v_ok($reportesSanos, 'reportes individuales: opcionales a la venta, con precio > 0 y sin motivo de bloqueo');
 
 // 5-bis) Opcionales A LA VENTA: lista exacta autorizada por el owner (2026-07-25).
 //        Espeja la proteccion de $BASE: si un bloque se desbloquea o se bloquea

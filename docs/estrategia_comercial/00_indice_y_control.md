@@ -22,6 +22,8 @@ Cada afirmación relevante se clasifica como:
 1. [Ruta maestra y estado de todas las etapas](../ruta_maestra_estrategia_comercial.md).
 2. [Resumen completo de resultados y decisiones](01_resumen_ejecutivo_para_la_duena.md).
 3. [Únicos pendientes que necesitan respuesta tuya o de Max](12_pendientes_imprescindibles.md).
+4. [Capacitación única para las visitas presenciales de mañana](21_capacitacion_venta_presencial_manana.md).
+5. [Manual de demostración express del sistema](22_manual_demostracion_express.md).
 
 ### Análisis del producto
 
@@ -31,33 +33,35 @@ Cada afirmación relevante se clasifica como:
 ### Investigación y estrategia
 
 6. [Mercado, entorno, PESTEL y competencia](03_mercado_entorno_y_competencia.md).
-7. [Investigación directa: preguntas para los hoteles](04_investigacion_directa.md).
-8. [Segmentación y mercado meta](05_segmentacion_y_mercado_meta.md).
-9. [Buyer personas y comité de compra](06_buyer_personas_y_compra.md).
-10. [Posicionamiento, oferta, piloto y precios](07_posicionamiento_oferta_y_precio.md).
+7. [PESTEL profundo, con factor legal ampliado](03A_pestel_profundo.md).
+8. [Investigación directa: preguntas para los hoteles](04_investigacion_directa.md).
+9. [Segmentación y mercado meta](05_segmentacion_y_mercado_meta.md).
+10. [Buyer personas y comité de compra](06_buyer_personas_y_compra.md).
+11. [Posicionamiento, oferta, piloto y precios](07_posicionamiento_oferta_y_precio.md).
 
 ### Cómo vender
 
-11. [Proceso de venta consultiva](08_proceso_venta_consultiva.md).
-12. [Guiones, WhatsApp, objeciones y cierres](09_herramientas_comerciales.md).
-13. [Capacitación y práctica](10_capacitacion_y_practica.md).
-14. [Prueba de campo y medición](11_prueba_campo_y_medicion.md).
+12. [Proceso de venta consultiva](08_proceso_venta_consultiva.md).
+13. [Manual profundo de venta presencial, objeciones y cierres](09_herramientas_comerciales.md).
+14. [Capacitación y práctica](10_capacitacion_y_practica.md).
+15. [Prueba de campo y medición](11_prueba_campo_y_medicion.md).
 
 ### Herramientas listas para utilizar
 
-15. [Directorio inicial de hoteles](13_directorio_inicial_prospectos.md).
-16. [Plantilla de propuesta comercial](14_plantilla_propuesta.md).
-17. [Acuerdo de piloto de 30 días](15_acuerdo_piloto_30_dias.md).
-18. [Campos para registrar prospectos](16_crm_campos_y_catalogos.md).
-19. [Guion de presentación comercial](17_presentacion_comercial_guion.md).
-20. [Onboarding, soporte y retención](18_onboarding_soporte_y_retencion.md).
-21. [Entrevista a clientes actuales (Los Cedros y San Nicolás)](19_entrevista_clientes_actuales.md).
-22. [Guiones de demostración por bloque](20_guiones_demostracion.md).
+16. [Directorio inicial de hoteles](13_directorio_inicial_prospectos.md).
+17. [Plantilla de propuesta comercial](14_plantilla_propuesta.md).
+18. [Acuerdo de piloto de 30 días](15_acuerdo_piloto_30_dias.md).
+19. [Campos para registrar prospectos](16_crm_campos_y_catalogos.md).
+20. [Guion de presentación comercial](17_presentacion_comercial_guion.md).
+21. [Onboarding, soporte y retención](18_onboarding_soporte_y_retencion.md).
+22. [Entrevista a clientes actuales (Los Cedros y San Nicolás)](19_entrevista_clientes_actuales.md).
+23. [Guiones de demostración por bloque](20_guiones_demostracion.md).
+24. [Manual de demostración express del sistema](22_manual_demostracion_express.md).
 
 ### Fronteras del producto (qué NO prometer)
 
-23. [Qué avisa el sistema hoy](../notificaciones-que-genera-el-sistema.md) — inventario verificado de notificaciones.
-24. [Política del Centro documental](../politica-centro-documental.md) — cuota, retención y responsabilidades.
+25. [Qué avisa el sistema hoy](../notificaciones-que-genera-el-sistema.md) — inventario verificado de notificaciones.
+26. [Política del Centro documental](../politica-centro-documental.md) — cuota, retención y responsabilidades.
 
 ## Regla de uso
 

@@ -815,7 +815,7 @@ La demostración no debe recorrer los 17 módulos. Para un hotel que todavía tr
 5. Caja: control del turno.
 6. Elegir un solo opcional según el dolor descubierto.
 
-Duración objetivo inicial: 8–12 minutos. Los demás módulos se muestran únicamente si el prospecto confirma que ese problema existe.
+Duración objetivo inicial: 6 minutos; puede ampliarse hasta 10 si el prospecto demuestra interés. Los demás módulos se muestran únicamente si confirma que ese problema existe. El recorrido actualizado está en `estrategia_comercial/22_manual_demostracion_express.md`.
 
 ## 7. Promesa central provisional
 

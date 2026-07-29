@@ -1,5 +1,11 @@
 # Etapa 7 — Posicionamiento, oferta, piloto y precio
 
+## Dictamen corregido
+
+La primera versión trató el piloto principalmente como filtro de prospectos y propuso un depósito. Ese enfoque no corresponde a la situación de Medisoft: la marca está entrando al mercado y necesita reducir el riesgo percibido, demostrar el producto y ganar confianza. **Se retira completamente el depósito de $500.**
+
+El piloto será una herramienta de persuasión basada en experiencia real, no una presión para que el hotel pague antes de conocer el sistema.
+
 ## Posicionamiento recomendado
 
 > Medisoft ayuda a hoteles independientes a pasar de libretas, archivos y mensajes separados a una operación organizada de habitaciones, reservaciones, huéspedes y caja, con configuración, capacitación y acompañamiento directo.
@@ -40,9 +46,40 @@ Dashboard, Habitaciones, Reservaciones, Huéspedes, Caja, Usuarios, Roles y perm
 
 Carga histórica, integraciones, hardware, captura masiva y desarrollo personalizado se cotizan aparte.
 
-## Arquitectura de precio recomendada para validar
+## Centro documental y sus 2 GB
 
-El precio final no puede calcularse con rigor hasta conocer costos y disposición de pago. Para no salir sin precio se propone un **precio de lanzamiento experimental**, mensual por hotel, IVA no especificado hasta definir situación fiscal:
+El precio del Centro documental incluye actualmente una cuota técnica de 2 GB por hotel.
+
+Comportamiento comprobado:
+
+- el sistema avisa cuando se utiliza 80%;
+- al alcanzar la cuota, bloquea cualquier archivo nuevo que no quepa;
+- muestra espacio usado y disponible;
+- cada archivo admite normalmente hasta 10 MB;
+- archivos activos y archivados cuentan contra la cuota;
+- al dar de baja un documento, deja de contar contra la cuota;
+- pero el archivo físico continúa en el servidor y la purga definitiva todavía está pendiente.
+
+Por tanto, la oferta correcta no puede decir solamente “2 GB y después se elimina”. Debe decir:
+
+> Incluye hasta 2 GB de almacenamiento documental. Al acercarse al límite revisaremos con el hotel qué documentos deben conservarse, darse de baja o trasladarse. Cualquier ampliación se cotizará y autorizará antes de aplicarse.
+
+Antes de vender ampliaciones deben definirse:
+
+1. precio por bloque adicional;
+2. tamaño de bloque —por ejemplo, 1 GB—;
+3. conservación de documentos dados de baja;
+4. plazo de recuperación;
+5. purga física segura;
+6. respaldo de archivos;
+7. qué ocurre al cancelar;
+8. quién autoriza una eliminación irreversible.
+
+Mientras esto no exista, el Centro documental puede mostrarse, pero no debe ofrecerse como almacenamiento ilimitado ni cobrarse automáticamente por excedentes.
+
+## Arquitectura de precio para investigar, no para imponer
+
+El precio final no puede calcularse con rigor hasta conocer costos, soporte y disposición de pago. La siguiente tabla es una **hipótesis interna**, no una tarifa aprobada para salir a vender:
 
 | Tamaño | Base mensual provisional |
 |---|---:|
@@ -57,7 +94,7 @@ Opcionales provisionales:
 |---|---:|
 | Inventario | $199 |
 | Seguimiento de facturación | $149 |
-| Centro documental | $199 + límite de almacenamiento por definir |
+| Centro documental | $199 con 2 GB; ampliación todavía no vendible |
 | Reputación y encuestas | $199, no vender hasta resolver Google |
 | Descuentos de huésped | $99 |
 | Tarifas dinámicas | $199 |
@@ -84,9 +121,15 @@ Antes de formalizar:
 
 ## Piloto guiado de 30 días
 
-### Cuándo ofrecerlo
+### Propósito
 
-Solo si el hotel tiene problema, ajuste funcional, decisor involucrado y voluntad de usarlo. No como rescate automático para alguien que no tiene interés.
+El piloto permite que un hotel que todavía no confía en una empresa nueva conozca Medisoft dentro de su operación. No se utiliza para amenazar con retirar la oferta ni para obligar a pagar.
+
+Se puede ofrecer cuando el hotel muestre curiosidad, una necesidad posible o temor al cambio, aunque todavía no esté listo para comprar. Antes de instalarlo sí necesitamos confirmar que alguien del hotel lo utilizará; de lo contrario, no existiría una prueba real que pudiera convencerlo.
+
+### Forma de ofrecerlo
+
+> Entiendo que todavía no conozca nuestra empresa y que no quiera decidir solo por una demostración. Podemos configurar Medisoft durante 30 días sin costo para que usted y su personal vean cómo funciona en su hotel. Nosotros los capacitamos y acompañamos. Al terminar, ustedes deciden con la experiencia real; si no les sirve, les entregamos la información exportable acordada en Excel.
 
 ### Condiciones
 
@@ -96,31 +139,50 @@ Solo si el hotel tiene problema, ajuste funcional, decisor involucrado y volunta
 - tareas que se usarán;
 - datos que cargará cada parte;
 - sesiones en días 1, 7, 15 y 30;
-- criterios de éxito;
-- fecha de decisión;
+- aspectos que el hotel quiere comprobar;
+- conversación final para conocer su decisión;
 - exportación a Excel si no continúa;
 - tratamiento y eliminación/conservación de datos documentados.
 
-### Recomendación económica
+### Costo
 
-Piloto sin mensualidad, pero con **depósito de compromiso de $500 MXN**, acreditable al primer pago si contrata. Si todavía no existe capacidad legal/fiscal para recibirlo correctamente, omitir el depósito y exigir compromiso operativo por escrito. **P.**
+**Piloto gratuito durante 30 días, sin depósito.**
 
-El depósito filtra curiosidad, pero puede reducir adopción; medir ambas variantes, no asumir.
+La reciprocidad solicitada no es dinero. Es:
+
+- permitir la configuración;
+- nombrar a una persona de contacto;
+- recibir capacitación;
+- intentar utilizarlo en tareas reales;
+- informar dudas y dificultades;
+- aceptar una conversación al concluir.
+
+Esto no es presión: son las condiciones mínimas para poder demostrar el valor.
 
 ### Criterios de éxito
 
-- al menos 80% de reservaciones nuevas registradas;
-- uso en ambos turnos aplicables;
-- caja utilizada según alcance acordado;
-- dos usuarios completan tareas esenciales sin ayuda;
-- dueño/administrador revisa el sistema al menos semanalmente;
-- decisión celebrada en día 30.
+- el personal pudo realizar las tareas acordadas;
+- el hotel identificó funciones útiles y dificultades;
+- hubo uso suficiente para comparar contra el método anterior;
+- el dueño o administrador recibió una explicación de resultados;
+- al final existe una decisión, una solicitud de extensión justificada o una razón clara para no continuar.
 
-No garantizar compra; el piloto valida adopción y ajuste.
+Los indicadores numéricos se acuerdan con el hotel según su volumen. No imponer “80% de reservaciones” sin conocer cómo opera.
+
+### Persuasión durante los 30 días
+
+- Día 0: preguntar qué necesita comprobar para confiar.
+- Día 1: acompañar la primera tarea real.
+- Día 3: resolver fricción temprana.
+- Día 7: mostrar un beneficio que ya haya ocurrido.
+- Día 15: comparar el método anterior y el nuevo.
+- Día 21: preguntar qué impediría continuar.
+- Día 27: resumir evidencia, resolver objeciones y presentar alcance final.
+- Día 30: pedir la contratación con claridad, sin castigo ni urgencia falsa.
 
 ## Cierre directo
 
-> Por lo que me explicó, el paquete base cubre [problemas]. Podemos configurarlo el [fecha] por $[importe] al mes. ¿Prefiere iniciar directamente o necesita validar el uso con el piloto guiado de 30 días?
+> Por lo que me explicó, el paquete base puede ayudarles con [problemas]. Si usted ya tiene claridad, podemos iniciar directamente. Si primero necesita comprobarlo y conocer cómo trabajamos, podemos acompañarlos durante un piloto gratuito de 30 días. ¿Cuál de las dos opciones le daría más seguridad?
 
 ## Comparación responsable
 

@@ -161,7 +161,7 @@ El piloto debe incluir:
 - reunión final de compra;
 - exportación acordada a Excel si no continúa.
 
-Se propuso experimentar con un depósito de compromiso de $500 acreditable al primer pago, pero solo si legal y fiscalmente puede recibirse correctamente. Necesita aprobación.
+El piloto será gratuito durante 30 días y no pedirá depósito. A cambio se solicita únicamente participación real: una persona responsable, capacitación, uso suficiente para evaluarlo y una conversación final. Su propósito es ganar confianza y demostrar el sistema, no presionar al hotel.
 
 [Abrir el acuerdo del piloto](15_acuerdo_piloto_30_dias.md).
 

@@ -19,7 +19,7 @@ Resuelve el pendiente 5 de `auditoria_comercial_modulos_20260725.md` §9 y el pu
 Un tipo de documento puede tener un tope propio más bajo (`documento_tipos.max_size_mb`); nunca uno más alto que los 10 MB.
 
 **Qué consume cuota:** documentos **activos y archivados**. Archivar organiza, no libera disco.
-**Qué no consume:** los dados de **baja**. Es la vía del hotelero para recuperar espacio sin llamar a soporte.
+**Qué deja de contar contra la cuota visible:** los dados de **baja**. Sin embargo, el archivo físico permanece en el servidor; por ello la baja no resuelve por sí sola el consumo real del disco.
 
 ## 2. Qué pasa al borrar (leer antes de prometer)
 
@@ -38,11 +38,11 @@ Sujeta a validación legal (punto 4 de "Antes de cobrar o firmar" en `estrategia
 | Documento activo | Mientras el hotel sea cliente |
 | Documento dado de baja | 30 días recuperable, luego purga física (cuando exista la purga) |
 | Fin del contrato | 30 días para exportar; después, borrado a solicitud escrita |
-| Respaldo | Incluido en el respaldo diario de la base (`tools/backup_db.sh`) |
+| Respaldo | Existe capacidad técnica para respaldar base y archivos; debe comprobarse que la programación diaria esté activa en producción |
 
 ## 4. Responsabilidades
 
-El Centro documental guarda con frecuencia **identificaciones de huéspedes**: eso es dato personal sensible y define quién responde por él.
+El Centro documental puede guardar **identificaciones de huéspedes** y otros datos personales. Una identificación no debe clasificarse automáticamente como dato sensible: depende del contenido y del tratamiento. Aun cuando no sea sensible, requiere protección y una finalidad justificada.
 
 - **El hotel es el responsable** de los datos: decide qué sube, con qué base legal y a quién da acceso. Su aviso de privacidad debe contemplarlo.
 - **Medisoft es encargado del tratamiento**: resguarda, controla accesos y no usa los documentos para otro fin.
