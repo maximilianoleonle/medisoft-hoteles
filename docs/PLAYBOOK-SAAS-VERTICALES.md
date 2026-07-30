@@ -735,6 +735,29 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
     (en hoteles: la descripción automática de la habitación y el ejemplo del
     campo libre), o la pantalla dice una cosa y el texto guardado otra.
 
+35. **El offline se dispara por LENTITUD, no por caída (verificado jul 2026).**
+    Todo modo sin conexión que se construye asume el corte limpio —red caída,
+    modo avión— y ese es el caso RARO. El común en cualquier negocio con clientes
+    enfrente es la señal mala: la antena sigue conectada, el servidor tarda, y
+    `fetch` **no falla: se cuelga** hasta que el navegador se rinde treinta
+    segundos o un minuto después. Durante todo ese rato el usuario ve la pantalla
+    anterior congelada, con la copia guardada lista al lado y sin que el sistema
+    se haya enterado de nada. El veredicto del cliente no es "mi internet está
+    mal", es "su software es lentísimo". Patrón: cada estrategia de caché lleva
+    un plazo medido contra **lo que se puede dar a cambio** —con copia guardada,
+    esperar más no compra nada (~3 s); sin nada que ofrecer, sí vale aguantar
+    (~9 s)— con tres reglas que no son negociables. (a) **Las escrituras nunca
+    llevan plazo**: abortar un POST que quizá ya llegó al servidor duplica un
+    cobro; el corte es solo para lecturas idempotentes. (b) **El plazo no cancela
+    la petición** de páginas: la respuesta que llega tarde refresca el caché y la
+    siguiente pantalla ya sale fresca; solo se abortan las de API, que las vistas
+    repiten solas. (c) **"Lento" y "sin conexión" son mensajes distintos**:
+    decirle a alguien que no tiene internet cuando sí lo tiene lo manda a pelear
+    con su módem y a desconfiar del producto, así que el motivo viaja hasta el
+    último cartel. Barato de verificar y casi imposible de ver en el navegador
+    (el throttling entrega las respuestas, solo lentas): se prueba con un arnés
+    que le pasa al service worker un `fetch` que nunca resuelve.
+
 ---
 
 ## §4. LO PROHIBIDO (errores pagados una vez; no se pagan dos)

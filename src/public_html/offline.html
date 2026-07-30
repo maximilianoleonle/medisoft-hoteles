@@ -299,7 +299,7 @@
             </div>
             <span class="status-pill">
                 <span class="status-dot" aria-hidden="true"></span>
-                Sin internet
+                <span id="offlineEstadoPill">Sin internet</span>
             </span>
             <h1 id="offline-title">Sin conexión</h1>
             <p id="hotelName" class="hotel-name">Medisoft Hoteles</p>
@@ -317,7 +317,7 @@
                 <div id="accesosLista" class="offline-links__grid"></div>
             </nav>
 
-            <div class="offline-note">
+            <div class="offline-note" id="offlineNota">
                 Cuando la conexión regrese, el sistema intentará cargar nuevamente la información del hotel.
             </div>
             <button class="retry-button" type="button" onclick="window.location.reload()">
@@ -444,6 +444,27 @@
             // (el arranque ya entra solo a la ultima copia buena). Aun asi puede
             // haber pantallas guardadas para una ruta que no las tenia: se ofrecen
             // en vez de dejar al hotelero con un boton que recarga lo que fallo.
+            // ── "No hay internet" y "el internet no responde" no son lo mismo ──
+            // El service worker pone esta bandera cuando se rindió por lentitud,
+            // no por caída. Decirle a alguien que SÍ tiene internet que no lo
+            // tiene lo manda a pelearse con el módem y a culpar al sistema.
+            var RED_LENTA = window.MEDISOFT_RED_LENTA === true;
+
+            function texto(id, valor) {
+                var nodo = document.getElementById(id);
+                if (nodo) nodo.textContent = valor;
+            }
+
+            function ajustarPorRedLenta() {
+                if (!RED_LENTA) return;
+
+                document.documentElement.setAttribute('data-motivo', 'lenta');
+                texto('offlineEstadoPill', 'Internet lento');
+                texto('offline-title', 'Tu internet está muy lento');
+                texto('offlineMensaje', 'La pantalla no alcanzó a cargar y preferimos no dejarte esperando. Tu internet responde, pero muy despacio.');
+                texto('offlineNota', 'Puedes volver a intentarlo ahora o seguir con lo que ya está guardado en este equipo.');
+            }
+
             var PAGES_CACHE = 'loscedros-pages';
             var PANTALLAS = [
                 ['dashboard', 'Inicio'],
@@ -509,7 +530,9 @@
                     if (mensaje) {
                         // Solo CONSULTA: la captura de escrituras sin conexion esta
                         // apagada (/api/sync responde 423). Nada de "se enviara solo".
-                        mensaje.textContent = 'No hay internet, pero lo último que abriste sigue disponible para consultarlo.';
+                        mensaje.textContent = RED_LENTA
+                            ? 'Tu internet está muy lento. Mientras se acomoda, lo último que abriste sigue disponible para consultarlo.'
+                            : 'No hay internet, pero lo último que abriste sigue disponible para consultarlo.';
                     }
                 }).catch(function () {});
             }
@@ -575,6 +598,7 @@
                 };
             }
 
+            ajustarPorRedLenta();
             pintarAccesos();
             pintarPendientes();
 

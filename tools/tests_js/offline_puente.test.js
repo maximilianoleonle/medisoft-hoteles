@@ -9,22 +9,33 @@ const HTML = fs.readFileSync('src/public_html/offline.html', 'utf8');
 const SCRIPT = [...HTML.matchAll(/<script>([\s\S]*?)<\/script>/g)][1][1];
 const ORIGIN = 'https://medisoft-hoteles.com';
 
+// Los nodos arrancan con el texto REAL del archivo, no vacios: asi se puede
+// afirmar que un texto NO se toco (y no confundirlo con "quedo en blanco").
+function textoInicialDe(id) {
+  const m = HTML.match(new RegExp('id="' + id + '"[^>]*>([\\s\\S]*?)<'));
+  return m ? m[1].trim() : '';
+}
+
 function nuevoDom() {
   const nodos = {};
   const crear = (id) => ({
-    id, textContent: '', hidden: true, className: '', href: '', src: '', alt: '',
+    id, textContent: textoInicialDe(id), hidden: true, className: '', href: '', src: '', alt: '',
     hijos: [], style: {},
     appendChild(n) { this.hijos.push(n); },
     classList: { toggle() {}, add() {}, remove() {} },
   });
 
   ['hotelName', 'hotelLogo', 'hotelLogoFallback', 'offlineMensaje',
-   'pendientesAviso', 'accesosOffline', 'accesosLista'].forEach(id => { nodos[id] = crear(id); });
+   'pendientesAviso', 'accesosOffline', 'accesosLista',
+   'offlineEstadoPill', 'offline-title', 'offlineNota'].forEach(id => { nodos[id] = crear(id); });
+
+  const raiz = { atributos: {}, style: { setProperty() {} }, setAttribute(k, v) { this.atributos[k] = v; } };
 
   return {
     nodos,
+    raiz,
     document: {
-      documentElement: { style: { setProperty() {} } },
+      documentElement: raiz,
       title: '',
       getElementById: (id) => nodos[id] || null,
       createElement: () => crear('nuevo'),
@@ -69,11 +80,13 @@ function indexedDbCon(operaciones) {
   };
 }
 
-async function correr({ rutasEnCache = [], operaciones = [], conIndexedDb = true }) {
+async function correr({ rutasEnCache = [], operaciones = [], conIndexedDb = true, redLenta = false }) {
   const dom = nuevoDom();
   const almacen = { 'loscedros_offline_db_name': 'medisoft-hotel-2-user-1' };
 
   const window = {
+    // La pone el service worker cuando se rindio por LENTITUD, no por caida.
+    MEDISOFT_RED_LENTA: redLenta ? true : undefined,
     localStorage: {
       getItem: (k) => (k in almacen ? almacen[k] : null),
       setItem() {},
@@ -89,7 +102,7 @@ async function correr({ rutasEnCache = [], operaciones = [], conIndexedDb = true
   );
 
   await new Promise(r => setTimeout(r, 30));
-  return dom.nodos;
+  return Object.assign(dom.nodos, { _raiz: dom.raiz });
 }
 
 const casos = [];
@@ -158,6 +171,36 @@ caso('Cola vacia -> no muestra aviso', async () => {
 caso('Sin IndexedDB disponible -> no truena', async () => {
   const n = await correr({ rutasEnCache: ['dashboard'], conIndexedDb: false });
   return [String(n.accesosOffline.hidden), 'false'];
+});
+
+// ── Internet LENTO no es internet CAIDO (v28) ────────────────────────────────
+// Decirle "sin conexión" a alguien cuyo internet SI funciona lo manda a pelearse
+// con el modem y a culpar al sistema; el muro tiene que decir lo que pasa.
+
+caso('Sin bandera -> el muro habla igual que siempre', async () => {
+  const n = await correr({ rutasEnCache: [] });
+  const ok = n['offline-title'].textContent === 'Sin conexión' &&
+    n.offlineEstadoPill.textContent === 'Sin internet' &&
+    n._raiz.atributos['data-motivo'] === undefined;
+  return [ok ? 'SIN CAMBIOS' : 'MAL: ' + n['offline-title'].textContent, 'SIN CAMBIOS'];
+});
+
+caso('Con bandera de red lenta -> titulo, insignia y nota lo dicen', async () => {
+  const n = await correr({ rutasEnCache: [], redLenta: true });
+  const ok = n['offline-title'].textContent === 'Tu internet está muy lento' &&
+    n.offlineEstadoPill.textContent === 'Internet lento' &&
+    /no alcanzó a cargar/.test(n.offlineMensaje.textContent) &&
+    !/[Ss]in conexión/.test(n.offlineMensaje.textContent) &&
+    n._raiz.atributos['data-motivo'] === 'lenta';
+  return [ok ? 'HABLA DE LENTITUD' : 'MAL: ' + n['offline-title'].textContent, 'HABLA DE LENTITUD'];
+});
+
+caso('Red lenta CON pantallas guardadas -> ofrece consultarlas sin negar el internet', async () => {
+  const n = await correr({ rutasEnCache: ['dashboard', 'caja'], redLenta: true });
+  const t = n.offlineMensaje.textContent;
+  const ok = n.accesosOffline.hidden === false &&
+    t.includes('muy lento') && t.includes('para consultarlo') && !t.includes('No hay internet');
+  return [ok ? 'OFRECE Y NO MIENTE' : 'MAL: ' + t, 'OFRECE Y NO MIENTE'];
 });
 
 (async () => {

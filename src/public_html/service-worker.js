@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v27'; // v27: cinta "estos datos son de antes" + aviso de filtro no aplicado
+const SW_VERSION = 'v28'; // v28: con senal debil no se espera a la red, se entra a lo guardado
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -35,6 +35,63 @@ const OFFLINE_ARRANQUE_PATHS = /^(h\/[a-z0-9-]+\/login|login|)([?#]|$)/;
 // con mala señal en los pasillos. Cada rol solo cachea lo que puede abrir, asi
 // que el orden no le quita su pantalla a nadie.
 const OFFLINE_ENTRY_PAGES = ['dashboard', 'camarista', 'habitaciones', 'reservaciones', 'caja', 'huespedes'];
+
+// ─── Paciencia con la red ────────────────────────────────────────────────────
+// Un `fetch` con mala senal NO falla: se queda colgado. La antena sigue viva y
+// el navegador espera su propio limite (30 s, a veces mas de un minuto) antes de
+// rendirse. Mientras tanto la pantalla anterior queda congelada, el hotelero
+// vuelve a picarle y concluye "el sistema esta lentisimo" — cuando el sistema ni
+// se ha enterado y la copia guardada estaba lista desde el primer segundo.
+//
+// La paciencia se mide contra LO QUE PODEMOS DAR A CAMBIO: si hay copia, esperar
+// mas no compra nada; si no hay nada que servir, aguantar si vale la pena porque
+// la alternativa es el muro. Los plazos NO cancelan la peticion (salvo las de
+// API): la respuesta que llegue tarde sigue sirviendo para refrescar el cache y
+// que la siguiente pantalla ya salga fresca.
+const ESPERA = {
+  conCopia: 3000, // hay copia guardada de esta pantalla
+  sinCopia: 9000, // no hay nada que ofrecer: se le da su oportunidad a la red
+  arranque: 4000, // abrir la app: el precio de equivocarse es entrar a lo viejo
+  api:      7000, // el widget cae a su estado sin conexion en vez de girar
+  asset:    2500, // hay otra version del mismo archivo en cache
+};
+
+const AGOTADO = Symbol('agotado'); // se acabo el plazo (la red sigue intentando)
+const FALLO   = Symbol('fallo');   // la red dijo que no de inmediato
+
+/**
+ * Mantiene vivo al service worker hasta que aterrice la respuesta tardia, para
+ * que alcance a dejar el cache fresco. Defensivo a proposito: si la ventana del
+ * evento ya se cerro, `waitUntil` LANZA — y seria absurdo tumbar la navegacion
+ * entera por un lujo (que la proxima pantalla salga al dia).
+ */
+function mantenerVivo(event, promesa) {
+  try {
+    event?.waitUntil(promesa.catch(() => {}));
+  } catch {
+    // El evento ya no acepta mas trabajo; la peticion sigue su curso igual.
+  }
+}
+
+/**
+ * Espera `promesa` como mucho `ms`. Nunca lanza: resuelve con el valor, con
+ * FALLO si la promesa se rompio o con AGOTADO si se acabo el plazo. Se puede
+ * volver a esperar la MISMA promesa despues (una promesa se puede leer muchas
+ * veces), que es como se le da una segunda oportunidad a la red sin repetir el
+ * viaje.
+ */
+function conLimite(promesa, ms) {
+  let temporizador;
+  const reloj = new Promise(resolve => {
+    temporizador = setTimeout(() => resolve(AGOTADO), ms);
+  });
+
+  return Promise.race([promesa.catch(() => FALLO), reloj])
+    .then(resultado => {
+      clearTimeout(temporizador);
+      return resultado;
+    });
+}
 
 // â”€â”€â”€ Assets del shell de la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SHELL_ASSETS = [
@@ -164,41 +221,39 @@ self.addEventListener('fetch', event => {
   // â”€â”€ 3. Rutas de API/AJAX â†’ Network Only con respuesta offline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (url.pathname.includes('/api/') ||
       request.headers.get('X-Requested-With') === 'XMLHttpRequest') {
-    event.respondWith(
-      fetch(request).catch(() =>
-        new Response(JSON.stringify({
-          success: false,
-          offline: true,
-          message: 'Sin conexiÃ³n a internet',
-        }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
-    );
+    event.respondWith(apiConEspera(request));
     return;
   }
 
   // â”€â”€ 4. Assets estÃ¡ticos locales â†’ Cache First â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (isSafeStaticAsset(url)) {
-    event.respondWith(cacheFirst(request, CACHE.shell));
+    event.respondWith(cacheFirst(request, CACHE.shell, event));
     return;
   }
 
   // â”€â”€ 5. PÃ¡ginas HTML privadas/dinamicas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (request.mode === 'navigate' ||
       (request.headers.get('accept') || '').includes('text/html')) {
+    // Precarga especulativa (instant-nav): esta NO debe recibir copia guardada.
+    // El navegador la guarda en su cache de precarga, asi que el clic abriria una
+    // pantalla vieja con cinta de "sin conexion" aunque para entonces la red ya
+    // este bien. Que la precarga falle es lo correcto: al hacer clic se navega de
+    // verdad y ahi si aplica todo lo demas.
+    if (esEspeculativa(request)) {
+      event.respondWith(soloRed(request, event));
+      return;
+    }
     // Pantallas operativas clave: network-first + ultima copia buena offline
     if (isOfflineCacheablePage(url)) {
-      event.respondWith(networkFirstPage(request));
+      event.respondWith(networkFirstPage(request, event));
       return;
     }
     // Arranque de la app: sin red entra a lo que si esta guardado.
     if (esRutaDeArranque(url)) {
-      event.respondWith(arranquePage(request));
+      event.respondWith(arranquePage(request, event));
       return;
     }
-    event.respondWith(networkOnlyPage(request));
+    event.respondWith(networkOnlyPage(request, event));
     return;
   }
 
@@ -377,26 +432,39 @@ async function cacheOfflineBrandingAssets(assets) {
 }
 
 /** Cache First: devuelve del cachÃ©, si no existe lo busca en red y lo guarda */
-async function cacheFirst(request, cacheName) {
+async function cacheFirst(request, cacheName, event) {
   const cached = await caches.match(request);
   if (cached) return cached;
 
-  try {
-    const response = await fetch(request);
+  const red = fetch(request).then(async response => {
     if (response.ok) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      await cache.put(request, response.clone());
     }
     return response;
-  } catch {
-    // Sin red: los assets versionados (?v=filemtime) no coinciden exacto con
-    // el precache (guardado sin query). Servir la ultima version conocida
-    // es mejor que un 503 estando offline.
-    const stale = await caches.match(request, { ignoreSearch: true });
-    if (stale) return stale;
+  });
+  mantenerVivo(event, red);
 
-    return new Response('Recurso no disponible offline', { status: 503 });
-  }
+  // El caso normal de miss NO es "asset nuevo": es que la URL trae ?v=filemtime
+  // y el precache lo guardo sin query. Con senal debil eso significa que CADA
+  // css/js de la pantalla se cuelga — la pagina llega desnuda y ahi si parece
+  // que el sistema se rompio. Por eso el plazo corto y la version vieja: un CSS
+  // de la semana pasada se ve bien; ninguno, no.
+  const pronto = await conLimite(red, ESPERA.asset);
+  if (pronto instanceof Response) return pronto;
+
+  // ignoreVary por la misma razon que en las pantallas: Apache manda
+  // `Vary: ...,User-Agent` y el UA cambia cuando el navegador se actualiza. Sin
+  // esto, un update de Safari dejaba este respaldo sin encontrar NADA (venia
+  // faltando desde antes de los plazos; lo destapo el arnes de v28).
+  const anterior = await caches.match(request, { ignoreSearch: true, ignoreVary: true });
+  if (anterior) return anterior;
+
+  // No hay version anterior que servir: se le da a la red el resto del plazo.
+  const tarde = pronto === AGOTADO ? await conLimite(red, ESPERA.sinCopia - ESPERA.asset) : pronto;
+  if (tarde instanceof Response) return tarde;
+
+  return new Response('Recurso no disponible offline', { status: 503 });
 }
 
 /** Stale While Revalidate: sirve del cachÃ© inmediatamente y actualiza en background */
@@ -440,41 +508,129 @@ function isOfflineCacheablePage(url) {
  * No guarda respuestas redirigidas (ej. sesion expirada -> login) ni errores,
  * para nunca "congelar" una pantalla equivocada.
  */
-async function networkFirstPage(request) {
-  try {
-    const response = await fetch(request);
-    notifyClients({ type: 'ONLINE' });
-
+async function networkFirstPage(request, event) {
+  const red = fetch(request).then(async response => {
+    // Se guarda aunque ya le hayamos servido la copia al hotelero: la respuesta
+    // que llega tarde deja lista la siguiente navegacion.
     if (response.ok && !response.redirected && response.status === 200) {
       const cache = await caches.open(CACHE.pages);
-      cache.put(request, response.clone());
+      await cache.put(request, response.clone());
     }
-
     return response;
-  } catch {
-    notifyClients({ type: 'OFFLINE' });
+  });
+  mantenerVivo(event, red);
 
-    const cache = await caches.open(CACHE.pages);
-
-    // 1) Copia EXACTA de lo que se pidio (misma URL, misma query).
-    // ignoreVary: la respuesta trae `Vary: ...,User-Agent` (Apache) y el UA cambia
-    // cuando el navegador se actualiza -> sin esto, un update de Safari invalidaria
-    // en silencio TODA la memoria offline del hotelero aunque siga guardada.
-    const exacta = await cache.match(request) ||
-      await cache.match(request, { ignoreVary: true });
-    if (exacta) return conCintaOffline(exacta);
-
-    // 2) Sin copia exacta: se sirve la de la misma ruta con OTRA query. Util
-    // (mejor eso que nada) pero hay que DECIRLO: pedir /huespedes?buscar=Ramirez
-    // y recibir la lista completa sin aviso es un resultado silenciosamente
-    // equivocado, y sobre eso se toman decisiones en el mostrador.
-    const otraQuery = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
-    if (otraQuery) {
-      return conCintaOffline(otraQuery, pidioBusquedaOFiltro(request.url));
-    }
-
-    return respuestaOffline();
+  const pronto = await conLimite(red, ESPERA.conCopia);
+  if (pronto instanceof Response) {
+    notifyClients({ type: 'ONLINE' });
+    return pronto;
   }
+
+  const guardada = await copiaGuardadaDePagina(request);
+  if (guardada) {
+    const lenta = pronto === AGOTADO;
+    notifyClients({ type: 'OFFLINE', lenta });
+    return conCintaOffline(guardada.respuesta, guardada.filtroNoAplicado, lenta);
+  }
+
+  // De esta pantalla no hay copia: la unica alternativa es el muro, asi que
+  // vale la pena darle a la red lo que le queda de plazo antes de rendirse.
+  const tarde = pronto === AGOTADO
+    ? await conLimite(red, ESPERA.sinCopia - ESPERA.conCopia)
+    : pronto;
+
+  if (tarde instanceof Response) {
+    notifyClients({ type: 'ONLINE' });
+    return tarde;
+  }
+
+  const lenta = tarde === AGOTADO;
+  notifyClients({ type: 'OFFLINE', lenta });
+  return respuestaOffline(lenta);
+}
+
+/** Peticion que el navegador hizo POR SU CUENTA, adelantandose al clic. */
+function esEspeculativa(request) {
+  const proposito = request.headers.get('Sec-Purpose') ||
+    request.headers.get('Purpose') || '';
+
+  return proposito.includes('prefetch') || proposito.includes('prerender');
+}
+
+/**
+ * Red pelada, sin respaldo: si falla, falla. Guarda la copia igual cuando la
+ * pantalla es de las cacheables — una precarga que si alcanzo a llegar deja
+ * lista la memoria offline, que es justo lo que queremos que pase con red buena.
+ */
+async function soloRed(request, event) {
+  const red = fetch(request).then(async response => {
+    if (isOfflineCacheablePage(new URL(request.url)) &&
+        response.ok && !response.redirected && response.status === 200) {
+      const cache = await caches.open(CACHE.pages);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  });
+
+  mantenerVivo(event, red);
+  return red;
+}
+
+/**
+ * La copia guardada de una pantalla, con la advertencia que le toca. null si de
+ * esa ruta no hay nada.
+ */
+async function copiaGuardadaDePagina(request) {
+  const cache = await caches.open(CACHE.pages);
+
+  // 1) Copia EXACTA de lo que se pidio (misma URL, misma query).
+  // ignoreVary: la respuesta trae `Vary: ...,User-Agent` (Apache) y el UA cambia
+  // cuando el navegador se actualiza -> sin esto, un update de Safari invalidaria
+  // en silencio TODA la memoria offline del hotelero aunque siga guardada.
+  const exacta = await cache.match(request) ||
+    await cache.match(request, { ignoreVary: true });
+  if (exacta) return { respuesta: exacta, filtroNoAplicado: false };
+
+  // 2) Sin copia exacta: se sirve la de la misma ruta con OTRA query. Util
+  // (mejor eso que nada) pero hay que DECIRLO: pedir /huespedes?buscar=Ramirez
+  // y recibir la lista completa sin aviso es un resultado silenciosamente
+  // equivocado, y sobre eso se toman decisiones en el mostrador.
+  const otraQuery = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
+  if (otraQuery) {
+    return { respuesta: otraQuery, filtroNoAplicado: pidioBusquedaOFiltro(request.url) };
+  }
+
+  return null;
+}
+
+/**
+ * API/AJAX con plazo. Aqui SI se cancela la peticion al vencer, a diferencia de
+ * las pantallas: son GET que las vistas repiten solas y una fila de peticiones
+ * colgadas sobre una antena mala se estorba entre si. El 503 es el que la app ya
+ * entiende — cada widget cae a su estado sin conexion en vez de girar sin fin.
+ */
+async function apiConEspera(request) {
+  const control = new AbortController();
+  const red = fetch(request, { signal: control.signal });
+  const resultado = await conLimite(red, ESPERA.api);
+
+  if (resultado instanceof Response) return resultado;
+
+  const lenta = resultado === AGOTADO;
+  if (lenta) control.abort();
+  notifyClients({ type: 'OFFLINE', lenta });
+
+  return new Response(JSON.stringify({
+    success: false,
+    offline: true,
+    lenta,
+    message: lenta
+      ? 'La conexión está muy lenta y no alcanzó a responder.'
+      : 'Sin conexión a internet.',
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 // ─── Cinta "estos datos son de antes" ────────────────────────────────────────
@@ -523,7 +679,7 @@ function edadHumana(fechaHttp) {
   return `de hace ${dias} días`;
 }
 
-function cintaOfflineHtml(fechaHttp, filtroNoAplicado) {
+function cintaOfflineHtml(fechaHttp, filtroNoAplicado, lenta) {
   const edad = edadHumana(fechaHttp);
   const cuando = edad
     ? `Estás viendo información guardada <strong>${edad}</strong>`
@@ -532,14 +688,25 @@ function cintaOfflineHtml(fechaHttp, filtroNoAplicado) {
     ? ' · <strong>no se pudo aplicar tu búsqueda o filtro</strong>, esto es la lista completa guardada'
     : '';
 
+  // Dos avisos distintos a proposito. Decirle "sin conexión" a alguien que SI
+  // tiene internet (lento, pero vivo) lo manda a reiniciar el módem y a
+  // desconfiar del sistema; lo que de verdad pasó es que no lo hicimos esperar.
+  const encabezado = lenta ? 'Tu internet está muy lento. ' : 'Sin conexión. ';
+  const cierre = lenta
+    ? '. Guardar cambios puede tardar o fallar mientras siga así.'
+    : '. Para guardar cambios hace falta internet.';
+  const icono = lenta ? '&#9203;' : '&#128246;'; // reloj de arena / antena sin senal
+  const fondo = lenta ? '#1F3B63' : '#7C4A03';
+
   // Estilos EN LINEA a proposito: la cinta debe verse aunque el CSS no cachee.
-  return '<div id="ms-offline-cinta" role="status" aria-live="polite" style="' +
+  return '<div id="ms-offline-cinta" role="status" aria-live="polite"' +
+    ' data-motivo="' + (lenta ? 'lenta' : 'sin-conexion') + '" style="' +
     'display:flex;gap:8px;align-items:flex-start;padding:9px 14px;' +
-    'background:#7C4A03;color:#FFF8EC;font-size:13px;line-height:1.35;' +
+    'background:' + fondo + ';color:#FFF8EC;font-size:13px;line-height:1.35;' +
     'font-weight:600;position:relative;z-index:2147483000;' +
     'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
-    '<span aria-hidden="true">&#128246;</span><span>Sin conexión. ' + cuando + filtro +
-    '. Para guardar cambios hace falta internet.</span></div>';
+    '<span aria-hidden="true">' + icono + '</span><span>' + encabezado + cuando + filtro +
+    cierre + '</span></div>';
 }
 
 /**
@@ -547,7 +714,7 @@ function cintaOfflineHtml(fechaHttp, filtroNoAplicado) {
  * parseo) devuelve la copia INTACTA: es un aviso, jamas debe impedir que la
  * pantalla se vea.
  */
-async function conCintaOffline(respuesta, filtroNoAplicado = false) {
+async function conCintaOffline(respuesta, filtroNoAplicado = false, lenta = false) {
   try {
     if (!respuesta) return respuesta;
 
@@ -555,7 +722,7 @@ async function conCintaOffline(respuesta, filtroNoAplicado = false) {
     if (!tipo.includes('text/html')) return respuesta;
 
     const html = await respuesta.clone().text();
-    const cinta = cintaOfflineHtml(respuesta.headers.get('date'), filtroNoAplicado);
+    const cinta = cintaOfflineHtml(respuesta.headers.get('date'), filtroNoAplicado, lenta);
     const conCinta = html.replace(/<body([^>]*)>/i, (m, attrs) => `<body${attrs}>${cinta}`);
 
     if (conCinta === html) return respuesta; // no habia <body>: no tocar
@@ -601,14 +768,42 @@ async function mejorPantallaGuardada() {
 }
 
 /** Muro "Sin conexion": ultimo recurso cuando no hay NADA que abrir. */
-async function respuestaOffline() {
+async function respuestaOffline(lenta = false) {
   const offline = await caches.match(BASE + 'offline.html');
-  if (offline) return offline;
+  if (offline) return lenta ? conMotivoLento(offline) : offline;
 
-  return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
+  return new Response(lenta
+    ? '<h1>Medisoft Hoteles</h1><p>Tu internet está muy lento y la pantalla no alcanzó a cargar. Vuelve a intentarlo.</p>'
+    : '<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
     status: 503,
     headers: { 'Content-Type': 'text/html' },
   });
+}
+
+/**
+ * El muro es un archivo estatico, asi que para que sepa distinguir "no hay
+ * internet" de "lo hay pero no responde" se le pone la bandera antes de su
+ * propio script. Si algo no cuadra devuelve el muro intacto: un aviso jamas debe
+ * impedir que la pantalla se vea.
+ */
+async function conMotivoLento(respuesta) {
+  try {
+    const html = await respuesta.clone().text();
+    const marca = '<script>window.MEDISOFT_RED_LENTA=true;</script>';
+    const conMarca = html.replace(/<body([^>]*)>/i, (m, attrs) => `<body${attrs}>${marca}`);
+    if (conMarca === html) return respuesta;
+
+    const headers = new Headers(respuesta.headers);
+    headers.delete('content-length');
+
+    return new Response(conMarca, {
+      status: respuesta.status,
+      statusText: respuesta.statusText,
+      headers,
+    });
+  } catch {
+    return respuesta;
+  }
 }
 
 /**
@@ -618,19 +813,38 @@ async function respuestaOffline() {
  * cosmetico y preferible a no poder trabajar. Nunca se cachea esta respuesta
  * (son credenciales y casi siempre un redirect).
  */
-async function arranquePage(request) {
-  try {
-    const response = await fetch(request);
+async function arranquePage(request, event) {
+  const red = fetch(request);
+  mantenerVivo(event, red);
+
+  // Es el momento mas caro de todos: el hotelero le picó al ícono y no ve NADA,
+  // ni siquiera la pantalla anterior. Un splash congelado medio minuto es lo que
+  // se recuerda como "esta app no sirve".
+  const pronto = await conLimite(red, ESPERA.arranque);
+  if (pronto instanceof Response) {
     notifyClients({ type: 'ONLINE' });
-    return response;
-  } catch {
-    notifyClients({ type: 'OFFLINE' });
-
-    const guardada = await mejorPantallaGuardada();
-    if (guardada) return conCintaOffline(guardada);
-
-    return respuestaOffline();
+    return pronto;
   }
+
+  const guardada = await mejorPantallaGuardada();
+  if (guardada) {
+    const lenta = pronto === AGOTADO;
+    notifyClients({ type: 'OFFLINE', lenta });
+    return conCintaOffline(guardada, false, lenta);
+  }
+
+  const tarde = pronto === AGOTADO
+    ? await conLimite(red, ESPERA.sinCopia - ESPERA.arranque)
+    : pronto;
+
+  if (tarde instanceof Response) {
+    notifyClients({ type: 'ONLINE' });
+    return tarde;
+  }
+
+  const lenta = tarde === AGOTADO;
+  notifyClients({ type: 'OFFLINE', lenta });
+  return respuestaOffline(lenta);
 }
 
 async function clearPagesCache() {
@@ -638,17 +852,26 @@ async function clearPagesCache() {
   console.log('[SW] Cache de pantallas limpiado (logout o cambio de hotel)');
 }
 
-/** Network Only para HTML privado/dinamico: no guarda pantallas con datos de hotel. */
-async function networkOnlyPage(request) {
-  try {
-    const response = await fetch(request);
-    notifyClients({ type: 'ONLINE' });
-    return response;
-  } catch {
-    notifyClients({ type: 'OFFLINE' });
+/**
+ * Network Only para HTML privado/dinamico: no guarda pantallas con datos de
+ * hotel. Como no hay copia posible, el plazo es el largo: rendirse pronto solo
+ * convertiria "lento" en "fallo". Aun asi se rinde — el muro dice qué pasa y
+ * ofrece volver a lo que sí está guardado, que es mejor que una pantalla
+ * congelada sin explicación.
+ */
+async function networkOnlyPage(request, event) {
+  const red = fetch(request);
+  mantenerVivo(event, red);
 
-    return respuestaOffline();
+  const resultado = await conLimite(red, ESPERA.sinCopia);
+  if (resultado instanceof Response) {
+    notifyClients({ type: 'ONLINE' });
+    return resultado;
   }
+
+  const lenta = resultado === AGOTADO;
+  notifyClients({ type: 'OFFLINE', lenta });
+  return respuestaOffline(lenta);
 }
 
 async function cachePage(url) {

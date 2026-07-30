@@ -665,6 +665,11 @@
   // periodica fuerzan la medicion, asi que no se pierde ninguna deteccion real.
   let _ultimaPruebaConexion = Date.now();
   let _estadoRedAnterior = _onlineConfirmado; // true = online al arrancar
+  // "El internet no responde" != "no hay internet". El service worker distingue
+  // los dos casos y lo dice en su mensaje; aqui se guarda para que los textos
+  // que ve el hotelero no lo manden a reiniciar un modem que esta bien.
+  let _redLenta = false;
+  const PING_LIMITE_MS = 4000;
 
   async function detectarConexionReal(forzar = false) {
     const ahora = Date.now();
@@ -674,11 +679,20 @@
 
     _ultimaPruebaConexion = ahora;
 
+    // Con senal debil este fetch NO falla: se queda colgado hasta que el
+    // navegador se rinde (30 s o mas). Y esta medicion es justo la que corre
+    // ANTES de guardar un huesped o cobrar (hayConexionAhora), asi que sin corte
+    // el hotelero se queda viendo "Guardando..." medio minuto. Preguntar "¿hay
+    // servidor?" y no obtener respuesta en 4 s ya es una respuesta.
+    const control = new AbortController();
+    const corte = setTimeout(() => control.abort(), PING_LIMITE_MS);
+
     try {
       const res = await fetch(`${BASE}/api/buscar?q=__ping__&t=${ahora}`, {
         method: 'GET',
         cache: 'no-store',
         credentials: 'same-origin',
+        signal: control.signal,
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
@@ -686,8 +700,16 @@
       });
 
       _onlineConfirmado = res.status !== 503;
+      if (_onlineConfirmado) _redLenta = false;
     } catch {
+      // Para lo que decide esta funcion (¿se puede hablar con el servidor?) los
+      // dos casos valen igual: no. Pero para lo que LEE el hotelero no: si nos
+      // rendimos nosotros por el plazo, su internet existe y no responde
+      // ("lento"); un error inmediato de red si es una caida.
       _onlineConfirmado = false;
+      if (control.signal.aborted) _redLenta = true;
+    } finally {
+      clearTimeout(corte);
     }
 
     // Mientras el estado sea "sin conexion" hay que SEGUIR midiendo: el navegador
@@ -728,6 +750,24 @@
   }
 
   /**
+   * El service worker acaba de chocar con la red, o de rendirse porque no
+   * respondia. Es la medicion mas fresca que existe: mejor que navigator.onLine
+   * —que con senal debil sigue jurando que hay internet— y mejor que nuestra
+   * ultima foto. Se adopta tal cual y se programa la reverificacion, que es lo
+   * unico que despues devuelve el estado a "en linea".
+   */
+  function adoptarEstadoSinConexion(lenta) {
+    const habiaCambio = _onlineConfirmado || _redLenta !== lenta;
+
+    _redLenta = lenta;
+    _onlineConfirmado = false;
+    _ultimaPruebaConexion = Date.now();
+    programarReverificacionRed();
+
+    if (habiaCambio) handleNetworkChange('sw');
+  }
+
+  /**
    * ¿Se puede hablar con el servidor AHORA? Para decisiones que le cuestan
    * trabajo al usuario (guardar un huesped, cobrar), no basta `isOnline()`:
    * eso es una foto que pudo tomarse hace minutos. Camino normal sin latencia
@@ -741,11 +781,20 @@
 
   async function handleNetworkChange(evento) {
     const isOnline = await detectarConexionReal(evento instanceof Event);
-    const esCambioReal = (evento instanceof Event); // false si es la llamada inicial
+    // 'sw' = lo reporto el service worker, que acaba de chocar de verdad contra
+    // la red. Cuenta como cambio real aunque no venga de un evento del
+    // navegador: con senal debil el navegador NUNCA dispara 'offline' (la antena
+    // sigue conectada), asi que ese seria el unico aviso que el hotelero recibe.
+    const esCambioReal = (evento instanceof Event) || evento === 'sw';
+
+    if (isOnline) _redLenta = false;
 
     document.documentElement.classList.toggle('is-offline', !isOnline);
     document.documentElement.classList.toggle('is-online',   isOnline);
-    window.dispatchEvent(new CustomEvent('loscedros:network-change', { detail: { online: isOnline } }));
+    document.documentElement.classList.toggle('is-red-lenta', !isOnline && _redLenta);
+    window.dispatchEvent(new CustomEvent('loscedros:network-change', {
+      detail: { online: isOnline, lenta: !isOnline && _redLenta },
+    }));
 
     const banner = document.getElementById('pwa-offline-banner');
     if (banner) {
@@ -755,7 +804,11 @@
 
     // Actualizar etiqueta en sidebar
     const label = document.getElementById('sidebar-net-label');
-    if (label) label.textContent = isOnline ? 'En línea' : 'Sin conexión';
+    if (label) {
+      label.textContent = isOnline
+        ? 'En línea'
+        : (_redLenta ? 'Conexión lenta' : 'Sin conexión');
+    }
 
     if (isOnline) {
       // Solo mostrar toast si antes estÃ¡bamos offline (cambio real de estado)
@@ -776,9 +829,12 @@
         // operacion, asi que un toast global no puede prometer "tus cambios se
         // guardan" sin arriesgarse a mentir sobre la pantalla en la que este el
         // usuario. Cada pantalla que SI puede capturar lo confirma por su cuenta
-        // al guardar.
+        // al guardar. Lo unico que si se distingue es el MOTIVO: decir "sin
+        // internet" a quien lo tiene (solo lento) lo manda a culpar al sistema.
         showToast(
-          'Sin internet. Puedes consultar lo ya cargado; para guardar hace falta conexión.',
+          _redLenta
+            ? 'Tu internet está muy lento. Te mostramos lo último guardado para no dejarte esperando.'
+            : 'Sin internet. Puedes consultar lo ya cargado; para guardar hace falta conexión.',
           'info',
           5000
         );
@@ -853,10 +909,19 @@
     const { type } = event.data || {};
     switch (type) {
       case 'ONLINE':
-        if (!_onlineConfirmado) handleNetworkChange(); // reconciliar si el SW detecta antes
+        // El SW acaba de recibir respuesta del servidor: es evidencia mejor que
+        // nuestra ultima foto, asi que se adopta en vez de esperar a la
+        // reverificacion (hasta 15 s con la UI pegada en "sin conexion").
+        if (!_onlineConfirmado) {
+          _onlineConfirmado = true;
+          _redLenta = false;
+          _ultimaPruebaConexion = Date.now();
+          detenerReverificacionRed();
+          handleNetworkChange('sw');
+        }
         break;
       case 'OFFLINE':
-        if (_onlineConfirmado) handleNetworkChange();
+        adoptarEstadoSinConexion(event.data.lenta === true);
         break;
       case 'PROCESS_QUEUE':
         if (_onlineConfirmado) processOfflineQueue();

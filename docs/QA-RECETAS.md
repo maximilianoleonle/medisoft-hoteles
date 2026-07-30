@@ -375,6 +375,20 @@ Contenedor hermano + sesión por endpoint temporal. **La sesión PHP vive DENTRO
 5. **Gotchas al armar operaciones de prueba a mano**: el uuid debe tener formato UUID real (`uuidValido()` rechaza cualquier cadena) y la operación necesita `usuario_id` (`validarOperacionAutorizada` responde "usuario invalido"). Lo más simple es encolar con `OfflineData.encolarOperacion(tipo, payload, etiqueta)`, que arma todo bien — dos intentos se perdieron por esto.
 6. **Los 5 candados del 423 se levantan JUNTOS** o parece regresión: `SyncBloqueadoTest`, `ClasificacionComercialModulosTest`, `tools/saas/health_check_fase_1a.php` y los 2 preflights de nómina (`preflight_frontera_nomina_oficial.php`, `preflight_nomina_administrativa_suite.php`). Los 3 últimos NO corren en `run.php`: si solo corres la suite, no te enteras de que quedaron desalineados.
 7. ⬜ prueba en iPhone real: registrar un huésped en modo avión y ver que suba al reconectar.
+## Señal débil: pasar rápido al modo sin internet — verificado ✅ 2026-07-30 (SW v28, 14 asserts)
+
+**Por qué no sirve el navegador para esto**: ni el pane ni Chrome reproducen "señal mala". El throttling de DevTools hace las respuestas LENTAS pero las entrega; lo que hay que simular es la red que **acepta la conexión y luego no manda nada** (`fetch` que nunca resuelve ni rechaza). Eso solo se prueba con un arnés: `node tools/tests_js/sw_lentitud.test.js` desde la raíz. Tarda ~40 s **a propósito** — mide los plazos reales del archivo; si se reescribieran los números en el arnés estaríamos probando una copia.
+
+1. **El caso que originó todo**: red colgada + `/dashboard` guardado → responde en ~3 s (no en 30) con la copia y cinta `data-motivo="lenta"`. Con `?fecha` o cualquier query sin copia exacta sigue avisando del filtro no aplicado.
+2. **Sin regresión en lo que ya servía**: red CAÍDA (rechazo inmediato) sigue respondiendo en <400 ms y con `data-motivo="sin-conexion"`. Son dos textos distintos y el arnés lo afirma: nunca decirle "sin conexión" a quien sí tiene internet.
+3. **Red buena no paga el arreglo**: <300 ms, sin cinta, sin aviso OFFLINE. Si esto falla, el fix se volvió un impuesto para todos.
+4. **La respuesta tardía refresca el caché**: red que tarda 4.5 s → sirve lo guardado a los 3 s y deja lo FRESCO guardado para la próxima. Verificar drenando `waitUntil`.
+5. **Sin copia**: aguanta los 9 s completos (no hay nada mejor que ofrecer) y el muro recibe `MEDISOFT_RED_LENTA=true` → título "Tu internet está muy lento", insignia "Internet lento". Cubierto también en `offline_puente.test.js`.
+6. **Arranque** (`/h/{slug}/login`): entra a la mejor pantalla guardada a los ~4 s. Es el momento más caro: ahí no se ve NADA, ni la pantalla anterior.
+7. **API colgada**: 503 a los ~7 s con `lenta:true` **y la petición abortada** (las de API sí se cancelan; las de página no, para no perder el refresco del caché).
+8. **Escrituras**: no deben tener plazo. Si alguien agrega uno a la rama `request.method !== 'GET'`, un POST que ya llegó al servidor se reintentaría a ciegas → cobro duplicado. No hay assert que lo impida: es criterio, va en revisión de código.
+9. **Precarga de instant-nav**: una navegación con `Sec-Purpose: prefetch` y red caída debe FALLAR, no recibir la copia guardada (si no, el navegador la archiva y el clic abre una pantalla vieja con cinta aunque la red ya esté bien). Con red buena sí debe seguir guardando la copia.
+10. ⬜ prueba en teléfono real con señal mala de verdad (no modo avión: modo avión es el caso fácil). Lo más parecido a mano: red wifi apuntando a un router sin salida a internet.
 
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 
