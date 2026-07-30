@@ -175,4 +175,56 @@ t_ok(!nav_pantalla_visible($pantalla), 'la entrada solo_medisoft queda fuera del
 $pantallaNormal = ['ruta' => 'reservaciones', 'permiso' => null, 'modulo' => null];
 t_ok(nav_pantalla_visible($pantallaNormal), 'una pantalla sin solo_medisoft sigue visible');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bloques no contratados en /configuracion: AVISAR, no ocultar (tanda 4, jul-29)
+//
+// Ocultar inputs NO es una opcion: el normalizador recorre todo el catalogo y lo
+// ausente se guarda vacio ('' en texto, '0' en casilla, visible=false en politica
+// de huesped), y los obligatorios abortan el guardado entero. Verificado en
+// navegador con round-trip real: guardar el hotel 2 toco 60 filas suyas + 8
+// nuevas y CERO del hotel 1, sin escribir la tabla legacy `configuracion`.
+// ─────────────────────────────────────────────────────────────────────────────
+$configView = (string) file_get_contents(APP_PATH . '/views/configuracion/index.php');
+
+t_ok(strpos($configView, '$configBloqueActivo = function ($clave) use ($configHotelId)') !== false,
+    'la vista resuelve el bloque contra el hotel OBJETIVO, no contra la sesion');
+t_ok(strpos($configView, 'if ($clave === \'\' || $hotelId <= 0) {') !== false,
+    'guard > 0 obligatorio: hotel_has_module usa ?: y un 0 caeria al hotel del ADMIN');
+t_ok(strpos($configView, "hotel_parking_visible(\$hotelId)") !== false,
+    'estacionamiento reusa su predicado unico en vez de una consulta nueva');
+t_ok(strpos($configView, 'return !function_exists(\'hotel_has_module\') || hotel_has_module($clave, $hotelId);') !== false,
+    'fail-OPEN: si no se puede determinar el catalogo, no se avisa de mas');
+
+// El aviso es un chip, JAMAS un input deshabilitado (un disabled no viaja en el
+// POST y el valor se guardaria vacio: bug con precedente en esta misma pantalla).
+t_ok(strpos($configView, 'class="hc-chip is-locked"') !== false,
+    'el aviso se pinta como chip');
+t_ok(strpos($configView, '$configAvisoBloque($configBloquePorAjuste[$settingKey] ?? \'\')') !== false,
+    'el chip entra por el UNICO emisor de hotel_config[...] (cubre las 2 secciones)');
+t_ok(strpos($configView, '$configAvisoBloque($configBloquePorCampoHuesped[$fieldKey] ?? \'\')') !== false,
+    'y por el UNICO renderizador de politicas de huesped (cubre las 2 cajas)');
+t_ok(strpos($configView, "\$configAvisoBloque(\$groupMeta['modulo'] ?? '')") !== false,
+    'los grupos completos avisan en su encabezado, no campo por campo');
+
+// Mapas completos: 7 campos de vehiculo (no 5), rfc + requiere_factura, y el
+// archivo de identificacion.
+t_eq(7, substr_count($configView, "' => 'vehiculos',"),
+    'los SIETE campos de vehiculo estan mapeados');
+t_ok(strpos($configView, "'rfc' => 'facturacion',") !== false && strpos($configView, "'requiere_factura' => 'facturacion',") !== false,
+    'rfc y requiere_factura cuelgan de facturacion');
+t_ok(strpos($configView, "'identificacion_archivo' => 'documentos',") !== false,
+    'el archivo de identificacion cuelga del centro documental');
+t_ok(strpos($configView, "'notificaciones.regla_facturas_pendientes' => 'facturacion',") !== false
+    && strpos($configView, "'notificaciones.regla_inventario_bajo' => 'inventario',") !== false
+    && strpos($configView, "'notificaciones.regla_reporte_gerencial_diario' => 'tablero_ejecutivo',") !== false,
+    'las 3 reglas con bloque real estan mapeadas');
+// Las otras 2 reglas NO deben tener entrada en el mapa: su consumidor
+// (NotificacionReglasService) gatea por `habitaciones`, que es paquete base.
+t_ok(strpos($configView, "'notificaciones.regla_habitaciones_limpieza' => '") === false
+    && strpos($configView, "'notificaciones.regla_mantenimiento_activo' => '") === false,
+    'las reglas que gatean por habitaciones (paquete base) NO se mapean: el chip mentiria');
+t_ok(strpos($configView, "'modulo' => 'reportes_distribucion',") !== false
+    && strpos($configView, "'modulo' => 'copiloto_briefing',") !== false,
+    'los grupos reportes y copiloto declaran su bloque');
+
 t_fin();

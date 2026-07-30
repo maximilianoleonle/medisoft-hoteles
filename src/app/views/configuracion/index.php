@@ -41,6 +41,88 @@ $configSeccionVisible = function ($seccion) use ($configEsSaas) {
     return !in_array($seccion, ['hc-appearance', 'hc-brand', 'hc-system'], true);
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bloques del catálogo: AVISAR, no ocultar.
+//
+// Esta pantalla la opera MEDISOFT, así que un ajuste de un bloque que el hotel no
+// contrató no se esconde: se marca. Ocultar los inputs no es una opción — el
+// normalizador recorre TODO el catálogo, de modo que un campo ausente del POST se
+// guarda vacío ('' en texto, '0' en casilla, visible=false en política de
+// huésped) y los 14 obligatorios de `hotel_config_editable_definitions` abortan el
+// guardado completo. El chip cuesta cero en el POST.
+//
+// El hotel es SIEMPRE el objetivo y con guard `> 0`: `hotel_has_module` resuelve
+// `$hotelId ?: current_hotel_id()` y `?:` trata 0 como falsy ⇒ pasar 0 desde el
+// panel SaaS respondería por el hotel del ADMIN, que es justo la fuga que esta
+// tanda cierra. Fail-OPEN a propósito: si no se puede determinar, no se avisa.
+// ─────────────────────────────────────────────────────────────────────────────
+$configBloqueActivo = function ($clave) use ($configHotelId) {
+    $hotelId = (int) $configHotelId;
+    $clave = (string) $clave;
+
+    if ($clave === '' || $hotelId <= 0) {
+        return true;
+    }
+
+    // Estacionamiento tiene su propio predicado (punto único de la tanda 2).
+    if ($clave === 'vehiculos' && function_exists('hotel_parking_visible')) {
+        return hotel_parking_visible($hotelId);
+    }
+
+    return !function_exists('hotel_has_module') || hotel_has_module($clave, $hotelId);
+};
+
+$configBloqueEtiquetas = [
+    'reportes_distribucion' => 'Distribución de reportes',
+    'copiloto' => 'Copiloto',
+    'copiloto_briefing' => 'Resumen diario del Copiloto',
+    'facturacion' => 'Facturación',
+    'inventario' => 'Inventario',
+    'tablero_ejecutivo' => 'Tablero ejecutivo',
+    'vehiculos' => 'Vehículos y estacionamiento',
+    'documentos' => 'Centro documental',
+];
+
+$configAvisoBloque = function ($clave) use ($configBloqueActivo, $configBloqueEtiquetas) {
+    $clave = (string) $clave;
+
+    if ($clave === '' || $configBloqueActivo($clave)) {
+        return '';
+    }
+
+    $etiqueta = $configBloqueEtiquetas[$clave] ?? $clave;
+
+    return '<span class="hc-chip is-locked" title="Lo que configures aquí no se usará hasta contratar el bloque">'
+        . '<i class="fas fa-lock" aria-hidden="true"></i>Sin el bloque «'
+        . htmlspecialchars($etiqueta, ENT_QUOTES, 'UTF-8')
+        . '»</span>';
+};
+
+// Ajuste → bloque que lo hace útil. Los grupos completos (reportes, copiloto) se
+// avisan en su encabezado, no campo por campo. OJO: `regla_habitaciones_limpieza`
+// y `regla_mantenimiento_activo` NO se mapean a propósito — su consumidor
+// (NotificacionReglasService) gatea por `habitaciones`, que es paquete base, así
+// que ahí el chip mentiría.
+$configBloquePorAjuste = [
+    'notificaciones.regla_facturas_pendientes' => 'facturacion',
+    'notificaciones.regla_inventario_bajo' => 'inventario',
+    'notificaciones.regla_reporte_gerencial_diario' => 'tablero_ejecutivo',
+];
+
+// Campo de huésped → bloque. Son SIETE campos de vehículo, no cinco.
+$configBloquePorCampoHuesped = [
+    'vehiculo_marca' => 'vehiculos',
+    'vehiculo_modelo' => 'vehiculos',
+    'vehiculo_placas' => 'vehiculos',
+    'vehiculo_color' => 'vehiculos',
+    'vehiculo_tipo' => 'vehiculos',
+    'vehiculo_estacionamiento' => 'vehiculos',
+    'vehiculo_observaciones' => 'vehiculos',
+    'rfc' => 'facturacion',
+    'requiere_factura' => 'facturacion',
+    'identificacion_archivo' => 'documentos',
+];
+
 $configHotelLogo = '';
 if (function_exists('hotel_branding_asset_url')) {
     $configHotelLogo = hotel_branding_asset_url($configBranding['logo_url'] ?? null)
@@ -377,6 +459,9 @@ $configHotelSettingGroupMeta = [
         'title' => 'Reportes',
         'hint' => 'Links seguros y correo para reportes compartidos.',
         'icon' => 'fa-chart-line',
+        // Estos 8 ajustes solo sirven con la distribución de reportes; el aviso va
+        // en el encabezado del grupo para no repetirlo campo por campo.
+        'modulo' => 'reportes_distribucion',
     ],
     'pwa' => [
         'title' => 'App PWA',
@@ -387,6 +472,7 @@ $configHotelSettingGroupMeta = [
         'title' => 'Asistente del hotel',
         'hint' => 'Resumen matutino y avisos proactivos del asistente.',
         'icon' => 'fa-wand-magic-sparkles',
+        'modulo' => 'copiloto_briefing',
     ],
     'otros' => [
         'title' => 'Otros ajustes',
@@ -425,7 +511,10 @@ $configNotificationGroups = [
     ],
 ];
 
-$configRenderSettingField = function ($settingKey, array $settingDefinition, $settingValue) {
+$configRenderSettingField = function ($settingKey, array $settingDefinition, $settingValue) use ($configAvisoBloque, $configBloquePorAjuste) {
+    // Único emisor de hotel_config[...]: el aviso puesto aquí alcanza a todos los
+    // ajustes de las dos secciones que lo llaman, sin repetir condicionales.
+    $settingAvisoBloque = $configAvisoBloque($configBloquePorAjuste[$settingKey] ?? '');
     $settingInput = $settingDefinition['input'] ?? 'text';
     $settingId = 'hotel_config_' . preg_replace('/[^a-z0-9_]+/i', '_', $settingKey);
     $settingMax = (int) ($settingDefinition['max'] ?? 0);
@@ -441,7 +530,8 @@ $configRenderSettingField = function ($settingKey, array $settingDefinition, $se
 
     ob_start();
     ?>
-    <div class="hc-field<?= $settingIsWide ? ' is-wide' : '' ?><?= $settingInput === 'checkbox' ? ' is-switch-field' : '' ?>">
+    <div class="hc-field<?= $settingIsWide ? ' is-wide' : '' ?><?= $settingInput === 'checkbox' ? ' is-switch-field' : '' ?><?= $settingAvisoBloque !== '' ? ' has-block-warn' : '' ?>">
+        <?php if ($settingAvisoBloque !== ''): ?><?= $settingAvisoBloque ?><?php endif; ?>
         <?php if ($settingInput === 'checkbox'): ?>
             <input type="hidden"
                    name="hotel_config[<?= htmlspecialchars($settingKey, ENT_QUOTES, 'UTF-8') ?>]"
@@ -496,7 +586,10 @@ $configRenderSettingField = function ($settingKey, array $settingDefinition, $se
     return ob_get_clean();
 };
 
-$configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use ($configGuestFieldPolicy) {
+$configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use ($configGuestFieldPolicy, $configAvisoBloque, $configBloquePorCampoHuesped) {
+    // Ninguna fila se oculta: hotel_guest_field_policy_normalize_payload recorre el
+    // catálogo completo y lo ausente queda visible=false SIN error visible.
+    $fieldAvisoBloque = $configAvisoBloque($configBloquePorCampoHuesped[$fieldKey] ?? '');
     $fieldState = is_array($configGuestFieldPolicy['fields'][$fieldKey] ?? null)
         ? $configGuestFieldPolicy['fields'][$fieldKey]
         : [];
@@ -522,6 +615,7 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
                     <p><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?></p>
                 <?php endif; ?>
                 <span class="hc-policy-type"><?= htmlspecialchars(strtoupper($inputType), ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($fieldAvisoBloque !== ''): ?><?= $fieldAvisoBloque ?><?php endif; ?>
             </div>
         </div>
 
@@ -4314,6 +4408,35 @@ html[data-theme="dark"] .hc-page {
 
 .hc-page .hc-chip i { color: var(--hc-accent); }
 
+/* Aviso de bloque no contratado: informa, NO deshabilita nada (un input
+   deshabilitado no viaja en el POST y se guardaria vacio). */
+.hc-page .hc-chip.is-locked,
+.hc-chip.is-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 4px 10px;
+    font-size: .72rem;
+    line-height: 1.25;
+    background: color-mix(in srgb, var(--hc-gold-line, #B4791F) 12%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--hc-gold-line, #B4791F) 34%, #FFFFFF);
+    color: color-mix(in srgb, var(--hc-gold-line, #B4791F) 82%, #111111);
+    white-space: normal;
+}
+
+.hc-page .hc-chip.is-locked i,
+.hc-chip.is-locked i { color: inherit; font-size: .7rem; }
+
+html[data-theme="dark"] .hc-chip.is-locked {
+    background: color-mix(in srgb, var(--hc-gold-line, #B4791F) 22%, #1C1C1E);
+    border-color: color-mix(in srgb, var(--hc-gold-line, #B4791F) 44%, #1C1C1E);
+    color: color-mix(in srgb, var(--hc-gold-line, #B4791F) 30%, #F5F5F7);
+}
+
+.hc-field.has-block-warn { position: relative; }
+
 /* El diseño concentra la identidad en el chip del hotel: sin aside duplicado */
 .hc-page .hc-identity { display: none; }
 .hc-page .hc-top { grid-template-columns: minmax(0, 1fr); }
@@ -5450,6 +5573,7 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                 </h3>
                                                 <p class="hc-group-hint"><?= htmlspecialchars($groupMeta['hint'], ENT_QUOTES, 'UTF-8') ?></p>
                                             </div>
+                                            <?= $configAvisoBloque($groupMeta['modulo'] ?? '') ?>
                                         </div>
                                         <div class="hc-field-grid">
                                             <?php foreach ($configGroupedHotelSettings[$groupKey] as $settingKey => $settingDefinition): ?>
@@ -6308,6 +6432,8 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                             Estacionamientos
                                         </h3>
                                         <p class="hc-field-hint">Define el nombre visible y el cupo que alimentará el indicador de estacionamiento en la pantalla de Inicio.</p>
+                                        <?php // El indicador que alimenta este catálogo cuelga del bloque 'vehiculos'. ?>
+                                        <?= $configAvisoBloque('vehiculos') ?>
                                     </div>
                                     <div class="hc-catalog-actions">
                                         <span class="hc-catalog-metric" title="Suma de cupos activos" data-parking-capacity-total>
@@ -6385,6 +6511,8 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                             Unidades de medida
                                         </h3>
                                         <p class="hc-field-hint">Estas opciones alimentan el selector de unidad al crear o editar productos.</p>
+                                        <?php // Los productos que usan estas unidades viven en el bloque 'inventario'. ?>
+                                        <?= $configAvisoBloque('inventario') ?>
                                     </div>
                                     <button type="button" class="hc-add-btn" data-catalog-add="units">
                                         <i class="fas fa-plus"></i>

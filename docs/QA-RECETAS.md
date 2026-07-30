@@ -294,6 +294,17 @@ Receta ejecutada tras el deploy de las 5 tandas, con el hotel **Demo de producci
 6. **API de proyección**: hotel CON el bloque → **200** con `proyeccion[]`; hotel SIN el bloque → **403** `{"module":"vehiculos"}`. GOTCHA de datos: en local los 4 hoteles tienen fila `hotel_modulos.activo=1` histórica para `vehiculos`, así que abrir el bloque globalmente lo activa para TODOS — para probar el 403 hay que desactivar el contrato de ese hotel, no basta con elegir "otro hotel". ✅
 7. ⬜ Falta: confirmar en el navegador de producción (hotel Demo) que el paso 3 ya dice "Confirmar" tras el deploy de estos dos arreglos.
 
+## Panel SaaS → configuración de un hotel cliente — verificado ✅ 2026-07-29
+
+Receta de la tanda 4 (avisos de bloque no contratado + hotel objetivo). Montaje: contenedor hermano sobre el worktree + endpoint temporal de sesión con `?h=` y el usuario que está en `saas_admins` (sin eso `/configuracion` y el panel rebotan).
+
+1. **La prueba que importa es cruzada**: entrar a `/admin/saas/hoteles/2/configuracion` con la sesión apuntando al hotel **1**. Si aparece el chip de un bloque que el hotel 1 SÍ tiene y el 2 no (p.ej. Facturación), el predicado responde por el hotel objetivo. Si NO aparece, está leyendo `$_SESSION` y la fuga sigue viva. ✅
+2. **A/B de chips** (local): hotel 2 → 17 chips (3 en campos de ajuste, 10 en filas de huésped, 2 en encabezados de grupo, 2 en catálogos) sobre 7 bloques; hotel 1 → 11 chips, desaparecen Facturación/Inventario/Documental y quedan los 4 bloqueados globalmente. ✅
+3. **El POST no debe cambiar**: `document.querySelectorAll('#configForm [disabled]').length === 0` y el conteo de `[name^="hotel_config["]` igual en los dos hoteles (69). ✅
+4. **Round-trip real** (lo único que prueba tenancy): apuntar un valor reconocible, `form.submit()` (nativo, salta el guard de app.js) y comparar en BD con marcas de tiempo, **no** con `MD5(GROUP_CONCAT(...))` — MySQL trunca GROUP_CONCAT a 1024 bytes y la huella sale idéntica aunque el contenido cambie. Con timestamps: hotel 2 = 60 filas tocadas + 8 creadas, hotel 1 = **0 y 0**, y `SELECT COUNT(*) FROM configuracion` (tabla legacy sin `hotel_id`) igual antes y después. ✅
+5. Los vacíos que aparecen tras guardar (`contacto.email`, textos de políticas, destinatarios de reportes) son campos opcionales que el formulario envió vacíos — comportamiento normal, no efecto de los chips. Se distinguen por `updated_at`. ✅
+6. ⬜ Falta: mirarlo en producción (panel de un hotel sin Facturación) para confirmar el chip en pantalla.
+
 ## Reputación — encuesta pública sin review gating (jul-26)
 
 El módulo no tenía receta. Lo que se verifica es que la invitación a Google se ofrezca a TODO el que responde: filtrarla por calificación viola la política de Google Maps y arriesga el perfil del hotel.
