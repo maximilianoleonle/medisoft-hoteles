@@ -38,7 +38,10 @@ Límites que hay que decir ANTES de vender, no después:
 
 | Límite | Por qué |
 |---|---|
-| No se puede cobrar, hacer check-in/check-out ni crear reservaciones sin internet | La captura sin conexión está apagada a propósito: encolaba cobros que no llegaban |
+| No se puede cobrar, hacer check-in/check-out ni crear reservaciones sin internet | Esa captura sigue apagada a propósito: encolaba cobros que no llegaban |
+| **Sí se puede registrar un huésped sin internet**, y se sube solo al volver la conexión (desde 30-jul) | Es la única operación reabierta: la más segura, no toca dinero ni disponibilidad |
+| Al registrar sin internet no se suben fotos ni identificaciones del huésped | Se completan después desde su expediente |
+| Si el teléfono ya está registrado, el sistema reutiliza a ese huésped y lo avisa | Evita duplicados; si son personas distintas, se registra con otro teléfono |
 | El equipo necesita haber entrado **con internet al menos una vez**, y haber abierto las pantallas que querrá consultar | Solo se guarda lo que se visitó |
 | Los datos son de la última sincronización (se refresca cada 15 min con señal), no del minuto exacto | Es una copia, no una conexión |
 | Los precios que se ven sin internet son la **tarifa base**: no incluyen temporada ni descuentos | El cálculo definitivo lo hace el servidor |

@@ -470,8 +470,7 @@ async function networkFirstPage(request) {
     // equivocado, y sobre eso se toman decisiones en el mostrador.
     const otraQuery = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
     if (otraQuery) {
-      const pidioFiltro = new URL(request.url).search !== '';
-      return conCintaOffline(otraQuery, pidioFiltro);
+      return conCintaOffline(otraQuery, pidioBusquedaOFiltro(request.url));
     }
 
     return respuestaOffline();
@@ -484,6 +483,25 @@ async function networkFirstPage(request) {
 // Los 4 avisos que vivian en las vistas estaban MUERTOS (un `return;` al inicio),
 // asi que se resuelve aqui: una sola cinta que cubre CUALQUIER pantalla servida
 // sin red, sin depender de que cada vista traiga la suya.
+
+// Parametros que NO cambian el contenido de la pantalla: son de navegacion o de
+// rastreo. Sin esta lista, abrir el alta de huesped desde una reservacion rapida
+// (/huespedes/create?return_to=...) mostraba "no se pudo aplicar tu busqueda o
+// filtro" en un formulario donde no habia ninguna busqueda — se veia como un
+// error del sistema. Reportado desde el iPhone del owner.
+const PARAMS_QUE_NO_FILTRAN = new Set([
+  'return_to', 'nc', 'v', '_', 'ref', 'from',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid',
+]);
+
+function pidioBusquedaOFiltro(url) {
+  try {
+    for (const clave of new URL(url).searchParams.keys()) {
+      if (!PARAMS_QUE_NO_FILTRAN.has(clave)) return true;
+    }
+  } catch {}
+  return false;
+}
 
 function edadHumana(fechaHttp) {
   if (!fechaHttp) return null;

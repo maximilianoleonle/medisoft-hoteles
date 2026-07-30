@@ -1288,13 +1288,82 @@ public function vehiculosHuespedAction() {
     }
 
     /**
-     * Mantiene deshabilitada temporalmente la sincronización de operaciones offline.
+     * Sincroniza lo capturado sin conexión — SOLO las operaciones de la Ola 1.
+     *
+     * Estuvo cerrado con 423 desde mayo porque los interceptores encolaban
+     * cobros y check-ins que nunca llegaban al servidor. Se reabre de a poco y
+     * empezando por lo que NO toca dinero: hoy únicamente `crear_huesped`, la
+     * única operación que ya comprueba su INSERT, valida el hotel y no duplica
+     * si el teléfono existe.
+     *
+     * LISTA BLANCA, no lista negra: la versión anterior rechazaba los tipos de
+     * dinero conocidos y dejaba pasar el resto, así que una operación nueva
+     * quedaba habilitada por omisión. Aquí lo que no está permitido, no pasa.
+     * `Sync::despachar` repite el candado por si algún día alguien toca esto.
      */
     public function syncAction() {
-        View::renderJSON([
-            'success' => false,
-            'error' => 'sync_temporarily_disabled',
-        ], 423);
+        if (!$this->isPost()) {
+            View::renderJSON(['success' => false, 'message' => 'Metodo no permitido. Usa POST.'], 405);
+            return;
+        }
+
+        $body = json_decode(file_get_contents('php://input') ?: '', true);
+        $operaciones = is_array($body['operaciones'] ?? null) ? $body['operaciones'] : [];
+
+        if (empty($operaciones)) {
+            View::renderJSON(['success' => true, 'exitosas' => [], 'fallidas' => [], 'restantes' => 0]);
+            return;
+        }
+
+        require_once __DIR__ . '/../models/Sync.php';
+
+        // Un lote gigante NO se rechaza entero: se procesa lo que cabe y se le
+        // dice al cliente cuántas quedan. Antes se respondía 400, que el cliente
+        // trata como error genérico y reintenta para siempre: un equipo con más
+        // de 200 pendientes no lograba sincronizar NUNCA.
+        $restantes = 0;
+        if (count($operaciones) > Sync::MAX_OPERACIONES_POR_LOTE) {
+            $restantes = count($operaciones) - Sync::MAX_OPERACIONES_POR_LOTE;
+            $operaciones = array_slice($operaciones, 0, Sync::MAX_OPERACIONES_POR_LOTE);
+        }
+
+        $permitidas = [];
+        $fallidas = [];
+
+        foreach ($operaciones as $op) {
+            $tipo = (string) ($op['tipo'] ?? '');
+
+            if (in_array($tipo, Sync::OPERACIONES_HABILITADAS, true)) {
+                $permitidas[] = $op;
+                continue;
+            }
+
+            // Se responde como FALLIDA (no se ignora en silencio) para que el
+            // dispositivo la saque de la cola y el operador la vea en
+            // /offline/pendientes con instrucciones, en vez de reintentarla eterno.
+            $fallidas[] = [
+                'uuid' => $op['uuid'] ?? 'sin-uuid',
+                'error' => 'Esta operación no se sincroniza sin conexión todavía. Regístrala de nuevo con internet.',
+            ];
+        }
+
+        try {
+            $sync = new Sync();
+            $resultado = $sync->procesarLote($permitidas, user_id(), $this->hotelIdActual());
+
+            View::renderJSON([
+                'success' => true,
+                'exitosas' => $resultado['exitosas'],
+                'fallidas' => array_merge($fallidas, $resultado['fallidas']),
+                // Se aplicaron, pero el operador tiene que enterarse (ej. el
+                // huésped se fusionó con uno existente por teléfono repetido).
+                'avisos' => $resultado['avisos'] ?? [],
+                'restantes' => $restantes,
+            ]);
+        } catch (Throwable $e) {
+            error_log('[API sync] ' . $e->getMessage());
+            View::renderJSON(['success' => false, 'message' => 'Error interno al sincronizar'], 500);
+        }
     }
 
     public function buscarHuespedesAction() {

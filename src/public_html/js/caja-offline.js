@@ -88,7 +88,7 @@
     // Captura offline apagada (/api/sync cerrado): un movimiento de caja
     // encolado aqui NUNCA llegaria al corte. Es dinero: se avisa y no se
     // finge que quedo guardado.
-    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+    if (window.OfflineData?.escriturasHabilitadas?.(tipoOperacion) !== true) {
       _avisar(
         'warning',
         'Sin conexión',
@@ -242,7 +242,7 @@
     // rechazando el cierre... pero recien despues de hacer contar el efectivo
     // fisico billete por billete. Avisar aqui, no al final. (El guard de
     // _encolarMovimientoOffline existia desde el 26-jul; este camino se salto.)
-    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+    if (window.OfflineData?.escriturasHabilitadas?.('pre_corte_caja') !== true) {
       _avisar(
         'warning',
         'Sin conexión',
@@ -358,12 +358,28 @@
     return (opcion?.textContent || '').trim();
   }
 
+  /**
+   * Igual que en huespedes-offline: con `text:` Swal escapa el HTML y se veian
+   * las etiquetas <strong> crudas. Se escapa y se re-permite solo <strong>
+   * (varios de estos avisos interpolan montos y conceptos capturados por el
+   * usuario, asi que nunca se pasa texto sin escapar).
+   */
+  function _htmlSeguro(texto) {
+    return String(texto)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/&lt;strong&gt;/g, '<strong>')
+      .replace(/&lt;\/strong&gt;/g, '</strong>');
+  }
+
   function _avisar(icon, titulo, texto) {
     if (window.Swal) {
       Swal.fire({
         icon,
         title: titulo,
-        text: texto,
+        html: _htmlSeguro(texto),
         confirmButtonText: 'Entendido',
         confirmButtonColor: icon === 'success' ? '#4A6340' : '#B45309',
       });
@@ -493,7 +509,7 @@
         // confiado en que el equipo lo registro, y ese dinero no existe para el
         // corte. El guard de _encolarMovimientoOffline ya impide encolar, pero
         // este banner induce a confiar ANTES de intentarlo.
-        const capturaViva = window.OfflineData?.escriturasHabilitadas?.() === true;
+        const capturaViva = window.OfflineData?.escriturasHabilitadas?.('pago_caja') === true;
         banner.innerHTML = capturaViva
           ? `
           <span style="font-size:1.2em">📡</span>

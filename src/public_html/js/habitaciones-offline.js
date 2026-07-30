@@ -55,7 +55,7 @@
 
   /** ¿Podemos capturar escrituras sin conexión? Hoy no (ver offline-data.js). */
   function _capturaOfflineActiva() {
-    return window.OfflineData?.escriturasHabilitadas?.() === true;
+    return window.OfflineData?.escriturasHabilitadas?.('cambiar_estado_habitacion') === true;
   }
 
   function _instalarInterceptores() {

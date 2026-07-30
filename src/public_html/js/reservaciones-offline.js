@@ -216,7 +216,7 @@
     // Sin captura offline no se pintan los botones de acción: harían creer que
     // el check-in quedó registrado cuando /api/sync no puede recibirlo. La
     // consulta de la lista (que sí funciona en caché) se conserva intacta.
-    const puedeCapturar = window.OfflineData?.escriturasHabilitadas?.() === true;
+    const puedeCapturar = window.OfflineData?.escriturasHabilitadas?.('checkin') === true;
     const accionHtml = (puedeCapturar && estado === 'confirmada')
       ? `<button type="button" class="btn-ticket-full" data-offline-res-action="checkin" data-res-id="${_esc(idReservacion)}" style="background:#2563EB;">
            <i class="fas fa-user-check"></i> check-in

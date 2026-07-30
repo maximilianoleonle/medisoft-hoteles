@@ -4859,7 +4859,7 @@ $(document).ready(function() {
         // rechazando la reservacion DESPUES de que el recepcionista lleno todo
         // el formulario con el huesped enfrente. Avisar antes de gastarle el
         // tiempo, y decir la verdad: es un candado del sistema, no un error suyo.
-        if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+        if (window.OfflineData?.escriturasHabilitadas?.('crear_reservacion') !== true) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Sin conexión',

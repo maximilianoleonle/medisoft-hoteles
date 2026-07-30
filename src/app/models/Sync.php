@@ -12,9 +12,33 @@
  */
 class Sync
 {
+    /**
+     * Operaciones cuya captura SIN CONEXION esta habilitada hoy (Ola 1, jul-30).
+     *
+     * Se reabre de a poco y empezando por lo que NO toca dinero. `crear_huesped`
+     * es la unica que ya comprueba su INSERT, valida el hotel y no duplica si el
+     * telefono existe. Las demas siguen dormidas: checkout escribe un estado
+     * inexistente en el enum, y las de caja no verifican su INSERT ni bloquean
+     * el corte. Ampliar esta lista SIN arreglar eso reintroduce el problema que
+     * obligo a apagarlo todo el 26-jul: cobros que se dan por buenos y no llegan.
+     *
+     * Al agregar una operacion aqui hay que sumarla tambien a la lista que
+     * publica el layout (`MEDISOFT_OFFLINE_OPERACIONES` en header.php).
+     */
+    public const OPERACIONES_HABILITADAS = ['crear_huesped'];
+
+    /** Tope de operaciones por lote: un cliente con mas drena por partes. */
+    public const MAX_OPERACIONES_POR_LOTE = 200;
+
     private Database $db;
     private array $reservacionesTemporales = [];
     private array $huespedesTemporales = [];
+
+    /** Operaciones que se aplicaron PERO el operador debe revisar (ej. dedupe). */
+    private array $avisos = [];
+
+    /** uuid de la operacion que se esta despachando, para poder etiquetar avisos. */
+    private ?string $uuidEnCurso = null;
     private int $hotelId = 0;
 
     public function __construct()
@@ -74,6 +98,7 @@ class Sync
 
             try {
                 $this->db->safeBeginTransaction();
+                $this->uuidEnCurso = $uuid;
                 $this->validarOperacionAutorizada($op, $usuarioActualId);
                 $resultado = $this->despachar($op);
                 $this->registrarResultado($uuid, $op['tipo'] ?? 'desconocido', $op['usuario_id'] ?? null, 'ok', $resultado);
@@ -88,7 +113,9 @@ class Sync
             }
         }
 
-        return ['exitosas' => $exitosas, 'fallidas' => $fallidas];
+        $this->uuidEnCurso = null;
+
+        return ['exitosas' => $exitosas, 'fallidas' => $fallidas, 'avisos' => $this->avisos];
     }
 
     // =========================================================================
@@ -101,6 +128,19 @@ class Sync
     private function despachar(array $op): string
     {
         $tipo    = $op['tipo']    ?? '';
+        // CANDADO POR OPERACION (Ola 1, jul-30). La captura sin conexion se
+        // reabre de a poco: hoy SOLO alta de huesped. Las demas siguen dormidas
+        // porque tienen defectos verificados — checkout escribe un estado que no
+        // existe en el enum, los movimientos de dinero no comprueban su INSERT y
+        // no bloquean el corte. Este candado vive en el MODELO a proposito:
+        // aunque un controlador nuevo acepte otro tipo por descuido, aqui muere.
+        if (!in_array($tipo, self::OPERACIONES_HABILITADAS, true)) {
+            throw new RuntimeException(
+                "La captura sin conexion de '{$tipo}' no esta habilitada todavia. " .
+                'Registralo de nuevo con internet.'
+            );
+        }
+
         $payload = $op['payload'] ?? [];
         $payload = $this->resolverReservacionTemporal($payload);
 
@@ -185,6 +225,22 @@ class Sync
                 if ($temp_id !== '') {
                     $this->huespedesTemporales[$temp_id] = (int) $existente['id'];
                 }
+
+                // El alta se resuelve reutilizando al huesped existente, pero lo
+                // que el recepcionista capturo (nombre, correo, procedencia) se
+                // DESCARTA. Antes pasaba en silencio y quedaba creyendo que
+                // registro a alguien que no existe — dos personas comparten
+                // telefono mas seguido de lo que parece (matrimonios, familias,
+                // o el numero del hotel puesto por costumbre). Ahora se avisa.
+                if (mb_strtolower(trim((string) $existente['nombre_completo'])) !== mb_strtolower($nombre)) {
+                    $this->avisos[] = [
+                        'uuid' => (string) ($this->uuidEnCurso ?? ''),
+                        'mensaje' => "El teléfono ya estaba registrado a nombre de \"{$existente['nombre_completo']}\", "
+                            . "así que \"{$nombre}\" NO se dio de alta como huésped nuevo. "
+                            . 'Si son personas distintas, regístralo con otro teléfono.',
+                    ];
+                }
+
                 return "Huesped offline ya existia por telefono #{$existente['id']}" .
                     ($temp_id !== '' ? " [temp:{$temp_id}]" : '');
             }

@@ -326,13 +326,22 @@ function nomOfValidateApiSyncBlocked(string $apiControllerPath): void
         return;
     }
 
+    // Ola 1 (30-jul): el candado dejo de ser "423 a todo" y paso a ser una lista
+    // blanca. Lo que importa para nomina es que NINGUNA operacion de dinero se
+    // sincronice sin conexion; eso lo garantiza Sync::OPERACIONES_HABILITADAS.
     $code = (string)file_get_contents($apiControllerPath);
-    if (strpos($code, 'sync_temporarily_disabled') !== false && strpos($code, '423') !== false) {
-        nomOfOk('/api/sync conserva bloqueo sync_temporarily_disabled + HTTP 423 en codigo.');
+    require_once __DIR__ . '/../../app/models/Sync.php';
+    $conDinero = array_intersect(Sync::OPERACIONES_HABILITADAS, ['pago_caja', 'gasto_caja', 'pre_corte_caja']);
+
+    if (strpos($code, 'Sync::OPERACIONES_HABILITADAS') !== false && empty($conDinero)) {
+        nomOfOk('/api/sync filtra por lista blanca y ninguna operacion de dinero esta habilitada offline.');
         return;
     }
 
-    nomOfError('/api/sync no muestra el bloqueo esperado.', 'Restaurar HTTP 423 con JSON sync_temporarily_disabled antes de continuar.');
+    nomOfError(
+        '/api/sync no muestra el candado esperado.',
+        'syncAction debe filtrar contra Sync::OPERACIONES_HABILITADAS, y esa lista NO puede incluir operaciones de caja.'
+    );
 }
 
 $appEnv = getenv('APP_ENV');

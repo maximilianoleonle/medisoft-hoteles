@@ -31,9 +31,15 @@ t_ok(strpos($inventarioCtrl, "require_hotel_module('compras')") === false,
 t_ok(strpos($reservacionCtrl, "hotel_has_module('camarista'") === false
     && strpos($reservacionCtrl, "require_hotel_module('camarista')") === false,
     'check-out manda a limpieza sin consultar App Camarista');
-t_ok(strpos($apiCtrl, 'sync_temporarily_disabled') !== false
-    && strpos($apiCtrl, '423') !== false,
-    '/api/sync conserva el candado HTTP 423 sync_temporarily_disabled');
+// El candado del 423 se sustituyo el 30-jul por uno mas fino: /api/sync se
+// reabrio SOLO para alta de huesped (Ola 1). Lo que hay que vigilar ya no es
+// que rechace todo, sino que la lista blanca siga siendo minima y sin dinero.
+// El detalle completo lo cubre SyncBloqueadoTest.
+require_once $root . '/app/models/Sync.php';
+t_ok(Sync::OPERACIONES_HABILITADAS === ['crear_huesped'],
+    '/api/sync solo acepta alta de huesped sin conexion (Ola 1)');
+t_ok(strpos($apiCtrl, 'Sync::OPERACIONES_HABILITADAS') !== false,
+    '/api/sync filtra contra la lista blanca del modelo');
 
 // Los 3 origenes de datos de graficas filtran por hotel (tenancy). Ocupacion
 // y procedencia son wrappers que DELEGAN la query: el filtro por hotel vive

@@ -7715,15 +7715,18 @@ if (!is_file($routesPath)) {
         $apiController = $controllersDir . '/ApiController.php';
         $apiCode = is_file($apiController) ? (string) file_get_contents($apiController) : '';
         $syncBody = hcMethodBody($apiCode, 'syncAction');
+        // Ola 1 (30-jul): /api/sync se reabrio SOLO para alta de huesped. Ya no
+        // se exige el 423 a todo; se exige que filtre por LISTA BLANCA y respete
+        // el tope por lote. El detalle lo cubre SyncBloqueadoTest.
         if (
-            strpos($syncBody, '423') !== false
-            && strpos($syncBody, 'sync_temporarily_disabled') !== false
+            strpos($syncBody, 'Sync::OPERACIONES_HABILITADAS') !== false
+            && strpos($syncBody, 'Sync::MAX_OPERACIONES_POR_LOTE') !== false
         ) {
-            hcOk('/api/sync permanece bloqueado con HTTP 423 y error sync_temporarily_disabled.');
+            hcOk('/api/sync filtra por lista blanca de operaciones (Ola 1: solo alta de huesped).');
         } else {
             hcError(
-                '/api/sync no cumple el bloqueo temporal obligatorio.',
-                'Restaurar syncAction con respuesta HTTP 423 y error sync_temporarily_disabled.'
+                '/api/sync no aplica la lista blanca de operaciones.',
+                'syncAction debe filtrar contra Sync::OPERACIONES_HABILITADAS y respetar Sync::MAX_OPERACIONES_POR_LOTE.'
             );
         }
     } else {

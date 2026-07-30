@@ -364,6 +364,18 @@ Contenedor hermano en :8092 con el código a probar + sesión por endpoint tempo
 
 **Si algún día se reabre `/api/sync`** (hoy 423, y la auditoría del 30-jul recomienda NO todavía), los bloqueadores verificados son: `Sync.php:460` escribe `estado='completada'`, valor inexistente en el enum de la tabla → el check-out offline está roto al 100%; los INSERT de dinero no verifican su retorno, así que un fallo se marca 'ok' y la idempotencia impide reintentarlo; y el CSRF global del Router rechazaría `/api/sync` con 403 sin rama en el cliente → la cola reintentaría para siempre. Empezar por olas y NUNCA por dinero.
 
+## Captura offline Ola 1: alta de huésped — verificado ✅ 2026-07-30 (E2E contra BD real)
+
+Contenedor hermano + sesión por endpoint temporal. **La sesión PHP vive DENTRO del contenedor**: si lo reinicias a media prueba, el sync empieza a dar 401 y parece un bug del código — volver a pasar por el endpoint de sesión.
+
+1. Permiso granular: `OfflineData.escriturasHabilitadas('crear_huesped')` → `true`; `('pago_caja')`, `('checkout')` → `false`; **sin argumento → `false`** (falla cerrado).
+2. E2E: tirar el contenedor, esperar a que `PWA.isOnline()` sea `false` (el ping tarda ~6-8 s), llenar el alta y enviar. Debe quedar en `operaciones_offline` con estado `pendiente`. Levantar, `OfflineData.sincronizar()`, y comprobar en MySQL que la fila existe **con el `hotel_id` correcto**. Verificado.
+3. Candado de dinero: meter a mano un `pago_caja` en la cola y sincronizar → debe volver `error` con "no se sincroniza sin conexión todavía". Verificado.
+4. Dedupe: encolar un huésped con un teléfono YA existente y otro nombre → la operación queda `sincronizado` (reutiliza el huésped) **y** aparece un aviso "El teléfono ya estaba registrado a nombre de…". Verificado.
+5. **Gotchas al armar operaciones de prueba a mano**: el uuid debe tener formato UUID real (`uuidValido()` rechaza cualquier cadena) y la operación necesita `usuario_id` (`validarOperacionAutorizada` responde "usuario invalido"). Lo más simple es encolar con `OfflineData.encolarOperacion(tipo, payload, etiqueta)`, que arma todo bien — dos intentos se perdieron por esto.
+6. **Los 5 candados del 423 se levantan JUNTOS** o parece regresión: `SyncBloqueadoTest`, `ClasificacionComercialModulosTest`, `tools/saas/health_check_fase_1a.php` y los 2 preflights de nómina (`preflight_frontera_nomina_oficial.php`, `preflight_nomina_administrativa_suite.php`). Los 3 últimos NO corren en `run.php`: si solo corres la suite, no te enteras de que quedaron desalineados.
+7. ⬜ prueba en iPhone real: registrar un huésped en modo avión y ver que suba al reconectar.
+
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 
 Desde jul-26 la app NO acepta capturas sin conexión (ver CLAUDE.md). Verificar que el candado sigue puesto:

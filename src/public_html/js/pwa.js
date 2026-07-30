@@ -772,12 +772,13 @@
       }
     } else {
       if (esCambioReal) {
-        // El texto depende de si la captura offline esta viva. Hoy esta apagada
-        // (/api/sync = 423): prometer que "tus cambios se guardan" es falso.
+        // Aviso GENERICO a proposito: la captura offline se habilita por
+        // operacion, asi que un toast global no puede prometer "tus cambios se
+        // guardan" sin arriesgarse a mentir sobre la pantalla en la que este el
+        // usuario. Cada pantalla que SI puede capturar lo confirma por su cuenta
+        // al guardar.
         showToast(
-          window.OfflineData?.escriturasHabilitadas?.() === true
-            ? 'Trabajando sin internet. Tus cambios se guardan en este equipo.'
-            : 'Sin internet. Puedes consultar lo ya cargado; para guardar hace falta conexión.',
+          'Sin internet. Puedes consultar lo ya cargado; para guardar hace falta conexión.',
           'info',
           5000
         );

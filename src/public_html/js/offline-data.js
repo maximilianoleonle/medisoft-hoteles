@@ -23,6 +23,7 @@
   // Rango de reservaciones a cachear (hoy + N días) para poder validar
   // disponibilidad localmente al crear reservaciones sin internet
   const RESERVACIONES_DIAS_SNAPSHOT = 30;
+  const MAX_OPERACIONES_POR_TANDA = 200; // debe coincidir con Sync::MAX_OPERACIONES_POR_LOTE
   const DB_VERSION = 5;
   let missingContextWarned = false;
 
@@ -841,15 +842,31 @@
    * ocurre. Si la variable no existe (página vieja en caché), asumimos
    * APAGADO — fallar cerrado es lo correcto cuando hay dinero de por medio.
    */
-  function escriturasHabilitadas() {
-    return window.MEDISOFT_OFFLINE_ESCRITURAS === true;
+  /**
+   * ¿Se puede capturar SIN CONEXION una operacion de este tipo?
+   *
+   * La captura se reabre POR OPERACION, no de golpe: el layout publica la lista
+   * blanca que el servidor acepta hoy (`MEDISOFT_OFFLINE_OPERACIONES`). Un
+   * booleano global no sirve — encenderlo reactivaria de un tiron los 6
+   * interceptores, incluidos los de dinero, que es exactamente el desastre que
+   * se apago el 26-jul.
+   *
+   * SIEMPRE se pasa el tipo. Sin tipo devuelve false (falla cerrado): una
+   * pagina vieja en cache o un llamador que se olvide de declararlo no debe
+   * conseguir permiso por descuido.
+   */
+  function escriturasHabilitadas(tipo) {
+    const permitidas = window.MEDISOFT_OFFLINE_OPERACIONES;
+    if (!Array.isArray(permitidas) || !permitidas.length) return false;
+    if (!tipo) return false;
+    return permitidas.includes(tipo);
   }
 
   async function encolarOperacion(tipo, payload, label = '') {
     // Candado único: cubre a todos los interceptores actuales y a cualquiera
     // que se agregue después. No moverlo a los llamadores.
-    if (!escriturasHabilitadas()) {
-      console.warn(`[OfflineData] Captura offline deshabilitada: se rechazó "${tipo}".`);
+    if (!escriturasHabilitadas(tipo)) {
+      console.warn(`[OfflineData] Captura offline no habilitada para "${tipo}".`);
       throw new Error('OFFLINE_ESCRITURAS_DESHABILITADAS');
     }
 
@@ -1001,12 +1018,32 @@
       };
       if (csrfMeta) headers['X-CSRF-Token'] = csrfMeta.content;
 
+      // Se envia por TANDAS: un equipo con cientos de pendientes mandaba todo
+      // de golpe y el servidor rechazaba el lote entero con 400, que este
+      // cliente trata como error generico y reintenta para siempre.
+      const tanda = pendientes.slice(0, MAX_OPERACIONES_POR_TANDA);
+
       const res = await fetch(BASE + '/api/sync', {
         method:      'POST',
         credentials: 'same-origin',
         headers,
-        body: JSON.stringify({ operaciones: pendientes }),
+        body: JSON.stringify({ operaciones: tanda }),
       });
+
+      // 403 = el CSRF global rechazo la peticion. Pasa cuando el equipo estuvo
+      // horas sin red: el token vive en el <meta> de la pagina y caduca a las 4
+      // horas. NO reintentar en bucle — al recargar, el meta viene fresco y el
+      // sync automatico del arranque lo resuelve solo. Sin esta rama la cola
+      // giraba indefinidamente sin drenar y sin decir por que.
+      if (res.status === 403) {
+        console.warn('[OfflineData] Sync rechazado por CSRF (403). Se reintenta al recargar la pagina.');
+        window.PWA?.showToast(
+          'No se pudieron enviar tus capturas pendientes. Recarga la página para reintentar.',
+          'warning',
+          9000
+        );
+        return;
+      }
 
       // Sesión expirada sin remember-token: la cola se conserva tal cual y
       // se reintenta después del re-login (sync automático al cargar página).
@@ -1027,7 +1064,7 @@
       if (res.status === 423) {
         console.warn('[OfflineData] Sync deshabilitado en el servidor (423). La cola se conserva para captura manual.');
         window.PWA?.showToast(
-          `Tienes ${pendientes.length} captura(s) sin conexión que el sistema no puede enviar. ` +
+          `Tienes ${tanda.length} captura(s) sin conexión que el sistema no puede enviar. ` +
           'Ábrelas en "Cambios sin enviar" y regístralas a mano: no se guardaron.',
           'warning',
           12000
@@ -1043,7 +1080,7 @@
 
       // Marcar exitosas
       for (const uuid of (json.exitosas || [])) {
-        const op = pendientes.find(o => o.uuid === uuid);
+        const op = tanda.find(o => o.uuid === uuid);
         if (op) {
           await _txPut('operaciones_offline', {
             ...op,
@@ -1056,9 +1093,27 @@
         }
       }
 
+      // Avisos: la operación SÍ se aplicó, pero el operador debe enterarse.
+      // Hoy el caso es el huésped que se fusionó con uno existente por tener el
+      // mismo teléfono: lo que capturó se descartó y antes no lo sabía nadie.
+      for (const aviso of (json.avisos || [])) {
+        if (!aviso?.mensaje) continue;
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Revisa este registro',
+            text: aviso.mensaje,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#B45309',
+          });
+        } else {
+          window.PWA?.showToast(aviso.mensaje, 'warning', 12000);
+        }
+      }
+
       // Marcar fallidas con el mensaje de error
       for (const falla of (json.fallidas || [])) {
-        const op = pendientes.find(o => o.uuid === falla.uuid);
+        const op = tanda.find(o => o.uuid === falla.uuid);
         if (op) {
           await _txPut('operaciones_offline', {
             ...op,

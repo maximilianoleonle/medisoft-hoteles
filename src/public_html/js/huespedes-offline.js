@@ -52,7 +52,7 @@
   async function _guardarHuespedOffline(form) {
     // Captura offline apagada (/api/sync cerrado): el alta no llegaria al
     // servidor. Mejor avisar que dar por registrado a un huesped que no existe.
-    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+    if (window.OfflineData?.escriturasHabilitadas?.('crear_huesped') !== true) {
       _avisar(
         'warning',
         'Sin conexión',
@@ -168,12 +168,29 @@
     return `${base}/huespedes`;
   }
 
+  /**
+   * Los avisos llevan <strong> para resaltar "no quedó guardado", pero Swal con
+   * `text:` ESCAPA el HTML y el hotelero veia las etiquetas crudas en pantalla.
+   * Con `html:` se renderiza — y por eso hay que escapar antes: estos mensajes
+   * interpolan datos del huesped (su nombre), que nunca deben inyectar markup.
+   * Se re-permite solo <strong>, el unico formato que usan los avisos.
+   */
+  function _htmlSeguro(texto) {
+    return String(texto)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/&lt;strong&gt;/g, '<strong>')
+      .replace(/&lt;\/strong&gt;/g, '</strong>');
+  }
+
   function _avisar(icon, titulo, texto) {
     if (window.Swal) {
       Swal.fire({
         icon,
         title: titulo,
-        text: texto,
+        html: _htmlSeguro(texto),
         confirmButtonText: 'Entendido',
         confirmButtonColor: icon === 'success' ? '#4A6340' : '#B45309',
       });

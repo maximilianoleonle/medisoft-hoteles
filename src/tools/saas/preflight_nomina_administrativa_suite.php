@@ -189,7 +189,9 @@ function qaNomValidateHealthIntegration(string $healthPath): void
     $needles = [
         'preflight_frontera_nomina_oficial.php',
         'Preflight Personal 5E-T-A',
-        'sync_temporarily_disabled',
+        // Ola 1 (30-jul): el health check dejo de exigir el 423 y ahora exige la
+        // lista blanca de operaciones. Se busca el marcador nuevo.
+        'Sync::OPERACIONES_HABILITADAS',
         '/api/sync',
     ];
 

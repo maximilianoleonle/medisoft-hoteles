@@ -401,6 +401,16 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
            app instalable siguen activos (eso si funciona). Para reactivarlo:
            reabrir /api/sync (auditando idempotencia y cortes de caja) y poner
            esto en true. Ver ApiController::syncAction. */
+        <?php
+            // Operaciones cuya captura SIN CONEXION esta habilitada. Sale de la
+            // MISMA constante que valida el servidor, para que cliente y backend
+            // no puedan desincronizarse: si aqui aparece algo que Sync rechaza,
+            // el hotelero captura y luego lo pierde.
+            require_once APP_PATH . '/models/Sync.php';
+        ?>
+        window.MEDISOFT_OFFLINE_OPERACIONES = <?= json_encode(Sync::OPERACIONES_HABILITADAS) ?>;
+        // Compatibilidad: paginas viejas en cache que aun consultan el booleano.
+        // Se deja en false a proposito — el permiso real es por operacion.
         window.MEDISOFT_OFFLINE_ESCRITURAS = false;
         <?php if ($medisoftContext): ?>
         window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
