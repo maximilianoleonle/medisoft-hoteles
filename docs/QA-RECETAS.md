@@ -339,6 +339,18 @@ El módulo no tenía receta. Lo que se verifica es que la invitación a Google s
    Si `keys()` la lista y `match(url)` da `undefined`, es el `Vary: User-Agent` de Apache (ver CLAUDE.md). Así se cazó el 30-jul un fallback que pasaba 8/8 en Node y en producción no habría encontrado nada. Verificado ✅ 2026-07-30: 393,804 bytes de HTML real recuperados con `ignoreVary`.
 9. ⬜ prueba real en iPhone: instalar, abrir con red (para que guarde copia), modo avión, abrir desde el ícono → debe entrar al dashboard, no al muro. **Ojo**: una PWA ya instalada conserva su `start_url` viejo hasta reinstalarse — ese caso lo cubre el fallback del SW y es justo lo que hay que ver en el teléfono.
 
+## Estado de red pegado ("Sin conexión" con internet bueno) — verificado ✅ 2026-07-30
+
+Reproducir el bug (y comprobar que ya no ocurre) NO necesita cortar el wifi: basta tirar el servidor con la pantalla abierta, que es el caso real (Apache reiniciándose, cambio de antena). Contenedor hermano en :8091 con el código a probar y sesión por endpoint temporal.
+
+1. Con red: `PWA.isOnline()` y `await PWA.hayConexionAhora()` → ambos `true`.
+2. `docker stop <contenedor>` + `window.dispatchEvent(new Event('offline'))` → esperar hasta 8 s (el ping tarda en fallar) → `isOnline()` debe ser `false`. **Sin esa espera se mide antes de tiempo y parece que no detecta nada.**
+3. `docker start` — y **NO** disparar el evento `online`: el navegador no lo dispara si la interfaz nunca se cayó, que es justo lo que causaba el bug.
+4. La foto debe curarse **sola en ≤15 s** (reverificación periódica). Antes se quedaba en `false` para siempre.
+5. Prueba determinista del interceptor, sin escribir en la BD: espiar `HTMLFormElement.prototype.submit` y `Swal.fire`, forzar la foto pegada con `window.PWA.isOnline = () => false` **con el servidor arriba**, y disparar `form.dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}))`. Esperado: `submit` llamado, **cero** avisos. Restaurar los tres espías al final.
+6. Caso contrario (no romper lo que sí servía): con el servidor caído **y la caída ya detectada** (paso 2 completo), el mismo submit debe mostrar "Sin conexión … no quedó guardado" y NO enviar. **Gotcha de esta prueba**: si la foto todavía dice `true`, el interceptor no interviene —correctamente— y el assert del aviso falla; parece regresión y no lo es. Detectar la caída primero.
+7. Mismo par de pruebas aplica a Caja (modales de ingreso/gasto y botón "Hacer Corte"). Habitaciones no usa este gate.
+
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 
 Desde jul-26 la app NO acepta capturas sin conexión (ver CLAUDE.md). Verificar que el candado sigue puesto:

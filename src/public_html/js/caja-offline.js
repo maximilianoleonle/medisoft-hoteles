@@ -67,7 +67,16 @@
       e.preventDefault();
       e.stopPropagation();
 
-      _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel);
+      // `isOnline()` es una foto que pudo quedarse en false tras un microcorte
+      // (el navegador no dispara 'online' si el wifi nunca se cayo). Con dinero
+      // de por medio, medir de verdad antes de rechazar el cobro.
+      Promise.resolve(window.PWA?.hayConexionAhora?.()).then(hayRed => {
+        if (hayRed === true) {
+          form.submit(); // nativo: no re-dispara este handler
+          return;
+        }
+        _encolarMovimientoOffline(form, modalId, tipoOperacion, tipoLabel);
+      });
     });
   }
 
@@ -215,7 +224,16 @@
 
       e.preventDefault();
       e.stopPropagation();
-      _preCorteOffline();
+
+      // La foto pudo quedarse en false tras un microcorte: medir de verdad
+      // antes de mandar al pre-corte offline en vez de al corte real.
+      Promise.resolve(window.PWA?.hayConexionAhora?.()).then(hayRed => {
+        if (hayRed === true) {
+          window.location.href = href;
+          return;
+        }
+        _preCorteOffline();
+      });
     }, true);
   }
 

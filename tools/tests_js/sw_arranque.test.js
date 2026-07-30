@@ -89,7 +89,13 @@ function nuevoEntorno({ online }) {
     listeners.fetch[0](event);
   });
 
-  return { caches, stores, dispararFetch };
+  const dispararPost = (url) => new Promise((resolve, reject) => {
+    const request = new Request(url, { method: 'POST', body: 'x=1' });
+    const event = { request, respondWith: p => Promise.resolve(p).then(resolve, reject), waitUntil: () => {} };
+    listeners.fetch[0](event);
+  });
+
+  return { caches, stores, dispararFetch, dispararPost };
 }
 
 // Las pantallas se guardan con la Request de NAVEGACION real (lleva User-Agent),
@@ -192,6 +198,22 @@ caso('SIN RED: /reportes (no operativa) -> muro, NO suplanta con otra pantalla',
   await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
   const res = await env.dispararFetch(ORIGIN + '/reportes');
   return [await res.text(), 'MURO SIN CONEXION'];
+});
+
+// El offline es de SOLO LECTURA (escrituras apagadas, /api/sync = 423): un POST
+// que falla NO se reintenta despues. El SW prometia "se ejecutara cuando vuelva
+// internet" — la misma mentira que se quito de los interceptores el 26-jul, que
+// sobrevivio aqui hasta jul-30. Este caso existe para que no vuelva.
+caso('SIN RED: un POST fallido NO promete que se enviara despues', async () => {
+  const env = nuevoEntorno({ online: false });
+  const res = await env.dispararPost(ORIGIN + '/huespedes/store');
+  const cuerpo = await res.json();
+  const prometeEnvio = /se ejecutar|se enviar|cuando vuelva internet/i.test(cuerpo.message || '');
+  const diceQueNoSeGuardo = /no qued|no se guard/i.test(cuerpo.message || '');
+  return [
+    `promete=${prometeEnvio} avisa_que_no_se_guardo=${diceQueNoSeGuardo}`,
+    'promete=false avisa_que_no_se_guardo=true',
+  ];
 });
 
 // ── Que el arreglo no rompa el camino normal ─────────────────────────────────

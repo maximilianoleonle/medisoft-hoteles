@@ -631,7 +631,53 @@
       _onlineConfirmado = false;
     }
 
+    // Mientras el estado sea "sin conexion" hay que SEGUIR midiendo: el navegador
+    // no dispara 'online' cuando la interfaz nunca se cayo (servidor que se
+    // reinicia, cambio de antena, wifi sin salida), asi que sin este reintento
+    // la foto se queda en false PARA SIEMPRE y bloquea guardados con internet
+    // perfecto — pasaba al registrar un huesped o cobrar en Caja (jul-30).
+    if (_onlineConfirmado) {
+      detenerReverificacionRed();
+    } else {
+      programarReverificacionRed();
+    }
+
     return _onlineConfirmado;
+  }
+
+  const REVERIFICAR_RED_MS = 15000;
+  let _reintentoRed = null;
+
+  function programarReverificacionRed() {
+    if (_reintentoRed) return;
+
+    _reintentoRed = setInterval(async () => {
+      if (_onlineConfirmado) {
+        detenerReverificacionRed();
+        return;
+      }
+      if (await detectarConexionReal(true)) {
+        handleNetworkChange(); // repinta banner/indicadores y avisa a las vistas
+      }
+    }, REVERIFICAR_RED_MS);
+  }
+
+  function detenerReverificacionRed() {
+    if (!_reintentoRed) return;
+    clearInterval(_reintentoRed);
+    _reintentoRed = null;
+  }
+
+  /**
+   * ¿Se puede hablar con el servidor AHORA? Para decisiones que le cuestan
+   * trabajo al usuario (guardar un huesped, cobrar), no basta `isOnline()`:
+   * eso es una foto que pudo tomarse hace minutos. Camino normal sin latencia
+   * (la foto dice que si) y medicion real solo cuando dice que no.
+   */
+  async function hayConexionAhora() {
+    if (!navigator.onLine) return false;
+    if (_onlineConfirmado) return true;
+    return await detectarConexionReal(true);
   }
 
   async function handleNetworkChange(evento) {
@@ -676,6 +722,12 @@
 
   window.addEventListener('online',  handleNetworkChange);
   window.addEventListener('offline', handleNetworkChange);
+
+  // Volver a la pestaña es la señal mas barata de "puede que ya haya red":
+  // el hotelero deja el celular, atiende, regresa y espera poder guardar.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !_onlineConfirmado) handleNetworkChange();
+  });
 
   // Inicializar estado (sin mostrar toasts)
   document.addEventListener('DOMContentLoaded', () => {
@@ -1187,7 +1239,8 @@
     manualOfflineDataCleanup,
     triggerInstall: window.triggerInstall,
     checkOnline: detectarConexionReal,
-    isOnline: () => _onlineConfirmado,
+    isOnline: () => _onlineConfirmado,          // foto: barata, puede estar vieja
+    hayConexionAhora,                            // medicion real: usar ANTES de bloquear al usuario
     initPushControls,
     refreshPushControls: () => document.querySelectorAll('[data-pwa-push-panel]').forEach(refreshPushPanel),
     autoActivarPush: autoActivarPushDispositivo,

@@ -74,7 +74,14 @@
     // Escuchar cambios de red
     window.addEventListener('offline', () => _evaluarModoOffline());
     window.addEventListener('loscedros:network-change', event => {
-      if (event.detail?.online === false) _evaluarModoOffline();
+      if (event.detail?.online === false) {
+        _evaluarModoOffline();
+        return;
+      }
+      // Volvio la red SIN que el navegador disparara 'online' (microcorte con el
+      // wifi arriba: lo detecta la reverificacion periodica de pwa.js). Si no se
+      // quita aqui, el banner "sin conexion" se queda pegado con internet bueno.
+      _quitarBannerOffline();
     });
     window.addEventListener('online',  () => {
       _quitarBannerOffline();

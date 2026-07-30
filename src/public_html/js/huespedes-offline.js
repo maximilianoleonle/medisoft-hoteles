@@ -33,7 +33,19 @@
       e.preventDefault();
       e.stopPropagation();
 
-      _guardarHuespedOffline(form);
+      // `isOnline()` es una FOTO que pudo tomarse hace minutos: un microcorte con
+      // el wifi arriba la deja en false y el navegador nunca dispara 'online'
+      // para corregirla. Antes de decirle a alguien que su captura "no quedo
+      // guardada" —tras dos minutos llenando el formulario— hay que medir de
+      // verdad. Bug real: registrar huesped fallaba con internet perfecto.
+      Promise.resolve(window.PWA?.hayConexionAhora?.()).then(hayRed => {
+        if (hayRed === true) {
+          // submit() nativo: no vuelve a disparar este handler, no hay bucle.
+          form.submit();
+          return;
+        }
+        _guardarHuespedOffline(form);
+      });
     });
   });
 

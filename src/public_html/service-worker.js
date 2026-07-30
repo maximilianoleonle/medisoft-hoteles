@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v25'; // v25: arranque offline real (la PWA entra a la app, ya no al muro "Sin conexion")
+const SW_VERSION = 'v26'; // v26: el aviso de POST sin red ya no promete un envio que no ocurre
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -138,10 +138,14 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') {
     event.respondWith(
       fetch(request.clone()).catch(() => {
+        // NO prometer envio: la captura de escrituras sin conexion esta apagada
+        // y /api/sync responde 423, asi que esto NO se ejecuta despues. Decia
+        // "la accion se ejecutara cuando vuelva internet" — la misma mentira que
+        // se quito de los interceptores el 26-jul, sobrevivio aqui hasta jul-30.
         return new Response(JSON.stringify({
           success: false,
           offline: true,
-          message: 'Sin conexiÃ³n. La acciÃ³n se ejecutarÃ¡ cuando vuelva internet.',
+          message: 'Sin conexión: la acción no quedó guardada. Vuelve a intentarla cuando regrese el internet.',
         }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' },
