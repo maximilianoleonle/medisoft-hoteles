@@ -150,12 +150,53 @@ if (!function_exists('hotel_footer_nav_default_keys')) {
 }
 
 if (!function_exists('hotel_footer_nav_item_available')) {
-    function hotel_footer_nav_item_available(array $item)
+    /**
+     * ¿Está disponible este atajo para el hotel indicado?
+     *
+     * Con `$hotelId` explícito consulta los módulos de ESE hotel. Es obligatorio
+     * desde el panel SaaS: `hotel_menu_module_enabled()` devuelve true para
+     * cualquier ruta bajo /admin/saas (por diseño del panel) y además resuelve
+     * por `current_hotel_id()`, que lee solo `$_SESSION` ⇒ el panel ofrecía —y
+     * GUARDABA, porque `hotel_footer_nav_sanitize_keys` valida contra el catálogo
+     * COMPLETO— atajos a pantallas que el hotel cliente rebota con 403.
+     *
+     * Sin `$hotelId` conserva la semántica de menú de siempre (el runtime del
+     * hotel y la barra real no cambian).
+     */
+    function hotel_footer_nav_item_available(array $item, $hotelId = null)
     {
         $modules = $item['modules_any'] ?? [];
 
         if (empty($modules)) {
             return true;
+        }
+
+        $hotelId = (int) $hotelId;
+
+        if ($hotelId > 0 && function_exists('hotel_active_module_keys')) {
+            // Espejo EXACTO de hotel_menu_module_enabled, cambiando solo el hotel
+            // al que se le pregunta: catálogo ilegible (null) ⇒ no se esconde
+            // nada, y catálogo vacío ⇒ sobrevive dashboard. Con hotel_has_module
+            // a secas el filtro seria fail-CLOSED y en un despliegue fresco —donde
+            // la tabla `modulos` nace vacia— el panel se quedaria sin un solo
+            // atajo que ofrecer.
+            $clavesActivas = hotel_active_module_keys($hotelId);
+
+            if ($clavesActivas === null) {
+                return true;
+            }
+
+            if (empty($clavesActivas)) {
+                return in_array('dashboard', $modules, true);
+            }
+
+            foreach ($modules as $module) {
+                if (in_array((string) $module, $clavesActivas, true)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         if (!function_exists('hotel_menu_module_enabled')) {
@@ -173,12 +214,12 @@ if (!function_exists('hotel_footer_nav_item_available')) {
 }
 
 if (!function_exists('hotel_footer_nav_available_catalog')) {
-    function hotel_footer_nav_available_catalog()
+    function hotel_footer_nav_available_catalog($hotelId = null)
     {
         $available = [];
 
         foreach (hotel_footer_nav_catalog() as $key => $item) {
-            if (hotel_footer_nav_item_available($item)) {
+            if (hotel_footer_nav_item_available($item, $hotelId)) {
                 $available[$key] = $item;
             }
         }
@@ -252,18 +293,22 @@ if (!function_exists('hotel_footer_nav_items')) {
         $items = [];
 
         foreach ($keys as $key) {
-            if (!isset($catalog[$key]) || !hotel_footer_nav_item_available($catalog[$key])) {
+            if (!isset($catalog[$key]) || !hotel_footer_nav_item_available($catalog[$key], $hotelId)) {
                 continue;
             }
 
             $items[$key] = $catalog[$key];
         }
 
-        // Si la configuración quedó vacía tras filtrar módulos, rellenar con
-        // los predeterminados disponibles para no dejar la barra inútil.
-        if (empty($items)) {
+        // Si tras filtrar módulos la barra quedó por DEBAJO del mínimo, rellenar
+        // con los predeterminados disponibles (los 4 son paquete base, así que
+        // siempre hay de dónde). Antes solo rellenaba si quedaba VACÍA, y ese
+        // hueco importa desde que el panel SaaS filtra de verdad: una barra que
+        // baja a 1 atajo hace que hotel_footer_nav_normalize_payload aborte TODO
+        // el guardado de /configuracion con "necesita al menos N atajos".
+        if (count($items) < hotel_footer_nav_min()) {
             foreach (hotel_footer_nav_default_keys() as $key) {
-                if (isset($catalog[$key]) && hotel_footer_nav_item_available($catalog[$key])) {
+                if (isset($catalog[$key]) && hotel_footer_nav_item_available($catalog[$key], $hotelId)) {
                     $items[$key] = $catalog[$key];
                 }
 

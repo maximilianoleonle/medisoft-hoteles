@@ -105,6 +105,63 @@ t_eq('555 111 2233', (string) ($datos['hotelSettings']['contacto.telefono'] ?? '
 t_eq('#123456', strtolower(HotelConfiguracionService::fondoGuardado($hotelB)), 'fondoGuardado devuelve el color del hotel pedido');
 t_eq('', HotelConfiguracionService::fondoGuardado($hotelA), 'sin fondo propio devuelve vacio (usa el del tema)');
 
+// ── Barra inferior: el catalogo responde por el HOTEL OBJETIVO ─────────────
+// Bug jul-29: hotel_footer_nav_available_catalog() no aceptaba hotel y filtraba
+// con hotel_menu_module_enabled, que devuelve true para TODA ruta /admin/saas y
+// ademas resuelve por current_hotel_id() ($_SESSION) ⇒ el panel ofrecia atajos
+// de bloques que el hotel cliente no tiene, y los GUARDABA (el sanitizador
+// valida contra el catalogo completo). Resultado: atajo hacia un 403.
+// Los 4 atajos predeterminados son paquete base (es_core): se siembran para que
+// el catalogo de prueba se parezca al real, donde siempre hay atajos disponibles.
+foreach (['dashboard', 'reservaciones', 'habitaciones', 'caja'] as $ordenBase => $claveBase) {
+    $db->query(
+        "INSERT INTO modulos (clave, nombre, categoria, es_core, tipo_comercial, precio_mensual, activo_global, orden, created_at)
+         VALUES (?, ?, 'test', 1, 'base', 0.00, 1, ?, NOW())",
+        [$claveBase, ucfirst($claveBase), 20 + $ordenBase]
+    );
+}
+
+$db->query(
+    "INSERT INTO modulos (clave, nombre, categoria, es_core, tipo_comercial, precio_mensual, activo_global, orden, created_at)
+     VALUES ('documentos', 'Centro documental', 'test', 0, 'opcional', 149.00, 1, 16, NOW())"
+);
+$idDocumentos = (int) $db->lastInsertId();
+
+// GOTCHA: hotel_active_module_keys memoiza por proceso, y los hoteles A/B ya
+// fueron consultados arriba ⇒ hoteles NUEVOS para este bloque.
+$db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel con docs', 'saascfg-docs', 1, NOW())");
+$hotelConDocs = (int) $db->lastInsertId();
+$db->query("INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel sin docs', 'saascfg-nodocs', 1, NOW())");
+$hotelSinDocs = (int) $db->lastInsertId();
+$db->query(
+    "INSERT INTO hotel_modulos (hotel_id, modulo_id, activo, fuente, enabled_at, created_at)
+     VALUES (?, ?, 1, 'manual', NOW(), NOW())",
+    [$hotelConDocs, $idDocumentos]
+);
+
+$_SERVER['REQUEST_URI'] = '/admin/saas/hoteles/' . $hotelConDocs . '/configuracion';
+
+$catalogoCon = hotel_footer_nav_available_catalog($hotelConDocs);
+$catalogoSin = hotel_footer_nav_available_catalog($hotelSinDocs);
+t_ok(isset($catalogoCon['documentos']),
+    'el hotel que SI contrato documentos conserva su atajo en el panel');
+t_ok(!isset($catalogoSin['documentos']),
+    'el hotel que NO lo contrato ya no puede recibir ese atajo desde el panel');
+t_ok(isset($catalogoSin['dashboard']),
+    'los atajos del paquete base siguen disponibles para todos');
+
+$catalogoServicio = HotelConfiguracionService::datosDeVista($hotelSinDocs)['footerNavCatalog'] ?? [];
+t_ok(!isset($catalogoServicio['documentos']),
+    'datosDeVista pasa el hotel al catalogo (antes decia "todo disponible" bajo /admin/saas)');
+
+// El relleno de respaldo debe alcanzar el MINIMO, no solo evitar el vacio: si
+// tras filtrar queda 1 atajo, hotel_footer_nav_normalize_payload aborta TODO el
+// guardado de la pantalla.
+t_ok(count(hotel_footer_nav_items($hotelSinDocs)) >= hotel_footer_nav_min(),
+    'la barra filtrada nunca queda por debajo del minimo que exige el guardado');
+
+$_SERVER['REQUEST_URI'] = '/configuracion';
+
 // ── El hotel inquilino ya no ve la pantalla ────────────────────────────────
 $_SESSION['saas_admin'] = null;
 unset($_SESSION['saas_admin']);

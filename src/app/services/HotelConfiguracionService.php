@@ -196,7 +196,11 @@ class HotelConfiguracionService
             'guestFieldCatalog' => function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : [],
             'guestFieldPolicy' => function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($hotelId) : [],
             'ownerDistributionConfig' => function_exists('hotel_owner_distribution_config') ? hotel_owner_distribution_config($hotelId) : [],
-            'footerNavCatalog' => function_exists('hotel_footer_nav_available_catalog') ? hotel_footer_nav_available_catalog() : [],
+            // Con el hotel EXPLÍCITO: sin él, hotel_menu_module_enabled devuelve
+            // true para toda ruta /admin/saas y el panel ofrecía atajos que el
+            // hotel cliente rebota con 403 (y los guardaba, porque el sanitizador
+            // valida contra el catálogo completo).
+            'footerNavCatalog' => function_exists('hotel_footer_nav_available_catalog') ? hotel_footer_nav_available_catalog($hotelId) : [],
             'footerNavSelected' => function_exists('hotel_footer_nav_items') ? array_keys(hotel_footer_nav_items($hotelId)) : [],
             'footerNavMax' => function_exists('hotel_footer_nav_max') ? hotel_footer_nav_max() : 4,
             'footerNavMin' => function_exists('hotel_footer_nav_min') ? hotel_footer_nav_min() : 2,

@@ -123,7 +123,9 @@ $configGeneralUnitRows = is_array($generalUnitCatalog ?? null)
 $configPwaPushDevices = is_array($pwaPushDevices ?? null) ? array_values($pwaPushDevices) : [];
 $configFooterNavCatalog = is_array($footerNavCatalog ?? null)
     ? $footerNavCatalog
-    : (function_exists('hotel_footer_nav_available_catalog') ? hotel_footer_nav_available_catalog() : []);
+    // Fallback en sintonía con HotelConfiguracionService::datosDeVista: el hotel
+    // objetivo va explícito o el catálogo miente dentro del panel SaaS.
+    : (function_exists('hotel_footer_nav_available_catalog') ? hotel_footer_nav_available_catalog($configHotelId) : []);
 $configFooterNavSelected = is_array($footerNavSelected ?? null)
     ? array_values(array_filter($footerNavSelected, static function ($navKey) use ($configFooterNavCatalog) {
         return isset($configFooterNavCatalog[$navKey]);
