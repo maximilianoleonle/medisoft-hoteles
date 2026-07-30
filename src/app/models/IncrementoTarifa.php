@@ -215,7 +215,44 @@ class IncrementoTarifa extends Model {
         ];
     }
 
+    /**
+     * ¿El hotel tiene contratado el bloque que gobierna ESTA clase de regla?
+     * Incrementos = `tarifas_dinamicas` ($149) · descuentos = `descuentos` ($99).
+     *
+     * Sin contexto de hotel resoluble devuelve true: `getActivosParaFecha` ya
+     * responde vacío en ese caso y no queremos cambiar el comportamiento de un
+     * CLI/cron por una consulta de módulos que no puede resolverse.
+     */
+    private function claseTarifaContratada($clase, $hotelId = null) {
+        if (!function_exists('hotel_has_module')) {
+            return true;
+        }
+
+        $hotelResuelto = (int) $this->hotelIdActual($hotelId);
+        if ($hotelResuelto <= 0) {
+            return true;
+        }
+
+        $bloque = ($clase === 'descuento') ? 'descuentos' : 'tarifas_dinamicas';
+        return hotel_has_module($bloque, $hotelResuelto);
+    }
+
     private function getIncrementosAplicables($habitacion_id, $tipo_habitacion, $fecha, $hotelId = null, $clase = 'incremento') {
+        // CANDADO DEL MOTOR (jul-29). c74b407 blindó las PANTALLAS de tarifas y
+        // el override manual del operador, pero las reglas guardadas seguían
+        // aplicándose desde ~20 consumidores (modelo Reservacion, cotizaciones,
+        // motor de reservas público, Copiloto, API de cálculo). Fuga real: el
+        // hotel que contrató y CANCELÓ seguía cobrando sus incrementos y, con
+        // /tarifas en 403, no tenía forma de apagarlos.
+        //
+        // Este es el único punto por el que pasan las dos calculadoras, así que
+        // el candado va aquí y no en cada consumidor. Lo YA cobrado se conserva:
+        // precio_total y descuento_total viven en la reservación y nadie los
+        // recalcula (mismo contrato de historial congelado que hotel_modulos).
+        if (!$this->claseTarifaContratada($clase, $hotelId)) {
+            return [];
+        }
+
         $incrementos = $this->getActivosParaFecha($fecha, $hotelId);
         $aplicables = [];
 

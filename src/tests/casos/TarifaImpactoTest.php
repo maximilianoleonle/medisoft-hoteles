@@ -23,6 +23,20 @@ $usuarioId = $base['usuario_id'];
 
 $db = Database::getInstance();
 
+// El MOTOR de tarifas exige el bloque contratado desde jul-29 (candado en
+// IncrementoTarifa::getIncrementosAplicables, ver GatesMotorTarifasTest): sin
+// esta contratación el motor devuelve cero reglas aplicables y todo el recálculo
+// de este caso mediría precios base. La dependencia se declara aquí a propósito.
+$db->query(
+    "INSERT INTO modulos (clave, nombre, categoria, es_core, tipo_comercial, precio_mensual, activo_global, orden, created_at)
+     VALUES ('tarifas_dinamicas', 'Tarifas dinamicas', 'test', 0, 'opcional', 149.00, 1, 14, NOW())"
+);
+$db->query(
+    "INSERT INTO hotel_modulos (hotel_id, modulo_id, activo, fuente, enabled_at, created_at)
+     VALUES (?, ?, 1, 'manual', NOW(), NOW())",
+    [$hotelId, (int) $db->lastInsertId()]
+);
+
 $d = function (int $offset): string {
     return date('Y-m-d', strtotime(($offset >= 0 ? '+' : '') . $offset . ' days'));
 };

@@ -2039,7 +2039,21 @@ public function incrementosTarifaActivosAction() {
     $tarifaModel = new IncrementoTarifa();
     
     $incrementos = $tarifaModel->getActivosParaFecha($fecha);
-    
+
+    // Este endpoint está mapeado al módulo 'reservaciones' (paquete base) porque
+    // lo consume el alta de reservación, así que hay que filtrar POR CLASE con el
+    // bloque que gobierna cada una: incrementos = 'tarifas_dinamicas',
+    // descuentos = 'descuentos'. Sin el filtro, un hotel que canceló el motor
+    // seguía viendo sus reglas listadas aunque ya no se le apliquen.
+    if (function_exists('hotel_has_module')) {
+        $hotelIdApi = (int) $this->hotelIdActual();
+        $tieneIncrementos = $hotelIdApi > 0 ? hotel_has_module('tarifas_dinamicas', $hotelIdApi) : true;
+        $tieneDescuentos = $hotelIdApi > 0 ? hotel_has_module('descuentos', $hotelIdApi) : true;
+        $incrementos = array_values(array_filter($incrementos, function ($regla) use ($tieneIncrementos, $tieneDescuentos) {
+            return (($regla['clase'] ?? 'incremento') === 'descuento') ? $tieneDescuentos : $tieneIncrementos;
+        }));
+    }
+
     View::renderJSON([
         'success' => true,
         'fecha' => $fecha,
