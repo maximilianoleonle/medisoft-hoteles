@@ -142,9 +142,24 @@ function initializeEventListeners() {
  * Iniciar actualizaciones automáticas
  */
 function startAutoUpdate() {
+    // Solo refrescar si en la pagina existe algo que refrescar. La vista del
+    // dashboard se rehizo y ya no trae NINGUNO de los anclajes que este archivo
+    // actualiza ([data-stat], .dashboard-widget, #ultima-actualizacion), asi que
+    // el ciclo pegaba a 3 endpoints cada 30 s, por pestaña abierta, para escribir
+    // en elementos inexistentes. Autolimitante: el dia que el DOM vuelva, esto
+    // se reactiva solo.
+    const hayAlgoQueActualizar = document.querySelector(
+        '[data-stat], .dashboard-widget, #ultima-actualizacion'
+    );
+
+    if (!hayAlgoQueActualizar) {
+        console.info('[Dashboard] Auto-actualizacion inactiva: la vista no tiene anclajes que refrescar.');
+        return;
+    }
+
     // Actualizar inmediatamente
     updateDashboard();
-    
+
     // Configurar intervalo
     dashboardState.updateTimer = setInterval(() => {
         updateDashboard();

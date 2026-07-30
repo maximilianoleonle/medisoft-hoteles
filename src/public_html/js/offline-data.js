@@ -117,6 +117,44 @@
     });
   }
 
+  /**
+   * Reemplaza el contenido de un store EN UNA SOLA TRANSACCION.
+   *
+   * Antes se hacia `_txClear` y despues N `_txPut`, cada uno abriendo su propia
+   * transaccion: si el usuario navegaba, el movil suspendia la pestaña o se
+   * llenaba el disco a media escritura, el equipo quedaba con MEDIA copia y sin
+   * ningun aviso — peor que no tener copia, porque un cuarto ocupado se pinta
+   * libre. IndexedDB hace rollback de la transaccion incompleta, asi que ahora
+   * o entra la copia nueva entera o se conserva la anterior entera.
+   * De paso quita ~7,200 aperturas de base por ciclo de captura.
+   */
+  function _txReemplazar(storeName, registros) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.reject(new Error('missing_offline_storage_context'));
+    }
+
+    const filas = (registros || []).filter(Boolean);
+
+    return abrirDB().then(db => new Promise((resolve, reject) => {
+      let tx;
+      try {
+        tx = db.transaction(storeName, 'readwrite');
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      const store = tx.objectStore(storeName);
+      store.clear();
+      for (const fila of filas) store.put(fila);
+
+      tx.oncomplete = () => resolve(filas.length);
+      tx.onerror    = () => reject(tx.error);
+      tx.onabort    = () => reject(tx.error);
+    }));
+  }
+
   function _txPut(storeName, data) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
@@ -262,11 +300,8 @@
       const json = await res.json();
       if (!json.success || !Array.isArray(json.data)) return;
 
-      // Reemplazar snapshot completo
-      await _txClear('habitaciones');
-      for (const hab of json.data) {
-        await _txPut('habitaciones', hab);
-      }
+      // Reemplazar snapshot completo (atomico: o entra entero o no entra)
+      await _txReemplazar('habitaciones', json.data);
 
       await _txPut('meta', {
         key:   'ultima_sync_habitaciones',
@@ -306,13 +341,10 @@
       const localesPendientes = (await _txGetAll('reservaciones'))
         .filter(r => r && r.offline_pendiente);
 
-      await _txClear('reservaciones');
-      for (const r of json.reservaciones) {
-        await _txPut('reservaciones', r);
-      }
-      for (const r of localesPendientes) {
-        await _txPut('reservaciones', r);
-      }
+      // Las capturadas en este equipo van en el MISMO reemplazo: si se borraran
+      // aparte y el proceso se cortara en medio, se perderian datos que no
+      // existen en el servidor.
+      await _txReemplazar('reservaciones', [...json.reservaciones, ...localesPendientes]);
 
       await _txPut('meta', {
         key:   'ultima_sync_reservaciones',
@@ -373,26 +405,20 @@
       if (!json.success) return;
 
       const resultados = Array.isArray(json.resultados) ? json.resultados : [];
-      await _txClear('busqueda_global');
-      for (let i = 0; i < resultados.length; i++) {
-        const item = resultados[i];
-        await _txPut('busqueda_global', {
-          ...item,
-          key: `${item.tipo || 'item'}:${item.url || item.titulo || i}:${i}`,
-          cached_at: new Date().toISOString(),
-        });
-      }
+      const ahoraIso = new Date().toISOString();
+      await _txReemplazar('busqueda_global', resultados.map((item, i) => ({
+        ...item,
+        key: `${item.tipo || 'item'}:${item.url || item.titulo || i}:${i}`,
+        cached_at: ahoraIso,
+      })));
 
       if (Array.isArray(json.reservaciones)) {
-        await _txClear('reservaciones_busqueda');
-        for (const r of json.reservaciones) {
-          await _txPut('reservaciones_busqueda', {
-            ...r,
-            id: Number(r.id),
-            habitaciones_ids: normalizarIdsHabitaciones(r.habitaciones_ids),
-            cached_at: new Date().toISOString(),
-          });
-        }
+        await _txReemplazar('reservaciones_busqueda', json.reservaciones.map(r => ({
+          ...r,
+          id: Number(r.id),
+          habitaciones_ids: normalizarIdsHabitaciones(r.habitaciones_ids),
+          cached_at: ahoraIso,
+        })));
       }
 
       if (Array.isArray(json.huespedes)) {
@@ -439,19 +465,11 @@
         cached_at: new Date().toISOString(),
       });
 
-      await _txClear('caja_movimientos');
-      for (const mov of (json.movimientos || [])) {
-        if (mov && mov.id) {
-          await _txPut('caja_movimientos', { ...mov, id: Number(mov.id) });
-        }
-      }
+      await _txReemplazar('caja_movimientos',
+        (json.movimientos || []).filter(m => m && m.id).map(m => ({ ...m, id: Number(m.id) })));
 
-      await _txClear('caja_categorias');
-      for (const cat of (json.categorias || [])) {
-        if (cat && cat.id) {
-          await _txPut('caja_categorias', { ...cat, id: Number(cat.id) });
-        }
-      }
+      await _txReemplazar('caja_categorias',
+        (json.categorias || []).filter(c => c && c.id).map(c => ({ ...c, id: Number(c.id) })));
 
       await _txPut('meta', {
         key: 'ultima_sync_caja',
@@ -484,12 +502,8 @@
       const json = await res.json();
       if (!json.success || !Array.isArray(json.incrementos_activos)) return;
 
-      await _txClear('tarifas_incrementos');
-      for (const inc of json.incrementos_activos) {
-        if (inc && inc.id) {
-          await _txPut('tarifas_incrementos', { ...inc, id: Number(inc.id) });
-        }
-      }
+      await _txReemplazar('tarifas_incrementos',
+        json.incrementos_activos.filter(i => i && i.id).map(i => ({ ...i, id: Number(i.id) })));
 
       await _txPut('meta', {
         key: 'ultima_sync_tarifas',
@@ -502,16 +516,33 @@
   }
 
   /** Captura todos los snapshots en paralelo. */
-  async function capturarSnapshots() {
-    await Promise.allSettled([
-      capturarHabitaciones(),
-      capturarReservaciones(),
-      capturarHuespedes(),
-      capturarIndiceGlobal(),
-      capturarCaja(),
-      capturarTarifas(),
-    ]);
-    _actualizarUITimestamp();
+  // Guard de re-entrancia: dos ciclos simultaneos escriben los MISMOS stores y
+  // se pisan (el arranque dispara uno, el intervalo o el evento 'online' otro,
+  // y una pagina prerenderizada por instant-nav ejecuta su propio DOMContentLoaded
+  // sobre la misma base). Con el reemplazo atomico ya no corrompe, pero sigue
+  // siendo trabajo duplicado contra un VPS de 2 vCPU.
+  let _capturaEnCurso = null;
+
+  function capturarSnapshots() {
+    if (_capturaEnCurso) return _capturaEnCurso;
+
+    _capturaEnCurso = (async () => {
+      try {
+        await Promise.allSettled([
+          capturarHabitaciones(),
+          capturarReservaciones(),
+          capturarHuespedes(),
+          capturarIndiceGlobal(),
+          capturarCaja(),
+          capturarTarifas(),
+        ]);
+        _actualizarUITimestamp();
+      } finally {
+        _capturaEnCurso = null;
+      }
+    })();
+
+    return _capturaEnCurso;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -982,6 +1013,9 @@
       if (res.status === 401) {
         console.warn('[OfflineData] Sync detenido: sesión expirada. La cola queda intacta.');
         _avisarSesionExpirada();
+        // La sesion termino sin pasar por el boton de salir: los datos del hotel
+        // deben irse de este equipo igual que en un logout normal (la cola no).
+        window.dispatchEvent(new CustomEvent('loscedros:sesion-expirada'));
         return;
       }
 

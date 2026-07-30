@@ -351,6 +351,19 @@ Reproducir el bug (y comprobar que ya no ocurre) NO necesita cortar el wifi: bas
 6. Caso contrario (no romper lo que sí servía): con el servidor caído **y la caída ya detectada** (paso 2 completo), el mismo submit debe mostrar "Sin conexión … no quedó guardado" y NO enviar. **Gotcha de esta prueba**: si la foto todavía dice `true`, el interceptor no interviene —correctamente— y el assert del aviso falla; parece regresión y no lo es. Detectar la caída primero.
 7. Mismo par de pruebas aplica a Caja (modales de ingreso/gasto y botón "Hacer Corte"). Habitaciones no usa este gate.
 
+## Offline vendible: honestidad, frescura y privacidad — verificado ✅ 2026-07-30 (SW v27)
+
+Contenedor hermano en :8092 con el código a probar + sesión por endpoint temporal. **El `curl` NO puebla el caché del service worker** (es otro cliente): para cachear una pantalla hay que pedirla DESDE el navegador, o la prueba mide el muro creyendo que mide una copia — costó una vuelta.
+
+1. **Cinta de frescura**: con `/habitaciones` cacheada y el servidor caído, `fetch('/habitaciones')` debe traer un `<div id="ms-offline-cinta">` con "Sin conexión. Estás viendo información guardada hace …". Con red NO debe aparecer. Verificado: 4 pantallas con cinta correcta.
+2. **Filtro no aplicado**: con copia de `/huespedes` pero no de `/huespedes?buscar=Ramirez`, pedir la segunda debe añadir "no se pudo aplicar tu búsqueda o filtro". Con copia exacta NO debe decirlo. Es el caso que devolvía la lista completa como si fuera el resultado de la búsqueda.
+3. **Banner honesto de Caja**: cargar `/caja` con red, luego `Object.defineProperty(navigator,'onLine',{get:()=>false})` + `dispatchEvent(new Event('offline'))`, esperar ~2.5 s y leer el banner. Con `escriturasHabilitadas()===false` debe decir "solo consulta … anótalo en papel" y **jamás** "se guardan / se aplican al volver". Restaurar el descriptor al final.
+4. **Privacidad al cerrar sesión** (el que importa legalmente): poblar con `OfflineData.capturarSnapshots()`, sembrar una fila en `operaciones_offline`, crear un `<form action="/logout">` con `preventDefault` y dispararle `submit`. Esperado — verificado: `huespedes` 1000→0, `busqueda_global` 1071→0, todos los stores del hotel a 0, y **`operaciones_offline` intacta** (es la única copia de lo capturado antes del apagado). Ojo: se detecta por la ACCIÓN del form, no por `id="logout-form"` — hay dos formularios de logout y el del menú móvil no tiene id.
+5. **Snapshots atómicos**: `_txReemplazar` hace clear+puts en UNA transacción. Comprobable indirectamente por los conteos del punto 4 (49 habitaciones, 1000 huéspedes, 1071 índice) y porque ya no queda ningún `_txClear` suelto en `offline-data.js` (solo su definición).
+6. Arneses: `node tools/tests_js/sw_arranque.test.js` (20) y `offline_puente.test.js` (11), desde la raíz del repo.
+
+**Si algún día se reabre `/api/sync`** (hoy 423, y la auditoría del 30-jul recomienda NO todavía), los bloqueadores verificados son: `Sync.php:460` escribe `estado='completada'`, valor inexistente en el enum de la tabla → el check-out offline está roto al 100%; los INSERT de dinero no verifican su retorno, así que un fallo se marca 'ok' y la idempotencia impide reintentarlo; y el CSRF global del Router rechazaría `/api/sync` con 403 sin rama en el cliente → la cola reintentaría para siempre. Empezar por olas y NUNCA por dinero.
+
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 
 Desde jul-26 la app NO acepta capturas sin conexión (ver CLAUDE.md). Verificar que el candado sigue puesto:

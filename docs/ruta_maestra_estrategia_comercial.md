@@ -17,7 +17,36 @@ Este documento controla el orden del trabajo comercial. No se considera terminad
 - Compras, proveedores, recepción de mercancía y cuentas por pagar quedan fuera de la oferta.
 - Lealtad queda bloqueado temporalmente y no se promociona. Su valor completo depende del Motor de reservaciones y Promociones/cupones.
 - No utilizar los precios provisionales existentes como precios comerciales definitivos.
-- No prometer operación offline sincronizable mientras `/api/sync` permanezca bloqueado.
+- No prometer operación offline sincronizable mientras `/api/sync` permanezca bloqueado. **Sí se puede vender el offline de CONSULTA** — ver la sección siguiente, que define exactamente qué prometer.
+
+## Modo sin internet: qué prometer y qué no (auditoría 2026-07-30)
+
+**La frase que sí se sostiene:** *"Si se cae el internet, Medisoft sigue abriendo y puedes consultar la información del hotel. Para registrar movimientos hace falta conexión."*
+
+**La frase que NO:** *"Sigue operando sin internet"* o *"guarda y envía solo cuando vuelve la señal"*. La captura sin conexión está apagada desde el 26-jul-2026 porque encolaba cobros que nunca llegaban al servidor.
+
+Lo que el hotelero puede esperar de verdad:
+
+- La app instalada **abre sin internet** y entra a la última pantalla útil, no a un error del navegador.
+- **Consultar** habitaciones, reservaciones (llegadas de los próximos 30 días), huéspedes y el corte de caja tal como estaban en la última sincronización.
+- **Buscar de verdad** por nombre o teléfono sobre ~1,000 huéspedes y ~3,000 reservaciones guardados en el equipo: no es una lista congelada.
+- El **tablero de Limpieza** es la pantalla más sólida sin conexión, y es la del rol que más se mueve por el hotel.
+- La app **avisa siempre de cuándo son los datos** que muestra ("información guardada hace 2 horas") y avisa cuando no pudo aplicar una búsqueda.
+- Al volver el internet **se actualiza sola**, sin apretar nada.
+
+Límites que hay que decir ANTES de vender, no después:
+
+| Límite | Por qué |
+|---|---|
+| No se puede cobrar, hacer check-in/check-out ni crear reservaciones sin internet | La captura sin conexión está apagada a propósito: encolaba cobros que no llegaban |
+| El equipo necesita haber entrado **con internet al menos una vez**, y haber abierto las pantallas que querrá consultar | Solo se guarda lo que se visitó |
+| Los datos son de la última sincronización (se refresca cada 15 min con señal), no del minuto exacto | Es una copia, no una conexión |
+| Los precios que se ven sin internet son la **tarifa base**: no incluyen temporada ni descuentos | El cálculo definitivo lo hace el servidor |
+| En iPhone la app se cierra sola en segundo plano y no hay sincronización automática oculta | Límite de iOS, no del sistema; ninguna PWA lo evita |
+| El sistema operativo puede borrar la copia local si el equipo se queda sin espacio | Comportamiento del navegador |
+| Al cerrar sesión la copia se borra del equipo (por protección de datos de huéspedes) | Decisión deliberada: ver abajo |
+
+**Protección de datos (responde a "¿y si se roban la tablet de recepción?"):** los datos de huéspedes guardados en el equipo se borran al cerrar sesión y cuando la sesión caduca. Recomendación comercial: pedir al hotel que su personal cierre sesión al terminar el turno — y decirles que ese es justamente el precio de tener la información disponible sin internet.
 - Facturación administra solicitudes; no timbra CFDI ni sustituye al SAT, PAC o sistema del contador.
 
 ## Criterio de evidencia

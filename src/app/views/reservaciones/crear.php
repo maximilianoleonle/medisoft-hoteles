@@ -4855,6 +4855,20 @@ $(document).ready(function() {
     }
 
     async function crearReservacionOffline() {
+        // Primero lo primero: con la captura offline apagada esto termina
+        // rechazando la reservacion DESPUES de que el recepcionista lleno todo
+        // el formulario con el huesped enfrente. Avisar antes de gastarle el
+        // tiempo, y decir la verdad: es un candado del sistema, no un error suyo.
+        if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin conexión',
+                html: 'No se pueden crear reservaciones sin internet. Puedes <strong>consultar</strong> las que ya existen; para dar de alta esta, espera a que regrese la conexión: <strong>no quedó guardada</strong>.',
+                confirmButtonColor: 'var(--lc-green)'
+            });
+            return;
+        }
+
         if (!window.OfflineData) {
             Swal.fire({ icon:'error', title:'Offline no disponible', text:'No se pudo abrir el almacenamiento local.', confirmButtonColor:'var(--lc-green)' });
             return;
@@ -4944,7 +4958,14 @@ $(document).ready(function() {
             window.location.href = '<?= url('reservaciones') ?>';
         } catch (err) {
             console.error('[ReservacionesOffline] Error al crear reservacion offline:', err);
-            Swal.fire({ icon:'error', title:'No se pudo guardar offline', text:'Revisa los datos e intenta de nuevo.', confirmButtonColor:'var(--lc-green)' });
+            // No culpar al usuario: si llegamos aqui el problema es del equipo
+            // (almacenamiento local), no de lo que capturo.
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo guardar en este equipo',
+                html: 'La reservación <strong>no quedó guardada</strong>. No es por los datos que capturaste: falló el almacenamiento local. Anótala e intenta cuando regrese el internet.',
+                confirmButtonColor: 'var(--lc-green)'
+            });
         }
     }
 

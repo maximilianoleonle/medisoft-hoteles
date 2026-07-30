@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v26'; // v26: el aviso de POST sin red ya no promete un envio que no ocurre
+const SW_VERSION = 'v27'; // v27: cinta "estos datos son de antes" + aviso de filtro no aplicado
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -455,14 +455,103 @@ async function networkFirstPage(request) {
     notifyClients({ type: 'OFFLINE' });
 
     const cache = await caches.open(CACHE.pages);
+
+    // 1) Copia EXACTA de lo que se pidio (misma URL, misma query).
     // ignoreVary: la respuesta trae `Vary: ...,User-Agent` (Apache) y el UA cambia
     // cuando el navegador se actualiza -> sin esto, un update de Safari invalidaria
     // en silencio TODA la memoria offline del hotelero aunque siga guardada.
-    const copia = await cache.match(request) ||
-      await cache.match(request, { ignoreSearch: true, ignoreVary: true });
-    if (copia) return copia;
+    const exacta = await cache.match(request) ||
+      await cache.match(request, { ignoreVary: true });
+    if (exacta) return conCintaOffline(exacta);
+
+    // 2) Sin copia exacta: se sirve la de la misma ruta con OTRA query. Util
+    // (mejor eso que nada) pero hay que DECIRLO: pedir /huespedes?buscar=Ramirez
+    // y recibir la lista completa sin aviso es un resultado silenciosamente
+    // equivocado, y sobre eso se toman decisiones en el mostrador.
+    const otraQuery = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
+    if (otraQuery) {
+      const pidioFiltro = new URL(request.url).search !== '';
+      return conCintaOffline(otraQuery, pidioFiltro);
+    }
 
     return respuestaOffline();
+  }
+}
+
+// ─── Cinta "estos datos son de antes" ────────────────────────────────────────
+// Una pantalla servida del cache se ve EXACTA a la de internet: mismos numeros,
+// misma hora impresa. Recepcion puede vender un cuarto que se ocupo hace horas.
+// Los 4 avisos que vivian en las vistas estaban MUERTOS (un `return;` al inicio),
+// asi que se resuelve aqui: una sola cinta que cubre CUALQUIER pantalla servida
+// sin red, sin depender de que cada vista traiga la suya.
+
+function edadHumana(fechaHttp) {
+  if (!fechaHttp) return null;
+
+  const guardado = new Date(fechaHttp).getTime();
+  if (!Number.isFinite(guardado)) return null;
+
+  const minutos = Math.floor((Date.now() - guardado) / 60000);
+  if (minutos < 1) return 'hace un momento';
+  if (minutos === 1) return 'hace 1 minuto';
+  if (minutos < 60) return `hace ${minutos} minutos`;
+
+  const horas = Math.floor(minutos / 60);
+  if (horas === 1) return 'hace 1 hora';
+  if (horas < 24) return `hace ${horas} horas`;
+
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return 'de ayer';
+  return `de hace ${dias} días`;
+}
+
+function cintaOfflineHtml(fechaHttp, filtroNoAplicado) {
+  const edad = edadHumana(fechaHttp);
+  const cuando = edad
+    ? `Estás viendo información guardada <strong>${edad}</strong>`
+    : 'Estás viendo la última información guardada en este equipo';
+  const filtro = filtroNoAplicado
+    ? ' · <strong>no se pudo aplicar tu búsqueda o filtro</strong>, esto es la lista completa guardada'
+    : '';
+
+  // Estilos EN LINEA a proposito: la cinta debe verse aunque el CSS no cachee.
+  return '<div id="ms-offline-cinta" role="status" aria-live="polite" style="' +
+    'display:flex;gap:8px;align-items:flex-start;padding:9px 14px;' +
+    'background:#7C4A03;color:#FFF8EC;font-size:13px;line-height:1.35;' +
+    'font-weight:600;position:relative;z-index:2147483000;' +
+    'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
+    '<span aria-hidden="true">&#128246;</span><span>Sin conexión. ' + cuando + filtro +
+    '. Para guardar cambios hace falta internet.</span></div>';
+}
+
+/**
+ * Copia cacheada + cinta. Si algo no cuadra (no es HTML, no hay <body>, falla el
+ * parseo) devuelve la copia INTACTA: es un aviso, jamas debe impedir que la
+ * pantalla se vea.
+ */
+async function conCintaOffline(respuesta, filtroNoAplicado = false) {
+  try {
+    if (!respuesta) return respuesta;
+
+    const tipo = respuesta.headers.get('content-type') || '';
+    if (!tipo.includes('text/html')) return respuesta;
+
+    const html = await respuesta.clone().text();
+    const cinta = cintaOfflineHtml(respuesta.headers.get('date'), filtroNoAplicado);
+    const conCinta = html.replace(/<body([^>]*)>/i, (m, attrs) => `<body${attrs}>${cinta}`);
+
+    if (conCinta === html) return respuesta; // no habia <body>: no tocar
+
+    const headers = new Headers(respuesta.headers);
+    headers.delete('content-length'); // el cuerpo cambio de tamaño
+
+    return new Response(conCinta, {
+      status: respuesta.status,
+      statusText: respuesta.statusText,
+      headers,
+    });
+  } catch {
+    return respuesta;
   }
 }
 
@@ -520,7 +609,7 @@ async function arranquePage(request) {
     notifyClients({ type: 'OFFLINE' });
 
     const guardada = await mejorPantallaGuardada();
-    if (guardada) return guardada;
+    if (guardada) return conCintaOffline(guardada);
 
     return respuestaOffline();
   }

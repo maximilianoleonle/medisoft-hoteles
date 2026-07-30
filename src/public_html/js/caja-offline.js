@@ -238,6 +238,19 @@
   }
 
   async function _preCorteOffline() {
+    // ANTES de nada: si la captura offline esta apagada, este flujo termina
+    // rechazando el cierre... pero recien despues de hacer contar el efectivo
+    // fisico billete por billete. Avisar aqui, no al final. (El guard de
+    // _encolarMovimientoOffline existia desde el 26-jul; este camino se salto.)
+    if (window.OfflineData?.escriturasHabilitadas?.() !== true) {
+      _avisar(
+        'warning',
+        'Sin conexión',
+        'No se puede cerrar el turno sin internet. Espera a que regrese la conexión para hacer el corte: <strong>no cuentes el efectivo todavía</strong>.'
+      );
+      return;
+    }
+
     if (!window.OfflineData?.obtenerCajaSnapshot) {
       _avisar('error', 'Offline no disponible', 'No se pudo abrir el almacenamiento local.');
       return;
@@ -473,13 +486,33 @@
           z-index:     100;
           box-shadow:  0 2px 8px rgba(0,0,0,0.15);
         `;
-        banner.innerHTML = `
+        // El texto DEPENDE de si la captura offline esta encendida. Con las
+        // escrituras apagadas (hoy: /api/sync responde 423) prometer que "se
+        // guardan y se aplican al volver internet" es falso, y es el peor lugar
+        // para mentir: el recepcionista lee el cartel, cobra en efectivo
+        // confiado en que el equipo lo registro, y ese dinero no existe para el
+        // corte. El guard de _encolarMovimientoOffline ya impide encolar, pero
+        // este banner induce a confiar ANTES de intentarlo.
+        const capturaViva = window.OfflineData?.escriturasHabilitadas?.() === true;
+        banner.innerHTML = capturaViva
+          ? `
           <span style="font-size:1.2em">📡</span>
           <div>
             <strong>Caja en modo offline</strong>
             <span style="display:block;font-size:0.82em;opacity:0.9;margin-top:1px;">
               Los ingresos, gastos y el cierre de corte que registres se guardan en este equipo
               y se aplican al volver internet. La apertura de un corte nuevo sí requiere conexión.
+            </span>
+          </div>
+        `
+          : `
+          <span style="font-size:1.2em">📡</span>
+          <div>
+            <strong>Caja sin conexión — solo consulta</strong>
+            <span style="display:block;font-size:0.82em;opacity:0.9;margin-top:1px;">
+              Puedes revisar el corte y los movimientos ya guardados. Para registrar un ingreso,
+              un gasto o cerrar el turno hace falta internet: <strong>anótalo en papel</strong> y
+              captúralo en cuanto regrese.
             </span>
           </div>
         `;

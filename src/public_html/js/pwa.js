@@ -416,15 +416,57 @@
     }
   }
 
+  // Stores que NO se borran al cerrar sesion: son trabajo del usuario, no datos
+  // del hotel. `operaciones_offline` es la UNICA copia de lo que se capturo
+  // antes de que se apagaran las escrituras (26-jul) — borrarla seria destruir
+  // informacion que no existe en ningun otro lado.
+  const STORES_QUE_SOBREVIVEN_AL_LOGOUT = ['operaciones_offline', 'offline_queue', 'meta'];
+
+  /**
+   * Borra de IndexedDB los datos del hotel (huespedes con telefono y correo,
+   * reservaciones, movimientos de caja...). Antes se preservaba la base ENTERA
+   * "para no perder pendientes", lo que dejaba datos personales de huespedes
+   * reales en cualquier tablet o celular donde alguien hubiera entrado, sin
+   * caducidad y recuperables sin contraseña. Ahora se conserva solo la cola.
+   */
+  async function borrarDatosDelHotelEnEsteEquipo() {
+    if (!hasOfflineStorageContext()) return;
+
+    const db = await openDB().catch(() => null);
+    if (!db) return;
+
+    const aBorrar = Array.from(db.objectStoreNames)
+      .filter(nombre => !STORES_QUE_SOBREVIVEN_AL_LOGOUT.includes(nombre));
+
+    if (!aBorrar.length) { db.close(); return; }
+
+    await new Promise(resolve => {
+      let tx;
+      try {
+        tx = db.transaction(aBorrar, 'readwrite');
+      } catch {
+        resolve();
+        return;
+      }
+      aBorrar.forEach(nombre => { try { tx.objectStore(nombre).clear(); } catch {} });
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+      tx.onabort = resolve;
+    });
+
+    db.close();
+    console.warn(`[PWA] Datos del hotel borrados de este equipo (${aBorrar.length} almacenes).`);
+  }
+
   async function clearLocalPrivateData() {
     try {
       clearKnownOfflineStorageKeys({ keepCurrentScope: true });
       // El HTML guardado de pantallas contiene datos del usuario/hotel: fuera al cerrar sesion.
-      // IndexedDB se preserva para no perder operaciones pendientes de sincronizar.
       postToSW({ type: 'CLEAR_PAGES_CACHE' });
-      console.warn('[PWA] Datos offline locales preservados por seguridad durante logout.');
+      // Y los datos personales de la base local tambien (la cola sobrevive).
+      await borrarDatosDelHotelEnEsteEquipo();
     } catch (err) {
-      console.warn('[PWA] No se pudieron actualizar los marcadores locales:', err);
+      console.warn('[PWA] No se pudieron limpiar los datos locales:', err);
     }
   }
 
@@ -536,6 +578,16 @@
    */
   document.addEventListener('submit', async function (e) {
     if (!e.target.dataset.offlineQueue) return;
+    // MINA: esta es una SEGUNDA cola, anterior a la tipada de offline-data.js, y
+    // el candado del 26-jul (OfflineData.encolarOperacion) no la cubre. Hoy no
+    // la usa ningun formulario del repo, pero esta documentada como API: el dia
+    // que alguien ponga data-offline-queue creyendo que "el offline esta
+    // apagado", su formulario diria "guardado" y despues lo borraria anunciando
+    // exito, sin pasar por ningun guard. Se alinea con la misma promesa.
+    if (window.MEDISOFT_OFFLINE_ESCRITURAS !== true) {
+      console.warn('[PWA] Cola offline generica ignorada: la captura sin conexion esta apagada.');
+      return;
+    }
     if (navigator.onLine) return; // online â†’ enviar normal
 
     e.preventDefault();
@@ -604,7 +656,14 @@
   // Rastrea si la Ãºltima vez que cargÃ³ la pÃ¡gina ya habÃ­a conexiÃ³n
   // para no mostrar "ConexiÃ³n restaurada" en cada navegaciÃ³n normal.
   let _onlineConfirmado = navigator.onLine;
-  let _ultimaPruebaConexion = 0;
+  // Arranca "recien medido" A PROPOSITO: el handleNetworkChange del
+  // DOMContentLoaded caia en el throttle... con 0 NO caia, y disparaba un ping a
+  // /api/buscar (2 JOIN + 3 GROUP_CONCAT + 3 LIKE) en CADA carga de pagina, para
+  // todo usuario, usara o no el offline. Es informacion que ya tenemos: si esta
+  // pagina llego del servidor hay red, y si vino del cache el propio SW nos
+  // manda 'OFFLINE'. Los eventos de red, hayConexionAhora() y la reverificacion
+  // periodica fuerzan la medicion, asi que no se pierde ninguna deteccion real.
+  let _ultimaPruebaConexion = Date.now();
   let _estadoRedAnterior = _onlineConfirmado; // true = online al arrancar
 
   async function detectarConexionReal(forzar = false) {
@@ -713,7 +772,15 @@
       }
     } else {
       if (esCambioReal) {
-        showToast('Trabajando sin internet. Tus cambios se guardan en este equipo.', 'info', 5000);
+        // El texto depende de si la captura offline esta viva. Hoy esta apagada
+        // (/api/sync = 423): prometer que "tus cambios se guardan" es falso.
+        showToast(
+          window.OfflineData?.escriturasHabilitadas?.() === true
+            ? 'Trabajando sin internet. Tus cambios se guardan en este equipo.'
+            : 'Sin internet. Puedes consultar lo ya cargado; para guardar hace falta conexión.',
+          'info',
+          5000
+        );
       }
     }
 
@@ -1217,11 +1284,34 @@
     } catch {}
   }
 
+  /**
+   * Al cerrar sesion hay que borrar los datos de huespedes de este equipo.
+   * Se detecta por la ACCION del formulario, no por su id: hay DOS formularios
+   * de logout (sidebar.php ~923 en el menu movil y ~1055 en escritorio) y solo
+   * el de escritorio tenia `id="logout-form"`. Un id no se puede repetir en el
+   * DOM, asi que en celular —justo donde trabaja recepcion— el borrado no
+   * corria NUNCA y los datos personales se quedaban en el equipo.
+   */
+  function esFormularioDeLogout(form) {
+    if (!form || form.tagName !== 'FORM') return false;
+    if (form.id === 'logout-form') return true;
+
+    try {
+      return new URL(form.action, window.location.origin).pathname.replace(/\/+$/, '').endsWith('/logout');
+    } catch {
+      return false;
+    }
+  }
+
   document.addEventListener('submit', event => {
-    if (event.target && event.target.id === 'logout-form') {
+    if (esFormularioDeLogout(event.target)) {
       clearLocalPrivateData();
     }
   });
+
+  // La sesion tambien puede terminar SIN pasar por el boton: caduca por
+  // inactividad y el servidor responde 401. Ahi tambien hay que limpiar.
+  window.addEventListener('loscedros:sesion-expirada', () => clearLocalPrivateData());
 
   document.addEventListener('click', event => {
     const button = event.target?.closest?.('#manual-offline-cleanup-btn');

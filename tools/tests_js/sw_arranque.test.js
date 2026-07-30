@@ -216,6 +216,65 @@ caso('SIN RED: un POST fallido NO promete que se enviara despues', async () => {
   ];
 });
 
+// ── Cinta "estos datos son de antes" ─────────────────────────────────────────
+// Una pantalla del cache se ve IDENTICA a la de internet. Sin este aviso,
+// recepcion vende un cuarto que se ocupo hace horas. Los 4 avisos que vivian en
+// las vistas estaban muertos (un `return;` al inicio); ahora lo pone el SW.
+
+async function textoCinta(res) {
+  const html = await res.text();
+  const m = html.match(/<div id="ms-offline-cinta"[\s\S]*?<\/div>/);
+  return m ? m[0].replace(/<[^>]+>/g, '').replace(/&#\d+;/g, '').replace(/\s+/g, ' ').trim() : null;
+}
+
+caso('SIN RED: la pantalla servida del cache AVISA que los datos son de antes', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'habitaciones', '<html><body>HABITACIONES</body></html>');
+  const res = await env.dispararFetch(ORIGIN + '/habitaciones');
+  const t = await textoCinta(res);
+  return [t && /Sin conexión/.test(t) && /guardada/.test(t) ? 'AVISA' : 'NO AVISA: ' + t, 'AVISA'];
+});
+
+caso('SIN RED: pedir una BUSQUEDA sin copia exacta avisa que el filtro no se aplico', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'huespedes', '<html><body>LISTA COMPLETA</body></html>');
+  const res = await env.dispararFetch(ORIGIN + '/huespedes?buscar=Ramirez');
+  const t = await textoCinta(res);
+  return [/no se pudo aplicar tu búsqueda o filtro/.test(t || '') ? 'AVISA DEL FILTRO' : 'NO AVISA: ' + t, 'AVISA DEL FILTRO'];
+});
+
+caso('SIN RED: con copia EXACTA no inventa un aviso de filtro', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'huespedes', '<html><body>LISTA</body></html>');
+  const res = await env.dispararFetch(ORIGIN + '/huespedes');
+  const t = await textoCinta(res);
+  return [/no se pudo aplicar/.test(t || '') ? 'AVISA DE MAS' : 'CORRECTO', 'CORRECTO'];
+});
+
+caso('CON RED: la pantalla NO lleva cinta (no ensuciar el uso normal)', async () => {
+  const env = nuevoEntorno({ online: true });
+  const res = await env.dispararFetch(ORIGIN + '/habitaciones');
+  const t = await textoCinta(res);
+  return [t === null ? 'SIN CINTA' : 'CINTA INDEBIDA: ' + t, 'SIN CINTA'];
+});
+
+caso('La cinta NO se inyecta en respuestas que no son HTML', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  const cache = await env.caches.open('loscedros-pages');
+  const req = new Request(ORIGIN + '/dashboard', { headers: { accept: 'text/html' } });
+  await cache.put(req, new Response('{"a":1}', {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'Vary': 'Accept-Encoding,User-Agent' },
+  }));
+  const res = await env.dispararFetch(ORIGIN + '/dashboard');
+  const cuerpo = await res.text();
+  return [cuerpo === '{"a":1}' ? 'INTACTA' : 'MODIFICADA: ' + cuerpo, 'INTACTA'];
+});
+
 // ── Que el arreglo no rompa el camino normal ─────────────────────────────────
 caso('CON RED: /dashboard -> responde la red y GUARDA la copia buena', async () => {
   const env = nuevoEntorno({ online: true });

@@ -1126,7 +1126,9 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <span class="pwa-banner-icon"><i class="fas fa-wifi"></i></span>
     <div class="pwa-banner-text">
       <strong>Sin conexión a internet</strong>
-      <span>Sin internet. Puedes seguir trabajando: tus cambios se guardan en este equipo y se enviarán solos.</span>
+      <!-- El texto lo escribe pwa.js segun si la captura offline esta encendida:
+           hoy esta apagada y prometer "se enviaran solos" seria falso. -->
+      <span data-pwa-banner-copy>Puedes consultar la información ya cargada. Para guardar cambios hace falta conexión.</span>
     </div>
   </div>
 
