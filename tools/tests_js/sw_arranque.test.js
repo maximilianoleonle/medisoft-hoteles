@@ -83,6 +83,14 @@ function nuevoEntorno({ online }) {
   const silencio = { log() {}, warn() {}, info() {}, error() {} };
   new Function('self', 'caches', 'fetch', 'console', SRC)(self, caches, fetchMock, silencio);
 
+  // Dispara un mensaje al SW (postMessage desde la app) y espera su trabajo.
+  const dispararMensaje = async (data) => {
+    const pendientes = [];
+    const event = { data, waitUntil: p => pendientes.push(p) };
+    (listeners.message || []).forEach(fn => fn(event));
+    await Promise.allSettled(pendientes);
+  };
+
   const dispararFetch = (url) => new Promise((resolve, reject) => {
     const request = new Request(url, { headers: { accept: 'text/html' } });
     const event = { request, respondWith: p => Promise.resolve(p).then(resolve, reject), waitUntil: () => {} };
@@ -95,7 +103,7 @@ function nuevoEntorno({ online }) {
     listeners.fetch[0](event);
   });
 
-  return { caches, stores, dispararFetch, dispararPost };
+  return { caches, stores, dispararFetch, dispararPost, dispararMensaje };
 }
 
 // Las pantallas se guardan con la Request de NAVEGACION real (lleva User-Agent),
@@ -273,6 +281,59 @@ caso('La cinta NO se inyecta en respuestas que no son HTML', async () => {
   const res = await env.dispararFetch(ORIGIN + '/dashboard');
   const cuerpo = await res.text();
   return [cuerpo === '{"a":1}' ? 'INTACTA' : 'MODIFICADA: ' + cuerpo, 'INTACTA'];
+});
+
+// ── Precalentado de pantallas ────────────────────────────────────────────────
+// Solo se guardaba lo VISITADO, asi que al caerse el internet faltaba justo lo
+// que no se habia tocado esa sesion (el owner lo vio en su PC: el muro le
+// ofrecia Inicio, Habitaciones y Caja, sin Reservaciones).
+
+caso('CON RED: precalentar guarda una pantalla que el usuario NO visito', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararMensaje({ type: 'PRECALENTAR_PANTALLAS', rutas: ['reservaciones'] });
+  const cache = await env.caches.open('loscedros-pages');
+  const copia = await cache.match(ORIGIN + '/reservaciones', { ignoreVary: true });
+  return [copia ? 'GUARDADA' : 'NO GUARDADA', 'GUARDADA'];
+});
+
+caso('La copia precalentada SE PUEDE LEER despues (el Vary no la esconde)', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararMensaje({ type: 'PRECALENTAR_PANTALLAS', rutas: ['reservaciones'] });
+  // Ahora se pide como navegacion real, con su User-Agent: debe encontrarla.
+  const res = await env.dispararFetch(ORIGIN + '/reservaciones');
+  const texto = await res.text();
+  return [texto.includes('/reservaciones') ? 'LEIDA' : 'NO LEIDA', 'LEIDA'];
+});
+
+// CANDADO: un mensaje manipulado no puede hacer que el SW recorra el sitio.
+caso('Precalentar IGNORA rutas que no son pantallas operativas', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararMensaje({
+    type: 'PRECALENTAR_PANTALLAS',
+    rutas: ['reportes', 'configuracion', 'admin/saas/hoteles', 'login'],
+  });
+  const cache = await env.caches.open('loscedros-pages');
+  const guardadas = (await cache.keys()).length;
+  return [`guardadas=${guardadas}`, 'guardadas=0'];
+});
+
+caso('Precalentar NO repide lo que ya tiene copia', async () => {
+  const env = nuevoEntorno({ online: true });
+  await sembrarPagina(env, 'reservaciones', 'COPIA VIEJA QUE NO SE DEBE PISAR');
+  await env.dispararMensaje({ type: 'PRECALENTAR_PANTALLAS', rutas: ['reservaciones'] });
+  // OJO: nada de navegar aqui. Un fetch con red refrescaria el cache por su
+  // cuenta y la prueba mediria ESO, no el precalentado (asi fallo la 1a version).
+  const cache = await env.caches.open('loscedros-pages');
+  const copia = await cache.match(ORIGIN + '/reservaciones', { ignoreVary: true });
+  const texto = await copia.text();
+  return [texto.includes('COPIA VIEJA') ? 'RESPETADA' : 'PISADA', 'RESPETADA'];
+});
+
+caso('SIN RED: precalentar no rompe nada (se abandona en silencio)', async () => {
+  const env = nuevoEntorno({ online: false });
+  await env.dispararMensaje({ type: 'PRECALENTAR_PANTALLAS', rutas: ['reservaciones', 'caja'] });
+  const cache = await env.caches.open('loscedros-pages');
+  return [`guardadas=${(await cache.keys()).length}`, 'guardadas=0'];
 });
 
 // ── Que el arreglo no rompa el camino normal ─────────────────────────────────

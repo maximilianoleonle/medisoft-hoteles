@@ -426,6 +426,12 @@ Contenedor hermano en :8092 con el código a probar + sesión por endpoint tempo
 
 **Si algún día se reabre `/api/sync`** (hoy 423, y la auditoría del 30-jul recomienda NO todavía), los bloqueadores verificados son: `Sync.php:460` escribe `estado='completada'`, valor inexistente en el enum de la tabla → el check-out offline está roto al 100%; los INSERT de dinero no verifican su retorno, así que un fallo se marca 'ok' y la idempotencia impide reintentarlo; y el CSRF global del Router rechazaría `/api/sync` con 403 sin rama en el cliente → la cola reintentaría para siempre. Empezar por olas y NUNCA por dinero.
 
+## Precalentado de pantallas y muro en escritorio (SW v29) — verificado ✅ 2026-07-30
+
+1. **Precalentado, en navegador**: borrar `loscedros-pages` y `localStorage['loscedros_precalentado_at']`, recargar `/dashboard` y esperar ~20 s → el caché debe tener las pantallas del menú **sin haberlas visitado**. GOTCHA: arranca en cuanto hay idle, así que si mides a los 3 s **ya terminó** y parece que no hizo nada; medir la diferencia, no el estado.
+2. **Precalentado, determinista** (lo que de verdad vale): `node tools/tests_js/sw_arranque.test.js`. Cubre que guarde una pantalla no visitada, que la copia **se pueda leer después** (el `Vary` no la esconde), que **ignore rutas no operativas** (`reportes`, `admin/saas/...`: candado contra un mensaje manipulado), que no repida lo que ya tiene y que sin red se abandone en silencio. **No navegues dentro de esas pruebas**: un fetch con red refresca el caché por su cuenta y acabas midiendo eso en vez del precalentado (así falló la 1ª versión del caso).
+3. **Muro en escritorio**: abrir `/offline.html` a 1280px → `.offline-card` en `display:grid`, ~920px de ancho, y el cuerpo a la DERECHA del encabezado (`body.x > header.x + header.width`). A 390px debe volver a apilarse y **no** generar scroll horizontal. Se comprueba con `getBoundingClientRect`, no con capturas (el pane cuelga el screenshot).
+
 ## Captura offline Ola 1: alta de huésped — verificado ✅ 2026-07-30 (E2E contra BD real)
 
 Contenedor hermano + sesión por endpoint temporal. **La sesión PHP vive DENTRO del contenedor**: si lo reinicias a media prueba, el sync empieza a dar 401 y parece un bug del código — volver a pasar por el endpoint de sesión.

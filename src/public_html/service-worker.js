@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v28'; // v28: con senal debil no se espera a la red, se entra a lo guardado
+const SW_VERSION = 'v29'; // v29: precalentado de pantallas + pantalla sin conexion adaptada a escritorio
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -366,6 +366,10 @@ self.addEventListener('message', event => {
 
     case 'CLEAR_PRIVATE_DATA':
       event.waitUntil(clearPrivateCaches());
+      break;
+
+    case 'PRECALENTAR_PANTALLAS':
+      event.waitUntil(precalentarPantallas(event.data.rutas));
       break;
 
     case 'CLEAR_PAGES_CACHE':
@@ -845,6 +849,62 @@ async function arranquePage(request, event) {
   const lenta = tarde === AGOTADO;
   notifyClients({ type: 'OFFLINE', lenta });
   return respuestaOffline(lenta);
+}
+
+/**
+ * Guarda por adelantado las pantallas operativas que el hotelero AUN no ha
+ * abierto en este equipo.
+ *
+ * Hasta ahora solo se guardaba lo visitado, asi que cuando se caia el internet
+ * faltaba justo lo que no se habia tocado esa sesion — el owner lo vio en su PC:
+ * el muro le ofrecia Inicio, Habitaciones y Caja, sin Reservaciones. Con esto la
+ * copia esta completa antes de hacer falta, que es la unica forma de que sirva.
+ *
+ * Reglas para no volverlo un impuesto sobre el VPS (2 vCPU, dos hoteles):
+ *  - Solo rutas OPERATIVAS: se validan contra OFFLINE_PAGE_PATHS, asi un mensaje
+ *    manipulado no puede hacer que el SW recorra el sitio entero.
+ *  - Se salta lo que ya tiene copia: en regimen normal no pide nada.
+ *  - De una en una y espaciadas, nunca en rafaga.
+ *  - Quien decide CUANDO es pwa.js (con la pagina ya quieta y no mas de una vez
+ *    cada varias horas); aqui solo se ejecuta.
+ */
+const PRECALENTADO_ESPACIADO_MS = 2500;
+const PRECALENTADO_MAX_RUTAS = 8;
+
+async function precalentarPantallas(rutas) {
+  if (!Array.isArray(rutas) || !rutas.length) return;
+
+  const cache = await caches.open(CACHE.pages);
+  let guardadas = 0;
+
+  for (const cruda of rutas.slice(0, PRECALENTADO_MAX_RUTAS)) {
+    const ruta = String(cruda || '').replace(/^\/+/, '').replace(/\/+$/, '');
+    if (!ruta || !OFFLINE_PAGE_PATHS.test(ruta)) continue;
+
+    const url = BASE + ruta;
+    if (await cache.match(url, { ignoreSearch: true, ignoreVary: true })) continue;
+
+    try {
+      const respuesta = await fetch(url, { credentials: 'same-origin' });
+      // `redirected` descarta el caso de sesion expirada -> login, y un 403 por
+      // permisos simplemente no se guarda: el rol que no ve esa pantalla
+      // tampoco la necesita offline.
+      if (respuesta.ok && !respuesta.redirected && respuesta.status === 200) {
+        await cache.put(new Request(url), respuesta.clone());
+        guardadas++;
+      }
+    } catch {
+      // Sin red a media tanda: se abandona, ya se reintentara en otra visita.
+      break;
+    }
+
+    await new Promise(listo => setTimeout(listo, PRECALENTADO_ESPACIADO_MS));
+  }
+
+  if (guardadas) {
+    console.log(`[SW] Precalentadas ${guardadas} pantalla(s) para uso sin conexion.`);
+    notifyClients({ type: 'PANTALLAS_PRECALENTADAS', total: guardadas });
+  }
 }
 
 async function clearPagesCache() {

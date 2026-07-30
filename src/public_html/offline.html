@@ -247,6 +247,66 @@
             transform: scale(.985);
         }
 
+        /* ── Escritorio ────────────────────────────────────────────────────
+           Esta pantalla se diseñó para el celular y en un monitor quedaba una
+           tarjeta chica flotando en mucho vacío (lo reportó el owner desde su
+           PC). Desde 900px se reparte en dos columnas: identidad del hotel a la
+           izquierda, qué puede hacer a la derecha — que es lo que la persona
+           necesita leer primero cuando se le cayó el internet. */
+        @media (min-width: 900px) {
+            body {
+                padding: 40px;
+            }
+
+            .offline-card {
+                width: min(920px, 100%);
+                display: grid;
+                grid-template-columns: 330px 1fr;
+            }
+
+            .offline-header {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 44px 32px;
+                border-bottom: 0;
+                border-right: 1px solid color-mix(in srgb, var(--brand-primary) 12%, var(--offline-line));
+            }
+
+            .offline-header h1 {
+                font-size: clamp(2.1rem, 3vw, 2.6rem);
+            }
+
+            .offline-body {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 44px 40px;
+            }
+
+            .offline-body > p {
+                font-size: 1.05rem;
+            }
+
+            /* Con espacio de sobra, los accesos dejan de ser botones apretados */
+            .offline-links__grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .offline-link {
+                min-height: 52px;
+                font-size: .95rem;
+            }
+
+            .retry-button {
+                align-self: flex-start;
+                min-width: 260px;
+                width: auto;
+                padding-inline: 30px;
+            }
+        }
+
         @media (max-width: 520px) {
             body {
                 padding: 12px;

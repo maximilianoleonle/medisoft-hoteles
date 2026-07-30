@@ -45,6 +45,9 @@
   const LEGACY_DB_NAME = 'loscedros-db';
   const STORAGE_SCOPE_KEY = 'loscedros_offline_storage_scope';
   const STORAGE_DB_KEY = 'loscedros_offline_db_name';
+  const PRECALENTADO_KEY = 'loscedros_precalentado_at';
+  const PRECALENTADO_CADA_MS = 6 * 60 * 60 * 1000; // 6 h
+  const PRECALENTADO_ESPERA_MS = 8000;             // dejar que la pagina termine lo suyo
   const KNOWN_SESSION_KEYS = [
     'loscedros_sw_controller_reload',
     'sw_cache_list',
@@ -144,11 +147,76 @@
         postToSW({ type: 'CACHE_PAGE', url: window.location.href });
         postToSW({ type: 'GET_CACHE_LIST' });
         cacheOfflineBrandingAssets();
+        programarPrecalentado();
 
       } catch (err) {
         console.error('[PWA] Error al registrar SW:', err);
       }
     });
+  }
+
+  // ── Precalentado de pantallas ──────────────────────────────────────────────
+  // Solo se guardaba lo que el hotelero visitaba, asi que al caerse el internet
+  // faltaba justo lo que no habia tocado esa sesion. Aqui se decide CUANDO
+  // pedir lo que falta; el trabajo lo hace el service worker.
+
+  const PRECALENTAR_CANDIDATAS = [
+    'dashboard', 'habitaciones', 'reservaciones', 'huespedes', 'caja',
+    'camarista', 'offline/pendientes',
+  ];
+
+  /**
+   * Solo las pantallas que ESTE usuario puede abrir, leidas de los enlaces que
+   * el servidor ya le pinto (la navegacion viene filtrada por permisos y por
+   * modulos del hotel). Asi una recepcionista no gasta peticiones pidiendo Caja
+   * para recibir un 403.
+   */
+  function rutasOperativasVisibles() {
+    const encontradas = new Set();
+
+    document.querySelectorAll('a[href]').forEach(enlace => {
+      let ruta;
+      try {
+        ruta = new URL(enlace.getAttribute('href'), window.location.origin)
+          .pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+      } catch { return; }
+
+      const candidata = PRECALENTAR_CANDIDATAS.find(c => ruta === c);
+      if (candidata) encontradas.add(candidata);
+    });
+
+    // Si el menu no esta en esta pagina, al menos la pantalla de inicio.
+    return encontradas.size ? Array.from(encontradas) : ['dashboard'];
+  }
+
+  function conexionBuenaParaPrecalentar() {
+    if (!navigator.onLine) return false;
+    if (window.PWA?.isOnline?.() === false) return false;
+
+    const red = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!red) return true;
+    if (red.saveData) return false; // el usuario pidio ahorrar datos: se respeta
+    return !['slow-2g', '2g'].includes(red.effectiveType);
+  }
+
+  function programarPrecalentado() {
+    if (!hasOfflineStorageContext()) return;
+
+    const ultimo = Number(safeLocalStorageGet(PRECALENTADO_KEY) || 0);
+    if (Number.isFinite(ultimo) && Date.now() - ultimo < PRECALENTADO_CADA_MS) return;
+
+    const lanzar = () => {
+      if (!conexionBuenaParaPrecalentar()) return;
+      safeLocalStorageSet(PRECALENTADO_KEY, String(Date.now()));
+      postToSW({ type: 'PRECALENTAR_PANTALLAS', rutas: rutasOperativasVisibles() });
+    };
+
+    // Con la pagina ya quieta: nunca competir con lo que el usuario esta viendo.
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(lanzar, { timeout: PRECALENTADO_ESPERA_MS });
+    } else {
+      setTimeout(lanzar, PRECALENTADO_ESPERA_MS);
+    }
   }
 
   function postToSW(message) {
