@@ -1297,17 +1297,14 @@ if ($_skShow):
 #psk{
     position:fixed;
     inset:0;
-    z-index:500;
+    z-index:1300;
     background:#FCFBF7; /* blanco cálido: mezcla con el lienzo boutique, no un flash frío */
     overflow:hidden;
     pointer-events:none;
     transition:opacity .3s ease;
 }
-/* En desktop queda a la derecha del sidebar */
-@media(min-width:1025px){
-    #psk{ left:268px; }
-    .ms-admin-scope #psk{ left:0; }
-}
+/* En escritorio cubre también el shell de navegación para que no asome la
+   sidebar de la pantalla anterior mientras llega la siguiente respuesta. */
 @media(max-width:1024px){
     #psk{ top:60px; } /* debajo del header mobile */
 }
@@ -1567,33 +1564,35 @@ html[data-theme="dark"] .psk-fieldset{ border-color:#38352C; }
 (function(){
     var sk = document.getElementById('psk');
     if (!sk) return;
-    var showTimer = 0, safety = 0;
+    var INTERNAL_NAV_KEY = 'medisoft:internal-navigation';
+    var internalNavigation = false;
+    var flagTimer = 0;
+
+    try {
+        var internalNavigationStartedAt = Number(window.sessionStorage.getItem(INTERNAL_NAV_KEY) || 0);
+        window.sessionStorage.removeItem(INTERNAL_NAV_KEY);
+        internalNavigation = internalNavigationStartedAt > 0
+            && (Date.now() - internalNavigationStartedAt) < 10000;
+    } catch (error) {}
 
     function hide(){
-        clearTimeout(safety);
         sk.classList.add('psk-out');
         setTimeout(function(){ sk.style.display = 'none'; }, 340);
     }
-    function show(){
-        clearTimeout(safety);
-        sk.style.transition = 'none';       // aparece al instante (sin fundido) para cubrir ya
-        sk.style.display = '';
-        sk.classList.remove('psk-out');
-        void sk.offsetWidth;
-        sk.style.transition = '';
-        safety = setTimeout(hide, 8000);    // nunca dejarlo pegado si la navegación no ocurre
-    }
 
     // Descarte inicial (tras el pintado de la página). No se remueve del DOM: se reutiliza.
-    if (document.readyState === 'complete') {
+    if (internalNavigation) {
+        sk.classList.add('psk-out');
+        sk.style.display = 'none';
+    } else if (document.readyState === 'complete') {
         setTimeout(hide, 60);
     } else {
         window.addEventListener('load', function(){ setTimeout(hide, 80); }, { once: true });
         setTimeout(hide, 3500); // respaldo si 'load' tarda demasiado
     }
 
-    // ── Reaparece al navegar internamente: cubre el "think-time" del servidor,
-    //    el instante en que la página vieja se queda congelada tras el clic. ──
+    // La navegación interna conserva la pantalla actual; el documento siguiente
+    // consume una marca breve y omite su skeleton antes del primer pintado.
     function ignore(a, e){
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return true;
         if (a.target && a.target !== '_self') return true;
@@ -1609,17 +1608,37 @@ html[data-theme="dark"] .psk-fieldset{ border-color:#38352C; }
         if (url.pathname === location.pathname && url.search === location.search && url.hash) return true;
         return false;
     }
-    // Burbuja (no captura): si otro handler cancela la navegación (links AJAX), no mostramos nada.
+
+    function markInternalNavigation(){
+        try {
+            var marker = String(Date.now());
+            window.sessionStorage.setItem(INTERNAL_NAV_KEY, marker);
+            clearTimeout(flagTimer);
+            flagTimer = setTimeout(function(){
+                try {
+                    if (window.sessionStorage.getItem(INTERNAL_NAV_KEY) === marker) {
+                        window.sessionStorage.removeItem(INTERNAL_NAV_KEY);
+                    }
+                } catch (error) {}
+            }, 10000);
+        } catch (error) {}
+    }
+
+    // Burbuja (no captura): respeta enlaces AJAX que ya cancelaron la navegación.
     document.addEventListener('click', function(e){
         var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
         if (!a || ignore(a, e)) return;
-        clearTimeout(showTimer);
-        showTimer = setTimeout(show, 120); // sin parpadeo en paginas instantaneas
+        markInternalNavigation();
     });
 
-    // Al volver con "atras" (bfcache) no dejar el skeleton puesto.
-    window.addEventListener('pageshow', function(ev){ clearTimeout(showTimer); if (ev.persisted) hide(); });
-    window.addEventListener('pagehide', function(){ clearTimeout(showTimer); });
+    // Al volver con "atrás" (bfcache) no dejar marcas ni skeleton pendientes.
+    window.addEventListener('pageshow', function(ev){
+        if (!ev.persisted) return;
+        clearTimeout(flagTimer);
+        try { window.sessionStorage.removeItem(INTERNAL_NAV_KEY); } catch (error) {}
+        hide();
+    });
+    window.addEventListener('pagehide', function(){ clearTimeout(flagTimer); });
 })();
 </script>
 <?php endif; // $_skShow ?>

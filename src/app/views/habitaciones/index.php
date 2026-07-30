@@ -3184,7 +3184,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Barra de Filtros Compacta -->
         <!-- Reemplazar toda la sección de "Barra de Filtros Compacta" con esto: -->
 <div class="bg-white rounded-xl shadow-sm p-2 sm:p-3 mb-4 hb-filter-panel">
-    <?php $hbFechaActiva = !empty($filtros['fecha_consulta']); ?>
+    <?php
+    $hbFechaActiva = !empty($filtros['fecha_consulta']);
+    // En móvil, un input date vacío puede adoptar "hoy" al abrir el picker y
+    // disparar el auto-filtro global. Mostrar la fecha actual evita esa recarga
+    // accidental sin convertirla en una proyección activa.
+    $hbFechaInputValue = $hbFechaActiva
+        ? (string) $filtros['fecha_consulta']
+        : date('Y-m-d');
+    ?>
 
     <?php
         $hbChips = [
@@ -3219,12 +3227,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?php endforeach; ?>
             </div>
             <form method="GET" action="<?= url('habitaciones') ?>" class="hb-filter-right" data-auto-filter-form>
-                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date<?= $hbFechaActiva ? ' is-active' : '' ?>" title="Disponibilidad en fecha">
+                <input type="date" name="fecha_consulta" id="fecha_consulta"
+                       value="<?= htmlspecialchars($hbFechaInputValue) ?>"
+                       data-hb-today="<?= date('Y-m-d') ?>"
+                       data-auto-filter-ignore
+                       data-instant-search-ignore
+                       onchange="hbSubmitDateFilter(this)"
+                       class="filter-date<?= $hbFechaActiva ? ' is-active' : '' ?>"
+                       title="Fecha para consultar disponibilidad"
+                       aria-label="Fecha para consultar disponibilidad">
                 <input type="hidden" name="mostrar_disponibilidad" value="1">
-                <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today" title="Volver a hoy">
+                <button type="button" class="filter-btn filter-btn-calendar hb-date-picker-trigger"
+                        onclick="hbOpenDatePicker()"
+                        title="Elegir otra fecha"
+                        aria-label="Elegir otra fecha"
+                        aria-controls="fecha_consulta">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i><span class="hidden sm:inline">Elegir fecha</span>
+                </button>
+                <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today hb-date-today" title="Volver a hoy">
                     <i class="fas fa-calendar-day"></i><span class="hidden sm:inline">Hoy</span>
                 </a>
-                <button type="button" class="filter-btn filter-btn-reset" onclick="hbClearFilters()" title="Limpiar filtros">
+                <button type="button" class="filter-btn filter-btn-reset" onclick="hbClearFilters()"
+                        title="<?= $hbFechaActiva ? 'Volver a hoy y limpiar filtros' : 'Limpiar filtros' ?>"
+                        aria-label="<?= $hbFechaActiva ? 'Volver a hoy y limpiar filtros' : 'Limpiar filtros' ?>">
                     <i class="fas fa-redo-alt"></i><span class="hidden sm:inline">Limpiar</span>
                 </button>
             </form>
@@ -3237,6 +3262,9 @@ document.addEventListener('DOMContentLoaded', function() {
     background:#EDF4FC !important;
     box-shadow:0 0 0 2px rgba(59,125,216,.18);
     font-weight:700;
+}
+.habitaciones-view .hb-date-picker-trigger{
+    display:none !important;
 }
 </style>
 <?php // El toast solo aporta en proyeccion; en pasado la barra pegada ya lo dice y se queda. ?>
@@ -9425,6 +9453,17 @@ body.hb-modal-open{ overflow:hidden; }
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-width:640px){
 
+  /* Fondos de estado con mayor presencia solo en móvil.
+     Conservan la paleta semántica y el acabado pastel, pero ya no se
+     pierden contra el lienzo marfil en pantallas pequeñas. */
+  .habitaciones-view{
+    --bg-available:#D9EEE2;
+    --bg-occupied:#F2DCCF;
+    --bg-arriving:#E6D5F8;
+    --bg-cleaning:#DCEAF9;
+    --bg-maint:#F3E3C5;
+  }
+
   /* 1. Grid: 2 columnas con espacio cómodo entre cards */
   .habitaciones-view .rgrid{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
@@ -10151,11 +10190,29 @@ body.hb-modal-open{ overflow:hidden; }
   }
   .habitaciones-view .filter-date{
     min-width:0!important;
+    max-width:100%!important;
+    width:100%!important;
+    box-sizing:border-box!important;
     padding:0 12px!important;
     font-size:.86rem!important;
+    text-align:left!important;
+  }
+  .habitaciones-view .filter-date::-webkit-calendar-picker-indicator{
+    width:0!important;
+    margin:0!important;
+    padding:0!important;
+    opacity:0!important;
+    pointer-events:none!important;
   }
   .habitaciones-view .filter-btn{
     font-size:.88rem!important;
+  }
+  .habitaciones-view .hb-date-today{
+    display:none!important;
+  }
+  .habitaciones-view .hb-date-picker-trigger{
+    display:grid!important;
+    color:color-mix(in srgb,var(--hb-secondary) 82%,#475569)!important;
   }
   .habitaciones-view .filter-btn-reset{
     color:#E0443E!important;
@@ -14032,9 +14089,50 @@ body.hb-modal-open{ overflow:hidden; }
 }
 </style>
 
+<style id="hb-deleite-room-card-contrast">
+/* Deleite Sereno · escritorio: en grids extensos el lavado anterior era tan
+   claro que limpieza, disponible y por llegar se confundían entre sí.
+   Se intensifica solo la superficie semántica; stripe, icono y texto siguen
+   comunicando el estado sin depender únicamente del color. */
+@media (min-width:769px){
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view{
+    --bg-available:#D7ECDC;
+    --bg-occupied:#F0D8CB;
+    --bg-arriving:#E3D0F7;
+    --bg-cleaning:#D7E7F8;
+    --bg-maint:#F1DFBB;
+  }
+
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-disponible,
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-disponible_fecha{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c-available) 8%,#fff),var(--bg-available))!important;
+  }
+
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-ocupada,
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-ocupada_fecha{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c-occupied) 8%,#fff),var(--bg-occupied))!important;
+  }
+
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-por_llegar,
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-doble{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c-arriving) 8%,#fff),var(--bg-arriving))!important;
+  }
+
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-limpieza,
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-limpieza-por-llegar{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c-cleaning) 8%,#fff),var(--bg-cleaning))!important;
+  }
+
+  html:not([data-tema]):not([data-theme="dark"]) .habitaciones-view .estado-mantenimiento{
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c-maint) 9%,#fff),var(--bg-maint))!important;
+  }
+}
+</style>
+
 <style id="hb-room-card-glass-redesign">
 /* ═══ Tarjetas de habitación: cristal líquido — SOLO TEMA CUPERTINO ═══════
-   (decisión del owner 2026-07-10: Deleite conserva sus tarjetas tal cual).
+   (decisión del owner 2026-07-10: Deleite conserva su diseño propio; el
+   bloque anterior solo refuerza el contraste de sus colores semánticos).
    Pase final SOLO escritorio (≥769px) y SOLO modo claro: el pase móvil
    compacto (≤768px) y el modo oscuro conservan su diseño tal cual.
    Gana a la sección 18 de cupertino.css (tarjeta blanca plana) por orden
@@ -14761,7 +14859,51 @@ function hbSetEstado(btn){
   hbMarcarEstadoActivo();
   hbApplyFilters();
 }
+function hbOpenDatePicker(){
+  var input = document.getElementById('fecha_consulta');
+  if (!input) return;
+
+  try {
+    input.focus({ preventScroll:true });
+  } catch(e) {
+    input.focus();
+  }
+
+  if (typeof input.showPicker === 'function') {
+    try {
+      input.showPicker();
+      return;
+    } catch(e) {}
+  }
+
+  input.click();
+}
+function hbSubmitDateFilter(input){
+  if (!input || !input.value || input.value === input.defaultValue) return;
+
+  var form = input.form;
+  if (!form || form.dataset.autoFilterSubmitting === '1') return;
+
+  // Elegir hoy equivale a salir de la proyección: se conserva una URL limpia.
+  if (input.value === input.getAttribute('data-hb-today')) {
+    window.location.href = form.action;
+    return;
+  }
+
+  form.dataset.autoFilterSubmitting = '1';
+  if (typeof form.requestSubmit === 'function') {
+    form.requestSubmit();
+    return;
+  }
+  form.submit();
+}
 function hbClearFilters(){
+  var fecha = document.getElementById('fecha_consulta');
+  if (fecha && fecha.form && fecha.value !== fecha.getAttribute('data-hb-today')) {
+    window.location.href = fecha.form.action;
+    return;
+  }
+
   window.__hbF = { estado:'', tipo:'', piso:'', q:'' };
   hbSyncEstadoUrl('');
   var s = document.getElementById('hbSearch'); if(s) s.value = '';

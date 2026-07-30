@@ -464,10 +464,19 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .btn-modal-confirm:active,
 .res-ci-cancel:active,
 .res-ci-confirm:not(:disabled):active { transform: translateY(0) scale(.99); }
-.res-table-shell { border: 1px solid var(--res-line); border-radius: 18px; overflow: hidden; overflow-x: auto; scrollbar-width: thin; background: rgba(255,255,255,.95); box-shadow: 0 16px 34px rgba(15,23,42,.06); }
-.res-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1020px; }
-.res-table thead th { padding: 16px 18px; text-align: left; border-bottom: 1px solid var(--res-line); color: #8A96AA; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; background: rgba(253,251,247,.82); }
-.res-table tbody td { padding: 14px 18px; border-bottom: 1px solid color-mix(in srgb, var(--res-line) 74%, transparent); vertical-align: middle; }
+.res-table-shell { border: 1px solid var(--res-line); border-radius: 18px; overflow: hidden; background: rgba(255,255,255,.95); box-shadow: 0 16px 34px rgba(15,23,42,.06); }
+.res-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.res-table col:nth-child(1) { width: 10%; }
+.res-table col:nth-child(2) { width: 20%; }
+.res-table col:nth-child(3) { width: 13%; }
+.res-table col:nth-child(4),
+.res-table col:nth-child(5) { width: 9%; }
+.res-table col:nth-child(6) { width: 7%; }
+.res-table col:nth-child(7) { width: 13%; }
+.res-table col:nth-child(8) { width: 9%; }
+.res-table col:nth-child(9) { width: 10%; }
+.res-table thead th { padding: 16px 14px; text-align: left; border-bottom: 1px solid var(--res-line); color: #8A96AA; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; background: rgba(253,251,247,.82); }
+.res-table tbody td { min-width: 0; padding: 14px; border-bottom: 1px solid color-mix(in srgb, var(--res-line) 74%, transparent); vertical-align: middle; }
 .res-table tbody tr { transition: background .18s ease, box-shadow .18s ease; }
 .res-table tbody tr:hover { background: color-mix(in srgb, var(--res-accent) 5%, #FFFFFF); box-shadow: inset 3px 0 0 color-mix(in srgb, var(--res-accent) 46%, transparent); }
 .res-folio { color: #758198; font-weight: 650; font-size: .87rem; white-space: nowrap; }
@@ -499,11 +508,11 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     text-decoration-color: var(--res-accent);
     text-underline-offset: 3px;
 }
-.res-guest { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.res-guest { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .res-guest-copy { min-width: 0; }
 .res-guest-name-row { min-width: 0; }
 .res-avatar {
-    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    width: 40px; height: 40px; flex: 0 0 40px; border-radius: 10px; display: grid; place-items: center;
     background: var(--res-avatar-bg, #EEF2FF) !important;
     color: var(--res-avatar-fg, #3730A3);
     border: 1px solid var(--res-avatar-border, #C7D2FE);
@@ -552,9 +561,10 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     --res-avatar-border: #CBD5E1;
     --res-avatar-shadow: rgba(71,85,105,.25);
 }
-.res-guest-name { color: var(--res-heading); font-weight: 700; line-height: 1.15; }
-.res-guest-meta { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
+.res-guest-name { max-width: 100%; color: var(--res-heading); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.res-guest-meta { color: #8B96A9; font-size: .78rem; margin-top: 3px; overflow-wrap: anywhere; }
 .res-room { display: flex; gap: 8px; align-items: flex-start; }
+.res-room > div { min-width: 0; }
 .res-room-mark { width: 6px; min-width: 6px; height: 24px; border-radius: 10px; margin-top: 2px; }
 .res-room-main { font-weight: 700; color: var(--res-heading); }
 .res-room-type { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
@@ -1498,12 +1508,21 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
     .res-actions { min-width: 0; justify-content: flex-start; }
     .res-search { flex: 1 1 min(100%, 520px); min-width: min(100%, 520px); }
 }
-@media (max-width: 1023px) {
+@media (max-width: 1280px) {
     .res-table-shell { display: none; }
     .res-mobile-list { display: grid; gap: 12px; }
-    /* El contador "Mostrando N de M" solo se conserva en escritorio: en la
-       lista movil ocupa una franja entera y no aporta sobre las tarjetas. */
+    /* El contador "Mostrando N de M" solo se conserva en la tabla amplia:
+       en la lista adaptable ocupa una franja entera y no aporta sobre las tarjetas. */
     #searchResults { display: none; }
+}
+@media (min-width: 1281px) and (max-width: 1599px) {
+    .res-table thead th,
+    .res-table tbody td { padding-left: 10px; padding-right: 10px; }
+    .res-row-actions { min-width: 0; }
+    .res-row-actions .res-row-command {
+        width: 100%;
+        min-width: 0;
+    }
 }
 @media (max-width: 720px) {
     .res-shell { padding: 18px 12px 28px; }
@@ -4610,6 +4629,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 
             <section class="res-table-shell" id="reservationsDesktop" aria-label="Listado de reservaciones">
                 <table class="res-table">
+                    <colgroup>
+                        <col><col><col><col><col><col><col><col><col>
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Folio</th>
@@ -4723,9 +4745,6 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                                 </td>
                                 <td>
                                     <div class="res-row-actions">
-                                        <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-icon-btn" title="Ver detalle de <?= htmlspecialchars($folio) ?>" aria-label="Ver detalle de <?= htmlspecialchars($folio) ?>">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
                                         <?php if ($estado === 'confirmada'): ?>
                                             <button type="button" onclick="abrirModalCheckIn(<?= $res_id ?>, <?= htmlspecialchars(json_encode($precio_total), ENT_QUOTES, 'UTF-8') ?>)" class="res-row-command is-checkin" title="Hacer check-in de <?= htmlspecialchars($folio) ?>">
                                                 <i class="fas fa-sign-in-alt"></i>Check-in
