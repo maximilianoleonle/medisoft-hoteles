@@ -466,3 +466,36 @@ table {
 @media (max-width: 768px) {
     .ms-print-hide-mobile { display: none !important; }
 }
+
+/* ===================================
+   SIN SELECCION ACCIDENTAL DE TEXTO EN TACTIL (GLOBAL)
+   En telefono/tablet, tocar o arrastrar sobre una fila, tarjeta o boton
+   levantaba el resaltado azul con manijas de seleccion (se ve como si la
+   app "quisiera copiar" en vez de responder al toque). Aqui se apaga para
+   TODA la app; el raton (escritorio) conserva la seleccion normal.
+   Para permitir copiar un dato puntual: clase .ms-copiable o [data-copiable].
+   =================================== */
+@media (hover: none) and (pointer: coarse) {
+    body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    /* Sin esto, iOS bloquea la edicion dentro de los campos del formulario */
+    input,
+    textarea,
+    select,
+    [contenteditable="true"],
+    [contenteditable=""],
+    .ms-copiable,
+    [data-copiable] {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+        -webkit-touch-callout: default;
+    }
+}
