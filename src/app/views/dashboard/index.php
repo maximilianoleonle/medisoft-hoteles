@@ -1552,6 +1552,10 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     align-items: start;
 }
 
+.dashboard-main-flow.is-without-parking {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .dashboard-left-flow {
     display: grid;
     gap: 20px;
@@ -4783,7 +4787,7 @@ button.parking-more-note:hover {
             </a>
         <?php endif; ?>
 
-        <section class="dashboard-main-flow">
+        <section class="dashboard-main-flow<?= $parking_activo_dashboard ? '' : ' is-without-parking' ?>">
             <div class="dashboard-left-flow">
             <article class="card card-pad weekly-occupancy-card">
                 <div class="weekly-chart-head">
