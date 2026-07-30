@@ -1433,7 +1433,17 @@
             const methodActive = checkbox ? checkbox.checked : amount > 0 || shouldShowPreventiveError(received);
             const shouldValidate = methodActive && (force || shouldShowPreventiveError(received) || amount > 0);
             if (amount > 0 && shouldValidate && receivedAmount < amount) {
-                setPreventiveFieldError(received, 'El efectivo recibido no cubre el monto a cobrar.', true);
+                // Vacio NO es "no alcanza": es "todavia no lo capturaste". Decirlo
+                // como insuficiente hacia creer que faltaba dinero cuando el
+                // resumen ya mostraba el cobro completo y cambio $0.00.
+                const sinCapturar = String(received.value || '').trim() === '';
+                setPreventiveFieldError(
+                    received,
+                    sinCapturar
+                        ? 'Captura cuanto efectivo recibiste (o marca que pago exacto).'
+                        : 'El efectivo recibido no cubre el monto a cobrar.',
+                    true
+                );
                 valid = false;
             } else if (typeof received.checkValidity === 'function' && received.checkValidity()) {
                 clearFieldError(received);

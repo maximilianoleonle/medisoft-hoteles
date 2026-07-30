@@ -5761,7 +5761,9 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                 <div class="rv-checkin-line" data-step-line="1"></div>
                 <div class="rv-checkin-step" data-step-indicator="2"><span>2</span><strong>Pago</strong></div>
                 <div class="rv-checkin-line" data-step-line="2"></div>
-                <div class="rv-checkin-step" data-step-indicator="3"><span>3</span><strong>Factura</strong></div>
+                <?php // Sin el bloque 'facturacion' la etapa 3 es solo el resumen: llamarla
+                // "Factura" mandaba a recepción a un paso vacío con ese nombre. ?>
+                <div class="rv-checkin-step" data-step-indicator="3"><span>3</span><strong><?= $rvModuloFacturacion ? 'Factura' : 'Confirmar' ?></strong></div>
             </div>
 
             <div class="rv-checkin-content">
@@ -5917,7 +5919,9 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                     </label>
                 </section>
 
-                <section class="rv-invoice-section rv-checkin-stage" data-checkin-stage="3" aria-labelledby="rvFacturaTitle" aria-hidden="true">
+                <?php // Sin el bloque de facturación esta etapa es SOLO el resumen: el
+                // aria-labelledby apuntaría a un h4 que no se renderiza. ?>
+                <section class="rv-invoice-section rv-checkin-stage<?= $rvModuloFacturacion ? '' : ' is-solo-resumen' ?>" data-checkin-stage="3" <?= $rvModuloFacturacion ? 'aria-labelledby="rvFacturaTitle"' : 'aria-label="Confirmar check-in"' ?> aria-hidden="true">
                     <div class="rv-final-grid">
                         <?php if ($rvModuloFacturacion): ?>
                         <div class="rv-final-invoice">
@@ -8099,7 +8103,10 @@ function calcularCambio() {
         if (divCambio) divCambio.style.display = 'none';
 
         if (montoPagar > 0) {
-            mostrarMensaje('Ingrese el monto recibido en efectivo', 'warning');
+            // El bloqueo es deliberado (el efectivo recibido hace auditable el
+            // cambio), pero el aviso tiene que decir QUÉ hacer: recepción veía
+            // "Pagado / Cambio $0.00" en el resumen y un botón muerto.
+            mostrarMensaje('Captura cuánto efectivo recibiste, o toca "Pagó exacto" si entregó justo.', 'warning');
             if (btnConfirmar) btnConfirmar.disabled = true;
         }
     }

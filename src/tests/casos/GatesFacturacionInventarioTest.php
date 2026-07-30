@@ -61,6 +61,28 @@ t_eq(3, substr_count($verView, 'if (!facturaSi || !facturaNo)'),
 t_ok(strpos($verView, "document.querySelector('input[name=\"requiere_factura_cp\"]:checked').value") === false,
     'el fetch de cambio de pago ya no truena cuando la pregunta no existe');
 
+// ── 2b) QA en navegador (2026-07-29): la etapa 3 no puede llamarse "Factura" ──
+// Hallazgo real con el hotel Demo de produccion: el gate quitaba el contenido
+// pero recepcion seguia llegando a un paso 3 llamado "Factura" y vacio, con el
+// aria-labelledby apuntando a un <h4> que ya no se renderiza.
+t_ok(strpos($verView, "\$rvModuloFacturacion ? 'Factura' : 'Confirmar'") !== false,
+    'el paso 3 del wizard se llama "Confirmar" cuando no hay bloque de facturacion');
+t_ok(strpos($verView, 'aria-label="Confirmar check-in"') !== false,
+    'la etapa 3 sin factura se etiqueta sola (no apunta a un titulo inexistente)');
+t_ok(strpos($verView, 'is-solo-resumen') !== false,
+    'la etapa queda marcada como solo-resumen para poder estilizarla aparte');
+
+// Trampa PREEXISTENTE que este QA dejo al descubierto (no la causo el gate, se
+// verifico A/B con el bloque activo): con el efectivo recibido vacio el boton se
+// deshabilita a proposito, pero el aviso no decia que hacer.
+t_ok(strpos($verView, 'Captura cuánto efectivo recibiste, o toca "Pagó exacto"') !== false,
+    'el aviso del efectivo dice QUE hacer y menciona el atajo existente');
+$appJs = (string) file_get_contents($root . '/public_html/js/app.js');
+t_ok(strpos($appJs, 'Captura cuanto efectivo recibiste') !== false,
+    'app.js distingue "no lo capturaste" de "no alcanza"');
+t_ok(strpos($appJs, 'El efectivo recibido no cubre el monto a cobrar.') !== false,
+    'y conserva el mensaje de insuficiente para cuando el monto SI es menor');
+
 // El QUINTO productor (hallazgo de la revisión adversarial 2026-07-29): el
 // modal de check-in del LISTADO /reservaciones postea a la misma acción y
 // tenía su propia pregunta obligatoria sin gate — pregunta forzada + servidor
