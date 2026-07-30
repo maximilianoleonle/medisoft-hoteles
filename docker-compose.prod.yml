@@ -51,6 +51,9 @@ services:
       # Endurecimiento PHP solo-produccion: errores fuera de pantalla,
       # cookie de sesion Secure, OPcache menos agresivo revalidando.
       - ./docker/php/php-prod.ini:/usr/local/etc/php/conf.d/zz-php-prod.ini:ro
+      # Tope de workers acorde a la RAM real: el default (150) no cabe en la
+      # maquina y un pico terminaria matando MySQL por OOM. Ver el archivo.
+      - ./docker/php/apache-prod.conf:/etc/apache2/conf-enabled/zz-mpm-prod.conf:ro
     env_file:
       - .env
     environment:
@@ -71,8 +74,19 @@ services:
     restart: unless-stopped
     # Sin ports: la BD no se expone a internet.
     # Tuning por flags (mismo bloque que en dev; ver comentario alla).
-    # MYSQL_BUFFER_POOL: subir en .env segun la RAM del servidor
-    # (~50-60% si MySQL comparte maquina con PHP; ej. 2G en un VPS de 4 GB).
+    # MYSQL_BUFFER_POOL: dimensionar por el TAMANO DE LOS DATOS, no por un
+    # porcentaje de la RAM. La regla de "50-60% de la RAM" es para servidores
+    # dedicados a MySQL con datos grandes; aqui MySQL comparte maquina con
+    # Apache y la BD entera pesa ~17 MB (jul-27, 2 hoteles, uno con 2 anios de
+    # historial). Un pool de 1G ya cabe la base 60 veces; lo que sobra le
+    # sirve mas a los workers de PHP. Subirlo cuando la BD se acerque al pool
+    # (regla practica: pool ~= 2x el tamanio de los datos), no antes.
+    # GOTCHA: el pool solo acepta multiplos de chunk_size x instances y MySQL
+    # REDONDEA HACIA ARRIBA en silencio si pides otra cosa. Con los defaults
+    # (chunk 128M, 8 instancias) el minimo real es 1G: poner 512M aqui daria
+    # 1G igual, salvo que el pool arranque por debajo de 1G, en cuyo caso
+    # MySQL usa 1 sola instancia y entonces si aplica exacto. Verificar
+    # siempre con  SELECT @@innodb_buffer_pool_size, @@innodb_buffer_pool_instances.
     command:
       - --innodb-buffer-pool-size=${MYSQL_BUFFER_POOL:-1G}
       - --innodb-redo-log-capacity=256M

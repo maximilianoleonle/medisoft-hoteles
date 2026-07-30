@@ -17,6 +17,8 @@ $proximas_salidas = $proximas_salidas ?? [];
 $graficos = $graficos ?? [];
 $notificaciones_resumen = $notificaciones_resumen ?? [];
 $notificaciones_recientes = $notificaciones_recientes ?? [];
+$dashboard_vehiculos_activo = !function_exists('hotel_menu_module_enabled')
+    || hotel_menu_module_enabled('vehiculos');
 
 if (!function_exists('dashboard_safe')) {
     function dashboard_safe($value, $fallback = '-') {

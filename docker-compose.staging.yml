@@ -1,0 +1,87 @@
+# Compose de STAGING — copia desechable para ensayar sin tocar produccion.
+#
+# Vive en /opt/medisoft-staging/ (directorio APARTE de /opt/medisoft): su propio
+# src/, su propio .env y su propio volumen de MySQL. Nunca comparte nada con
+# produccion, ni siquiera el codigo — si compartiera el src/, editar staging
+# editaria prod, que es exactamente lo que un staging debe impedir.
+#
+# Se maneja con tools/staging.sh (up / down / restaurar / estado), NUNCA a mano:
+# ese script es el que neutraliza los secretos peligrosos del .env.
+#
+# TRES DECISIONES DELIBERADAS:
+#  1. restart "no": staging se levanta BAJO DEMANDA y no debe revivir solo tras
+#     un reinicio del VPS. Comparte RAM con produccion (3.9 GB en total), asi
+#     que dejarlo encendido se come el margen que le calculamos a prod.
+#  2. Sin Caddy y escuchando solo en 127.0.0.1: no se expone a internet. Se
+#     entra por tunel SSH:  ssh -L 8090:127.0.0.1:8090 root@<vps>  -> localhost:8090
+#  3. Reutiliza la imagen ya construida de prod (medisoft-app:latest) en vez de
+#     reconstruir: mismo binario que produccion y arranque en segundos.
+#
+# LIMITE HONESTO: staging comparte los 2 vCPU con produccion. Sirve para el
+# drill de restauracion, QA de deploys y probar migraciones — NO para medir
+# capacidad con k6: el numero saldria contaminado y de paso le pegaria al hotel.
+
+name: medisoft-staging
+
+x-logging: &log-rotado
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "2"
+
+services:
+  app:
+    <<: *log-rotado
+    image: medisoft-app:latest
+    container_name: medisoft_staging_app
+    restart: "no"
+    ports:
+      - "127.0.0.1:8090:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./migrations:/var/www/migrations:ro
+      - ./.env:/var/www/.env:ro
+      # Mismo tope de workers que prod: staging no tiene por que poder
+      # arrebatarle memoria al hotel que esta operando.
+      - ./docker/php/apache-prod.conf:/etc/apache2/conf-enabled/zz-mpm-prod.conf:ro
+    env_file:
+      - .env
+    environment:
+      APP_ENV: staging
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: medisoft_staging
+      DB_USER: medisoft_user
+      DB_PASS: staging_local
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    <<: *log-rotado
+    image: mysql:8.0
+    container_name: medisoft_staging_db
+    restart: "no"
+    # Buffer pool minimo: los datos de staging son una copia de una BD de ~17 MB
+    # y la RAM que sobra le hace falta a produccion. 128M cabe la base 7 veces.
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --innodb-flush-log-at-trx-commit=2
+      - --max-connections=50
+      - --skip-name-resolve
+    environment:
+      MYSQL_DATABASE: medisoft_staging
+      MYSQL_USER: medisoft_user
+      MYSQL_PASSWORD: staging_local
+      MYSQL_ROOT_PASSWORD: staging_root_local
+    volumes:
+      - staging_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pstaging_root_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  staging_mysql_data:
