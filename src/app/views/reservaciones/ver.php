@@ -3954,7 +3954,8 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                 <div class="rda-stepper" aria-hidden="true">
                                     <div class="rda-step is-current" data-rda-ind="1"><span>1</span> Anticipo</div>
                                     <div class="rda-line" data-rda-line></div>
-                                    <div class="rda-step" data-rda-ind="2"><span>2</span> Factura</div>
+                                    <?php // Sin el bloque, la etapa 2 de este wizard queda solo con el resumen. ?>
+                                    <div class="rda-step" data-rda-ind="2"><span>2</span> <?= $rvModuloFacturacion ? 'Factura' : 'Confirmar' ?></div>
                                 </div>
                                 <div class="rda-body">
                                     <section class="rda-stage is-active" data-rda-stage="1">
@@ -6958,7 +6959,10 @@ function setCheckInWizardStep(step) {
     const pagoStepLabel = document.querySelector('#modalCheckIn [data-step-indicator="2"] strong');
     const facturaStepLabel = document.querySelector('#modalCheckIn [data-step-indicator="3"] strong');
     if (pagoStepLabel) pagoStepLabel.textContent = sinCobroNuevo ? 'Pago cubierto' : 'Pago';
-    if (facturaStepLabel) facturaStepLabel.textContent = sinCobroNuevo ? 'Sin cobro nuevo' : 'Factura';
+    // OJO: esta línea PISA en tiempo de ejecución la etiqueta que pintó PHP, así
+    // que el nombre del paso 3 se decide aquí, no solo en el marcado. Sin el
+    // bloque 'facturacion' la etapa es solo el resumen ⇒ "Confirmar".
+    if (facturaStepLabel) facturaStepLabel.textContent = sinCobroNuevo ? 'Sin cobro nuevo' : <?= $rvModuloFacturacion ? "'Factura'" : "'Confirmar'" ?>;
 
     document.querySelectorAll('#modalCheckIn [data-checkin-stage]').forEach(stage => {
         const stageStep = parseInt(stage.dataset.checkinStage, 10);

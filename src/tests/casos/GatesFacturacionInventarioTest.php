@@ -65,8 +65,18 @@ t_ok(strpos($verView, "document.querySelector('input[name=\"requiere_factura_cp\
 // Hallazgo real con el hotel Demo de produccion: el gate quitaba el contenido
 // pero recepcion seguia llegando a un paso 3 llamado "Factura" y vacio, con el
 // aria-labelledby apuntando a un <h4> que ya no se renderiza.
-t_ok(strpos($verView, "\$rvModuloFacturacion ? 'Factura' : 'Confirmar'") !== false,
-    'el paso 3 del wizard se llama "Confirmar" cuando no hay bloque de facturacion');
+t_eq(2, substr_count($verView, "\$rvModuloFacturacion ? 'Factura' : 'Confirmar'"),
+    'los DOS steppers (wizard de check-in y wizard de anticipos) renombran su paso');
+
+// El marcado NO alcanzaba: setCheckInWizardStep PISA la etiqueta en cada cambio
+// de etapa. Se vio en produccion — el paso seguia diciendo "Factura" con el
+// ternario de PHP ya desplegado, porque el JS la reescribia encima.
+t_ok(strpos($verView, '$rvModuloFacturacion ? "\'Factura\'" : "\'Confirmar\'"') !== false,
+    'el JS que reescribe la etiqueta del paso 3 tambien consulta el bloque');
+t_ok(strpos($verView, "sinCobroNuevo ? 'Sin cobro nuevo' : 'Factura'") === false,
+    'ya no queda el "Factura" hardcodeado que pisaba lo que pinto PHP');
+t_ok(strpos($verView, "'Sin cobro nuevo'") !== false,
+    'y se conserva la etiqueta de reservacion ya pagada, que no depende del bloque');
 t_ok(strpos($verView, 'aria-label="Confirmar check-in"') !== false,
     'la etapa 3 sin factura se etiqueta sola (no apunta a un titulo inexistente)');
 t_ok(strpos($verView, 'is-solo-resumen') !== false,
