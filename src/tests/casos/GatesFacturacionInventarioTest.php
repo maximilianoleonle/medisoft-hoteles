@@ -88,10 +88,21 @@ t_ok(strpos($verView, 'is-solo-resumen') !== false,
 t_ok(strpos($verView, 'Captura cuánto efectivo recibiste, o toca "Pagó exacto"') !== false,
     'el aviso del efectivo dice QUE hacer y menciona el atajo existente');
 $appJs = (string) file_get_contents($root . '/public_html/js/app.js');
-t_ok(strpos($appJs, 'Captura cuanto efectivo recibiste') !== false,
-    'app.js distingue "no lo capturaste" de "no alcanza"');
+// Decision del owner (29-jul): el caso "todavia no lo capturaste" NO pinta
+// mensaje. El campo vive en el paso Pago y el aviso salia en la cabecera del
+// modal, o sea en OTRO paso y en rojo, hablando de algo que no esta a la vista.
+t_ok(strpos($appJs, 'Captura cuanto efectivo recibiste') === false,
+    'el aviso de "falta capturar" ya no se pinta en el modal');
+t_ok(strpos($appJs, '!sinCapturar') !== false,
+    'el showError del validador queda apagado para el caso vacio');
 t_ok(strpos($appJs, 'El efectivo recibido no cubre el monto a cobrar.') !== false,
-    'y conserva el mensaje de insuficiente para cuando el monto SI es menor');
+    'pero el mensaje de INSUFICIENTE se conserva: ahi si hay algo que corregir');
+// El freno NO se relaja: setCustomValidity sigue marcando el campo invalido.
+t_ok(strpos($appJs, "sinCapturar\n                        ? 'Falta capturar el efectivo recibido.'") !== false
+    || strpos($appJs, "? 'Falta capturar el efectivo recibido.'") !== false,
+    'el campo sigue invalido (nadie llama reportValidity, ese texto nunca se ve)');
+t_ok(strpos($appJs, 'function hideFieldErrorMessage') !== false,
+    'existe el helper que retira el texto sin declarar valido el campo (clearFieldError no puede)');
 
 // El QUINTO productor (hallazgo de la revisión adversarial 2026-07-29): el
 // modal de check-in del LISTADO /reservaciones postea a la misma acción y

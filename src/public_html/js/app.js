@@ -1433,17 +1433,28 @@
             const methodActive = checkbox ? checkbox.checked : amount > 0 || shouldShowPreventiveError(received);
             const shouldValidate = methodActive && (force || shouldShowPreventiveError(received) || amount > 0);
             if (amount > 0 && shouldValidate && receivedAmount < amount) {
-                // Vacio NO es "no alcanza": es "todavia no lo capturaste". Decirlo
-                // como insuficiente hacia creer que faltaba dinero cuando el
-                // resumen ya mostraba el cobro completo y cambio $0.00.
+                // Vacio NO es "no alcanza": es "todavia no lo capturaste", y ese
+                // caso NO PINTA MENSAJE (pedido del owner, 29-jul): el campo vive
+                // en el paso Pago y el aviso salia en la cabecera del modal, o sea
+                // en OTRO paso, en rojo, hablando de algo que no esta a la vista.
+                // El freno se conserva igual — el campo queda invalido por
+                // setCustomValidity (nadie llama reportValidity, asi que ese texto
+                // nunca se muestra) y el wizard ya devuelve al paso Pago, donde
+                // esta el boton "Pago exacto". El mensaje de INSUFICIENTE si se
+                // pinta: ahi si hay un error que el operador debe corregir.
                 const sinCapturar = String(received.value || '').trim() === '';
                 setPreventiveFieldError(
                     received,
                     sinCapturar
-                        ? 'Captura cuanto efectivo recibiste (o marca que pago exacto).'
+                        ? 'Falta capturar el efectivo recibido.'
                         : 'El efectivo recibido no cubre el monto a cobrar.',
-                    true
+                    !sinCapturar
                 );
+                if (sinCapturar) {
+                    // Y si venia pintado el mensaje de insuficiente, se retira:
+                    // clearFieldError no puede porque el campo sigue invalido.
+                    hideFieldErrorMessage(received);
+                }
                 valid = false;
             } else if (typeof received.checkValidity === 'function' && received.checkValidity()) {
                 clearFieldError(received);
@@ -1693,6 +1704,27 @@
         }
 
         error.textContent = message;
+    }
+
+    /**
+     * Retira el mensaje visible de un campo SIN declararlo valido.
+     *
+     * clearFieldError() no sirve para esto: se corta en cuanto checkValidity()
+     * es false, asi que un campo frenado a proposito (setCustomValidity) se
+     * queda con el texto rojo de la validacion anterior pegado en pantalla.
+     */
+    function hideFieldErrorMessage(field) {
+        if (!field || !field.classList) {
+            return;
+        }
+
+        field.classList.remove('ms-form-invalid');
+        field.removeAttribute('aria-invalid');
+
+        const error = document.getElementById(getFieldErrorId(field));
+        if (error && error.parentNode) {
+            error.parentNode.removeChild(error);
+        }
     }
 
     function clearFieldError(field) {
