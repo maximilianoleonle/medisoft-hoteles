@@ -57,6 +57,9 @@ Cada vez que un enfoque se descarte tras haberlo intentado (o se descubra que "e
 
 ## Entorno / herramientas
 
+- **"Igualar producción con el repo" copiando `src/` de origin encima** → habría BORRADO en silencio el apagado de selección táctil (33 líneas de `custom.css` que vivían SOLO en prod desde el 27-jul, desplegadas a mano y nunca commiteadas; `git log -S` en todas las ramas no las encuentra). La deriva prod↔repo puede ir en CUALQUIER dirección: se audita archivo por archivo con md5 normalizados y se resuelve caso por caso — lo que está vivo y no está en git se RESCATA al repo, no se pisa.
+- **Auditar deriva con `git ls-tree` sin `core.quotepath=false`** → los nombres con acentos vuelven entrecomillados con escapes octales, el `[ -f "$f" ]` falla a los dos lados y la diferencia real se ve como "falta en ambos": una deriva verdadera (vista de caja) quedó invisible en la primera pasada.
+
 - **`docker exec ... php /var/www/html/...` desde Git Bash** → MSYS convierte `/var/...` a ruta de Windows y falla → prefijar `MSYS_NO_PATHCONV=1` (o correr desde PowerShell).
 - **Aplicar migraciones "cuando me acuerde" tras un merge multi-PC** → BDs locales divergen silenciosamente → `tools/migrate.php status` (o la radiografía) tras cada merge.
 - **Escribir casos de test sin `t_fin()` al final** → los FAIL no se cuentan y el runner reporta "TODOS PASARON" con aserciones rotas → todo caso cierra con `t_fin()` (así se descubrió: un gate falso pasaba en verde).
