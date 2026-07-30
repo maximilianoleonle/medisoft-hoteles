@@ -19,7 +19,7 @@ const CACHE = {
 // Pantallas operativas que se guardan para navegacion offline (network-first
 // con respaldo). Se limpian al cerrar sesion o cambiar de hotel via
 // CLEAR_PAGES_CACHE. Login, reportes y pantallas publicas /h/{slug} quedan fuera.
-const OFFLINE_PAGE_PATHS = /^(dashboard|habitaciones|reservaciones|huespedes|caja|offline\/pendientes)([\/?#]|$)/;
+const OFFLINE_PAGE_PATHS = /^(dashboard|habitaciones|reservaciones|huespedes|caja|camarista|offline\/pendientes)([\/?#]|$)/;
 
 // Rutas por las que ARRANCA la app instalada: start_url del manifest (login por
 // slug), login generico y la raiz. Ninguna es cacheable (son credenciales o un
@@ -29,8 +29,12 @@ const OFFLINE_PAGE_PATHS = /^(dashboard|habitaciones|reservaciones|huespedes|caj
 // con el start_url viejo, que no re-leen el manifest hasta reinstalarse.
 const OFFLINE_ARRANQUE_PATHS = /^(h\/[a-z0-9-]+\/login|login|)([?#]|$)/;
 
-// Puertas de entrada offline, en orden de preferencia.
-const OFFLINE_ENTRY_PAGES = ['dashboard', 'habitaciones', 'reservaciones', 'caja', 'huespedes'];
+// Puertas de entrada offline, en orden de preferencia. `camarista` va segundo a
+// proposito: un rol acotado a Limpieza NUNCA tiene copia del dashboard (su home
+// es /camarista y DashboardController lo rebota), y es justo quien mas trabaja
+// con mala señal en los pasillos. Cada rol solo cachea lo que puede abrir, asi
+// que el orden no le quita su pantalla a nadie.
+const OFFLINE_ENTRY_PAGES = ['dashboard', 'camarista', 'habitaciones', 'reservaciones', 'caja', 'huespedes'];
 
 // â”€â”€â”€ Assets del shell de la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SHELL_ASSETS = [

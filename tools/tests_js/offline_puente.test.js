@@ -101,6 +101,11 @@ caso('Con dashboard, habitaciones y caja guardados -> pinta esos 3 accesos', asy
   return [etiquetas, 'Inicio, Habitaciones, Caja'];
 });
 
+caso('El tablero de Limpieza aparece con su nombre del menu, no "camarista"', async () => {
+  const n = await correr({ rutasEnCache: ['camarista'] });
+  return [n.accesosLista.hijos.map(h => h.textContent).join(','), 'Limpieza'];
+});
+
 caso('El bloque de accesos se revela', async () => {
   const n = await correr({ rutasEnCache: ['dashboard'] });
   return [String(n.accesosOffline.hidden), 'false'];

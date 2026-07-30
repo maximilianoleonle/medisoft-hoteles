@@ -133,6 +133,43 @@ caso('SIN RED: arranque en la raiz / CON habitaciones guardado -> entra a habita
   return [await res.text(), 'HABITACIONES'];
 });
 
+// Rol acotado a Limpieza: su home es /camarista y NUNCA tendra dashboard guardado
+// (DashboardController lo rebota). Sin camarista en las puertas de entrada, su
+// arranque offline caia al muro — y es quien mas trabaja con mala señal.
+caso('SIN RED: camarista (sin dashboard guardado) -> entra a su tablero', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'camarista', 'TABLERO DE LIMPIEZA');
+  const res = await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  return [await res.text(), 'TABLERO DE LIMPIEZA'];
+});
+
+caso('SIN RED: /camarista es ruta operativa y sirve SU copia', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'camarista', 'TABLERO DE LIMPIEZA');
+  const res = await env.dispararFetch(ORIGIN + '/camarista');
+  return [await res.text(), 'TABLERO DE LIMPIEZA'];
+});
+
+caso('CON RED: /camarista se GUARDA como copia buena', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararFetch(ORIGIN + '/camarista');
+  await new Promise(r => setImmediate(r));
+  const cache = await env.caches.open('loscedros-pages');
+  const guardada = await cache.match(ORIGIN + '/camarista', { ignoreVary: true });
+  return [guardada ? 'GUARDADA' : 'NO GUARDADA', 'GUARDADA'];
+});
+
+caso('Con dashboard Y camarista guardados manda el dashboard (gerente)', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'camarista', 'TABLERO DE LIMPIEZA');
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
+  const res = await env.dispararFetch(ORIGIN + '/');
+  return [await res.text(), 'DASHBOARD DEL HOTEL'];
+});
+
 caso('SIN RED: arranque SIN nada guardado -> muro (comportamiento honesto)', async () => {
   const env = nuevoEntorno({ online: false });
   await sembrarShellOffline(env);
