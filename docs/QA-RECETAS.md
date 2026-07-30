@@ -328,7 +328,15 @@ El módulo no tenía receta. Lo que se verifica es que la invitación a Google s
 5. Con red: `/dashboard` se guarda en `loscedros-pages`; el login **nunca** se guarda (son credenciales y casi siempre un redirect).
 6. `offline.html`: con pantallas guardadas revela los accesos con la URL real del caché y cambia el copy; sin nada guardado no inventa accesos; cuenta la cola (`operaciones_offline`, `estado !== 'sincronizado'`) en singular/plural; sin IndexedDB no truena. **Asertar el LENGUAJE, no solo que aparezca**: el offline es de solo lectura (ver la sección siguiente) → ningún texto puede decir "se enviará al volver el internet"; debe mandar a registrarlo a mano. Es la regresión fácil de reintroducir sin darse cuenta — pasó en esta misma sesión y lo cazó el assert.
 7. Manifest: `curl <host>/h/<slug>/manifest.webmanifest` → `start_url` debe ser `/dashboard` y el `id` seguir siendo `/h/{slug}` (si el `id` cambia, la PWA se reinstala como app nueva y el hotelero pierde el ícono).
-8. ⬜ prueba real en iPhone: instalar, abrir con red (para que guarde copia), modo avión, abrir desde el ícono → debe entrar al dashboard, no al muro. **Ojo**: una PWA ya instalada conserva su `start_url` viejo hasta reinstalarse — ese caso lo cubre el fallback del SW y es justo lo que hay que ver en el teléfono.
+8. **El paso que NINGÚN arnés puede sustituir** — verificar en un navegador de verdad que la copia guardada se puede LEER (no solo que existe). Con sesión, en `/dashboard`, desde la consola:
+   ```js
+   const c = await caches.open('loscedros-pages');
+   (await c.keys()).map(k => k.url);                                  // ¿está la URL?
+   await c.match(location.origin + '/dashboard');                      // undefined  ← Vary
+   await c.match(location.origin + '/dashboard', {ignoreVary:true});   // Response   ← correcto
+   ```
+   Si `keys()` la lista y `match(url)` da `undefined`, es el `Vary: User-Agent` de Apache (ver CLAUDE.md). Así se cazó el 30-jul un fallback que pasaba 8/8 en Node y en producción no habría encontrado nada. Verificado ✅ 2026-07-30: 393,804 bytes de HTML real recuperados con `ignoreVary`.
+9. ⬜ prueba real en iPhone: instalar, abrir con red (para que guarde copia), modo avión, abrir desde el ícono → debe entrar al dashboard, no al muro. **Ojo**: una PWA ya instalada conserva su `start_url` viejo hasta reinstalarse — ese caso lo cubre el fallback del SW y es justo lo que hay que ver en el teléfono.
 
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 

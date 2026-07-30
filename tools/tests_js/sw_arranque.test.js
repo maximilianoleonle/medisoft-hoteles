@@ -11,15 +11,34 @@ const ORIGIN = 'https://medisoft-hoteles.com';
 function nuevoEntorno({ online }) {
   const stores = new Map();
 
+  /**
+   * Simula el Vary REAL de produccion. Apache manda `Vary: Accept-Encoding,User-Agent`
+   * y las paginas se guardan con la Request de navegacion (con User-Agent), asi que
+   * buscarlas por URL string NO casa salvo que se pase `ignoreVary`. Sin esta regla
+   * el arnes daba verde a un fallback que en el navegador real nunca encontraba nada
+   * (bug real cazado en QA el 30-jul-2026; no simplificar este mock).
+   */
   class FakeCache {
     constructor() { this.map = new Map(); }
-    async put(req, res) { this.map.set(typeof req === 'string' ? req : req.url, res); }
+    async put(req, res) {
+      const url = typeof req === 'string' ? req : req.url;
+      // Guardado por Request de navegacion => la entrada "recuerda" su User-Agent
+      const conUA = typeof req !== 'string';
+      this.map.set(url, { res, conUA });
+    }
     async match(req, opts = {}) {
       const url = typeof req === 'string' ? req : req.url;
-      if (this.map.has(url)) return this.map.get(url);
+      const buscaConUA = typeof req !== 'string';
+      const casaVary = (e) => opts.ignoreVary === true || e.conUA === buscaConUA;
+
+      const exacta = this.map.get(url);
+      if (exacta && casaVary(exacta)) return exacta.res;
+
       if (opts.ignoreSearch) {
         const base = url.split('?')[0];
-        for (const [k, v] of this.map) if (k.split('?')[0] === base) return v;
+        for (const [k, e] of this.map) {
+          if (k.split('?')[0] === base && casaVary(e)) return e.res;
+        }
       }
       return undefined;
     }
@@ -73,17 +92,24 @@ function nuevoEntorno({ online }) {
   return { caches, stores, dispararFetch };
 }
 
+// Las pantallas se guardan con la Request de NAVEGACION real (lleva User-Agent),
+// como hace networkFirstPage en produccion.
 async function sembrarPagina(env, ruta, cuerpo) {
   const cache = await env.caches.open('loscedros-pages');
-  await cache.put(ORIGIN + '/' + ruta, new Response(cuerpo, {
-    status: 200, headers: { 'Content-Type': 'text/html' },
+  const request = new Request(ORIGIN + '/' + ruta, { headers: { accept: 'text/html' } });
+  await cache.put(request, new Response(cuerpo, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html', 'Vary': 'Accept-Encoding,User-Agent' },
   }));
 }
 
+// El shell se precachea con `cache.add(string)`: sin User-Agent de ninguno de los
+// dos lados, por eso el muro siempre caso aun con Vary.
 async function sembrarShellOffline(env) {
   const cache = await env.caches.open('loscedros-shell-v25');
   await cache.put(ORIGIN + '/offline.html', new Response('MURO SIN CONEXION', {
-    status: 200, headers: { 'Content-Type': 'text/html' },
+    status: 200,
+    headers: { 'Content-Type': 'text/html', 'Vary': 'Accept-Encoding,User-Agent' },
   }));
 }
 
@@ -137,7 +163,8 @@ caso('CON RED: /dashboard -> responde la red y GUARDA la copia buena', async () 
   await env.dispararFetch(ORIGIN + '/dashboard');
   await new Promise(r => setImmediate(r));
   const cache = await env.caches.open('loscedros-pages');
-  const guardada = await cache.match(ORIGIN + '/dashboard');
+  // ignoreVary tambien aqui: se guardo con Request de navegacion y buscamos por URL
+  const guardada = await cache.match(ORIGIN + '/dashboard', { ignoreVary: true });
   return [guardada ? 'GUARDADA' : 'NO GUARDADA', 'GUARDADA'];
 });
 
@@ -148,6 +175,25 @@ caso('CON RED: el login NUNCA se guarda (son credenciales)', async () => {
   const cache = await env.caches.open('loscedros-pages');
   const guardada = await cache.match(ORIGIN + '/h/hotel-los-cedros/login');
   return [guardada ? 'GUARDADA' : 'NO GUARDADA', 'NO GUARDADA'];
+});
+
+// Regresion del bug cazado en el navegador el 30-jul-2026: sin `ignoreVary` el
+// fallback NUNCA encontraba la copia en produccion (Apache manda Vary: User-Agent)
+// y el arranque seguia muriendo en el muro pese a tener el dashboard guardado.
+caso('SIN RED: encuentra la copia AUNQUE la respuesta traiga Vary: User-Agent', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD CON VARY');
+  const res = await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  return [await res.text(), 'DASHBOARD CON VARY'];
+});
+
+caso('SIN RED: /habitaciones tambien casa con Vary (ruta operativa, no arranque)', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'habitaciones', 'HABITACIONES CON VARY');
+  const res = await env.dispararFetch(ORIGIN + '/habitaciones');
+  return [await res.text(), 'HABITACIONES CON VARY'];
 });
 
 caso('SIN RED: tras logout (cache de pantallas limpio) -> muro, no la sesion anterior', async () => {

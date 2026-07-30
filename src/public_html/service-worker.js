@@ -447,8 +447,11 @@ async function networkFirstPage(request) {
     notifyClients({ type: 'OFFLINE' });
 
     const cache = await caches.open(CACHE.pages);
+    // ignoreVary: la respuesta trae `Vary: ...,User-Agent` (Apache) y el UA cambia
+    // cuando el navegador se actualiza -> sin esto, un update de Safari invalidaria
+    // en silencio TODA la memoria offline del hotelero aunque siga guardada.
     const copia = await cache.match(request) ||
-      await cache.match(request, { ignoreSearch: true });
+      await cache.match(request, { ignoreSearch: true, ignoreVary: true });
     if (copia) return copia;
 
     return respuestaOffline();
@@ -460,12 +463,22 @@ function esRutaDeArranque(url) {
     OFFLINE_ARRANQUE_PATHS.test(pathWithinScope(url));
 }
 
-/** Mejor pantalla operativa guardada, en orden de preferencia. null si no hay ninguna. */
+/**
+ * Mejor pantalla operativa guardada, en orden de preferencia. null si no hay ninguna.
+ *
+ * `ignoreVary` NO es opcional: Apache manda `Vary: Accept-Encoding,User-Agent`
+ * (el `Header append Vary User-Agent` del .htaccess) y estas paginas se guardan
+ * con la Request de NAVEGACION real, que si lleva User-Agent. Buscarlas por URL
+ * arma una Request sin ese header, el Vary no casa y el match falla SIEMPRE —
+ * el fallback no encontraria nada y el arranque seguiria muriendo en el muro.
+ * (offline.html no sufre esto porque se precachea con `cache.add(string)`:
+ * ninguno de los dos lados lleva User-Agent y por eso siempre caso.)
+ */
 async function mejorPantallaGuardada() {
   const cache = await caches.open(CACHE.pages);
 
   for (const pagina of OFFLINE_ENTRY_PAGES) {
-    const copia = await cache.match(BASE + pagina, { ignoreSearch: true });
+    const copia = await cache.match(BASE + pagina, { ignoreSearch: true, ignoreVary: true });
     if (copia) return copia;
   }
 
