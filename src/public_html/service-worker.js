@@ -3,19 +3,34 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v24'; // v24: Tailwind precompilado (css/tailwind.css) sustituye al Play CDN
+const SW_VERSION = 'v25'; // v25: arranque offline real (la PWA entra a la app, ya no al muro "Sin conexion")
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
   shell:   `loscedros-shell-${SW_VERSION}`,   // assets estÃ¡ticos locales
   ext:     `loscedros-ext-${SW_VERSION}`,     // librerÃ­as externas (CDN)
-  pages:   `loscedros-pages-${SW_VERSION}`,   // ultima copia buena de pantallas clave
+  // SIN version a proposito: la memoria offline del hotelero sobrevive a los
+  // deploys del SW (antes cada version nueva la borraba y lo dejaba sin nada
+  // que abrir hasta su siguiente visita con red). Se limpia por logout o
+  // cambio de hotel via CLEAR_PAGES_CACHE, que es lo que importa para aislar.
+  pages:   'loscedros-pages',                 // ultima copia buena de pantallas clave
 };
 
 // Pantallas operativas que se guardan para navegacion offline (network-first
 // con respaldo). Se limpian al cerrar sesion o cambiar de hotel via
 // CLEAR_PAGES_CACHE. Login, reportes y pantallas publicas /h/{slug} quedan fuera.
 const OFFLINE_PAGE_PATHS = /^(dashboard|habitaciones|reservaciones|huespedes|caja|offline\/pendientes)([\/?#]|$)/;
+
+// Rutas por las que ARRANCA la app instalada: start_url del manifest (login por
+// slug), login generico y la raiz. Ninguna es cacheable (son credenciales o un
+// redirect), asi que sin red no tienen copia posible y caian en offline.html
+// SIEMPRE — con media operacion guardada al lado. Ahora se resuelven entrando a
+// la mejor pantalla operativa disponible. Cubre tambien a las apps ya instaladas
+// con el start_url viejo, que no re-leen el manifest hasta reinstalarse.
+const OFFLINE_ARRANQUE_PATHS = /^(h\/[a-z0-9-]+\/login|login|)([?#]|$)/;
+
+// Puertas de entrada offline, en orden de preferencia.
+const OFFLINE_ENTRY_PAGES = ['dashboard', 'habitaciones', 'reservaciones', 'caja', 'huespedes'];
 
 // â”€â”€â”€ Assets del shell de la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SHELL_ASSETS = [
@@ -168,6 +183,11 @@ self.addEventListener('fetch', event => {
     // Pantallas operativas clave: network-first + ultima copia buena offline
     if (isOfflineCacheablePage(url)) {
       event.respondWith(networkFirstPage(request));
+      return;
+    }
+    // Arranque de la app: sin red entra a lo que si esta guardado.
+    if (esRutaDeArranque(url)) {
+      event.respondWith(arranquePage(request));
       return;
     }
     event.respondWith(networkOnlyPage(request));
@@ -431,13 +451,57 @@ async function networkFirstPage(request) {
       await cache.match(request, { ignoreSearch: true });
     if (copia) return copia;
 
-    const offline = await caches.match(BASE + 'offline.html');
-    if (offline) return offline;
+    return respuestaOffline();
+  }
+}
 
-    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
-      status: 503,
-      headers: { 'Content-Type': 'text/html' },
-    });
+function esRutaDeArranque(url) {
+  return url.origin === self.location.origin &&
+    OFFLINE_ARRANQUE_PATHS.test(pathWithinScope(url));
+}
+
+/** Mejor pantalla operativa guardada, en orden de preferencia. null si no hay ninguna. */
+async function mejorPantallaGuardada() {
+  const cache = await caches.open(CACHE.pages);
+
+  for (const pagina of OFFLINE_ENTRY_PAGES) {
+    const copia = await cache.match(BASE + pagina, { ignoreSearch: true });
+    if (copia) return copia;
+  }
+
+  return null;
+}
+
+/** Muro "Sin conexion": ultimo recurso cuando no hay NADA que abrir. */
+async function respuestaOffline() {
+  const offline = await caches.match(BASE + 'offline.html');
+  if (offline) return offline;
+
+  return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
+    status: 503,
+    headers: { 'Content-Type': 'text/html' },
+  });
+}
+
+/**
+ * Arranque de la PWA (start_url / login). Con red se comporta como siempre; sin
+ * red entrega la mejor pantalla guardada para que la app ABRA en vez de morir en
+ * el muro. La URL queda en la del login hasta la siguiente carga con red: es
+ * cosmetico y preferible a no poder trabajar. Nunca se cachea esta respuesta
+ * (son credenciales y casi siempre un redirect).
+ */
+async function arranquePage(request) {
+  try {
+    const response = await fetch(request);
+    notifyClients({ type: 'ONLINE' });
+    return response;
+  } catch {
+    notifyClients({ type: 'OFFLINE' });
+
+    const guardada = await mejorPantallaGuardada();
+    if (guardada) return guardada;
+
+    return respuestaOffline();
   }
 }
 
@@ -455,13 +519,7 @@ async function networkOnlyPage(request) {
   } catch {
     notifyClients({ type: 'OFFLINE' });
 
-    const offline = await caches.match(BASE + 'offline.html');
-    if (offline) return offline;
-
-    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexión. Vuelve a intentarlo cuando tengas internet.</p>', {
-      status: 503,
-      headers: { 'Content-Type': 'text/html' },
-    });
+    return respuestaOffline();
   }
 }
 

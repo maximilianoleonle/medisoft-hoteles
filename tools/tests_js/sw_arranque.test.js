@@ -1,0 +1,178 @@
+/**
+ * Arnes que carga el service-worker.js REAL y le corta la red.
+ * Verifica el arreglo: arrancar la PWA sin internet debe ENTRAR a la app,
+ * no morir en offline.html.
+ */
+const fs = require('fs');
+
+const SRC = fs.readFileSync('src/public_html/service-worker.js', 'utf8');
+const ORIGIN = 'https://medisoft-hoteles.com';
+
+function nuevoEntorno({ online }) {
+  const stores = new Map();
+
+  class FakeCache {
+    constructor() { this.map = new Map(); }
+    async put(req, res) { this.map.set(typeof req === 'string' ? req : req.url, res); }
+    async match(req, opts = {}) {
+      const url = typeof req === 'string' ? req : req.url;
+      if (this.map.has(url)) return this.map.get(url);
+      if (opts.ignoreSearch) {
+        const base = url.split('?')[0];
+        for (const [k, v] of this.map) if (k.split('?')[0] === base) return v;
+      }
+      return undefined;
+    }
+    async keys() { return [...this.map.keys()].map(u => ({ url: u })); }
+    async delete() { return true; }
+  }
+
+  const caches = {
+    async open(name) {
+      if (!stores.has(name)) stores.set(name, new FakeCache());
+      return stores.get(name);
+    },
+    async match(req, opts) {
+      for (const c of stores.values()) {
+        const r = await c.match(req, opts);
+        if (r) return r;
+      }
+      return undefined;
+    },
+    async keys() { return [...stores.keys()]; },
+    async delete(name) { return stores.delete(name); },
+  };
+
+  const listeners = {};
+  const self = {
+    registration: { scope: ORIGIN + '/' },
+    location: { origin: ORIGIN },
+    addEventListener: (t, f) => { (listeners[t] = listeners[t] || []).push(f); },
+    skipWaiting: () => {},
+    clients: { matchAll: async () => [], claim: async () => {} },
+  };
+
+  const fetchMock = async (req) => {
+    if (!online) throw new TypeError('Failed to fetch');
+    const url = typeof req === 'string' ? req : req.url;
+    return new Response('<html>RED: ' + url + '</html>', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' },
+    });
+  };
+
+  const silencio = { log() {}, warn() {}, info() {}, error() {} };
+  new Function('self', 'caches', 'fetch', 'console', SRC)(self, caches, fetchMock, silencio);
+
+  const dispararFetch = (url) => new Promise((resolve, reject) => {
+    const request = new Request(url, { headers: { accept: 'text/html' } });
+    const event = { request, respondWith: p => Promise.resolve(p).then(resolve, reject), waitUntil: () => {} };
+    listeners.fetch[0](event);
+  });
+
+  return { caches, stores, dispararFetch };
+}
+
+async function sembrarPagina(env, ruta, cuerpo) {
+  const cache = await env.caches.open('loscedros-pages');
+  await cache.put(ORIGIN + '/' + ruta, new Response(cuerpo, {
+    status: 200, headers: { 'Content-Type': 'text/html' },
+  }));
+}
+
+async function sembrarShellOffline(env) {
+  const cache = await env.caches.open('loscedros-shell-v25');
+  await cache.put(ORIGIN + '/offline.html', new Response('MURO SIN CONEXION', {
+    status: 200, headers: { 'Content-Type': 'text/html' },
+  }));
+}
+
+const casos = [];
+function caso(nombre, fn) { casos.push([nombre, fn]); }
+
+// ── El bug reportado: arrancar la PWA sin internet ───────────────────────────
+caso('SIN RED: arranque en /h/{slug}/login CON dashboard guardado -> entra al dashboard', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
+  const res = await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  return [await res.text(), 'DASHBOARD DEL HOTEL'];
+});
+
+caso('SIN RED: arranque en la raiz / CON habitaciones guardado -> entra a habitaciones', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'habitaciones', 'HABITACIONES');
+  const res = await env.dispararFetch(ORIGIN + '/');
+  return [await res.text(), 'HABITACIONES'];
+});
+
+caso('SIN RED: arranque SIN nada guardado -> muro (comportamiento honesto)', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  const res = await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  return [await res.text(), 'MURO SIN CONEXION'];
+});
+
+caso('SIN RED: /habitaciones con su copia -> sirve SU copia, no el dashboard', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
+  await sembrarPagina(env, 'habitaciones', 'HABITACIONES');
+  const res = await env.dispararFetch(ORIGIN + '/habitaciones');
+  return [await res.text(), 'HABITACIONES'];
+});
+
+caso('SIN RED: /reportes (no operativa) -> muro, NO suplanta con otra pantalla', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
+  const res = await env.dispararFetch(ORIGIN + '/reportes');
+  return [await res.text(), 'MURO SIN CONEXION'];
+});
+
+// ── Que el arreglo no rompa el camino normal ─────────────────────────────────
+caso('CON RED: /dashboard -> responde la red y GUARDA la copia buena', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararFetch(ORIGIN + '/dashboard');
+  await new Promise(r => setImmediate(r));
+  const cache = await env.caches.open('loscedros-pages');
+  const guardada = await cache.match(ORIGIN + '/dashboard');
+  return [guardada ? 'GUARDADA' : 'NO GUARDADA', 'GUARDADA'];
+});
+
+caso('CON RED: el login NUNCA se guarda (son credenciales)', async () => {
+  const env = nuevoEntorno({ online: true });
+  await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  await new Promise(r => setImmediate(r));
+  const cache = await env.caches.open('loscedros-pages');
+  const guardada = await cache.match(ORIGIN + '/h/hotel-los-cedros/login');
+  return [guardada ? 'GUARDADA' : 'NO GUARDADA', 'NO GUARDADA'];
+});
+
+caso('SIN RED: tras logout (cache de pantallas limpio) -> muro, no la sesion anterior', async () => {
+  const env = nuevoEntorno({ online: false });
+  await sembrarShellOffline(env);
+  await sembrarPagina(env, 'dashboard', 'DASHBOARD DEL HOTEL');
+  await env.caches.delete('loscedros-pages'); // lo que hace CLEAR_PAGES_CACHE
+  const res = await env.dispararFetch(ORIGIN + '/h/hotel-los-cedros/login');
+  return [await res.text(), 'MURO SIN CONEXION'];
+});
+
+(async () => {
+  let fallos = 0;
+  for (const [nombre, fn] of casos) {
+    try {
+      const [real, esperado] = await fn();
+      const ok = real === esperado;
+      if (!ok) fallos++;
+      console.log((ok ? '  OK  ' : ' FALLA') + ' | ' + nombre);
+      if (!ok) console.log('        obtuvo: "' + real + '"  esperaba: "' + esperado + '"');
+    } catch (e) {
+      fallos++;
+      console.log(' ERROR | ' + nombre + '\n        ' + e.message);
+    }
+  }
+  console.log('\n' + (casos.length - fallos) + '/' + casos.length + ' correctos');
+  process.exit(fallos ? 1 : 0);
+})();

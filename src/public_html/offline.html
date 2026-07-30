@@ -186,6 +186,67 @@
             transform: translateY(0) scale(.99);
         }
 
+        .pending-note {
+            margin-top: 16px;
+            border: 1px solid color-mix(in srgb, #D97706 34%, var(--offline-line));
+            border-radius: 16px;
+            padding: 13px 14px;
+            background: color-mix(in srgb, #D97706 9%, #fff);
+            color: #7C4A03;
+            font-size: .86rem;
+            line-height: 1.45;
+            font-weight: 800;
+        }
+
+        .offline-links {
+            margin-top: 18px;
+        }
+
+        .pending-note[hidden],
+        .offline-links[hidden] {
+            display: none !important;
+        }
+
+        .offline-body .offline-links__title {
+            margin: 0 0 10px;
+            color: color-mix(in srgb, var(--brand-primary) 74%, var(--offline-ink));
+            font-size: .76rem;
+            font-weight: 900;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .offline-links__grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .offline-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 46px;
+            padding: 0 12px;
+            border-radius: 13px;
+            border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, var(--offline-line));
+            background: #fff;
+            color: color-mix(in srgb, var(--brand-primary) 88%, var(--offline-ink));
+            font-size: .92rem;
+            font-weight: 850;
+            text-align: center;
+            text-decoration: none;
+            transition: transform .16s ease, border-color .16s ease;
+        }
+
+        .offline-link:hover {
+            border-color: color-mix(in srgb, var(--brand-accent) 52%, var(--offline-line));
+        }
+
+        .offline-link:active {
+            transform: scale(.985);
+        }
+
         @media (max-width: 520px) {
             body {
                 padding: 12px;
@@ -245,9 +306,17 @@
         </section>
 
         <section class="offline-body">
-            <p>
+            <p id="offlineMensaje">
                 No se pudo conectar con el servidor. Revisa tu conexión y vuelve a intentarlo.
             </p>
+
+            <div id="pendientesAviso" class="pending-note" hidden></div>
+
+            <nav id="accesosOffline" class="offline-links" hidden aria-label="Pantallas disponibles sin conexión">
+                <p class="offline-links__title">Puedes seguir aquí</p>
+                <div id="accesosLista" class="offline-links__grid"></div>
+            </nav>
+
             <div class="offline-note">
                 Cuando la conexión regrese, el sistema intentará cargar nuevamente la información del hotel.
             </div>
@@ -369,6 +438,144 @@
                     window.location.reload();
                 }, 700);
             });
+
+            // ── Puente: esta pantalla dejo de ser un callejon sin salida ──────
+            // Solo se llega aqui cuando el service worker no tuvo NADA que abrir
+            // (el arranque ya entra solo a la ultima copia buena). Aun asi puede
+            // haber pantallas guardadas para una ruta que no las tenia: se ofrecen
+            // en vez de dejar al hotelero con un boton que recarga lo que fallo.
+            var PAGES_CACHE = 'loscedros-pages';
+            var PANTALLAS = [
+                ['dashboard', 'Inicio'],
+                ['habitaciones', 'Habitaciones'],
+                ['reservaciones', 'Reservaciones'],
+                ['huespedes', 'Huéspedes'],
+                ['caja', 'Caja'],
+                ['offline/pendientes', 'Cambios sin enviar']
+            ];
+
+            function rutaDe(url) {
+                try {
+                    return new URL(url).pathname.replace(/^\/+/, '');
+                } catch (error) {
+                    return '';
+                }
+            }
+
+            function coincide(ruta, pantalla) {
+                return ruta === pantalla ||
+                    ruta.indexOf(pantalla + '/') === 0 ||
+                    ruta.indexOf(pantalla + '?') === 0;
+            }
+
+            function pintarAccesos() {
+                if (!window.caches) return;
+
+                window.caches.open(PAGES_CACHE).then(function (cache) {
+                    return cache.keys();
+                }).then(function (requests) {
+                    var lista = document.getElementById('accesosLista');
+                    var nav = document.getElementById('accesosOffline');
+                    if (!lista || !nav || !requests.length) return;
+
+                    var pintadas = 0;
+
+                    PANTALLAS.forEach(function (par) {
+                        var guardada = null;
+
+                        for (var i = 0; i < requests.length; i++) {
+                            if (coincide(rutaDe(requests[i].url), par[0])) {
+                                guardada = requests[i];
+                                break;
+                            }
+                        }
+
+                        if (!guardada) return;
+
+                        var enlace = document.createElement('a');
+                        enlace.className = 'offline-link';
+                        enlace.href = guardada.url;
+                        enlace.textContent = par[1];
+                        lista.appendChild(enlace);
+                        pintadas++;
+                    });
+
+                    if (!pintadas) return;
+
+                    nav.hidden = false;
+
+                    var mensaje = document.getElementById('offlineMensaje');
+                    if (mensaje) {
+                        // Solo CONSULTA: la captura de escrituras sin conexion esta
+                        // apagada (/api/sync responde 423). Nada de "se enviara solo".
+                        mensaje.textContent = 'No hay internet, pero lo último que abriste sigue disponible para consultarlo.';
+                    }
+                }).catch(function () {});
+            }
+
+            // Cuenta lo que quedo ATRAPADO en la cola vieja. NO prometer envio:
+            // /api/sync responde 423 y la captura de escrituras se apago el
+            // jul-26 justo para no mentir. Esto se registra A MANO.
+            function pintarPendientes() {
+                var dbName = null;
+
+                try {
+                    dbName = window.localStorage.getItem('loscedros_offline_db_name');
+                } catch (error) {
+                    return;
+                }
+
+                if (!dbName || !window.indexedDB) return;
+
+                var solicitud;
+                try {
+                    solicitud = window.indexedDB.open(dbName);
+                } catch (error) {
+                    return;
+                }
+
+                // Si la base no existia, NO crearla desde esta pantalla.
+                solicitud.onupgradeneeded = function (event) {
+                    try { event.target.transaction.abort(); } catch (error) {}
+                };
+
+                solicitud.onsuccess = function (event) {
+                    var db = event.target.result;
+
+                    if (!db.objectStoreNames.contains('operaciones_offline')) {
+                        db.close();
+                        return;
+                    }
+
+                    var consulta = db.transaction('operaciones_offline', 'readonly')
+                        .objectStore('operaciones_offline')
+                        .getAll();
+
+                    consulta.onsuccess = function () {
+                        var operaciones = consulta.result || [];
+                        var sinEnviar = operaciones.filter(function (op) {
+                            return op && op.estado !== 'sincronizado';
+                        }).length;
+
+                        if (sinEnviar > 0) {
+                            var aviso = document.getElementById('pendientesAviso');
+                            if (aviso) {
+                                aviso.textContent = sinEnviar === 1
+                                    ? 'Quedó 1 cambio guardado en este dispositivo que nunca llegó al sistema. Ábrelo en "Cambios sin enviar" y regístralo a mano.'
+                                    : 'Quedaron ' + sinEnviar + ' cambios guardados en este dispositivo que nunca llegaron al sistema. Ábrelos en "Cambios sin enviar" y regístralos a mano.';
+                                aviso.hidden = false;
+                            }
+                        }
+
+                        db.close();
+                    };
+
+                    consulta.onerror = function () { db.close(); };
+                };
+            }
+
+            pintarAccesos();
+            pintarPendientes();
 
         })();
     </script>

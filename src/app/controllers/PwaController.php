@@ -60,7 +60,14 @@ class PwaController extends Controller {
             'name' => $nombre,
             'short_name' => $this->shortName($nombre),
             'description' => 'Acceso al sistema de gestion hotelera de ' . $nombre . ' con Medisoft Hoteles.',
-            'start_url' => url('h/' . $slug . '/login'),
+            // Arranca en una pantalla que el service worker SI puede tener
+            // guardada: sin red la app abre en la ultima copia buena en vez del
+            // muro "Sin conexion" (el login jamas se cachea). Con sesion entra
+            // directo; sin sesion, require_auth() devuelve al login de ESTE hotel
+            // (login_path_for_current_context resuelve el slug por cookie), asi
+            // que no se pierde ni la marca ni el scope del hotel.
+            // El 'id' sigue siendo /h/{slug}: cambiar start_url no reinstala la app.
+            'start_url' => url('dashboard'),
             'scope' => rtrim(url(''), '/') . '/',
             'display' => 'standalone',
             'background_color' => $this->splashBackgroundColor($branding),

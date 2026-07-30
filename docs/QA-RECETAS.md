@@ -317,6 +317,19 @@ El módulo no tenía receta. Lo que se verifica es que la invitación a Google s
 4. GOTCHA: el gating vivía en DOS lugares (servicio + vista). Tras el POST la vista relee la encuesta y evaluaba el umbral por su cuenta ⇒ verificar SIEMPRE por HTTP, no solo con la suite del servicio.
 5. ⬜ Envío por correo: NO se prueba porque no funciona (no hay MTA en la imagen); la encuesta se comparte copiando el enlace.
 
+## PWA / Offline — arranque sin internet (SW v25) — verificado ✅ 2026-07-30 (18 asserts, falta prueba en teléfono)
+
+**Cómo probar un service worker SIN navegador** (el pane no corta la red ni reproduce el arranque de una PWA instalada): cargar el `service-worker.js` REAL con `new Function('self','caches','fetch','console', src)` y pasarle mocks — `self` (registration.scope, location.origin, addEventListener, clients), un CacheStorage falso con `open/match/keys/put/delete` (respetar `ignoreSearch`, que el SW usa) y un `fetch` que LANZA para simular sin red. Luego se dispara `listeners.fetch[0]({request, respondWith, waitUntil})` con un `Request` que lleve `accept: text/html` (el SW acepta navegación por `mode` o por ese header) y se leen las respuestas. Node 24 ya trae `Request`/`Response`/`URL` globales. Mismo truco para `offline.html`: extraer su 2º `<script>` con regex y ejecutarlo con un `document` mínimo (getElementById/createElement/appendChild) — evita jsdom, que no está instalado. Arneses versionados en `tools/tests_js/`: `node tools/tests_js/sw_arranque.test.js` (8) y `node tools/tests_js/offline_puente.test.js` (10), desde la RAÍZ del repo (leen `src/...` por ruta relativa). No hay PHP ni npm de por medio: corren con el `node` del host.
+
+1. Ruteo del SW: extraer `OFFLINE_PAGE_PATHS`/`OFFLINE_ARRANQUE_PATHS` del archivo con regex y evaluarlas (no reescribirlas a mano, o pruebas una copia). Contrato: `''`/`login`/`h/{slug}/login` → arranque; `dashboard`, `caja/movimientos`, `offline/pendientes` → operativa; `reportes`, `loginfalso`, `h/{slug}/reservar` → ninguna. El handler evalúa **operativa primero**.
+2. Sin red + arranque + dashboard guardado → devuelve el dashboard, NO `offline.html`. Este es el bug original.
+3. Sin red + arranque + caché vacío → muro. Sin red + `/habitaciones` con su copia → SU copia, no el dashboard. Sin red + `/reportes` → muro (no suplantar: mentiría sobre la URL).
+4. **Seguridad**: tras `CLEAR_PAGES_CACHE` (logout / cambio de hotel) el arranque sin red debe dar el muro, jamás la sesión anterior.
+5. Con red: `/dashboard` se guarda en `loscedros-pages`; el login **nunca** se guarda (son credenciales y casi siempre un redirect).
+6. `offline.html`: con pantallas guardadas revela los accesos con la URL real del caché y cambia el copy; sin nada guardado no inventa accesos; cuenta la cola (`operaciones_offline`, `estado !== 'sincronizado'`) en singular/plural; sin IndexedDB no truena. **Asertar el LENGUAJE, no solo que aparezca**: el offline es de solo lectura (ver la sección siguiente) → ningún texto puede decir "se enviará al volver el internet"; debe mandar a registrarlo a mano. Es la regresión fácil de reintroducir sin darse cuenta — pasó en esta misma sesión y lo cazó el assert.
+7. Manifest: `curl <host>/h/<slug>/manifest.webmanifest` → `start_url` debe ser `/dashboard` y el `id` seguir siendo `/h/{slug}` (si el `id` cambia, la PWA se reinstala como app nueva y el hotelero pierde el ícono).
+8. ⬜ prueba real en iPhone: instalar, abrir con red (para que guarde copia), modo avión, abrir desde el ícono → debe entrar al dashboard, no al muro. **Ojo**: una PWA ya instalada conserva su `start_url` viejo hasta reinstalarse — ese caso lo cubre el fallback del SW y es justo lo que hay que ver en el teléfono.
+
 ## Captura offline apagada (escrituras que no llegaban al servidor)
 
 Desde jul-26 la app NO acepta capturas sin conexión (ver CLAUDE.md). Verificar que el candado sigue puesto:
