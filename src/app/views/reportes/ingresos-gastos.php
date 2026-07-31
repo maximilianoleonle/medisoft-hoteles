@@ -90,6 +90,9 @@ $total_reversos = (float)($totales['reversos'] ?? array_sum(array_column($datos[
 $total_ingresos = (float)($totales['ingresos'] ?? ($total_ingresos_brutos - $total_reversos));
 $total_gastos = (float)($totales['gastos_reales'] ?? ($totales['gastos'] ?? 0));
 $utilidad_neta = (float)($totales['utilidad'] ?? ($total_ingresos - $total_gastos));
+$movimientos_ingresos = (int)array_sum(array_column($datos['ingresos'] ?? [], 'cantidad'));
+$movimientos_reversos = (int)array_sum(array_column($datos['reversos'] ?? [], 'cantidad'));
+$movimientos_gastos = (int)array_sum(array_column($datos['gastos'] ?? [], 'cantidad'));
 $dias_periodo = max(count($resumenDiario), 1);
 $promedio_ingresos = $total_ingresos / $dias_periodo;
 $promedio_gastos = $total_gastos / $dias_periodo;
@@ -216,7 +219,6 @@ $metodoMeta = [
 .profit-kicker,
 .profit-label,
 .profit-section-kicker,
-.profit-table th,
 .profit-mini-label {
     color: var(--pr-muted);
     font-size: .72rem;
@@ -607,60 +609,170 @@ $metodoMeta = [
     text-decoration: line-through;
 }
 
-.profit-two-columns {
+.profit-breakdown-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
+    align-items: start;
     margin-bottom: 18px;
 }
 
-.profit-table-wrap {
-    overflow-x: auto;
+.profit-breakdown-card {
+    align-self: start;
+    margin-bottom: 0;
 }
 
-.profit-table {
-    width: 100%;
-    min-width: 560px;
-    border-collapse: separate;
-    border-spacing: 0;
+.profit-breakdown-card--adjustments {
+    grid-column: 1 / -1;
 }
 
-.profit-table th {
-    padding: 12px 11px;
-    border-bottom: 1px solid var(--pr-line);
-    text-align: left;
-}
-
-.profit-table td {
-    padding: 13px 11px;
+.profit-breakdown-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 20px;
     border-bottom: 1px solid var(--pr-line-soft);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pr-primary) 4%, var(--pr-surface)), var(--pr-surface));
+}
+
+.profit-breakdown-icon {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 1rem;
+}
+
+.profit-breakdown-icon.is-income {
+    background: color-mix(in srgb, var(--pr-income) 12%, var(--pr-surface));
+    color: var(--pr-income);
+}
+
+.profit-breakdown-icon.is-expense {
+    background: color-mix(in srgb, var(--pr-expense) 11%, var(--pr-surface));
+    color: var(--pr-expense);
+}
+
+.profit-breakdown-icon.is-adjustment {
+    background: color-mix(in srgb, var(--pr-warning) 13%, var(--pr-surface));
+    color: var(--pr-warning);
+}
+
+.profit-breakdown-title {
+    min-width: 0;
+}
+
+.profit-breakdown-title h3 {
+    margin: 2px 0 0;
     color: var(--pr-text);
-    font-size: .86rem;
-}
-
-.profit-table tbody tr {
-    transition: background .18s ease;
-}
-
-.profit-table tbody tr:hover {
-    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFFFF);
-}
-
-.profit-table tfoot td {
-    background: color-mix(in srgb, var(--pr-primary) 5%, #FFFFFF);
-    color: var(--pr-primary);
+    font-size: 1.08rem;
     font-weight: 700;
+    line-height: 1.25;
 }
 
-.profit-bar {
-    height: 7px;
-    margin-top: 6px;
-    border-radius: 999px;
+.profit-breakdown-title p {
+    max-width: 46ch;
+    margin: 5px 0 0;
+    color: var(--pr-muted);
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.profit-breakdown-summary {
+    min-width: 126px;
+    text-align: right;
+}
+
+.profit-breakdown-summary span,
+.profit-breakdown-amount span {
+    display: block;
+    color: var(--pr-muted);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.profit-breakdown-summary strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 1.18rem;
+}
+
+.profit-breakdown-list {
+    margin: 0;
+    padding: 0 20px;
+    list-style: none;
+}
+
+.profit-breakdown-item {
+    padding: 17px 0;
+}
+
+.profit-breakdown-item + .profit-breakdown-item {
+    border-top: 1px solid var(--pr-line-soft);
+}
+
+.profit-breakdown-item-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: start;
+}
+
+.profit-breakdown-concept {
+    min-width: 0;
+}
+
+.profit-breakdown-concept strong {
+    display: block;
+    overflow-wrap: anywhere;
+    color: var(--pr-text);
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.profit-breakdown-concept span {
+    display: block;
+    margin-top: 4px;
+    color: var(--pr-muted);
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.profit-breakdown-amount {
+    min-width: 116px;
+    text-align: right;
+}
+
+.profit-breakdown-amount strong {
+    display: block;
+    margin-top: 3px;
+    font-size: .94rem;
+    white-space: nowrap;
+}
+
+.profit-breakdown-share {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.profit-breakdown-track {
+    height: 8px;
     overflow: hidden;
-    background: color-mix(in srgb, var(--pr-primary) 8%, #FFFFFF);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--pr-primary) 8%, var(--pr-surface));
 }
 
-.profit-bar span {
+.profit-breakdown-track span {
     display: block;
     height: 100%;
     border-radius: inherit;
@@ -668,12 +780,47 @@ $metodoMeta = [
     transition: transform .7s ease;
 }
 
-.profit-bar.is-income span {
+.profit-breakdown-track.is-income span {
     background: var(--pr-income);
 }
 
-.profit-bar.is-expense span {
+.profit-breakdown-track.is-expense span {
     background: var(--pr-expense);
+}
+
+.profit-breakdown-track.is-adjustment span {
+    background: var(--pr-warning);
+}
+
+.profit-breakdown-share > span {
+    min-width: 84px;
+    color: var(--pr-muted);
+    font-size: .76rem;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.profit-breakdown-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--pr-line-soft);
+    background: color-mix(in srgb, var(--pr-primary) 4%, var(--pr-surface));
+    color: var(--pr-muted);
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.profit-breakdown-footer strong {
+    color: var(--pr-text);
+    font-weight: 700;
+}
+
+.profit-breakdown-card .profit-empty {
+    min-height: 168px;
 }
 
 .profit-empty {
@@ -839,8 +986,12 @@ $metodoMeta = [
 
 @media (max-width: 1180px) {
     .profit-hero,
-    .profit-two-columns {
+    .profit-breakdown-grid {
         grid-template-columns: 1fr;
+    }
+
+    .profit-breakdown-card--adjustments {
+        grid-column: auto;
     }
 
     .profit-metric-grid {
@@ -898,6 +1049,56 @@ $metodoMeta = [
     .profit-section-head {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .profit-breakdown-head {
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 18px;
+    }
+
+    .profit-breakdown-summary {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        padding-top: 14px;
+        border-top: 1px solid var(--pr-line-soft);
+        text-align: left;
+    }
+
+    .profit-breakdown-summary strong {
+        margin-top: 0;
+    }
+
+    .profit-breakdown-list {
+        padding-inline: 18px;
+    }
+
+    .profit-breakdown-item-top {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .profit-breakdown-amount {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .profit-breakdown-amount strong {
+        margin-top: 0;
+    }
+
+    .profit-breakdown-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+        padding-inline: 18px;
     }
 
     .profit-chart-shell {
@@ -1108,176 +1309,194 @@ $metodoMeta = [
             </div>
         </section>
 
-        <section class="profit-two-columns">
-            <article class="profit-section">
-                <div class="profit-section-head">
-                    <div>
-                        <span class="profit-section-kicker">Dinero recibido</span>
-                        <h3>Dinero que entro</h3>
+        <section class="profit-breakdown-grid" aria-label="Desglose del dinero del periodo">
+            <article class="profit-section profit-breakdown-card">
+                <div class="profit-breakdown-head">
+                    <span class="profit-breakdown-icon is-income" aria-hidden="true">
+                        <i class="fas fa-arrow-down"></i>
+                    </span>
+                    <div class="profit-breakdown-title">
+                        <span class="profit-section-kicker">Ingresos cobrados</span>
+                        <h3>De dónde entró el dinero</h3>
+                        <p>Cobros registrados antes de restar devoluciones o cancelaciones.</p>
                     </div>
-                    <span class="profit-money is-income"><?= format_currency($total_ingresos_brutos) ?></span>
+                    <div class="profit-breakdown-summary">
+                        <span>Total recibido</span>
+                        <strong class="profit-money is-income"><?= format_currency($total_ingresos_brutos) ?></strong>
+                    </div>
                 </div>
-                <div class="profit-section-body">
-                    <?php if (!empty($datos['ingresos'])): ?>
-                        <div class="profit-table-wrap">
-                            <table class="profit-table">
-                                <thead>
-                                    <tr>
-                                        <th>Concepto</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-right">Total</th>
-                                        <th class="text-center">%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($datos['ingresos'] as $ingreso): ?>
-                                        <?php $porcentaje = rep_ig_percent($ingreso['total'] ?? 0, $total_ingresos_brutos); ?>
-                                        <tr>
-                                            <td>
-                                                <strong><?= rep_ig_concept_label($ingreso['categoria'] ?? '') ?></strong>
-                                                <div class="profit-bar is-income">
-                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
-                                                </div>
-                                            </td>
-                                            <td class="text-center"><?= number_format($ingreso['cantidad'] ?? 0) ?></td>
-                                            <td class="text-right profit-money is-income"><?= format_currency($ingreso['total'] ?? 0) ?></td>
-                                            <td class="text-center"><?= $porcentaje ?>%</td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['ingresos'], 'cantidad'))) ?></td>
-                                        <td class="text-right"><?= format_currency($total_ingresos_brutos) ?></td>
-                                        <td class="text-center">100%</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                <?php if (!empty($datos['ingresos'])): ?>
+                    <ol class="profit-breakdown-list" aria-label="Ingresos por concepto">
+                        <?php foreach ($datos['ingresos'] as $ingreso): ?>
+                            <?php
+                            $porcentaje = rep_ig_percent($ingreso['total'] ?? 0, $total_ingresos_brutos);
+                            $cantidad = (int)($ingreso['cantidad'] ?? 0);
+                            ?>
+                            <li class="profit-breakdown-item">
+                                <div class="profit-breakdown-item-top">
+                                    <div class="profit-breakdown-concept">
+                                        <strong><?= rep_ig_concept_label($ingreso['categoria'] ?? '') ?></strong>
+                                        <span><?= number_format($cantidad) ?> movimiento<?= $cantidad === 1 ? '' : 's' ?></span>
+                                    </div>
+                                    <div class="profit-breakdown-amount">
+                                        <span>Importe</span>
+                                        <strong class="profit-money is-income"><?= format_currency($ingreso['total'] ?? 0) ?></strong>
+                                    </div>
+                                </div>
+                                <div class="profit-breakdown-share">
+                                    <div class="profit-breakdown-track is-income"
+                                         role="progressbar"
+                                         aria-label="Participación de <?= rep_ig_concept_label($ingreso['categoria'] ?? '') ?>"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         aria-valuenow="<?= $porcentaje ?>"
+                                         aria-valuetext="<?= $porcentaje ?> por ciento del total">
+                                        <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                    </div>
+                                    <span><?= $porcentaje ?>% del total</span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <div class="profit-breakdown-footer">
+                        <span><strong><?= number_format($movimientos_ingresos) ?></strong> movimiento<?= $movimientos_ingresos === 1 ? '' : 's' ?> en total</span>
+                        <span>100% del dinero recibido</span>
+                    </div>
+                <?php else: ?>
+                    <div class="profit-empty">
+                        <div>
+                            <i class="fas fa-info-circle"></i>
+                            <p>No hay ingresos registrados en este periodo. Los cobros aparecerán aquí cuando exista actividad.</p>
                         </div>
-                    <?php else: ?>
-                        <div class="profit-empty">
-                            <div>
-                                <i class="fas fa-info-circle"></i>
-                                <p>No hay ingresos registrados en este periodo. Los cobros aparecerán aquí cuando exista actividad.</p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             </article>
 
-            <article class="profit-section">
-                <div class="profit-section-head">
-                    <div>
-                        <span class="profit-section-kicker">Dinero que salio por ajuste</span>
-                        <h3>Devoluciones y cancelaciones</h3>
+            <article class="profit-section profit-breakdown-card">
+                <div class="profit-breakdown-head">
+                    <span class="profit-breakdown-icon is-expense" aria-hidden="true">
+                        <i class="fas fa-arrow-up"></i>
+                    </span>
+                    <div class="profit-breakdown-title">
+                        <span class="profit-section-kicker">Salidas operativas</span>
+                        <h3>En qué se gastó</h3>
+                        <p>Gastos del hotel agrupados por concepto durante el periodo.</p>
                     </div>
-                    <span class="profit-money is-expense"><?= format_currency($total_reversos) ?></span>
+                    <div class="profit-breakdown-summary">
+                        <span>Total gastado</span>
+                        <strong class="profit-money is-expense"><?= format_currency($total_gastos) ?></strong>
+                    </div>
                 </div>
-                <div class="profit-section-body">
-                    <?php if (!empty($datos['reversos'])): ?>
-                        <div class="profit-table-wrap">
-                            <table class="profit-table">
-                                <thead>
-                                    <tr>
-                                        <th>Motivo</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-right">Total</th>
-                                        <th class="text-center">%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($datos['reversos'] as $reverso): ?>
-                                        <?php $porcentaje = rep_ig_percent($reverso['total'] ?? 0, $total_reversos); ?>
-                                        <tr>
-                                            <td>
-                                                <strong><?= rep_ig_concept_label($reverso['categoria'] ?? '') ?></strong>
-                                                <div class="profit-bar is-expense">
-                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
-                                                </div>
-                                            </td>
-                                            <td class="text-center"><?= number_format($reverso['cantidad'] ?? 0) ?></td>
-                                            <td class="text-right profit-money is-expense"><?= format_currency($reverso['total'] ?? 0) ?></td>
-                                            <td class="text-center"><?= $porcentaje ?>%</td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['reversos'], 'cantidad'))) ?></td>
-                                        <td class="text-right"><?= format_currency($total_reversos) ?></td>
-                                        <td class="text-center">100%</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                <?php if (!empty($datos['gastos'])): ?>
+                    <ol class="profit-breakdown-list" aria-label="Gastos por concepto">
+                        <?php foreach ($datos['gastos'] as $gasto): ?>
+                            <?php
+                            $porcentaje = rep_ig_percent($gasto['total'] ?? 0, $total_gastos);
+                            $cantidad = (int)($gasto['cantidad'] ?? 0);
+                            ?>
+                            <li class="profit-breakdown-item">
+                                <div class="profit-breakdown-item-top">
+                                    <div class="profit-breakdown-concept">
+                                        <strong><?= rep_ig_concept_label($gasto['categoria'] ?? '') ?></strong>
+                                        <span><?= number_format($cantidad) ?> movimiento<?= $cantidad === 1 ? '' : 's' ?></span>
+                                    </div>
+                                    <div class="profit-breakdown-amount">
+                                        <span>Importe</span>
+                                        <strong class="profit-money is-expense"><?= format_currency($gasto['total'] ?? 0) ?></strong>
+                                    </div>
+                                </div>
+                                <div class="profit-breakdown-share">
+                                    <div class="profit-breakdown-track is-expense"
+                                         role="progressbar"
+                                         aria-label="Participación de <?= rep_ig_concept_label($gasto['categoria'] ?? '') ?>"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         aria-valuenow="<?= $porcentaje ?>"
+                                         aria-valuetext="<?= $porcentaje ?> por ciento del total">
+                                        <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                    </div>
+                                    <span><?= $porcentaje ?>% del total</span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <div class="profit-breakdown-footer">
+                        <span><strong><?= number_format($movimientos_gastos) ?></strong> movimiento<?= $movimientos_gastos === 1 ? '' : 's' ?> en total</span>
+                        <span>100% de los gastos registrados</span>
+                    </div>
+                <?php else: ?>
+                    <div class="profit-empty">
+                        <div>
+                            <i class="fas fa-info-circle"></i>
+                            <p>No hay gastos registrados en este periodo. Los egresos aparecerán aquí cuando se capturen movimientos.</p>
                         </div>
-                    <?php else: ?>
-                        <div class="profit-empty">
-                            <div>
-                                <i class="fas fa-info-circle"></i>
-                                <p>No hay devoluciones o cancelaciones en este periodo.</p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             </article>
 
-            <article class="profit-section">
-                <div class="profit-section-head">
-                    <div>
-                        <span class="profit-section-kicker">Gastos del negocio</span>
-                        <h3>Gastos del hotel por concepto</h3>
+            <article class="profit-section profit-breakdown-card profit-breakdown-card--adjustments">
+                <div class="profit-breakdown-head">
+                    <span class="profit-breakdown-icon is-adjustment" aria-hidden="true">
+                        <i class="fas fa-undo-alt"></i>
+                    </span>
+                    <div class="profit-breakdown-title">
+                        <span class="profit-section-kicker">Ajustes a ingresos</span>
+                        <h3>Qué dinero se devolvió o canceló</h3>
+                        <p>Movimientos que redujeron el dinero recibido en el periodo.</p>
                     </div>
-                    <span class="profit-money is-expense"><?= format_currency($total_gastos) ?></span>
+                    <div class="profit-breakdown-summary">
+                        <span>Total ajustado</span>
+                        <strong class="profit-money is-expense"><?= format_currency($total_reversos) ?></strong>
+                    </div>
                 </div>
-                <div class="profit-section-body">
-                    <?php if (!empty($datos['gastos'])): ?>
-                        <div class="profit-table-wrap">
-                            <table class="profit-table">
-                                <thead>
-                                    <tr>
-                                        <th>Concepto</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-right">Total</th>
-                                        <th class="text-center">%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($datos['gastos'] as $gasto): ?>
-                                        <?php $porcentaje = rep_ig_percent($gasto['total'] ?? 0, $total_gastos); ?>
-                                        <tr>
-                                            <td>
-                                                <strong><?= rep_ig_concept_label($gasto['categoria'] ?? '') ?></strong>
-                                                <div class="profit-bar is-expense">
-                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
-                                                </div>
-                                            </td>
-                                            <td class="text-center"><?= number_format($gasto['cantidad'] ?? 0) ?></td>
-                                            <td class="text-right profit-money is-expense"><?= format_currency($gasto['total'] ?? 0) ?></td>
-                                            <td class="text-center"><?= $porcentaje ?>%</td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['gastos'], 'cantidad'))) ?></td>
-                                        <td class="text-right"><?= format_currency($total_gastos) ?></td>
-                                        <td class="text-center">100%</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                <?php if (!empty($datos['reversos'])): ?>
+                    <ol class="profit-breakdown-list" aria-label="Devoluciones y cancelaciones por motivo">
+                        <?php foreach ($datos['reversos'] as $reverso): ?>
+                            <?php
+                            $porcentaje = rep_ig_percent($reverso['total'] ?? 0, $total_reversos);
+                            $cantidad = (int)($reverso['cantidad'] ?? 0);
+                            ?>
+                            <li class="profit-breakdown-item">
+                                <div class="profit-breakdown-item-top">
+                                    <div class="profit-breakdown-concept">
+                                        <strong><?= rep_ig_concept_label($reverso['categoria'] ?? '') ?></strong>
+                                        <span><?= number_format($cantidad) ?> movimiento<?= $cantidad === 1 ? '' : 's' ?></span>
+                                    </div>
+                                    <div class="profit-breakdown-amount">
+                                        <span>Importe</span>
+                                        <strong class="profit-money is-expense"><?= format_currency($reverso['total'] ?? 0) ?></strong>
+                                    </div>
+                                </div>
+                                <div class="profit-breakdown-share">
+                                    <div class="profit-breakdown-track is-adjustment"
+                                         role="progressbar"
+                                         aria-label="Participación de <?= rep_ig_concept_label($reverso['categoria'] ?? '') ?>"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         aria-valuenow="<?= $porcentaje ?>"
+                                         aria-valuetext="<?= $porcentaje ?> por ciento del total">
+                                        <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                    </div>
+                                    <span><?= $porcentaje ?>% del total</span>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <div class="profit-breakdown-footer">
+                        <span><strong><?= number_format($movimientos_reversos) ?></strong> movimiento<?= $movimientos_reversos === 1 ? '' : 's' ?> en total</span>
+                        <span>100% del dinero ajustado</span>
+                    </div>
+                <?php else: ?>
+                    <div class="profit-empty">
+                        <div>
+                            <i class="fas fa-check-circle"></i>
+                            <p>No hubo devoluciones ni cancelaciones en este periodo.</p>
                         </div>
-                    <?php else: ?>
-                        <div class="profit-empty">
-                            <div>
-                                <i class="fas fa-info-circle"></i>
-                                <p>No hay gastos registrados en este periodo. Los egresos aparecerán aquí cuando se capturen movimientos.</p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             </article>
         </section>
 
