@@ -434,6 +434,18 @@
                 <div class="cash-category-modal__body">
                     <input type="hidden" id="categoria_id" name="id">
 
+                    <!-- Aviso de error DENTRO del modal. Un Swal aqui no sirve:
+                         este modal va en z-index 13000 y SweetAlert2 en 1060, asi
+                         que el aviso quedaba TAPADO y solo aparecia al cerrar el
+                         modal a mano (queja real del 31-jul). Ademas conserva lo
+                         que el usuario ya escribio. -->
+                    <div id="categoriaFormError"
+                         class="hidden mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                         role="alert" aria-live="assertive">
+                        <i class="fas fa-circle-exclamation mt-0.5 text-red-500" aria-hidden="true"></i>
+                        <span id="categoriaFormErrorTexto"></span>
+                    </div>
+
                     <div class="cash-category-modal__fields space-y-4">
                     <!-- Nombre -->
                     <div>
@@ -516,8 +528,8 @@
                             class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                         Cancelar
                     </button>
-                    <button type="submit" 
-                            class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition">
+                    <button type="submit" id="btnGuardarCategoria"
+                            class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
                         <i class="fas fa-save mr-2"></i>
                         Guardar
                     </button>
@@ -548,6 +560,7 @@ function abrirModalCategoria() {
     modalCategoriaDisparador = document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    limpiarErrorCategoria();
     modalCategoriaEl.classList.remove('hidden');
     modalCategoriaEl.setAttribute('aria-hidden', 'false');
     document.body.classList.add('overflow-hidden', 'cash-category-modal-open');
@@ -620,6 +633,7 @@ function cerrarModalCategoria() {
     modalCategoriaEl.classList.add('hidden');
     modalCategoriaEl.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('overflow-hidden', 'cash-category-modal-open');
+    limpiarErrorCategoria();
 
     if (modalCategoriaDisparador && document.contains(modalCategoriaDisparador)) {
         modalCategoriaDisparador.focus();
@@ -649,14 +663,49 @@ function editarCategoria(id) {
     abrirModalCategoria();
 }
 
+// Aviso de error dentro del modal (ver el comentario del bloque en el HTML:
+// un Swal queda tapado por este modal y el usuario no ve nada).
+function mostrarErrorCategoria(mensaje) {
+    const caja = document.getElementById('categoriaFormError');
+    if (!caja) return;
+    document.getElementById('categoriaFormErrorTexto').textContent = mensaje;
+    caja.classList.remove('hidden');
+    caja.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function limpiarErrorCategoria() {
+    const caja = document.getElementById('categoriaFormError');
+    if (!caja) return;
+    caja.classList.add('hidden');
+    document.getElementById('categoriaFormErrorTexto').textContent = '';
+}
+
 // Guardar categoría
 document.getElementById('formCategoria').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(this);
     const id = formData.get('id');
     const url = id ? '<?= url('caja/categoria/actualizar') ?>' : '<?= url('caja/categoria/crear') ?>';
-    
+
+    // Un solo envío a la vez: sin esto el botón sigue vivo mientras el servidor
+    // responde y un segundo clic manda otra alta (así quedaron dos peticiones
+    // fallidas seguidas en el log de producción del 31-jul).
+    const btn = document.getElementById('btnGuardarCategoria');
+    if (btn && btn.disabled) return;
+    const btnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Guardando...';
+    }
+    limpiarErrorCategoria();
+
+    const restaurarBoton = () => {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.innerHTML = btnHtml;
+    };
+
     fetch(url, {
         method: 'POST',
         headers: {
@@ -665,18 +714,27 @@ document.getElementById('formCategoria').addEventListener('submit', function(e) 
         },
         body: formData
     })
-    .then(response => response.json())
+    // Respuesta no-JSON (500 en HTML, sesión vencida, 403): sin esto el .json()
+    // truena y el usuario solo ve un genérico "Error al procesar la solicitud".
+    .then(response => response.json().catch(() => ({
+        success: false,
+        message: response.status === 403
+            ? 'No tienes permiso para hacer este cambio.'
+            : 'El servidor respondió de forma inesperada (código ' + response.status + '). Vuelve a intentar.'
+    })))
     .then(data => {
         if (data.success) {
             Swal.fire('Éxito', data.message, 'success')
                 .then(() => location.reload());
-        } else {
-            Swal.fire('Error', data.message || 'Error al guardar la categoría', 'error');
+            return;
         }
+        restaurarBoton();
+        mostrarErrorCategoria(data.message || 'No se pudo guardar la categoría.');
     })
     .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Error al procesar la solicitud', 'error');
+        restaurarBoton();
+        mostrarErrorCategoria('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
     });
 });
 

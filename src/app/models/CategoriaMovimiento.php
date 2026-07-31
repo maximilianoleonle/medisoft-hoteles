@@ -6,6 +6,11 @@
 
 class CategoriaMovimiento extends Model {
     protected $table = 'categorias_movimientos';
+    // La tabla NO tiene updated_at (solo created_at, con DEFAULT CURRENT_TIMESTAMP).
+    // Con los timestamps del Model base, create() y update() agregaban esa columna
+    // al INSERT/UPDATE y MySQL respondia 1054 -> 500 al crear o desactivar un
+    // concepto. created_at lo sigue poniendo el DEFAULT de la columna.
+    protected $timestamps = false;
     protected $fillable = [
         'hotel_id',
         'nombre',
@@ -71,9 +76,11 @@ class CategoriaMovimiento extends Model {
         $errores = $this->validarCategoria($data);
         
         if (!empty($errores)) {
-            return ['success' => false, 'errores' => $errores];
+            // 'message' ademas de 'errores': la pantalla muestra el motivo real
+            // ("Ya existe una categoria con ese nombre") en vez de un generico.
+            return ['success' => false, 'errores' => $errores, 'message' => implode(' ', $errores)];
         }
-        
+
         // Obtener el último orden (dentro del hotel actual)
         $hotelId = $this->hotelIdActual();
         $sql = "SELECT MAX(orden) as max_orden FROM {$this->table} WHERE hotel_id = ?";
