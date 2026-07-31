@@ -146,30 +146,30 @@ $bajaProtegida = $modelo->desactivar((int) $hospedaje['id']);
 t_ok(empty($bajaProtegida['success']), 'concepto del sistema (Hospedaje) NO se puede dar de baja');
 
 // ── 8. Tenancy: los conceptos de otro hotel son intocables ───────────────
-$otro = t_seed_base('conceptos-otro-hotel'); // la sesion queda en el hotel B
-$modeloB = new CategoriaMovimiento();
-$modeloB->crearCategoria([
-    'nombre' => 'Concepto del hotel B',
-    'tipo' => 'gasto',
-    'descripcion' => '',
-    'icono' => 'fas fa-tag',
-    'color' => '#6B7280',
-]);
+// El hotel B se siembra con SQL crudo A PROPOSITO: `obtenerHotelIdActualCompat()`
+// cachea el hotel en un `static` para todo el proceso (en web da igual, cada
+// request es un proceso nuevo), asi que cambiar de hotel a media corrida NO
+// mueve lo que ve el modelo -> las altas del "hotel B" caian en el A y los
+// asserts de aislamiento pasaban por la razon equivocada. La sesion se queda
+// en el hotel A de principio a fin, que es justo el escenario a probar.
+$db->query(
+    "INSERT INTO hoteles (nombre, slug, activo, created_at) VALUES ('Hotel B', 'conceptos-otro-hotel', 1, NOW())"
+);
+$hotelB = (int) $db->lastInsertId();
+t_ok($hotelB > 0 && $hotelB !== $hotelId, 'sembrado un segundo hotel');
+
+$db->query(
+    "INSERT INTO categorias_movimientos (hotel_id, nombre, tipo, descripcion, icono, color, orden)
+     VALUES (?, 'Concepto del hotel B', 'gasto', '', 'fas fa-tag', '#6B7280', 1)",
+    [$hotelB]
+);
 $catB = $db->query(
     'SELECT id FROM categorias_movimientos WHERE hotel_id = ? AND nombre = ?',
-    [$otro['hotel_id'], 'Concepto del hotel B']
+    [$hotelB, 'Concepto del hotel B']
 )->fetch();
-t_ok(!empty($catB), 'el hotel B creo su propio concepto');
+t_ok(!empty($catB), 'el hotel B tiene su propio concepto');
 
-// Volver al hotel A e intentar tocar el concepto del B.
-$_SESSION['hotel_id'] = $hotelId;
-$_SESSION['user_id'] = $usuarioId;
-TenantContext::boot([
-    'hotel' => ['id' => $hotelId, 'slug' => 'conceptos-test'],
-    'usuario_id' => $usuarioId,
-    'roles' => ['administrador'],
-]);
-
+// Seguimos en la sesion del hotel A: intentar tocar el concepto del B.
 $modeloA = new CategoriaMovimiento();
 $cruzada = $modeloA->actualizarCategoria((int) $catB['id'], [
     'nombre' => 'Secuestrado',
@@ -190,8 +190,13 @@ $intactoB = $db->query(
 t_eq('Concepto del hotel B', $intactoB['nombre'], 'el concepto del hotel B quedo intacto');
 
 $listaA = $modeloA->listarTodasDelHotel();
+$ajenos = 0;
 foreach ($listaA as $c) {
-    t_eq($hotelId, (int) $c['hotel_id'], 'la lista del hotel A solo trae conceptos del hotel A');
+    if ((int) $c['hotel_id'] !== $hotelId) {
+        $ajenos++;
+    }
 }
+t_ok(!empty($listaA), 'la lista del hotel A no viene vacia (si no, el assert de abajo no prueba nada)');
+t_eq(0, $ajenos, 'la lista del hotel A no trae ni un concepto de otro hotel');
 
 t_fin();
