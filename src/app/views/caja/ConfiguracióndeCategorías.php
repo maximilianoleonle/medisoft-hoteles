@@ -203,23 +203,166 @@
 </div>
 
 <!-- Modal Nueva/Editar Categoría -->
-<div id="modalCategoria" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-t-2xl">
+<style id="cash-category-modal-layout">
+    /*
+     * El shell usa z-index > 1000 y custom.css expande cualquier max-w-* al 100%.
+     * Este modal evita ambas reglas globales y se comporta como los overlays
+     * actuales de Caja: centrado, por encima del shell y con scroll interno.
+     */
+    .cash-category-modal {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 13000 !important;
+        display: grid;
+        place-items: center;
+        padding:
+            max(16px, env(safe-area-inset-top))
+            max(16px, env(safe-area-inset-right))
+            max(16px, env(safe-area-inset-bottom))
+            max(16px, env(safe-area-inset-left));
+        overflow-y: auto;
+        background: rgba(12, 18, 30, .68);
+        -webkit-backdrop-filter: blur(7px);
+        backdrop-filter: blur(7px);
+    }
+
+    .cash-category-modal.hidden {
+        display: none !important;
+    }
+
+    body.cash-category-modal-open,
+    body.cash-category-modal-open .main-content {
+        overflow: hidden !important;
+    }
+
+    .cash-category-modal__dialog {
+        width: min(32rem, calc(100vw - 32px)) !important;
+        max-width: 32rem !important;
+        max-height: min(92dvh, 760px);
+        margin: auto;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(255, 255, 255, .52);
+        border-radius: 22px;
+        background: #FFFFFF;
+        box-shadow: 0 34px 90px -36px rgba(10, 15, 25, .78);
+    }
+
+    .cash-category-modal__head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .cash-category-modal__close {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 12px;
+        color: #FFFFFF;
+        background: rgba(255, 255, 255, .14);
+        transition: background-color .16s ease, transform .16s ease;
+    }
+
+    .cash-category-modal__close:hover {
+        background: rgba(255, 255, 255, .24);
+    }
+
+    .cash-category-modal__close:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, .72);
+        outline-offset: 2px;
+    }
+
+    .cash-category-modal__form {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .cash-category-modal__actions button {
+        min-height: 44px;
+    }
+
+    @media (max-width: 640px) {
+        .cash-category-modal {
+            place-items: end center;
+            padding:
+                max(10px, env(safe-area-inset-top))
+                max(10px, env(safe-area-inset-right))
+                max(10px, env(safe-area-inset-bottom))
+                max(10px, env(safe-area-inset-left));
+        }
+
+        .cash-category-modal__dialog {
+            width: 100% !important;
+            max-width: none !important;
+            max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            border-radius: 20px;
+        }
+
+        .cash-category-modal__head {
+            padding: 18px !important;
+        }
+
+        .cash-category-modal__form {
+            padding: 18px !important;
+        }
+
+        .cash-category-modal__split {
+            grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .cash-category-modal__actions {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .cash-category-modal:not(.hidden) .cash-category-modal__dialog {
+            animation: cashCategoryModalIn .2s cubic-bezier(.22, 1, .36, 1);
+        }
+
+        @keyframes cashCategoryModalIn {
+            from { opacity: 0; transform: translateY(14px) scale(.985); }
+            to { opacity: 1; transform: none; }
+        }
+    }
+</style>
+
+<div id="modalCategoria"
+     class="cash-category-modal hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modalTitulo"
+     aria-hidden="true">
+        <div class="cash-category-modal__dialog" tabindex="-1">
+            <div class="cash-category-modal__head bg-gradient-to-r from-orange-500 to-orange-600 p-6">
                 <h3 class="text-xl font-semibold text-white flex items-center">
                     <i class="fas fa-tag mr-3"></i>
                     <span id="modalTitulo">Nueva Categoría</span>
                 </h3>
+                <button type="button"
+                        class="cash-category-modal__close"
+                        onclick="cerrarModalCategoria()"
+                        aria-label="Cerrar modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
             </div>
             
-            <form id="formCategoria" class="p-6">
+            <form id="formCategoria" class="cash-category-modal__form p-6">
                 <input type="hidden" id="categoria_id" name="id">
                 
                 <div class="space-y-4">
                     <!-- Nombre -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="categoria_nombre" class="block text-sm font-medium text-gray-700 mb-2">
                             Nombre <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="nombre" id="categoria_nombre"
@@ -229,7 +372,7 @@
                     
                     <!-- Tipo -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="categoria_tipo" class="block text-sm font-medium text-gray-700 mb-2">
                             Tipo <span class="text-red-500">*</span>
                         </label>
                         <select name="tipo" id="categoria_tipo"
@@ -243,7 +386,7 @@
                     
                     <!-- Descripción -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="categoria_descripcion" class="block text-sm font-medium text-gray-700 mb-2">
                             Descripción
                         </label>
                         <textarea name="descripcion" id="categoria_descripcion" rows="2"
@@ -251,9 +394,9 @@
                     </div>
                     
                     <!-- Icono y Color -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="cash-category-modal__split grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="categoria_icono" class="block text-sm font-medium text-gray-700 mb-2">
                                 Icono
                             </label>
                             <select name="icono" id="categoria_icono"
@@ -265,7 +408,7 @@
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="categoria_color" class="block text-sm font-medium text-gray-700 mb-2">
                                 Color
                             </label>
                             <select name="color" id="categoria_color"
@@ -292,7 +435,7 @@
                 </div>
                 
                 <!-- Botones -->
-                <div class="flex justify-end gap-3 mt-6">
+                <div class="cash-category-modal__actions flex justify-end gap-3 mt-6">
                     <button type="button" onclick="cerrarModalCategoria()" 
                             class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                         Cancelar
@@ -305,7 +448,6 @@
                 </div>
             </form>
         </div>
-    </div>
 </div>
 
 <!-- Librería para drag and drop -->
@@ -314,6 +456,31 @@
 <script>
 // Datos de categorías para edición
 const categoriasData = <?= json_encode($categorias) ?>;
+const modalCategoriaEl = document.getElementById('modalCategoria');
+const modalCategoriaDialog = modalCategoriaEl?.querySelector('.cash-category-modal__dialog');
+let modalCategoriaDisparador = null;
+
+// El shell contiene capas propias (sidebar/header). En <body>, position:fixed
+// queda anclado al viewport y no hereda restricciones del contenido principal.
+if (modalCategoriaEl && modalCategoriaEl.parentElement !== document.body) {
+    document.body.appendChild(modalCategoriaEl);
+}
+
+function abrirModalCategoria() {
+    if (!modalCategoriaEl) return;
+
+    modalCategoriaDisparador = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    modalCategoriaEl.classList.remove('hidden');
+    modalCategoriaEl.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('overflow-hidden', 'cash-category-modal-open');
+
+    window.requestAnimationFrame(() => {
+        const nombre = document.getElementById('categoria_nombre');
+        (nombre || modalCategoriaDialog)?.focus();
+    });
+}
 
 // Inicializar Sortable para reordenamiento
 document.addEventListener('DOMContentLoaded', function() {
@@ -367,14 +534,21 @@ function mostrarModalNueva() {
     document.getElementById('preview-icon').style.backgroundColor = '#6B728020';
     document.getElementById('preview-icon-class').style.color = '#6B7280';
     
-    document.getElementById('modalCategoria').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
+    abrirModalCategoria();
 }
 
 // Cerrar modal
 function cerrarModalCategoria() {
-    document.getElementById('modalCategoria').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
+    if (!modalCategoriaEl || modalCategoriaEl.classList.contains('hidden')) return;
+
+    modalCategoriaEl.classList.add('hidden');
+    modalCategoriaEl.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('overflow-hidden', 'cash-category-modal-open');
+
+    if (modalCategoriaDisparador && document.contains(modalCategoriaDisparador)) {
+        modalCategoriaDisparador.focus();
+    }
+    modalCategoriaDisparador = null;
 }
 
 // Editar categoría
@@ -396,8 +570,7 @@ function editarCategoria(id) {
     document.getElementById('preview-icon').style.backgroundColor = categoria.color + '20';
     document.getElementById('preview-icon-class').style.color = categoria.color;
     
-    document.getElementById('modalCategoria').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
+    abrirModalCategoria();
 }
 
 // Guardar categoría
@@ -505,9 +678,39 @@ function actualizarOrden() {
     });
 }
 
+// Clic fuera del panel: cerrar sin afectar el formulario ni sus controles.
+modalCategoriaEl?.addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalCategoria();
+});
+
+// Mantener el foco dentro del diálogo mientras está abierto.
+modalCategoriaEl?.addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab' || this.classList.contains('hidden')) return;
+
+    const focusables = Array.from(this.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(element => element.offsetParent !== null);
+    if (!focusables.length) {
+        e.preventDefault();
+        modalCategoriaDialog?.focus();
+        return;
+    }
+
+    const primero = focusables[0];
+    const ultimo = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+    } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+    }
+});
+
 // Atajos de teclado
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && modalCategoriaEl && !modalCategoriaEl.classList.contains('hidden')) {
+        e.preventDefault();
         cerrarModalCategoria();
     }
 });
