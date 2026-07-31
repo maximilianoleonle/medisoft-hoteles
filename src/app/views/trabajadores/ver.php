@@ -16,6 +16,18 @@ $avisoNominaPendiente = in_array($avisoNominaPendiente ?? null, ['sin_grupo', 's
     ? $avisoNominaPendiente
     : null;
 
+// La nomina salio de Personal: la ficha queda en registro + tareas. Con esto en
+// false no se pinta saldo, pago por Caja, cuenta del trabajador ni asistencias;
+// el controlador ademas ni siquiera consulta esos datos. Ver
+// personal_nomina_legacy_visible() en app/helpers/modulos.php.
+$nominaLegacyVisible = isset($nominaLegacyVisible)
+    ? (bool)$nominaLegacyVisible
+    : (!function_exists('personal_nomina_legacy_visible') || personal_nomina_legacy_visible());
+
+if (!$nominaLegacyVisible) {
+    $avisoNominaPendiente = null;
+}
+
 if (!function_exists('trab_view_safe')) {
     function trab_view_safe($value, $fallback = '-')
     {
@@ -460,7 +472,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     <div class="wk-chips">
                         <span class="wk-badge <?= $estadoClass ?>"><i class="fas <?= $estadoIcon ?>"></i> <?= $estadoLabel ?></span>
                         <span class="wk-badge is-soft"><i class="fas fa-briefcase"></i> <?= trab_view_safe($trabajador['rol_laboral'] ?? null, 'Sin rol') ?></span>
-                        <?php if (!empty($trabajador['periodicidad_pago'])): ?>
+                        <?php if ($nominaLegacyVisible && !empty($trabajador['periodicidad_pago'])): ?>
                             <span class="wk-badge is-soft"><i class="fas fa-calendar-day"></i> Pago <?= trab_view_safe($trabajador['periodicidad_pago']) ?></span>
                         <?php endif; ?>
                     </div>
@@ -470,7 +482,9 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
                 <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
                 <a class="wk-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>"><i class="fas fa-pen"></i> Editar datos</a>
+                <?php if ($nominaLegacyVisible): ?>
                 <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>"><i class="fas fa-cash-register"></i> Simulador</a>
+                <?php endif; ?>
                 <?php if ($estadoTrabajador === 'baja'): ?>
                     <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
                         <?= csrf_field() ?>
@@ -508,7 +522,8 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
         </section>
         <?php endif; ?>
 
-        <!-- Resumen de cuenta -->
+        <!-- Resumen de cuenta (solo con la nomina legacy encendida) -->
+        <?php if ($nominaLegacyVisible): ?>
         <section class="wk-summary">
             <div class="wk-balance <?= $pagoCajaDisponibleClase ?>">
                 <div class="wk-balance-label">Disponible para pagar ahora</div>
@@ -528,14 +543,19 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <div class="wk-factor is-gold"><small>Disponible</small><strong><?= trab_view_money($pagoCajaSaldoDisponible) ?></strong></div>
             </div>
         </section>
+        <?php endif; ?>
 
         <div class="wk-tabs-block">
             <span class="wk-scope-label">Ficha de <?= trab_view_safe($trabajador['nombre_completo'] ?? null, 'este trabajador') ?></span>
             <div class="wk-tabs" role="tablist" aria-label="Secciones de la ficha">
                 <button type="button" class="wk-tab is-active" data-wk-tab="resumen" role="tab" aria-selected="true"><i class="fas fa-id-card"></i> Resumen</button>
+                <?php if ($nominaLegacyVisible): ?>
                 <button type="button" class="wk-tab" data-wk-tab="pagos" role="tab" aria-selected="false"><i class="fas fa-money-bill-wave"></i> Pagarle</button>
                 <button type="button" class="wk-tab" data-wk-tab="cuenta" role="tab" aria-selected="false"><i class="fas fa-scale-balanced"></i> Cuenta</button>
                 <button type="button" class="wk-tab" data-wk-tab="actividad" role="tab" aria-selected="false"><i class="fas fa-calendar-check"></i> Actividad</button>
+                <?php else: ?>
+                <button type="button" class="wk-tab" data-wk-tab="actividad" role="tab" aria-selected="false"><i class="fas fa-list-check"></i> Tareas</button>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -558,8 +578,10 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <div><div class="wk-meta-label">Correo</div><div class="wk-meta-value is-soft"><?= trab_view_safe($trabajador['email'] ?? null) ?></div></div>
                 <div><div class="wk-meta-label">Fecha de alta</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['fecha_alta'] ?? null) ?></div></div>
                 <div><div class="wk-meta-label">Fecha de baja</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['fecha_baja'] ?? null) ?></div></div>
+                <?php if ($nominaLegacyVisible): ?>
                 <div><div class="wk-meta-label">Salario base</div><div class="wk-meta-value"><?= array_key_exists('salario_base', $trabajador) && $trabajador['salario_base'] !== null ? trab_view_money($trabajador['salario_base']) : '-' ?></div></div>
                 <div><div class="wk-meta-label">Cada cu&aacute;ndo se le paga</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['periodicidad_pago'] ?? null) ?></div></div>
+                <?php endif; ?>
                 <div style="grid-column: span 2"><div class="wk-meta-label">Notas</div><div class="wk-meta-value is-notes"><?= trab_view_safe($trabajador['notas'] ?? null, 'Sin notas') ?></div></div>
             </div>
             </div>
@@ -571,6 +593,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
         ]); ?>
         </div>
 
+        <?php if ($nominaLegacyVisible): ?>
         <div class="wk-tabpane" data-wk-pane="pagos">
         <!-- Pagar al trabajador con Caja -->
         <section class="wk-panel">
@@ -930,17 +953,21 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
             </div>
         </section>
         </div>
+        <?php endif; ?>
 
         <div class="wk-tabpane" data-wk-pane="actividad">
-        <!-- Tareas asignadas -->
+        <!-- Tareas asignadas: con la nomina fuera, esta es LA segunda pestana de la ficha. -->
         <section>
             <?php
             $tituloTareasContextuales = 'Tareas asignadas';
-            $subtituloTareasContextuales = 'Tareas operativas de este trabajador. No representan asistencia ni pago.';
+            $subtituloTareasContextuales = $nominaLegacyVisible
+                ? 'Tareas operativas de este trabajador. No representan asistencia ni pago.'
+                : 'Lo que esta persona tiene asignado en Tareas operativas.';
             include __DIR__ . '/../tareas/_contextual_list.php';
             ?>
         </section>
 
+        <?php if ($nominaLegacyVisible): ?>
         <!-- Asistencias -->
         <section class="wk-panel">
             <div class="wk-panel-head">
@@ -1019,6 +1046,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                 <?php endif; ?>
             <?php endif; ?>
         </section>
+        <?php endif; ?>
         </div>
     </div>
 </div>

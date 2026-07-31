@@ -861,7 +861,14 @@ class NominaController extends Controller {
         // se reescribe nada de la logica de dinero.
         $pagosSnapshot = [];
         $pagoSnapshotTokens = [];
-        $puedePagar = function_exists('can') ? can('personal.pagar') : false;
+        // Any-of a proposito: 'nomina.pagar' es la casilla que hoy se ofrece en la
+        // matriz (el pago se ejerce desde aqui), y 'personal.pagar' se conserva
+        // porque es la que traen los roles sembrados antes de que la nomina saliera
+        // de Personal -entre ellos el preset 'administrador'-. Quitar el OR le
+        // quitaria el pago a esos roles sin avisar.
+        $puedePagar = function_exists('can_any')
+            ? can_any(['nomina.pagar', 'personal.pagar'])
+            : (function_exists('can') && can('personal.pagar'));
         if ((string) ($periodo['estado'] ?? '') === 'aprobado' && $puedePagar) {
             require_once __DIR__ . '/../services/TrabajadorNominaSnapshotPagoService.php';
             $snapshotPagoService = new TrabajadorNominaSnapshotPagoService();

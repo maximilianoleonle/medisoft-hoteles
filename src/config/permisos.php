@@ -24,6 +24,36 @@
  * Al editar presets, actualiza tambien Rol::sembrarPresetsParaHotel().
  */
 
+// La nomina salio del modulo Personal (ver personal_nomina_legacy_visible() en
+// app/helpers/modulos.php). Mientras este apagada, Personal solo registra gente.
+$permisosPersonalNomina = !function_exists('personal_nomina_legacy_visible')
+    || personal_nomina_legacy_visible();
+
+$permisosCatalogoPersonal = [
+    'personal.view'      => ['label' => $permisosPersonalNomina ? 'Ver personal y pre-nómina' : 'Ver personal', 'tipo' => 'acceso'],
+    'personal.gestionar' => ['label' => $permisosPersonalNomina
+        ? 'Gestionar personal (altas, conceptos, anticipos, préstamos, asistencia y pre-nómina)'
+        : 'Gestionar personal (altas, cambios y bajas)', 'tipo' => 'accion'],
+];
+
+// 'personal.pagar' sale de la MATRIZ cuando la nomina no vive en Personal, pero la
+// clave NO se borra ni se renombra: los roles que ya la tienen la CONSERVAN (un
+// permiso sin casilla nunca cae en 'quitados', y RolController::actualizarAction
+// reinyecta los que el catalogo no dibuja) y el codigo la sigue honrando.
+//
+// El permiso grantable de ahora en adelante es 'nomina.pagar', que ya existia en
+// el grupo de abajo: los gates del pago preguntan por CUALQUIERA de los dos. Se
+// hizo asi y NO moviendo la casilla al grupo de Nomina porque ahi la habria
+// barrido el comodin 'nomina.all': ese comodin no cubre una clave con prefijo
+// 'personal.', asi que la UI la habria pintado como hija suya (checked disabled,
+// no viaja en el POST) y derivarAjustes la habria mandado a 'quitados', dejando
+// sin pagar justo al rol con control total de nomina.
+$permisosCatalogoPagoNomina = ['label' => 'Pagar nómina por Caja y revertir pagos', 'tipo' => 'accion'];
+if ($permisosPersonalNomina) {
+    $permisosCatalogoPersonal['personal.pagar'] = $permisosCatalogoPagoNomina;
+}
+$permisosCatalogoPersonal['personal.all'] = ['label' => 'Control total de personal', 'tipo' => 'wildcard'];
+
 return [
     // Permiso comodin que concede todo.
     'comodin' => '*',
@@ -76,6 +106,11 @@ return [
                 'caja.movimientos' => ['label' => 'Registrar movimientos', 'tipo' => 'accion'],
                 'caja.corte'       => ['label' => 'Hacer cortes de caja', 'tipo' => 'accion'],
                 'caja.ajustes'     => ['label' => 'Ajustes y correcciones de caja', 'tipo' => 'accion'],
+                // El catalogo de conceptos (ingresos y gastos) es administrativo,
+                // no monetario: se separo de caja.ajustes (que edita el MONTO de
+                // un movimiento) para que todo hotel lo traiga de fabrica sin
+                // repartir de paso el poder de corregir dinero.
+                'caja.conceptos'   => ['label' => 'Conceptos de ingresos y gastos', 'tipo' => 'accion'],
                 'caja.all'         => ['label' => 'Control total de caja', 'tipo' => 'wildcard'],
             ],
         ],
@@ -176,14 +211,9 @@ return [
             ],
         ],
         'personal' => [
-            'label' => 'Personal y nómina',
+            'label' => $permisosPersonalNomina ? 'Personal y nómina' : 'Personal',
             'modulo' => null,
-            'permisos' => [
-                'personal.view'      => ['label' => 'Ver personal y pre-nómina', 'tipo' => 'acceso'],
-                'personal.gestionar' => ['label' => 'Gestionar personal (altas, conceptos, anticipos, préstamos, asistencia y pre-nómina)', 'tipo' => 'accion'],
-                'personal.pagar'     => ['label' => 'Pagar nómina por Caja y revertir pagos', 'tipo' => 'accion'],
-                'personal.all'       => ['label' => 'Control total de personal', 'tipo' => 'wildcard'],
-            ],
+            'permisos' => $permisosCatalogoPersonal,
         ],
         'nomina' => [
             'label' => 'Nómina avanzada',
@@ -495,7 +525,7 @@ return [
             'permisos'    => [
                 'usuarios.view', 'usuarios.create', 'usuarios.edit',
                 'reportes.view', 'reportes.export',
-                'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte',
+                'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte', 'caja.conceptos',
                 'habitaciones.all', 'reservaciones.all', 'huespedes.all', 'inventarios.all',
                 'compras.all', 'proveedores.all', 'facturacion.view',
                 'cuentas_por_cobrar.view', 'cuentas_por_cobrar.cobrar',

@@ -8,6 +8,13 @@ $documentos = $reporte['documentos'] ?? [];
 $tareas = $reporte['tareas'] ?? [];
 $trabajadoresRelevantes = $reporte['trabajadores_relevantes'] ?? [];
 
+// Con la nomina fuera de Personal este reporte deja de hablar de dinero: se van
+// los saldos, los anticipos, los prestamos y la asistencia (todo eso se reporta
+// desde Nomina). Quedan las dimensiones que SI son de Personal: cuanta gente hay,
+// su estado, sus documentos y sus tareas.
+$repNominaVisible = !function_exists('personal_nomina_legacy_visible')
+    || personal_nomina_legacy_visible();
+
 if (!function_exists('trab_report_safe')) {
     function trab_report_safe($value, $fallback = '-')
     {
@@ -85,6 +92,10 @@ if (!function_exists('trab_report_estado_meta')) {
 .workers-report .wk-contract-pill i { color: var(--wk-gold-ink); }
 
 .workers-report .wk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+/* Sin la nomina quedan menos fichas y menos paneles: sin esto la rejilla fija
+   deja huecos a la derecha (4 columnas con 3 fichas, 3 columnas con 1 panel). */
+.workers-report .wk-stats.is-lean { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.workers-report .wk-grid3.is-lean { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .workers-report .wk-stat { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
 .workers-report .wk-stat.is-warm { background: var(--wk-surface-warm); }
 .workers-report .wk-stat-label { color: var(--wk-muted); font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -146,12 +157,16 @@ if (!function_exists('trab_report_estado_meta')) {
                 <div>
                     <p class="wk-kicker">Personal del hotel</p>
                     <h1 class="wk-title">Reporte de Personal</h1>
-                    <p class="wk-subtitle">Resumen de tu equipo: saldos laborales, asistencia, documentos y tareas. Es solo para consultar. No genera nomina oficial ni pagos.</p>
+                    <p class="wk-subtitle"><?= $repNominaVisible
+                        ? 'Resumen de tu equipo: saldos laborales, asistencia, documentos y tareas. Es solo para consultar. No genera nomina oficial ni pagos.'
+                        : 'Resumen de tu equipo: cu&aacute;nta gente hay, en qu&eacute; estado, sus documentos y sus tareas. Es solo para consultar.' ?></p>
                 </div>
             </div>
             <div class="wk-contract-row">
                 <span class="wk-contract-pill"><i class="fas fa-lock"></i> read-only</span>
+                <?php if ($repNominaVisible): ?>
                 <span class="wk-contract-pill"><i class="fas fa-file-circle-xmark"></i> No genera nomina</span>
+                <?php endif; ?>
                 <?php $back_arrow_href = back_url('trabajadores'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
                 <a class="wk-btn ms-back-legacy" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
             </div>
@@ -168,12 +183,13 @@ if (!function_exists('trab_report_estado_meta')) {
                 </div>
             </section>
         <?php else: ?>
-            <section class="wk-stats">
+            <section class="wk-stats<?= $repNominaVisible ? '' : ' is-lean' ?>">
                 <div class="wk-stat">
                     <p class="wk-stat-label">Trabajadores</p>
                     <p class="wk-stat-value"><?= trab_report_num($trabajadores['total'] ?? 0) ?></p>
                     <p class="wk-stat-foot">Activos: <?= trab_report_num($trabajadores['activos'] ?? 0) ?></p>
                 </div>
+                <?php if ($repNominaVisible): ?>
                 <div class="wk-stat is-warm">
                     <p class="wk-stat-label">Saldo laboral (informativo)</p>
                     <p class="wk-stat-value"><?= trab_report_money($ledger['saldo_informativo'] ?? 0) ?></p>
@@ -184,6 +200,13 @@ if (!function_exists('trab_report_estado_meta')) {
                     <p class="wk-stat-value"><?= trab_report_num($asistencias['total'] ?? 0) ?></p>
                     <p class="wk-stat-foot">&Uacute;ltima: <?= trab_report_safe($asistencias['ultima_fecha'] ?? null, 'Sin registros') ?></p>
                 </div>
+                <?php else: ?>
+                <div class="wk-stat">
+                    <p class="wk-stat-label">Tareas asignadas</p>
+                    <p class="wk-stat-value"><?= trab_report_num($tareas['total'] ?? 0) ?></p>
+                    <p class="wk-stat-foot">Pendientes: <?= trab_report_num($tareas['pendiente'] ?? 0) ?></p>
+                </div>
+                <?php endif; ?>
                 <div class="wk-stat">
                     <p class="wk-stat-label">Documentos</p>
                     <p class="wk-stat-value"><?= trab_report_num($documentos['total'] ?? 0) ?></p>
@@ -191,7 +214,8 @@ if (!function_exists('trab_report_estado_meta')) {
                 </div>
             </section>
 
-            <div class="wk-grid3">
+            <div class="wk-grid3<?= $repNominaVisible ? '' : ' is-lean' ?>">
+                <?php if ($repNominaVisible): ?>
                 <div class="wk-panel wk-panel-pad">
                     <h2>Saldos laborales</h2>
                     <div class="wk-kv"><span>Conceptos</span><strong><?= trab_report_num($ledger['conceptos_count'] ?? 0) ?></strong></div>
@@ -212,6 +236,7 @@ if (!function_exists('trab_report_estado_meta')) {
                         <?php endforeach; ?>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <div class="wk-panel wk-panel-pad">
                     <h2>Tareas asignadas</h2>
@@ -225,14 +250,18 @@ if (!function_exists('trab_report_estado_meta')) {
 
             <div class="wk-panel overflow-hidden">
                 <div class="wk-panel-head">
-                    <h2 class="wk-panel-title">Trabajadores y saldos</h2>
-                    <p class="wk-panel-sub">Saldos informativos por persona. No son movimientos de Caja.</p>
+                    <h2 class="wk-panel-title"><?= $repNominaVisible ? 'Trabajadores y saldos' : 'Trabajadores' ?></h2>
+                    <p class="wk-panel-sub"><?= $repNominaVisible
+                        ? 'Saldos informativos por persona. No son movimientos de Caja.'
+                        : 'Qui&eacute;n est&aacute; dado de alta y en qu&eacute; puesto.' ?></p>
                 </div>
                 <?php if (empty($trabajadoresRelevantes)): ?>
                     <div class="wk-empty">
                         <div class="wk-empty-icon"><i class="fas fa-chart-pie"></i></div>
                         <h3>Sin trabajadores para reportar</h3>
-                        <p>Cuando registres personal, aqu&iacute; ver&aacute;s su resumen laboral.</p>
+                        <p><?= $repNominaVisible
+                            ? 'Cuando registres personal, aqu&iacute; ver&aacute;s su resumen laboral.'
+                            : 'Cuando registres personal, aqu&iacute; ver&aacute;s a tu equipo.' ?></p>
                     </div>
                 <?php else: ?>
                     <div class="overflow-x-auto">
@@ -240,9 +269,12 @@ if (!function_exists('trab_report_estado_meta')) {
                             <thead>
                                 <tr>
                                     <th>Trabajador</th><th>Estado</th>
+                                    <?php if ($repNominaVisible): ?>
                                     <th class="is-end">A favor</th><th class="is-end">En contra</th>
                                     <th class="is-end">Anticipos</th><th class="is-end">Pr&eacute;stamos</th>
-                                    <th class="is-end">Saldo</th><th class="is-end">Acci&oacute;n</th>
+                                    <th class="is-end">Saldo</th>
+                                    <?php endif; ?>
+                                    <th class="is-end">Acci&oacute;n</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -257,11 +289,13 @@ if (!function_exists('trab_report_estado_meta')) {
                                             <div class="wk-sub"><?= trab_report_safe($trabajador['rol_laboral'] ?? null, 'Sin rol') ?></div>
                                         </td>
                                         <td><span class="wk-badge <?= $eClass ?>"><?= $eLabel ?></span></td>
+                                        <?php if ($repNominaVisible): ?>
                                         <td class="is-end"><?= trab_report_money($resumen['conceptos_a_favor'] ?? 0) ?></td>
                                         <td class="is-end"><?= trab_report_money($resumen['conceptos_en_contra'] ?? 0) ?></td>
                                         <td class="is-end"><?= trab_report_money($resumen['anticipos_saldo'] ?? 0) ?></td>
                                         <td class="is-end"><?= trab_report_money($resumen['prestamos_saldo'] ?? 0) ?></td>
                                         <td class="is-end wk-strong"><?= trab_report_money($resumen['saldo_informativo'] ?? 0) ?></td>
+                                        <?php endif; ?>
                                         <td class="is-end"><a class="wk-act" href="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0)) ?>"><i class="fas fa-eye"></i> Ver</a></td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -217,8 +217,21 @@ Cuando el pane, la extensión y Docker Desktop están caídos a la vez, un fix d
 
 1. Login `claude_qa1` en Los Cedros → `/nomina` (fachada: subnav fija, ficha con 4 tabs, toggles Pagos/Pre-nómina).
 2. ⬜ receta completa de pre-nómina → período → revisión (reconstruir de la receta original de la fase NP al primer uso).
-3. **PAGAR se hace en la pantalla VIEJA** (trabajadores/nomina), no en /nomina.
+3. **PAGAR se hace en la pantalla VIEJA** (trabajadores/nomina), no en /nomina — el botón vive en `views/nomina/periodo_ver.php` pero POSTEA a `trabajadores/nomina/periodos/{p}/detalles/{d}/registrar-pago-caja`. Es el ÚNICO botón de pago del sistema: cualquier gate nuevo sobre TrabajadorController debe dejarlo pasar (ver receta de Personal abajo).
 4. Invariante a verificar si se tocó crédito: crédito = bruto − ledger absorbido; anular/reabrir no debe permitir doble pago.
+
+## Personal SIN nómina (registro + tareas) — verificado ✅ 2026-07-31
+
+Interruptor: `personal_nomina_legacy_visible()` (`helpers/modulos.php`). Con él en `false`:
+
+1. `php src/tests/run.php PersonalSinNomina` → 51 asserts (lógica pura: allowlist, motor de nómina, catálogos).
+2. Sesión QA en un hotel CON `personal` activo (local: `activo_global=0` de fábrica, hay que encenderlo para probar y **volverlo a apagar al terminar**).
+3. `/trabajadores` → subtítulo habla de tareas, no de nómina · subnav = Equipo + Informes (sin Pagos).
+4. `/trabajadores/{id}` → **2 pestañas: Resumen y Tareas**. Cero: "Pagar al trabajador", "Cuenta del trabajador", "Disponible para pagar", "Pagos hechos en Caja", "Registrar asistencia", "Simulador", "Salario base".
+5. `/trabajadores/reporte` → sin columnas de dinero ni panel de saldos; rejillas con `.is-lean` (si no, huecos a la derecha).
+6. Gates de servidor (302 → `/trabajadores`): `nomina/periodos`, `nomina/preview`, `nomina/auditoria`, `pagos-caja/reporte`, `pagos-caja/simulador`, `{id}/recibo-laboral`.
+7. **Lo que NO debe rebotar** (motor que /nomina consume, con `nomina_avanzada` activo): `trabajadores/nomina/periodos/{id}`, `trabajadores/nomina/periodos/pagos-snapshot`, y sobre todo el POST de pago del punto 3 de la receta de Nómina. Si estos rebotan, el hotel se quedó sin poder pagar.
+8. Roles: `/configuracion/roles` → el área "Personal" no ofrece casilla de pagar; "Nómina avanzada" sí (`nomina.pagar`). Ningún rol existente pierde el pago (`personal.pagar` sigue en los presets y los gates la aceptan por any-of).
 
 ## Modo dueño
 

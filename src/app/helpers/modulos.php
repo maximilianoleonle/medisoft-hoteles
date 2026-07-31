@@ -316,6 +316,46 @@ function require_hotel_module($clave) {
 }
 
 /**
+ * INTERRUPTOR: la nomina salio del modulo Personal (jul-2026, decision del owner).
+ *
+ * 'personal' (/trabajadores) es SOLO registro de gente + tareas asignadas. Toda la
+ * nomina -calculo, periodos, recibos, incidencias y pagos- vive en el modulo aparte
+ * 'nomina_avanzada' (/nomina), que es lo unico que se llama nomina de cara al hotelero.
+ *
+ * La superficie vieja NO se borro, se apaga desde aqui: /trabajadores/nomina/*,
+ * /trabajadores/pagos-caja/*, el ledger laboral (conceptos, anticipos, prestamos,
+ * asistencias) y el pago por Caja de la ficha. Devolver true la reabre COMPLETA,
+ * tal como estaba, sin tocar nada mas: los datos y el codigo siguen intactos.
+ *
+ * Al apagarla no se pierde dinero registrado: los movimientos ya hechos siguen en
+ * Caja y en sus tablas; lo que desaparece es la puerta para hacer nuevos.
+ */
+function personal_nomina_legacy_visible() {
+    return false;
+}
+
+/**
+ * Gate de servidor de esa superficie. El menu esconderla no basta: las rutas
+ * siguen resolviendo y cualquiera con la URL entraria (misma regla que el resto
+ * del RBAC del repo). Manda a la ficha de Personal con un aviso que dice a donde
+ * se mudo la nomina, en vez de un 403 mudo.
+ */
+function require_personal_nomina_legacy() {
+    if (personal_nomina_legacy_visible()) {
+        return true;
+    }
+
+    $mensaje = 'La nomina ya no vive en Personal. Ahora se lleva desde el modulo Nomina.';
+
+    if (function_exists('is_ajax') && is_ajax()) {
+        json_response(['success' => false, 'message' => $mensaje], 404);
+    }
+
+    set_mensaje($mensaje, 'info');
+    redirect('trabajadores');
+}
+
+/**
  * Gate del panel "Documentos vinculados" que otras fichas (huesped,
  * reservacion, trabajador, compra, proveedor, cuenta por pagar, tarea)
  * pintan con el partial documentos_entidad.

@@ -5261,9 +5261,11 @@ class CopilotoService
              'palabras' => ['como creo una tarea', 'asignar una tarea', 'tareas del personal', 'pendientes del equipo'],
              'texto' => 'En **Tareas** creas pendientes operativos y los asignas a tu personal (limpieza, mantenimiento, encargos). Cada quien ve su agenda y va marcando avance.',
              'enlace' => ['url' => 'tareas', 'texto' => 'Ir a Tareas']],
-            ['clave' => 'personal', 'modulo' => 'personal', 'nombre' => 'Personal y Nómina',
-             'palabras' => ['como registro a un trabajador', 'alta de empleado', 'asistencia del personal', 'como pago la nomina', 'anticipos del personal', 'prestamos al personal'],
-             'texto' => 'En **Personal** llevas a tus trabajadores: datos, asistencia, anticipos y préstamos, y el pago de nómina ligado a Caja con recibos.',
+            // Personal ya no habla de nomina: eso lo contesta la entrada 'nomina'
+            // de mas abajo. Ver personal_nomina_legacy_visible() en helpers/modulos.php.
+            ['clave' => 'personal', 'modulo' => 'personal', 'nombre' => 'Personal',
+             'palabras' => ['como registro a un trabajador', 'alta de empleado', 'dar de baja a un trabajador', 'quien trabaja en el hotel', 'tareas de un trabajador'],
+             'texto' => 'En **Personal** llevas el registro de tu gente: datos, puesto, contacto y estado (alta o baja). Desde la ficha de cada quien ves las tareas que tiene asignadas.',
              'enlace' => ['url' => 'trabajadores', 'texto' => 'Ir a Personal']],
             ['clave' => 'compras', 'modulo' => 'compras', 'nombre' => 'Compras y proveedores',
              'palabras' => ['como registro una compra', 'alta de proveedor', 'pagar a un proveedor', 'cuentas por pagar'],
@@ -5322,8 +5324,8 @@ class CopilotoService
              'texto' => 'En **Notificaciones** se juntan las alertas del sistema (calificaciones bajas, cierres con pendientes, inventario bajo). La campanita del menú te marca las nuevas.',
              'enlace' => ['url' => 'notificaciones', 'texto' => 'Ir a Notificaciones']],
             ['clave' => 'nomina', 'modulo' => 'nomina_avanzada', 'nombre' => 'Nómina avanzada',
-             'palabras' => ['como corro la nomina', 'calcular la nomina', 'nomina legal', 'nomina avanzada'],
-             'texto' => 'En **Nómina** corres el cálculo del periodo con las reglas configuradas, revisas la prenómina y cierras con recibos y trazabilidad a Caja.',
+             'palabras' => ['como corro la nomina', 'calcular la nomina', 'nomina legal', 'nomina avanzada', 'como pago la nomina', 'pagar a un trabajador', 'anticipos del personal', 'prestamos al personal', 'asistencia del personal', 'sueldo de un trabajador'],
+             'texto' => 'En **Nómina** va todo el dinero del personal: sueldos, incidencias (faltas, horas extra, anticipos y préstamos), el cálculo del periodo, y el cierre con recibos y trazabilidad a Caja. En Personal solo se registra a la gente.',
              'enlace' => ['url' => 'nomina', 'texto' => 'Ir a Nómina']],
         ];
 

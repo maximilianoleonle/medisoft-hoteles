@@ -45,16 +45,21 @@ if ($subnavSection === 'nomina') {
     ];
     $subnavAria = 'Secciones de Lavandería';
 } else {
-    // Nota: la pestaña "Pre-nómina" se retiró de aquí a proposito. El calculo y
-    // cierre de periodos vive ahora en el modulo Nomina (sidebar > Nomina). La
-    // superficie vieja (trabajadores/nomina/*) sigue existiendo como pantalla de
-    // pago a la que el modulo Nomina enlaza, pero ya no se anuncia como puerta
-    // duplicada en Personal. El key 'prenomina' se conserva tolerado abajo.
+    // Personal quedo en registro de gente + tareas: la nomina COMPLETA (calculo,
+    // periodos, recibos y pagos) vive en el modulo Nomina (sidebar > Nomina).
+    // Por eso ya no hay pestana "Pre-nomina" ni "Pagos" aqui. Los keys viejos
+    // ('prenomina', 'pagos') se toleran abajo para no romper vistas apagadas.
     $subnavTabs = [
         'equipo'    => ['url' => url('trabajadores'),                   'icono' => 'fa-users',          'label' => 'Equipo'],
-        'pagos'     => ['url' => url('trabajadores/pagos-caja/reporte'),'icono' => 'fa-cash-register',  'label' => 'Pagos'],
         'informes'  => ['url' => url('trabajadores/informes'),          'icono' => 'fa-chart-pie',      'label' => 'Informes'],
     ];
+    if (function_exists('personal_nomina_legacy_visible') && personal_nomina_legacy_visible()) {
+        $subnavTabs = [
+            'equipo'   => $subnavTabs['equipo'],
+            'pagos'    => ['url' => url('trabajadores/pagos-caja/reporte'), 'icono' => 'fa-cash-register', 'label' => 'Pagos'],
+            'informes' => $subnavTabs['informes'],
+        ];
+    }
     $subnavAria = 'Secciones de Personal';
 }
 ?>

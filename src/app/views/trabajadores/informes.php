@@ -10,31 +10,38 @@ $infReportes = [
         'titulo' => 'Personal',
         'desc' => 'Personas por rol y estado: altas, bajas y composición del equipo.',
     ],
-    [
+];
+
+// Los 4 informes de pre-nomina se fueron con la nomina al modulo Nomina.
+// Vuelven completos si personal_nomina_legacy_visible() regresa a true.
+if (function_exists('personal_nomina_legacy_visible') && personal_nomina_legacy_visible()) {
+    $infReportes[] = [
         'url' => url('trabajadores/nomina/periodos/reporte'),
         'icono' => 'fa-file-lines',
         'titulo' => 'Snapshots de pre-nómina',
         'desc' => 'Periodos cerrados y aprobados: totales, estados y detalle histórico.',
-    ],
-    [
+    ];
+    $infReportes[] = [
         'url' => url('trabajadores/nomina/periodos/pagos-snapshot'),
         'icono' => 'fa-link',
         'titulo' => 'Conciliación de pagos',
         'desc' => 'Cruce entre lo cerrado en pre-nómina y los pagos registrados por Caja.',
-    ],
-    [
+    ];
+    $infReportes[] = [
         'url' => url('trabajadores/nomina/auditoria'),
         'icono' => 'fa-list-check',
         'titulo' => 'Auditoría de pre-nómina',
         'desc' => 'Bitácora consolidada: quién cerró, aprobó o anuló cada periodo y cuándo.',
-    ],
-    [
+    ];
+    $infReportes[] = [
         'url' => url('trabajadores/nomina/expediente'),
         'icono' => 'fa-folder-open',
         'titulo' => 'Expediente administrativo',
         'desc' => 'Constancia administrativa por periodo para respaldo y revisión externa.',
-    ],
-];
+    ];
+}
+
+$infHayNomina = count($infReportes) > 1;
 ?>
 <style>
 .informes-page {
@@ -95,7 +102,9 @@ $infReportes = [
             <h1 class="inf-title">Informes</h1>
         </div>
     </div>
-    <p class="inf-subtitle">Todos los reportes de Personal en un solo lugar: equipo, pre-nómina, conciliación y respaldos.</p>
+    <p class="inf-subtitle"><?= $infHayNomina
+        ? 'Todos los reportes de Personal en un solo lugar: equipo, pre-nómina, conciliación y respaldos.'
+        : 'Los reportes de Personal. Los de nómina viven en el módulo Nómina.' ?></p>
 
     <?php $subnav_section = 'personal'; $subnav_active = 'informes'; include APP_PATH . '/views/partials/section_subnav.php'; ?>
 

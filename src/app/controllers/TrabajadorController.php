@@ -59,7 +59,89 @@ class TrabajadorController extends Controller
             require_permission('personal.view');
         }
 
+        $this->gateNominaLegacy();
+
         return true;
+    }
+
+    /**
+     * Personal = registro de gente + tareas. Todo lo demas que vive en este
+     * controlador (nomina por periodos, ledger laboral, pagos por Caja, recibos)
+     * se mudo al modulo Nomina y se apaga con personal_nomina_legacy_visible().
+     *
+     * Son DOS listas, no una, y la diferencia importa:
+     *
+     *  (1) $registroPersonal = la superficie de Personal que se queda. ALLOWLIST a
+     *      proposito, igual que requirePermissionForAction: lo que no este aqui
+     *      queda apagado. Si agregas una accion de REGISTRO nueva, ponla aqui o el
+     *      gate la mandara a /trabajadores.
+     *
+     *  (2) $motorNomina = acciones que NO son pantalla de Personal sino el motor
+     *      que el modulo Nomina consume por debajo. Los periodos del motor viejo
+     *      (v1) se siguen viendo, aprobando, anulando y PAGANDO desde /nomina, que
+     *      postea a estas rutas: el unico boton "Registrar pago" del producto vive
+     *      en views/nomina/periodo_ver.php y apunta aqui. Apagarlas con el
+     *      interruptor dejaba al hotel sin ninguna forma de pagar nomina, que es lo
+     *      contrario de lo que se pidio. Se gatean por el MODULO destino: si el
+     *      hotel contrato Nomina siguen vivas (sin menu, alcanzables solo desde
+     *      /nomina); si no lo contrato, no hay de donde llegar y caen al aviso.
+     */
+    /** Acciones que SON la superficie de Personal (registro de gente). */
+    public const ACCIONES_REGISTRO_PERSONAL = [
+        'index', 'reporte', 'informes', 'ver',
+        'crear', 'guardar', 'editar', 'actualizar',
+        'bajaLogica', 'reactivar',
+    ];
+
+    /** Acciones que NO son pantalla de Personal sino motor que /nomina consume. */
+    public const ACCIONES_MOTOR_NOMINA = [
+        'nominaPeriodoDetalle',
+        'aprobarNominaPeriodo',
+        'anularNominaPeriodo',
+        'registrarPagoSnapshotNomina',
+        'reporteNominaPagosSnapshot',
+        'exportarNominaPagosSnapshot',
+    ];
+
+    /**
+     * Decision PURA del gate, sin sesion ni BD, para poder probarla sola:
+     *   'registro'      -> se queda en Personal, siempre visible
+     *   'motor_nomina'  -> vive solo si el hotel contrato 'nomina_avanzada'
+     *   'nomina_legacy' -> apagado mientras la nomina no viva en Personal
+     */
+    public static function clasificarAccionPersonal(string $accion): string
+    {
+        if (in_array($accion, self::ACCIONES_REGISTRO_PERSONAL, true)) {
+            return 'registro';
+        }
+
+        if (in_array($accion, self::ACCIONES_MOTOR_NOMINA, true)) {
+            return 'motor_nomina';
+        }
+
+        return 'nomina_legacy';
+    }
+
+    private function gateNominaLegacy(): void
+    {
+        if (!function_exists('personal_nomina_legacy_visible') || personal_nomina_legacy_visible()) {
+            return;
+        }
+
+        $clase = self::clasificarAccionPersonal((string) ($this->route_params['action'] ?? ''));
+
+        if ($clase === 'registro') {
+            return;
+        }
+
+        if ($clase === 'motor_nomina') {
+            if (function_exists('current_hotel_has_module') && !current_hotel_has_module('nomina_avanzada')) {
+                require_personal_nomina_legacy();
+            }
+            return;
+        }
+
+        require_personal_nomina_legacy();
     }
 
     public function indexAction(): void
@@ -211,7 +293,10 @@ class TrabajadorController extends Controller
 
     public function registrarPagoSnapshotNominaAction(): void
     {
-        $this->requireWritePermission('personal.pagar');
+        // Este es el endpoint al que postea el UNICO boton "Registrar pago" del
+        // producto (views/nomina/periodo_ver.php). Mismo any-of que usa esa vista
+        // para decidir si lo pinta: un boton jamas debe exigir mas que su pantalla.
+        $this->requirePagoNominaPermission();
 
         if (!$this->isPost()) {
             $this->redirect('trabajadores/nomina/periodos');
@@ -679,6 +764,11 @@ class TrabajadorController extends Controller
             $documentosEntidad = [];
         }
 
+        // Con la nomina fuera de Personal, la ficha es registro + tareas: ni siquiera
+        // se consulta el ledger ni Caja (son ~8 queries y una evaluacion de corte por
+        // cada pago). La vista ya normaliza estos vacios a [] en su cabecera.
+        $nominaLegacy = personal_nomina_legacy_visible();
+
         $pagoCaja = [
             'elegible' => false,
             'motivo_bloqueo' => 'No se pudo evaluar el pago laboral con Caja.',
@@ -688,57 +778,75 @@ class TrabajadorController extends Controller
             'saldo' => [],
         ];
         $pagoCajaToken = null;
-        try {
-            $pagoCaja = $this->pagoCajaService->evaluarPago($hotelId, $id);
-            if (!empty($pagoCaja['elegible'])) {
-                $pagoCajaToken = $this->generarPagoCajaToken($id);
-            }
-        } catch (Throwable $e) {
-            $pagoCaja['motivo_bloqueo'] = $e->getMessage();
-        }
-
-        $pagosCajaLaborales = $this->trabajadorModel->pagosCajaPorTrabajador($id, $hotelId, 20);
+        $pagosCajaLaborales = [];
         $reversionesPagoCaja = [];
         $reversionPagoCajaTokens = [];
-        foreach ($pagosCajaLaborales as $pagoLaboral) {
-            $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
-            if ($pagoLaboralId <= 0 || (string)($pagoLaboral['estado'] ?? '') !== 'pagado') {
-                continue;
-            }
+        $avisoNominaPendiente = null;
+        $datosNomina = [
+            'resumenLedger' => [],
+            'conceptosLaborales' => [],
+            'anticiposRecientes' => [],
+            'prestamosRecientes' => [],
+            'asistenciasRecientes' => [],
+            'ledgerDisponible' => [],
+        ];
 
+        if ($nominaLegacy) {
             try {
-                $reversion = $this->pagoCajaService->evaluarReversion($hotelId, $id, $pagoLaboralId);
-                $reversionesPagoCaja[$pagoLaboralId] = $reversion;
-                if (!empty($reversion['elegible'])) {
-                    $reversionPagoCajaTokens[$pagoLaboralId] = $this->generarReversionPagoCajaToken($id, $pagoLaboralId);
+                $pagoCaja = $this->pagoCajaService->evaluarPago($hotelId, $id);
+                if (!empty($pagoCaja['elegible'])) {
+                    $pagoCajaToken = $this->generarPagoCajaToken($id);
                 }
             } catch (Throwable $e) {
-                $reversionesPagoCaja[$pagoLaboralId] = [
-                    'elegible' => false,
-                    'motivo_bloqueo' => $e->getMessage(),
-                ];
+                $pagoCaja['motivo_bloqueo'] = $e->getMessage();
             }
+
+            $pagosCajaLaborales = $this->trabajadorModel->pagosCajaPorTrabajador($id, $hotelId, 20);
+            foreach ($pagosCajaLaborales as $pagoLaboral) {
+                $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
+                if ($pagoLaboralId <= 0 || (string)($pagoLaboral['estado'] ?? '') !== 'pagado') {
+                    continue;
+                }
+
+                try {
+                    $reversion = $this->pagoCajaService->evaluarReversion($hotelId, $id, $pagoLaboralId);
+                    $reversionesPagoCaja[$pagoLaboralId] = $reversion;
+                    if (!empty($reversion['elegible'])) {
+                        $reversionPagoCajaTokens[$pagoLaboralId] = $this->generarReversionPagoCajaToken($id, $pagoLaboralId);
+                    }
+                } catch (Throwable $e) {
+                    $reversionesPagoCaja[$pagoLaboralId] = [
+                        'elegible' => false,
+                        'motivo_bloqueo' => $e->getMessage(),
+                    ];
+                }
+            }
+
+            $avisoNominaPendiente = (function_exists('current_hotel_has_module')
+                && current_hotel_has_module('nomina_avanzada'))
+                ? $this->trabajadorModel->pendienteConfiguracionNomina($id, $hotelId)
+                : null;
+
+            $datosNomina = [
+                'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
+                'conceptosLaborales' => $this->trabajadorModel->conceptosLaboralesPorTrabajador($id, $hotelId, 12),
+                'anticiposRecientes' => $this->trabajadorModel->anticiposPorTrabajador($id, $hotelId, 12),
+                'prestamosRecientes' => $this->trabajadorModel->prestamosPorTrabajador($id, $hotelId, 12),
+                'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
+                'ledgerDisponible' => $this->trabajadorModel->tablasLedgerDisponibles(),
+            ];
         }
 
-        $avisoNominaPendiente = (function_exists('current_hotel_has_module')
-            && current_hotel_has_module('nomina_avanzada'))
-            ? $this->trabajadorModel->pendienteConfiguracionNomina($id, $hotelId)
-            : null;
-
-        View::renderTemplate('trabajadores/ver', [
+        View::renderTemplate('trabajadores/ver', array_merge($datosNomina, [
             'title' => 'Trabajador #' . $id . ' - ' . current_hotel_display_name(),
             'trabajador' => $trabajador,
+            'nominaLegacyVisible' => $nominaLegacy,
             'avisoNominaPendiente' => $avisoNominaPendiente,
-            'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
-            'conceptosLaborales' => $this->trabajadorModel->conceptosLaboralesPorTrabajador($id, $hotelId, 12),
             'pagosCajaLaborales' => $pagosCajaLaborales,
             'reversionesPagoCaja' => $reversionesPagoCaja,
             'reversionPagoCajaTokens' => $reversionPagoCajaTokens,
-            'anticiposRecientes' => $this->trabajadorModel->anticiposPorTrabajador($id, $hotelId, 12),
-            'prestamosRecientes' => $this->trabajadorModel->prestamosPorTrabajador($id, $hotelId, 12),
-            'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
-            'ledgerDisponible' => $this->trabajadorModel->tablasLedgerDisponibles(),
-            'tareasContextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'trabajador', $id, 8),
+            // Tareas pasa de dato secundario a la segunda pestana de la ficha.
+            'tareasContextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'trabajador', $id, $nominaLegacy ? 8 : 12),
             'pagoCaja' => $pagoCaja,
             'pagoCajaToken' => $pagoCajaToken,
             'documentosEntidad' => $documentosEntidad,
@@ -747,7 +855,7 @@ class TrabajadorController extends Controller
                 'id' => $id,
                 'label' => 'Trabajador',
             ],
-        ]);
+        ]));
     }
 
     public function crearAction(): void
@@ -2402,6 +2510,24 @@ class TrabajadorController extends Controller
     {
         if (function_exists('require_permission')) {
             require_permission($permission);
+        }
+    }
+
+    /**
+     * Pagar nomina: 'nomina.pagar' (la casilla que se ofrece hoy en la matriz) o
+     * 'personal.pagar' (la que traen los roles sembrados de antes, incluido el
+     * preset 'administrador'). Espejo exacto del gate de NominaController, que es
+     * quien decide si se pinta el boton.
+     */
+    private function requirePagoNominaPermission(): void
+    {
+        if (!function_exists('can_any')) {
+            $this->requireWritePermission('personal.pagar');
+            return;
+        }
+
+        if (!can_any(['nomina.pagar', 'personal.pagar'])) {
+            deny_access_403('No tienes permiso para registrar pagos de nómina.');
         }
     }
 

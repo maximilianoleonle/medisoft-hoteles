@@ -330,7 +330,9 @@ $visibles = count($trabajadores);
                 <div>
                     <p class="wk-kicker">Personal del hotel</p>
                     <h1 class="wk-title">Personal</h1>
-                    <p class="wk-subtitle">Las personas que trabajan en el hotel: su rol, contacto y estado. Desde aqu&iacute; entras a su ficha, n&oacute;mina y pagos.</p>
+                    <p class="wk-subtitle"><?= (!function_exists('personal_nomina_legacy_visible') || personal_nomina_legacy_visible())
+                        ? 'Las personas que trabajan en el hotel: su rol, contacto y estado. Desde aqu&iacute; entras a su ficha, n&oacute;mina y pagos.'
+                        : 'Las personas que trabajan en el hotel: su rol, contacto y estado. Desde aqu&iacute; entras a su ficha y a las tareas que tienen asignadas.' ?></p>
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
