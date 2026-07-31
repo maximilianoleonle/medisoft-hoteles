@@ -1176,6 +1176,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     color: var(--gd-accent-readable);
 }
 
+/* Sin esto el bloque de texto no puede encogerse (min-width:auto) y unas
+   placas sin espacios se desbordan POR DEBAJO de los botones de acción. */
+.guest-vehicle-title > div {
+    min-width: 0;
+}
+
 .guest-vehicle-title strong {
     display: block;
     color: var(--gd-text);
@@ -1185,6 +1191,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 }
 
 .guest-vehicle-title span {
+    max-width: 100%;
     width: fit-content;
     display: inline-flex;
     margin-top: 6px;
@@ -1194,6 +1201,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     font-weight: 600;
     letter-spacing: .02em;
     font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
 }
 
 .guest-mini-actions {
@@ -1350,16 +1358,34 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     gap: 10px;
 }
 
+/* Renglón elástico: los mínimos de un grid fijo desbordaban la columna
+   central (la tarjeta pedía ~860px con ~700px disponibles) y el panel, que
+   recorta con overflow:hidden, se comía el chip de estado y el botón Ver. */
 .guest-reservation-card {
-    display: grid;
-    grid-template-columns: minmax(230px, 1.3fr) repeat(3, minmax(120px, .72fr)) auto;
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 14px;
     align-items: center;
     border: 1px solid color-mix(in srgb, var(--status-color) 22%, var(--gd-line));
     border-radius: 17px;
     background: #FFFFFF;
     box-shadow: inset 4px 0 0 var(--status-color);
     padding: 14px;
+}
+
+.guest-reservation-main {
+    flex: 1 1 210px;
+    min-width: 0;
+}
+
+.guest-reservation-meta {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.guest-reservation-state {
+    flex: none;
+    margin-left: auto;
 }
 
 .guest-reservation-main strong {
@@ -1391,6 +1417,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 }
 
 .guest-reservation-link {
+    flex: none;
     min-height: 36px;
     display: inline-flex;
     align-items: center;
@@ -1826,8 +1853,11 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     }
 
     .guest-reservation-card {
-        grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 10px 12px;
+    }
+
+    .guest-reservation-main {
+        flex-basis: 100%;
     }
 
     .guest-vehicle-card {
@@ -2424,7 +2454,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                             <strong><?= format_money($reservacion['precio_total'] ?? 0) ?></strong>
                                             <span><?= guest_detail_safe(ucfirst($reservacion['metodo_pago'] ?? 'No especificado')) ?></span>
                                         </div>
-                                        <div>
+                                        <div class="guest-reservation-state">
                                             <span class="guest-status-badge">
                                                 <i class="fas fa-circle"></i>
                                                 <?= guest_detail_safe($estadoReserva['label']) ?>
