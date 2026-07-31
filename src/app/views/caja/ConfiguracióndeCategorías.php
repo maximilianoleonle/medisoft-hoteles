@@ -209,6 +209,17 @@
      * Este modal evita ambas reglas globales y se comporta como los overlays
      * actuales de Caja: centrado, por encima del shell y con scroll interno.
      */
+    /*
+     * SweetAlert2 vive en z-index 1060: contra los 13000 de este modal, CUALQUIER
+     * Swal disparado con el modal abierto queda TAPADO y parece que la pantalla
+     * se congeló (pasó dos veces: con el aviso de error y con el de éxito, que
+     * dejaba el botón en "Guardando..." hasta cerrar el modal a mano). Se sube
+     * por encima del modal de una vez para que no vuelva a esconderse ninguno.
+     */
+    .swal2-container {
+        z-index: 13500 !important;
+    }
+
     .cash-category-modal {
         position: fixed !important;
         inset: 0 !important;
@@ -724,6 +735,10 @@ document.getElementById('formCategoria').addEventListener('submit', function(e) 
     })))
     .then(data => {
         if (data.success) {
+            // Cerrar ANTES de avisar: guardó bien, el formulario ya no tiene
+            // nada que hacer ahí y así el aviso queda a la vista aunque alguien
+            // cambie los z-index de arriba.
+            cerrarModalCategoria();
             Swal.fire('Éxito', data.message, 'success')
                 .then(() => location.reload());
             return;
