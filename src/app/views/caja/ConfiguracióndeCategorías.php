@@ -238,7 +238,7 @@
     .cash-category-modal__dialog {
         width: min(32rem, calc(100vw - 32px)) !important;
         max-width: 32rem !important;
-        max-height: min(92dvh, 760px);
+        max-height: min(94dvh, 780px);
         margin: auto;
         overflow: hidden;
         display: flex;
@@ -255,6 +255,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+        padding: 18px 20px !important;
     }
 
     .cash-category-modal__close {
@@ -280,9 +281,74 @@
     }
 
     .cash-category-modal__form {
+        flex: 1 1 auto;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .cash-category-modal__body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 16px 20px 12px;
         overflow-y: auto;
         overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .cash-category-modal__fields > * + * {
+        margin-top: 12px !important;
+    }
+
+    .cash-category-modal__form label {
+        margin-bottom: 6px !important;
+    }
+
+    .cash-category-modal__form input:not([type="hidden"]),
+    .cash-category-modal__form select {
+        min-height: 42px;
+    }
+
+    .cash-category-modal__form textarea {
+        min-height: 62px;
+    }
+
+    .cash-category-modal__preview {
+        padding: 10px 12px !important;
+    }
+
+    .cash-category-modal__preview-icon {
+        width: 40px !important;
+        height: 40px !important;
+        flex: 0 0 40px;
+    }
+
+    /* El resumen global de validación se mantiene visible, pero más compacto. */
+    .cash-category-modal__form > .ms-form-error-summary {
+        flex: 0 0 auto;
+        gap: 2px;
+        margin: 12px 20px 0;
+        padding: 10px 12px;
+        box-shadow: none;
+    }
+
+    .cash-category-modal__form > .ms-form-error-summary strong {
+        font-size: .84rem;
+    }
+
+    .cash-category-modal__form > .ms-form-error-summary span {
+        margin-top: 2px;
+        font-size: .78rem;
+    }
+
+    .cash-category-modal__actions {
+        flex: 0 0 auto;
+        margin-top: 0 !important;
+        padding: 12px 20px max(14px, env(safe-area-inset-bottom));
+        border-top: 1px solid #E5E7EB;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 -10px 24px -22px rgba(15, 23, 42, .7);
     }
 
     .cash-category-modal__actions button {
@@ -307,20 +373,28 @@
         }
 
         .cash-category-modal__head {
-            padding: 18px !important;
+            padding: 14px 16px !important;
         }
 
-        .cash-category-modal__form {
-            padding: 18px !important;
+        .cash-category-modal__body {
+            padding: 14px 16px 10px;
         }
 
-        .cash-category-modal__split {
-            grid-template-columns: minmax(0, 1fr) !important;
+        .cash-category-modal__form > .ms-form-error-summary {
+            margin: 10px 16px 0;
         }
 
         .cash-category-modal__actions {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+        }
+    }
+
+    @media (max-width: 350px) {
+        .cash-category-modal__split {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 12px !important;
         }
     }
 
@@ -356,10 +430,11 @@
                 </button>
             </div>
             
-            <form id="formCategoria" class="cash-category-modal__form p-6">
-                <input type="hidden" id="categoria_id" name="id">
-                
-                <div class="space-y-4">
+            <form id="formCategoria" class="cash-category-modal__form">
+                <div class="cash-category-modal__body">
+                    <input type="hidden" id="categoria_id" name="id">
+
+                    <div class="cash-category-modal__fields space-y-4">
                     <!-- Nombre -->
                     <div>
                         <label for="categoria_nombre" class="block text-sm font-medium text-gray-700 mb-2">
@@ -425,12 +500,13 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Vista Previa
                         </label>
-                        <div class="bg-gray-50 rounded-lg p-4 flex items-center gap-3">
-                            <div id="preview-icon" class="w-12 h-12 flex items-center justify-center rounded-full">
+                        <div class="cash-category-modal__preview bg-gray-50 rounded-lg p-4 flex items-center gap-3">
+                            <div id="preview-icon" class="cash-category-modal__preview-icon w-12 h-12 flex items-center justify-center rounded-full">
                                 <i id="preview-icon-class" class="fas fa-tag text-xl"></i>
                             </div>
                             <span id="preview-nombre" class="font-medium">Nueva Categoría</span>
                         </div>
+                    </div>
                     </div>
                 </div>
                 
