@@ -511,10 +511,27 @@ class MantenimientoController extends Controller
             [$hotelId]
         );
 
+        // Areas del hotel: un activo puede colgar de un area (alberca, lobby,
+        // azotea) igual que de una habitacion. Si el modulo de areas no esta
+        // migrado todavia, la lista queda vacia y el selector no se pinta.
+        $areas = [];
+        try {
+            $stmtAreas = $db->query(
+                "SELECT id, nombre, tipo FROM areas_hotel
+                 WHERE hotel_id = ? AND COALESCE(activa, 1) = 1
+                 ORDER BY nombre",
+                [$hotelId]
+            );
+            $areas = $stmtAreas ? ($stmtAreas->fetchAll() ?: []) : [];
+        } catch (Throwable $e) {
+            $areas = [];
+        }
+
         View::renderTemplate('mantenimientos/activos', [
             'title' => 'Activos y preventivo - ' . current_hotel_display_name(),
             'activos' => $activoModel->listar($hotelId),
             'habitaciones' => $stmt ? ($stmt->fetchAll() ?: []) : [],
+            'areas' => $areas,
             'puede_gestionar' => function_exists('can') ? can('habitaciones.mantenimiento') : true,
         ]);
     }
@@ -564,6 +581,7 @@ class MantenimientoController extends Controller
         $nombre = trim((string)$this->getPost('nombre', ''));
         $ubicacion = trim((string)$this->getPost('ubicacion', ''));
         $habitacionId = (int)$this->getPost('habitacion_id', 0);
+        $areaId = (int)$this->getPost('area_id', 0);
         $periodicidad = (int)$this->getPost('periodicidad_dias', 0);
         $ultimoServicio = trim((string)$this->getPost('ultimo_servicio', ''));
         $proximoServicio = trim((string)$this->getPost('proximo_servicio', ''));
@@ -581,6 +599,15 @@ class MantenimientoController extends Controller
             return;
         }
 
+        // Un activo vive en UNA habitacion o en UN area, nunca en las dos: si
+        // pudiera estar en ambas, el bloque "Activos" de las dos fichas lo
+        // mostraria y no habria una respuesta unica a "donde esta el boiler".
+        if ($habitacionId > 0 && $areaId > 0) {
+            set_mensaje('Elige habitacion o area para el activo, no las dos', 'error');
+            $this->redirect('mantenimientos/activos');
+            return;
+        }
+
         // Habitacion opcional: si viene, debe ser del hotel.
         if ($habitacionId > 0) {
             $db = Database::getInstance();
@@ -590,6 +617,20 @@ class MantenimientoController extends Controller
             );
             if (!$stmt || !$stmt->fetch()) {
                 set_mensaje('La habitacion elegida no pertenece a este hotel', 'error');
+                $this->redirect('mantenimientos/activos');
+                return;
+            }
+        }
+
+        // Area opcional: mismo contrato de tenancy que la habitacion.
+        if ($areaId > 0) {
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "SELECT id FROM areas_hotel WHERE id = ? AND hotel_id = ? LIMIT 1",
+                [$areaId, $hotelId]
+            );
+            if (!$stmt || !$stmt->fetch()) {
+                set_mensaje('El area elegida no pertenece a este hotel', 'error');
                 $this->redirect('mantenimientos/activos');
                 return;
             }
@@ -617,6 +658,7 @@ class MantenimientoController extends Controller
             'nombre' => mb_substr($nombre, 0, 160),
             'ubicacion' => $ubicacion !== '' ? mb_substr($ubicacion, 0, 160) : null,
             'habitacion_id' => $habitacionId > 0 ? $habitacionId : null,
+            'area_id' => $areaId > 0 ? $areaId : null,
             'periodicidad_dias' => $periodicidad,
             'ultimo_servicio' => $ultimoServicio,
             'proximo_servicio' => $proximoServicio,

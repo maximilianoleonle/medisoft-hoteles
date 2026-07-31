@@ -12,6 +12,10 @@ $mantenimientos_programados = is_array($mantenimientos_programados ?? null) ? $m
 $reservas_mantenimiento_futuras = is_array($reservas_mantenimiento_futuras ?? null) ? $reservas_mantenimiento_futuras : [];
 $reservas_mantenimiento_proximas = is_array($reservas_mantenimiento_proximas ?? null) ? $reservas_mantenimiento_proximas : [];
 $tareas_contextuales = is_array($tareas_contextuales ?? null) ? $tareas_contextuales : [];
+// Activos con preventivo del cuarto (minisplit, boiler). Alimenta el selector
+// opcional del modal de mantenimiento: elegir uno es lo que hace que el servicio
+// se marque en /mantenimientos/activos. Vacio = el cuarto no tiene activos.
+$hdvActivos = is_array($activos_unidad ?? null) ? $activos_unidad : [];
 $reservacion_pendiente = $reservacion_pendiente ?? null;
 $estados = $estados ?? [];
 $tipos = $tipos ?? [];
@@ -1849,6 +1853,20 @@ $mantenimientos_count = count($mantenimientos_programados);
                 <label class="hdv-modal-label">Motivo</label>
                 <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." class="hdv-modal-input">
             </div>
+
+            <?php if (!empty($hdvActivos)): ?>
+            <div>
+                <label class="hdv-modal-label">&iquest;A qu&eacute; equipo le das servicio? <span style="font-weight:400;color:var(--muted,#828B99);">(opcional)</span></label>
+                <select name="activo_id" class="hdv-modal-input">
+                    <option value="">Ninguno en particular</option>
+                    <?php foreach ($hdvActivos as $hdvActivo): ?>
+                        <option value="<?= (int)$hdvActivo['id'] ?>"><?= htmlspecialchars((string)$hdvActivo['nombre'], ENT_QUOTES, 'UTF-8') ?><?php
+                            if (!empty($hdvActivo['proximo_servicio'])): ?> — vence <?= htmlspecialchars(date('d/m/Y', strtotime((string)$hdvActivo['proximo_servicio'])), ENT_QUOTES, 'UTF-8') ?><?php endif; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p style="font-size:.76rem;color:var(--muted,#828B99);margin:5px 0 0;line-height:1.4;">Si eliges uno, al finalizar el mantenimiento se le adelanta su pr&oacute;ximo servicio en Activos.</p>
+            </div>
+            <?php endif; ?>
 
             <?php if (function_exists('current_hotel_has_module') && current_hotel_has_module('mantenimiento')): ?>
             <div>

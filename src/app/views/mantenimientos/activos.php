@@ -4,6 +4,10 @@
  * Mobile-first: alta rapida y semaforo de vencimiento.
  */
 
+// Areas del hotel para el selector. Vacio = el hotel no tiene areas (o el bloque
+// no esta migrado) y el campo simplemente no se pinta.
+$mactAreas = is_array($areas ?? null) ? $areas : [];
+
 if (!function_exists('mact_safe')) {
     function mact_safe($value, string $fallback = ''): string
     {
@@ -119,6 +123,9 @@ foreach ($activos as $a) {
 .mact .mact-form-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 560px) { .mact .mact-form-grid { grid-template-columns: 1fr; } }
 .mact label.mact-lbl { display: block; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ma-muted); font-weight: 700; margin-bottom: 4px; }
+.mact .mact-hint { font-size: .74rem; color: var(--ma-muted); margin: 5px 0 0; line-height: 1.4; }
+.mact .mact-area-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.mact .mact-area-link:hover { color: var(--ma-brand, inherit); }
 .mact .mact-input, .mact select.mact-input {
     width: 100%; padding: 10px 12px; border: 1px solid var(--ma-border); border-radius: 11px;
     font-size: .88rem; background: #FFF; color: var(--ma-heading);
@@ -152,6 +159,14 @@ foreach ($activos as $a) {
                 </div>
             </div>
 
+            <?php
+            // Los activos cuelgan de habitaciones y areas: se navegan como parte
+            // de esa seccion (Mapa · Habitaciones · Áreas · Activos).
+            $subnav_section = 'habitaciones';
+            $subnav_active = 'activos';
+            include APP_PATH . '/views/partials/section_subnav.php';
+            ?>
+
             <?php if ($puedeGestionar): ?>
             <form class="mact-form" id="mactForm" method="POST" action="<?= url('mantenimientos/activos/guardar') ?>">
                 <?= csrf_field() ?>
@@ -174,6 +189,18 @@ foreach ($activos as $a) {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if (!empty($mactAreas)): ?>
+                    <div>
+                        <label class="mact-lbl">&Aacute;rea (opcional)</label>
+                        <select name="area_id" id="mactFormArea" class="mact-input">
+                            <option value="">Sin &aacute;rea</option>
+                            <?php foreach ($mactAreas as $mactArea): ?>
+                                <option value="<?= (int)$mactArea['id'] ?>"><?= mact_safe($mactArea['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="mact-hint">El activo vive en una habitaci&oacute;n <strong>o</strong> en un &aacute;rea, no en las dos.</p>
+                    </div>
+                    <?php endif; ?>
                     <div>
                         <label class="mact-lbl">Servicio cada (d&iacute;as)</label>
                         <input type="number" name="periodicidad_dias" id="mactFormPeriodicidad" required min="1" max="3650" value="180" placeholder="180" class="mact-input">
@@ -211,15 +238,22 @@ foreach ($activos as $a) {
                     <?php foreach ($activos as $a): ?>
                         <?php
                         $venc = $vencMeta[$a['vencimiento'] ?? 'sin_programa'] ?? $vencMeta['sin_programa'];
-                        $ubic = trim((string)($a['habitacion_numero'] ?? '')) !== ''
-                            ? 'Hab. ' . $a['habitacion_numero']
-                            : (trim((string)($a['ubicacion'] ?? '')) ?: 'Instalaciones generales');
+                        // Orden de precedencia: habitacion > area > texto libre.
+                        // Habitacion y area son excluyentes (lo impone el controlador).
+                        if (trim((string)($a['habitacion_numero'] ?? '')) !== '') {
+                            $ubic = 'Hab. ' . $a['habitacion_numero'];
+                        } elseif (trim((string)($a['area_nombre'] ?? '')) !== '') {
+                            $ubic = (string)$a['area_nombre'];
+                        } else {
+                            $ubic = trim((string)($a['ubicacion'] ?? '')) ?: 'Instalaciones generales';
+                        }
+                        $esDeArea = trim((string)($a['area_nombre'] ?? '')) !== '';
                         ?>
                         <div class="mact-item <?= ($a['vencimiento'] ?? '') === 'vencido' ? 'is-vencido' : '' ?>">
                             <div class="mact-item-top">
                                 <div>
                                     <strong><?= mact_safe($a['nombre']) ?></strong>
-                                    <small><i class="fas fa-location-dot"></i> <?= mact_safe($ubic) ?> · cada <?= (int)$a['periodicidad_dias'] ?> d&iacute;as</small>
+                                    <small><i class="fas <?= $esDeArea ? 'fa-map-location-dot' : 'fa-location-dot' ?>"></i> <?php if ($esDeArea): ?><a class="mact-area-link" href="<?= url('areas/' . (int)$a['area_id']) ?>"><?= mact_safe($ubic) ?></a><?php else: ?><?= mact_safe($ubic) ?><?php endif; ?> · cada <?= (int)$a['periodicidad_dias'] ?> d&iacute;as</small>
                                 </div>
                                 <span class="mact-chip <?= $venc['clase'] ?>"><i class="fas <?= $venc['icono'] ?>"></i> <?= mact_safe($venc['label']) ?></span>
                             </div>
@@ -296,9 +330,21 @@ function mactEditar(a) {
     document.getElementById('mactFormNombre').value = a.nombre || '';
     document.getElementById('mactFormUbicacion').value = a.ubicacion || '';
     document.getElementById('mactFormHabitacion').value = a.habitacion_id > 0 ? String(a.habitacion_id) : '';
+    var mactArea = document.getElementById('mactFormArea');
+    if (mactArea) { mactArea.value = a.area_id > 0 ? String(a.area_id) : ''; }
     document.getElementById('mactFormPeriodicidad').value = a.periodicidad_dias || 180;
     document.getElementById('mactFormUltimo').value = a.ultimo_servicio || '';
     document.getElementById('mactFormProximo').value = a.proximo_servicio || '';
     document.getElementById('mactFormNotas').value = a.notas || '';
 }
+
+/* Habitacion y area son excluyentes: elegir una limpia la otra en el acto, para
+   que el error del servidor ("elige una, no las dos") no llegue nunca. */
+(function () {
+    var hab = document.getElementById('mactFormHabitacion');
+    var area = document.getElementById('mactFormArea');
+    if (!hab || !area) return;
+    hab.addEventListener('change', function () { if (hab.value) area.value = ''; });
+    area.addEventListener('change', function () { if (area.value) hab.value = ''; });
+})();
 </script>

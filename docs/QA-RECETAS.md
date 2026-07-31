@@ -233,6 +233,18 @@ Interruptor: `personal_nomina_legacy_visible()` (`helpers/modulos.php`). Con él
 7. **Lo que NO debe rebotar** (motor que /nomina consume, con `nomina_avanzada` activo): `trabajadores/nomina/periodos/{id}`, `trabajadores/nomina/periodos/pagos-snapshot`, y sobre todo el POST de pago del punto 3 de la receta de Nómina. Si estos rebotan, el hotel se quedó sin poder pagar.
 8. Roles: `/configuracion/roles` → el área "Personal" no ofrece casilla de pagar; "Nómina avanzada" sí (`nomina.pagar`). Ningún rol existente pierde el pago (`personal.pagar` sigue en los presets y los gates la aceptan por any-of).
 
+## Activos con preventivo ↔ Áreas — verificado ✅ 2026-07-31
+
+Módulo requerido: **`mantenimiento`** (NO `mantenimiento_plus`, esa clave no existe en el catálogo).
+
+1. `php src/tests/run.php ActivoMantenimiento` → 10 asserts (liga, marcado, tenancy, cruce habitación/área).
+2. Sembrar un área y un activo suyo (`activos_hotel.area_id`), con `proximo_servicio` en el pasado.
+3. `/mantenimientos/activos` → subnav de la sección (Mapa · Habitaciones · Áreas · **Activos**) · el activo se pinta con el nombre del área y **enlaza a `/areas/{id}`** · el formulario ofrece "Área (opcional)" y elegir área limpia habitación (y viceversa).
+4. `/areas/{id}` → bloque "**Equipos de esta área**" con semáforo (Vencido/Por vencer/Al día) y el próximo servicio.
+5. **El caso que se reportó**: en `/habitaciones/{id}` → Reportar mantenimiento → elegir el equipo en "¿A qué equipo le das servicio?" → finalizar → el activo debe quedar con `ultimo_servicio = hoy` y `proximo_servicio` recorrido una periodicidad. Sin elegir equipo, NADA se toca (el selector es opcional a propósito).
+6. Ídem desde `/areas/{id}` (esa rama antes no marcaba ningún activo, ni con el cron).
+7. Tenancy: un activo de otro hotel, de otra habitación, o de un área no se liga a un mantenimiento de habitación — se ignora en silencio, sin tumbar el mantenimiento.
+
 ## Modo dueño
 
 1. Login `dueno_qa` → `/dueno`.

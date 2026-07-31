@@ -30,7 +30,7 @@ class MantenimientoService
      * ['ok' => false, 'conflictos' => [...]]. Validaciones invalidas lanzan
      * InvalidArgumentException/RuntimeException con mensaje humano.
      */
-    public function iniciarParaHotel(int $hotelId, int $habitacionId, string $tipo, string $prioridad, string $motivo, ?int $usuarioId = null, bool $confirmoConflicto = false): array
+    public function iniciarParaHotel(int $hotelId, int $habitacionId, string $tipo, string $prioridad, string $motivo, ?int $usuarioId = null, bool $confirmoConflicto = false, ?int $activoId = null): array
     {
         $motivo = trim($motivo);
         if (!in_array($tipo, array_keys(Mantenimiento::getTipos()), true)) {
@@ -50,6 +50,8 @@ class MantenimientoService
         if ((string) ($habitacion['estado'] ?? '') === 'mantenimiento') {
             throw new RuntimeException('La habitacion ya esta en mantenimiento');
         }
+
+        $activoId = $this->activoLigadoValido($hotelId, 'habitacion', $habitacionId, $activoId);
 
         $conflictos = [];
         $mantenimientoId = 0;
@@ -76,9 +78,9 @@ class MantenimientoService
             );
             $stmtInsert = $this->db->query(
                 "INSERT INTO mantenimientos_habitaciones
-                    (hotel_id, habitacion_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')",
-                [$hotelId, $habitacionId, $tipo, $prioridad, $motivo, $usuarioId]
+                    (hotel_id, habitacion_id, activo_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')",
+                [$hotelId, $habitacionId, $activoId, $tipo, $prioridad, $motivo, $usuarioId]
             );
             if (!$stmtInsert) {
                 throw new RuntimeException('No se pudo registrar el mantenimiento.');
@@ -185,7 +187,7 @@ class MantenimientoService
      * registro en mantenimientos_habitaciones pero con area_id y habitacion
      * NULL. Sin conflicto de reservas: las areas no se reservan.
      */
-    public function iniciarParaAreaHotel(int $hotelId, int $areaId, string $tipo, string $prioridad, string $motivo, ?int $usuarioId = null): array
+    public function iniciarParaAreaHotel(int $hotelId, int $areaId, string $tipo, string $prioridad, string $motivo, ?int $usuarioId = null, ?int $activoId = null): array
     {
         $motivo = trim($motivo);
         if (!in_array($tipo, array_keys(Mantenimiento::getTipos()), true)) {
@@ -206,6 +208,8 @@ class MantenimientoService
             throw new RuntimeException('El area ya esta en mantenimiento');
         }
 
+        $activoId = $this->activoLigadoValido($hotelId, 'area', $areaId, $activoId);
+
         $mantenimientoId = 0;
         $this->db->safeBeginTransaction();
         try {
@@ -225,9 +229,9 @@ class MantenimientoService
             );
             $stmtInsert = $this->db->query(
                 "INSERT INTO mantenimientos_habitaciones
-                    (hotel_id, area_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')",
-                [$hotelId, $areaId, $tipo, $prioridad, $motivo, $usuarioId]
+                    (hotel_id, area_id, activo_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')",
+                [$hotelId, $areaId, $activoId, $tipo, $prioridad, $motivo, $usuarioId]
             );
             if (!$stmtInsert) {
                 throw new RuntimeException('No se pudo registrar el mantenimiento del area.');
@@ -267,6 +271,10 @@ class MantenimientoService
 
         $this->db->safeBeginTransaction();
         try {
+            // Se leen ANTES de cerrarlos: al pasar a 'completado' ya no cumplen
+            // el filtro estado='en_proceso' (mismo orden que la rama de habitacion).
+            $activosServidos = $this->activosServidosEnProceso($hotelId, $areaId, 'area');
+
             $this->db->query(
                 "UPDATE areas_hotel SET estado = 'disponible', updated_at = NOW()
                  WHERE id = ? AND hotel_id = ?",
@@ -291,7 +299,11 @@ class MantenimientoService
             throw $e;
         }
 
-        return ['ok' => true, 'area' => $area];
+        // Fuera de la transaccion, igual que en habitaciones: adelantar el
+        // preventivo del activo es una consecuencia, no debe tumbar el cierre.
+        $activosActualizados = $this->registrarActivosServidos($hotelId, $activosServidos);
+
+        return ['ok' => true, 'area' => $area, 'activos_actualizados' => $activosActualizados];
     }
 
     private function area(int $hotelId, int $areaId): ?array
@@ -417,16 +429,56 @@ class MantenimientoService
     }
 
     /**
+     * Valida el activo que el usuario dijo estar atendiendo.
+     *
+     * Silencioso a proposito: el selector es OPCIONAL y un id invalido (activo de
+     * otro hotel, de otra habitacion, o borrado entre que se pinto la pantalla y
+     * se envio) no debe tumbar el mantenimiento -que es la operacion importante-,
+     * solo dejar de ligarlo. Devuelve null cuando no hay activo que ligar.
+     *
+     * @param string $entidad 'habitacion' | 'area'
+     */
+    private function activoLigadoValido(int $hotelId, string $entidad, int $entidadId, ?int $activoId): ?int
+    {
+        $columnas = ['habitacion' => 'habitacion_id', 'area' => 'area_id'];
+
+        if ($activoId === null || $activoId <= 0 || !isset($columnas[$entidad])) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT id FROM activos_hotel
+                 WHERE id = ? AND hotel_id = ? AND {$columnas[$entidad]} = ? AND activo = 1
+                 LIMIT 1",
+                [$activoId, $hotelId, $entidadId]
+            );
+
+            return ($stmt && $stmt->fetch()) ? $activoId : null;
+        } catch (Throwable $e) {
+            // Sin la migracion de Mantenimiento Plus la tabla no existe: el
+            // mantenimiento normal sigue funcionando, solo sin activo ligado.
+            error_log('Mantenimiento: no se pudo validar el activo ligado: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Activos preventivos ligados a mantenimientos abiertos. Si la migracion
      * de activos no existe aun, el flujo de mantenimiento sigue cerrando.
+     *
+     * @param string $entidad 'habitacion' | 'area'
      */
-    private function activosServidosEnProceso(int $hotelId, int $habitacionId): array
+    private function activosServidosEnProceso(int $hotelId, int $habitacionId, string $entidad = 'habitacion'): array
     {
+        $columnas = ['habitacion' => 'habitacion_id', 'area' => 'area_id'];
+        $columna = $columnas[$entidad] ?? 'habitacion_id';
+
         try {
             $stmt = $this->db->query(
                 "SELECT DISTINCT activo_id
                  FROM mantenimientos_habitaciones
-                 WHERE habitacion_id = ?
+                 WHERE {$columna} = ?
                    AND hotel_id = ?
                    AND estado = 'en_proceso'
                    AND activo_id IS NOT NULL",

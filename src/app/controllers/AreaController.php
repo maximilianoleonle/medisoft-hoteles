@@ -181,11 +181,23 @@ class AreaController extends Controller {
             error_log('Areas: no se pudo cargar personal de limpieza: ' . $e->getMessage());
         }
 
+        // Activos del area (boiler de la alberca, minisplit del lobby) con su
+        // preventivo. Alimenta el bloque "Activos" y el selector opcional del
+        // mantenimiento. Tolerante: sin Mantenimiento Plus la lista va vacia.
+        $activos = [];
+        try {
+            require_once __DIR__ . '/../models/ActivoHotel.php';
+            $activos = (new ActivoHotel())->listarPorUnidad($hotelId, 'area', $id);
+        } catch (Throwable $e) {
+            error_log('Areas: no se pudieron cargar los activos del area: ' . $e->getMessage());
+        }
+
         View::renderTemplate('areas/ver', [
             'title' => (string)$area['nombre'] . ' - ' . current_hotel_display_name(),
             'area' => $area,
             'tipos' => Area::catalogoTipos(),
             'historial' => $this->areaModel->historial($id, $hotelId),
+            'activos' => $activos,
             'personal_limpieza' => $trabajadores,
             'tipos_mantenimiento' => class_exists('Mantenimiento') ? Mantenimiento::getTipos() : [],
             'prioridades_mantenimiento' => class_exists('Mantenimiento') ? Mantenimiento::getPrioridades() : [],
@@ -294,7 +306,9 @@ class AreaController extends Controller {
                     trim((string)$this->getPost('tipo_mantenimiento')),
                     trim((string)$this->getPost('prioridad', 'media')),
                     trim((string)$this->getPost('motivo')),
-                    user_id()
+                    user_id(),
+                    // Opcional: a que activo del area se le esta dando servicio.
+                    ((int)$this->getPost('activo_id', 0)) ?: null
                 );
                 set_mensaje('Mantenimiento del área iniciado correctamente', 'success');
             } else {

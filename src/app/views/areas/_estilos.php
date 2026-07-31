@@ -235,4 +235,18 @@
   .arx .arx-dot{ animation:none!important; }
   .arx *{ transition-duration:.01ms!important; }
 }
+
+/* Activos con preventivo que viven en el area (bomba, minisplit, boiler).
+   Tokens --ax-* de siempre: voltean solos en oscuro. */
+.arx .arx-activos{ list-style:none; margin:0; padding:0; }
+.arx .arx-activo{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:11px 0; border-bottom:1px solid var(--ax-slate-200);
+}
+.arx .arx-activo:last-child{ border-bottom:0; }
+.arx .arx-activo-info{ min-width:0; }
+.arx .arx-activo-nombre{ display:block; font-weight:650; color:var(--ax-ink); text-decoration:none; }
+.arx .arx-activo-nombre:hover{ text-decoration:underline; text-underline-offset:2px; }
+.arx .arx-activo-info small{ display:block; margin-top:2px; font-size:.76rem; color:var(--ax-slate-400); }
+.arx .arx-hint{ font-size:.74rem; color:var(--ax-slate-400); margin:5px 0 0; line-height:1.4; }
 </style>

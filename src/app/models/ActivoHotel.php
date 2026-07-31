@@ -19,6 +19,11 @@ class ActivoHotel extends Model {
         'nombre',
         'ubicacion',
         'habitacion_id',
+        // Un activo vive en UNA habitacion o en UN area (alberca, lobby, azotea),
+        // nunca en las dos: lo excluyente lo impone MantenimientoController al
+        // guardar. La columna existia desde la migracion de Areas pero no estaba
+        // en fillable, asi que jamas se pudo guardar (jul-31).
+        'area_id',
         'periodicidad_dias',
         'ultimo_servicio',
         'proximo_servicio',
@@ -37,11 +42,17 @@ class ActivoHotel extends Model {
         }
 
         $stmt = $this->db->query(
-            "SELECT a.*, h.numero AS habitacion_numero
+            "SELECT a.*,
+                    h.numero AS habitacion_numero,
+                    ar.nombre AS area_nombre,
+                    ar.tipo AS area_tipo
              FROM {$this->table} a
              LEFT JOIN habitaciones h
                 ON h.id = a.habitacion_id
                AND h.hotel_id = a.hotel_id
+             LEFT JOIN areas_hotel ar
+                ON ar.id = a.area_id
+               AND ar.hotel_id = a.hotel_id
              WHERE a.id = ? AND a.hotel_id = ?
              LIMIT 1",
             [$id, $hotelId]
@@ -63,6 +74,8 @@ class ActivoHotel extends Model {
         $stmt = $this->db->query(
             "SELECT a.*,
                     h.numero AS habitacion_numero,
+                    ar.nombre AS area_nombre,
+                    ar.tipo AS area_tipo,
                     (
                         SELECT m.id
                         FROM mantenimientos_habitaciones m
@@ -76,6 +89,9 @@ class ActivoHotel extends Model {
              LEFT JOIN habitaciones h
                 ON h.id = a.habitacion_id
                AND h.hotel_id = a.hotel_id
+             LEFT JOIN areas_hotel ar
+                ON ar.id = a.area_id
+               AND ar.hotel_id = a.hotel_id
              WHERE a.hotel_id = ?{$whereActivo}
              ORDER BY a.activo DESC,
                       (a.proximo_servicio IS NULL) ASC,
@@ -104,6 +120,31 @@ class ActivoHotel extends Model {
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * Activos de UNA unidad (habitacion o area), con su categoria de vencimiento.
+     *
+     * Alimenta dos cosas: el bloque "Activos" de la ficha del area/habitacion y el
+     * selector opcional "que activo le diste servicio" del mantenimiento. Reusa
+     * listar() a proposito: la clasificacion de vencimiento vive en UN solo lugar.
+     *
+     * @param string $entidad 'habitacion' | 'area'
+     */
+    public function listarPorUnidad(int $hotelId, string $entidad, int $entidadId, bool $soloActivos = true): array {
+        $columnas = ['habitacion' => 'habitacion_id', 'area' => 'area_id'];
+        if ($hotelId <= 0 || $entidadId <= 0 || !isset($columnas[$entidad])) {
+            return [];
+        }
+
+        $columna = $columnas[$entidad];
+
+        return array_values(array_filter(
+            $this->listar($hotelId, $soloActivos),
+            static function (array $fila) use ($columna, $entidadId) {
+                return (int) ($fila[$columna] ?? 0) === $entidadId;
+            }
+        ));
     }
 
     /**

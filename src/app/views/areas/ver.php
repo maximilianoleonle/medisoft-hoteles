@@ -29,6 +29,16 @@ if (!function_exists('arv_fecha')) {
 $area = $area ?? [];
 $tipos = $tipos ?? [];
 $historial = $historial ?? ['limpiezas' => [], 'mantenimientos' => []];
+// Activos con preventivo que viven en esta area (bomba de la alberca, minisplit
+// del lobby). Vacio = el hotel no tiene el bloque o no le ha dado de alta ninguno.
+$arvActivos = is_array($activos ?? null) ? $activos : [];
+$arvActivoMeta = [
+    'vencido'      => ['clase' => 'st-warn', 'icono' => 'fa-triangle-exclamation', 'label' => 'Vencido'],
+    'por_vencer'   => ['clase' => 'st-warn', 'icono' => 'fa-clock',                'label' => 'Por vencer'],
+    'al_dia'       => ['clase' => 'st-ok',   'icono' => 'fa-circle-check',         'label' => 'Al día'],
+    'sin_programa' => ['clase' => '',        'icono' => 'fa-calendar-xmark',       'label' => 'Sin programa'],
+    'inactivo'     => ['clase' => '',        'icono' => 'fa-pause',                'label' => 'Pausado'],
+];
 $personalLimpieza = $personal_limpieza ?? [];
 $tiposMantenimiento = $tipos_mantenimiento ?? [];
 $prioridadesMantenimiento = $prioridades_mantenimiento ?? [];
@@ -194,6 +204,18 @@ $estadoMantMeta = [
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if (!empty($arvActivos)): ?>
+                    <div>
+                        <label class="arx-lbl">¿A qué equipo le das servicio?</label>
+                        <select name="activo_id" class="arx-input">
+                            <option value="">Ninguno en particular</option>
+                            <?php foreach ($arvActivos as $arvActivo): ?>
+                                <option value="<?= (int)$arvActivo['id'] ?>"><?= arv_safe($arvActivo['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="arx-hint">Si eliges uno, al finalizar se le adelanta su próximo servicio preventivo.</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:12px;">
                     <button type="submit" class="arx-btn is-warn"><i class="fas fa-wrench"></i> Iniciar mantenimiento</button>
@@ -201,6 +223,31 @@ $estadoMantMeta = [
                 </div>
             </form>
             <?php endif; ?>
+        </section>
+        <?php endif; ?>
+
+        <?php if (!empty($arvActivos)): ?>
+        <div class="arx-floor">
+            <span class="arx-floor-t">Equipos de esta área</span>
+            <span class="arx-floor-rule"></span>
+            <span class="arx-floor-ct"><?= count($arvActivos) ?> activo<?= count($arvActivos) === 1 ? '' : 's' ?></span>
+        </div>
+        <section class="arx-card">
+            <ul class="arx-activos">
+                <?php foreach ($arvActivos as $arvActivo): ?>
+                    <?php $arvMeta = $arvActivoMeta[$arvActivo['vencimiento'] ?? 'sin_programa'] ?? $arvActivoMeta['sin_programa']; ?>
+                    <li class="arx-activo">
+                        <div class="arx-activo-info">
+                            <a class="arx-activo-nombre" href="<?= url('mantenimientos/activos/' . (int)$arvActivo['id']) ?>"><?= arv_safe($arvActivo['nombre']) ?></a>
+                            <small>
+                                Servicio cada <?= (int)$arvActivo['periodicidad_dias'] ?> días<?php
+                                if (!empty($arvActivo['proximo_servicio'])): ?> · próximo <?= arv_safe(date('d/m/Y', strtotime((string)$arvActivo['proximo_servicio']))) ?><?php endif; ?>
+                            </small>
+                        </div>
+                        <span class="arx-chip <?= $arvMeta['clase'] ?>"><i class="fas <?= $arvMeta['icono'] ?>"></i> <?= arv_safe($arvMeta['label']) ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
         </section>
         <?php endif; ?>
 

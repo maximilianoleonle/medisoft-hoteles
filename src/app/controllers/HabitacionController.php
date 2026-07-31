@@ -814,12 +814,31 @@ $ocupacion_actual = $this->habitacionModel->getOcupacionActual($id);
         'reservas_mantenimiento_futuras' => $reservas_mantenimiento_futuras,
         'reservas_mantenimiento_proximas' => $reservas_mantenimiento_proximas,
         'tareas_contextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'habitacion', (int)$id, 8),
+        // Activos del cuarto (minisplit, boiler) para el selector opcional del
+        // mantenimiento: es lo que hace que el servicio SI se marque en
+        // /mantenimientos/activos. Ver activosDeLaUnidad().
+        'activos_unidad' => $this->activosDeLaUnidad($hotelId, 'habitacion', (int)$id),
         'reservacion_pendiente' => $reservacion_pendiente,
         'estados' => Habitacion::getEstados(),
         'tipos' => $this->catalogoTiposHabitacion()
     ]);
 }
     
+    /**
+     * Activos con preventivo de una habitacion/area, tolerante a que el bloque
+     * Mantenimiento Plus no este migrado (devuelve [] y la vista no pinta nada).
+     */
+    private function activosDeLaUnidad(int $hotelId, string $entidad, int $entidadId): array
+    {
+        try {
+            require_once __DIR__ . '/../models/ActivoHotel.php';
+            return (new ActivoHotel())->listarPorUnidad($hotelId, $entidad, $entidadId);
+        } catch (Throwable $e) {
+            error_log('Habitaciones: no se pudieron cargar los activos de la unidad: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Mostrar formulario para crear habitación
      */
@@ -1962,7 +1981,10 @@ public function mantenimientoAction() {
                 trim((string)$this->getPost('prioridad', 'media')),
                 trim((string)$this->getPost('motivo')),
                 user_id(),
-                $this->confirmoConflictoMantenimiento()
+                $this->confirmoConflictoMantenimiento(),
+                // Opcional: a que activo del cuarto se le esta dando servicio.
+                // Sin esto el mantenimiento nunca marcaba nada en /mantenimientos/activos.
+                ((int)$this->getPost('activo_id', 0)) ?: null
             );
 
             if (empty($resultado['ok'])) {

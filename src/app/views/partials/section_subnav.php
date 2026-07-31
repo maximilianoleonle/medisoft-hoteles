@@ -36,6 +36,19 @@ if ($subnavSection === 'nomina') {
         'habitaciones' => ['url' => url('habitaciones'), 'icono' => 'fa-bed',              'label' => 'Habitaciones'],
         'areas'        => ['url' => url('areas'),        'icono' => 'fa-map-location-dot', 'label' => 'Áreas'],
     ];
+    // Activos con preventivo (boiler, minisplit, bomba): cuelgan de una habitacion
+    // o de un area, asi que su puerta natural es esta seccion. Gate EXACTO al de la
+    // pantalla destino (MantenimientoController::before = modulo 'mantenimiento' +
+    // 'habitaciones.view'): ni mas estricto (esconderlo a quien si puede entrar) ni
+    // mas laxo (enlace a 403). Gestionar activos ya pide su propio permiso dentro.
+    // OJO con la clave: el catalogo `modulos` la llama 'mantenimiento' a secas
+    // (verificado en local Y en prod). 'mantenimiento_plus' NO existe en el
+    // catalogo y con estos helpers -in_array estricto- nunca haria match.
+    $subnavVeActivos = (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('mantenimiento'))
+        && (!function_exists('can') || can('habitaciones.view'));
+    if ($subnavVeActivos) {
+        $subnavTabs['activos'] = ['url' => url('mantenimientos/activos'), 'icono' => 'fa-screwdriver-wrench', 'label' => 'Activos'];
+    }
     $subnavAria = 'Secciones de Habitaciones y áreas';
 } elseif ($subnavSection === 'lavanderia') {
     $subnavTabs = [
@@ -115,4 +128,4 @@ if ($subnavSection === 'nomina') {
     </a>
     <?php endforeach; ?>
 </nav>
-<?php unset($subnav_section, $subnav_active, $subnavSection, $subnavActive, $subnavTabs, $subnavAria, $subnavPuedeConfigurar, $subnavKey, $subnavTab, $subnavEsActiva); ?>
+<?php unset($subnav_section, $subnav_active, $subnavSection, $subnavActive, $subnavTabs, $subnavAria, $subnavPuedeConfigurar, $subnavVeActivos, $subnavKey, $subnavTab, $subnavEsActiva); ?>
