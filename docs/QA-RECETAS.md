@@ -172,6 +172,15 @@ Receta sin app ni Docker (Chrome headless; útil cuando el pane está caído). S
 4. **Cerrar el círculo**: `diff` del `<style>` medido contra el `<style>` del archivo ya desplegado en prod — si no son idénticos, la medición no prueba nada de lo que ve el hotelero.
 5. Regresión histórica: antes del arreglo el chip salía **101–448px** fuera del panel y la placa invadía los botones hasta **168px**.
 
+## Vehículos: el token interno de placas nunca se ve — verificado ✅ 2026-07-31 (E2E local + PDF)
+
+1. **Sembrar el caso**: `UPDATE huesped_vehiculos SET placas='SINPLACAABCDEF012345' WHERE id=<uno de Los Cedros>` (guardar el valor original y restaurarlo al terminar). El token debe ser `SINPLACA` + 12 hex o el helper NO lo reconoce, a propósito.
+2. **Encender el módulo**: en LOCAL `modulos.activo_global=0` para `vehiculos` (en prod está en 1) → sin esto el panel no se pinta y la prueba da **falso verde** (pasó: reporté "sin token" sobre una pantalla que no mostraba vehículos). Apagarlo de nuevo al final.
+3. **Sesión nueva OBLIGATORIA**: las claves de módulos activos se cachean EN LA SESIÓN, así que tras tocar el catálogo hay que rehacer la cookie (`rm jar; curl -c jar -b jar .../tmp_sesion_placas.php`) o se sigue viendo el estado viejo.
+4. **Asserts por pantalla** (`curl -c jar -b jar`): `/huespedes/{id}`, `/huespedes`, `/dashboard`, `/habitaciones/{id}` → `grep -c SINPLACA` debe dar **0**, la marca del vehículo SÍ debe aparecer (si no, el panel no se está pintando y el 0 no vale) y el `onclick='editarVehiculo({…})'` debe traer `"placas":""` (el modal no debe prellenar basura; al guardar en blanco el controller conserva el token de la BD).
+5. **PDF de cotización** (lo que recibe el huésped): `curl -X POST -d "reservacion_id=<id>&csrf_token=<el de la sesión>" .../reservaciones/cotizacion-reservacion-pdf -o cot.pdf`, luego inflar streams con `gzuncompress` y leer el texto entre paréntesis (script a archivo y `docker cp`: el `php -r` inline se rompe con las comillas del regex). Debe decir "Vehículo: <marca> · Color …" y **omitir** la línea de placas.
+6. Restaurar placas + `activo_global` + borrar el endpoint temporal de sesión.
+
 ## Mensajes / canal WhatsApp — enlaces de "lo que falta" en la cola
 
 Verificado en navegador jul-25 (localhost:8080, Los Cedros). El bloque `canal_whatsapp` NO está activo en la BD local: sin fila `hotel_modulos` (modulo_id 6749, `es_core=0`) toda la sección da 403 → activarla para la prueba y **borrar la fila al terminar** (si no existía antes, se borra; no se deja en `activo=0`).

@@ -31,6 +31,60 @@ class HuespedVehiculo extends Model {
     }
     
     /**
+     * ¿Estas placas son el token INTERNO que inventa el sistema?
+     *
+     * Cuando el hotel no exige placas, HuespedController las genera solas
+     * ('SINPLACA' + 12 hex) para no romper el índice único por hotel. Es un
+     * relleno de base de datos, JAMÁS algo que el hotelero deba leer.
+     *
+     * El patrón es EXACTO a propósito: 'SINPLACAS' o 'SINPLACAS1' los escribió
+     * una persona a mano (hay 2 así en producción) y su texto se respeta.
+     */
+    public static function esPlacaInterna($placas): bool {
+        return (bool)preg_match('/^SINPLACA[0-9A-F]{12}$/i', trim((string)$placas));
+    }
+
+    /**
+     * Placas listas para pintar: el token interno se lee como "sin placas".
+     * Devuelve '' cuando no hay nada que mostrar y no se pasó respaldo, para
+     * que cada vista decida (unas ocultan el renglón, otras dicen 'S/P').
+     */
+    public static function placasVisibles($placas, string $siNoHay = ''): string {
+        $placas = trim((string)$placas);
+
+        if ($placas === '' || self::esPlacaInterna($placas)) {
+            return $siNoHay;
+        }
+
+        return $placas;
+    }
+
+    /**
+     * Misma limpieza para lo que sale por JSON: el JS de reservaciones y de la
+     * ficha ya pintan 'Sin placas' cuando el campo viene vacío, así que basta
+     * con vaciarlo. Se limpia SOLO la copia que viaja al navegador; el token
+     * sigue intacto en la BD (es lo que sostiene el índice único) y el guardado
+     * lo conserva porque relee las placas actuales desde la base.
+     */
+    public static function paraMostrar($vehiculo) {
+        if (!is_array($vehiculo) || !array_key_exists('placas', $vehiculo)) {
+            return $vehiculo;
+        }
+
+        $vehiculo['placas'] = self::placasVisibles($vehiculo['placas']);
+
+        return $vehiculo;
+    }
+
+    public static function listaParaMostrar($vehiculos): array {
+        if (!is_array($vehiculos)) {
+            return [];
+        }
+
+        return array_map([self::class, 'paraMostrar'], $vehiculos);
+    }
+
+    /**
      * Obtener vehículos por huésped
      */
     private function hotelIdActual($hotelId = null) {

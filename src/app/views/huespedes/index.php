@@ -1161,8 +1161,9 @@ select.guest-control {
                                                 <i class="fas fa-car text-slate-400"></i>
                                                 <span>
                                                     <?= $total_vehiculos ?> <?= $total_vehiculos == 1 ? 'vehículo' : 'vehículos' ?>
-                                                    <?php if ($total_vehiculos == 1 && !empty($vehiculos[0]['placas'])): ?>
-                                                        · <?= htmlspecialchars($vehiculos[0]['placas']) ?>
+                                                    <?php $placas_visibles_lista = $total_vehiculos == 1 ? HuespedVehiculo::placasVisibles($vehiculos[0]['placas'] ?? '') : ''; ?>
+                                                    <?php if ($placas_visibles_lista !== ''): ?>
+                                                        · <?= htmlspecialchars($placas_visibles_lista) ?>
                                                     <?php endif; ?>
                                                 </span>
                                             </div>

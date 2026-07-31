@@ -4610,7 +4610,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                                         <div class="rdv3-vehicle-sub"><?= $rdSafe($vehiculo['ubicacion_estacionamiento'] ?? $vehiculo['observaciones'] ?? 'Registrado') ?></div>
                                                     </div>
                                                 </div>
-                                                <span class="rdv3-plate"><?= $rdSafe($vehiculo['placas'] ?? $vehiculo['placa'] ?? 'S/P') ?></span>
+                                                <span class="rdv3-plate"><?= $rdSafe(HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? $vehiculo['placa'] ?? ''), 'S/P') ?></span>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php endif; ?>

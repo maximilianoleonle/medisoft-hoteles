@@ -292,7 +292,8 @@ class ReservacionController extends Controller {
             if ($marcaModelo !== '') {
                 $partes[] = $marcaModelo;
             }
-            $placas = trim((string) ($vehiculo['placas'] ?? ''));
+            // El token interno 'SINPLACA…' no es una placa: se omite la línea.
+            $placas = HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? '');
             if ($placas !== '') {
                 $partes[] = 'Placas ' . $placas;
             }

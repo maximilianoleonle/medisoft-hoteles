@@ -1278,7 +1278,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                             <span class="hdv-tile-value">
                                                 <i class="fas fa-car" style="color:var(--green);font-size:.8rem;"></i>
                                                 <?= room_detail_safe(trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? '')), 'Veh.') ?>
-                                                (<?= room_detail_safe($vehiculo['placas'] ?? '', 'sin placas') ?>)
+                                                (<?= room_detail_safe(HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? ''), 'sin placas') ?>)
                                             </span>
                                         <?php endforeach; ?>
                                     </div>

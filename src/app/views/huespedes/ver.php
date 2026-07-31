@@ -2338,7 +2338,8 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                         $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
                                         $icono = ($vehiculo['estacionamiento'] ?? '') === 'coches' ? 'fa-car' : 'fa-square-parking';
                                         $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
-                                        $vehiculo_desc = trim(($vehiculo['marca'] ?? '') . ' - ' . ($vehiculo['placas'] ?? ''));
+                                        $vehiculo_placas_visibles = HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? '');
+                                        $vehiculo_desc = trim(($vehiculo['marca'] ?? '') . ' - ' . ($vehiculo_placas_visibles !== '' ? $vehiculo_placas_visibles : 'sin placas'));
                                         $vehiculoExtras = function_exists('hotel_guest_decode_extra_json')
                                             ? hotel_guest_decode_extra_json($vehiculo['datos_extra_json'] ?? null)
                                             : [];
@@ -2351,12 +2352,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                                 </span>
                                                 <div>
                                                     <strong><?= guest_detail_safe($vehiculo_nombre, 'Vehículo') ?></strong>
-                                                    <span><?= guest_detail_safe($vehiculo['placas'] ?? '', 'Sin placas') ?></span>
+                                                    <span><?= guest_detail_safe($vehiculo_placas_visibles, 'Sin placas') ?></span>
                                                 </div>
                                             </div>
                                             <div class="guest-mini-actions">
                                                 <button type="button"
-                                                        onclick='editarVehiculo(<?= guest_detail_json_attr($vehiculo) ?>)'
+                                                        onclick='editarVehiculo(<?= guest_detail_json_attr(HuespedVehiculo::paraMostrar($vehiculo)) ?>)'
                                                         class="guest-icon-btn"
                                                         title="Editar vehículo">
                                                     <i class="fas fa-edit"></i>

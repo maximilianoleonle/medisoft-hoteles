@@ -1925,7 +1925,7 @@ textarea.ge-control {
                                 <?php foreach ($vehiculos as $vehiculo): ?>
                                     <?php
                                         $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
-                                        $vehiculo_placas = trim((string)($vehiculo['placas'] ?? ''));
+                                        $vehiculo_placas = HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? '');
                                         $vehiculo_color = trim((string)($vehiculo['color'] ?? ''));
                                         $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
                                     ?>

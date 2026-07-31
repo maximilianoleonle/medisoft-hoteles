@@ -510,7 +510,7 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
 
                 $resumen[$parkingCode]['registrados']++;
                 $vehiculoNombre = dashboard_parking_vehicle_name($vehiculo);
-                $placas = trim((string)($vehiculo['placas'] ?? ''));
+                $placas = HuespedVehiculo::placasVisibles($vehiculo['placas'] ?? '');
                 $habitaciones = $reserva ? trim((string)($reserva['habitaciones'] ?? '')) : '';
 
                 $lista[] = [

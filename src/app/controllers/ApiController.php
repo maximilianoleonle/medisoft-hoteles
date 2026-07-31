@@ -744,7 +744,7 @@ public function vehiculosHuespedAction() {
     
     View::renderJSON([
         'success' => true,
-        'vehiculos' => $vehiculos
+        'vehiculos' => HuespedVehiculo::listaParaMostrar($vehiculos)
     ]);
 }
     public function disponiblesAction() {

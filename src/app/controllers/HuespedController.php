@@ -697,9 +697,9 @@ public function actualizarVehiculoAction() {
         $vehiculoActualizado = $vehiculoModel->findForHotel($vehiculo_id, $hotelId);
         
         View::renderJSON([
-            'success' => true, 
+            'success' => true,
             'message' => 'Vehículo actualizado exitosamente',
-            'vehiculo' => $vehiculoActualizado
+            'vehiculo' => HuespedVehiculo::paraMostrar($vehiculoActualizado)
         ]);
     } else {
         View::renderJSON(['success' => false, 'message' => 'Error al actualizar vehículo']);
@@ -1046,9 +1046,9 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
     
     if ($result) {
         json_response([
-            'success' => true, 
+            'success' => true,
             'message' => 'Vehículo agregado exitosamente',
-            'vehiculo' => $result
+            'vehiculo' => HuespedVehiculo::paraMostrar($result)
         ]);
     } else {
         json_response(['success' => false, 'message' => 'Error al agregar vehículo']);

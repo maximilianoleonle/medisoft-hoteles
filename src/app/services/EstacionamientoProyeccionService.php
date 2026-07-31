@@ -407,7 +407,7 @@ class EstacionamientoProyeccionService {
                 $vehiculosDetalle[$hid][] = [
                     'area' => $area !== '' ? $area : 'coches',
                     'vehiculo' => self::nombreVehiculo($fila['marca'] ?? '', $fila['modelo'] ?? '', $fila['color'] ?? ''),
-                    'placas' => self::esRellenoSinDato($placas) ? '' : $placas,
+                    'placas' => (self::esRellenoSinDato($placas) || HuespedVehiculo::esPlacaInterna($placas)) ? '' : $placas,
                 ];
             }
         }
