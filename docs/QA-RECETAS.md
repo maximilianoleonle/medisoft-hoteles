@@ -159,6 +159,19 @@ Verificado E2E jul-2026 (localhost:8080, sesión QA en Los Cedros).
 4. **Reporte** `/reportes/procedencia`: panel "Procedencia internacional" con KPIs (extranjeros, % del total, nacionalidades, ingresos) + ranking por nacionalidad. Con dato de prueba (huésped con reserva en rango + nacionalidad) el panel se puebla; sin extranjeros muestra estado vacío que invita a activar el campo. Query = `Reporte::obtenerProcedenciaExtranjeros()` (`JSON_EXTRACT`), agrupa correcto (verificado: 1 extranjero, 2 reservaciones, $14,400).
 5. GOTCHA: la ruta del alta es `/huespedes/create` (no `/crear`). El screenshot del pane se cuelga → verificar por `javascript_tool` + asserts.
 
+## Huéspedes: ficha (`/huespedes/{id}`) — nada se debe RECORTAR — verificado ✅ 2026-07-31
+
+Receta sin app ni Docker (Chrome headless; útil cuando el pane está caído). Se mide, no se mira.
+
+1. **Armar el banco**: `sed -n '288,<fin del style>p' src/app/views/huespedes/ver.php` → bloque `<style>` real; pegarle marcado con 3 `.guest-reservation-card` (6 hijos: main, 3 metas, `.guest-reservation-state`, link) y 2 `.guest-vehicle-card` con placas largas SIN espacios (`SINPLACAB4632F2A3B025`), todo dentro de `.guest-detail-view > .guest-detail-shell > .guest-layout` con su `<aside class="guest-side-stack">`. Shim: `*{box-sizing:border-box}` + `.fas{display:inline-block;width:1em}` (sin el bundle FA los íconos miden 0 y el ancho medido miente).
+2. **Simular el ancho real**: envolver en un contenedor de **1067px** (viewport 1440 − sidebar ~373) y correr con `--window-size=1400,1150` — con ventana chica el layout colapsa a 1 columna y el bug desaparece (falso verde).
+3. **Asserts** (script que escribe en el DOM entre `@@RES@@`/`@@FIN@@`, leído con `--dump-dom`), barriendo anchos `[1067, 950, 880, 800, 720]` y también `[1700…1180]` (ahí caben 2 vehículos por fila, que es cuando la columna izquierda se estrangula):
+   - `max(chip.right, link.right) − panelBody.right` debe ser **negativo** (si es positivo, `.guest-panel{overflow:hidden}` lo está recortando y el hotelero NO ve el estado de la reserva). Valores buenos: −33px en todo el rango.
+   - `placa.right − botónEditar.left` debe ser **≤ 0** (positivo = la placa corre por debajo de los botones).
+   - La altura de la tarjeta puede CRECER al angostar (141→270px): eso es que envuelve, que es lo correcto.
+4. **Cerrar el círculo**: `diff` del `<style>` medido contra el `<style>` del archivo ya desplegado en prod — si no son idénticos, la medición no prueba nada de lo que ve el hotelero.
+5. Regresión histórica: antes del arreglo el chip salía **101–448px** fuera del panel y la placa invadía los botones hasta **168px**.
+
 ## Mensajes / canal WhatsApp — enlaces de "lo que falta" en la cola
 
 Verificado en navegador jul-25 (localhost:8080, Los Cedros). El bloque `canal_whatsapp` NO está activo en la BD local: sin fila `hotel_modulos` (modulo_id 6749, `es_core=0`) toda la sección da 403 → activarla para la prueba y **borrar la fila al terminar** (si no existía antes, se borra; no se deja en `activo=0`).
