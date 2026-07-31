@@ -872,7 +872,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     
     $pdf->writeHTML($html, true, false, false, false, '');
     $pdf->Ln(8);
-    // ═══ SECCIÓN MANOLO vs ELIA (ESTE USUARIO) ═══
+    // ═══ INGRESOS POR DUEÑO DE ESTE USUARIO (vacio si no hay multi-dueño) ═══
     $propiedadesUsuario = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario, $brand, $configPropietarios ?? null);
     $pdf->Ln(5);
@@ -1087,7 +1087,7 @@ private function exportarIngresosGastosUsuarioPdf() {
 // Método adicional para exportar reporte de ingresos totales
 
 /**
-     * Obtener ingresos por propiedad (MANOLO vs ELIA) para un rango de fechas
+     * Obtener ingresos por dueño configurado para un rango de fechas
      * Reparte proporcionalmente cuando hay habitaciones mixtas
      */
 public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id = null, $hotel_id = null) {
@@ -1270,146 +1270,6 @@ private function generarSeccionPropiedadesPDF($pdf, $propiedades, array $brand =
         </tbody>
     </table>';
 
-    $pdf->writeHTML($html, true, false, false, false, '');
-}
-
-private function generarSeccionPropiedadesLegacyPDF($pdf, $propiedades, array $brand = []) {
-    $manolo = $propiedades['manolo'];
-    $elia = $propiedades['elia'];
-    $totalGeneral = $manolo['total'] + $elia['total'];
-    
-    // Si no hay ingresos de hospedaje, no mostrar esta sección
-    if ($totalGeneral <= 0) return;
-    
-    $pctM = ($manolo['total'] / $totalGeneral) * 100;
-    $pctE = ($elia['total'] / $totalGeneral) * 100;
-    $primary = $brand['primary'] ?? '#8B6D42';
-    $secondary = $brand['secondary'] ?? '#7A8B5C';
-    $accent = $brand['accent'] ?? '#4A6FA5';
-    $primaryDark = $brand['primary_dark'] ?? '#654E2C';
-    $secondaryDark = $brand['secondary_dark'] ?? '#576441';
-    $accentDark = $brand['accent_dark'] ?? '#2C4A6E';
-    $primarySoft = $brand['primary_soft'] ?? '#F5EFE6';
-    $secondarySoft = $brand['secondary_soft'] ?? '#EEF2E6';
-    $accentSoft = $brand['accent_soft'] ?? '#E8EDF3';
-    $line = $brand['line'] ?? '#E7DEC9';
-    $primaryRgb = $this->reportePdfRgb($primary);
-    $primaryTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($primary));
-    
-    $pdf->Ln(5);
-    
-    // ── TÍTULO DE SECCIÓN ──
-    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
-    $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
-    $pdf->SetFont('helvetica', 'B', 13);
-    $pdf->Cell(0, 11, '  INGRESOS POR PROPIEDAD', 0, 1, 'L', true);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(4);
-    
-    // ── 3 CARDS: MANOLO | ELIA | TOTAL ──
-    $html = '<table cellpadding="0" cellspacing="6">
-        <tr>
-            <td width="33%">
-                <div style="background-color:' . $primarySoft . '; border:2px solid ' . $primary . '; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:9pt; color:' . $primaryDark . '; font-weight:bold; letter-spacing:1px;">MANOLO</div>
-                    <div style="font-size:20pt; font-weight:bold; color:' . $primary . ';">$' . number_format($manolo['total'], 2) . '</div>
-                    <div style="font-size:9pt; color:' . $primary . '; margin-top:4px;">' . $manolo['reservas'] . ' reservas · ' . number_format($pctM, 1) . '%</div>
-                </div>
-            </td>
-            <td width="33%">
-                <div style="background-color:' . $secondarySoft . '; border:2px solid ' . $secondary . '; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:9pt; color:' . $secondaryDark . '; font-weight:bold; letter-spacing:1px;">ELIA</div>
-                    <div style="font-size:20pt; font-weight:bold; color:' . $secondary . ';">$' . number_format($elia['total'], 2) . '</div>
-                    <div style="font-size:9pt; color:' . $secondary . '; margin-top:4px;">' . $elia['reservas'] . ' reservas · ' . number_format($pctE, 1) . '%</div>
-                </div>
-            </td>
-            <td width="34%">
-                <div style="background-color:' . $accentSoft . '; border:2px solid ' . $accent . '; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:9pt; color:' . $accentDark . '; font-weight:bold; letter-spacing:1px;">TOTAL HOSPEDAJE</div>
-                    <div style="font-size:20pt; font-weight:bold; color:' . $accent . ';">$' . number_format($totalGeneral, 2) . '</div>
-                    <div style="font-size:9pt; color:' . $accent . '; margin-top:4px;">' . ($manolo['reservas'] + $elia['reservas']) . ' reservas</div>
-                </div>
-            </td>
-        </tr>
-    </table>';
-    
-    $pdf->writeHTML($html, true, false, false, false, '');
-    $pdf->Ln(3);
-    
-    // ── TABLA COMPARATIVA POR MÉTODO DE PAGO ──
-    $pdf->SetFont('helvetica', 'B', 11);
-    $pdf->SetTextColor(60, 60, 60);
-    $pdf->Cell(0, 8, '¿Cómo se cobró en cada propiedad?', 0, 1);
-    
-    $metodos = [
-        'efectivo' => ['nombre' => 'Efectivo', 'color' => $primary, 'bg' => $primarySoft],
-        'tarjeta' => ['nombre' => 'Tarjeta', 'color' => $secondary, 'bg' => $secondarySoft],
-        'transferencia' => ['nombre' => 'Transferencia', 'color' => $accent, 'bg' => $accentSoft]
-    ];
-    
-    $html = '<table border="1" cellpadding="6" cellspacing="0" style="font-size:10pt;">
-        <thead>
-            <tr style="background-color:' . $primary . '; color:' . $this->reportePdfTextColor($primary) . '; font-weight:bold;">
-                <th width="28%">Método de Pago</th>
-                <th width="24%" style="text-align:right;">Manolo</th>
-                <th width="24%" style="text-align:right;">Elia</th>
-                <th width="24%" style="text-align:right;">Total</th>
-            </tr>
-        </thead>
-        <tbody>';
-    
-    $fila = 0;
-    foreach ($metodos as $key => $info) {
-        $m = $manolo[$key] ?? 0;
-        $e = $elia[$key] ?? 0;
-        $t = $m + $e;
-        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $line;
-        
-        $html .= '<tr style="background-color:' . $bgColor . ';">
-            <td style="font-weight:bold; color:' . $info['color'] . ';">
-                <span style="background-color:' . $info['bg'] . '; padding:3px 8px; border-radius:8px;">' . $info['nombre'] . '</span>
-            </td>
-            <td style="text-align:right; color:' . $primary . '; font-weight:bold;">$' . number_format($m, 2) . '</td>
-            <td style="text-align:right; color:' . $secondary . '; font-weight:bold;">$' . number_format($e, 2) . '</td>
-            <td style="text-align:right; font-weight:bold;">$' . number_format($t, 2) . '</td>
-        </tr>';
-        $fila++;
-    }
-    
-    // Fila de TOTALES
-    $html .= '<tr style="background-color:' . $primarySoft . '; font-weight:bold;">
-            <td style="font-size:11pt;">TOTAL</td>
-            <td style="text-align:right; color:' . $primary . '; font-size:11pt;">$' . number_format($manolo['total'], 2) . '</td>
-            <td style="text-align:right; color:' . $secondary . '; font-size:11pt;">$' . number_format($elia['total'], 2) . '</td>
-            <td style="text-align:right; font-size:11pt;">$' . number_format($totalGeneral, 2) . '</td>
-        </tr>';
-    
-    $html .= '</tbody></table>';
-    $pdf->writeHTML($html, true, false, false, false, '');
-    
-    // ── BARRA VISUAL DE PROPORCIÓN ──
-    $pdf->Ln(3);
-    
-    $manoloWidth = round($pctM);
-    $eliaWidth = 100 - $manoloWidth;
-    if ($manoloWidth < 1 && $manolo['total'] > 0) $manoloWidth = 1;
-    if ($eliaWidth < 1 && $elia['total'] > 0) $eliaWidth = 1;
-    
-    $html = '<table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-            <td width="15%" style="font-size:9pt; color:' . $primary . '; font-weight:bold; text-align:right; padding-right:5px;">Manolo ' . number_format($pctM, 0) . '%</td>
-            <td width="70%">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                    <tr>
-                        <td width="' . $manoloWidth . '%" style="background-color:' . $primary . '; height:16px;">&nbsp;</td>
-                        <td width="' . $eliaWidth . '%" style="background-color:' . $secondary . '; height:16px;">&nbsp;</td>
-                    </tr>
-                </table>
-            </td>
-            <td width="15%" style="font-size:9pt; color:' . $secondary . '; font-weight:bold; padding-left:5px;">Elia ' . number_format($pctE, 0) . '%</td>
-        </tr>
-    </table>';
-    
     $pdf->writeHTML($html, true, false, false, false, '');
 }
 
@@ -1648,7 +1508,7 @@ private function exportarIngresosGastosPdf() {
     }
     
     // ═══════════════════════════════════════════
-    // ═══ SECCIÓN MANOLO vs ELIA ═══
+    // ═══ INGRESOS POR DUEÑO (vacio si el hotel no configuró multi-dueño) ═══
     // ═══════════════════════════════════════════
     $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand, $configPropietarios ?? null);
@@ -2152,7 +2012,7 @@ private function exportarIngresosTotalesPdf() {
     $html .= '</tbody></table>';
     $pdf->writeHTML($html, true, false, false, false, '');
     
-    // ═══ SECCIÓN MANOLO vs ELIA ═══
+    // ═══ INGRESOS POR DUEÑO (vacio si el hotel no configuró multi-dueño) ═══
     $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand, $configPropietarios ?? null);
     

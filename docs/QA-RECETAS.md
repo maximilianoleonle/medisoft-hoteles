@@ -90,6 +90,17 @@ Objetivo: la pantalla de ajustes dejó de ser del hotelero. Comprobar que Mediso
 4. **Guardado por hotel** (el assert que importa): con la sesión en el hotel A, cambiar un valor en la pantalla del hotel B y `HTMLFormElement.prototype.submit.call(form)`. Por PDO: el valor cambió en `hotel_configuracion` del B, el A quedó **idéntico**, y `SELECT COUNT(*) FROM configuracion` (tabla legacy global, sin `hotel_id`) **no se movió**. En modo SaaS el form tampoco debe traer los hidden legacy (`form.querySelector('[name="hotel_nombre"]') === null`).
 5. **Como hotelero**: `/configuracion` redirige a `/dashboard` con "La configuración del hotel la administra Medisoft…", la sidebar no trae la entrada (`href$="/configuracion"` = 0) pero **sí conserva** Precios y temporadas y Roles y permisos, y el dashboard ya no enlaza `#hc-catalgos` (los avisos de estacionamiento quedan como `<span>`). Como SaaS admin, ambas cosas vuelven a aparecer.
 
+## Multi-dueño (propietarios por habitación) — verificado ✅ 2026-07-30
+
+Objetivo: el reparto de ingresos entre socios está APAGADO de fábrica (antes cada hotel heredaba a "Manolo" y "Elia") y el que ya lo tenga puede quitarlo.
+
+1. **Arranque limpio**: con `DELETE FROM hotel_configuracion WHERE clave='propietarios.distribucion' AND hotel_id=X`, abrir `/configuracion#hc-owners`. Asserts JS: `[data-owner-off].hidden === false` (banner "Este hotel no reparte ingresos entre dueños"), `[data-owner-preview].hidden === true`, `[data-owner-clear-all].hidden === true`, y las claves de las filas `[data-owner-row="propietarios"]` todas vacías (cero Manolo/Elia).
+2. **Vivo**: escribir clave+nombre+% en la primera fila y disparar `input` → el banner se oculta, aparece la vista previa con el conteo de activos y el botón "Quitar todos".
+3. **Baja por fila**: `[data-owner-remove]` quita la fila del DOM; sobre la ÚLTIMA fila de la lista NO la borra, la **vacía** (es la plantilla que clona "Agregar dueño" — si se borrara, el botón dejaría de funcionar).
+4. **Round-trip de alta**: `HTMLFormElement.prototype.submit.call(form)` (el guard de `#configForm` come `requestSubmit`) y por PDO `propietarios.distribucion` guarda SOLO el dueño escrito, con `propietario_default` derivado si se dejó vacío.
+5. **Round-trip de baja** (el assert que importa): "Quitar todos" → el `msConfirm` necesita `document.querySelector('.ms-cf-ov').classList.add('open')` antes del clic sintético (rAF congelado en el pane) → guardar → el JSON queda `{"propietarios":[],"propietario_default":""}` **sin ningún error de validación** (antes respondía "Debes configurar al menos un propietario" y era imposible eliminarlo).
+6. **Consumidores**: sin dueños, `/habitaciones` no pinta ni un `.rc-owner` ni el texto "Sin propietario", y `/habitaciones/{id}` no muestra la fila "Propietario"; con un dueño configurado ambos vuelven con nombre y % correctos. El PDF de corte (`/caja/descargar-pdf/{id}`) responde `%PDF` sin avisos en el log y sin bloques de propietario.
+
 ## Panel Medisoft → Marca del hotel (taller visual) — verificado ✅ 2026-07-28
 
 Objetivo: la pestaña Marca reemplazó al formulario plano; debe previsualizar en vivo y guardar todo, incluidos tema y fondo del sistema (que antes solo existían en `/configuracion`).

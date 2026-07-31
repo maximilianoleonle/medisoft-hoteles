@@ -55,8 +55,10 @@ $precio_base_original = (float)($habitacion['precio_base_original'] ?? $precio_b
 $incremento_total = (float)($habitacion['incremento_total'] ?? 0);
 $tiene_incremento = !empty($habitacion['tiene_incremento']);
 $activa = !empty($habitacion['activa']);
+// Vacio = hotel sin multi-dueño: no se muestra el dato ni el acceso a configurarlo.
 $propietario_nombre = trim((string)($habitacion['propietario_nombre'] ?? ''));
-$propietario_nombre = $propietario_nombre !== '' ? $propietario_nombre : 'Sin propietario';
+$tiene_multidueno = $propietario_nombre !== '';
+$config_propietarios_url = function_exists('config_hotel_url') ? config_hotel_url('#hc-owners') : null;
 $propietario_pct = is_numeric($habitacion['propietario_participacion_pct'] ?? null)
     ? (float)$habitacion['propietario_participacion_pct']
     : 100.0;
@@ -1615,10 +1617,12 @@ $mantenimientos_count = count($mantenimientos_programados);
                             <span><i class="fas fa-images"></i> Gestionar fotograf&iacute;as</span>
                             <i class="fas fa-arrow-right hdv-action-arr"></i>
                         </a>
-                        <a href="<?= url('configuracion#hc-owners') ?>" class="hdv-action">
-                            <span><i class="fas fa-user-tie"></i> Configurar propietario</span>
-                            <i class="fas fa-arrow-right hdv-action-arr"></i>
-                        </a>
+                        <?php if ($config_propietarios_url !== null): ?>
+                            <a href="<?= $config_propietarios_url ?>" class="hdv-action">
+                                <span><i class="fas fa-user-tie"></i> Configurar propietario</span>
+                                <i class="fas fa-arrow-right hdv-action-arr"></i>
+                            </a>
+                        <?php endif; ?>
 
                         <?php if ($habitacion_estado == 'disponible'): ?>
                             <a href="<?= url('reservaciones/crear?habitacion=' . $habitacion_id) ?>" class="hdv-btn hdv-btn-success hdv-btn-full" style="margin-top:4px;">
@@ -1695,15 +1699,17 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 <?php endif; ?>
                             </dd>
                         </div>
-                        <div class="hdv-data-row">
-                            <dt>Propietario</dt>
-                            <dd>
-                                <?= room_detail_safe($propietario_nombre) ?>
-                                <?php if ($propietario_pct_label !== ''): ?>
-                                    <br><small style="font-weight:500;color:var(--subtle);"><?= room_detail_safe($propietario_pct_label) ?></small>
-                                <?php endif; ?>
-                            </dd>
-                        </div>
+                        <?php if ($tiene_multidueno): ?>
+                            <div class="hdv-data-row">
+                                <dt>Propietario</dt>
+                                <dd>
+                                    <?= room_detail_safe($propietario_nombre) ?>
+                                    <?php if ($propietario_pct_label !== ''): ?>
+                                        <br><small style="font-weight:500;color:var(--subtle);"><?= room_detail_safe($propietario_pct_label) ?></small>
+                                    <?php endif; ?>
+                                </dd>
+                            </div>
+                        <?php endif; ?>
                         <div class="hdv-data-row">
                             <dt>Sistema</dt>
                             <dd style="color:<?= $activa ? 'var(--green)' : 'var(--red)' ?>;"><?= $activa ? 'Activa' : 'Inactiva' ?></dd>

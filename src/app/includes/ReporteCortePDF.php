@@ -4,7 +4,7 @@
  * Los Cedros
  * 
  * Diseño simple con letras grandes - Paleta Olivo + Café
- * Separación MANOLO vs ELIA por nombre de habitación
+ * Bloques por propietario SOLO si el hotel configuró dueños (multi-dueño)
  * 
  * Usa TCPDF (app/helpers/tcpdf/)
  */
@@ -243,107 +243,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->Ln(2);
         
-        if (!$this->renderPropietariosDinamicos($ingresosPorTipo, false)) {
-        // =============================================================
-        // SEPARACIÓN: MANOLO vs ELIA
-        // =============================================================
-        $datosManolo = $ingresosPorTipo['manolo'] ?? null;
-        $datosElia = $ingresosPorTipo['elia'] ?? null;
-        
-        // Calcular totales
-        $totalManolo = 0;
-        $totalElia = 0;
-        $cantManolo = 0;
-        $cantElia = 0;
-        $habsManolo = [];
-        $habsElia = [];
-        
-        if ($datosManolo) {
-            $totalManolo = ($datosManolo['efectivo'] ?? 0) + ($datosManolo['tarjeta'] ?? 0) + ($datosManolo['transferencia'] ?? 0);
-            $cantManolo = $datosManolo['cantidad_reservas'] ?? 0;
-            if (!empty($datosManolo['detalle'])) {
-                foreach ($datosManolo['detalle'] as $d) {
-                    $h = $d['habitacion'] ?? '';
-                    if ($h && !in_array($h, $habsManolo)) $habsManolo[] = $h;
-                }
-            }
-        }
-        
-        if ($datosElia) {
-            $totalElia = ($datosElia['efectivo'] ?? 0) + ($datosElia['tarjeta'] ?? 0) + ($datosElia['transferencia'] ?? 0);
-            $cantElia = $datosElia['cantidad_reservas'] ?? 0;
-            if (!empty($datosElia['detalle'])) {
-                foreach ($datosElia['detalle'] as $d) {
-                    $h = $d['habitacion'] ?? '';
-                    if ($h && !in_array($h, $habsElia)) $habsElia[] = $h;
-                }
-            }
-        }
-        
-        $hayManolo = $totalManolo > 0 || $cantManolo > 0;
-        $hayElia = $totalElia > 0 || $cantElia > 0;
-        
-        if ($hayManolo) {
-            $this->bloquePropiedad('HABITACIONES MANOLO', $this->cafe, $this->cafeClaro, 
-                $totalManolo, $cantManolo, $datosManolo, $habsManolo);
-        }
-        
-        if ($hayElia) {
-            $this->bloquePropiedad('HABITACIONES ELIA', $this->olivo, $this->olivoClaro, 
-                $totalElia, $cantElia, $datosElia, $habsElia);
-        }
-        }
-        
-        // =============================================================
-        // RESUMEN COMPARATIVO
-        // =============================================================
-        if ($hayManolo && $hayElia) {
-            $this->titulo('RESUMEN COMPARATIVO', [80, 80, 80]);
-            
-            $totalComb = $totalManolo + $totalElia;
-            $pctM = $totalComb > 0 ? ($totalManolo / $totalComb * 100) : 0;
-            $pctE = $totalComb > 0 ? ($totalElia / $totalComb * 100) : 0;
-            
-            $this->c_fill([70, 70, 70]);
-            $this->SetTextColor(255, 255, 255);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(70, 9, '', 0, 0, 'L', true);
-            $this->Cell(40, 9, 'MANOLO', 0, 0, 'C', true);
-            $this->Cell(40, 9, 'ELIA', 0, 0, 'C', true);
-            $this->Cell(40, 9, 'TOTAL', 0, 1, 'C', true);
-            
-            // Ingresos
-            $this->SetFillColor(255, 255, 255);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->c_text($this->oscuro);
-            $this->Cell(70, 9, '  Ingresos', 'B', 0, 'L', true);
-            $this->c_text($this->verdeOk);
-            $this->Cell(40, 9, '$' . number_format($totalManolo, 2), 'B', 0, 'C', true);
-            $this->Cell(40, 9, '$' . number_format($totalElia, 2), 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 11);
-            $this->Cell(40, 9, '$' . number_format($totalComb, 2), 'B', 1, 'C', true);
-            
-            // Reservas
-            $this->c_fill($this->crema);
-            $this->c_text($this->oscuro);
-            $this->SetFont('helvetica', '', 10);
-            $this->Cell(70, 9, '  Reservas', 'B', 0, 'L', true);
-            $this->Cell(40, 9, $cantManolo, 'B', 0, 'C', true);
-            $this->Cell(40, 9, $cantElia, 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(40, 9, $cantManolo + $cantElia, 'B', 1, 'C', true);
-            
-            // Porcentaje
-            $this->SetFillColor(255, 255, 255);
-            $this->SetFont('helvetica', '', 10);
-            $this->Cell(70, 9, '  % del Total', 'B', 0, 'L', true);
-            $this->Cell(40, 9, number_format($pctM, 1) . '%', 'B', 0, 'C', true);
-            $this->Cell(40, 9, number_format($pctE, 1) . '%', 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(40, 9, '100%', 'B', 1, 'C', true);
-            
-            $this->Ln(2);
-        }
+        $this->renderPropietariosDinamicos($ingresosPorTipo, false);
         
         // =============================================================
         // OTROS INGRESOS

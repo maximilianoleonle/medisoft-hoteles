@@ -2618,6 +2618,11 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
             return $habitaciones;
         }
 
+        // Hotel sin multi-dueño: la tarjeta no habla de propietarios.
+        if (empty($config['propietarios'])) {
+            return $habitaciones;
+        }
+
         foreach ($habitaciones as &$habitacion) {
             if (!is_array($habitacion)) {
                 continue;

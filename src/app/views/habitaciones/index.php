@@ -3730,8 +3730,8 @@ if ($tieneEstadoLimpiezaOperativa && isset($habitacion['reservacion_pendiente'])
                 $habitacionCamasTexto = hb_room_beds_label($habitacion);
                 $habitacionCamasDetalle = hb_room_beds_detail_label($habitacion);
                 $habitacionCapacidadTexto = hb_room_capacity_label($habitacion);
-                $habitacionPropietarioNombre = trim((string)($habitacion['propietario_nombre'] ?? ''));
-                $habitacionPropietarioTexto = $habitacionPropietarioNombre !== '' ? $habitacionPropietarioNombre : 'Sin propietario';
+                // Vacio = hotel sin multi-dueño: la tarjeta no menciona propietarios.
+                $habitacionPropietarioTexto = trim((string)($habitacion['propietario_nombre'] ?? ''));
                 $habitacionPropietarioPct = $habitacion['propietario_participacion_pct'] ?? 100;
                 $habitacionPropietarioPctLabel = hb_room_owner_percent_label($habitacionPropietarioPct);
 
@@ -3987,10 +3987,12 @@ if ($tiene_doble_movimiento) {
                                 <div class="rc-foot">
                                     <?php // En pasado no se pinta precio: el base es el de HOY, no lo que se cobro esa noche. ?>
                                     <span class="rc-price"><?= $hbFechaEsPasada ? '' : format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) . '<small>/noche</small>' ?></span>
-                                    <span class="rc-owner" title="Propietario: <?= htmlspecialchars($habitacionPropietarioTexto) ?>">
-                                        <i class="fas fa-user-tie" aria-hidden="true"></i>
-                                        <span><?= htmlspecialchars($habitacionPropietarioTexto) ?></span>
-                                    </span>
+                                    <?php if ($habitacionPropietarioTexto !== ''): ?>
+                                        <span class="rc-owner" title="Propietario: <?= htmlspecialchars($habitacionPropietarioTexto) ?>">
+                                            <i class="fas fa-user-tie" aria-hidden="true"></i>
+                                            <span><?= htmlspecialchars($habitacionPropietarioTexto) ?></span>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -3999,15 +4001,17 @@ if ($tiene_doble_movimiento) {
                         <div class="flip-card-back <?= $backColorClass ?>"<?= $backStyle ? ' style="' . $backStyle . '"' : '' ?>>
                             <h4 class="room-card-action-title">Hab. <?= htmlspecialchars($habitacion['numero']) ?></h4>
                             <div class="room-card-scroll-info">
-                                <div class="info-item">
-                                    <i class="fas fa-user-tie"></i>
-                                    <span>
-                                        Propietario: <?= htmlspecialchars($habitacionPropietarioTexto) ?>
-                                        <?php if ($habitacionPropietarioPctLabel !== ''): ?>
-                                            - <?= htmlspecialchars($habitacionPropietarioPctLabel) ?>
-                                        <?php endif; ?>
-                                    </span>
-                                </div>
+                                <?php if ($habitacionPropietarioTexto !== ''): ?>
+                                    <div class="info-item">
+                                        <i class="fas fa-user-tie"></i>
+                                        <span>
+                                            Propietario: <?= htmlspecialchars($habitacionPropietarioTexto) ?>
+                                            <?php if ($habitacionPropietarioPctLabel !== ''): ?>
+                                                - <?= htmlspecialchars($habitacionPropietarioPctLabel) ?>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="info-item">
                                     <i class="fas fa-users"></i>
                                     <span>Capacidad: <?= htmlspecialchars($habitacionCapacidadTexto) ?></span>

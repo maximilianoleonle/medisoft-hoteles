@@ -256,6 +256,8 @@ foreach ($configOwnerRows as $ownerRow) {
         $configOwnerActiveRows[] = $ownerRow;
     }
 }
+// Sin dueños activos el multi-dueño esta APAGADO: el hotel no reparte con nadie.
+$configOwnerActivo = !empty($configOwnerActiveRows);
 $configOwnerDefaultRow = is_array($configOwnerRowsByKey[$configOwnerDefault] ?? null)
     ? $configOwnerRowsByKey[$configOwnerDefault]
     : [];
@@ -1528,15 +1530,15 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
 }
 
 .hc-catalog-row.is-owner {
-    grid-template-columns: minmax(120px, .78fr) minmax(180px, 1.25fr) minmax(110px, .54fr) minmax(118px, 148px);
+    grid-template-columns: minmax(120px, .78fr) minmax(180px, 1.25fr) minmax(110px, .54fr) minmax(118px, 148px) minmax(96px, 118px);
 }
 
 .hc-catalog-row.is-owner-rule {
-    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(96px, 118px);
 }
 
 .hc-catalog-row.is-owner-room {
-    grid-template-columns: minmax(104px, .62fr) minmax(120px, .78fr) minmax(160px, 1fr) minmax(180px, .95fr);
+    grid-template-columns: minmax(104px, .62fr) minmax(120px, .78fr) minmax(160px, 1fr) minmax(180px, .95fr) minmax(96px, 118px);
 }
 
 .hc-catalog-cell {
@@ -1573,6 +1575,86 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     display: grid;
     gap: 14px;
     margin-bottom: 20px;
+}
+
+/* Multi-dueño apagado: el estado normal de un hotel que no reparte con socios. */
+.hc-owner-off {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border: 1px dashed color-mix(in srgb, var(--hc-section-accent) 34%, var(--hc-line));
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--hc-section-accent) 5%, var(--hc-paper, #FFFFFD));
+}
+
+.hc-owner-off i {
+    margin-top: 2px;
+    color: var(--hc-ink-faint);
+    font-size: 1.05rem;
+}
+
+.hc-owner-off strong {
+    display: block;
+    color: var(--hc-ink);
+    font-size: .95rem;
+    font-weight: 820;
+}
+
+.hc-owner-off span {
+    display: block;
+    margin-top: 3px;
+    color: var(--hc-ink-faint);
+    font-size: .84rem;
+    line-height: 1.5;
+}
+
+.hc-owner-preview[hidden],
+.hc-owner-off[hidden],
+.hc-add-btn[hidden] {
+    display: none !important;
+}
+
+/* Quitar fila: la baja del dueño se confirma al guardar, como el resto del form. */
+.hc-row-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--hc-danger) 26%, var(--hc-line));
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--hc-danger) 5%, var(--hc-paper, #FFFFFD));
+    color: var(--hc-danger);
+    font-size: .82rem;
+    font-weight: 820;
+    cursor: pointer;
+    transition: background .18s ease-out, border-color .18s ease-out, transform .18s ease-out;
+}
+
+.hc-row-remove:hover {
+    background: color-mix(in srgb, var(--hc-danger) 12%, var(--hc-paper, #FFFFFD));
+    border-color: color-mix(in srgb, var(--hc-danger) 42%, var(--hc-line));
+    transform: translateY(-1px);
+}
+
+.hc-row-remove:focus-visible {
+    outline: 3px solid var(--hc-focus);
+    outline-offset: 2px;
+}
+
+.hc-clear-btn {
+    border-color: color-mix(in srgb, var(--hc-danger) 26%, var(--hc-line));
+    color: var(--hc-danger);
+}
+
+.hc-clear-btn:hover {
+    color: var(--hc-danger);
+    background: color-mix(in srgb, var(--hc-danger) 9%, var(--hc-paper, #FFFFFD));
+    border-color: color-mix(in srgb, var(--hc-danger) 42%, var(--hc-line));
 }
 
 .hc-owner-summary-grid {
@@ -3270,15 +3352,15 @@ html {
 }
 
 .hc-catalog-row.is-owner {
-    grid-template-columns: minmax(150px, .78fr) minmax(220px, 1.22fr) minmax(118px, .54fr) minmax(118px, 148px);
+    grid-template-columns: minmax(150px, .78fr) minmax(220px, 1.22fr) minmax(118px, .54fr) minmax(118px, 148px) minmax(104px, 126px);
 }
 
 .hc-catalog-row.is-owner-rule {
-    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(104px, 126px);
 }
 
 .hc-catalog-row.is-owner-room {
-    grid-template-columns: minmax(118px, .62fr) minmax(150px, .78fr) minmax(190px, 1fr) minmax(190px, .95fr);
+    grid-template-columns: minmax(118px, .62fr) minmax(150px, .78fr) minmax(190px, 1fr) minmax(190px, .95fr) minmax(104px, 126px);
 }
 
 .hc-catalog-row .hc-catalog-cell:last-child .hc-switch {
@@ -6051,7 +6133,8 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                     Propietarios por habitacion
                                 </h2>
                                 <p class="hc-panel-copy">
-                                    Define dueños, reglas por tipo de habitacion y excepciones por habitacion para reportes y cortes.
+                                    Opcional: solo para hoteles que reparten el ingreso entre varios dueños. Si lo dejas vacio,
+                                    cortes y reportes hablan del hotel completo, sin separar por socio.
                                 </p>
                             </div>
                         </div>
@@ -6070,7 +6153,18 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                             <?php endforeach; ?>
                         </datalist>
 
-                        <div class="hc-owner-preview" data-owner-preview>
+                        <div class="hc-owner-off" data-owner-off<?= $configOwnerActivo ? ' hidden' : '' ?>>
+                            <i class="fas fa-circle-info" aria-hidden="true"></i>
+                            <div>
+                                <strong>Este hotel no reparte ingresos entre dueños</strong>
+                                <span>
+                                    Es lo normal. Cortes, reportes y la ficha de cada habitacion hablan del hotel completo.
+                                    Da de alta un dueño abajo solo si el ingreso se divide entre socios.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="hc-owner-preview" data-owner-preview<?= $configOwnerActivo ? '' : ' hidden' ?>>
                             <div class="hc-owner-summary-grid" aria-label="Vista previa de propietarios">
                                 <article class="hc-owner-summary-card">
                                     <span><i class="fas fa-users"></i> Dueños activos</span>
@@ -6157,12 +6251,18 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                             <i class="fas fa-users-gear"></i>
                                             Dueños configurados
                                         </h3>
-                                        <p class="hc-field-hint">La clave se usa en reglas y reportes. Ejemplo: elia, manolo, socio_1.</p>
+                                        <p class="hc-field-hint">La clave se usa en reglas y reportes. Ejemplo: socio_1, familia_ruiz.</p>
                                     </div>
-                                    <button type="button" class="hc-add-btn" data-owner-add="propietarios">
-                                        <i class="fas fa-plus"></i>
-                                        Agregar dueño
-                                    </button>
+                                    <div class="hc-catalog-actions">
+                                        <button type="button" class="hc-add-btn hc-clear-btn" data-owner-clear-all<?= $configOwnerActivo ? '' : ' hidden' ?>>
+                                            <i class="fas fa-user-slash"></i>
+                                            Quitar todos
+                                        </button>
+                                        <button type="button" class="hc-add-btn" data-owner-add="propietarios">
+                                            <i class="fas fa-plus"></i>
+                                            Agregar dueño
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="hc-field-grid">
@@ -6174,8 +6274,8 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                list="owner-key-options"
                                                maxlength="40"
                                                class="form-input"
-                                               placeholder="elia">
-                                        <p class="hc-field-hint">Se usa cuando ninguna regla o asignacion coincide.</p>
+                                               placeholder="socio_1">
+                                        <p class="hc-field-hint">Se usa cuando ninguna regla o asignacion coincide. Si lo dejas vacio se toma el primer dueño activo.</p>
                                     </div>
                                 </div>
 
@@ -6197,7 +6297,7 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        value="<?= htmlspecialchars($ownerKey, ENT_QUOTES, 'UTF-8') ?>"
                                                        maxlength="40"
                                                        class="form-input"
-                                                       placeholder="elia">
+                                                       placeholder="socio_1">
                                             </div>
                                             <div class="hc-catalog-cell">
                                                 <label>Nombre visible</label>
@@ -6206,7 +6306,7 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        value="<?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?>"
                                                        maxlength="80"
                                                        class="form-input"
-                                                       placeholder="Elia">
+                                                       placeholder="Nombre del socio">
                                             </div>
                                             <div class="hc-catalog-cell">
                                                 <label>Participacion %</label>
@@ -6230,6 +6330,12 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                     <span class="hc-switch-ui" aria-hidden="true"></span>
                                                     <span class="hc-switch-text"><strong>Si</strong></span>
                                                 </label>
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <button type="button" class="hc-row-remove" data-owner-remove title="Quitar este dueño">
+                                                    <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                                    <span>Quitar</span>
+                                                </button>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -6266,7 +6372,7 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        value="<?= htmlspecialchars($ruleText, ENT_QUOTES, 'UTF-8') ?>"
                                                        maxlength="60"
                                                        class="form-input"
-                                                       placeholder="manolo">
+                                                       placeholder="suite">
                                             </div>
                                             <div class="hc-catalog-cell">
                                                 <label>Propietario</label>
@@ -6276,7 +6382,13 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        list="owner-key-options"
                                                        maxlength="40"
                                                        class="form-input"
-                                                       placeholder="manolo">
+                                                       placeholder="socio_1">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <button type="button" class="hc-row-remove" data-owner-remove title="Quitar esta regla">
+                                                    <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                                    <span>Quitar</span>
+                                                </button>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -6324,7 +6436,7 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        value="<?= htmlspecialchars($assignmentType, ENT_QUOTES, 'UTF-8') ?>"
                                                        maxlength="80"
                                                        class="form-input"
-                                                       placeholder="habitacion manolo">
+                                                       placeholder="suite">
                                             </div>
                                             <div class="hc-catalog-cell">
                                                 <label>ID opcional</label>
@@ -6342,7 +6454,13 @@ html[data-theme="dark"] .hc-saas-bar .hc-saas-back {
                                                        list="owner-key-options"
                                                        maxlength="40"
                                                        class="form-input"
-                                                       placeholder="elia">
+                                                       placeholder="socio_1">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <button type="button" class="hc-row-remove" data-owner-remove title="Quitar esta asignacion">
+                                                    <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                                    <span>Quitar</span>
+                                                </button>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -7889,6 +8007,95 @@ document.querySelectorAll('[data-owner-add]').forEach(button => {
     });
 });
 
+// Baja de dueños/reglas/asignaciones. La ULTIMA fila de cada lista no se borra:
+// se vacia, porque [data-owner-add] la clona como plantilla. Una fila vacia no
+// viaja al servidor, asi que da igual para el guardado.
+const vaciarFilaPropietario = row => {
+    row.querySelectorAll('input, textarea, select').forEach(input => {
+        if (input.type === 'checkbox') {
+            input.checked = true;
+            return;
+        }
+
+        if (input.type === 'hidden') {
+            input.value = '0';
+            return;
+        }
+
+        input.value = '';
+    });
+};
+
+document.addEventListener('click', event => {
+    const button = event.target?.closest?.('[data-owner-remove]');
+
+    if (!button) {
+        return;
+    }
+
+    const row = button.closest('[data-owner-row]');
+    const list = row?.closest('[data-owner-list]');
+
+    if (!row || !list) {
+        return;
+    }
+
+    if (list.querySelectorAll('[data-owner-row]').length > 1) {
+        row.remove();
+    } else {
+        vaciarFilaPropietario(row);
+    }
+
+    document.dispatchEvent(new CustomEvent('owner-config-changed'));
+});
+
+document.querySelectorAll('[data-owner-clear-all]').forEach(button => {
+    button.addEventListener('click', () => {
+        const panel = document.querySelector('#hc-owners');
+
+        if (!panel) {
+            return;
+        }
+
+        const quitarTodo = () => {
+            panel.querySelectorAll('[data-owner-list]').forEach(list => {
+                Array.from(list.querySelectorAll('[data-owner-row]')).forEach((row, index) => {
+                    if (index === 0) {
+                        vaciarFilaPropietario(row);
+                    } else {
+                        row.remove();
+                    }
+                });
+            });
+
+            const defaultInput = panel.querySelector('input[name="owner_config[propietario_default]"]');
+            if (defaultInput) {
+                defaultInput.value = '';
+            }
+
+            document.dispatchEvent(new CustomEvent('owner-config-changed'));
+        };
+
+        if (typeof window.msConfirm === 'function') {
+            window.msConfirm({
+                type: 'warning',
+                icon: 'trash',
+                title: '¿Quitar todos los dueños?',
+                msg: 'El hotel dejara de repartir el ingreso entre socios. Se aplica al guardar.',
+                confirmLabel: 'Si, quitar',
+                cancelLabel: 'Cancelar'
+            }).then(ok => {
+                if (ok) {
+                    quitarTodo();
+                }
+            });
+            return;
+        }
+
+        quitarTodo();
+    });
+});
+
 (() => {
     const ownerPanel = document.querySelector('#hc-owners');
     const preview = ownerPanel?.querySelector('[data-owner-preview]');
@@ -7904,6 +8111,8 @@ document.querySelectorAll('[data-owner-add]').forEach(button => {
     const assignmentCountNode = preview.querySelector('[data-owner-preview-assignment-count]');
     const listNode = preview.querySelector('[data-owner-preview-list]');
     const defaultInput = ownerPanel.querySelector('input[name="owner_config[propietario_default]"]');
+    const offNode = ownerPanel.querySelector('[data-owner-off]');
+    const clearAllNode = ownerPanel.querySelector('[data-owner-clear-all]');
 
     const normalizeKey = function(value) {
         return String(value || '')
@@ -7993,6 +8202,16 @@ document.querySelectorAll('[data-owner-add]').forEach(button => {
             || owners.find(owner => owner.key === defaultKey)
             || activeOwners[0]
             || { key: defaultKey, name: defaultKey || 'Sin definir', percentage: '100', active: true };
+
+        // Sin dueños activos el multi-dueño esta apagado: se anuncia, no se previsualiza.
+        const multiDuenoActivo = activeOwners.length > 0;
+        if (offNode) {
+            offNode.hidden = multiDuenoActivo;
+        }
+        preview.hidden = !multiDuenoActivo;
+        if (clearAllNode) {
+            clearAllNode.hidden = owners.length === 0;
+        }
 
         if (activeCountNode) {
             activeCountNode.textContent = String(activeOwners.length);

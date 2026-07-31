@@ -2499,28 +2499,17 @@ if (!function_exists('hotel_config_get')) {
 }
 
 if (!function_exists('hotel_owner_distribution_default')) {
+    /**
+     * Estado de fabrica: SIN multi-dueño. Un hotel reparte ingresos entre socios
+     * solo si alguien da de alta los dueños a mano; nadie hereda los de otro hotel.
+     */
     function hotel_owner_distribution_default()
     {
         return [
             'version' => 1,
-            'propietario_default' => 'elia',
-            'propietarios' => [
-                'manolo' => [
-                    'key' => 'manolo',
-                    'nombre' => 'Manolo',
-                    'activo' => true,
-                    'participacion_pct' => 100.0,
-                ],
-                'elia' => [
-                    'key' => 'elia',
-                    'nombre' => 'Elia',
-                    'activo' => true,
-                    'participacion_pct' => 100.0,
-                ],
-            ],
-            'reglas_tipo_contiene' => [
-                'manolo' => 'manolo',
-            ],
+            'propietario_default' => '',
+            'propietarios' => [],
+            'reglas_tipo_contiene' => [],
             'habitaciones' => [],
         ];
     }
@@ -2570,9 +2559,7 @@ if (!function_exists('hotel_owner_distribution_normalize')) {
             $config = [];
         }
 
-        $rawOwners = is_array($config['propietarios'] ?? null) && !empty($config['propietarios'])
-            ? $config['propietarios']
-            : $base['propietarios'];
+        $rawOwners = is_array($config['propietarios'] ?? null) ? $config['propietarios'] : [];
 
         $propietarios = [];
         foreach ($rawOwners as $key => $row) {
@@ -2597,24 +2584,14 @@ if (!function_exists('hotel_owner_distribution_normalize')) {
             ];
         }
 
-        if (empty($propietarios)) {
-            $propietarios = $base['propietarios'];
-        }
-
+        // Lista vacia = multi-dueño apagado. JAMAS se rellena con una semilla.
         $activeOwnerKeys = array_keys(array_filter($propietarios, static function (array $row) {
             return !empty($row['activo']);
         }));
 
-        if (empty($activeOwnerKeys)) {
-            $propietarios = $base['propietarios'];
-            $activeOwnerKeys = array_keys($propietarios);
-        }
-
-        $defaultKey = hotel_owner_distribution_key($config['propietario_default'] ?? $base['propietario_default']);
-        if (!isset($propietarios[$defaultKey]) || empty($propietarios[$defaultKey]['activo'])) {
-            $defaultKey = isset($propietarios[$base['propietario_default']]) && !empty($propietarios[$base['propietario_default']]['activo'])
-                ? $base['propietario_default']
-                : (string) $activeOwnerKeys[0];
+        $defaultKey = hotel_owner_distribution_key($config['propietario_default'] ?? '');
+        if ($defaultKey === '' || !isset($propietarios[$defaultKey]) || empty($propietarios[$defaultKey]['activo'])) {
+            $defaultKey = !empty($activeOwnerKeys) ? (string) $activeOwnerKeys[0] : '';
         }
 
         $reglas = [];
@@ -2685,6 +2662,24 @@ if (!function_exists('hotel_owner_distribution_config')) {
     }
 }
 
+if (!function_exists('hotel_owner_distribution_enabled')) {
+    /**
+     * ¿El hotel reparte ingresos entre dueños? Solo si dio de alta al menos uno activo.
+     */
+    function hotel_owner_distribution_enabled($hotelId = null)
+    {
+        $config = hotel_owner_distribution_config($hotelId);
+
+        foreach (($config['propietarios'] ?? []) as $propietario) {
+            if (!empty($propietario['activo'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('hotel_owner_distribution_normalize_payload')) {
     function hotel_owner_distribution_normalize_payload(array $payload)
     {
@@ -2750,28 +2745,27 @@ if (!function_exists('hotel_owner_distribution_normalize_payload')) {
             ];
         }
 
-        if (empty($propietarios)) {
-            $errors[] = 'Debes configurar al menos un propietario.';
-        }
-
+        // Cero dueños es una respuesta valida: el hotel no reparte con nadie.
         $activeOwners = array_filter($propietarios, static function (array $row) {
             return !empty($row['activo']);
         });
         $activeOwnerKeys = array_keys($activeOwners);
-
-        if (!empty($propietarios) && empty($activeOwners)) {
-            $errors[] = 'Debes dejar activo al menos un propietario.';
-        }
+        $multiDuenoActivo = !empty($activeOwners);
 
         $defaultKey = hotel_owner_distribution_key($payload['propietario_default'] ?? '');
-        if ($defaultKey === '') {
-            $errors[] = 'Selecciona un propietario predeterminado.';
+        if (!$multiDuenoActivo) {
+            // Sin dueños no hay predeterminado que elegir ni reglas a las que apuntar.
+            $defaultKey = '';
+        } elseif ($defaultKey === '') {
+            $defaultKey = (string) $activeOwnerKeys[0];
         } elseif (!isset($activeOwners[$defaultKey])) {
             $errors[] = 'El propietario predeterminado debe existir y estar activo.';
         }
 
         $reglas = [];
-        $ruleRows = is_array($payload['reglas_tipo_contiene'] ?? null) ? $payload['reglas_tipo_contiene'] : [];
+        $ruleRows = $multiDuenoActivo && is_array($payload['reglas_tipo_contiene'] ?? null)
+            ? $payload['reglas_tipo_contiene']
+            : [];
         foreach ($ruleRows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -2804,7 +2798,9 @@ if (!function_exists('hotel_owner_distribution_normalize_payload')) {
         }
 
         $habitaciones = [];
-        $assignmentRows = is_array($payload['habitaciones'] ?? null) ? $payload['habitaciones'] : [];
+        $assignmentRows = $multiDuenoActivo && is_array($payload['habitaciones'] ?? null)
+            ? $payload['habitaciones']
+            : [];
         foreach ($assignmentRows as $row) {
             if (!is_array($row)) {
                 continue;

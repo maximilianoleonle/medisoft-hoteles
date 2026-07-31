@@ -434,7 +434,7 @@ class ReportePDF extends TCPDF {
     }
     
     /**
-     * Generar sección de Ingresos por Propiedad (MANOLO vs ELIA)
+     * Generar sección de Ingresos por Propiedad (solo si el hotel configuró dueños)
      */
     public function generarSeccionPropiedades($datos, array $configPropietarios = null) {
         $this->AddPage();

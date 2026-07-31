@@ -3,7 +3,7 @@
  * Generador de PDF para Corte de Caja
  * 
  * Diseño simple con letras grandes - Paleta Olivo + Café
- * Separación MANOLO vs ELIA por nombre de habitación
+ * Bloques por propietario SOLO si el hotel configuró dueños (multi-dueño)
  * 
  * Usa TCPDF (app/helpers/tcpdf/)
  */
@@ -303,123 +303,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->Ln(2);
         
-        if (!$this->renderPropietariosDinamicos($ingresosPorTipo, true)) {
-        // =============================================================
-        // SEPARACIÓN: MANOLO vs ELIA
-        // =============================================================
-        $datosElia = $ingresosPorTipo['elia'] ?? null;
-        $datosManolo = $ingresosPorTipo['manolo'] ?? null;
-        
-        // Calcular totales y CONTAR HABITACIONES (no reservas)
-        $totalManolo = 0;
-        $totalElia = 0;
-        $habsManolo = [];
-        $habsElia = [];
-        
-        if ($datosManolo) {
-            $totalManolo = ($datosManolo['efectivo'] ?? 0) + ($datosManolo['tarjeta'] ?? 0) + ($datosManolo['transferencia'] ?? 0);
-            if (!empty($datosManolo['detalle'])) {
-                foreach ($datosManolo['detalle'] as $d) {
-                    $h = $d['habitacion'] ?? '';
-                    if ($h) {
-                        // Separar por coma si hay múltiples habitaciones
-                        $habsArr = array_map('trim', explode(',', $h));
-                        foreach ($habsArr as $hab) {
-                            if ($hab && !in_array($hab, $habsManolo)) {
-                                $habsManolo[] = $hab;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        if ($datosElia) {
-            $totalElia = ($datosElia['efectivo'] ?? 0) + ($datosElia['tarjeta'] ?? 0) + ($datosElia['transferencia'] ?? 0);
-            if (!empty($datosElia['detalle'])) {
-                foreach ($datosElia['detalle'] as $d) {
-                    $h = $d['habitacion'] ?? '';
-                    if ($h) {
-                        // Separar por coma si hay múltiples habitaciones
-                        $habsArr = array_map('trim', explode(',', $h));
-                        foreach ($habsArr as $hab) {
-                            if ($hab && !in_array($hab, $habsElia)) {
-                                $habsElia[] = $hab;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Contar habitaciones únicas
-        $cantHabsManolo = count($habsManolo);
-        $cantHabsElia = count($habsElia);
-        
-        $hayManolo = $totalManolo > 0 || $cantHabsManolo > 0;
-        $hayElia = $totalElia > 0 || $cantHabsElia > 0;
-        
-        if ($hayManolo) {
-            $this->bloquePropiedad('HABITACIONES MANOLO', $this->cafe, $this->cafeClaro, 
-                $totalManolo, $cantHabsManolo, $datosManolo, $habsManolo);
-        }
-        
-        if ($hayElia) {
-            $this->bloquePropiedad('HABITACIONES ELIA', $this->olivo, $this->olivoClaro, 
-                $totalElia, $cantHabsElia, $datosElia, $habsElia);
-        }
-        }
-        
-        // =============================================================
-        // RESUMEN COMPARATIVO
-        // =============================================================
-        if ($hayManolo && $hayElia) {
-            $this->titulo('RESUMEN COMPARATIVO', [80, 80, 80]);
-            
-            $totalComb = $totalManolo + $totalElia;
-            $pctM = $totalComb > 0 ? ($totalManolo / $totalComb * 100) : 0;
-            $pctE = $totalComb > 0 ? ($totalElia / $totalComb * 100) : 0;
-            
-            $this->c_fill([70, 70, 70]);
-            $this->SetTextColor(255, 255, 255);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(70, 9, '', 0, 0, 'L', true);
-            $this->Cell(40, 9, 'MANOLO', 0, 0, 'C', true);
-            $this->Cell(40, 9, 'ELIA', 0, 0, 'C', true);
-            $this->Cell(40, 9, 'TOTAL', 0, 1, 'C', true);
-            
-            // Ingresos
-            $this->SetFillColor(255, 255, 255);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->c_text($this->oscuro);
-            $this->Cell(70, 9, '  Ingresos', 'B', 0, 'L', true);
-            $this->c_text($this->verdeOk);
-            $this->Cell(40, 9, '$' . number_format($totalManolo, 2), 'B', 0, 'C', true);
-            $this->Cell(40, 9, '$' . number_format($totalElia, 2), 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 11);
-            $this->Cell(40, 9, '$' . number_format($totalComb, 2), 'B', 1, 'C', true);
-            
-            // Habitaciones ocupadas
-            $this->c_fill($this->crema);
-            $this->c_text($this->oscuro);
-            $this->SetFont('helvetica', '', 10);
-            $this->Cell(70, 9, '  Habitaciones', 'B', 0, 'L', true);
-            $this->Cell(40, 9, $cantHabsManolo, 'B', 0, 'C', true);
-            $this->Cell(40, 9, $cantHabsElia, 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(40, 9, $cantHabsManolo + $cantHabsElia, 'B', 1, 'C', true);
-            
-            // Porcentaje
-            $this->SetFillColor(255, 255, 255);
-            $this->SetFont('helvetica', '', 10);
-            $this->Cell(70, 9, '  % del Total', 'B', 0, 'L', true);
-            $this->Cell(40, 9, number_format($pctM, 1) . '%', 'B', 0, 'C', true);
-            $this->Cell(40, 9, number_format($pctE, 1) . '%', 'B', 0, 'C', true);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(40, 9, '100%', 'B', 1, 'C', true);
-            
-            $this->Ln(2);
-        }
+        $this->renderPropietariosDinamicos($ingresosPorTipo, true);
         
         // =============================================================
         // OTROS INGRESOS

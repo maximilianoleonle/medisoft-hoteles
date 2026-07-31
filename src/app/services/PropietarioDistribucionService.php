@@ -4,63 +4,54 @@
  * Servicio base para centralizar la distribucion de ingresos por propietario.
  *
  * Fase 2C: centraliza Caja y Reportes con configuracion por hotel.
- * Si no existe configuracion guardada, conserva la regla legacy Manolo/Elia.
+ * Sin configuracion guardada NO hay multi-dueño: el reparto queda apagado
+ * y cada pantalla habla del hotel, no de socios que nadie dio de alta.
  */
 class PropietarioDistribucionService
 {
     public const CONFIG_KEY = 'propietarios.distribucion';
 
-    private const DEFAULT_OWNER_KEY = 'elia';
-    private const LEGACY_MANOLO_KEY = 'manolo';
-
-    public function configuracionLegacy(): array
+    public function configuracionVacia(): array
     {
         return [
             'version' => 1,
-            'propietario_default' => self::DEFAULT_OWNER_KEY,
-            'propietarios' => [
-                self::LEGACY_MANOLO_KEY => [
-                    'key' => self::LEGACY_MANOLO_KEY,
-                    'nombre' => 'Manolo',
-                    'activo' => true,
-                    'participacion_pct' => 100.0,
-                ],
-                self::DEFAULT_OWNER_KEY => [
-                    'key' => self::DEFAULT_OWNER_KEY,
-                    'nombre' => 'Elia',
-                    'activo' => true,
-                    'participacion_pct' => 100.0,
-                ],
-            ],
-            'reglas_tipo_contiene' => [
-                'manolo' => self::LEGACY_MANOLO_KEY,
-            ],
+            'propietario_default' => '',
+            'propietarios' => [],
+            'reglas_tipo_contiene' => [],
             'habitaciones' => [],
         ];
     }
 
     public function configuracionParaHotel($hotelId = null): array
     {
-        $legacy = $this->configuracionLegacy();
+        $vacia = $this->configuracionVacia();
 
         if (!function_exists('hotel_config_get')) {
-            return $this->normalizarConfiguracion($legacy);
+            return $this->normalizarConfiguracion($vacia);
         }
 
         try {
-            $config = hotel_config_get(self::CONFIG_KEY, $legacy, $hotelId);
+            $config = hotel_config_get(self::CONFIG_KEY, $vacia, $hotelId);
         } catch (Throwable $e) {
             error_log('No se pudo cargar la configuracion de propietarios: ' . $e->getMessage());
-            $config = $legacy;
+            $config = $vacia;
         }
 
         return $this->normalizarConfiguracion($config);
     }
 
+    /**
+     * ¿Hay reparto que hacer? Cero dueños activos = el hotel se queda todo.
+     */
+    public function hayPropietarios($config = null): bool
+    {
+        $config = $this->normalizarConfiguracion($config);
+
+        return !empty($config['propietarios']);
+    }
+
     public function normalizarConfiguracion($config = null): array
     {
-        $base = $this->configuracionLegacy();
-
         if (is_string($config) && trim($config) !== '') {
             $decoded = json_decode($config, true);
             $config = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
@@ -70,16 +61,11 @@ class PropietarioDistribucionService
             $config = [];
         }
 
-        $propietarios = $this->normalizarPropietarios(
-            $config['propietarios'] ?? $base['propietarios'],
-            $base['propietarios']
-        );
+        $propietarios = $this->normalizarPropietarios($config['propietarios'] ?? []);
 
-        $defaultKey = $this->normalizarKey($config['propietario_default'] ?? $base['propietario_default']);
-        if (!isset($propietarios[$defaultKey])) {
-            $defaultKey = isset($propietarios[$base['propietario_default']])
-                ? $base['propietario_default']
-                : (string) array_key_first($propietarios);
+        $defaultKey = $this->normalizarKey($config['propietario_default'] ?? '');
+        if ($defaultKey === '' || !isset($propietarios[$defaultKey])) {
+            $defaultKey = !empty($propietarios) ? (string) array_key_first($propietarios) : '';
         }
 
         return [
@@ -87,7 +73,7 @@ class PropietarioDistribucionService
             'propietario_default' => $defaultKey,
             'propietarios' => $propietarios,
             'reglas_tipo_contiene' => $this->normalizarReglasTipo(
-                $config['reglas_tipo_contiene'] ?? $base['reglas_tipo_contiene'],
+                $config['reglas_tipo_contiene'] ?? [],
                 $propietarios
             ),
             'habitaciones' => $this->normalizarAsignaciones(
@@ -149,6 +135,10 @@ class PropietarioDistribucionService
     {
         $config = $this->normalizarConfiguracion($config);
 
+        if (empty($config['propietarios'])) {
+            return '';
+        }
+
         $asignado = $this->propietarioPorAsignacionHabitacion($habitacion, $config);
         if ($asignado !== null) {
             return $asignado;
@@ -178,6 +168,11 @@ class PropietarioDistribucionService
     public function distribuirPorPrecio(float $monto, array $habitaciones, $config = null): array
     {
         $config = $this->normalizarConfiguracion($config);
+
+        if (empty($config['propietarios'])) {
+            return [];
+        }
+
         $resultado = $this->crearPartesVacias($config);
 
         foreach ($habitaciones as $habitacion) {
@@ -258,6 +253,11 @@ class PropietarioDistribucionService
         $config = null
     ): array {
         $config = $this->normalizarConfiguracion($config);
+
+        if (empty($config['propietarios'])) {
+            return $resultado;
+        }
+
         $partes = $this->distribuirPorPrecio((float) ($movimiento['monto'] ?? 0), $habitaciones, $config);
         $metodo = (string) ($movimiento['metodo_pago'] ?? '');
         $resId = (string) ($movimiento['reservacion_id'] ?? '');
@@ -319,6 +319,11 @@ class PropietarioDistribucionService
         $config = null
     ): array {
         $config = $this->normalizarConfiguracion($config);
+
+        if (empty($config['propietarios'])) {
+            return $resultado;
+        }
+
         $partes = $this->distribuirPorPrecio((float) ($movimiento['monto'] ?? 0), $habitaciones, $config);
         $metodo = (string) ($movimiento['metodo_pago'] ?? '');
         $resId = (string) ($movimiento['reservacion_id'] ?? '');
@@ -470,10 +475,10 @@ class PropietarioDistribucionService
         return null;
     }
 
-    private function normalizarPropietarios($rawPropietarios, array $fallback): array
+    private function normalizarPropietarios($rawPropietarios): array
     {
-        if (!is_array($rawPropietarios) || empty($rawPropietarios)) {
-            $rawPropietarios = $fallback;
+        if (!is_array($rawPropietarios)) {
+            return [];
         }
 
         $propietarios = [];
@@ -499,15 +504,10 @@ class PropietarioDistribucionService
             ];
         }
 
-        if (empty($propietarios)) {
-            return $fallback;
-        }
-
-        $activos = array_filter($propietarios, static function (array $propietario): bool {
+        // Solo los activos reparten; ninguno activo = multi-dueño apagado.
+        return array_filter($propietarios, static function (array $propietario): bool {
             return !empty($propietario['activo']);
         });
-
-        return !empty($activos) ? $activos : $fallback;
     }
 
     private function normalizarReglasTipo($rawReglas, array $propietarios): array
