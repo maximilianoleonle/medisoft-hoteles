@@ -54,6 +54,19 @@ $email = trim((string)($huesped['email'] ?? ''));
 $contacto_label = $telefono !== '' || $email !== '' ? 'Contacto disponible' : 'Contacto incompleto';
 $ultima_visita_label = $ultima_visita ? format_date($ultima_visita) : 'Sin visitas completadas';
 $es_cliente_frecuente = $total_reservaciones >= 3;
+// Lo arma HuespedController::derivarResumenActividad; el respaldo es por si la
+// vista se pinta sin él (así la tarjeta nunca queda con llaves faltantes).
+$resumenActividad = is_array($resumenActividad ?? null) ? $resumenActividad : [];
+$resumenActividad += [
+    'completadas' => $total_reservaciones,
+    'etiqueta_numero' => $total_reservaciones === 1 ? 'Estancia completada' : 'Estancias completadas',
+    'frase' => $es_cliente_frecuente ? 'Huésped frecuente con historial activo.' : 'Historial en crecimiento.',
+    'mostrar_promedio' => $total_reservaciones > 0,
+    'mostrar_por_venir' => false,
+    'reservas_por_venir' => 0,
+    'monto_por_venir' => 0.0,
+    'nota_gastado' => '',
+];
 $estacionamientos = [];
 if (function_exists('hotel_general_catalog_parking_rows')) {
     foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
@@ -1452,11 +1465,38 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     color: #FFFFFF;
 }
 
+/* El número gigante iba SIN etiqueta: un "0" solo se leía como "este huésped
+   no vale nada" en vez de "todavía no completa estancias". */
+.guest-score-caption {
+    display: block;
+    margin: 15px 0 3px;
+    color: rgba(255,255,255,.66);
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
 .guest-score-number {
     margin: 15px 0 5px;
     font-size: clamp(2.1rem, 4vw, 3.2rem);
     font-weight: 950;
     line-height: 1;
+}
+
+.guest-score-caption + .guest-score-number {
+    margin-top: 0;
+}
+
+.guest-score-note {
+    display: block;
+    margin-top: 2px;
+    color: rgba(255,255,255,.5);
+    font-size: .72rem;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .guest-score-card p {
@@ -2031,7 +2071,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 
         <section class="guest-metrics-strip" aria-label="Resumen del huésped">
             <article class="guest-metric" style="--metric-color: var(--gd-primary);">
-                <span>Visitas válidas</span>
+                <span>Estancias completadas</span>
                 <strong><?= number_format($total_reservaciones) ?></strong>
             </article>
             <article class="guest-metric" style="--metric-color: var(--gd-accent);">
@@ -2493,17 +2533,37 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
             <aside class="guest-side-stack">
                 <section class="guest-side-card guest-score-card">
                     <h2>Perfil de actividad</h2>
+                    <span class="guest-score-caption"><?= guest_detail_safe($resumenActividad['etiqueta_numero']) ?></span>
                     <div class="guest-score-number"><?= number_format($total_reservaciones) ?></div>
-                    <p><?= $es_cliente_frecuente ? 'Huésped frecuente con historial activo.' : 'Historial en crecimiento.' ?></p>
+                    <p><?= guest_detail_safe($resumenActividad['frase']) ?></p>
                     <div class="guest-score-list">
                         <div>
-                            <span>Total gastado</span>
+                            <span>
+                                Total gastado
+                                <?php if ($resumenActividad['nota_gastado'] !== ''): ?>
+                                    <small class="guest-score-note"><?= guest_detail_safe($resumenActividad['nota_gastado']) ?></small>
+                                <?php endif; ?>
+                            </span>
                             <strong><?= format_money($total_gastado) ?></strong>
                         </div>
+                        <?php if ($resumenActividad['mostrar_promedio']): ?>
                         <div>
                             <span>Gasto promedio</span>
                             <strong><?= format_money($gasto_promedio) ?></strong>
                         </div>
+                        <?php endif; ?>
+                        <?php if ($resumenActividad['mostrar_por_venir']): ?>
+                        <div>
+                            <span>
+                                Reservado por venir
+                                <small class="guest-score-note">
+                                    <?= number_format($resumenActividad['reservas_por_venir']) ?>
+                                    <?= $resumenActividad['reservas_por_venir'] === 1 ? 'reservación' : 'reservaciones' ?>
+                                </small>
+                            </span>
+                            <strong><?= format_money($resumenActividad['monto_por_venir']) ?></strong>
+                        </div>
+                        <?php endif; ?>
                         <?php if ($guestVerParkingActivo): ?>
                         <div>
                             <span>Vehículos</span>
@@ -3192,5 +3252,13 @@ html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-s
 }
 html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-list strong{
     color:#111827;
+}
+/* En Cupertino esta tarjeta es CLARA con tinta oscura: la etiqueta del número y
+   las notas son blancas de fábrica y aquí quedarían invisibles. */
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-caption{
+    color:color-mix(in srgb, var(--gd-primary) 45%, #48484A);
+}
+html[data-tema="cupertino"]:not([data-theme="dark"]) .guest-detail-view .guest-score-note{
+    color:#6E6E73;
 }
 </style>

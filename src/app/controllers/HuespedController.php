@@ -901,6 +901,68 @@ public function actualizarAction() {
     }
 
     /**
+     * Qué decir en la tarjeta "Perfil de actividad". PURO.
+     *
+     * El panel contaba SOLO estancias ya vividas (check-in/out/completada) y
+     * pintaba un "0" gigante SIN etiqueta junto a "$0.00", al lado de un
+     * historial con reservaciones de miles de pesos: se leía como un error del
+     * sistema. El dato era correcto; lo que faltaba era decir de qué habla y
+     * qué falta para que sume.
+     *
+     * @param array $m metricas de reservaciones del perfil operativo
+     */
+    public static function derivarResumenActividad(array $m): array {
+        $completadas = max(0, (int)($m['validas'] ?? 0));
+        $total       = max(0, (int)($m['total'] ?? 0));
+        $porVenir    = max(0, (int)($m['proximas'] ?? 0));
+        $canceladas  = max(0, (int)($m['canceladas'] ?? 0));
+        $montoPorVenir = max(0.0, (float)($m['monto_proximas'] ?? 0));
+
+        // El total del modelo manda; si viniera incompleto, no inventamos menos
+        // reservaciones de las que ya sabemos que existen.
+        $total = max($total, $completadas + $porVenir);
+
+        $plural = function (int $n, string $singular, string $pluralTxt): string {
+            return $n === 1 ? $singular : $pluralTxt;
+        };
+
+        if ($completadas > 0) {
+            $frase = $completadas >= 3
+                ? 'Huésped frecuente con historial activo.'
+                : 'Historial en crecimiento.';
+            if ($porVenir > 0) {
+                $frase .= ' ' . $porVenir . ' ' . $plural($porVenir, 'reservación', 'reservaciones') . ' por venir.';
+            }
+        } elseif ($porVenir > 0) {
+            $frase = 'Todavía no se hospeda: ' . $porVenir . ' '
+                . $plural($porVenir, 'reservación registrada', 'reservaciones registradas') . '.';
+        } elseif ($total > 0 && $canceladas >= $total) {
+            $frase = $total === 1
+                ? 'Su única reservación fue cancelada.'
+                : 'Sus ' . $total . ' reservaciones fueron canceladas.';
+        } elseif ($total > 0) {
+            $frase = $total . ' ' . $plural($total, 'reservación registrada', 'reservaciones registradas')
+                . ', ninguna estancia completada.';
+        } else {
+            $frase = 'Sin reservaciones registradas.';
+        }
+
+        return [
+            'completadas'       => $completadas,
+            'etiqueta_numero'   => $plural($completadas, 'Estancia completada', 'Estancias completadas'),
+            'frase'             => $frase,
+            'mostrar_promedio'  => $completadas > 0,
+            'mostrar_por_venir' => $porVenir > 0,
+            'reservas_por_venir' => $porVenir,
+            'monto_por_venir'   => $montoPorVenir,
+            // La aclaración solo aparece cuando el $0.00 necesita defenderse.
+            'nota_gastado'      => ($completadas === 0 && $total > 0)
+                ? 'Se suma cuando la estancia se completa.'
+                : '',
+        ];
+    }
+
+    /**
      * Ver detalle de huésped
      */
     public function verAction() {
@@ -967,6 +1029,9 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
         'total_reservaciones' => $total_reservaciones,
         'total_gastado' => $total_gastado,
         'ultima_visita' => $ultima_visita,
+        'resumenActividad' => self::derivarResumenActividad(
+            is_array($perfilOperativo['reservaciones'] ?? null) ? $perfilOperativo['reservaciones'] : []
+        ),
         'documentosEntidad' => $documentosEntidad,
         'guestFieldPolicy' => $this->politicaCamposRegistro(),
         'documentosEntidadContexto' => [

@@ -450,6 +450,11 @@ class Huesped extends Model {
                         THEN COALESCE(precio_total, 0)
                         ELSE 0
                     END), 0) AS total_gastado,
+                    COALESCE(SUM(CASE
+                        WHEN fecha_entrada >= CURDATE() AND estado <> 'cancelada'
+                        THEN COALESCE(precio_total, 0)
+                        ELSE 0
+                    END), 0) AS monto_proximas,
                     MAX(CASE
                         WHEN estado IN ('checked_in', 'checked_out', 'completada')
                         THEN fecha_salida
@@ -476,6 +481,7 @@ class Huesped extends Model {
             'canceladas' => (int)($row['canceladas'] ?? 0),
             'noches' => (int)($row['noches'] ?? 0),
             'total_gastado' => (float)($row['total_gastado'] ?? 0),
+            'monto_proximas' => (float)($row['monto_proximas'] ?? 0),
             'ultima_visita' => $row['ultima_visita'] ?? null,
             'proxima_visita' => $row['proxima_visita'] ?? null,
         ];
