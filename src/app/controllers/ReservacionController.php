@@ -315,6 +315,32 @@ class ReservacionController extends Controller {
         return $lineas;
     }
 
+    /**
+     * Columna CAMAS de la tabla de cotizacion. Pura (sin BD ni sesion): la comparten
+     * cotizacionReservacionPdfAction y cotizacionPdfAction. Suite CotizacionCamasTest.
+     * Cuando solo hay un tipo de cama se escribe completo (documento que lee el huesped);
+     * si hay de los dos se abrevia como en habitaciones/index (hb_room_beds_detail_label)
+     * para no desbordar la celda.
+     */
+    public static function cotizacionPdfCamas(array $habitacion): string {
+        $matrimoniales = max(0, (int) ($habitacion['camas_matrimoniales'] ?? 0));
+        $individuales  = max(0, (int) ($habitacion['camas_individuales'] ?? 0));
+
+        if ($matrimoniales > 0 && $individuales > 0) {
+            return $matrimoniales . ' mat. / ' . $individuales . ' ind.';
+        }
+
+        if ($matrimoniales > 0) {
+            return $matrimoniales . ' matrimonial' . ($matrimoniales === 1 ? '' : 'es');
+        }
+
+        if ($individuales > 0) {
+            return $individuales . ' individual' . ($individuales === 1 ? '' : 'es');
+        }
+
+        return '-';
+    }
+
     private function cotizacionPdfTerminosDefault(string $fechaEntradaTexto, string $checkinTexto, string $checkoutTexto): array {
         return [
             'El alojamiento es por la noche del ' . $fechaEntradaTexto . ' con salida conforme al horario de check-out configurado.',
@@ -752,14 +778,15 @@ class ReservacionController extends Controller {
                 return 2;
             };
 
-            // Columnas: HAB | TIPO | PISO | PERSONAS | PRECIO/NOCHE | NOCHES | TOTAL
-            $colHab    = 18;
-            $colTipo   = 36;
-            $colPiso   = 28;
-            $colPers   = 22;
-            $colPrecio = 30;
-            $colNoches = 20;
-            $colTotal  = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colPrecio - $colNoches;
+            // Columnas: HAB | TIPO | PISO | PERSONAS | CAMAS | PRECIO/NOCHE | NOCHES | TOTAL
+            $colHab    = 16;
+            $colTipo   = 32;
+            $colPiso   = 24;
+            $colPers   = 15;
+            $colCamas  = 30;
+            $colPrecio = 28;
+            $colNoches = 15;
+            $colTotal  = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colCamas - $colPrecio - $colNoches;
 
             // Header tabla (texto adaptativo: el fondo es el color de marca)
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
@@ -770,6 +797,7 @@ class ReservacionController extends Controller {
             $pdf->Cell($colTipo, 8, 'TIPO', 0, 0, 'C', true);
             $pdf->Cell($colPiso, 8, 'PISO', 0, 0, 'C', true);
             $pdf->Cell($colPers, 8, 'PERS.', 0, 0, 'C', true);
+            $pdf->Cell($colCamas, 8, 'CAMAS', 0, 0, 'C', true);
             $pdf->Cell($colPrecio, 8, 'PRECIO/NOCHE', 0, 0, 'C', true);
             $pdf->Cell($colNoches, 8, 'NOCHES', 0, 0, 'C', true);
             $pdf->Cell($colTotal, 8, 'TOTAL', 0, 1, 'C', true);
@@ -829,6 +857,7 @@ class ReservacionController extends Controller {
                 $pdf->Cell($colTipo, 7, $u($tipoRealCotizacion($hab)), 0, 0, 'C', true);
                 $pdf->Cell($colPiso, 7, $u($formatPisoCotizacion($hab['piso'] ?? '')), 0, 0, 'C', true);
                 $pdf->Cell($colPers, 7, $capacidadCotizacion($hab), 0, 0, 'C', true);
+                $pdf->Cell($colCamas, 7, $u(self::cotizacionPdfCamas($hab)), 0, 0, 'C', true);
 
                 // Precio y noches
                 if ($esCortesia) {
@@ -5345,14 +5374,15 @@ $cortesias_ids = $this->getPost('cortesias', []);
                 return $map[$piso] ?? 'Piso ' . $piso;
             };
 
-            // Columnas: Hab | Tipo | Piso | Personas | Precio/Noche | Noches | Total
-            $colHab      = 18;
-            $colTipo     = 36;
-            $colPiso     = 28;
-            $colPers     = 22;
-            $colPrecio   = 30;
-            $colNoches   = 20;
-            $colTotal    = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colPrecio - $colNoches;
+            // Columnas: Hab | Tipo | Piso | Personas | Camas | Precio/Noche | Noches | Total
+            $colHab      = 16;
+            $colTipo     = 32;
+            $colPiso     = 24;
+            $colPers     = 15;
+            $colCamas    = 30;
+            $colPrecio   = 28;
+            $colNoches   = 15;
+            $colTotal    = $contentW - $colHab - $colTipo - $colPiso - $colPers - $colCamas - $colPrecio - $colNoches;
 
             // Header de la tabla (texto adaptativo: el fondo es el color de marca)
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
@@ -5363,6 +5393,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
             $pdf->Cell($colTipo, 8, 'TIPO', 0, 0, 'C', true);
             $pdf->Cell($colPiso, 8, 'PISO', 0, 0, 'C', true);
             $pdf->Cell($colPers, 8, $u('PERS.'), 0, 0, 'C', true);
+            $pdf->Cell($colCamas, 8, 'CAMAS', 0, 0, 'C', true);
             $pdf->Cell($colPrecio, 8, 'PRECIO/NOCHE', 0, 0, 'C', true);
             $pdf->Cell($colNoches, 8, 'NOCHES', 0, 0, 'C', true);
             $pdf->Cell($colTotal, 8, 'TOTAL', 0, 1, 'C', true);
@@ -5403,6 +5434,7 @@ $cortesias_ids = $this->getPost('cortesias', []);
                 $pdf->Cell($colTipo, 7, $u($hab['tipo_label'] ?? $formatTipo($hab['tipo'], $hab['caracteristicas'] ?? '')), 0, 0, 'C', true);
                 $pdf->Cell($colPiso, 7, $u($formatPiso($hab['piso'])), 0, 0, 'C', true);
                 $pdf->Cell($colPers, 7, $hab['capacidad_personas'] ?? $capacidadPorTipo($hab['tipo']), 0, 0, 'C', true);
+                $pdf->Cell($colCamas, 7, $u(self::cotizacionPdfCamas($hab)), 0, 0, 'C', true);
 
                 if ($esCortesia) {
                     $pdf->SetTextColor($ambar[0], $ambar[1], $ambar[2]);
