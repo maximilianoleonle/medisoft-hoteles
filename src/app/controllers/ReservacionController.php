@@ -1589,6 +1589,9 @@ public function obtenerNotasAction() {
             }
         }
         
+        // Precio de temporada de las libres para esa fecha (mismo criterio que el Excel)
+        $preciosTemporada = $this->preciosTemporadaReporteDia($habitaciones, $ocupacion_por_habitacion, $fecha, (int) $hotel_id);
+
         // Generar HTML compacto para 2 páginas landscape
         $html = $this->generarHTMLReservacionesPersonalizado(
             $fecha,
@@ -1599,7 +1602,8 @@ public function obtenerNotasAction() {
             $total_habitaciones,
             $habitaciones_con_checkin,
             $habitaciones_reservadas,
-            $habitaciones_disponibles
+            $habitaciones_disponibles,
+            $preciosTemporada
         );
         
         header('Content-Type: text/html; charset=UTF-8');
@@ -1611,6 +1615,96 @@ public function obtenerNotasAction() {
         $this->redirect('reservaciones');
     }
 }
+
+    /**
+     * Formato de dinero del reporte del dia.
+     *
+     * El separador de miles JAMAS va en punto: estos reportes se abren en Excel
+     * (el .xls es HTML) y ahi el punto se lee como separador DECIMAL en es-MX,
+     * o sea "$1.200" se pinta como $1.20. PURO.
+     */
+    public static function formatoMonedaReporteDia($monto): string {
+        return '$' . number_format((float) $monto, 0, '.', ',');
+    }
+
+    /**
+     * Que decir en la columna COSTO del reporte del dia, para UNA habitacion. PURO.
+     *
+     * Son DOS fuentes distintas y NO intercambiables:
+     *  - habitacion VENDIDA: manda rh.precio, el precio CONGELADO al reservar. Es lo
+     *    que el huesped paga; re-derivarlo con la tarifa de hoy mentiria sobre la venta.
+     *  - habitacion LIBRE: es la cotizacion para un walk-in de ESA fecha, asi que lleva
+     *    el incremento de temporada vigente. Con precio_base crudo el reporte SUBCOTIZA
+     *    (queja real: CORAL salia $1,000 al lado de sus gemelas vendidas en $1,200,
+     *    porque las dos traen +$200 de temporada y solo la vendida lo tenia aplicado).
+     *
+     * @param array      $hab              fila de habitaciones (id, precio_base)
+     * @param array|null $res              ocupacion de esa habitacion, null si esta libre
+     * @param array      $preciosTemporada mapa habitacion_id => precio ya con temporada
+     */
+    public static function costoReporteDia(array $hab, $res, array $preciosTemporada): array {
+        $base = (float) ($hab['precio_base'] ?? 0);
+
+        if (is_array($res)) {
+            if (!empty($res['es_cortesia_hab'])) {
+                return ['texto' => 'Cortesía', 'monto' => 0.0, 'con_temporada' => false];
+            }
+            $monto = (float) ($res['precio_hab'] ?? $base);
+            return [
+                'texto' => self::formatoMonedaReporteDia($monto),
+                'monto' => $monto,
+                'con_temporada' => false,
+            ];
+        }
+
+        $habId = $hab['id'] ?? null;
+        $monto = isset($preciosTemporada[$habId]) ? (float) $preciosTemporada[$habId] : $base;
+
+        return [
+            'texto' => self::formatoMonedaReporteDia($monto),
+            'monto' => $monto,
+            'con_temporada' => $monto > $base,
+        ];
+    }
+
+    /**
+     * Precio con temporada de cada habitacion LIBRE para la fecha del reporte.
+     *
+     * Solo se consulta para las libres: las vendidas ya traen su precio congelado y
+     * recalcularlas seria reescribir la venta. Reusa el motor unico de tarifas
+     * (IncrementoTarifa) en vez de re-implementar el matching de alcances.
+     */
+    private function preciosTemporadaReporteDia(array $habitaciones, array $ocupacion, string $fecha, int $hotelId): array {
+        require_once __DIR__ . '/../models/IncrementoTarifa.php';
+
+        $tarifaModel = new IncrementoTarifa();
+        $mapa = [];
+
+        foreach ($habitaciones as $hab) {
+            $habId = $hab['id'] ?? null;
+            if ($habId === null || isset($ocupacion[$habId])) {
+                continue;
+            }
+
+            $base = (float) ($hab['precio_base'] ?? 0);
+            try {
+                $info = $tarifaModel->calcularPrecioConIncremento(
+                    $habId,
+                    $hab['tipo'] ?? '',
+                    $base,
+                    $fecha,
+                    $hotelId
+                );
+                $mapa[$habId] = (float) ($info['precio_final'] ?? $base);
+            } catch (Exception $e) {
+                // Si el motor de tarifas truena, el reporte del dia NO se cae:
+                // cae al precio base, que es peor dato pero sigue siendo dato.
+                $mapa[$habId] = $base;
+            }
+        }
+
+        return $mapa;
+    }
 
     public function exportarExcelAction() {
         require_hotel_module('exportaciones');
@@ -1740,6 +1834,9 @@ public function obtenerNotasAction() {
                 }
             }
 
+            // Precio de temporada de las habitaciones LIBRES para la fecha consultada
+            $preciosTemporada = $this->preciosTemporadaReporteDia($habitaciones, $ocupacion, $fecha, (int) $hotel_id);
+
             // Separar habitaciones en numéricas y de color
             $hab_numericas = [];
             $hab_color = [];
@@ -1772,7 +1869,7 @@ public function obtenerNotasAction() {
             echo '<body>';
 
             // Helper para generar una sección
-            $generarSeccion = function($lista_habs) use ($ocupacion, $fecha_bonita) {
+            $generarSeccion = function($lista_habs) use ($ocupacion, $fecha_bonita, $preciosTemporada) {
                 $estilo_th = 'background:#2E7D32;color:white;font-weight:bold;padding:6px 8px;text-align:center;font-size:10pt;';
                 $columnas = ['HUÉSPED', 'TELÉFONO', 'PROCEDENCIA', 'HABITACIÓN', 'COSTO', 'FACTURA', 'VEHÍCULO', 'TIPO/ESTADO DE PAGO'];
 
@@ -1800,12 +1897,8 @@ public function obtenerNotasAction() {
                         // Procedencia
                         $procedencia = trim(($res['procedencia_ciudad'] ?? '') . ' ' . ($res['procedencia_estado'] ?? ''));
 
-                        // Precio de esta habitación
-                        $precio_mostrar = $res['precio_hab'] ?? $hab['precio_base'];
-                        $precio_fmt = '$' . number_format($precio_mostrar, 0, '.', ',');
-                        if ($res['es_cortesia_hab'] ?? false) {
-                            $precio_fmt = 'Cortesía';
-                        }
+                        // Precio de esta habitación (vendida: manda el precio congelado)
+                        $precio_fmt = self::costoReporteDia($hab, $res, $preciosTemporada)['texto'];
 
                         // Vehículo
                         $vehiculo = '';
@@ -1839,8 +1932,9 @@ public function obtenerNotasAction() {
                         echo '<td style="background:' . $bg . ';">' . htmlspecialchars($tipo_pago) . '</td>';
                         echo '</tr>';
                     } else {
-                        // Habitación disponible — solo número y precio
-                        $precio_fmt = '$' . number_format($hab['precio_base'], 0, '.', ',');
+                        // Habitación disponible — número y precio CON la temporada vigente
+                        // de esa fecha (es la cotización para un walk-in, no el precio base).
+                        $precio_fmt = self::costoReporteDia($hab, null, $preciosTemporada)['texto'];
                         echo '<tr>';
                         echo '<td style="background:#C8E6C9;"></td>';
                         echo '<td style="background:#C8E6C9;"></td>';
@@ -1890,7 +1984,8 @@ private function generarHTMLReservacionesPersonalizado(
     $total_habitaciones,
     $habitaciones_con_checkin,
     $habitaciones_reservadas,
-        $habitaciones_disponibles
+        $habitaciones_disponibles,
+    $preciosTemporada = []
 ) {
     $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
     $hotelNombre = function_exists('hotel_branding_public_name')
@@ -2351,7 +2446,7 @@ private function generarHTMLReservacionesPersonalizado(
         
         <?php
         // Función interna para generar tabla de una sección
-        $renderTabla = function($lista_habs, $titulo) use ($ocupacion_por_habitacion) {
+        $renderTabla = function($lista_habs, $titulo) use ($ocupacion_por_habitacion, $preciosTemporada) {
         ?>
             <div class="seccion-titulo"><?= $titulo ?></div>
             <table>
@@ -2378,9 +2473,7 @@ private function generarHTMLReservacionesPersonalizado(
                         
                         $procedencia = trim(($res['procedencia_ciudad'] ?? '') . ' ' . ($res['procedencia_estado'] ?? ''));
                         
-                        $precio_mostrar = $res['precio_hab'] ?? $hab['precio_base'];
-                        $precio_fmt = '$' . number_format($precio_mostrar, 0, '.', ',');
-                        if ($res['es_cortesia_hab'] ?? false) { $precio_fmt = 'Cortesia'; }
+                        $precio_fmt = self::costoReporteDia($hab, $res, $preciosTemporada)['texto'];
                         
                         $vehiculo = '';
                         if (isset($res['vehiculo'])) {
@@ -2416,7 +2509,7 @@ private function generarHTMLReservacionesPersonalizado(
                         <td></td>
                         <td></td>
                         <td class="hab-num"><?= htmlspecialchars($hab['numero']) ?></td>
-                        <td class="precio">$<?= number_format($hab['precio_base'], 0, '.', ',') ?></td>
+                        <td class="precio"><?= self::costoReporteDia($hab, null, $preciosTemporada)['texto'] ?></td>
                         <td></td>
                         <td></td>
                         <td></td>
