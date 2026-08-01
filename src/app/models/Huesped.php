@@ -34,6 +34,13 @@ class Huesped extends Model {
             return ['descuento' => 0, 'tipo' => null, 'valor' => 0];
         }
 
+        // Sin el bloque 'descuentos' contratado, el valor se conserva en BD
+        // (ver HuespedController::descuentoHuespedDesdePost) pero deja de
+        // tener efecto en el precio.
+        if (function_exists('hotel_has_module') && !hotel_has_module('descuentos', $huesped['hotel_id'] ?? null)) {
+            return ['descuento' => 0, 'tipo' => null, 'valor' => 0];
+        }
+
         if ($tipo === 'porcentaje') {
             $monto = $subtotal * ($valor / 100);
         } else {

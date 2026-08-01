@@ -2145,23 +2145,25 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                     <strong><?= guest_detail_safe($ultima_visita_label) ?></strong>
                                 </div>
                             </article>
-                            <?php
-                            $descTipoVer = (string)($huesped['descuento_tipo'] ?? '');
-                            $descValorVer = (float)($huesped['descuento_valor'] ?? 0);
-                            $descLabelVer = 'Sin descuento';
-                            if ($descValorVer > 0 && $descTipoVer === 'porcentaje') {
-                                $descLabelVer = rtrim(rtrim(number_format($descValorVer, 2), '0'), '.') . '%';
-                            } elseif ($descValorVer > 0 && $descTipoVer === 'monto') {
-                                $descLabelVer = '$' . number_format($descValorVer, 2);
-                            }
-                            ?>
-                            <article class="guest-info-card">
-                                <i class="fas fa-tags"></i>
-                                <div>
-                                    <span class="guest-info-label">Descuento</span>
-                                    <strong><?= guest_detail_safe($descLabelVer) ?></strong>
-                                </div>
-                            </article>
+                            <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('descuentos')): ?>
+                                <?php
+                                $descTipoVer = (string)($huesped['descuento_tipo'] ?? '');
+                                $descValorVer = (float)($huesped['descuento_valor'] ?? 0);
+                                $descLabelVer = 'Sin descuento';
+                                if ($descValorVer > 0 && $descTipoVer === 'porcentaje') {
+                                    $descLabelVer = rtrim(rtrim(number_format($descValorVer, 2), '0'), '.') . '%';
+                                } elseif ($descValorVer > 0 && $descTipoVer === 'monto') {
+                                    $descLabelVer = '$' . number_format($descValorVer, 2);
+                                }
+                                ?>
+                                <article class="guest-info-card">
+                                    <i class="fas fa-tags"></i>
+                                    <div>
+                                        <span class="guest-info-label">Descuento</span>
+                                        <strong><?= guest_detail_safe($descLabelVer) ?></strong>
+                                    </div>
+                                </article>
+                            <?php endif; ?>
                             <?php if ($guestVerParkingActivo && (!empty($huesped['vehiculo_marca']) || !empty($huesped['vehiculo_placas']))): ?>
                                 <article class="guest-info-card">
                                     <i class="fas fa-car-side"></i>
