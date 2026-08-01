@@ -1802,7 +1802,7 @@ public function obtenerNotasAction() {
 
                         // Precio de esta habitación
                         $precio_mostrar = $res['precio_hab'] ?? $hab['precio_base'];
-                        $precio_fmt = '$' . number_format($precio_mostrar, 0, '.', '.');
+                        $precio_fmt = '$' . number_format($precio_mostrar, 0, '.', ',');
                         if ($res['es_cortesia_hab'] ?? false) {
                             $precio_fmt = 'Cortesía';
                         }
@@ -1840,7 +1840,7 @@ public function obtenerNotasAction() {
                         echo '</tr>';
                     } else {
                         // Habitación disponible — solo número y precio
-                        $precio_fmt = '$' . number_format($hab['precio_base'], 0, '.', '.');
+                        $precio_fmt = '$' . number_format($hab['precio_base'], 0, '.', ',');
                         echo '<tr>';
                         echo '<td style="background:#C8E6C9;"></td>';
                         echo '<td style="background:#C8E6C9;"></td>';
