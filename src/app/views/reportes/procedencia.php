@@ -1726,11 +1726,29 @@ function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=procedencia' +
                 '&fecha_inicio=<?= $fecha_inicio ?>' +
                 '&fecha_fin=<?= $fecha_fin ?>';
-    if (window.MedisoftMobileFiles) {
-        window.MedisoftMobileFiles.open(url, { label: 'PDF del reporte' });
+    const mobileFileHelper = window.MedisoftMobileFiles;
+    const isNarrowViewport = window.matchMedia('(max-width: 820px)').matches;
+    const isStandaloneTablet = window.matchMedia('(display-mode: standalone)').matches &&
+        window.innerWidth <= 1024;
+    const shouldUseMobileFileHelper = mobileFileHelper &&
+        (isNarrowViewport || isStandaloneTablet);
+
+    if (shouldUseMobileFileHelper) {
+        mobileFileHelper.open(url, { label: 'PDF del reporte' });
         return;
     }
-    window.open(url, '_blank');
+
+    // Descargar el adjunto en un contexto oculto evita que algunos navegadores
+    // sustituyan el reporte por una pantalla en blanco.
+    let downloadFrame = document.getElementById('procedenciaPdfDownloadFrame');
+    if (!downloadFrame) {
+        downloadFrame = document.createElement('iframe');
+        downloadFrame.id = 'procedenciaPdfDownloadFrame';
+        downloadFrame.title = 'Descarga del PDF de procedencia';
+        downloadFrame.hidden = true;
+        document.body.appendChild(downloadFrame);
+    }
+    downloadFrame.src = url;
 }
 
 function setPeriodo(dias) {
