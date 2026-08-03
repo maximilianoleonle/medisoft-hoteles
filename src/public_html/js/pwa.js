@@ -480,8 +480,11 @@
     try {
       if (scopeChanged) {
         clearKnownOfflineStorageKeys({ keepCurrentScope: true });
-        // Las pantallas guardadas del hotel anterior no deben verse en el nuevo contexto
-        postToSW({ type: 'CLEAR_PAGES_CACHE' });
+        // Las pantallas del hotel anterior no deben verse aqui, pero tampoco hay
+        // que tirarlas: se archivan por scope y se restauran las de este hotel si
+        // ya las tenia. Antes se borraba todo y alternar hoteles dejaba al usuario
+        // sin memoria offline una y otra vez.
+        postToSW({ type: 'SWITCH_PAGES_CACHE', desde: previousScope, hacia: currentScope });
         console.warn('[PWA] Datos offline previos preservados por seguridad al cambiar de contexto.');
       }
     } catch (err) {

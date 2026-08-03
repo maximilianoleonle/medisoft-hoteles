@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v30'; // v30: el reporte del dia de reservaciones se exporta sin internet (PDF y Excel)
+const SW_VERSION = 'v31'; // v31: cambiar de hotel ya no borra las pantallas guardadas (se archivan por scope)
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -15,6 +15,13 @@ const CACHE = {
   // cambio de hotel via CLEAR_PAGES_CACHE, que es lo que importa para aislar.
   pages:   'loscedros-pages',                 // ultima copia buena de pantallas clave
 };
+
+// Al cambiar de hotel, las pantallas del anterior se GUARDAN aqui en vez de
+// borrarse: `loscedros-pages-<scope>`. Un usuario con varios hoteles perdia toda
+// su memoria offline cada vez que alternaba, y volver a llenarla exige pasar por
+// cada pantalla con red. El aislamiento se mantiene igual — cada hotel solo ve su
+// archivo — y el logout SI borra todo (ahi el equipo puede cambiar de manos).
+const PAGES_ARCHIVO_PREFIJO = CACHE.pages + '-';
 
 // Pantallas operativas que se guardan para navegacion offline (network-first
 // con respaldo). Se limpian al cerrar sesion o cambiar de hotel via
@@ -176,7 +183,12 @@ self.addEventListener('activate', event => {
       const validos = Object.values(CACHE);
       return Promise.all(
         keys
-          .filter(k => k.startsWith('loscedros-') && !validos.includes(k))
+          // Los archivos por hotel (loscedros-pages-<scope>) SOBREVIVEN al deploy:
+          // sin esta excepcion, cada version nueva del SW borraria las pantallas
+          // guardadas de los hoteles en los que el usuario no esta ahora mismo.
+          .filter(k => k.startsWith('loscedros-')
+                    && !validos.includes(k)
+                    && !k.startsWith(PAGES_ARCHIVO_PREFIJO))
           .map(k => {
             console.log('[SW] Eliminando cache obsoleto:', k);
             return caches.delete(k);
@@ -377,6 +389,10 @@ self.addEventListener('message', event => {
 
     case 'CLEAR_PAGES_CACHE':
       event.waitUntil(clearPagesCache());
+      break;
+
+    case 'SWITCH_PAGES_CACHE':
+      event.waitUntil(cambiarCachePantallas(event.data.desde, event.data.hacia));
       break;
 
     case 'CACHE_OFFLINE_BRANDING':
@@ -910,9 +926,65 @@ async function precalentarPantallas(rutas) {
   }
 }
 
+/**
+ * Borra TODAS las pantallas guardadas, incluidas las archivadas de otros hoteles.
+ *
+ * Esto es el LOGOUT: el equipo puede cambiar de manos, asi que no puede quedar
+ * HTML con nombres de huespedes ni movimientos de caja de ningun hotel. El cambio
+ * de hotel usa otra puerta (cambiarCachePantallas), que conserva por scope.
+ */
 async function clearPagesCache() {
+  const nombres = await caches.keys();
+  const aBorrar = nombres.filter(
+    n => n === CACHE.pages || n.startsWith(PAGES_ARCHIVO_PREFIJO)
+  );
+
+  await Promise.all(aBorrar.map(n => caches.delete(n)));
+  console.log(`[SW] Pantallas guardadas borradas (${aBorrar.length} almacenes): logout`);
+}
+
+/** Copia entrada por entrada. Devuelve cuantas movio. */
+async function copiarCache(origen, destino) {
+  if (!(await caches.has(origen))) return 0;
+
+  const [desde, hacia] = await Promise.all([caches.open(origen), caches.open(destino)]);
+  const claves = await desde.keys();
+
+  for (const request of claves) {
+    const respuesta = await desde.match(request);
+    if (respuesta) await hacia.put(request, respuesta);
+  }
+
+  return claves.length;
+}
+
+/**
+ * Cambio de hotel: guarda lo del anterior y restaura lo del nuevo si ya existe.
+ *
+ * Se hace copiando y no renombrando porque la Cache API no sabe renombrar. Es un
+ * evento raro (cambiar de hotel) sobre ~7 pantallas, asi que el costo no importa;
+ * lo que importa es que al volver al hotel A sus pantallas sigan ahi.
+ */
+async function cambiarCachePantallas(desde, hacia) {
+  const limpio = (s) => String(s || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 64);
+  const scopeAnterior = limpio(desde);
+  const scopeNuevo = limpio(hacia);
+
+  if (scopeAnterior) {
+    const archivo = PAGES_ARCHIVO_PREFIJO + scopeAnterior;
+    await caches.delete(archivo);
+    const movidas = await copiarCache(CACHE.pages, archivo);
+    console.log(`[SW] Pantallas de ${scopeAnterior} archivadas (${movidas})`);
+  }
+
+  // El hotel nuevo arranca en limpio SIEMPRE: si no tuviera archivo y no
+  // vaciaramos, se quedaria viendo las pantallas del hotel anterior.
   await caches.delete(CACHE.pages);
-  console.log('[SW] Cache de pantallas limpiado (logout o cambio de hotel)');
+
+  if (scopeNuevo) {
+    const restauradas = await copiarCache(PAGES_ARCHIVO_PREFIJO + scopeNuevo, CACHE.pages);
+    if (restauradas) console.log(`[SW] Pantallas de ${scopeNuevo} restauradas (${restauradas})`);
+  }
 }
 
 /**
