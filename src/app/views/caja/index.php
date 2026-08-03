@@ -1084,7 +1084,11 @@ $cash_methods = [
             <li>Caja</li>
         </ol>
         <div class="cj-topbar-acts">
-            <?php if (user_role() == 'gerente'): ?>
+            <?php // El enlace pide EXACTAMENTE lo que el servidor exige en
+                  // /caja/categorias. Antes iba por user_role()=='gerente', que
+                  // lee el rol GLOBAL del usuario y no el de ESTE hotel: por eso
+                  // Conceptos aparecia en un hotel y en otro no. ?>
+            <?php if (can('caja.conceptos')): ?>
             <a href="<?= url('caja/categorias') ?>" class="cj-btn-ghost">
                 <i class="fas fa-tags"></i> Conceptos
             </a>
@@ -1356,7 +1360,7 @@ $cash_methods = [
                                 <div class="cj-shortcut-ico"><i class="fas fa-chart-bar"></i></div>
                                 Reporte por forma de pago
                             </a>
-                            <?php if (user_role() == 'gerente'): ?>
+                            <?php if (can('caja.conceptos')): ?>
                             <a href="<?= url('caja/categorias') ?>" class="cj-shortcut">
                                 <div class="cj-shortcut-ico"><i class="fas fa-tags"></i></div>
                                 Conceptos

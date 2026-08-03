@@ -31,7 +31,8 @@ class CajaController extends Controller {
         $this->requireAuth();
         require_hotel_module('caja');
         // Acceso base al modulo. Las acciones sensibles piden su permiso fino
-        // (caja.cobros, caja.movimientos, caja.corte, caja.ajustes) y quedan
+        // (caja.cobros, caja.movimientos, caja.corte, caja.ajustes,
+        // caja.conceptos) y quedan
         // configurables por rol desde el editor de roles del hotel.
         if (function_exists('require_permission')) {
             require_permission('caja.view');
@@ -1163,7 +1164,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
      */
     public function categoriasAction() {
         if (function_exists('require_permission')) {
-            require_permission('caja.ajustes');
+            require_permission('caja.conceptos');
         }
         
         $categorias = $this->categoriaModel->listarTodasDelHotel();
@@ -1194,7 +1195,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function crearCategoriaAction() {
         $this->requireAjax();
         if (function_exists('require_permission')) {
-            require_permission('caja.ajustes');
+            require_permission('caja.conceptos');
         }
         
         if (!$this->isPost()) {
@@ -1222,7 +1223,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function actualizarCategoriaAction() {
         $this->requireAjax();
         if (function_exists('require_permission')) {
-            require_permission('caja.ajustes');
+            require_permission('caja.conceptos');
         }
         
         if (!$this->isPost()) {
@@ -1256,7 +1257,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function toggleCategoriaAction() {
         $this->requireAjax();
         if (function_exists('require_permission')) {
-            require_permission('caja.ajustes');
+            require_permission('caja.conceptos');
         }
         
         if (!$this->isPost()) {
@@ -1279,7 +1280,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function ordenCategoriaAction() {
         $this->requireAjax();
         if (function_exists('require_permission')) {
-            require_permission('caja.ajustes');
+            require_permission('caja.conceptos');
         }
         
         if (!$this->isPost()) {
