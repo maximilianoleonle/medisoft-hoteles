@@ -45,7 +45,12 @@
   const LEGACY_DB_NAME = 'loscedros-db';
   const STORAGE_SCOPE_KEY = 'loscedros_offline_storage_scope';
   const STORAGE_DB_KEY = 'loscedros_offline_db_name';
-  const PRECALENTADO_KEY = 'loscedros_precalentado_at';
+  // La marca de "ya precalente" va POR HOTEL. Sin el sufijo, un usuario con varios
+  // hoteles precalentaba uno y los demas quedaban bloqueados 6 h creyendo que ya
+  // estaban listos — y como el cambio de hotel vacia el cache de pantallas, se
+  // quedaban sin nada que abrir sin internet.
+  const PRECALENTADO_KEY = 'loscedros_precalentado_at'
+    + (OFFLINE_STORAGE_CONTEXT?.scope ? '_' + OFFLINE_STORAGE_CONTEXT.scope : '');
   const PRECALENTADO_CADA_MS = 6 * 60 * 60 * 1000; // 6 h
   const PRECALENTADO_ESPERA_MS = 8000;             // dejar que la pagina termine lo suyo
   const KNOWN_SESSION_KEYS = [
@@ -199,11 +204,13 @@
     return !['slow-2g', '2g'].includes(red.effectiveType);
   }
 
-  function programarPrecalentado() {
+  function programarPrecalentado(opciones = {}) {
     if (!hasOfflineStorageContext()) return;
 
-    const ultimo = Number(safeLocalStorageGet(PRECALENTADO_KEY) || 0);
-    if (Number.isFinite(ultimo) && Date.now() - ultimo < PRECALENTADO_CADA_MS) return;
+    if (!opciones.forzar) {
+      const ultimo = Number(safeLocalStorageGet(PRECALENTADO_KEY) || 0);
+      if (Number.isFinite(ultimo) && Date.now() - ultimo < PRECALENTADO_CADA_MS) return;
+    }
 
     const lanzar = () => {
       if (!conexionBuenaParaPrecalentar()) return;
@@ -1468,6 +1475,10 @@
     initPushControls,
     refreshPushControls: () => document.querySelectorAll('[data-pwa-push-panel]').forEach(refreshPushPanel),
     autoActivarPush: autoActivarPushDispositivo,
+    // Guardar pantallas para usarlas sin internet. Sin argumentos respeta el
+    // plazo de 6 h; con {forzar:true} lo ignora (lo usa "ponerse al dia").
+    precalentarPantallas: programarPrecalentado,
+    rutasPrecalentables: rutasOperativasVisibles,
   };
 
 })();

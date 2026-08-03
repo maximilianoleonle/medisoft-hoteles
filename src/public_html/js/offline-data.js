@@ -24,6 +24,53 @@
   // disponibilidad localmente al crear reservaciones sin internet
   const RESERVACIONES_DIAS_SNAPSHOT = 30;
   const MAX_OPERACIONES_POR_TANDA = 200; // debe coincidir con Sync::MAX_OPERACIONES_POR_LOTE
+
+  /**
+   * Cuanto vale cada conjunto antes de volver a pedirlo.
+   *
+   * Hasta ago-03 NO habia ningun control: cada carga de pantalla disparaba las 6
+   * peticiones DOS veces (a los 400 ms y a los 3.5 s) = 12 por navegacion, aunque
+   * los datos tuvieran veinte segundos de vida. Con recepcion navegando ~150 veces
+   * al dia eso son ~1,800 peticiones diarias por usuario contra un VPS de 2 vCPU
+   * que sirve a varios hoteles, y una de ellas (/api/buscar) es de las caras.
+   *
+   * Los plazos salen de que tan rapido cambia cada cosa de verdad, no de un numero
+   * redondo: el estado de un cuarto cambia en minutos, el padron de huespedes en
+   * dias y una temporada se edita un par de veces al año.
+   */
+  const FRESCURA_MS = {
+    habitaciones:   3 * 60 * 1000,
+    reservaciones:  3 * 60 * 1000,
+    caja:           3 * 60 * 1000,
+    huespedes:     20 * 60 * 1000,
+    busqueda_global: 20 * 60 * 1000,
+    tarifas:       60 * 60 * 1000,
+  };
+
+  /**
+   * ¿Lo guardado sigue sirviendo? Lee el sello que cada captura deja en `meta`.
+   *
+   * Falla ABIERTO a proposito: sin sello, con fecha ilegible o si IndexedDB no
+   * responde, devuelve false y se vuelve a pedir. Quedarse sin datos por un error
+   * de lectura del reloj es mucho peor que una peticion de mas.
+   */
+  async function estaFresco(clave, forzar) {
+    if (forzar) return false;
+
+    const ttl = FRESCURA_MS[clave];
+    if (!ttl) return false;
+
+    try {
+      const meta = await _txGet('meta', 'ultima_sync_' + clave);
+      if (!meta || !meta.valor) return false;
+
+      const edad = Date.now() - new Date(meta.valor).getTime();
+      return Number.isFinite(edad) && edad >= 0 && edad < ttl;
+    } catch (e) {
+      return false;
+    }
+  }
+
   const DB_VERSION = 5;
   let missingContextWarned = false;
 
@@ -289,12 +336,13 @@
    * Descarga el estado actual de habitaciones desde el servidor
    * y lo guarda en IndexedDB. Actualiza meta.ultima_sync_habitaciones.
    */
-  async function capturarHabitaciones(fechaEntrada = fechaConOffset(0), fechaSalida = fechaConOffset(1)) {
+  async function capturarHabitaciones(fechaEntrada = fechaConOffset(0), fechaSalida = fechaConOffset(1), opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('habitaciones', opciones.forzar)) return;
 
     try {
       const params = new URLSearchParams({
@@ -332,12 +380,13 @@
    * Descarga reservaciones de hoy + los próximos RESERVACIONES_DIAS_SNAPSHOT
    * días y las guarda en IndexedDB. Actualiza meta.ultima_sync_reservaciones.
    */
-  async function capturarReservaciones() {
+  async function capturarReservaciones(opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('reservaciones', opciones.forzar)) return;
 
     try {
       const res  = await fetch(`${BASE}/api/reservaciones/hoy?dias=${RESERVACIONES_DIAS_SNAPSHOT}`, {
@@ -376,12 +425,13 @@
     }
   }
 
-  async function capturarHuespedes() {
+  async function capturarHuespedes(opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('huespedes', opciones.forzar)) return;
 
     try {
       const res = await fetch(BASE + '/api/huespedes/search?q=__offline_cache__', {
@@ -404,12 +454,13 @@
     }
   }
 
-  async function capturarIndiceGlobal() {
+  async function capturarIndiceGlobal(opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('busqueda_global', opciones.forzar)) return;
 
     try {
       const res = await fetch(BASE + '/api/buscar?q=__offline_cache__', {
@@ -457,12 +508,13 @@
    * categorías) para poder VER la caja sin internet. Solo lectura: los
    * registros de dinero siguen siendo online-only.
    */
-  async function capturarCaja() {
+  async function capturarCaja(opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('caja', opciones.forzar)) return;
 
     try {
       const res = await fetch(BASE + '/api/caja/snapshot', {
@@ -502,12 +554,13 @@
   }
 
   /** Descarga los incrementos de tarifa activos para cálculo local de precios. */
-  async function capturarTarifas() {
+  async function capturarTarifas(opciones = {}) {
     if (!hasOfflineStorageContext()) {
       warnMissingOfflineContext();
       return;
     }
     if (!navigator.onLine) return;
+    if (await estaFresco('tarifas', opciones.forzar)) return;
 
     try {
       // Se pide el RANGO completo del snapshot, no solo hoy: una habitacion libre
@@ -545,18 +598,21 @@
   // siendo trabajo duplicado contra un VPS de 2 vCPU.
   let _capturaEnCurso = null;
 
-  function capturarSnapshots() {
+  function capturarSnapshots(opciones = {}) {
     if (_capturaEnCurso) return _capturaEnCurso;
 
     _capturaEnCurso = (async () => {
       try {
+        // Cada captura decide sola si su copia sigue fresca (FRESCURA_MS), asi que
+        // en regimen normal esta llamada no pide NADA a la red. `forzar` es para
+        // cuando el usuario pide explicitamente ponerse al dia.
         await Promise.allSettled([
-          capturarHabitaciones(),
-          capturarReservaciones(),
-          capturarHuespedes(),
-          capturarIndiceGlobal(),
-          capturarCaja(),
-          capturarTarifas(),
+          capturarHabitaciones(undefined, undefined, opciones),
+          capturarReservaciones(opciones),
+          capturarHuespedes(opciones),
+          capturarIndiceGlobal(opciones),
+          capturarCaja(opciones),
+          capturarTarifas(opciones),
         ]);
         _actualizarUITimestamp();
       } finally {
@@ -565,6 +621,74 @@
     })();
 
     return _capturaEnCurso;
+  }
+
+  /**
+   * Que hay guardado en este equipo y de cuando. Para poder DECIRLE al usuario si
+   * puede trabajar sin internet en vez de que lo descubra cuando ya no hay red.
+   *
+   * `datos_desde` es el sello MAS VIEJO de todos los conjuntos, no el mas nuevo:
+   * la copia sirve tanto como su parte mas rancia, y presumir del dato mas fresco
+   * seria justo la clase de optimismo que hace que alguien confie de mas.
+   */
+  async function estadoOffline() {
+    const claves = Object.keys(FRESCURA_MS);
+    const metas = await Promise.all(
+      claves.map(c => _txGet('meta', 'ultima_sync_' + c).catch(() => null))
+    );
+
+    const conjuntos = {};
+    let guardados = 0;
+    let masViejo = null;
+
+    claves.forEach((clave, i) => {
+      const iso = metas[i]?.valor || null;
+      conjuntos[clave] = {
+        guardado: Boolean(iso),
+        en: iso,
+        total: metas[i]?.total ?? null,
+      };
+      if (iso) {
+        guardados++;
+        if (!masViejo || iso < masViejo) masViejo = iso;
+      }
+    });
+
+    return {
+      listo: guardados === claves.length,
+      guardados,
+      totales: claves.length,
+      datos_desde: masViejo,
+      conjuntos,
+    };
+  }
+
+  /**
+   * Deja el equipo listo para trabajar sin internet, de una sola vez: los DATOS
+   * (esta base) y las PANTALLAS (las guarda el service worker desde pwa.js).
+   *
+   * Antes eran dos mecanismos con politicas distintas —datos en cada carga de
+   * pagina, pantallas una vez cada 6 h— y ninguno de los dos le decia nada al
+   * usuario. Con el control de frescura esta llamada normalmente no pide NADA:
+   * solo trabaja cuando de verdad falta algo.
+   */
+  async function prepararOffline(opciones = {}) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return null;
+    }
+
+    if (navigator.onLine) {
+      await capturarSnapshots(opciones);
+      // Barato aunque se llame de mas: precalentarPantallas trae su propio plazo.
+      try { window.PWA?.precalentarPantallas?.(opciones); } catch (e) {}
+    }
+
+    const estado = await estadoOffline();
+    try {
+      document.dispatchEvent(new CustomEvent('medisoft:offline-listo', { detail: estado }));
+    } catch (e) {}
+    return estado;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1254,16 +1378,48 @@
   }
 
   async function _actualizarUITimestamp() {
-    const el = document.getElementById('offline-sync-timestamp');
-    if (!el) return;
+    const legacy = document.getElementById('offline-sync-timestamp');
+    const listo  = document.getElementById('offline-listo');
+    if (!legacy && !listo) return;
+
     try {
-      const meta = await obtenerMetaSync();
-      const iso  = meta?.habitaciones?.valor;
-      if (iso) {
+      const estado = await estadoOffline();
+
+      // 24 h a proposito: 'es-MX' en 12 h devuelve "03:16 p.m." con punto final y,
+      // pegado al de la frase, queda un ".." feo. El resto del sistema tambien
+      // muestra las horas de operacion en 24 h.
+      const soloHora = (iso) => {
         const d = new Date(iso);
-        el.textContent = `Datos al ${d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`;
-        el.classList.remove('hidden');
+        return Number.isNaN(d.getTime())
+          ? null
+          : d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+      };
+
+      if (legacy && estado.datos_desde) {
+        const h = soloHora(estado.datos_desde);
+        if (h) {
+          legacy.textContent = `Datos al ${h}`;
+          legacy.classList.remove('hidden');
+        }
       }
+
+      if (!listo) return;
+
+      // Se anuncia SOLO cuando estan los 6 conjuntos: decir "listo" con la mitad
+      // guardada es la clase de promesa que deja a alguien tirado a media captura.
+      if (!estado.listo) {
+        listo.classList.add('hidden');
+        return;
+      }
+
+      const hora = estado.datos_desde ? soloHora(estado.datos_desde) : null;
+
+      const texto = listo.querySelector('[data-offline-listo-texto]');
+      if (texto) texto.textContent = 'Sin internet: listo';
+      listo.title = hora
+        ? `Puedes consultar sin internet. Datos guardados en este equipo a las ${hora}.`
+        : 'Puedes consultar sin internet con los datos guardados en este equipo.';
+      listo.classList.remove('hidden');
     } catch (_) {}
   }
 
@@ -1272,11 +1428,13 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   document.addEventListener('DOMContentLoaded', async () => {
-    // Captura inicial al cargar la página (si hay internet)
+    // Dejar el equipo listo para trabajar sin internet: datos y pantallas.
+    // Los DOS disparos se conservan a proposito: con el control de frescura el
+    // segundo ya no duplica nada (si el primero guardo, no pide) y sigue sirviendo
+    // de reintento gratis cuando el primero se topa con la red aun levantandose.
     if (navigator.onLine) {
-      // Pequeño delay para no bloquear el primer render
-      setTimeout(capturarSnapshots, 400);
-      setTimeout(capturarSnapshots, 3500);
+      setTimeout(() => prepararOffline(), 400);
+      setTimeout(() => prepararOffline(), 3500);
     }
 
     // Mantener chico el historial de operaciones ya sincronizadas
@@ -1319,6 +1477,9 @@
     capturarCaja,
     capturarTarifas,
     capturarSnapshots,
+    prepararOffline,
+    estadoOffline,
+    estaFresco,
 
     // Lectura
     obtenerHabitaciones,

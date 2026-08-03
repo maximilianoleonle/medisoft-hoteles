@@ -514,6 +514,17 @@ Contenedor hermano + sesión por endpoint temporal. **La sesión PHP vive DENTRO
 5. **Gotchas al armar operaciones de prueba a mano**: el uuid debe tener formato UUID real (`uuidValido()` rechaza cualquier cadena) y la operación necesita `usuario_id` (`validarOperacionAutorizada` responde "usuario invalido"). Lo más simple es encolar con `OfflineData.encolarOperacion(tipo, payload, etiqueta)`, que arma todo bien — dos intentos se perdieron por esto.
 6. **Los 5 candados del 423 se levantan JUNTOS** o parece regresión: `SyncBloqueadoTest`, `ClasificacionComercialModulosTest`, `tools/saas/health_check_fase_1a.php` y los 2 preflights de nómina (`preflight_frontera_nomina_oficial.php`, `preflight_nomina_administrativa_suite.php`). Los 3 últimos NO corren en `run.php`: si solo corres la suite, no te enteras de que quedaron desalineados.
 7. ⬜ prueba en iPhone real: registrar un huésped en modo avión y ver que suba al reconectar.
+## Precarga offline: que no se re-descargue lo que ya está guardado — verificado ✅ 2026-08-03
+
+El arnés (`node tools/tests_js/precarga_offline.test.js`, 19) solo fija contratos de texto: **el ahorro se mide en el navegador**, contando peticiones.
+
+1. **Cómo contar**: envolver `window.fetch` y llamar a `OfflineData.capturarSnapshots()`. Para simular un equipo nuevo hay que **borrar los sellos**, no la base entera: abrir `LosCedrosDB.name`, transacción sobre `meta` y `delete('ultima_sync_' + clave)` de las 6 (`habitaciones`, `reservaciones`, `huespedes`, `busqueda_global`, `caja`, `tarifas`).
+2. **Los cuatro números que importan** (verificados): arranque en frío = **6**; segunda pasada inmediata = **0**; `prepararOffline()` en la siguiente pantalla = **0**; `capturarSnapshots({forzar:true})` = **6**. Antes de esto eran **12 por cada carga de pantalla**, sin excepción.
+3. **El indicador es honesto o no sirve**: con los 6 conjuntos, `#offline-listo` del pie del sidebar se muestra con el `title` "Datos guardados en este equipo a las HH:MM". Borrar UN sello (`ultima_sync_caja`) debe dejar `estadoOffline().listo === false` y esconderlo — anunciar "listo" con la copia a medias es justo la promesa que no se puede hacer.
+4. **Hora en 24 h**: `toLocaleTimeString('es-MX')` en 12 h devuelve "03:16 p.m." **con punto final**, y pegado al punto de la frase queda "..". Usar `hour12:false`.
+5. **Al recargar para medir**, hazlo con `?nc=N`: si el JS viejo sigue en caché, `OfflineData.prepararOffline` sale `undefined` y parece que el cambio no se aplicó.
+6. ⬜ medir en un equipo con la PWA instalada y varios días de uso: los plazos (3/20/60 min) se eligieron por criterio, no por telemetría.
+
 ## Exportar el reporte del día sin internet (PDF y Excel) — verificado ✅ 2026-08-03 (SW v30)
 
 **La prueba que vale es comparar contra el servidor**, no los asserts del cliente: el arnés prueba el JS contra sí mismo y da verde con el reporte equivocado (pasó — 48 de 49 filas con el precio inflado y 31/31 en verde).

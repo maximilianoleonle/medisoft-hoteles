@@ -937,6 +937,16 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
         <div class="hotel-sidebar-status" style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
             <span class="pwa-status-label" id="sidebar-net-label">Sesión activa</span>
+            <?php // Aparece solo cuando el equipo ya tiene TODO guardado. Antes esto
+                  // era invisible: el hotelero descubría si podía trabajar sin
+                  // internet justo cuando ya no lo tenía. El detalle va en el title
+                  // (qué hay guardado y de cuándo) para no cargar la barra. ?>
+            <span id="offline-listo" class="hidden" data-offline-listo
+                  style="display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:650;color:#0F7B4F;"
+                  title="">
+                <i class="fas fa-cloud-arrow-down" style="font-size:.72rem;" aria-hidden="true"></i>
+                <span data-offline-listo-texto>Sin internet: listo</span>
+            </span>
             <!-- Operaciones offline pendientes/rechazadas (JS lo muestra solo si hay) -->
             <a href="<?= url('offline/pendientes') ?>" id="offline-ops-link" class="hidden"
                style="margin-left:auto;display:flex;align-items:center;gap:5px;text-decoration:none;"
