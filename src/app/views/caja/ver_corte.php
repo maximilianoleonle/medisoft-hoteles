@@ -606,13 +606,14 @@ if ($diferencia > 0) {
 
     .cut-method-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
         gap: 14px;
     }
 
     .cut-method {
         display: grid;
-        gap: 14px;
+        min-width: 0;
+        gap: 12px;
         min-height: 204px;
         padding: 16px;
         border-radius: 16px;
@@ -625,9 +626,9 @@ if ($diferencia > 0) {
     .cut-method.is-transfer { --method-soft: var(--cut-violet-soft); --method-color: var(--cut-violet); }
 
     .cut-method-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
         gap: 10px;
     }
 
@@ -635,7 +636,10 @@ if ($diferencia > 0) {
         display: flex;
         align-items: center;
         gap: 10px;
+        min-width: 0;
         color: var(--cut-brand-deep);
+        font-size: .9rem;
+        line-height: 1.25;
         font-weight: 950;
     }
 
@@ -644,6 +648,7 @@ if ($diferencia > 0) {
         height: 32px;
         display: inline-grid;
         place-items: center;
+        flex: 0 0 32px;
         border-radius: 10px;
         background: var(--method-soft);
         color: var(--method-color);
@@ -657,17 +662,19 @@ if ($diferencia > 0) {
     }
 
     .cut-method-note {
-        margin: -8px 0 0;
+        margin: -4px 0 0;
         color: var(--cut-muted);
         font-size: .78rem;
+        line-height: 1.4;
         font-weight: 700;
     }
 
     .cut-method-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: baseline;
         gap: 12px;
+        min-width: 0;
         padding-top: 9px;
         border-top: 1px solid color-mix(in srgb, var(--method-color) 14%, #E8EDF4);
         color: var(--cut-muted);
@@ -675,7 +682,13 @@ if ($diferencia > 0) {
         font-weight: 780;
     }
 
-    .cut-method-row strong { font-variant-numeric: tabular-nums; font-weight: 950; }
+    .cut-method-row strong {
+        min-width: 0;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        font-weight: 950;
+    }
 
     .cut-method-bar {
         overflow: hidden;

@@ -6075,13 +6075,18 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
    verdad no cabe, scrollean en horizontal — mismo recurso que ya usa el layout
    movil — en vez de empujar a nadie a otra fila. */
 @media (min-width:768px){
-  .habitaciones-view .hb-filterbar{ flex-wrap:nowrap; }
-  /* Factor de shrink ALTO: el reparto de flex es base x factor, y la base de los
-     chips (~685px) aplasta a la del buscador (200px). Con un factor normal los
-     chips se comian casi todo el recorte y siempre quedaba uno cortado; con 100
-     el buscador se lleva ~97% del ajuste y cede hasta su min-width antes de que
-     los chips pierdan un pixel. */
-  .habitaciones-view .hb-search{ flex:0 100 200px; min-width:128px; }
+  .habitaciones-view .hb-filterbar{ flex-wrap:nowrap; gap:6px; }
+  /* Factor de shrink alto: el buscador cede primero hasta un ancho util y deja
+     espacio a las seis categorias. Los chips conservan su etiqueta completa. */
+  .habitaciones-view .hb-search{
+    flex:0 100 160px;
+    min-width:110px;
+    max-width:180px;
+    gap:6px;
+    padding-inline:9px;
+  }
+  .habitaciones-view .hb-search input{ font-size:.78rem; }
+  .habitaciones-view .hb-fdiv{ margin-inline:0; }
   .habitaciones-view .hb-chips{
     /* shrink NORMAL (no 0): si los chips se niegan a ceder, una vez que el
        buscador toca su min-width el sobrante empuja al grupo Hoy/Limpiar FUERA
@@ -6092,12 +6097,22 @@ window.HB_PUEDE_CREAR_TAREA = <?= can('habitaciones.mantenimiento') ? 'true' : '
     flex-wrap:nowrap;
     overflow-x:auto;
     scrollbar-width:none;
-    gap:5px;
+    gap:4px;
   }
   .habitaciones-view .hb-chips::-webkit-scrollbar{ height:0; }
-  .habitaciones-view .hb-chip{ flex:0 0 auto; padding:7px 9px; }
-  .habitaciones-view .hb-filter-right{ flex:0 0 auto; margin-left:0; gap:5px; }
-  .habitaciones-view .hb-filter-right .filter-date{ font-size:.76rem; }
+  .habitaciones-view .hb-chip{
+    flex:0 0 auto;
+    gap:5px;
+    padding:7px 7px;
+  }
+  .habitaciones-view .hb-chip-dot{ width:7px; height:7px; }
+  .habitaciones-view .hb-filter-right{ flex:0 0 auto; margin-left:0; gap:4px; }
+  .habitaciones-view .hb-filter-right .filter-date{
+    flex:0 0 132px;
+    width:132px;
+    min-width:132px;
+    font-size:.76rem;
+  }
 }
 /* La barra NO mide lo que el viewport: la sidebar se come ~370px, asi que a
    1440 quedan ~1067px y los 6 chips con etiqueta completa no caben junto al
@@ -17852,9 +17867,8 @@ body.ms-modal-abierto .habitaciones-view .modern-header{
    Se ancla en top:0 del scroller real, que es main.main-content (NO el window:
    medido, la topbar .ms-vtb no llega a fijarse ahi y se va con el scroll, asi
    que descontar su alto solo dejaba un hueco por el que pasaba el contenido).
-   z-index 31 > 30 de .ms-vtb: si en algun tema esa barra si llegara a fijarse,
-   gana la de fecha — saber que NO estas viendo hoy pesa mas que la flechita,
-   que sigue a un scroll de distancia.
+   z-index 45 > 40 del hero y > 30 de .ms-vtb: el contenido pasa por debajo
+   de la barra sin mezclarse con sus controles durante el desplazamiento.
    COLOR: grafito neutro a proposito. En esta vista TODOS los matices utiles ya
    son un estado de habitacion (verde=libre, terracota=ocupada, violeta=por
    llegar, azul=limpieza, ambar=mantenimiento); pintarla de color la haria leer
@@ -17862,7 +17876,7 @@ body.ms-modal-abierto .habitaciones-view .modern-header{
 .habitaciones-view .hb-datebar{
   position:sticky;
   top:0;
-  z-index:31;
+  z-index:45;
   display:flex;
   align-items:center;
   gap:12px;

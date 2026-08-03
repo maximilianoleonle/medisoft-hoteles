@@ -79,6 +79,121 @@ class ReservacionController extends Controller {
         return obtenerHotelIdActualCompat();
     }
 
+    /**
+     * Mantiene compatibilidad con registros operativos legacy que todavia
+     * leen el nombre desde $_SESSION['user_name'].
+     */
+    private function prepararNombreUsuarioAuditoria(): void {
+        $nombre = function_exists('user_name') ? trim((string) user_name()) : '';
+        $nombreNormalizado = function_exists('mb_strtolower')
+            ? mb_strtolower($nombre, 'UTF-8')
+            : strtolower($nombre);
+
+        if ($nombre !== '' && !in_array($nombreNormalizado, ['usuario', 'sistema'], true)) {
+            $_SESSION['user_name'] = $nombre;
+        }
+    }
+
+    /**
+     * Sustituye solo responsables genericos de notas de check-out. Las notas
+     * que ya tienen un nombre real se conservan intactas.
+     */
+    public static function aplicarResponsablesCheckoutHistoricos(string $notas, array $responsablesPorFecha): string {
+        if ($notas === '' || empty($responsablesPorFecha)) {
+            return $notas;
+        }
+
+        $resultado = preg_replace_callback(
+            '/(\[CHECK-OUT\s+(?:COMPLETO|PARCIAL)\]\s*)(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})(\s*-\s*Por:\s*)(Usuario|Sistema)\b/u',
+            static function (array $coincidencia) use ($responsablesPorFecha): string {
+                $fecha = $coincidencia[2];
+                $responsable = trim((string) ($responsablesPorFecha[$fecha] ?? ''));
+                $responsableNormalizado = function_exists('mb_strtolower')
+                    ? mb_strtolower($responsable, 'UTF-8')
+                    : strtolower($responsable);
+
+                if ($responsable === '' || in_array($responsableNormalizado, ['usuario', 'sistema'], true)) {
+                    return $coincidencia[0];
+                }
+
+                return $coincidencia[1] . $fecha . $coincidencia[3] . $responsable;
+            },
+            $notas
+        );
+
+        return is_string($resultado) ? $resultado : $notas;
+    }
+
+    /**
+     * Recupera el actor desde rastros append-only creados por el mismo
+     * check-out. Es una lectura defensiva para notas historicas que guardaron
+     * "Usuario" o "Sistema" en lugar del nombre real.
+     */
+    private function responsablesCheckoutHistoricos(int $reservacionId, int $hotelId): array {
+        if ($reservacionId <= 0 || $hotelId <= 0) {
+            return [];
+        }
+
+        $consultas = [
+            [
+                'sql' => "SELECT hl.fecha_hora, u.nombre_completo
+                          FROM historial_llaves hl
+                          INNER JOIN habitaciones h ON h.id = hl.habitacion_id AND h.hotel_id = ?
+                          INNER JOIN usuarios u ON u.id = hl.usuario_id
+                          WHERE hl.reservacion_id = ? AND hl.tipo_movimiento = 'recogida'
+                          ORDER BY hl.fecha_hora DESC",
+                'params' => [$hotelId, $reservacionId],
+                'fuente' => 'llaves',
+            ],
+            [
+                'sql' => "SELECT hr.fecha_hora, u.nombre_completo
+                          FROM historial_remotos hr
+                          INNER JOIN habitaciones h ON h.id = hr.habitacion_id AND h.hotel_id = ?
+                          INNER JOIN usuarios u ON u.id = hr.usuario_id
+                          WHERE hr.reservacion_id = ? AND hr.tipo_movimiento = 'recogida'
+                          ORDER BY hr.fecha_hora DESC",
+                'params' => [$hotelId, $reservacionId],
+                'fuente' => 'remotos',
+            ],
+            [
+                'sql' => "SELECT t.created_at AS fecha_hora, u.nombre_completo
+                          FROM tareas_operativas t
+                          INNER JOIN reservacion_habitaciones rh
+                            ON rh.habitacion_id = t.habitacion_id AND rh.hotel_id = t.hotel_id
+                          INNER JOIN usuarios u ON u.id = t.creada_por_usuario_id
+                          WHERE rh.reservacion_id = ?
+                            AND t.hotel_id = ?
+                            AND t.categoria = 'limpieza'
+                            AND t.titulo = 'Limpieza tras check-out'
+                          ORDER BY t.created_at DESC",
+                'params' => [$reservacionId, $hotelId],
+                'fuente' => 'tareas',
+            ],
+        ];
+
+        $responsables = [];
+        foreach ($consultas as $consulta) {
+            try {
+                $stmt = $this->db->prepare($consulta['sql']);
+                $stmt->execute($consulta['params']);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $fila) {
+                    $fecha = trim((string) ($fila['fecha_hora'] ?? ''));
+                    $nombre = trim((string) ($fila['nombre_completo'] ?? ''));
+                    if ($fecha !== '' && $nombre !== '' && !isset($responsables[$fecha])) {
+                        $responsables[$fecha] = $nombre;
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log(
+                    'Reservaciones: no se pudo resolver responsable historico de check-out ('
+                    . $consulta['fuente'] . '): ' . $e->getMessage()
+                );
+            }
+        }
+
+        return $responsables;
+    }
+
     private function cotizacionPdfBranding(): array {
         $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
         if (!is_array($branding)) {
@@ -1266,6 +1381,9 @@ public function checkOutParcialAction() {
 
         // Obtener hora de salida
         $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
+
+        // Los registros legacy del check-out leen este alias de sesion.
+        $this->prepararNombreUsuarioAuditoria();
 
         // Ejecutar check-out parcial
         $resultado = $this->reservacionModel->checkOutParcial($id, $habitaciones_ids, $hora_salida);
@@ -3191,6 +3309,18 @@ private function obtenerAlertasPendientesReservaciones(int $hotelId): array {
             return;
         }
         
+        $notasSistema = (string) ($reservacion['notas'] ?? '');
+        if (preg_match('/\[CHECK-OUT\s+(?:COMPLETO|PARCIAL)\].*?-\s*Por:\s*(?:Usuario|Sistema)\b/su', $notasSistema)) {
+            $responsablesCheckout = $this->responsablesCheckoutHistoricos(
+                (int) $id,
+                (int) $this->hotelIdActual()
+            );
+            $reservacion['notas'] = self::aplicarResponsablesCheckoutHistoricos(
+                $notasSistema,
+                $responsablesCheckout
+            );
+        }
+
         if (!empty($reservacion['usuario_registro_id'])) {
         $sql = "SELECT nombre_completo FROM usuarios WHERE id = ?";
         $stmt = $this->db->prepare($sql);
@@ -4141,6 +4271,8 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
 
     // Habitaciones de la reservacion (antes del check-out) para poder asignar limpieza.
     $habitacionIds = $this->reservacionModel->obtenerHabitacionIds($id);
+
+    $this->prepararNombreUsuarioAuditoria();
 
     // Usar el método checkOut del modelo
     $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
@@ -5787,6 +5919,8 @@ public function checkOutRapidoAction() {
         $habitacionIds = array_map(function($hab) {
             return (int)$hab['habitacion_id'];
         }, $habitaciones);
+
+        $this->prepararNombreUsuarioAuditoria();
 
         // Usar el método checkOut del modelo
         $resultado = $this->reservacionModel->checkOut($id, $hora_salida);
