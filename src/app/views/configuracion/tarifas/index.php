@@ -644,6 +644,791 @@ input.toggle-activo:checked ~ div {
     color: var(--tar-text) !important;
 }
 
+/* Calculadora de precios: consulta guiada, sin modificar tarifas. */
+#modalPrecios.tar-price-modal {
+    --tp-brand: var(--brand-primary, #1B2746);
+    --tp-brand-2: var(--brand-secondary, #0F172A);
+    --tp-accent: var(--brand-accent, #BD9441);
+    --tp-text: #172033;
+    --tp-muted: #667085;
+    --tp-bg: #F5F5F7;
+    --tp-surface: #FFFFFF;
+    --tp-line: color-mix(in srgb, var(--tp-brand) 11%, #E8E2D8);
+    --tp-success: #148653;
+    --tp-success-soft: #EAF7F0;
+    --tp-warning: #A96E12;
+    --tp-warning-soft: #FFF6E6;
+    --tp-danger: #B42318;
+    z-index: 13000;
+    color: var(--tp-text);
+    font-family: var(--tar-sans, 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+}
+
+#modalPrecios .tar-price-modal__dialog {
+    width: min(1120px, calc(100vw - 32px)) !important;
+    max-width: 1120px !important;
+    margin: max(16px, 4dvh) auto;
+}
+
+#modalPrecios .tar-price-modal__content {
+    max-height: min(92dvh, 860px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--tp-brand) 13%, #FFFFFF) !important;
+    border-radius: 26px !important;
+    background: var(--tp-surface);
+    box-shadow: 0 38px 90px -34px rgba(12, 18, 31, .58) !important;
+}
+
+#modalPrecios .tar-price-modal__header {
+    flex: 0 0 auto;
+    min-height: 94px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 22px !important;
+    border-bottom: 1px solid var(--tp-line) !important;
+    background:
+        radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--tp-accent) 15%, transparent), transparent 14rem),
+        linear-gradient(145deg, #FFFFFF, color-mix(in srgb, var(--tp-brand) 4%, #F8F7F4)) !important;
+}
+
+#modalPrecios .tar-price-modal__title-lockup {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+#modalPrecios .tar-price-modal__icon {
+    width: 50px;
+    height: 50px;
+    flex: 0 0 50px;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    color: #FFFFFF;
+    background: linear-gradient(145deg, var(--tp-brand), var(--tp-brand-2));
+    box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--tp-brand) 72%, transparent);
+}
+
+#modalPrecios .tar-price-modal__icon i {
+    font-size: 1.05rem;
+}
+
+#modalPrecios .tar-price-modal__eyebrow {
+    margin: 0 0 2px;
+    color: color-mix(in srgb, var(--tp-accent) 72%, #59401B);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+#modalPrecios .tar-price-modal__title {
+    margin: 0;
+    color: var(--tp-brand) !important;
+    font-size: clamp(1.05rem, 2vw, 1.28rem) !important;
+    font-weight: 900 !important;
+    line-height: 1.2;
+}
+
+#modalPrecios .tar-price-modal__subtitle {
+    margin: 4px 0 0;
+    color: var(--tp-muted);
+    font-size: .79rem;
+    line-height: 1.45;
+}
+
+#modalPrecios .tar-price-modal__close {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--tp-line);
+    border-radius: 13px;
+    color: var(--tp-brand) !important;
+    background: rgba(255, 255, 255, .82);
+    opacity: 1 !important;
+    text-shadow: none !important;
+    transition: transform .16s ease, background-color .16s ease, border-color .16s ease;
+}
+
+#modalPrecios .tar-price-modal__close:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--tp-brand) 24%, var(--tp-line));
+    background: #FFFFFF;
+}
+
+#modalPrecios .tar-price-modal__close:focus-visible,
+#modalPrecios .tar-price-date:focus-visible,
+#modalPrecios .tar-price-group__toggle:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--tp-accent) 34%, transparent) !important;
+    outline-offset: 2px;
+}
+
+#modalPrecios .tar-price-modal__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(250px, .72fr) minmax(0, 2fr);
+    padding: 0 !important;
+    overflow: hidden;
+    background: var(--tp-bg) !important;
+}
+
+#modalPrecios .tar-price-controls {
+    min-width: 0;
+    padding: 24px;
+    border-right: 1px solid var(--tp-line);
+    background: var(--tp-surface);
+}
+
+#modalPrecios .tar-price-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+#modalPrecios .tar-price-step__number {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: #FFFFFF;
+    background: var(--tp-brand);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+#modalPrecios .tar-price-step__copy h6 {
+    margin: 1px 0 3px;
+    color: var(--tp-brand);
+    font-size: .92rem;
+    font-weight: 900;
+}
+
+#modalPrecios .tar-price-step__copy p {
+    margin: 0;
+    color: var(--tp-muted);
+    font-size: .75rem;
+    line-height: 1.45;
+}
+
+#modalPrecios .tar-price-field {
+    margin-top: 22px;
+}
+
+#modalPrecios .tar-price-field label {
+    display: block;
+    margin: 0 0 7px;
+    color: var(--tp-text);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+#modalPrecios .tar-price-date-wrap {
+    position: relative;
+}
+
+#modalPrecios .tar-price-date-wrap > i {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    color: var(--tp-accent);
+    pointer-events: none;
+}
+
+#modalPrecios .tar-price-date {
+    width: 100%;
+    min-height: 50px;
+    padding: 10px 12px 10px 42px;
+    border: 1px solid var(--tp-line);
+    border-radius: 13px;
+    color: var(--tp-text);
+    background: var(--tp-bg);
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 800;
+    transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+#modalPrecios .tar-price-date:hover,
+#modalPrecios .tar-price-date:focus {
+    border-color: color-mix(in srgb, var(--tp-accent) 58%, var(--tp-line));
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tp-accent) 15%, transparent);
+}
+
+#modalPrecios .tar-price-field__help {
+    display: block;
+    margin-top: 7px;
+    color: var(--tp-muted);
+    font-size: .71rem;
+    line-height: 1.45;
+}
+
+#modalPrecios .tar-price-readonly-note {
+    margin-top: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 12px;
+    border: 1px solid color-mix(in srgb, var(--tp-success) 20%, #DDEDE4);
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--tp-success) 70%, #173C2A);
+    background: var(--tp-success-soft);
+    font-size: .71rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+#modalPrecios .tar-price-readonly-note i {
+    margin-top: 2px;
+}
+
+#modalPrecios .tar-price-results {
+    min-width: 0;
+    min-height: 0;
+    padding: 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+#modalPrecios .tar-price-state {
+    min-height: 360px;
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+    text-align: center;
+}
+
+#modalPrecios .tar-price-state__inner {
+    width: min(390px, 100%);
+}
+
+#modalPrecios .tar-price-state__icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+    border: 1px solid color-mix(in srgb, var(--tp-brand) 12%, #E5E7EB);
+    border-radius: 17px;
+    color: var(--tp-brand);
+    background: color-mix(in srgb, var(--tp-brand) 7%, #FFFFFF);
+    font-size: 1.15rem;
+}
+
+#modalPrecios .tar-price-state.is-error .tar-price-state__icon {
+    border-color: color-mix(in srgb, var(--tp-danger) 20%, #FEE2E2);
+    color: var(--tp-danger);
+    background: #FFF3F2;
+}
+
+#modalPrecios .tar-price-state h6 {
+    margin: 0 0 5px;
+    color: var(--tp-brand);
+    font-size: .94rem;
+    font-weight: 900;
+}
+
+#modalPrecios .tar-price-state p {
+    margin: 0;
+    color: var(--tp-muted);
+    font-size: .78rem;
+    line-height: 1.55;
+}
+
+#modalPrecios .tar-price-summary {
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
+}
+
+#modalPrecios .tar-price-summary__eyebrow {
+    margin: 0 0 3px;
+    color: var(--tp-muted);
+    font-size: .67rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+#modalPrecios .tar-price-summary h6 {
+    margin: 0;
+    color: var(--tp-brand);
+    font-size: 1.02rem;
+    font-weight: 900;
+}
+
+#modalPrecios .tar-price-summary__hint {
+    margin: 4px 0 0;
+    color: var(--tp-muted);
+    font-size: .73rem;
+}
+
+#modalPrecios .tar-price-metrics {
+    display: flex;
+    gap: 8px;
+}
+
+#modalPrecios .tar-price-metric {
+    min-width: 92px;
+    padding: 9px 11px;
+    border: 1px solid var(--tp-line);
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+#modalPrecios .tar-price-metric strong {
+    display: block;
+    color: var(--tp-brand);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+#modalPrecios .tar-price-metric span {
+    display: block;
+    margin-top: 3px;
+    color: var(--tp-muted);
+    font-size: .62rem;
+    font-weight: 800;
+}
+
+#modalPrecios .tar-price-metric.is-adjusted {
+    border-color: color-mix(in srgb, var(--tp-accent) 28%, var(--tp-line));
+    background: var(--tp-warning-soft);
+}
+
+#modalPrecios .tar-price-metric.is-adjusted strong {
+    color: var(--tp-warning);
+}
+
+#modalPrecios .tar-price-groups {
+    display: grid;
+    gap: 10px;
+}
+
+#modalPrecios .tar-price-group {
+    overflow: hidden;
+    border: 1px solid var(--tp-line);
+    border-radius: 15px;
+    background: var(--tp-surface);
+    box-shadow: 0 10px 28px -26px rgba(23, 32, 51, .55);
+}
+
+#modalPrecios .tar-price-group__toggle {
+    width: 100%;
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 14px;
+    border: 0;
+    color: inherit;
+    background: #FFFFFF;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .16s ease;
+}
+
+#modalPrecios .tar-price-group__toggle:hover {
+    background: color-mix(in srgb, var(--tp-brand) 3%, #FFFFFF);
+}
+
+#modalPrecios .tar-price-group__icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    color: var(--tp-brand);
+    background: color-mix(in srgb, var(--tp-brand) 8%, #FFFFFF);
+}
+
+#modalPrecios .tar-price-group__copy {
+    min-width: 0;
+}
+
+#modalPrecios .tar-price-group__copy strong,
+#modalPrecios .tar-price-group__copy span {
+    display: block;
+}
+
+#modalPrecios .tar-price-group__copy strong {
+    overflow: hidden;
+    color: var(--tp-text);
+    font-size: .8rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#modalPrecios .tar-price-group__copy span {
+    margin-top: 2px;
+    color: var(--tp-muted);
+    font-size: .67rem;
+}
+
+#modalPrecios .tar-price-group__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: var(--tp-warning);
+    background: var(--tp-warning-soft);
+    font-size: .62rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+#modalPrecios .tar-price-group__chevron {
+    color: var(--tp-muted);
+    font-size: .7rem;
+    transition: transform .18s ease;
+}
+
+#modalPrecios .tar-price-group__toggle[aria-expanded="true"] .tar-price-group__chevron {
+    transform: rotate(180deg);
+}
+
+#modalPrecios .tar-price-group__body {
+    border-top: 1px solid var(--tp-line);
+}
+
+#modalPrecios .tar-price-table-wrap {
+    overflow-x: auto;
+}
+
+#modalPrecios .tar-price-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+#modalPrecios .tar-price-table th {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--tp-line);
+    color: var(--tp-muted);
+    background: var(--tp-bg);
+    font-size: .61rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+#modalPrecios .tar-price-table th.is-number,
+#modalPrecios .tar-price-table td.is-number {
+    text-align: right;
+}
+
+#modalPrecios .tar-price-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--tp-line) 72%, #FFFFFF);
+    color: var(--tp-text);
+    font-size: .73rem;
+    vertical-align: middle;
+}
+
+#modalPrecios .tar-price-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+#modalPrecios .tar-price-table tbody tr.is-adjusted {
+    background: color-mix(in srgb, var(--tp-warning-soft) 48%, #FFFFFF);
+}
+
+#modalPrecios .tar-price-room {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+#modalPrecios .tar-price-room i {
+    color: var(--tp-brand);
+}
+
+#modalPrecios .tar-price-final {
+    color: var(--tp-brand);
+    font-size: .8rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+#modalPrecios tr.is-adjusted .tar-price-final {
+    color: var(--tp-warning);
+}
+
+#modalPrecios .tar-price-difference {
+    color: var(--tp-warning);
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+#modalPrecios .tar-price-difference small {
+    display: block;
+    margin-top: 2px;
+    color: var(--tp-muted);
+    font-size: .61rem;
+    font-weight: 700;
+}
+
+#modalPrecios .tar-price-no-change {
+    color: var(--tp-muted);
+    font-weight: 700;
+}
+
+#modalPrecios .tar-price-rules {
+    display: grid;
+    gap: 4px;
+}
+
+#modalPrecios .tar-price-rule {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    color: var(--tp-muted);
+    line-height: 1.35;
+}
+
+#modalPrecios .tar-price-rule i {
+    color: var(--tp-accent);
+    font-size: .62rem;
+}
+
+#modalPrecios .tar-price-rule strong {
+    color: var(--tp-success);
+}
+
+@media (max-width: 840px) {
+    #modalPrecios .tar-price-modal__dialog {
+        width: min(760px, calc(100vw - 20px)) !important;
+        margin: 10px auto;
+    }
+
+    #modalPrecios .tar-price-modal__content {
+        max-height: calc(100dvh - 20px);
+    }
+
+    #modalPrecios .tar-price-modal__body {
+        display: block;
+        overflow-y: auto;
+    }
+
+    #modalPrecios .tar-price-controls {
+        padding: 16px 18px;
+        border-right: 0;
+        border-bottom: 1px solid var(--tp-line);
+    }
+
+    #modalPrecios .tar-price-controls__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(230px, .72fr);
+        align-items: end;
+        gap: 16px;
+    }
+
+    #modalPrecios .tar-price-field {
+        margin-top: 0;
+    }
+
+    #modalPrecios .tar-price-readonly-note {
+        grid-column: 1 / -1;
+        margin-top: 0;
+    }
+
+    #modalPrecios .tar-price-results {
+        padding: 18px;
+        overflow: visible;
+    }
+}
+
+@media (max-width: 640px) {
+    #modalPrecios.tar-price-modal {
+        padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+    }
+
+    #modalPrecios .tar-price-modal__dialog {
+        width: 100% !important;
+        margin: 0 auto;
+    }
+
+    #modalPrecios .tar-price-modal__content {
+        max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+        border-radius: 22px 22px 16px 16px !important;
+    }
+
+    #modalPrecios .tar-price-modal__header {
+        min-height: 78px;
+        padding: 14px 16px !important;
+    }
+
+    #modalPrecios .tar-price-modal__icon {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+        border-radius: 13px;
+    }
+
+    #modalPrecios .tar-price-modal__subtitle {
+        display: none;
+    }
+
+    #modalPrecios .tar-price-controls__layout {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    #modalPrecios .tar-price-readonly-note {
+        grid-column: auto;
+    }
+
+    #modalPrecios .tar-price-results {
+        padding: 14px;
+    }
+
+    #modalPrecios .tar-price-summary {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #modalPrecios .tar-price-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #modalPrecios .tar-price-metric {
+        min-width: 0;
+        padding: 8px;
+    }
+
+    #modalPrecios .tar-price-group__toggle {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        padding: 9px 11px;
+    }
+
+    #modalPrecios .tar-price-group__status {
+        display: none;
+    }
+
+    #modalPrecios .tar-price-table-wrap {
+        overflow: visible;
+    }
+
+    #modalPrecios .tar-price-table,
+    #modalPrecios .tar-price-table tbody,
+    #modalPrecios .tar-price-table tr,
+    #modalPrecios .tar-price-table td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #modalPrecios .tar-price-table thead {
+        display: none;
+    }
+
+    #modalPrecios .tar-price-table tr {
+        padding: 12px;
+        border-bottom: 1px solid var(--tp-line);
+        background: #FFFFFF;
+    }
+
+    #modalPrecios .tar-price-table tr:last-child {
+        border-bottom: 0;
+    }
+
+    #modalPrecios .tar-price-table tbody tr.is-adjusted {
+        background: color-mix(in srgb, var(--tp-warning-soft) 52%, #FFFFFF);
+    }
+
+    #modalPrecios .tar-price-table td {
+        min-height: 32px;
+        display: grid;
+        grid-template-columns: minmax(100px, .8fr) minmax(0, 1.2fr);
+        align-items: baseline;
+        gap: 10px;
+        padding: 5px 0;
+        border: 0;
+        text-align: right !important;
+    }
+
+    #modalPrecios .tar-price-table td::before {
+        content: attr(data-label);
+        color: var(--tp-muted);
+        font-size: .61rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-align: left;
+        text-transform: uppercase;
+    }
+
+    #modalPrecios .tar-price-table td.tar-price-room-cell {
+        display: block;
+        min-height: 0;
+        margin-bottom: 5px;
+        padding-bottom: 9px;
+        border-bottom: 1px dashed var(--tp-line);
+        text-align: left !important;
+    }
+
+    #modalPrecios .tar-price-table td.tar-price-room-cell::before {
+        content: none;
+    }
+
+    #modalPrecios .tar-price-rules {
+        justify-items: end;
+    }
+
+    #modalPrecios .tar-price-rule {
+        justify-content: flex-end;
+        text-align: right;
+    }
+}
+
+@media (max-width: 380px) {
+    #modalPrecios .tar-price-modal__eyebrow,
+    #modalPrecios .tar-price-summary__hint {
+        display: none;
+    }
+
+    #modalPrecios .tar-price-metrics {
+        gap: 5px;
+    }
+
+    #modalPrecios .tar-price-metric span {
+        font-size: .57rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #modalPrecios,
+    #modalPrecios * {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+}
+
 .dataTables_wrapper .dataTables_info {
     color: var(--tar-muted) !important;
 }
@@ -2015,33 +2800,80 @@ input.toggle-activo:checked ~ div {
     </div>
 </div><!-- end page -->
 
-<!-- ══════ Modal Calculadora de Precios ══════ -->
-<div class="modal fade" id="modalPrecios" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title flex items-center gap-2">
-                    <i class="fas fa-calculator opacity-80"></i>
-                    Calculadora de Precios con Incrementos
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-5">
-                    <label class="filter-label block mb-1.5">Seleccionar fecha para calcular precios</label>
-                    <input type="date" class="date-input" id="fechaPreview"
-                           value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>">
-                </div>
-                <div id="resultadoPrecios">
-                    <div class="empty-state py-12">
-                        <div style="width:56px;height:56px;border-radius:50%;background:rgba(92,122,78,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                            <i class="fas fa-calendar-check text-xl" style="color:#A8C4A0"></i>
-                        </div>
-                        <p class="text-sm text-gray-400">Seleccione una fecha para ver los precios aplicables</p>
+<!-- ══════ Modal Simulador de Precios ══════ -->
+<div class="modal fade tar-price-modal"
+     id="modalPrecios"
+     tabindex="-1"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modalPreciosTitulo"
+     aria-describedby="modalPreciosDescripcion">
+    <div class="modal-dialog tar-price-modal__dialog" role="document">
+        <div class="modal-content tar-price-modal__content">
+            <header class="modal-header tar-price-modal__header">
+                <div class="tar-price-modal__title-lockup">
+                    <span class="tar-price-modal__icon" aria-hidden="true">
+                        <i class="fas fa-calculator"></i>
+                    </span>
+                    <div>
+                        <p class="tar-price-modal__eyebrow">Vista previa</p>
+                        <h5 class="modal-title tar-price-modal__title" id="modalPreciosTitulo">Simula el precio por habitación</h5>
+                        <p class="tar-price-modal__subtitle" id="modalPreciosDescripcion">Consulta cuánto cobrarías en una fecha antes de crear o modificar una tarifa.</p>
                     </div>
                 </div>
+                <button type="button"
+                        class="close tar-price-modal__close"
+                        data-dismiss="modal"
+                        aria-label="Cerrar simulador">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </header>
+
+            <div class="modal-body tar-price-modal__body">
+                <aside class="tar-price-controls" aria-labelledby="tarPriceStepTitle">
+                    <div class="tar-price-controls__layout">
+                        <div class="tar-price-step">
+                            <span class="tar-price-step__number" aria-hidden="true">1</span>
+                            <div class="tar-price-step__copy">
+                                <h6 id="tarPriceStepTitle">Elige la fecha</h6>
+                                <p>Usaremos las tarifas activas y vigentes para ese día.</p>
+                            </div>
+                        </div>
+
+                        <div class="tar-price-field">
+                            <label for="fechaPreview">Fecha de hospedaje</label>
+                            <div class="tar-price-date-wrap">
+                                <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                                <input type="date"
+                                       class="tar-price-date"
+                                       id="fechaPreview"
+                                       value="<?= date('Y-m-d') ?>"
+                                       min="<?= date('Y-m-d') ?>"
+                                       aria-describedby="fechaPreviewAyuda">
+                            </div>
+                            <small class="tar-price-field__help" id="fechaPreviewAyuda">El resultado se actualiza automáticamente al cambiar el día.</small>
+                        </div>
+
+                        <div class="tar-price-readonly-note">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                            <span>Esta consulta es sólo informativa. No guarda cambios ni modifica reservaciones.</span>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="tar-price-results lc-scroll"
+                         id="resultadoPrecios"
+                         aria-live="polite"
+                         aria-busy="false"
+                         aria-label="Resultado del cálculo">
+                    <div class="tar-price-state">
+                        <div class="tar-price-state__inner">
+                            <span class="tar-price-state__icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
+                            <h6>Revisa el precio antes de aplicarlo</h6>
+                            <p>Selecciona una fecha para ver el precio base, los incrementos vigentes y el precio final de cada habitación.</p>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -2240,91 +3072,207 @@ $(document).ready(function() {
         });
     });
 
-    // Previsualizar precios
+    // Previsualizar precios. Es una consulta de solo lectura: no guarda cambios.
+    const $modalPrecios = $('#modalPrecios');
+    const $resultadoPrecios = $('#resultadoPrecios');
+    let tarifaPreviewTrigger = null;
+
+    // Como hijo directo de <body>, el modal no hereda restricciones del shell.
+    if ($modalPrecios.parent()[0] !== document.body) {
+        $modalPrecios.appendTo(document.body);
+    }
+
     window.previsualizarPrecios = function() {
-        $('#modalPrecios').modal('show');
+        tarifaPreviewTrigger = document.activeElement;
+        $modalPrecios.modal('show');
         cargarPreciosPreview();
     };
 
+    $modalPrecios.on('shown.bs.modal', function() {
+        document.getElementById('fechaPreview')?.focus();
+    });
+
+    $modalPrecios.on('hidden.bs.modal', function() {
+        if (tarifaPreviewTrigger && document.contains(tarifaPreviewTrigger)) {
+            tarifaPreviewTrigger.focus();
+        }
+        tarifaPreviewTrigger = null;
+    });
+
     $('#fechaPreview').change(cargarPreciosPreview);
+
+    $resultadoPrecios.on('click', '.tar-price-group__toggle', function() {
+        const panelId = this.getAttribute('aria-controls');
+        const panel = panelId ? document.getElementById(panelId) : null;
+        if (!panel) return;
+
+        const expanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        panel.hidden = expanded;
+    });
+
+    function tarifaPreviewEscape(value) {
+        return $('<div>').text(value == null ? '' : String(value)).html();
+    }
+
+    function mostrarEstadoPrecios(tipo, titulo, detalle) {
+        const iconos = {
+            loading: 'fa-spinner fa-spin',
+            error: 'fa-exclamation-triangle',
+            empty: 'fa-bed'
+        };
+        const clase = tipo === 'error' ? ' is-error' : '';
+        const role = tipo === 'error' ? ' role="alert"' : ' role="status"';
+        $resultadoPrecios.html(
+            `<div class="tar-price-state${clase}"${role}>
+                <div class="tar-price-state__inner">
+                    <span class="tar-price-state__icon" aria-hidden="true"><i class="fas ${iconos[tipo] || iconos.empty}"></i></span>
+                    <h6>${tarifaPreviewEscape(titulo)}</h6>
+                    <p>${tarifaPreviewEscape(detalle)}</p>
+                </div>
+            </div>`
+        );
+    }
 
     function cargarPreciosPreview() {
         const fecha = $('#fechaPreview').val();
-        $('#resultadoPrecios').html(
-            '<div class="text-center py-10">' +
-            '<div style="width:52px;height:52px;border-radius:50%;background:rgba(92,122,78,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">' +
-            '<i class="fas fa-spinner fa-spin text-xl" style="color:#5C7A4E"></i></div>' +
-            '<p class="text-xs text-gray-400">Calculando precios...</p></div>'
-        );
+        if (!fecha) {
+            $resultadoPrecios.attr('aria-busy', 'false');
+            mostrarEstadoPrecios('empty', 'Selecciona una fecha', 'Elige el día de hospedaje para consultar los precios aplicables.');
+            return;
+        }
+
+        $resultadoPrecios.attr('aria-busy', 'true');
+        mostrarEstadoPrecios('loading', 'Calculando precios', 'Estamos aplicando las tarifas activas y vigentes para la fecha seleccionada.');
+
         $.post('<?= url("configuracion/tarifas/previsualizar") ?>', { fecha:fecha, csrf_token:'<?= csrf_token() ?>' })
-        .done(function(r) { if (r.success) mostrarTablaPrecios(r); })
-        .fail(() => {
-            $('#resultadoPrecios').html(
-                '<div class="p-3 rounded-xl" style="background:#FEF2F2;border:1px solid #FECACA;">' +
-                '<p class="text-xs text-red-700"><i class="fas fa-exclamation-triangle mr-1.5"></i>Error al cargar los precios</p></div>'
-            );
+        .done(function(r) {
+            $resultadoPrecios.attr('aria-busy', 'false');
+            if (r && r.success) {
+                mostrarTablaPrecios(r);
+                return;
+            }
+            mostrarEstadoPrecios('error', 'No pudimos calcular los precios', 'Cambia la fecha o inténtalo nuevamente. No se modificó ninguna tarifa.');
+        })
+        .fail(function() {
+            $resultadoPrecios.attr('aria-busy', 'false');
+            mostrarEstadoPrecios('error', 'No pudimos cargar los precios', 'Revisa tu conexión y cambia la fecha para volver a intentarlo. No se modificó ninguna tarifa.');
         });
     }
 
     function mostrarTablaPrecios(data) {
-        let html = `<div class="flex items-center justify-between mb-4">
-            <p class="text-xs font-bold text-[#3D5234]">Precios para el ${data.fecha_formateada}</p>
-            <div class="flex items-center gap-3 text-xs text-gray-400">
-                <span class="flex items-center gap-1"><i class="fas fa-circle text-xs" style="color:#C8A96A"></i>Con incremento</span>
-                <span class="flex items-center gap-1"><i class="fas fa-circle text-xs text-gray-200"></i>Sin incremento</span>
-            </div></div>`;
+        const precios = Array.isArray(data.precios) ? data.precios : [];
+        if (!precios.length) {
+            mostrarEstadoPrecios('empty', 'No hay habitaciones para mostrar', 'No encontramos habitaciones activas con precios para la fecha seleccionada.');
+            return;
+        }
+
+        const habitacionesConIncremento = precios.filter(p => Number(p.incremento) > 0).length;
+        const habitacionesSinCambio = precios.length - habitacionesConIncremento;
+        const fechaFormateada = tarifaPreviewEscape(data.fecha_formateada || data.fecha || '');
+
+        let html = `<section class="tar-price-summary" aria-label="Resumen del cálculo">
+            <div>
+                <p class="tar-price-summary__eyebrow">2 · Revisa el resultado</p>
+                <h6>Precios para el ${fechaFormateada}</h6>
+                <p class="tar-price-summary__hint">Precio base + incrementos vigentes = precio final por noche.</p>
+            </div>
+            <div class="tar-price-metrics">
+                <div class="tar-price-metric"><strong>${precios.length}</strong><span>Habitaciones</span></div>
+                <div class="tar-price-metric is-adjusted"><strong>${habitacionesConIncremento}</strong><span>Con incremento</span></div>
+                <div class="tar-price-metric"><strong>${habitacionesSinCambio}</strong><span>Sin cambio</span></div>
+            </div>
+        </section>`;
 
         const porTipo = {};
-        data.precios.forEach(p => { if (!porTipo[p.tipo]) porTipo[p.tipo]=[]; porTipo[p.tipo].push(p); });
-
-        html += '<div class="space-y-3">';
-        Object.keys(porTipo).forEach((tipo, idx) => {
-            const habs = porTipo[tipo];
-            const tieneInc = habs.some(h => h.incremento > 0);
-            html += `<div class="tar-panel overflow-hidden">
-                <button class="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[#FAFDF8] transition-colors"
-                        onclick="$('#precio-tipo-${idx}').toggleClass('hidden')">
-                    <span class="text-xs font-bold text-gray-700">${tipo}</span>
-                    <div class="flex items-center gap-2">
-                        ${tieneInc ? '<span class="vig-badge" style="background:rgba(200,169,106,.12);color:#B8994A;border:1px solid rgba(200,169,106,.25);"><i class="fas fa-tag text-xs"></i>Con incremento</span>' : ''}
-                        <i class="fas fa-chevron-down text-gray-300 text-xs"></i>
-                    </div>
-                </button>
-                <div id="precio-tipo-${idx}" class="${idx>0?'hidden':''}">
-                    <div class="overflow-x-auto lc-scroll">
-                    <table class="min-w-full">
-                        <thead><tr style="border-bottom:2px solid #DDE8D5;">
-                            <th class="px-4 py-2 text-left" style="font-size:.65rem;font-weight:700;color:#7A9B6A;text-transform:uppercase;letter-spacing:.05em;">Habitación</th>
-                            <th class="px-4 py-2 text-right" style="font-size:.65rem;font-weight:700;color:#7A9B6A;text-transform:uppercase;letter-spacing:.05em;">P. Base</th>
-                            <th class="px-4 py-2 text-left hidden sm:table-cell" style="font-size:.65rem;font-weight:700;color:#7A9B6A;text-transform:uppercase;letter-spacing:.05em;">Incrementos</th>
-                            <th class="px-4 py-2 text-right" style="font-size:.65rem;font-weight:700;color:#7A9B6A;text-transform:uppercase;letter-spacing:.05em;">P. Final</th>
-                            <th class="px-4 py-2 text-right" style="font-size:.65rem;font-weight:700;color:#7A9B6A;text-transform:uppercase;letter-spacing:.05em;">Dif.</th>
-                        </tr></thead>
-                        <tbody>`;
-            habs.forEach(h => {
-                const tiInc = h.incremento > 0;
-                html += `<tr style="border-bottom:1px solid #F0F5ED;${tiInc?'background:#FAFDF8;':''}">
-                    <td class="px-4 py-2 text-xs font-semibold text-gray-800">Hab. ${h.habitacion}</td>
-                    <td class="px-4 py-2 text-xs text-gray-500 text-right">${formatCurrency(h.precio_base)}</td>
-                    <td class="px-4 py-2 text-xs hidden sm:table-cell">`;
-                if (h.incrementos.length) {
-                    h.incrementos.forEach(i => {
-                        html += `<div class="flex items-center gap-1 mb-0.5"><i class="fas fa-tag text-xs" style="color:#C8A96A"></i><span class="text-gray-600">${i.nombre}: <strong class="text-emerald-600">+${formatCurrency(i.aumento)}</strong>${i.tipo==='porcentaje'?` <span class="text-gray-400">(${i.valor}%)</span>`:''}</span></div>`;
-                    });
-                } else html += '<span class="text-gray-300 text-xs">Sin incrementos</span>';
-                html += `</td>
-                    <td class="px-4 py-2 text-xs font-bold text-right ${tiInc?'text-[#B8994A]':'text-gray-800'}">${formatCurrency(h.precio_final)}</td>
-                    <td class="px-4 py-2 text-xs text-right">`;
-                if (h.incremento>0) {
-                    const pct = ((h.incremento/h.precio_base)*100).toFixed(1);
-                    html += `<span class="text-red-500 font-semibold">+${formatCurrency(h.incremento)}</span><span class="text-gray-400 block text-xs">(+${pct}%)</span>`;
-                } else html += '<span class="text-gray-300">—</span>';
-                html += `</td></tr>`;
-            });
-            html += '</tbody></table></div></div></div>';
+        precios.forEach(p => {
+            const tipo = String(p.tipo || 'Sin tipo de habitación');
+            if (!porTipo[tipo]) porTipo[tipo] = [];
+            porTipo[tipo].push(p);
         });
+
+        html += '<div class="tar-price-groups">';
+        Object.keys(porTipo).forEach((tipo, idx) => {
+            const habitaciones = porTipo[tipo];
+            const ajustadas = habitaciones.filter(h => Number(h.incremento) > 0).length;
+            const panelId = `precio-tipo-${idx}`;
+            const expandido = idx === 0;
+
+            html += `<article class="tar-price-group">
+                <button type="button"
+                        class="tar-price-group__toggle"
+                        aria-expanded="${expandido ? 'true' : 'false'}"
+                        aria-controls="${panelId}">
+                    <span class="tar-price-group__icon" aria-hidden="true"><i class="fas fa-bed"></i></span>
+                    <span class="tar-price-group__copy">
+                        <strong>${tarifaPreviewEscape(tipo)}</strong>
+                        <span>${habitaciones.length} ${habitaciones.length === 1 ? 'habitación' : 'habitaciones'}</span>
+                    </span>
+                    ${ajustadas > 0 ? `<span class="tar-price-group__status"><i class="fas fa-tag" aria-hidden="true"></i>${ajustadas} con incremento</span>` : ''}
+                    <i class="fas fa-chevron-down tar-price-group__chevron" aria-hidden="true"></i>
+                </button>
+                <div class="tar-price-group__body" id="${panelId}"${expandido ? '' : ' hidden'}>
+                    <div class="tar-price-table-wrap lc-scroll">
+                        <table class="tar-price-table">
+                            <thead>
+                                <tr>
+                                    <th>Habitación</th>
+                                    <th class="is-number">Precio base</th>
+                                    <th>Tarifas aplicadas</th>
+                                    <th class="is-number">Precio final</th>
+                                    <th class="is-number">Diferencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            habitaciones.forEach(habitacion => {
+                const incremento = Number(habitacion.incremento) || 0;
+                const precioBase = Number(habitacion.precio_base) || 0;
+                const tieneIncremento = incremento > 0;
+                const incrementos = Array.isArray(habitacion.incrementos) ? habitacion.incrementos : [];
+
+                html += `<tr class="${tieneIncremento ? 'is-adjusted' : ''}">
+                    <td class="tar-price-room-cell" data-label="Habitación">
+                        <span class="tar-price-room"><i class="fas fa-door-closed" aria-hidden="true"></i>Hab. ${tarifaPreviewEscape(habitacion.habitacion)}</span>
+                    </td>
+                    <td class="is-number" data-label="Precio base">${formatCurrency(precioBase)}</td>
+                    <td data-label="Tarifas aplicadas">`;
+
+                if (incrementos.length) {
+                    html += '<div class="tar-price-rules">';
+                    incrementos.forEach(incrementoAplicado => {
+                        const porcentaje = incrementoAplicado.tipo === 'porcentaje'
+                            ? ` <span>(${tarifaPreviewEscape(incrementoAplicado.valor)}%)</span>`
+                            : '';
+                        html += `<div class="tar-price-rule">
+                            <i class="fas fa-tag" aria-hidden="true"></i>
+                            <span>${tarifaPreviewEscape(incrementoAplicado.nombre)}: <strong>+${formatCurrency(incrementoAplicado.aumento)}</strong>${porcentaje}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<span class="tar-price-no-change">Sin incrementos</span>';
+                }
+
+                html += `</td>
+                    <td class="is-number" data-label="Precio final"><span class="tar-price-final">${formatCurrency(habitacion.precio_final)}</span></td>
+                    <td class="is-number" data-label="Diferencia">`;
+
+                if (tieneIncremento) {
+                    const porcentajeDiferencia = precioBase > 0 ? ((incremento / precioBase) * 100).toFixed(1) : '0.0';
+                    html += `<span class="tar-price-difference">+${formatCurrency(incremento)}<small>+${porcentajeDiferencia}%</small></span>`;
+                } else {
+                    html += '<span class="tar-price-no-change">Sin cambio</span>';
+                }
+
+                html += '</td></tr>';
+            });
+
+            html += '</tbody></table></div></div></article>';
+        });
+
         html += '</div>';
-        $('#resultadoPrecios').html(html);
+        $resultadoPrecios.html(html);
     }
 
     window.formatCurrency = val => '$'+parseFloat(val).toFixed(2).replace(/\d(?=(\d{3})+\.)/g,'$&,');
