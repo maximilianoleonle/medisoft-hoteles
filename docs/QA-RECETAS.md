@@ -523,7 +523,8 @@ El arnés (`node tools/tests_js/precarga_offline.test.js`, 19) solo fija contrat
 3. **El indicador es honesto o no sirve**: con los 6 conjuntos, `#offline-listo` del pie del sidebar se muestra con el `title` "Datos guardados en este equipo a las HH:MM". Borrar UN sello (`ultima_sync_caja`) debe dejar `estadoOffline().listo === false` y esconderlo — anunciar "listo" con la copia a medias es justo la promesa que no se puede hacer.
 4. **Hora en 24 h**: `toLocaleTimeString('es-MX')` en 12 h devuelve "03:16 p.m." **con punto final**, y pegado al punto de la frase queda "..". Usar `hour12:false`.
 5. **Al recargar para medir**, hazlo con `?nc=N`: si el JS viejo sigue en caché, `OfflineData.prepararOffline` sale `undefined` y parece que el cambio no se aplicó.
-6. ⬜ medir en un equipo con la PWA instalada y varios días de uso: los plazos (3/20/60 min) se eligieron por criterio, no por telemetría.
+6. **Los plazos son 8/20/60 min** (los cortos subieron de 3 a 8 el ago-03). Al tocarlos, recordar que **solo gobiernan la copia sin internet**: los tres lectores que capturan van detrás de un guard de "sin conexión", así que estirarlos no muestra datos viejos a nadie que tenga red — solo aumenta la antigüedad máxima de la copia si la red se cae. El techo útil es `SNAPSHOT_INTERVALO_MS` (15 min): por encima, el refresco de fondo deja de refrescar.
+7. ⬜ medir en un equipo con la PWA instalada y varios días de uso si 8 min se siente bien para el estado de los cuartos.
 
 ## Exportar el reporte del día sin internet (PDF y Excel) — verificado ✅ 2026-08-03 (SW v30)
 

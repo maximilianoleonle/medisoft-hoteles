@@ -37,11 +37,18 @@
    * Los plazos salen de que tan rapido cambia cada cosa de verdad, no de un numero
    * redondo: el estado de un cuarto cambia en minutos, el padron de huespedes en
    * dias y una temporada se edita un par de veces al año.
+   *
+   * Esto SOLO gobierna la copia que se usa sin internet: los tres lectores que
+   * capturan (obtenerHabitaciones/obtenerReservaciones/obtenerCajaSnapshot) se
+   * llaman detras de un guard de "sin conexion", y con red las pantallas piden al
+   * servidor como siempre. Por eso el plazo se puede estirar sin que nadie vea
+   * datos viejos estando conectado: lo unico que crece es la antiguedad maxima de
+   * la copia el dia que se caiga la red.
    */
   const FRESCURA_MS = {
-    habitaciones:   3 * 60 * 1000,
-    reservaciones:  3 * 60 * 1000,
-    caja:           3 * 60 * 1000,
+    habitaciones:   8 * 60 * 1000,
+    reservaciones:  8 * 60 * 1000,
+    caja:           8 * 60 * 1000,
     huespedes:     20 * 60 * 1000,
     busqueda_global: 20 * 60 * 1000,
     tarifas:       60 * 60 * 1000,
