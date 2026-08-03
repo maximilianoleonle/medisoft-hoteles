@@ -404,6 +404,12 @@ $GLOBALS['msFooterRenderizado'] = true;
     <!-- Offline: caché de lectura para reservaciones del día -->
     <?php if (isset($title) && stripos($title, 'Reservaciones') !== false): ?>
     <script src="<?= function_exists('asset_version') ? asset_version('js/reservaciones-offline.js') : asset('js/reservaciones-offline.js') ?>" defer></script>
+    <?php // Arma el reporte del día en el navegador cuando no hay red. Va con el
+          // mismo gate del módulo que los botones de exportar: sin 'exportaciones'
+          // no hay nada que generar y el archivo no tiene por qué viajar. ?>
+    <?php if (!function_exists('hotel_menu_module_enabled') || hotel_menu_module_enabled('exportaciones')): ?>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/reservaciones-reporte-offline.js') : asset('js/reservaciones-reporte-offline.js') ?>" defer></script>
+    <?php endif; ?>
     <?php endif; ?>
 
     <!-- Offline: interceptores para habitaciones (check-in, check-out, estados) -->

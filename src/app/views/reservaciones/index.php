@@ -859,6 +859,11 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
 .res-export-help i { color: color-mix(in srgb, var(--res-brand) 50%, #98A2B3); }
 .res-export-error { display: none; margin: 9px 2px 0; border: 1px solid #FECACA; border-radius: 10px; background: #FEF2F2; color: #B42318; padding: 8px 10px; font-size: .75rem; font-weight: 650; line-height: 1.35; }
 .res-export-error.is-visible { display: block; }
+/* Aviso de que el reporte saldrá del snapshot local: ámbar, no rojo — no es un
+   error, es un dato del que el hotelero tiene que enterarse antes de imprimir. */
+.res-export-offline { margin: 9px 2px 0; border: 1px solid #F0C77E; border-radius: 10px; background: #FFF6E6; color: #8A5A00; padding: 8px 10px; font-size: .75rem; font-weight: 650; line-height: 1.35; display: flex; align-items: flex-start; gap: 7px; }
+.res-export-offline[hidden] { display: none; }
+.res-export-offline i { margin-top: 2px; }
 .res-export-actions { display: flex; gap: 10px; margin-top: 22px; }
 .res-export-actions .btn-modal-cancel { flex: 1; border: 1px solid var(--res-line); background: #fff; color: var(--res-brand-2); border-radius: 12px; padding: 12px; font-weight: 650; transition: .16s; }
 .res-export-actions .btn-modal-cancel:hover { background: color-mix(in srgb, var(--res-brand) 5%, #fff); border-color: color-mix(in srgb, var(--res-brand) 28%, var(--res-line)); }
@@ -5265,6 +5270,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportar" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>
+                <p id="fechaExportarOffline" class="res-export-offline" hidden></p>
                 <p id="fechaExportarError" class="res-export-error" aria-live="polite"></p>
                 <div class="res-export-actions">
                     <button type="button" onclick="cerrarModalExportarPDF()" class="btn-modal-cancel">Cancelar</button>
@@ -5292,6 +5298,7 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportarExcel" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>
+                <p id="fechaExportarExcelOffline" class="res-export-offline" hidden></p>
                 <p id="fechaExportarExcelError" class="res-export-error" aria-live="polite"></p>
                 <div class="res-export-actions">
                     <button type="button" onclick="cerrarModalExportarExcel()" class="btn-modal-cancel">Cancelar</button>
@@ -6823,6 +6830,7 @@ function abrirModalExportarPDF() {
         const fecha = document.getElementById('fechaExportar');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
         resLimpiarErrorExportacion('fechaExportar', 'fechaExportarError');
+        resPintarAvisoOffline('fechaExportarOffline');
         if (window.msModal) {
             window.msModal.open(modal);
         } else {
@@ -6847,13 +6855,167 @@ function cerrarModalExportarPDF() {
     }
 }
 
-document.getElementById('formExportarPDF')?.addEventListener('submit', function(e) {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Exportación sin internet
+
+   Con red manda el SERVIDOR y no se toca nada: es la fuente de verdad, alcanza
+   cualquier fecha y ve estados que el snapshot no guarda. Sin red el reporte se
+   arma aquí con lo último que se guardó (js/reservaciones-reporte-offline.js).
+
+   El estado de red se mide con hayConexionAhora(), no con isOnline(): esta
+   decisión le cuesta trabajo al usuario, y una foto vieja lo mandaría al muro
+   offline teniendo internet (bug real del 30-jul).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+async function resHayConexion() {
+    if (window.PWA && typeof window.PWA.hayConexionAhora === 'function') {
+        try { return await window.PWA.hayConexionAhora(); } catch (e) { /* si medir falla, decide el navegador */ }
+    }
+    return navigator.onLine;
+}
+
+async function resDatosReporteLocal() {
+    if (!window.OfflineData || typeof window.OfflineData.obtenerDatosReporteDia !== 'function') return null;
+    try { return await window.OfflineData.obtenerDatosReporteDia(); } catch (e) { return null; }
+}
+
+function resNombreHotel() {
+    const marca = document.querySelector('.sidebar-hotel-name, [data-hotel-nombre]');
+    if (marca) {
+        const txt = (marca.dataset?.hotelNombre || marca.textContent || '').trim();
+        if (txt) return txt;
+    }
+    const titulo = (document.title || '').split(/[·|—-]/)[0].trim();
+    return titulo || 'Reporte de reservaciones';
+}
+
+function resColorPrimario() {
+    try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary');
+        return (v || '').trim() || '#1B2746';
+    } catch (e) { return '#1B2746'; }
+}
+
+function resFechaCorta(iso) {
+    const p = String(iso || '').split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(iso || '');
+}
+
+function resDescargarArchivo(contenido, nombre, mime) {
+    const blob = new Blob([contenido], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+}
+
+function resAbrirParaImprimir(html) {
+    const ventana = window.open('', '_blank');
+    if (ventana && ventana.document) {
+        ventana.document.open();
+        ventana.document.write(html);
+        ventana.document.close();
+        return true;
+    }
+    // Pestaña bloqueada: el blob sigue funcionando sin red porque no sale del equipo.
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    if (!window.open(url, '_blank')) window.location.href = url;
+    setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+    return true;
+}
+
+/**
+ * Avisa en el modal hasta dónde alcanzan los datos guardados. Solo aparece sin
+ * red: con internet el servidor no tiene estas limitaciones.
+ */
+async function resPintarAvisoOffline(avisoId) {
+    const aviso = document.getElementById(avisoId);
+    if (!aviso) return;
+    aviso.hidden = true;
+
+    if (await resHayConexion()) return;
+
+    const datos = await resDatosReporteLocal();
+    const icono = '<i class="fas fa-wifi" aria-hidden="true"></i>';
+
+    if (!datos || !datos.habitaciones.length) {
+        aviso.innerHTML = icono + '<span>Sin conexión y sin datos guardados en este equipo. '
+            + 'Abre esta pantalla con internet al menos una vez para poder exportar sin red.</span>';
+        aviso.hidden = false;
+        return;
+    }
+
+    const rango = (datos.desde && datos.hasta)
+        ? ` Hay datos guardados del ${resFechaCorta(datos.desde)} al ${resFechaCorta(datos.hasta)}.`
+        : '';
+    aviso.innerHTML = icono + `<span>Sin conexión: el reporte se armará con los datos guardados en este equipo.${rango}</span>`;
+    aviso.hidden = false;
+}
+
+/**
+ * Arma y entrega el reporte con el snapshot local.
+ * @returns {boolean} true si lo entregó; false si ya mostró el motivo por el que no.
+ */
+async function resExportarSinRed(fecha, formato, inputId, errorId) {
+    const generador = window.MedisoftReporteOffline;
+    if (!generador) {
+        resMostrarErrorExportacion(inputId, errorId,
+            'Sin conexión no puedo generar el archivo en este equipo. Vuelve a intentarlo con internet.');
+        return false;
+    }
+
+    const datos = await resDatosReporteLocal();
+    if (!datos || !datos.habitaciones.length) {
+        resMostrarErrorExportacion(inputId, errorId,
+            'Sin conexión y sin datos guardados en este equipo. Abre esta pantalla con internet al menos una vez.');
+        return false;
+    }
+
+    // Fuera del rango guardado NO se genera: un reporte vacío parecería un día
+    // sin movimiento, que es peor que no entregar nada.
+    if ((datos.desde && fecha < datos.desde) || (datos.hasta && fecha > datos.hasta)) {
+        resMostrarErrorExportacion(inputId, errorId,
+            `De esa fecha no tengo datos guardados. Sin conexión puedo exportar del `
+            + `${resFechaCorta(datos.desde)} al ${resFechaCorta(datos.hasta)}.`);
+        return false;
+    }
+
+    const reporte = generador.construirReporte(datos, fecha);
+    const opciones = { hotel: resNombreHotel(), colorPrimario: resColorPrimario() };
+
+    if (formato === 'excel') {
+        resDescargarArchivo(
+            generador.htmlParaExcel(reporte, opciones),
+            `reservaciones_${fecha}.xls`,
+            'application/vnd.ms-excel;charset=utf-8'
+        );
+    } else {
+        resAbrirParaImprimir(generador.htmlParaImprimir(reporte, opciones));
+    }
+
+    resIndexToast('Reporte generado con los datos guardados en este equipo.', 'warning');
+    return true;
+}
+
+document.getElementById('formExportarPDF')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     const fecha = document.getElementById('fechaExportar')?.value;
     if (!fecha) {
         resMostrarErrorExportacion('fechaExportar', 'fechaExportarError', 'Selecciona una fecha para generar el PDF.');
         return;
     }
+
+    if (!(await resHayConexion())) {
+        if (await resExportarSinRed(fecha, 'pdf', 'fechaExportar', 'fechaExportarError')) {
+            cerrarModalExportarPDF();
+        }
+        return;
+    }
+
     const url = baseUrl + '/reservaciones/exportar-pdf?fecha=' + encodeURIComponent(fecha);
     const mobileFileHelper = window.MedisoftMobileFiles;
     const ventana = mobileFileHelper
@@ -6879,6 +7041,7 @@ function abrirModalExportarExcel() {
         const fecha = document.getElementById('fechaExportarExcel');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
         resLimpiarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError');
+        resPintarAvisoOffline('fechaExportarExcelOffline');
         if (window.msModal) {
             window.msModal.open(modal);
         } else {
@@ -6903,13 +7066,21 @@ function cerrarModalExportarExcel() {
     }
 }
 
-document.getElementById('formExportarExcel')?.addEventListener('submit', function(e) {
+document.getElementById('formExportarExcel')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     const fecha = document.getElementById('fechaExportarExcel')?.value;
     if (!fecha) {
         resMostrarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError', 'Selecciona una fecha para descargar Excel.');
         return;
     }
+
+    if (!(await resHayConexion())) {
+        if (await resExportarSinRed(fecha, 'excel', 'fechaExportarExcel', 'fechaExportarExcelError')) {
+            cerrarModalExportarExcel();
+        }
+        return;
+    }
+
     const url = baseUrl + '/reservaciones/exportar-excel?fecha=' + encodeURIComponent(fecha);
     const ventana = window.open(url, '_blank');
     if (!ventana) {

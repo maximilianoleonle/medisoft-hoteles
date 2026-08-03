@@ -258,6 +258,16 @@
     return fechaISO(d);
   }
 
+  /** Suma dias a una fecha 'YYYY-MM-DD' sin salirse del calendario local. */
+  function fechaMasDias(fecha, dias = 0) {
+    if (!fecha) return null;
+    const partes = String(fecha).split('-').map(Number);
+    if (partes.length !== 3 || partes.some(Number.isNaN)) return null;
+    const d = new Date(partes[0], partes[1] - 1, partes[2]);
+    d.setDate(d.getDate() + Number(dias || 0));
+    return fechaISO(d);
+  }
+
   function traslapa(fechaEntradaA, fechaSalidaA, fechaEntradaB, fechaSalidaB) {
     if (!fechaEntradaA || !fechaSalidaA || !fechaEntradaB || !fechaSalidaB) return false;
     return fechaEntradaA < fechaSalidaB && fechaSalidaA > fechaEntradaB;
@@ -352,6 +362,12 @@
         valor: new Date().toISOString(),
         total: json.reservaciones.length + localesPendientes.length,
         fecha: json.fecha,
+        // Hasta que fecha alcanzan los datos guardados. Sin esto, una pantalla
+        // sin internet no puede decir "de esta fecha no tengo datos" y acabaria
+        // generando un reporte vacio que parece real.
+        desde: json.fecha,
+        dias:  RESERVACIONES_DIAS_SNAPSHOT,
+        hasta: fechaMasDias(json.fecha, RESERVACIONES_DIAS_SNAPSHOT),
       });
 
       console.log(`[OfflineData] Reservaciones cacheadas: ${json.reservaciones.length}`);
@@ -494,7 +510,10 @@
     if (!navigator.onLine) return;
 
     try {
-      const res = await fetch(BASE + '/api/tarifas/incrementos', {
+      // Se pide el RANGO completo del snapshot, no solo hoy: una habitacion libre
+      // de dentro de dos semanas se cotiza con la temporada de ESE dia, y con las
+      // reglas de hoy saldria en precio base (misma subcotizacion del reporte).
+      const res = await fetch(`${BASE}/api/tarifas/incrementos?dias=${RESERVACIONES_DIAS_SNAPSHOT}`, {
         credentials: 'same-origin',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
       });
@@ -510,6 +529,8 @@
         key: 'ultima_sync_tarifas',
         valor: new Date().toISOString(),
         total: json.incrementos_activos.length,
+        desde: json.fecha || null,
+        hasta: json.hasta || null,
       });
     } catch (err) {
       console.warn('[OfflineData] No se pudo capturar tarifas:', err.message);
@@ -817,6 +838,40 @@
     })).catch(() => null);
 
     return { habitaciones: hab, reservaciones: res };
+  }
+
+  /**
+   * Todo lo que el reporte del dia necesita para armarse SIN INTERNET.
+   *
+   * Lee el snapshot tal cual y NO toca la red, ni siquiera habiendo conexion:
+   * quien llama aqui ya decidio que va a generar en local, y un fetch a medias
+   * dejaria un reporte mezclando datos frescos con guardados.
+   *
+   * Devuelve tambien hasta que fecha alcanza lo guardado, para que la pantalla
+   * pueda avisar en vez de producir un reporte vacio que parece real.
+   */
+  async function obtenerDatosReporteDia() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return null;
+    }
+
+    const [habitaciones, reservaciones, tarifas, metaRes, metaHab] = await Promise.all([
+      _txGetAll('habitaciones').catch(() => []),
+      _txGetAll('reservaciones').catch(() => []),
+      _txGetAll('tarifas_incrementos').catch(() => []),
+      _txGet('meta', 'ultima_sync_reservaciones').catch(() => null),
+      _txGet('meta', 'ultima_sync_habitaciones').catch(() => null),
+    ]);
+
+    return {
+      habitaciones: Array.isArray(habitaciones) ? habitaciones : [],
+      reservaciones: Array.isArray(reservaciones) ? reservaciones : [],
+      tarifas: Array.isArray(tarifas) ? tarifas : [],
+      capturadoEn: metaRes?.valor || metaHab?.valor || null,
+      desde: metaRes?.desde || metaRes?.fecha || null,
+      hasta: metaRes?.hasta || null,
+    };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1278,6 +1333,7 @@
     obtenerIncrementosTarifa,
     verificarDisponibilidadLocal,
     obtenerMetaSync,
+    obtenerDatosReporteDia,
 
     // Cola
     escriturasHabilitadas,

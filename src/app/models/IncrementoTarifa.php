@@ -144,6 +144,35 @@ class IncrementoTarifa extends Model {
         return $this->getActivosParaFecha(date('Y-m-d'), $hotelId);
     }
 
+    /**
+     * Reglas activas que SOLAPAN un rango de fechas.
+     *
+     * Existe para el snapshot offline: la PWA guarda reservaciones de hoy + N dias y
+     * necesita poder cotizar una habitacion libre de CUALQUIER dia de ese rango. Con
+     * getActivosParaFecha(hoy) solo se puede cotizar hoy, y el reporte de una fecha
+     * futura saldria en precio base — el mismo defecto que se corrigio en el reporte
+     * del dia (ago-01): sin la temporada, el reporte SUBCOTIZA.
+     *
+     * Devuelve la fila completa (con fecha_inicio/fecha_fin/es_permanente) a proposito:
+     * quien la consume decide, dia por dia, cual de las reglas estaba vigente.
+     */
+    public function getActivosParaRango($desde, $hasta, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0) {
+            return [];
+        }
+
+        $sql = "SELECT * FROM {$this->table}
+                WHERE hotel_id = ?
+                AND activo = 1
+                AND fecha_inicio <= ?
+                AND (fecha_fin >= ? OR fecha_fin IS NULL OR es_permanente = 1)
+                ORDER BY prioridad DESC, created_at DESC";
+
+        $stmt = $this->db->query($sql, [$hotelId, $hasta, $desde]);
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
     public function calcularPrecioConIncremento($habitacion_id, $tipo_habitacion, $precio_base, $fecha, $hotelId = null) {
         $hotelId = $this->hotelIdActual($hotelId ?: $this->hotelIdPorHabitacion($habitacion_id));
         $incrementos = $this->getIncrementosAplicables($habitacion_id, $tipo_habitacion, $fecha, $hotelId);

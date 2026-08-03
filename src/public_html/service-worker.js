@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v29'; // v29: precalentado de pantallas + pantalla sin conexion adaptada a escritorio
+const SW_VERSION = 'v30'; // v30: el reporte del dia de reservaciones se exporta sin internet (PDF y Excel)
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -110,6 +110,9 @@ const SHELL_ASSETS = [
   'js/buscador-global.js',
   'js/checkout-limpieza.js',
   'js/reservaciones-offline.js',
+  // Arma el reporte del dia sin red. Va en el precache y no en carga diferida:
+  // se necesita EXACTAMENTE cuando no hay internet para ir a buscarlo.
+  'js/reservaciones-reporte-offline.js',
   'js/habitaciones-offline.js',
   'js/caja-offline.js',
   'js/huespedes-offline.js',

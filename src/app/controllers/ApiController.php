@@ -1178,6 +1178,7 @@ public function vehiculosHuespedAction() {
                         h.nombre_completo AS huesped_nombre,
                         h.telefono AS huesped_telefono,
                         h.procedencia_estado,
+                        h.procedencia_ciudad,
                         GROUP_CONCAT(DISTINCT hab.numero ORDER BY CAST(hab.numero AS UNSIGNED), hab.numero SEPARATOR ', ') AS habitaciones_numeros,
                         GROUP_CONCAT(DISTINCT hab.id SEPARATOR ',') AS habitaciones_ids,
                         GROUP_CONCAT(DISTINCT hab.tipo SEPARATOR '||') AS habitaciones_tipos
@@ -1197,7 +1198,25 @@ public function vehiculosHuespedAction() {
             $stmt = $db->query($sql, [$hotel_id, $hoy, $hoy]);
             $filas = $stmt ? $stmt->fetchAll() : [];
 
-            $reservaciones = array_map(function (array $r): array {
+            // Lo que el reporte del dia necesita y no cabe en un GROUP_CONCAT: el
+            // precio CONGELADO de cada habitacion, el vehiculo y si pidio factura.
+            // Sin esto el export sin internet sale con columnas vacias y el hotelero
+            // ve dos reportes distintos segun tenga o no red.
+            $resIds     = array_values(array_unique(array_map(static fn(array $r): int => (int) $r['id'], $filas)));
+            $huespedIds = array_values(array_unique(array_map(static fn(array $r): int => (int) $r['huesped_id'], $filas)));
+
+            $habitacionesPorReservacion = $this->habitacionesReservadasParaSnapshot($resIds, $hotel_id);
+            $vehiculoPorHuesped         = $this->vehiculoPorHuespedParaSnapshot($huespedIds, $hotel_id);
+            $facturaPorReservacion      = $this->facturasSolicitadasParaSnapshot($resIds, $hotel_id);
+
+            $reservaciones = array_map(function (array $r) use (
+                $habitacionesPorReservacion,
+                $vehiculoPorHuesped,
+                $facturaPorReservacion
+            ): array {
+                $resId     = (int) $r['id'];
+                $huespedId = (int) $r['huesped_id'];
+
                 return [
                     'id' => (int) $r['id'],
                     'estado' => $r['estado'],
@@ -1214,9 +1233,15 @@ public function vehiculosHuespedAction() {
                     'huesped_nombre' => $r['huesped_nombre'],
                     'huesped_telefono' => $r['huesped_telefono'],
                     'procedencia_estado' => $r['procedencia_estado'],
+                    'procedencia_ciudad' => $r['procedencia_ciudad'],
                     'habitaciones_numeros' => $r['habitaciones_numeros'],
                     'habitaciones_ids' => $r['habitaciones_ids'] ? array_map('intval', explode(',', $r['habitaciones_ids'])) : [],
                     'habitaciones_tipos' => $r['habitaciones_tipos'],
+                    // Detalle por habitacion: el reporte del dia cobra por CUARTO, no
+                    // por reservacion, y el precio de cada uno es el congelado al reservar.
+                    'habitaciones' => $habitacionesPorReservacion[$resId] ?? [],
+                    'vehiculo' => $vehiculoPorHuesped[$huespedId] ?? null,
+                    'tiene_factura' => isset($facturaPorReservacion[$resId]),
                 ];
             }, $filas);
 
@@ -1232,6 +1257,128 @@ public function vehiculosHuespedAction() {
             error_log('[API reservacionesHoy] ' . $e->getMessage());
             View::renderJSON(['success' => false, 'message' => 'Error interno'], 500);
         }
+    }
+
+    /**
+     * Habitaciones de cada reservacion con su precio CONGELADO. Para el reporte del
+     * dia sin internet: re-derivar el precio de una habitacion vendida con la tarifa
+     * de hoy seria reescribir la venta (mismo contrato que costoReporteDia).
+     *
+     * @return array<int, array<int, array>> reservacion_id => lista de habitaciones
+     */
+    private function habitacionesReservadasParaSnapshot(array $resIds, int $hotelId): array {
+        if (empty($resIds)) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($resIds), '?'));
+        $sql = "SELECT rh.reservacion_id, rh.habitacion_id, rh.precio, rh.es_cortesia,
+                       hab.numero, hab.tipo
+                FROM reservacion_habitaciones rh
+                INNER JOIN habitaciones hab
+                    ON hab.id = rh.habitacion_id
+                   AND hab.hotel_id = rh.hotel_id
+                WHERE rh.reservacion_id IN ($marcadores)
+                  AND rh.hotel_id = ?";
+
+        $stmt = Database::getInstance()->query($sql, array_merge($resIds, [$hotelId]));
+        $mapa = [];
+
+        foreach (($stmt ? $stmt->fetchAll() : []) as $fila) {
+            $mapa[(int) $fila['reservacion_id']][] = [
+                'id'          => (int) $fila['habitacion_id'],
+                'numero'      => $fila['numero'],
+                'tipo'        => $fila['tipo'],
+                'precio'      => $fila['precio'] === null ? null : (float) $fila['precio'],
+                'es_cortesia' => (int) ($fila['es_cortesia'] ?? 0) === 1,
+            ];
+        }
+
+        return $mapa;
+    }
+
+    /**
+     * Un vehiculo por huesped, con las placas YA enmascaradas. El relleno interno
+     * SINPLACA+hex jamas viaja al navegador (contrato de placas internas): sanear en
+     * el productor evita repetir el criterio en cada render JS.
+     */
+    private function vehiculoPorHuespedParaSnapshot(array $huespedIds, int $hotelId): array {
+        if (empty($huespedIds)) {
+            return [];
+        }
+        // Bloque 'vehiculos': sin contratar, el reporte dice "Sin vehiculo" — que
+        // ademas es cierto, porque el hotel no puede registrarlos.
+        if (function_exists('hotel_parking_visible') && !hotel_parking_visible($hotelId)) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($huespedIds), '?'));
+        $sql = "SELECT v.huesped_id, v.marca, v.modelo, v.color, v.placas
+                FROM huesped_vehiculos v
+                INNER JOIN huespedes h
+                    ON h.id = v.huesped_id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.huesped_id IN ($marcadores)
+                  AND v.hotel_id = ?
+                  AND v.activo = 1
+                ORDER BY v.id ASC";
+
+        $mapa = [];
+
+        try {
+            $stmt = Database::getInstance()->query($sql, array_merge($huespedIds, [$hotelId]));
+            foreach (($stmt ? $stmt->fetchAll() : []) as $fila) {
+                $huespedId = (int) $fila['huesped_id'];
+                if (isset($mapa[$huespedId])) {
+                    continue; // el reporte pinta uno solo: gana el mas antiguo
+                }
+                $mapa[$huespedId] = [
+                    'marca'  => $fila['marca'],
+                    'modelo' => $fila['modelo'],
+                    'color'  => $fila['color'],
+                    'placas' => class_exists('HuespedVehiculo')
+                        ? HuespedVehiculo::placasVisibles($fila['placas'])
+                        : '',
+                ];
+            }
+        } catch (Throwable $e) {
+            error_log('[API reservacionesHoy vehiculos] ' . $e->getMessage());
+        }
+
+        return $mapa;
+    }
+
+    /** Reservaciones con factura pedida. Mismo criterio que el export del servidor. */
+    private function facturasSolicitadasParaSnapshot(array $resIds, int $hotelId): array {
+        if (empty($resIds)) {
+            return [];
+        }
+
+        $marcadores = implode(',', array_fill(0, count($resIds), '?'));
+        $sql = "SELECT sf.reservacion_id
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                   AND sf.hotel_id = r.hotel_id
+                WHERE sf.reservacion_id IN ($marcadores)
+                  AND sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.requiere_factura = 'si'
+                  AND sf.created_at >= r.created_at";
+
+        $mapa = [];
+
+        try {
+            $stmt = Database::getInstance()->query($sql, array_merge($resIds, [$hotelId, $hotelId]));
+            foreach (($stmt ? $stmt->fetchAll() : []) as $fila) {
+                $mapa[(int) $fila['reservacion_id']] = true;
+            }
+        } catch (Throwable $e) {
+            // La tabla puede no existir en un hotel sin facturacion: el reporte
+            // simplemente deja la columna vacia, como ya hace el export del servidor.
+        }
+
+        return $mapa;
     }
 
     /**
@@ -2107,7 +2254,20 @@ public function incrementosTarifaActivosAction() {
     require_once __DIR__ . '/../models/IncrementoTarifa.php';
     $tarifaModel = new IncrementoTarifa();
     
-    $incrementos = $tarifaModel->getActivosParaFecha($fecha);
+    // La PWA pide un RANGO (?dias=N) porque su snapshot cubre hoy + N dias y sin
+    // internet tiene que poder cotizar una habitacion libre de cualquiera de esos
+    // dias. Sin el rango solo viajan las reglas vigentes HOY y el reporte de una
+    // fecha futura sale en precio base, que es justo el bug de subcotizacion.
+    $diasRango = (int) $this->getQuery('dias', 0);
+    $hastaRango = null;
+
+    if ($diasRango > 0) {
+        $diasRango  = min(45, $diasRango);
+        $hastaRango = date('Y-m-d', strtotime($fecha . ' +' . $diasRango . ' days'));
+        $incrementos = $tarifaModel->getActivosParaRango($fecha, $hastaRango);
+    } else {
+        $incrementos = $tarifaModel->getActivosParaFecha($fecha);
+    }
 
     // Este endpoint está mapeado al módulo 'reservaciones' (paquete base) porque
     // lo consume el alta de reservación, así que hay que filtrar POR CLASE con el
@@ -2126,6 +2286,7 @@ public function incrementosTarifaActivosAction() {
     View::renderJSON([
         'success' => true,
         'fecha' => $fecha,
+        'hasta' => $hastaRango,
         'incrementos_activos' => $incrementos,
         'total' => count($incrementos)
     ]);
