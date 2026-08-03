@@ -969,56 +969,802 @@ input:checked + .toggle-slider:before {
 }
 </style>
 
+<style id="tarifa-create-serene">
+/* Flujo sereno: cuatro decisiones claras, resumen persistente y una sola salida. */
+.tarifa-create-page {
+    --tc-line: color-mix(in srgb, var(--tar-brand) 11%, #E8E2D8);
+    --tc-soft: color-mix(in srgb, var(--tar-brand) 4%, #F7F7F8);
+    --tc-success: #148653;
+    --tc-success-soft: #EAF7F0;
+    --tc-info: #356F9E;
+    --tc-info-soft: #EDF4F9;
+    --tc-warning: #A96E12;
+    --tc-warning-soft: #FFF6E6;
+    padding: clamp(12px, 2vw, 24px) !important;
+    background: var(--tar-ivory) !important;
+}
+
+.tarifa-create-page .tarifa-container {
+    max-width: 1480px !important;
+}
+
+.tarifa-create-page .tarifa-shell {
+    gap: 14px;
+}
+
+.tarifa-create-page .tarifa-hero {
+    padding: 18px 20px !important;
+    overflow: hidden;
+    border: 1px solid var(--tc-line);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 96% 0%, color-mix(in srgb, var(--tar-gold) 11%, transparent), transparent 18rem),
+        linear-gradient(145deg, #FFFFFF, var(--tc-soft));
+    box-shadow: 0 20px 48px -38px rgba(17, 24, 39, .42);
+}
+
+.tarifa-hero-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.tarifa-hero-copy {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+}
+
+.tarifa-create-page .tarifa-hero-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, var(--tar-brand), var(--tar-brand-2));
+    box-shadow: 0 14px 26px -17px color-mix(in srgb, var(--tar-brand) 72%, transparent);
+}
+
+.tarifa-create-page .tarifa-page-kicker {
+    margin: 0 0 4px;
+    color: color-mix(in srgb, var(--tar-gold) 72%, #59401B);
+    font-size: .68rem;
+}
+
+.tarifa-create-page .tarifa-page-title {
+    margin: 0;
+    color: var(--tar-brand);
+    font-size: clamp(1.55rem, 2.7vw, 2.15rem);
+    font-weight: 900;
+    line-height: 1.08;
+}
+
+.tarifa-create-page .tarifa-page-subtitle {
+    max-width: 760px;
+    margin-top: 5px;
+    font-size: .82rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.tarifa-create-page .tarifa-back-btn {
+    min-width: 112px;
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    color: var(--tar-brand);
+}
+
+.tarifa-progress-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--tc-line);
+    border-radius: 20px;
+    background: #FFFFFF;
+    box-shadow: 0 16px 40px -36px rgba(17, 24, 39, .44);
+}
+
+.tarifa-progress-item {
+    position: relative;
+    min-height: 78px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 13px 15px;
+    border-right: 1px solid var(--tc-line);
+    color: inherit;
+    text-decoration: none;
+}
+
+.tarifa-progress-item:last-child { border-right: 0; }
+.tarifa-progress-item::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: color-mix(in srgb, var(--tar-brand) 74%, var(--tar-gold));
+}
+
+.tarifa-progress-number {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--tar-brand) 18%, var(--tc-line));
+    border-radius: 11px;
+    color: var(--tar-brand);
+    background: var(--tc-soft);
+    font-size: .75rem;
+    font-weight: 900;
+}
+
+.tarifa-progress-item strong,
+.tarifa-progress-item small {
+    display: block;
+}
+
+.tarifa-progress-item strong {
+    color: var(--tar-heading);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.tarifa-progress-item small {
+    margin-top: 2px;
+    color: var(--tar-muted);
+    font-size: .68rem;
+    font-weight: 650;
+}
+
+.tarifa-current-prices,
+.tarifa-create-page .section-card,
+.tarifa-create-summary,
+.tarifa-action-bar {
+    border: 1px solid var(--tc-line) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 16px 40px -36px rgba(17, 24, 39, .44) !important;
+}
+
+.tarifa-create-page .tarifa-current-prices,
+.tarifa-create-page .section-card {
+    margin: 0 !important;
+    border-radius: 20px !important;
+}
+
+.tarifa-create-page .section-card:hover {
+    transform: none;
+    border-color: var(--tc-line) !important;
+    box-shadow: 0 16px 40px -36px rgba(17, 24, 39, .44) !important;
+}
+
+.tarifa-create-page .section-header {
+    min-height: 74px;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid var(--tc-line) !important;
+    background: linear-gradient(145deg, #FFFFFF, var(--tc-soft)) !important;
+}
+
+.tarifa-create-page .section-title {
+    align-items: flex-start;
+    gap: 10px;
+    font-size: .9rem;
+}
+
+.tarifa-step-heading {
+    min-width: 0;
+}
+
+.tarifa-step-heading span,
+.tarifa-step-heading small {
+    display: block;
+}
+
+.tarifa-step-heading > span {
+    color: var(--tar-heading);
+    font-size: .9rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.tarifa-step-heading small {
+    margin-top: 3px;
+    color: var(--tar-muted);
+    font-size: .7rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.tarifa-create-page .section-number,
+.tarifa-create-page .section-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--tar-brand) !important;
+    box-shadow: none;
+}
+
+.tarifa-create-page .section-body {
+    padding: 18px !important;
+}
+
+.tarifa-form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 306px);
+    align-items: start;
+    gap: 14px;
+    padding-bottom: 76px;
+}
+
+.tarifa-form-main {
+    min-width: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.tarifa-form-aside {
+    position: sticky;
+    top: 16px;
+    display: grid;
+    gap: 12px;
+}
+
+.tarifa-create-summary {
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.tarifa-summary-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--tc-line);
+    background: linear-gradient(145deg, #FFFFFF, var(--tc-soft));
+}
+
+.tarifa-summary-header-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    border-radius: 10px;
+    color: #FFFFFF;
+    background: var(--tar-brand);
+}
+
+.tarifa-summary-header h2 {
+    margin: 0;
+    color: var(--tar-heading);
+    font-size: .9rem;
+    font-weight: 900;
+}
+
+.tarifa-summary-header p {
+    margin: 3px 0 0;
+    color: var(--tar-muted);
+    font-size: .69rem;
+    line-height: 1.4;
+}
+
+.tarifa-summary-list {
+    margin: 0;
+    padding: 5px 16px;
+}
+
+.tarifa-summary-row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 10px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--tc-line);
+}
+
+.tarifa-summary-row:last-child { border-bottom: 0; }
+.tarifa-summary-row dt {
+    color: var(--tar-muted);
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.tarifa-summary-row dd {
+    margin: 0;
+    color: var(--tar-heading);
+    font-size: .75rem;
+    font-weight: 800;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.tarifa-summary-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 16px 16px;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--tc-info) 18%, var(--tc-line));
+    border-radius: 11px;
+    color: color-mix(in srgb, var(--tc-info) 68%, #25384A);
+    background: var(--tc-info-soft);
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.tarifa-create-page .form-group {
+    margin-bottom: 0;
+}
+
+.tarifa-create-page .form-label {
+    margin-bottom: 6px;
+    color: var(--tar-text);
+    font-size: .68rem;
+    letter-spacing: .04em;
+}
+
+.tarifa-create-page .form-help {
+    margin-top: 6px;
+    font-size: .7rem;
+    line-height: 1.4;
+}
+
+.tarifa-create-page .form-input {
+    min-height: 46px;
+    border-color: var(--tc-line);
+    border-radius: 12px;
+    background: var(--tar-ivory);
+    font-size: .82rem;
+}
+
+.tarifa-create-page textarea.form-input {
+    min-height: 82px;
+    resize: vertical;
+}
+
+.tarifa-fields-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, .34fr);
+    gap: 14px;
+}
+
+.tarifa-choice-group + .tarifa-choice-group {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--tc-line);
+}
+
+.tarifa-choice-group,
+.tarifa-create-page .section-body > fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.tarifa-choice-legend {
+    margin: 0 0 9px;
+    color: var(--tar-text);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.tarifa-choice-help {
+    margin: -2px 0 9px;
+    color: var(--tc-warning);
+    font-size: .7rem;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+.tarifa-choice-group:has(input:checked) > .tarifa-choice-help,
+.tarifa-create-page .section-body > fieldset:has(input:checked) > .tarifa-choice-help {
+    display: none;
+}
+
+.tarifa-create-page .option-cards {
+    gap: 10px;
+    margin-top: 0;
+}
+
+.tarifa-create-page #claseCards,
+.tarifa-create-page #tipoCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tarifa-create-page #alcanceOptions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tarifa-create-page #claseCards .option-card:nth-child(1) { --tar-option-accent: var(--tar-success); }
+.tarifa-create-page #claseCards .option-card:nth-child(2) { --tar-option-accent: var(--tar-danger); }
+.tarifa-create-page #tipoCards .option-card:nth-child(1) { --tar-option-accent: var(--tar-sky); }
+.tarifa-create-page #tipoCards .option-card:nth-child(2) { --tar-option-accent: var(--tar-teal); }
+
+.tarifa-create-page .option-card {
+    min-height: 92px;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 10px;
+    row-gap: 2px;
+    padding: 13px;
+    border-color: var(--tc-line);
+    border-radius: 13px;
+    background: #FFFFFF;
+    box-shadow: none;
+}
+
+.tarifa-create-page .option-card::before { width: 4px; }
+.tarifa-create-page .option-card::after {
+    top: 10px;
+    right: 10px;
+    bottom: auto;
+}
+
+.tarifa-create-page .option-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.tarifa-create-page .option-card.selected {
+    background: color-mix(in srgb, var(--tar-option-accent) 6%, #FFFFFF);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tar-option-accent) 20%, transparent);
+}
+
+.tarifa-create-page .option-card:has(input:focus-visible) {
+    outline: 2px solid var(--tar-gold);
+    outline-offset: 3px;
+}
+
+.tarifa-create-page .option-icon {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    border-radius: 11px;
+    font-size: .95rem;
+}
+
+.tarifa-create-page .option-title,
+.tarifa-create-page .option-desc {
+    grid-column: 2;
+    padding-right: 12px;
+}
+
+.tarifa-create-page .option-title {
+    margin: 0;
+    font-size: .82rem;
+}
+
+.tarifa-create-page .option-desc {
+    font-size: .7rem;
+    line-height: 1.35;
+}
+
+.tarifa-value-workspace {
+    display: grid;
+    grid-template-columns: minmax(220px, .7fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.tarifa-value-field,
+.tarifa-create-page .preview-card {
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--tc-line);
+    border-radius: 14px;
+    background: var(--tar-ivory);
+}
+
+.tarifa-value-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+}
+
+.tarifa-value-input .form-input {
+    border-radius: 12px 0 0 12px;
+}
+
+.tarifa-value-symbol {
+    display: grid;
+    place-items: center;
+    min-height: 46px;
+    border: 1px solid var(--tc-line);
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
+    color: var(--tar-brand);
+    background: #FFFFFF;
+    font-size: .85rem;
+    font-weight: 900;
+}
+
+.tarifa-create-page .preview-card {
+    display: grid;
+    align-content: center;
+    border-color: color-mix(in srgb, var(--tc-info) 18%, var(--tc-line));
+    background: var(--tc-info-soft);
+}
+
+.tarifa-create-page .preview-title {
+    margin-bottom: 5px;
+    font-size: .72rem;
+}
+
+.tarifa-create-page #ejemploCalculo {
+    font-size: .76rem;
+    line-height: 1.5;
+}
+
+.tarifa-create-page .toggle-container,
+.tarifa-impact-option {
+    min-height: 66px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--tc-line);
+    border-radius: 14px;
+    background: var(--tar-ivory);
+}
+
+.tarifa-toggle-copy strong,
+.tarifa-toggle-copy span {
+    display: block;
+}
+
+.tarifa-toggle-copy strong {
+    color: var(--tar-heading);
+    font-size: .8rem;
+    font-weight: 900;
+}
+
+.tarifa-toggle-copy span {
+    margin-top: 2px;
+    color: var(--tar-muted);
+    font-size: .7rem;
+    line-height: 1.4;
+}
+
+.tarifa-create-page .toggle-switch {
+    min-width: 48px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.tarifa-create-page .toggle-slider {
+    top: 9px;
+    bottom: 9px;
+}
+
+.tarifa-create-page .toggle-switch input:focus-visible + .toggle-slider {
+    outline: 2px solid var(--tar-gold);
+    outline-offset: 3px;
+}
+
+.tarifa-date-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.tarifa-period-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--tc-info) 18%, var(--tc-line));
+    border-radius: 11px;
+    color: color-mix(in srgb, var(--tc-info) 68%, #25384A);
+    background: var(--tc-info-soft);
+    font-size: .7rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.tarifa-create-page .selection-list {
+    max-height: 360px;
+    border-color: var(--tc-line);
+}
+
+.tarifa-create-page .selection-item {
+    min-height: 44px;
+    border-color: var(--tc-line);
+}
+
+.tarifa-create-page .selection-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+}
+
+.tarifa-current-prices .section-body {
+    max-height: min(62dvh, 620px);
+    overflow: auto;
+}
+
+.tarifa-create-page .tarifa-form-alert {
+    margin: 0;
+    grid-column: 1 / -1;
+}
+
+.tarifa-action-bar {
+    position: sticky;
+    z-index: 8;
+    bottom: 12px;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+}
+
+.tarifa-action-copy strong,
+.tarifa-action-copy span {
+    display: block;
+}
+
+.tarifa-action-copy strong {
+    color: var(--tar-heading);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.tarifa-action-copy span {
+    margin-top: 2px;
+    color: var(--tar-muted);
+    font-size: .68rem;
+}
+
+.tarifa-action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.tarifa-create-page .btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+.tarifa-create-page .btn-primary {
+    background: linear-gradient(145deg, var(--tar-brand), var(--tar-brand-2));
+    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--tar-brand) 72%, transparent);
+}
+
+.tarifa-create-page .btn-primary:hover {
+    background: linear-gradient(145deg, var(--tar-brand-dark), var(--tar-brand-2));
+}
+
+@media (max-width: 1050px) {
+    .tarifa-form-layout { grid-template-columns: minmax(0, 1fr) 260px; }
+    .tarifa-create-page #alcanceOptions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+    .tarifa-form-layout { grid-template-columns: 1fr; }
+    .tarifa-form-aside { position: static; }
+    .tarifa-summary-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+    .tarifa-summary-row:nth-last-child(-n+2) { border-bottom: 0; }
+    .tarifa-summary-note { margin-top: 6px; }
+    .tarifa-create-page #alcanceOptions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+    .tarifa-create-page { padding: 8px 8px calc(88px + env(safe-area-inset-bottom)) !important; }
+    .tarifa-create-page .tarifa-hero { padding: 14px !important; border-radius: 20px; }
+    .tarifa-hero-inner { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .tarifa-hero-copy { grid-template-columns: 42px minmax(0, 1fr); }
+    .tarifa-create-page .tarifa-hero-icon { width: 42px; height: 42px; border-radius: 13px; }
+    .tarifa-create-page .tarifa-page-title { font-size: 1.5rem; }
+    .tarifa-create-page .tarifa-page-subtitle { font-size: .75rem; }
+    .tarifa-create-page .tarifa-back-btn { width: 100%; }
+    .tarifa-progress-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 17px; }
+    .tarifa-progress-item { min-height: 66px; padding: 10px; }
+    .tarifa-progress-item:nth-child(2) { border-right: 0; }
+    .tarifa-progress-item:nth-child(-n+2) { border-bottom: 1px solid var(--tc-line); }
+    .tarifa-progress-item small { display: none; }
+    .tarifa-create-page .section-card,
+    .tarifa-current-prices,
+    .tarifa-create-summary { border-radius: 17px !important; }
+    .tarifa-create-page .section-header { min-height: 68px; padding: 12px 14px !important; }
+    .tarifa-create-page .section-body { padding: 14px !important; }
+    .tarifa-step-heading small { display: none; }
+    .tarifa-fields-grid,
+    .tarifa-value-workspace,
+    .tarifa-date-grid,
+    .tarifa-create-page #claseCards,
+    .tarifa-create-page #tipoCards,
+    .tarifa-create-page #alcanceOptions,
+    .tarifa-summary-list { grid-template-columns: 1fr; }
+    .tarifa-summary-row { border-bottom: 1px solid var(--tc-line) !important; }
+    .tarifa-summary-row:last-child { border-bottom: 0 !important; }
+    .tarifa-create-page .option-card { min-height: 84px; }
+    .tarifa-action-bar { position: static; align-items: stretch; flex-direction: column; }
+    .tarifa-form-layout { padding-bottom: 0; }
+    .tarifa-action-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+    .tarifa-action-buttons .btn { width: 100%; }
+}
+
+@media (max-width: 380px) {
+    .tarifa-action-buttons { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarifa-create-page,
+    .tarifa-create-page * { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+</style>
+
 <div class="tarifa-create-page hotel-page min-h-screen p-4 sm:p-6">
     <div class="tarifa-container">
         <div class="tarifa-shell">
-            <section class="tarifa-hero hotel-page-header">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div class="flex items-start gap-3 min-w-0">
-                        <div class="tarifa-hero-icon">
+            <section class="tarifa-hero hotel-page-header" aria-labelledby="tarifa-create-title">
+                <div class="tarifa-hero-inner">
+                    <div class="tarifa-hero-copy">
+                        <div class="tarifa-hero-icon" aria-hidden="true">
                             <i class="fas fa-tags"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="tarifa-page-kicker">Operación hotelera</p>
-                            <h1 class="tarifa-page-title">Nuevo ajuste de precio</h1>
-                            <p class="tarifa-page-subtitle">Configura una regla de precio para temporadas, eventos o ajustes puntuales sin perder claridad en alcance y vigencia.</p>
+                            <p class="tarifa-page-kicker">Tarifas dinámicas</p>
+                            <h1 class="tarifa-page-title" id="tarifa-create-title">Crear ajuste de precio</h1>
+                            <p class="tarifa-page-subtitle">Define qué cambiará, dónde se aplicará y durante cuánto tiempo antes de guardar la regla.</p>
                         </div>
                     </div>
 
                     <?php $back_arrow_href = back_url('configuracion/tarifas'); $back_arrow_class = 'ms-back--inline'; include APP_PATH . '/views/partials/back_arrow.php'; ?>
-                    <a href="<?= back_url('configuracion/tarifas') ?>" class="tarifa-back-btn ms-back-legacy" title="Regresar a tarifas dinámicas">
-                        <i class="fas fa-arrow-left"></i>
-                        Regresar
+                    <a href="<?= back_url('configuracion/tarifas') ?>" class="tarifa-back-btn ms-back-legacy" title="Volver a precios y temporadas">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        Volver al listado
                     </a>
                 </div>
             </section>
 
-            <section class="tarifa-summary-strip" aria-label="Resumen para crear incremento">
-                <div class="tarifa-summary-item">
-                    <p class="tarifa-summary-label">Habitaciones</p>
-                    <p class="tarifa-summary-value"><?= number_format(count($habitaciones ?? [])) ?></p>
-                </div>
-                <div class="tarifa-summary-item">
-                    <p class="tarifa-summary-label">Tipos</p>
-                    <p class="tarifa-summary-value"><?= number_format(count($tipos_habitacion ?? [])) ?></p>
-                </div>
-                <div class="tarifa-summary-item">
-                    <p class="tarifa-summary-label">Flujo</p>
-                    <p class="tarifa-summary-value">4 pasos</p>
-                </div>
-            </section>
+            <nav class="tarifa-progress-strip" aria-label="Pasos para crear el ajuste">
+                <a class="tarifa-progress-item" href="#paso-informacion">
+                    <span class="tarifa-progress-number">1</span>
+                    <span><strong>Identifica</strong><small>Nombre y prioridad</small></span>
+                </a>
+                <a class="tarifa-progress-item" href="#paso-ajuste">
+                    <span class="tarifa-progress-number">2</span>
+                    <span><strong>Define</strong><small>Operación y valor</small></span>
+                </a>
+                <a class="tarifa-progress-item" href="#paso-alcance">
+                    <span class="tarifa-progress-number">3</span>
+                    <span><strong>Delimita</strong><small>Habitaciones afectadas</small></span>
+                </a>
+                <a class="tarifa-progress-item" href="#paso-vigencia">
+                    <span class="tarifa-progress-number">4</span>
+                    <span><strong>Programa</strong><small>Inicio y finalización</small></span>
+                </a>
+            </nav>
         <!-- SECCIÓN: Precios Actuales con Tarifas Vigentes -->
-        <div class="section-card tarifa-step-prices mb-6">
+        <section class="section-card tarifa-step-prices tarifa-current-prices" aria-labelledby="precios-actuales-title">
             <div class="section-header">
                 <div class="flex justify-between items-center">
                     <h2 class="section-title">
                         <span class="section-icon">
                             <i class="fas fa-tags"></i>
                         </span>
-                        Precios Actuales (con tarifas vigentes)
+                        <span class="tarifa-step-heading">
+                            <span id="precios-actuales-title">Consulta los precios actuales</span>
+                            <small>Referencia opcional antes de crear la nueva regla.</small>
+                        </span>
                     </h2>
-                    <button type="button" onclick="togglePreciosActuales()" class="tarifa-back-btn">
-                        <i class="fas fa-chevron-down" id="iconTogglePreciosActuales"></i>
+                    <button type="button" onclick="togglePreciosActuales()" class="tarifa-back-btn" aria-expanded="false" aria-controls="seccionPreciosActuales" id="togglePreciosActualesBtn">
+                        <i class="fas fa-chevron-down" id="iconTogglePreciosActuales" aria-hidden="true"></i>
                         <span id="textTogglePreciosActuales">Mostrar</span>
                     </button>
                 </div>
@@ -1026,7 +1772,7 @@ input:checked + .toggle-slider:before {
             <div class="section-body" id="seccionPreciosActuales" style="display: none;">
                 <p class="tarifa-note text-sm text-gray-600 mb-4 p-3">
                     <i class="fas fa-info-circle mr-1"></i>
-                    Estos son los precios actuales de las habitaciones considerando las tarifas vigentes. El nuevo incremento se sumará sobre estos precios.
+                    Estos son los precios actuales de las habitaciones considerando las tarifas vigentes. La nueva regla partirá de estos importes.
                 </p>
                 
                 <?php
@@ -1115,132 +1861,154 @@ input:checked + .toggle-slider:before {
                 <div class="mt-4 p-3 bg-blue-50 rounded-lg">
                     <p class="text-xs text-blue-700">
                         <i class="fas fa-lightbulb mr-1"></i>
-                        <strong>Tip:</strong> El nuevo incremento que crees se sumará a estos precios actuales. 
-                        Por ejemplo, si agregas +10% a una habitación que ya tiene un precio de $1,100, el nuevo precio será $1,210.
+                        <strong>Referencia:</strong> cualquier nuevo ajuste se calculará tomando como punto de partida el precio actual mostrado.
                     </p>
                 </div>
                 <?php endif; ?>
             </div>
-        </div>
+        </section>
 
         <form action="<?= url('configuracion/tarifas/crear') ?>" method="POST" id="formIncremento">
             <?= csrf_field() ?>
+            <div class="tarifa-form-layout">
+                <div class="tarifa-form-main">
             
             <!-- PASO 1: Información básica -->
-            <div class="section-card tarifa-step-info">
+            <section class="section-card tarifa-step-info" id="paso-informacion" aria-labelledby="paso-informacion-title">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">1</span>
-                        Información del Incremento
+                        <span class="tarifa-step-heading">
+                            <span id="paso-informacion-title">Identifica la regla</span>
+                            <small>Usa un nombre reconocible y define qué regla debe tener prioridad.</small>
+                        </span>
                     </h2>
                 </div>
                 <div class="section-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="tarifa-fields-grid">
                         <div class="form-group">
-                            <label class="form-label">
-                                Nombre del incremento <span class="text-red-500">*</span>
+                            <label class="form-label" for="nombre">
+                                Nombre del ajuste <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
                                    name="nombre" 
-                                   class="form-input" 
-                                   placeholder="Ej: Temporada Alta Navidad"
+                                   id="nombre"
+                                   class="form-input"
+                                   placeholder="Ej. Temporada alta de verano"
                                    value="<?= old('nombre') ?>"
+                                   autocomplete="off"
                                    required>
-                            <p class="form-help">Un nombre corto y descriptivo</p>
+                            <p class="form-help">Te ayudará a reconocer esta regla en el listado.</p>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Prioridad</label>
+                            <label class="form-label" for="prioridad">Prioridad</label>
                             <input type="number" 
                                    name="prioridad" 
+                                   id="prioridad"
                                    class="form-input" 
                                    value="<?= old('prioridad', 0) ?>"
                                    min="0"
-                                   max="99">
-                            <p class="form-help">Mayor número = mayor prioridad</p>
+                                   max="99"
+                                   inputmode="numeric">
+                            <p class="form-help">La cifra mayor se aplica primero.</p>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Descripción (opcional)</label>
+                    <div class="form-group mt-4">
+                        <label class="form-label" for="descripcion">Descripción <span class="normal-case tracking-normal font-medium text-gray-400">(opcional)</span></label>
                         <textarea name="descripcion" 
+                                  id="descripcion"
                                   class="form-input" 
                                   rows="2"
-                                  placeholder="Explique brevemente el motivo del incremento"><?= old('descripcion') ?></textarea>
+                                  placeholder="Ej. Aplica durante el festival regional"><?= old('descripcion') ?></textarea>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- PASO 2: Tipo y valor -->
-            <div class="section-card tarifa-step-value" id="seccionTipo">
+            <section class="section-card tarifa-step-value" id="paso-ajuste" aria-labelledby="paso-ajuste-title">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">2</span>
-                        Tipo y Valor del Incremento
+                        <span class="tarifa-step-heading">
+                            <span id="paso-ajuste-title">Define el cambio de precio</span>
+                            <small>Elige si aumentará o disminuirá y captura el valor exacto.</small>
+                        </span>
                     </h2>
                 </div>
                 <div class="section-body">
-                    <div class="option-cards grid-cols-2" id="claseCards" style="margin-bottom:1.25rem;">
-                        <div class="option-card <?= old('clase') === 'descuento' ? '' : 'selected' ?>" onclick="selectClase('incremento')">
-                            <input type="radio" name="clase" value="incremento" <?= old('clase') === 'descuento' ? '' : 'checked' ?>>
+                    <fieldset class="tarifa-choice-group">
+                        <legend class="tarifa-choice-legend">Operación</legend>
+                        <p class="tarifa-choice-help">Selecciona si el precio aumentará o disminuirá.</p>
+                    <div class="option-cards grid-cols-2" id="claseCards">
+                        <label class="option-card <?= old('clase') === 'incremento' ? 'selected' : '' ?>">
+                            <input type="radio" name="clase" value="incremento" <?= old('clase') === 'incremento' ? 'checked' : '' ?> required>
                             <div class="option-icon bg-blue-100 text-blue-600">
                                 <i class="fas fa-arrow-up"></i>
                             </div>
                             <div class="option-title">Incremento</div>
-                            <div class="option-desc">Aumenta el precio de la habitacion</div>
-                        </div>
+                            <div class="option-desc">Aumenta el precio actual.</div>
+                        </label>
 
-                        <div class="option-card <?= old('clase') === 'descuento' ? 'selected' : '' ?>" onclick="selectClase('descuento')">
+                        <label class="option-card <?= old('clase') === 'descuento' ? 'selected' : '' ?>">
                             <input type="radio" name="clase" value="descuento" <?= old('clase') === 'descuento' ? 'checked' : '' ?>>
                             <div class="option-icon bg-rose-100 text-rose-600">
                                 <i class="fas fa-arrow-down"></i>
                             </div>
                             <div class="option-title">Descuento</div>
-                            <div class="option-desc">Resta del precio de la habitacion</div>
-                        </div>
+                            <div class="option-desc">Reduce el precio actual.</div>
+                        </label>
                     </div>
+                    </fieldset>
 
+                    <fieldset class="tarifa-choice-group">
+                        <legend class="tarifa-choice-legend">Forma de cálculo</legend>
+                        <p class="tarifa-choice-help">Selecciona cómo se calculará el cambio.</p>
                     <div class="option-cards grid-cols-2" id="tipoCards">
-                        <div class="option-card selected" onclick="selectTipo('porcentaje')">
-                            <input type="radio" name="tipo_incremento" value="porcentaje" checked>
+                        <label class="option-card <?= old('tipo_incremento') === 'porcentaje' ? 'selected' : '' ?>">
+                            <input type="radio" name="tipo_incremento" value="porcentaje" <?= old('tipo_incremento') === 'porcentaje' ? 'checked' : '' ?> required>
                             <div class="option-icon bg-blue-100 text-blue-600">
                                 <i class="fas fa-percentage"></i>
                             </div>
                             <div class="option-title">Porcentaje</div>
-                            <div class="option-desc">Aumenta el precio en un porcentaje</div>
-                        </div>
+                            <div class="option-desc">Calcula el cambio sobre cada precio.</div>
+                        </label>
 
-                        <div class="option-card" onclick="selectTipo('monto_fijo')">
-                            <input type="radio" name="tipo_incremento" value="monto_fijo">
+                        <label class="option-card <?= old('tipo_incremento') === 'monto_fijo' ? 'selected' : '' ?>">
+                            <input type="radio" name="tipo_incremento" value="monto_fijo" <?= old('tipo_incremento') === 'monto_fijo' ? 'checked' : '' ?>>
                             <div class="option-icon bg-green-100 text-green-600">
                                 <i class="fas fa-dollar-sign"></i>
                             </div>
-                            <div class="option-title">Monto Fijo</div>
-                            <div class="option-desc">Suma una cantidad fija al precio</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-6">
-                        <label class="form-label">
-                            <span id="labelValor">Porcentaje de incremento</span> <span class="text-red-500">*</span>
+                            <div class="option-title">Monto fijo</div>
+                            <div class="option-desc">Aplica la misma cantidad a cada precio.</div>
                         </label>
-                        <div class="flex">
+                    </div>
+                    </fieldset>
+
+                    <div class="tarifa-value-workspace">
+                        <div class="form-group tarifa-value-field">
+                        <label class="form-label" for="valor_incremento">
+                            <span id="labelValor">Valor del ajuste</span> <span class="text-red-500">*</span>
+                        </label>
+                        <div class="tarifa-value-input">
                             <input type="number" 
                                    name="valor_incremento" 
                                    id="valor_incremento"
-                                   class="form-input rounded-r-none flex-1" 
+                                   class="form-input"
                                    step="0.01" 
                                    min="0.01"
                                    placeholder="0.00"
                                    value="<?= old('valor_incremento') ?>"
+                                   inputmode="decimal"
                                    required>
-                            <span class="px-4 py-2 bg-gray-100 border-2 border-l-0 border-gray-300 rounded-r-lg font-semibold" id="simboloValor">%</span>
+                            <span class="tarifa-value-symbol" id="simboloValor" aria-hidden="true"><?= old('tipo_incremento') === 'porcentaje' ? '%' : (old('tipo_incremento') === 'monto_fijo' ? '$' : '—') ?></span>
                         </div>
-                        <p class="form-help" id="ayudaValor">Ejemplo: 15 para un incremento del 15%</p>
-                    </div>
+                        <p class="form-help" id="ayudaValor">Primero selecciona la operación y la forma de cálculo.</p>
+                        </div>
 
                     <!-- Preview del cálculo -->
-                    <div class="preview-card" id="previewCalculo">
+                    <div class="preview-card" id="previewCalculo" <?= old('clase') && old('tipo_incremento') ? '' : 'hidden' ?>>
                         <div class="preview-title">
                             <i class="fas fa-calculator"></i>
                             Ejemplo de cálculo
@@ -1250,50 +2018,58 @@ input:checked + .toggle-slider:before {
                             el precio final será <strong>$1,150</strong>
                         </div>
                     </div>
+                    </div>
                 </div>
-            </div>
+            </section>
 
             <!-- PASO 3: Aplicación -->
-            <div class="section-card tarifa-step-scope" id="seccionAlcance">
+            <section class="section-card tarifa-step-scope" id="paso-alcance" aria-labelledby="paso-alcance-title">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">3</span>
-                        ¿Dónde se aplicará el incremento?
+                        <span class="tarifa-step-heading">
+                            <span id="paso-alcance-title">Elige dónde se aplicará</span>
+                            <small>Puedes abarcar todo el hotel o seleccionar únicamente ciertas habitaciones.</small>
+                        </span>
                     </h2>
                 </div>
                 <div class="section-body">
+                    <fieldset>
+                    <legend class="tarifa-choice-legend">Alcance del ajuste</legend>
+                    <p class="tarifa-choice-help">Selecciona qué habitaciones recibirán este ajuste.</p>
                     <div class="option-cards" id="alcanceOptions">
-                        <div class="option-card selected" onclick="selectAlcance('global')">
-                            <input type="radio" name="alcance" value="global" checked>
+                        <label class="option-card <?= old('alcance') === 'global' ? 'selected' : '' ?>">
+                            <input type="radio" name="alcance" value="global" <?= old('alcance') === 'global' ? 'checked' : '' ?> required>
                             <div class="option-icon bg-purple-100 text-purple-600">
                                 <i class="fas fa-hotel"></i>
                             </div>
                             <div class="option-title">Todas las habitaciones</div>
-                            <div class="option-desc">Se aplicará a las 66 habitaciones del hotel</div>
-                        </div>
+                            <div class="option-desc">Incluye las <?= number_format(count($habitaciones ?? [])) ?> habitaciones del hotel.</div>
+                        </label>
 
-                        <div class="option-card" onclick="selectAlcance('tipo_habitacion')">
-                            <input type="radio" name="alcance" value="tipo_habitacion">
+                        <label class="option-card <?= old('alcance') === 'tipo_habitacion' ? 'selected' : '' ?>">
+                            <input type="radio" name="alcance" value="tipo_habitacion" <?= old('alcance') === 'tipo_habitacion' ? 'checked' : '' ?>>
                             <div class="option-icon bg-indigo-100 text-indigo-600">
                                 <i class="fas fa-bed"></i>
                             </div>
                             <div class="option-title">Por tipo de habitación</div>
-                            <div class="option-desc">Solo a ciertos tipos (sencilla, doble, etc.)</div>
-                        </div>
+                            <div class="option-desc">Selecciona uno o varios tipos de habitación.</div>
+                        </label>
 
-                        <div class="option-card" onclick="selectAlcance('habitacion')">
-                            <input type="radio" name="alcance" value="habitacion">
+                        <label class="option-card <?= old('alcance') === 'habitacion' ? 'selected' : '' ?>">
+                            <input type="radio" name="alcance" value="habitacion" <?= old('alcance') === 'habitacion' ? 'checked' : '' ?>>
                             <div class="option-icon bg-amber-100 text-amber-600">
                                 <i class="fas fa-door-open"></i>
                             </div>
                             <div class="option-title">Habitaciones específicas</div>
-                            <div class="option-desc">Seleccionar habitaciones individuales</div>
-                        </div>
+                            <div class="option-desc">Elige habitaciones individuales.</div>
+                        </label>
                     </div>
+                    </fieldset>
 
                     <!-- Selector de tipos -->
-                    <div id="selectorTipos" style="display: none;" class="mt-6">
-                        <p class="form-label mb-3">Seleccione los tipos de habitación:</p>
+                    <div id="selectorTipos" style="display: <?= old('alcance') === 'tipo_habitacion' ? 'block' : 'none' ?>;" class="mt-6">
+                        <p class="form-label mb-3" id="selector-tipos-title">Selecciona los tipos de habitación</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <?php foreach ($tipos_habitacion as $tipo): ?>
                             <label class="selection-item bg-gray-50 rounded-lg cursor-pointer">
@@ -1307,11 +2083,11 @@ input:checked + .toggle-slider:before {
                     </div>
 
                     <!-- Selector de habitaciones -->
-                    <div id="selectorHabitaciones" style="display: none;" class="mt-6">
+                    <div id="selectorHabitaciones" style="display: <?= old('alcance') === 'habitacion' ? 'block' : 'none' ?>;" class="mt-6">
                         <div class="flex justify-between items-center mb-3">
-                            <p class="form-label">Seleccione las habitaciones:</p>
-                            <button type="button" class="text-sm text-primary hover:underline" onclick="mostrarFiltroTipos()">
-                                <i class="fas fa-filter"></i> Filtrar por tipo
+                            <p class="form-label" id="selector-habitaciones-title">Selecciona las habitaciones</p>
+                            <button type="button" class="tarifa-back-btn" onclick="mostrarFiltroTipos()">
+                                <i class="fas fa-filter" aria-hidden="true"></i> Filtrar por tipo
                             </button>
                         </div>
                         
@@ -1319,7 +2095,7 @@ input:checked + .toggle-slider:before {
                         <div class="bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
                             <p class="text-xs text-amber-700">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                Los precios mostrados incluyen las tarifas vigentes. El nuevo incremento se sumará a estos precios.
+                                Los precios mostrados ya incluyen las tarifas vigentes y sirven como referencia para esta nueva regla.
                             </p>
                         </div>
                         <?php endif; ?>
@@ -1388,14 +2164,17 @@ input:checked + .toggle-slider:before {
                         </p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- PASO 4: Vigencia -->
-            <div class="section-card tarifa-step-period">
+            <section class="section-card tarifa-step-period" id="paso-vigencia" aria-labelledby="paso-vigencia-title">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">4</span>
-                        Período de Vigencia
+                        <span class="tarifa-step-heading">
+                            <span id="paso-vigencia-title">Programa la vigencia</span>
+                            <small>Indica cuándo comienza y si tendrá una fecha de finalización.</small>
+                        </span>
                     </h2>
                 </div>
                 <div class="section-body">
@@ -1405,30 +2184,33 @@ input:checked + .toggle-slider:before {
                                    name="es_permanente" 
                                    id="es_permanente"
                                    value="1"
+                                   aria-describedby="permanente-help"
                                    onchange="togglePermanente()">
                             <span class="toggle-slider"></span>
+                            <span class="sr-only">Mantener el ajuste sin fecha de finalización</span>
                         </label>
-                        <div>
-                            <div class="font-semibold">Incremento permanente</div>
-                            <div class="text-sm text-gray-600">Sin fecha de finalización</div>
+                        <div class="tarifa-toggle-copy" id="permanente-help">
+                            <strong>Ajuste permanente</strong>
+                            <span>Actívalo si la regla no tendrá fecha de finalización.</span>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="tarifa-date-grid">
                         <div class="form-group">
-                            <label class="form-label">
+                            <label class="form-label" for="fecha_inicio">
                                 Fecha de inicio <span class="text-red-500">*</span>
                             </label>
                             <input type="date" 
                                    name="fecha_inicio" 
+                                   id="fecha_inicio"
                                    class="form-input"
-                                   value="<?= old('fecha_inicio', date('Y-m-d')) ?>"
+                                   value="<?= old('fecha_inicio') ?>"
                                    min="<?= date('Y-m-d') ?>"
                                    required>
                         </div>
 
                         <div class="form-group" id="grupoFechaFin">
-                            <label class="form-label">
+                            <label class="form-label" for="fecha_fin">
                                 Fecha de fin <span class="text-red-500">*</span>
                             </label>
                             <input type="date" 
@@ -1440,36 +2222,67 @@ input:checked + .toggle-slider:before {
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            El incremento se aplicará automáticamente a las reservaciones realizadas durante este período.
-                        </p>
-                    </div>
+                    <p class="tarifa-period-note">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        <span>El ajuste se aplicará a las reservaciones realizadas dentro de este período.</span>
+                    </p>
                 </div>
-            </div>
+            </section>
 
             <!-- Reservaciones existentes: revision opcional del impacto -->
-            <div class="section-card" id="cardImpactoReservas">
-                <div class="section-body" style="display:flex; align-items:flex-start; gap:.85rem;">
+            <div class="tarifa-impact-option" id="cardImpactoReservas">
+                <div style="display:flex; align-items:flex-start; gap:.85rem;">
                     <label class="toggle-switch" style="flex-shrink:0; margin-top:.15rem;">
                         <input type="checkbox"
                                name="revisar_reservaciones"
                                id="revisar_reservaciones"
                                value="1"
+                               aria-describedby="impacto-reservas-help"
                                <?= old('revisar_reservaciones') ? 'checked' : '' ?>>
                         <span class="toggle-slider"></span>
+                        <span class="sr-only">Revisar las reservaciones existentes antes de aplicar cambios</span>
                     </label>
-                    <div>
-                        <div class="font-semibold">Revisar reservaciones existentes al guardar</div>
-                        <div class="text-sm text-gray-600">
-                            Las reservaciones ya creadas conservan su precio congelado. Con esta opción, al guardar verás
-                            las futuras afectadas (precio actual → nuevo y saldo resultante) y confirmarás el recálculo.
-                            Nada se modifica sin tu confirmación.
-                        </div>
+                    <div class="tarifa-toggle-copy" id="impacto-reservas-help">
+                        <strong>Revisar reservaciones existentes antes de terminar</strong>
+                        <span>Verás cuáles podrían cambiar y confirmarás el recálculo. Nada se modifica sin tu confirmación.</span>
                     </div>
                 </div>
             </div>
+                </div><!-- end tarifa-form-main -->
+
+                <aside class="tarifa-form-aside" aria-labelledby="tarifa-summary-title">
+                    <section class="tarifa-create-summary">
+                        <div class="tarifa-summary-header">
+                            <span class="tarifa-summary-header-icon" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
+                            <div>
+                                <h2 id="tarifa-summary-title">Resumen del ajuste</h2>
+                                <p>Se actualiza conforme completas el formulario.</p>
+                            </div>
+                        </div>
+                        <dl class="tarifa-summary-list" aria-live="polite">
+                            <div class="tarifa-summary-row">
+                                <dt>Regla</dt>
+                                <dd id="resumenNombre">Sin nombre</dd>
+                            </div>
+                            <div class="tarifa-summary-row">
+                                <dt>Cambio</dt>
+                                <dd id="resumenCambio">Falta elegir operación y cálculo</dd>
+                            </div>
+                            <div class="tarifa-summary-row">
+                                <dt>Alcance</dt>
+                                <dd id="resumenAlcance">Falta elegir alcance</dd>
+                            </div>
+                            <div class="tarifa-summary-row">
+                                <dt>Vigencia</dt>
+                                <dd id="resumenVigencia">Falta definir la vigencia</dd>
+                            </div>
+                        </dl>
+                        <p class="tarifa-summary-note">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                            <span>Ningún precio cambiará hasta que guardes el ajuste.</span>
+                        </p>
+                    </section>
+                </aside>
 
             <!-- Botones de acción -->
             <div id="tarifaFormAlert" class="tarifa-form-alert" role="alert" aria-live="assertive" hidden>
@@ -1477,16 +2290,23 @@ input:checked + .toggle-slider:before {
                 <span data-tarifa-alert-text></span>
             </div>
 
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="tarifa-action-bar">
+                <div class="tarifa-action-copy">
+                    <strong>Revisa el resumen antes de guardar</strong>
+                    <span>Podrás activar o desactivar la regla más adelante.</span>
+                </div>
+                <div class="tarifa-action-buttons">
                 <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times" aria-hidden="true"></i>
                     Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    Guardar Incremento
+                    <i class="fas fa-save" aria-hidden="true"></i>
+                    Guardar ajuste
                 </button>
+                </div>
             </div>
+            </div><!-- end tarifa-form-layout -->
         </form>
     </div>
     </div>
@@ -1503,28 +2323,35 @@ function togglePreciosActuales() {
     const seccion = document.getElementById('seccionPreciosActuales');
     const icon = document.getElementById('iconTogglePreciosActuales');
     const text = document.getElementById('textTogglePreciosActuales');
+    const button = document.getElementById('togglePreciosActualesBtn');
     
     if (seccion.style.display === 'none') {
         seccion.style.display = 'block';
         icon.classList.remove('fa-chevron-down');
         icon.classList.add('fa-chevron-up');
         text.textContent = 'Ocultar';
+        if (button) button.setAttribute('aria-expanded', 'true');
     } else {
         seccion.style.display = 'none';
         icon.classList.remove('fa-chevron-up');
         icon.classList.add('fa-chevron-down');
         text.textContent = 'Mostrar';
+        if (button) button.setAttribute('aria-expanded', 'false');
     }
+}
+
+function sincronizarTarjetaSeleccionada(name, rootSelector) {
+    document.querySelectorAll(`${rootSelector} .option-card`).forEach(card => {
+        const radio = card.querySelector(`input[name="${name}"]`);
+        card.classList.toggle('selected', Boolean(radio && radio.checked));
+    });
 }
 
 // Función para seleccionar tipo
 function selectTipo(tipo) {
-    // Buscar específicamente en las tarjetas de tipo (no en las de clase)
-    document.querySelectorAll('#tipoCards .option-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    event.currentTarget.classList.add('selected');
-    document.querySelector(`input[value="${tipo}"]`).checked = true;
+    const radio = document.querySelector(`input[name="tipo_incremento"][value="${tipo}"]`);
+    if (radio) radio.checked = true;
+    sincronizarTarjetaSeleccionada('tipo_incremento', '#tipoCards');
 
     // Actualizar labels y ejemplo
     const label = document.getElementById('labelValor');
@@ -1532,27 +2359,50 @@ function selectTipo(tipo) {
     const ayuda = document.getElementById('ayudaValor');
     const valor = document.getElementById('valor_incremento').value || 15;
 
+    const claseSeleccionada = document.querySelector('input[name="clase"]:checked')?.value;
+    const preview = document.getElementById('previewCalculo');
+    const esDescuento = claseSeleccionada === 'descuento';
+    const operacion = esDescuento ? 'descuento' : 'incremento';
+
+    if (!claseSeleccionada) {
+        label.textContent = 'Valor del ajuste';
+        simbolo.textContent = tipo === 'porcentaje' ? '%' : '$';
+        ayuda.textContent = 'Ahora selecciona si el ajuste suma o resta al precio.';
+        if (preview) preview.hidden = true;
+        actualizarResumenTarifa();
+        return;
+    }
+
+    if (preview) preview.hidden = false;
+
     if (tipo === 'porcentaje') {
-        label.textContent = 'Porcentaje de incremento';
+        label.textContent = `Porcentaje de ${operacion}`;
         simbolo.textContent = '%';
-        ayuda.textContent = 'Ejemplo: 15 para un incremento del 15%';
+        ayuda.textContent = `Ejemplo: 15 para un ${operacion} del 15%`;
         actualizarEjemplo(valor, 'porcentaje');
     } else {
-        label.textContent = 'Monto a incrementar';
+        label.textContent = esDescuento ? 'Monto a descontar' : 'Monto a incrementar';
         simbolo.textContent = '$';
-        ayuda.textContent = 'Ejemplo: 100 para incrementar $100';
+        ayuda.textContent = esDescuento ? 'Ejemplo: 100 para descontar $100' : 'Ejemplo: 100 para incrementar $100';
         actualizarEjemplo(valor, 'monto_fijo');
     }
+
+    actualizarResumenTarifa();
 }
 
 function selectClase(clase) {
-    document.querySelectorAll('#claseCards .option-card').forEach(function (card) {
-        const radio = card.querySelector('input[name="clase"]');
-        const isSel = radio && radio.value === clase;
-        card.classList.toggle('selected', isSel);
-        if (isSel) { radio.checked = true; }
-    });
+    const radio = document.querySelector(`input[name="clase"][value="${clase}"]`);
+    if (radio) radio.checked = true;
+    sincronizarTarjetaSeleccionada('clase', '#claseCards');
     actualizarCardImpacto();
+    const tipoSeleccionado = document.querySelector('input[name="tipo_incremento"]:checked')?.value;
+    if (tipoSeleccionado) {
+        selectTipo(tipoSeleccionado);
+    } else {
+        const preview = document.getElementById('previewCalculo');
+        if (preview) preview.hidden = true;
+    }
+    actualizarResumenTarifa();
 }
 
 // La revision de reservaciones existentes solo aplica a incrementos:
@@ -1561,27 +2411,20 @@ function actualizarCardImpacto() {
     const card = document.getElementById('cardImpactoReservas');
     if (!card) { return; }
     const claseSel = document.querySelector('input[name="clase"]:checked');
-    const esDescuento = claseSel && claseSel.value === 'descuento';
-    card.style.display = esDescuento ? 'none' : '';
-    if (esDescuento) {
+    const esIncremento = claseSel && claseSel.value === 'incremento';
+    card.style.display = esIncremento ? '' : 'none';
+    if (!esIncremento) {
         const chk = document.getElementById('revisar_reservaciones');
         if (chk) { chk.checked = false; }
     }
 }
 document.addEventListener('DOMContentLoaded', actualizarCardImpacto);
 
-// Función para seleccionar alcance - CORREGIDA
+// Función para seleccionar alcance
 function selectAlcance(alcance) {
-    // Buscar específicamente en la sección de alcance usando el ID
-    document.querySelectorAll('#alcanceOptions .option-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Agregar la clase selected al elemento clickeado
-    event.currentTarget.classList.add('selected');
-    
-    // Marcar el radio button correspondiente
-    document.querySelector(`input[name="alcance"][value="${alcance}"]`).checked = true;
+    const radio = document.querySelector(`input[name="alcance"][value="${alcance}"]`);
+    if (radio) radio.checked = true;
+    sincronizarTarjetaSeleccionada('alcance', '#alcanceOptions');
 
     // Mostrar/ocultar selectores
     document.getElementById('selectorTipos').style.display = 'none';
@@ -1593,6 +2436,8 @@ function selectAlcance(alcance) {
         document.getElementById('selectorHabitaciones').style.display = 'block';
         actualizarContadorHabitaciones();
     }
+
+    actualizarResumenTarifa();
 }
 
 // Toggle permanente
@@ -1631,6 +2476,59 @@ function actualizarEjemplo(valor, tipo) {
 function actualizarContadorHabitaciones() {
     const total = document.querySelectorAll('input[name="habitaciones[]"]:checked').length;
     document.getElementById('contadorHabitaciones').textContent = total;
+    actualizarResumenTarifa();
+}
+
+function formatearFechaResumen(value) {
+    if (!value) return '';
+    const date = new Date(`${value}T00:00:00`);
+    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+}
+
+function actualizarResumenTarifa() {
+    const nombre = document.getElementById('nombre')?.value.trim();
+    const clase = document.querySelector('input[name="clase"]:checked')?.value || '';
+    const tipo = document.querySelector('input[name="tipo_incremento"]:checked')?.value || '';
+    const valor = Number.parseFloat(document.getElementById('valor_incremento')?.value) || 0;
+    const alcance = document.querySelector('input[name="alcance"]:checked')?.value || '';
+    const inicio = document.getElementById('fecha_inicio')?.value || '';
+    const fin = document.getElementById('fecha_fin')?.value || '';
+    const permanente = Boolean(document.getElementById('es_permanente')?.checked);
+
+    const resumenNombre = document.getElementById('resumenNombre');
+    const resumenCambio = document.getElementById('resumenCambio');
+    const resumenAlcance = document.getElementById('resumenAlcance');
+    const resumenVigencia = document.getElementById('resumenVigencia');
+
+    if (resumenNombre) resumenNombre.textContent = nombre || 'Sin nombre';
+    if (resumenCambio) {
+        if (!clase || !tipo) {
+            resumenCambio.textContent = !clase && !tipo
+                ? 'Falta elegir operación y cálculo'
+                : (!clase ? 'Falta elegir operación' : 'Falta elegir forma de cálculo');
+        } else {
+            const operacion = clase === 'descuento' ? 'Descuento' : 'Incremento';
+            const unidad = tipo === 'porcentaje' ? `${valor}%` : `$${valor.toLocaleString('es-MX')}`;
+            resumenCambio.textContent = valor > 0 ? `${operacion} de ${unidad}` : `${operacion}, falta el valor`;
+        }
+    }
+    if (resumenAlcance) {
+        if (!alcance) {
+            resumenAlcance.textContent = 'Falta elegir alcance';
+        } else if (alcance === 'tipo_habitacion') {
+            const totalTipos = document.querySelectorAll('input[name="tipos_habitacion[]"]:checked').length;
+            resumenAlcance.textContent = totalTipos ? `${totalTipos} ${totalTipos === 1 ? 'tipo' : 'tipos'} de habitación` : 'Falta seleccionar tipos';
+        } else if (alcance === 'habitacion') {
+            const totalHabitaciones = document.querySelectorAll('input[name="habitaciones[]"]:checked').length;
+            resumenAlcance.textContent = totalHabitaciones ? `${totalHabitaciones} ${totalHabitaciones === 1 ? 'habitación' : 'habitaciones'}` : 'Falta seleccionar habitaciones';
+        } else {
+            resumenAlcance.textContent = 'Todas las habitaciones';
+        }
+    }
+    if (resumenVigencia) {
+        const desde = inicio ? `Desde ${formatearFechaResumen(inicio)}` : 'Falta fecha de inicio';
+        resumenVigencia.textContent = permanente ? `${desde}, sin fecha de fin` : (fin ? `${desde} hasta ${formatearFechaResumen(fin)}` : `${desde}, falta fecha de fin`);
+    }
 }
 
 // Mostrar filtro de tipos
@@ -1663,12 +2561,32 @@ function mostrarFiltroTipos() {
 
 // Event listeners
 document.getElementById('valor_incremento').addEventListener('input', function() {
-    const tipo = document.querySelector('input[name="tipo_incremento"]:checked').value;
-    actualizarEjemplo(this.value || 0, tipo);
+    const tipo = document.querySelector('input[name="tipo_incremento"]:checked')?.value;
+    const clase = document.querySelector('input[name="clase"]:checked')?.value;
+    if (tipo && clase) {
+        actualizarEjemplo(this.value || 0, tipo);
+    }
+    actualizarResumenTarifa();
 });
 
 const formIncremento = document.getElementById('formIncremento');
 const tarifaFormAlert = document.getElementById('tarifaFormAlert');
+
+document.querySelectorAll('#claseCards input[name="clase"]').forEach(input => {
+    input.addEventListener('change', () => selectClase(input.value));
+});
+
+document.querySelectorAll('#tipoCards input[name="tipo_incremento"]').forEach(input => {
+    input.addEventListener('change', () => selectTipo(input.value));
+});
+
+document.querySelectorAll('#alcanceOptions input[name="alcance"]').forEach(input => {
+    input.addEventListener('change', () => selectAlcance(input.value));
+});
+
+document.querySelectorAll('#nombre, #fecha_inicio, #fecha_fin, #es_permanente').forEach(input => {
+    input.addEventListener(input.type === 'text' ? 'input' : 'change', actualizarResumenTarifa);
+});
 
 function mostrarErrorFormularioTarifa(message, targetSelector) {
     if (!tarifaFormAlert) {
@@ -1699,14 +2617,37 @@ function limpiarErrorFormularioTarifa() {
 }
 
 document.querySelectorAll('input[name="tipos_habitacion[]"], input[name="habitaciones[]"], input[name="alcance"]').forEach(input => {
-    input.addEventListener('change', limpiarErrorFormularioTarifa);
+    input.addEventListener('change', function () {
+        limpiarErrorFormularioTarifa();
+        actualizarResumenTarifa();
+    });
 });
 
 // Validación del formulario
 if (formIncremento) {
     formIncremento.addEventListener('submit', function(e) {
-        const alcance = document.querySelector('input[name="alcance"]:checked').value;
+        const clase = document.querySelector('input[name="clase"]:checked')?.value;
+        const tipo = document.querySelector('input[name="tipo_incremento"]:checked')?.value;
+        const alcance = document.querySelector('input[name="alcance"]:checked')?.value;
         limpiarErrorFormularioTarifa();
+
+        if (!clase) {
+            e.preventDefault();
+            mostrarErrorFormularioTarifa('Selecciona si el ajuste será un incremento o un descuento.', '#claseCards');
+            return;
+        }
+
+        if (!tipo) {
+            e.preventDefault();
+            mostrarErrorFormularioTarifa('Selecciona cómo se calculará el ajuste.', '#tipoCards');
+            return;
+        }
+
+        if (!alcance) {
+            e.preventDefault();
+            mostrarErrorFormularioTarifa('Selecciona dónde se aplicará el ajuste.', '#alcanceOptions');
+            return;
+        }
 
         if (alcance === 'tipo_habitacion') {
             const tipos = document.querySelectorAll('input[name="tipos_habitacion[]"]:checked');
@@ -1731,18 +2672,18 @@ if (formIncremento) {
 // Inicializar
 document.addEventListener('DOMContentLoaded', function() {
     togglePermanente();
-    
-    // Asegurar que el primer tipo esté seleccionado visualmente
-    const firstTipoCard = document.querySelector('#seccionTipo .option-card');
-    if (firstTipoCard) {
-        firstTipoCard.classList.add('selected');
+    sincronizarTarjetaSeleccionada('clase', '#claseCards');
+    sincronizarTarjetaSeleccionada('tipo_incremento', '#tipoCards');
+    sincronizarTarjetaSeleccionada('alcance', '#alcanceOptions');
+    actualizarCardImpacto();
+    const tipoSeleccionado = document.querySelector('input[name="tipo_incremento"]:checked')?.value;
+    if (tipoSeleccionado) {
+        selectTipo(tipoSeleccionado);
+    } else {
+        const preview = document.getElementById('previewCalculo');
+        if (preview) preview.hidden = true;
     }
-    
-    // Asegurar que el primer alcance esté seleccionado visualmente
-    const firstAlcanceCard = document.querySelector('#alcanceOptions .option-card');
-    if (firstAlcanceCard) {
-        firstAlcanceCard.classList.add('selected');
-    }
+    actualizarResumenTarifa();
 });
 </script>
 

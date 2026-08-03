@@ -1666,7 +1666,7 @@ input.toggle-activo:checked ~ div {
     --tar-coral: #C66A5A;
     --tar-amber: #D0963A;
     padding: 1rem;
-    
+
 }
 
 .tarifa-index-page .tar-topbar,
@@ -2372,37 +2372,591 @@ input.toggle-activo:checked ~ div {
         grid-template-columns: 1fr;
     }
 }
+
+/* Index sereno: la lista y las decisiones dominan sobre la decoración. */
+.tarifa-index-page {
+    --ti-line: color-mix(in srgb, var(--tar-brand) 11%, #E8E2D8);
+    --ti-soft: color-mix(in srgb, var(--tar-brand) 4%, #F7F7F8);
+    --ti-success: #148653;
+    --ti-success-soft: #EAF7F0;
+    --ti-info: #356F9E;
+    --ti-info-soft: #EDF4F9;
+    --ti-warning: #A96E12;
+    --ti-warning-soft: #FFF6E6;
+    padding: clamp(12px, 2vw, 24px) !important;
+    background: var(--tar-bg) !important;
+}
+
+.tarifa-index-page .tar-topbar,
+.tarifa-index-page .tar-topbar.bg-white {
+    max-width: 1480px;
+    margin: 0 auto 14px !important;
+    overflow: hidden;
+    border: 1px solid var(--ti-line) !important;
+    border-radius: 24px !important;
+    background:
+        radial-gradient(circle at 96% 0%, color-mix(in srgb, var(--tar-accent) 11%, transparent), transparent 18rem),
+        linear-gradient(145deg, #FFFFFF, var(--ti-soft)) !important;
+    box-shadow: 0 20px 48px -38px rgba(17, 24, 39, .42);
+}
+
+.tarifa-index-page .tar-topbar > div {
+    padding: 18px 20px !important;
+}
+
+.tarifa-index-page > .px-3 {
+    max-width: 1480px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+}
+
+.tarifa-index-hero-inner {
+    align-items: center;
+    gap: 20px;
+}
+
+.tarifa-index-title-lockup {
+    grid-template-columns: 46px minmax(0, 1fr);
+    column-gap: 13px;
+}
+
+.tarifa-index-hero-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, var(--tar-brand), var(--tar-brand-2)) !important;
+}
+
+.tarifa-index-page .tarifa-page-kicker {
+    margin-bottom: 4px;
+    color: color-mix(in srgb, var(--tar-accent) 72%, #59401B);
+    font-size: .68rem;
+}
+
+.tarifa-index-page .tarifa-page-title {
+    font-size: clamp(1.55rem, 2.7vw, 2.15rem) !important;
+    font-weight: 900 !important;
+    line-height: 1.08 !important;
+}
+
+.tarifa-index-page .tarifa-page-subtitle,
+.tarifa-index-page .tar-topbar p.text-gray-400 {
+    max-width: 760px;
+    margin-top: 5px !important;
+    font-size: .82rem !important;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.tarifa-index-actions {
+    min-width: 0;
+    gap: 8px;
+}
+
+.tarifa-index-page .btn-tar {
+    min-height: 44px;
+    padding: 10px 14px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+.tarifa-index-page .btn-tar.calc {
+    border-color: color-mix(in srgb, var(--tar-brand) 18%, var(--ti-line)) !important;
+    background: #FFFFFF !important;
+    color: var(--tar-brand) !important;
+}
+
+.tarifa-index-page .btn-tar.calc:hover {
+    border-color: color-mix(in srgb, var(--tar-brand) 34%, var(--ti-line)) !important;
+    background: var(--ti-soft) !important;
+    color: var(--tar-brand) !important;
+}
+
+.tarifa-index-page .btn-tar.new {
+    background: linear-gradient(145deg, var(--tar-brand), var(--tar-brand-2)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--tar-brand) 72%, transparent) !important;
+}
+
+.tarifa-index-summary.tarifa-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    margin-bottom: 14px !important;
+    overflow: hidden;
+    border: 1px solid var(--ti-line) !important;
+    border-radius: 20px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 16px 40px -36px rgba(17, 24, 39, .44) !important;
+}
+
+.tar-metric-card {
+    --metric: var(--tar-brand);
+    grid-column: auto !important;
+    min-height: 112px;
+    gap: 7px;
+    padding: 15px 16px;
+    border: 0;
+    border-right: 1px solid var(--ti-line);
+    border-radius: 0;
+    background: #FFFFFF;
+    box-shadow: none;
+}
+
+.tar-metric-card:last-child {
+    border-right: 0;
+}
+
+.tar-metric-card::before {
+    inset: 0 0 auto;
+    width: auto;
+    height: 3px;
+    background: color-mix(in srgb, var(--metric) 78%, var(--tar-brand));
+}
+
+.tar-metric-card::after,
+.tar-metric-line {
+    display: none;
+}
+
+.tar-metric-card:hover {
+    z-index: 2;
+    transform: none;
+    border-color: var(--ti-line);
+    background: color-mix(in srgb, var(--metric) 3%, #FFFFFF);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--metric) 15%, transparent);
+}
+
+.tar-metric-icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: 10px;
+}
+
+.tar-metric-label span {
+    font-size: .64rem;
+}
+
+.tar-metric-label small {
+    margin-top: 3px;
+    font-size: .69rem;
+}
+
+.tar-metric-number {
+    font-size: 2rem;
+    line-height: .9;
+}
+
+.tar-metric-status {
+    min-height: 24px;
+    padding: 4px 7px;
+    font-size: .65rem;
+}
+
+.tar-type-breakdown {
+    gap: 5px;
+}
+
+.tar-type-row {
+    min-height: 28px;
+    padding: 4px 6px;
+    border-radius: 9px;
+}
+
+.tarifa-workspace {
+    display: grid;
+    grid-template-columns: minmax(250px, 292px) minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+}
+
+.tarifa-index-page .tar-filters,
+.tarifa-index-page .tar-panel {
+    margin: 0;
+    border: 1px solid var(--ti-line) !important;
+    border-radius: 20px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 16px 40px -36px rgba(17, 24, 39, .44);
+}
+
+.tarifa-index-page .tar-filters {
+    position: sticky;
+    top: 16px;
+}
+
+.tarifa-index-page .tar-filters::before,
+.tarifa-index-page .tar-panel::before {
+    content: none;
+}
+
+.tarifa-section-header,
+.tar-panel-hd {
+    min-height: 74px;
+    padding: 14px 16px !important;
+    background: linear-gradient(145deg, #FFFFFF, var(--ti-soft)) !important;
+}
+
+.tarifa-section-title {
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.tarifa-section-icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+    color: #FFFFFF;
+    background: var(--tar-brand);
+    border: 0;
+}
+
+.tarifa-section-copy {
+    min-width: 0;
+}
+
+.tarifa-section-eyebrow {
+    display: block;
+    margin: 0 0 2px;
+    color: var(--tar-muted);
+    font-size: .62rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.tarifa-section-title h2,
+.tar-panel-title {
+    margin: 0;
+    color: var(--tar-heading) !important;
+    font-size: .9rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.tarifa-section-title small,
+.tar-panel-subtitle {
+    margin-top: 3px;
+    font-size: .7rem;
+    line-height: 1.4;
+}
+
+.tarifa-index-page .btn-reset {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 12px;
+}
+
+.tarifa-index-page .btn-reset span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.tarifa-index-page .tar-filters > .p-4 {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 16px !important;
+    background: #FFFFFF;
+}
+
+.tarifa-index-page .filter-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--tar-text) !important;
+    font-size: .68rem;
+    letter-spacing: .04em;
+}
+
+.tarifa-index-page .filter-select {
+    min-height: 46px;
+    padding: 9px 11px;
+    border: 1px solid var(--ti-line) !important;
+    border-radius: 12px;
+    color: var(--tar-text);
+    background: var(--tar-bg) !important;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.tarifa-filter-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 16px 16px;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--ti-info) 18%, var(--ti-line));
+    border-radius: 11px;
+    color: color-mix(in srgb, var(--ti-info) 68%, #25384A);
+    background: var(--ti-info-soft);
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.tarifa-filter-note i {
+    margin-top: 2px;
+}
+
+.tar-panel-count {
+    border-color: var(--ti-line);
+    border-radius: 10px;
+    color: var(--tar-brand);
+    background: #FFFFFF;
+}
+
+.tarifa-index-page .tar-panel-body {
+    padding: 14px 16px 18px !important;
+    background: var(--tar-bg);
+}
+
+.tarifa-index-page .dataTables_wrapper .dataTables_filter {
+    position: relative;
+    width: min(360px, 100%);
+}
+
+.tarifa-index-page .dataTables_wrapper .dataTables_filter label {
+    width: 100%;
+    margin: 0;
+    color: transparent;
+    font-size: 0;
+}
+
+.tarifa-index-page .dataTables_wrapper .dataTables_filter input {
+    width: 100% !important;
+    min-height: 44px;
+    margin: 0 !important;
+    padding: 9px 12px 9px 38px !important;
+    border: 1px solid var(--ti-line) !important;
+    border-radius: 12px !important;
+    color: var(--tar-text) !important;
+    background:
+        linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+        #FFFFFF !important;
+    font-size: .78rem !important;
+}
+
+.tarifa-index-page .dataTables_wrapper .dataTables_filter::before {
+    content: "\f002";
+    position: absolute;
+    z-index: 2;
+    margin: 13px 0 0 14px;
+    color: var(--tar-muted);
+    font-family: "Font Awesome 5 Free";
+    font-size: .75rem;
+    font-weight: 900;
+    pointer-events: none;
+}
+
+.tarifa-index-page #tablaTarifas {
+    border-collapse: separate !important;
+    border-spacing: 0 8px !important;
+}
+
+.tarifa-index-page #tablaTarifas thead th {
+    padding: 5px 10px !important;
+}
+
+.tarifa-index-page #tablaTarifas tbody td {
+    padding: 11px 10px !important;
+    border-top: 1px solid var(--ti-line) !important;
+    border-bottom: 1px solid var(--ti-line) !important;
+    background: #FFFFFF;
+}
+
+.tarifa-index-page #tablaTarifas tbody td:first-child {
+    border-left: 1px solid var(--ti-line) !important;
+    border-radius: 13px 0 0 13px;
+}
+
+.tarifa-index-page #tablaTarifas tbody td:last-child {
+    border-right: 1px solid var(--ti-line) !important;
+    border-radius: 0 13px 13px 0;
+}
+
+.tarifa-index-page .icn-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 11px !important;
+}
+
+.tarifa-index-page .empty-state {
+    min-height: 330px;
+    display: grid;
+    place-items: center;
+    padding: 34px 20px;
+    border: 1px dashed color-mix(in srgb, var(--tar-brand) 18%, var(--ti-line));
+    border-radius: 16px;
+    background: #FFFFFF !important;
+}
+
+.tarifa-empty-inner {
+    width: min(430px, 100%);
+    text-align: center;
+}
+
+.tarifa-empty-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+    border: 1px solid color-mix(in srgb, var(--tar-brand) 14%, var(--ti-line));
+    border-radius: 17px;
+    color: var(--tar-brand);
+    background: var(--ti-soft);
+    font-size: 1.1rem;
+}
+
+.tarifa-empty-title {
+    margin: 0 0 6px;
+    color: var(--tar-heading);
+    font-size: .96rem;
+    font-weight: 900;
+}
+
+.tarifa-empty-copy {
+    margin: 0 auto 17px;
+    color: var(--tar-muted);
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 1050px) {
+    .tarifa-index-summary.tarifa-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .tar-metric-card:nth-child(2) { border-right: 0; }
+    .tar-metric-card:nth-child(-n+2) { border-bottom: 1px solid var(--ti-line); }
+    .tarifa-workspace { grid-template-columns: 230px minmax(0, 1fr); }
+}
+
+@media (max-width: 820px) {
+    .tarifa-index-hero-inner { align-items: flex-start; }
+    .tarifa-workspace { grid-template-columns: 1fr; }
+    .tarifa-index-page .tar-filters { position: static; }
+    .tarifa-index-page .tar-filters > .p-4 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+    .tarifa-filter-note { display: none; }
+}
+
+@media (max-width: 640px) {
+    .tarifa-index-page { padding: 8px 8px calc(86px + env(safe-area-inset-bottom)) !important; }
+    .tarifa-index-page .tar-topbar { border-radius: 20px !important; }
+    .tarifa-index-page .tar-topbar > div { padding: 14px !important; }
+    .tarifa-index-hero-inner { gap: 14px; }
+    .tarifa-index-title-lockup { grid-template-columns: 42px minmax(0, 1fr); }
+    .tarifa-index-hero-icon { width: 42px; height: 42px; border-radius: 13px; }
+    .tarifa-index-page .tarifa-page-title { font-size: 1.5rem !important; }
+    .tarifa-index-page .tarifa-page-subtitle { font-size: .75rem !important; }
+    .tarifa-index-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .tarifa-index-actions .btn-tar { width: 100%; padding-inline: 10px !important; }
+    .tarifa-index-summary.tarifa-metrics-grid { border-radius: 17px !important; }
+    .tar-metric-card { min-height: 104px; padding: 13px 12px; }
+    .tar-metric-card:nth-child(odd) { border-right: 1px solid var(--ti-line); }
+    .tar-metric-card:nth-child(even) { border-right: 0; }
+    .tar-metric-label small, .tar-metric-status { display: none; }
+    .tar-metric-number { font-size: 1.75rem; }
+    .tar-type-breakdown { grid-template-columns: 1fr; }
+    .tar-type-row { min-height: 24px; }
+    .tarifa-index-page .tar-filters > .p-4 { grid-template-columns: 1fr !important; }
+    .tarifa-section-header, .tar-panel-hd { min-height: 68px; align-items: center; flex-direction: row; }
+    .tarifa-section-title small, .tar-panel-subtitle { display: none; }
+    .tarifa-index-page .tar-panel-body { padding: 10px !important; }
+    .tarifa-index-page .dataTables_wrapper .dataTables_filter { width: 100%; }
+    .tarifa-index-page #tablaTarifas,
+    .tarifa-index-page #tablaTarifas tbody,
+    .tarifa-index-page #tablaTarifas tr,
+    .tarifa-index-page #tablaTarifas td { display: block !important; width: 100% !important; }
+    .tarifa-index-page #tablaTarifas thead { display: none !important; }
+    .tarifa-index-page #tablaTarifas { border-spacing: 0 10px !important; }
+    .tarifa-index-page #tablaTarifas tbody tr { overflow: hidden; border: 1px solid var(--ti-line); border-radius: 15px; background: #FFFFFF; }
+    .tarifa-index-page #tablaTarifas tbody td {
+        min-height: 38px;
+        display: grid !important;
+        grid-template-columns: minmax(88px, .7fr) minmax(0, 1.3fr) !important;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px !important;
+        border: 0 !important;
+        border-bottom: 1px solid color-mix(in srgb, var(--ti-line) 70%, #FFFFFF) !important;
+        border-radius: 0 !important;
+        text-align: right !important;
+    }
+    .tarifa-index-page #tablaTarifas tbody td::before {
+        content: attr(data-label);
+        color: var(--tar-muted);
+        font-size: .62rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        text-align: left;
+        text-transform: uppercase;
+    }
+    .tarifa-index-page #tablaTarifas tbody td:last-child { border-bottom: 0 !important; }
+    .tarifa-index-page #tablaTarifas tbody td.tarifa-name-cell {
+        display: block !important;
+        padding-top: 12px !important;
+        padding-bottom: 10px !important;
+        border-bottom-style: dashed !important;
+        text-align: left !important;
+    }
+    .tarifa-index-page #tablaTarifas tbody td.tarifa-name-cell::before { content: none; }
+    .tarifa-index-page #tablaTarifas tbody td.tarifa-created-cell { display: none !important; }
+    .tarifa-index-page #tablaTarifas tbody td .flex { justify-content: flex-end !important; }
+    .tarifa-index-page #tablaTarifas tbody td.tarifa-name-cell .flex { justify-content: flex-start !important; }
+    .tarifa-index-page #tablaTarifas tbody td p { max-width: none !important; text-align: right; }
+    .tarifa-index-page #tablaTarifas tbody td.tarifa-name-cell p { text-align: left; }
+    .tarifa-index-page .icn-btn { width: 44px !important; height: 44px !important; }
+    .tarifa-index-page .dataTables_info, .tarifa-index-page .dataTables_paginate { width: 100%; text-align: center !important; }
+}
+
+@media (max-width: 380px) {
+    .tarifa-index-actions { grid-template-columns: 1fr; }
+    .tarifa-index-summary.tarifa-metrics-grid { grid-template-columns: 1fr !important; }
+    .tar-metric-card { border-right: 0 !important; border-bottom: 1px solid var(--ti-line); }
+    .tar-metric-card:last-child { border-bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarifa-index-page, .tarifa-index-page * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
 </style>
 
 <div class="tar-page tarifa-index-page hotel-page min-h-screen">
 
     <!-- Top Bar -->
-    <div class="tar-topbar tarifa-index-hero bg-white">
+    <div class="tar-topbar tarifa-index-hero bg-white" aria-labelledby="tarifas-page-title">
         <div class="px-3 sm:px-5 lg:px-7 py-4">
             <?php $back_arrow_href = back_url('configuracion'); include APP_PATH . '/views/partials/back_arrow.php'; ?>
             <div class="tarifa-index-hero-inner">
 
                 <!-- Title -->
                 <div class="tarifa-index-title-lockup">
-                    <div class="tarifa-index-hero-icon">
+                    <div class="tarifa-index-hero-icon" aria-hidden="true">
                         <i class="fas fa-tags text-lg"></i>
                     </div>
                     <div class="tarifa-index-title-copy">
                         <p class="tarifa-page-kicker">Tarifas din&aacute;micas</p>
-                        <h1 class="tarifa-page-title text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Precios y temporadas</h1>
-                        <p class="tarifa-page-subtitle text-xs text-gray-400 mt-0.5">Sube o baja tus precios por temporada, con vigencia, alcance y estado claros · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
+                        <h1 id="tarifas-page-title" class="tarifa-page-title text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Precios y temporadas</h1>
+                        <p class="tarifa-page-subtitle text-xs text-gray-400 mt-0.5">Administra reglas de precio por temporada y revisa cuánto cobrarás antes de aplicarlas · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
 
                 <!-- Actions -->
                 <div class="tarifa-index-actions">
-                    <button onclick="previsualizarPrecios()" class="btn-tar calc flex-1 sm:flex-none ms-glass-btn">
+                    <button type="button" onclick="previsualizarPrecios()" class="btn-tar calc flex-1 sm:flex-none">
                         <i class="fas fa-calculator text-xs"></i>
-                        <span>Calcular</span><span class="hidden sm:inline"> Precios</span>
+                        <span>Simular precios</span>
                     </button>
-                    <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new flex-1 sm:flex-none ms-glass-btn">
+                    <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new flex-1 sm:flex-none">
                         <i class="fas fa-plus text-xs"></i>
-                        <span>Nuevo</span><span class="hidden sm:inline"> Incremento</span>
+                        <span>Crear ajuste</span>
                     </a>
                 </div>
             </div>
@@ -2414,7 +2968,7 @@ input.toggle-activo:checked ~ div {
 
         <!-- Stat Widgets -->
         <?php $total_tipos_incremento = (int)($estadisticas['porcentaje'] ?? 0) + (int)($estadisticas['monto_fijo'] ?? 0); ?>
-        <div class="tarifa-index-summary tarifa-metrics-grid mb-5" aria-label="Resumen de tarifas dinamicas">
+        <div class="tarifa-index-summary tarifa-metrics-grid mb-5" aria-label="Resumen de tarifas dinámicas">
 
             <!-- Activos -->
             <article class="tar-metric-card tar-metric-active">
@@ -2489,77 +3043,29 @@ input.toggle-activo:checked ~ div {
                 </div>
             </article>
 
-            <!-- Vigentes -->
-            <div class="tar-stat tar-stat-current" style="--ws:var(--tar-success)">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="tar-stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <span class="text-xl font-bold text-emerald-600"><?= $estadisticas['vigentes'] ?></span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Vigentes</p>
-                <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">Aplicándose hoy</p>
-            </div>
-
-            <!-- Programados -->
-            <div class="tar-stat tar-stat-scheduled" style="--ws:var(--tar-sky)">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="tar-stat-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <span class="text-xl font-bold text-blue-600"><?= $estadisticas['futuros'] ?></span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Programados</p>
-                <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">Para fechas futuras</p>
-            </div>
-
-            <!-- Por tipo -->
-            <div class="tar-stat tar-stat-types" style="--ws:var(--tar-amber)">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="tar-stat-icon">
-                        <i class="fas fa-percentage"></i>
-                    </div>
-                    <span class="text-xl font-bold text-gray-700"><?= (int)($estadisticas['porcentaje'] ?? 0) + (int)($estadisticas['monto_fijo'] ?? 0) ?></span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Por Tipo</p>
-                <div class="space-y-1 text-xs">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500 flex items-center gap-1">
-                            <i class="fas fa-circle text-[#8b5cf6]" style="font-size:.45rem"></i>
-                            <span class="hidden xs:inline">Porcentaje</span><span class="xs:hidden">%</span>
-                        </span>
-                        <span class="font-bold text-gray-700"><?= $estadisticas['porcentaje'] ?? 0 ?></span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500 flex items-center gap-1">
-                            <i class="fas fa-circle text-[#10b981]" style="font-size:.45rem"></i>
-                            <span class="hidden xs:inline">Monto Fijo</span><span class="xs:hidden">$</span>
-                        </span>
-                        <span class="font-bold text-gray-700"><?= $estadisticas['monto_fijo'] ?? 0 ?></span>
-                    </div>
-                </div>
-            </div>
         </div>
 
+        <div class="tarifa-workspace">
         <!-- Filters -->
-        <div class="tar-filters">
+        <aside class="tar-filters" aria-labelledby="tarifa-filter-title">
             <div class="tar-filters-hd tarifa-section-header">
                 <div class="tarifa-section-title">
-                    <div class="tarifa-section-icon">
+                    <div class="tarifa-section-icon" aria-hidden="true">
                         <i class="fas fa-filter text-xs"></i>
                     </div>
-                    <div>
-                        <span class="text-xs font-bold text-[#3D5234]">Filtros de tarifas</span>
-                        <small>Depura el tablero por estado, tipo y alcance.</small>
+                    <div class="tarifa-section-copy">
+                        <span class="tarifa-section-eyebrow">1 · Define la vista</span>
+                        <h2 id="tarifa-filter-title">Filtrar ajustes</h2>
+                        <small>Combina estado, duración y alcance.</small>
                     </div>
                 </div>
-                <button onclick="resetFiltros()" class="btn-reset">
-                    <i class="fas fa-sync-alt mr-1 text-xs"></i>Limpiar
+                <button type="button" onclick="resetFiltros()" class="btn-reset" aria-label="Limpiar filtros" title="Limpiar filtros">
+                    <i class="fas fa-undo-alt text-xs" aria-hidden="true"></i><span>Limpiar filtros</span>
                 </button>
             </div>
             <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                    <p class="filter-label">Estado</p>
+                    <label class="filter-label" for="filtroEstado">Estado</label>
                     <select id="filtroEstado" class="filter-select">
                         <option value="">Todos los estados</option>
                         <option value="activo">Activos</option>
@@ -2569,7 +3075,7 @@ input.toggle-activo:checked ~ div {
                     </select>
                 </div>
                 <div>
-                    <p class="filter-label">Tipo</p>
+                    <label class="filter-label" for="filtroTipo">Duración</label>
                     <select id="filtroTipo" class="filter-select">
                         <option value="">Todos los tipos</option>
                         <option value="permanente">Permanentes</option>
@@ -2577,7 +3083,7 @@ input.toggle-activo:checked ~ div {
                     </select>
                 </div>
                 <div>
-                    <p class="filter-label">Alcance</p>
+                    <label class="filter-label" for="filtroAlcance">Alcance</label>
                     <select id="filtroAlcance" class="filter-select">
                         <option value="">Todos los alcances</option>
                         <option value="global">Global</option>
@@ -2586,57 +3092,63 @@ input.toggle-activo:checked ~ div {
                     </select>
                 </div>
             </div>
-        </div>
+            <p class="tarifa-filter-note">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <span>Los filtros sólo cambian esta lista; no modifican ninguna regla de precio.</span>
+            </p>
+        </aside>
 
         <!-- Table Panel -->
-        <div class="tar-panel">
+        <section class="tar-panel" aria-labelledby="tarifa-rules-title">
             <div class="tar-panel-hd">
                 <div class="tarifa-section-title">
-                    <div class="tarifa-section-icon">
+                    <div class="tarifa-section-icon" aria-hidden="true">
                         <i class="fas fa-layer-group text-xs"></i>
                     </div>
-                    <div>
-                        <span class="tar-panel-title">Incrementos configurados</span>
-                        <small class="tar-panel-subtitle">Vista operativa de reglas activas, programadas y finalizadas.</small>
+                    <div class="tarifa-section-copy">
+                        <span class="tarifa-section-eyebrow">2 · Revisa y administra</span>
+                        <h2 class="tar-panel-title" id="tarifa-rules-title">Ajustes configurados</h2>
+                        <small class="tar-panel-subtitle">Consulta vigencia, alcance y estado de cada regla.</small>
                     </div>
                 </div>
-                <div class="tar-panel-count"><?= number_format(count($incrementos ?? [])) ?> registros</div>
+                <div class="tar-panel-count" aria-live="polite"><?= number_format(count($incrementos ?? [])) ?> registros</div>
             </div>
             <div class="tar-panel-body">
                 <?php if (empty($incrementos)): ?>
                     <div class="empty-state">
-                        <div style="width:64px;height:64px;border-radius:50%;background:rgba(92,122,78,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                            <i class="fas fa-tags text-2xl" style="color:#A8C4A0"></i>
+                        <div class="tarifa-empty-inner">
+                            <div class="tarifa-empty-icon" aria-hidden="true">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <h3 class="tarifa-empty-title">Aún no hay ajustes de precio</h3>
+                            <p class="tarifa-empty-copy">Crea una regla para subir o bajar precios por temporada, evento o habitación específica.</p>
+                            <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new">
+                                <i class="fas fa-plus text-xs" aria-hidden="true"></i> Crear primer ajuste
+                            </a>
                         </div>
-                        <h3 class="text-sm font-bold text-gray-600 mb-2">Aún no tienes ajustes de precio. Crea el primero para subir o bajar precios por temporada</h3>
-                        <p class="text-xs text-gray-400 mb-5 max-w-xs mx-auto">
-                            Crea tu primer incremento para gestionar precios dinámicamente.
-                        </p>
-                        <a href="<?= url('configuracion/tarifas/crear') ?>" class="btn-tar new">
-                            <i class="fas fa-plus text-xs"></i> Crear el primer ajuste
-                        </a>
                     </div>
                 <?php else: ?>
                     <div class="overflow-x-auto lc-scroll">
                         <table class="min-w-full" id="tablaTarifas">
+                            <caption class="sr-only">Listado de ajustes de precio configurados</caption>
                             <thead>
                                 <tr>
-                                    <th class="text-left">
+                                    <th scope="col" class="text-left">
                                         <span class="flex items-center gap-1">
                                             <i class="fas fa-sort-numeric-up"></i>
                                             <span class="hidden xs:inline">Prior.</span>
                                         </span>
                                     </th>
-                                    <th class="text-left">Incremento</th>
-                                    <th class="text-left hidden sm:table-cell">Valor</th>
-                                    <th class="text-left hidden md:table-cell">Alcance</th>
-                                    <th class="text-left">Vigencia</th>
-                                    <th class="text-center">
+                                    <th scope="col" class="text-left">Ajuste</th>
+                                    <th scope="col" class="text-left hidden sm:table-cell">Valor</th>
+                                    <th scope="col" class="text-left hidden md:table-cell">Alcance</th>
+                                    <th scope="col" class="text-left">Vigencia</th>
+                                    <th scope="col" class="text-center">
                                         <span class="hidden sm:inline">Estado</span>
                                         <i class="fas fa-toggle-on sm:hidden"></i>
                                     </th>
-                                    <th class="text-left hidden lg:table-cell">Creado</th>
-                                    <th class="text-center">
+                                    <th scope="col" class="text-left hidden lg:table-cell">Creado</th>
+                                    <th scope="col" class="text-center">
                                         <span class="hidden sm:inline">Acciones</span>
                                         <i class="fas fa-ellipsis-h sm:hidden"></i>
                                     </th>
@@ -2662,12 +3174,12 @@ input.toggle-activo:checked ~ div {
                                     class="<?= !$inc['activo'] ? 'opacity-60' : '' ?>">
 
                                     <!-- Prioridad -->
-                                    <td>
+                                    <td data-label="Prioridad">
                                         <span class="prio-badge"><?= $inc['prioridad'] ?></span>
                                     </td>
 
                                     <!-- Nombre -->
-                                    <td>
+                                    <td class="tarifa-name-cell" data-label="Ajuste">
                                         <p class="text-xs font-semibold text-gray-800 truncate max-w-[160px]">
                                             <?= htmlspecialchars($inc['nombre']) ?>
                                         </p>
@@ -2701,7 +3213,7 @@ input.toggle-activo:checked ~ div {
                                     </td>
 
                                     <!-- Valor desktop -->
-                                    <td class="hidden sm:table-cell">
+                                    <td class="hidden sm:table-cell" data-label="Valor">
                                         <?php if ($inc['tipo_incremento'] == 'porcentaje'): ?>
                                             <span class="val-badge"><i class="fas fa-percentage text-xs"></i><?= (($inc['clase'] ?? 'incremento') === 'descuento') ? '&minus;' : '+' ?><?= number_format($inc['valor_incremento'],2) ?>%</span>
                                         <?php else: ?>
@@ -2710,7 +3222,7 @@ input.toggle-activo:checked ~ div {
                                     </td>
 
                                     <!-- Alcance -->
-                                    <td class="hidden md:table-cell">
+                                    <td class="hidden md:table-cell" data-label="Alcance">
                                         <?php switch($inc['alcance']):
                                             case 'global': ?>
                                                 <span class="scope-badge scope-global"><i class="fas fa-globe text-xs"></i>Global</span>
@@ -2728,7 +3240,7 @@ input.toggle-activo:checked ~ div {
                                     </td>
 
                                     <!-- Vigencia -->
-                                    <td>
+                                    <td data-label="Vigencia">
                                         <?php if ($inc['es_permanente']): ?>
                                             <span class="vig-badge vig-perm"><i class="fas fa-infinity text-xs"></i><span class="hidden xs:inline">Permanente</span></span>
                                             <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">Desde <?= format_date($inc['fecha_inicio'],'d/m/Y') ?></p>
@@ -2747,11 +3259,12 @@ input.toggle-activo:checked ~ div {
                                     </td>
 
                                     <!-- Toggle -->
-                                    <td class="text-center">
-                                        <label class="relative inline-flex items-center cursor-pointer">
+                                    <td class="text-center" data-label="Estado">
+                                        <label class="tarifa-switch relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox"
                                                    class="sr-only peer toggle-activo"
                                                    data-id="<?= $inc['id'] ?>"
+                                                   aria-label="<?= htmlspecialchars(($inc['activo'] ? 'Desactivar ' : 'Activar ') . $inc['nombre'], ENT_QUOTES, 'UTF-8') ?>"
                                                    <?= $inc['activo'] ? 'checked' : '' ?>>
                                             <div class="w-9 h-5 bg-gray-200 rounded-full peer
                                                         peer-checked:after:translate-x-full peer-checked:after:border-white
@@ -2766,26 +3279,26 @@ input.toggle-activo:checked ~ div {
                                     </td>
 
                                     <!-- Creado -->
-                                    <td class="hidden lg:table-cell">
+                                    <td class="tarifa-created-cell hidden lg:table-cell" data-label="Creado por">
                                         <p class="text-xs font-semibold text-gray-700"><?= htmlspecialchars($inc['usuario_nombre']) ?></p>
                                         <p class="text-xs text-gray-400"><?= format_date($inc['created_at'],'d/m/Y H:i') ?></p>
                                     </td>
 
                                     <!-- Actions -->
-                                    <td class="text-center">
+                                    <td class="text-center" data-label="Acciones">
                                         <div class="flex items-center justify-center gap-0.5">
                                             <a href="<?= url('configuracion/tarifas/editar/'.$inc['id']) ?>"
-                                               class="icn-btn icn-edit" title="Editar">
-                                                <i class="fas fa-edit"></i>
+                                               class="icn-btn icn-edit" title="Editar" aria-label="Editar <?= htmlspecialchars($inc['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <i class="fas fa-edit" aria-hidden="true"></i>
                                             </a>
                                             <button type="button" class="icn-btn icn-view btn-detalle"
-                                                    data-id="<?= $inc['id'] ?>" title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
+                                                    data-id="<?= $inc['id'] ?>" title="Ver detalles" aria-label="Ver detalles de <?= htmlspecialchars($inc['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
                                             </button>
                                             <button type="button" class="icn-btn icn-del btn-eliminar"
-                                                    data-id="<?= $inc['id'] ?>" title="Eliminar"
+                                                    data-id="<?= $inc['id'] ?>" title="Eliminar" aria-label="Eliminar <?= htmlspecialchars($inc['nombre'], ENT_QUOTES, 'UTF-8') ?>"
                                                     <?= ($inc['activo'] && $estado_fecha=='vigente') ? 'disabled' : '' ?>>
-                                                <i class="fas fa-trash"></i>
+                                                <i class="fas fa-trash" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -2796,7 +3309,8 @@ input.toggle-activo:checked ~ div {
                     </div>
                 <?php endif; ?>
             </div>
-        </div>
+        </section>
+        </div><!-- end workspace -->
     </div>
 </div><!-- end page -->
 
@@ -2879,17 +3393,72 @@ input.toggle-activo:checked ~ div {
     </div>
 </div>
 
-<!-- ══════ Modal Detalle Incremento ══════ -->
-<div class="modal fade" id="modalDetalle" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<style id="tar-detail-serene">
+.tar-detail-modal .modal-dialog { max-width: 760px; margin: 1.75rem auto; }
+.tar-detail-modal .modal-content { overflow: hidden; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #e7e2d9); border-radius: 22px; background: #fff; box-shadow: 0 28px 80px rgba(18,27,42,.25); }
+.tar-detail-modal .modal-header { min-height: 82px; display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; border-bottom: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 11%, #e9e5dd); background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #fff), #fff 62%); }
+.tar-detail-modal__heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tar-detail-modal__icon { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; background: var(--brand-primary, #1B2746); box-shadow: 0 9px 22px color-mix(in srgb, var(--brand-primary, #1B2746) 20%, transparent); }
+.tar-detail-modal__eyebrow { margin: 0 0 2px; color: #7d8999; font-size: .64rem; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
+.tar-detail-modal .modal-title { margin: 0; color: #172033; font-size: 1.08rem; font-weight: 850; line-height: 1.2; }
+.tar-detail-modal .close { width: 42px; height: 42px; display: grid; place-items: center; margin: 0; padding: 0; border: 1px solid #ded9d0; border-radius: 12px; color: #586579; background: rgba(255,255,255,.8); opacity: 1; font-size: 1rem; text-shadow: none; }
+.tar-detail-modal .close:hover { color: #172033; border-color: #c8c1b6; background: #fff; }
+.tar-detail-modal .modal-body { max-height: calc(100dvh - 150px); overflow-y: auto; padding: 18px 20px 20px; background: #fbfbfa; }
+.tar-detail-hero { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #e3ded5); border-radius: 17px; background: #fff; }
+.tar-detail-hero__copy { min-width: 0; }
+.tar-detail-hero__label { margin: 0 0 4px; color: #8590a0; font-size: .65rem; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.tar-detail-hero h3 { margin: 0; overflow: hidden; color: #172033; font-size: 1.18rem; font-weight: 850; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.tar-detail-hero p { margin: 5px 0 0; color: #6c7889; font-size: .77rem; line-height: 1.4; }
+.tar-detail-value { flex: 0 0 auto; min-width: 120px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 15%, #ded9d0); border-radius: 14px; color: var(--brand-primary, #1B2746); background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff); text-align: right; }
+.tar-detail-value small { display: block; margin-bottom: 2px; color: #7d8999; font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+.tar-detail-value strong { display: block; font-size: 1.14rem; line-height: 1.15; }
+.tar-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.tar-detail-section { min-width: 0; padding: 15px 16px; border: 1px solid #e5e0d7; border-radius: 17px; background: #fff; }
+.tar-detail-section__title { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; color: #3f4c5f; font-size: .71rem; font-weight: 850; letter-spacing: .07em; text-transform: uppercase; }
+.tar-detail-section__title i { color: var(--brand-primary, #1B2746); }
+.tar-detail-list { margin: 0; }
+.tar-detail-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid #f0ede7; }
+.tar-detail-row:last-child { border-bottom: 0; }
+.tar-detail-row dt { color: #8792a1; font-size: .7rem; font-weight: 720; }
+.tar-detail-row dd { min-width: 0; margin: 0; color: #263246; font-size: .76rem; font-weight: 730; line-height: 1.45; text-align: right; overflow-wrap: anywhere; }
+.tar-detail-tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.tar-detail-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #ded9d0); border-radius: 999px; color: #526074; background: #faf9f7; font-size: .66rem; font-weight: 760; }
+.tar-detail-status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 999px; font-size: .68rem; font-weight: 820; }
+.tar-detail-status.is-active { color: #116945; background: #eaf8f1; }
+.tar-detail-status.is-inactive { color: #875247; background: #fbefec; }
+.tar-detail-meta { display: flex; align-items: center; gap: 8px; margin: 12px 2px 0; color: #818c9b; font-size: .68rem; }
+.tar-detail-meta i { color: color-mix(in srgb, var(--brand-accent, #BD9441) 78%, #5b4520); }
+@media (max-width: 767px) {
+    .tar-detail-modal .modal-dialog { margin: .7rem; }
+    .tar-detail-modal .modal-content { border-radius: 19px; }
+    .tar-detail-modal .modal-header { min-height: 72px; padding: 13px 14px; }
+    .tar-detail-modal .modal-body { max-height: calc(100dvh - 100px); padding: 13px; }
+    .tar-detail-hero { align-items: flex-start; padding: 14px; }
+    .tar-detail-hero h3 { white-space: normal; }
+    .tar-detail-value { min-width: 104px; }
+    .tar-detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 470px) {
+    .tar-detail-hero { display: block; }
+    .tar-detail-value { margin-top: 12px; text-align: left; }
+    .tar-detail-row { grid-template-columns: 84px minmax(0, 1fr); }
+}
+</style>
+
+<!-- ══════ Modal de detalle del ajuste ══════ -->
+<div class="modal fade tar-detail-modal" id="modalDetalle" tabindex="-1" role="dialog" aria-labelledby="modalDetalleTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title flex items-center gap-2">
-                    <i class="fas fa-info-circle opacity-80"></i>
-                    Detalle del Incremento
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <div class="tar-detail-modal__heading">
+                    <span class="tar-detail-modal__icon" aria-hidden="true"><i class="fas fa-tag"></i></span>
+                    <div>
+                        <p class="tar-detail-modal__eyebrow">Tarifa dinámica</p>
+                        <h5 class="modal-title" id="modalDetalleTitle">Detalle del ajuste</h5>
+                    </div>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar detalle">
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
             </div>
             <div class="modal-body" id="contenidoDetalle">
@@ -2906,42 +3475,79 @@ window.gettipoHabitacion = t => window.tipoHabitacionLabels[t] || String(t || ''
 
 <script>
 $(document).ready(function() {
-    var tabla = $('#tablaTarifas').DataTable({
-        language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
-        order: [[0,'desc'],[4,'desc']],
-        pageLength: 10,
-        lengthMenu: [[10,25,50,-1],[10,25,50,'Todos']],
-        columnDefs: [{ orderable:false, targets:[7] }],
-        dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4"<"flex items-center"f>>rt<"flex flex-col sm:flex-row justify-between items-center mt-4"<"text-xs text-gray-400"i><"flex items-center"p>>',
-        initComplete: function() {
-            $('.dataTables_length').hide();
-        }
-    });
+    const $tablaTarifas = $('#tablaTarifas');
+    let tabla = null;
+
+    function coincideConFiltros($fila) {
+        const estado = $('#filtroEstado').val();
+        const tipo = $('#filtroTipo').val();
+        const alcance = $('#filtroAlcance').val();
+
+        if (estado === 'vigente' && !($fila.data('vigencia') === 'vigente' && $fila.data('estado') === 'activo')) return false;
+        if (estado === 'activo' && $fila.data('estado') !== 'activo') return false;
+        if (estado && estado !== 'vigente' && estado !== 'activo' && $fila.data('vigencia') !== estado) return false;
+        if (tipo && $fila.data('tipo') !== tipo) return false;
+        if (alcance && $fila.data('alcance') !== alcance) return false;
+
+        return true;
+    }
+
+    if ($tablaTarifas.length) {
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            if (!settings.nTable || settings.nTable.id !== 'tablaTarifas') return true;
+            const fila = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+            return fila ? coincideConFiltros($(fila)) : true;
+        });
+
+        tabla = $tablaTarifas.DataTable({
+            language: {
+                search: '',
+                searchPlaceholder: 'Buscar ajuste…',
+                emptyTable: 'Todavía no hay ajustes configurados.',
+                info: 'Mostrando _START_ a _END_ de _TOTAL_ ajustes',
+                infoEmpty: 'Mostrando 0 ajustes',
+                infoFiltered: '(filtrados de _MAX_ ajustes)',
+                lengthMenu: 'Mostrar _MENU_ ajustes',
+                loadingRecords: 'Cargando ajustes…',
+                processing: 'Procesando…',
+                zeroRecords: 'No encontramos ajustes con estos filtros.',
+                paginate: {
+                    first: 'Primera',
+                    last: 'Última',
+                    next: 'Siguiente',
+                    previous: 'Anterior'
+                },
+                aria: {
+                    sortAscending: ': ordenar ascendente',
+                    sortDescending: ': ordenar descendente'
+                }
+            },
+            order: [[0,'desc'],[4,'desc']],
+            pageLength: 10,
+            lengthMenu: [[10,25,50,-1],[10,25,50,'Todos']],
+            columnDefs: [{ orderable:false, targets:[7] }],
+            dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4"<"flex items-center"f>>rt<"flex flex-col sm:flex-row justify-between items-center mt-4"<"text-xs text-gray-400"i><"flex items-center"p>>',
+            initComplete: function() {
+                $('.dataTables_length').hide();
+                actualizarConteoResultados();
+            }
+        });
+
+        tabla.on('draw.dt', actualizarConteoResultados);
+        actualizarConteoResultados();
+    }
 
     $('[data-toggle="tooltip"]').tooltip();
 
     // Filtros
     $('#filtroEstado, #filtroTipo, #filtroAlcance').change(function() {
-        aplicarFiltros();
+        if (tabla) tabla.draw();
     });
 
-    function aplicarFiltros() {
-        var estado   = $('#filtroEstado').val();
-        var tipo     = $('#filtroTipo').val();
-        var alcance  = $('#filtroAlcance').val();
-
-        $('#tablaTarifas tbody tr').each(function() {
-            var $r = $(this); var mostrar = true;
-            if (estado) {
-                if (estado === 'vigente') mostrar = $r.data('vigencia')==='vigente' && $r.data('estado')==='activo';
-                else if (estado === 'activo') mostrar = $r.data('estado')==='activo';
-                else mostrar = $r.data('vigencia')===estado;
-            }
-            if (tipo   && mostrar) mostrar = $r.data('tipo')===tipo;
-            if (alcance && mostrar) mostrar = $r.data('alcance')===alcance;
-            $r.toggle(mostrar);
-        });
-        tabla.draw();
+    function actualizarConteoResultados() {
+        if (!tabla) return;
+        const total = tabla.rows({ search: 'applied' }).count();
+        $('.tar-panel-count').text(`${total} ${total === 1 ? 'registro' : 'registros'}`);
     }
 
     // Toggle activo
@@ -2971,71 +3577,80 @@ $(document).ready(function() {
         .done(function(response) { if (response.success) mostrarDetalle(response.incremento); });
     });
 
+    function tarifaDetailEscape(value) {
+        return $('<div>').text(value == null ? '' : String(value)).html();
+    }
+
+    function tarifaDetailTags(items, formatter) {
+        const values = Array.isArray(items) ? items : [];
+        if (!values.length) return '<span class="tar-detail-tag">Sin selección registrada</span>';
+        return `<span class="tar-detail-tags">${values.map(item => `<span class="tar-detail-tag">${tarifaDetailEscape(formatter(item))}</span>`).join('')}</span>`;
+    }
+
     function mostrarDetalle(inc) {
-        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+        const esDescuento = inc.clase === 'descuento';
+        const signo = esDescuento ? '−' : '+';
+        const operacion = esDescuento ? 'Descuento' : 'Incremento';
+        const tipo = inc.tipo_incremento === 'porcentaje' ? 'Porcentaje' : 'Monto fijo';
+        const valor = inc.tipo_incremento === 'porcentaje'
+            ? `${signo}${tarifaDetailEscape(inc.valor_incremento)}%`
+            : `${signo}${tarifaDetailEscape(formatCurrency(inc.valor_incremento))}`;
+        const estaActivo = inc.activo === true || Number(inc.activo) === 1;
+        const esPermanente = inc.es_permanente === true || Number(inc.es_permanente) === 1;
 
-        // Col izquierda
-        html += '<div>';
-        html += '<p class="text-xs font-bold text-[#5C7A4E] uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fas fa-info-circle"></i>Información General</p>';
-
-        html += `<div class="detail-field"><p class="detail-field-label">Nombre</p><p class="detail-field-val">${inc.nombre}</p></div>`;
-        html += `<div class="detail-field"><p class="detail-field-label">Descripción</p><p class="detail-field-val">${inc.descripcion||'Sin descripción'}</p></div>`;
-
-        html += '<div class="detail-field"><p class="detail-field-label">Tipo de Incremento</p><p class="detail-field-val">';
-        if (inc.tipo_incremento==='porcentaje')
-            html += `<span class="val-badge"><i class="fas fa-percentage text-xs"></i>+${inc.valor_incremento}%</span>`;
-        else
-            html += `<span class="val-badge"><i class="fas fa-dollar-sign text-xs"></i>+${formatCurrency(inc.valor_incremento)}</span>`;
-        html += '</p></div>';
-
-        html += `<div class="detail-field"><p class="detail-field-label">Prioridad</p><p class="detail-field-val"><span class="prio-badge">${inc.prioridad}</span></p></div>`;
-        html += '</div>';
-
-        // Col derecha
-        html += '<div>';
-        html += '<p class="text-xs font-bold text-[#5C7A4E] uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fas fa-sliders-h"></i>Configuración de Aplicación</p>';
-
-        html += '<div class="detail-field"><p class="detail-field-label">Alcance</p><p class="detail-field-val">';
-        switch(inc.alcance) {
-            case 'global':
-                html += '<span class="scope-badge scope-global"><i class="fas fa-globe text-xs"></i>Global</span>';
-                html += '<p class="text-xs text-gray-400 mt-1">Aplica a todas las habitaciones</p>'; break;
-            case 'tipo_habitacion':
-                html += '<span class="scope-badge scope-tipo"><i class="fas fa-bed text-xs"></i>Por Tipo</span>';
-                html += '<div class="flex flex-wrap gap-1 mt-1.5">';
-                inc.tipos_habitacion_array.forEach(t => { html += `<span class="vig-badge vig-perm text-xs">${gettipoHabitacion(t)}</span>`; });
-                html += '</div>'; break;
-            case 'habitacion':
-                html += '<span class="scope-badge scope-hab"><i class="fas fa-door-open text-xs"></i>Habitaciones Específicas</span>';
-                html += '<div class="flex flex-wrap gap-1 mt-1.5">';
-                (inc.numeros_habitaciones||inc.habitaciones_array).forEach(h => { html += `<span class="vig-badge vig-perm text-xs">Hab. ${h}</span>`; });
-                html += '</div>'; break;
+        let alcanceNombre = 'Todas las habitaciones';
+        let alcanceDetalle = '<span class="tar-detail-tag"><i class="fas fa-globe" aria-hidden="true"></i> Todo el hotel</span>';
+        if (inc.alcance === 'tipo_habitacion') {
+            alcanceNombre = 'Por tipo de habitación';
+            alcanceDetalle = tarifaDetailTags(inc.tipos_habitacion_array, gettipoHabitacion);
+        } else if (inc.alcance === 'habitacion') {
+            alcanceNombre = 'Habitaciones específicas';
+            alcanceDetalle = tarifaDetailTags(inc.numeros_habitaciones || inc.habitaciones_array, item => `Hab. ${item}`);
         }
-        html += '</p></div>';
 
-        html += '<div class="detail-field"><p class="detail-field-label">Vigencia</p><p class="detail-field-val">';
-        if (inc.es_permanente) {
-            html += `<span class="vig-badge vig-perm"><i class="fas fa-infinity text-xs"></i>Permanente</span>`;
-            html += `<p class="text-xs text-gray-400 mt-1">Desde: ${formatDate(inc.fecha_inicio)}</p>`;
-        } else {
-            html += `<span class="vig-badge vig-futuro"><i class="fas fa-calendar-alt text-xs"></i>Temporal</span>`;
-            html += `<p class="text-xs text-gray-400 mt-1">${formatDate(inc.fecha_inicio)} – ${formatDate(inc.fecha_fin)}</p>`;
-        }
-        html += '</p></div>';
+        const vigenciaNombre = esPermanente ? 'Permanente' : 'Temporal';
+        const vigenciaFechas = esPermanente
+            ? `Desde ${formatDate(inc.fecha_inicio)}`
+            : `${formatDate(inc.fecha_inicio)} – ${formatDate(inc.fecha_fin)}`;
 
-        html += '<div class="detail-field"><p class="detail-field-label">Estado</p><p class="detail-field-val">';
-        html += inc.activo
-            ? '<span class="vig-badge vig-vigente"><i class="fas fa-check-circle text-xs"></i>Activo</span>'
-            : '<span class="vig-badge vig-pasado"><i class="fas fa-times-circle text-xs"></i>Inactivo</span>';
-        html += '</p></div>';
-        html += '</div></div>';
+        const html = `
+            <section class="tar-detail-hero">
+                <div class="tar-detail-hero__copy">
+                    <p class="tar-detail-hero__label">Ajuste configurado</p>
+                    <h3>${tarifaDetailEscape(inc.nombre || 'Sin nombre')}</h3>
+                    <p>${tarifaDetailEscape(inc.descripcion || 'Sin descripción')}</p>
+                </div>
+                <div class="tar-detail-value">
+                    <small>${operacion}</small>
+                    <strong>${valor}</strong>
+                </div>
+            </section>
 
-        html += `<div class="mt-4 pt-4 border-t border-[#EAF0E5]">
-            <p class="text-xs text-gray-400 flex items-center gap-1.5">
-                <i class="fas fa-user-clock" style="color:#A8C4A0"></i>
-                Creado por <span class="font-semibold text-gray-600 ml-1">${inc.usuario_nombre}</span>
-                &nbsp;·&nbsp; ${formatDate(inc.created_at, true)}
-            </p></div>`;
+            <div class="tar-detail-grid">
+                <section class="tar-detail-section" aria-labelledby="tarDetailConfigTitle">
+                    <h4 class="tar-detail-section__title" id="tarDetailConfigTitle"><i class="fas fa-sliders-h" aria-hidden="true"></i> Configuración</h4>
+                    <dl class="tar-detail-list">
+                        <div class="tar-detail-row"><dt>Operación</dt><dd>${operacion}</dd></div>
+                        <div class="tar-detail-row"><dt>Cálculo</dt><dd>${tipo}</dd></div>
+                        <div class="tar-detail-row"><dt>Prioridad</dt><dd>${tarifaDetailEscape(inc.prioridad ?? 0)}</dd></div>
+                        <div class="tar-detail-row"><dt>Estado</dt><dd><span class="tar-detail-status ${estaActivo ? 'is-active' : 'is-inactive'}"><i class="fas ${estaActivo ? 'fa-check-circle' : 'fa-pause-circle'}" aria-hidden="true"></i>${estaActivo ? 'Activo' : 'Inactivo'}</span></dd></div>
+                    </dl>
+                </section>
+
+                <section class="tar-detail-section" aria-labelledby="tarDetailApplyTitle">
+                    <h4 class="tar-detail-section__title" id="tarDetailApplyTitle"><i class="fas fa-calendar-check" aria-hidden="true"></i> Aplicación</h4>
+                    <dl class="tar-detail-list">
+                        <div class="tar-detail-row"><dt>Alcance</dt><dd>${tarifaDetailEscape(alcanceNombre)}</dd></div>
+                        <div class="tar-detail-row"><dt>Selección</dt><dd>${alcanceDetalle}</dd></div>
+                        <div class="tar-detail-row"><dt>Vigencia</dt><dd>${vigenciaNombre}<br><span style="color:#818c9b;font-weight:600">${tarifaDetailEscape(vigenciaFechas)}</span></dd></div>
+                    </dl>
+                </section>
+            </div>
+
+            <p class="tar-detail-meta">
+                <i class="fas fa-user-clock" aria-hidden="true"></i>
+                Creado por <strong>${tarifaDetailEscape(inc.usuario_nombre || 'Usuario desconocido')}</strong> · ${tarifaDetailEscape(formatDate(inc.created_at, true))}
+            </p>`;
 
         $('#contenidoDetalle').html(html);
         $('#modalDetalle').modal('show');
@@ -3285,7 +3900,10 @@ $(document).ready(function() {
     };
     const tipoHabitacionLabels = <?= json_encode($tarifaRoomTypeLabels, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?> || {};
     window.gettipoHabitacion = t => tipoHabitacionLabels[t] || String(t || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    window.resetFiltros = () => $('#filtroEstado,#filtroTipo,#filtroAlcance').val('').trigger('change');
+    window.resetFiltros = function() {
+        $('#filtroEstado,#filtroTipo,#filtroAlcance').val('');
+        if (tabla) tabla.draw();
+    };
 });
 </script>
 
