@@ -60,11 +60,34 @@ t_eq('-', ReservacionController::cotizacionPdfCamas([
     'camas_individuales' => null,
 ]), 'nulls devuelven guion');
 
+// ── King Size: el esquema legacy las cuenta como matrimoniales ──
+t_eq('1 King Size', ReservacionController::cotizacionPdfCamas([
+    'camas_matrimoniales' => 1,
+    'camas_individuales' => 0,
+    'caracteristicas' => '1 cama King Size, aire acondicionado, television.',
+]), 'una King Size no se muestra como matrimonial');
+
+t_eq('1 mat. / 1 King Size', ReservacionController::cotizacionPdfCamas([
+    'camas_matrimoniales' => 2,
+    'camas_individuales' => 0,
+    'caracteristicas' => '1 cama matrimonial y 1 cama King Size, aire acondicionado.',
+]), 'la configuracion mixta conserva ambos tipos de cama');
+
+t_eq('1 King Size', ReservacionController::cotizacionPdfCamas([
+    'camas_matrimoniales' => 1,
+    'camas_individuales' => 0,
+    'caracteristicas' => '1 cama K.S.',
+]), 'la abreviatura del tarifario tambien se reconoce');
+
 // ── Sin acentos: el PDF va en Helvetica latin1 y la celda no debe traer basura ──
 $textos = [
     ReservacionController::cotizacionPdfCamas(['camas_matrimoniales' => 1]),
     ReservacionController::cotizacionPdfCamas(['camas_individuales' => 2]),
     ReservacionController::cotizacionPdfCamas(['camas_matrimoniales' => 1, 'camas_individuales' => 1]),
+    ReservacionController::cotizacionPdfCamas([
+        'camas_matrimoniales' => 1,
+        'caracteristicas' => '1 cama King Size',
+    ]),
 ];
 foreach ($textos as $texto) {
     t_ok(preg_match('/^[\x20-\x7E]+$/', $texto) === 1, 'texto ASCII para el PDF: ' . $texto);

@@ -440,6 +440,40 @@ class ReservacionController extends Controller {
     public static function cotizacionPdfCamas(array $habitacion): string {
         $matrimoniales = max(0, (int) ($habitacion['camas_matrimoniales'] ?? 0));
         $individuales  = max(0, (int) ($habitacion['camas_individuales'] ?? 0));
+        $caracteristicas = trim((string) ($habitacion['caracteristicas'] ?? ''));
+
+        // El esquema historico no tiene una columna para camas King Size y las
+        // contabiliza como matrimoniales. Cuando la descripcion especifica una
+        // King, esa configuracion textual es la fuente precisa para la cotizacion.
+        if (
+            $caracteristicas !== ''
+            && preg_match_all(
+                '/(\d+)\s+camas?\s+(?:king\s*size|k\.?\s*s\.?)/i',
+                $caracteristicas,
+                $kingMatches
+            ) > 0
+        ) {
+            $kingSize = array_sum(array_map('intval', $kingMatches[1]));
+            $matrimoniales = self::cantidadCamasEnCaracteristicas(
+                $caracteristicas,
+                '/(\d+)\s+camas?\s+matrimonial(?:es)?/i'
+            );
+            $individuales = self::cantidadCamasEnCaracteristicas(
+                $caracteristicas,
+                '/(\d+)\s+camas?\s+individual(?:es)?/i'
+            );
+
+            $partes = [];
+            if ($matrimoniales > 0) {
+                $partes[] = $matrimoniales . ' mat.';
+            }
+            if ($individuales > 0) {
+                $partes[] = $individuales . ' ind.';
+            }
+            $partes[] = $kingSize . ' King Size';
+
+            return implode(' / ', $partes);
+        }
 
         if ($matrimoniales > 0 && $individuales > 0) {
             return $matrimoniales . ' mat. / ' . $individuales . ' ind.';
@@ -454,6 +488,14 @@ class ReservacionController extends Controller {
         }
 
         return '-';
+    }
+
+    private static function cantidadCamasEnCaracteristicas(string $caracteristicas, string $patron): int {
+        if (preg_match_all($patron, $caracteristicas, $matches) < 1) {
+            return 0;
+        }
+
+        return array_sum(array_map('intval', $matches[1]));
     }
 
     private function cotizacionPdfTerminosDefault(string $fechaEntradaTexto, string $checkinTexto, string $checkoutTexto): array {
