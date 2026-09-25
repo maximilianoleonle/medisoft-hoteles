@@ -658,6 +658,65 @@ CREATE TABLE `documentos` (
   CONSTRAINT `chk_documentos_size_bytes` CHECK ((`size_bytes` > 0))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `estancia_peticiones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `estancia_peticiones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `habitacion_id` int NOT NULL,
+  `reservacion_id` int DEFAULT NULL,
+  `huesped_id` int DEFAULT NULL,
+  `tipo` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `detalle` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `foto_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `estado` enum('nueva','en_atencion','resuelta','descartada') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'nueva',
+  `nota_cierre` varchar(300) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `atendida_por` int DEFAULT NULL,
+  `atendida_at` datetime DEFAULT NULL,
+  `cerrada_por` int DEFAULT NULL,
+  `cerrada_at` datetime DEFAULT NULL,
+  `origen_ip_hash` char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_estancia_pet_hotel_estado` (`hotel_id`,`estado`,`created_at`),
+  KEY `idx_estancia_pet_habitacion` (`hotel_id`,`habitacion_id`,`created_at`),
+  KEY `idx_estancia_pet_reservacion` (`hotel_id`,`reservacion_id`),
+  KEY `fk_estancia_pet_habitacion` (`habitacion_id`),
+  KEY `fk_estancia_pet_reservacion` (`reservacion_id`),
+  KEY `fk_estancia_pet_huesped` (`huesped_id`),
+  KEY `fk_estancia_pet_atendida` (`atendida_por`),
+  KEY `fk_estancia_pet_cerrada` (`cerrada_por`),
+  CONSTRAINT `fk_estancia_pet_atendida` FOREIGN KEY (`atendida_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_estancia_pet_cerrada` FOREIGN KEY (`cerrada_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_estancia_pet_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_estancia_pet_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_estancia_pet_huesped` FOREIGN KEY (`huesped_id`) REFERENCES `huespedes` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_estancia_pet_reservacion` FOREIGN KEY (`reservacion_id`) REFERENCES `reservaciones` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `estancia_qr`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `estancia_qr` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hotel_id` int NOT NULL,
+  `habitacion_id` int NOT NULL,
+  `token` char(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `generado_por` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_estancia_qr_token` (`token`),
+  UNIQUE KEY `uk_estancia_qr_habitacion` (`hotel_id`,`habitacion_id`),
+  KEY `fk_estancia_qr_habitacion` (`habitacion_id`),
+  KEY `fk_estancia_qr_usuario` (`generado_por`),
+  CONSTRAINT `fk_estancia_qr_habitacion` FOREIGN KEY (`habitacion_id`) REFERENCES `habitaciones` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_estancia_qr_hotel` FOREIGN KEY (`hotel_id`) REFERENCES `hoteles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_estancia_qr_usuario` FOREIGN KEY (`generado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `guardian_hallazgos_estado`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -1591,7 +1650,7 @@ CREATE TABLE `mensajes_whatsapp` (
   `id` int NOT NULL AUTO_INCREMENT,
   `hotel_id` int NOT NULL,
   `reservacion_id` int NOT NULL,
-  `tipo` enum('confirmacion','recordatorio','anticipo','encuesta') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tipo` enum('confirmacion','recordatorio','anticipo','encuesta','seguimiento') COLLATE utf8mb4_unicode_ci NOT NULL,
   `telefono` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `contenido` text COLLATE utf8mb4_unicode_ci,
   `estado` enum('pendiente','enviado','descartado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendiente',

@@ -39,7 +39,9 @@ class View {
         $esVistaStandalone = in_array($view, ['auth/login', 'errors/404', 'errors/500'])
             || strpos($view, 'motor/') === 0
             || strpos($view, 'checkin/') === 0
-            || strpos($view, 'encuesta/') === 0;
+            || strpos($view, 'encuesta/') === 0
+            || strpos($view, 'estancia/') === 0
+            || $view === 'peticiones/imprimir';
 
         // Registrar la vista como "reciente" para navegacion rapida
         // (fire-and-forget: nunca rompe la pagina si falla).

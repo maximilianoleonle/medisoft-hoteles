@@ -77,6 +77,8 @@ dist/
 
 # Fotos de identificacion de huespedes (PII - nunca al repo)
 src/storage/checkin_ids/
+# Fotos que mandan los huespedes desde el QR de su habitacion
+src/storage/estancia_fotos/
 
 # Config local de preview de Claude (rutas por maquina)
 .claude/launch.json

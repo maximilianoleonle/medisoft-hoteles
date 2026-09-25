@@ -264,6 +264,22 @@ if (!function_exists('sidebar_novedades')) {
             }
         }
 
+        // Peticiones de huespedes esperando (QR en la habitacion, bloque
+        // reputacion): nuevas + en atencion. Mismo conteo que la bandeja.
+        if (_sidebar_novedades_tabla_existe($db, 'estancia_peticiones')) {
+            try {
+                require_once APP_PATH . '/services/EstanciaService.php';
+                if (EstanciaService::disponible($hotelId)) {
+                    $n = (new EstanciaService($db))->contarAbiertas($hotelId);
+                    if ($n > 0) {
+                        $map['peticiones'] = ['count' => $n, 'tono' => 'count'];
+                    }
+                }
+            } catch (Throwable $e) {
+                // Sin burbuja de peticiones si el bloque aun no migra.
+            }
+        }
+
         // Notificaciones sin leer (respeta rol/usuario via el modelo). El gate de
         // modulo va explicito por simetria con canal_whatsapp: hoy 'notificaciones'
         // es paquete base y siempre pasa, pero si algun dia se revirtiera, sin esta

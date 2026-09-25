@@ -20,6 +20,7 @@ $msjTipos = [
     'confirmacion' => ['Confirmación', 'fa-calendar-check', 'is-info', 'Reservas nuevas por confirmar'],
     'recordatorio' => ['Recordatorio', 'fa-bell', 'is-gold', 'Llegadas de mañana'],
     'anticipo' => ['Anticipo', 'fa-building-columns', 'is-gold', 'Anticipos'],
+    'seguimiento' => ['¿Todo bien?', 'fa-hand-holding-heart', 'is-ok', 'Hospedados: ¿todo bien?'],
     'encuesta' => ['Encuesta', 'fa-star', 'is-ok', 'Salidas de hoy'],
 ];
 
@@ -53,6 +54,8 @@ $msjContexto = static function (array $item) use ($msjFechaCorta) {
     switch ($item['tipo']) {
         case 'recordatorio':
             return 'Llega mañana' . $hab;
+        case 'seguimiento':
+            return 'Hospedado, sale el ' . $msjFechaCorta($item['fecha_salida']) . $hab;
         case 'encuesta':
             return 'Salió hoy' . $hab;
         default:
@@ -548,7 +551,7 @@ a.msj-falta:focus-visible { outline: 3px solid var(--msj-ring); outline-offset: 
                 <div>
                     <p class="msj-kicker">Canal WhatsApp</p>
                     <h1 class="msj-title">Mensajes a hu&eacute;spedes</h1>
-                    <p class="msj-subtitle">Lo que toca mandar hoy, ya redactado: confirma reservas nuevas, recuerda las llegadas de mañana y agradece a quien se fue con tu encuesta.</p>
+                    <p class="msj-subtitle">Lo que toca mandar hoy, ya redactado: confirma reservas nuevas, recuerda las llegadas de mañana, pregunta a tus hospedados si todo va bien y agradece a quien se fue con tu encuesta.</p>
                 </div>
             </div>
             <div class="msj-hero-side">
@@ -614,7 +617,7 @@ a.msj-falta:focus-visible { outline: 3px solid var(--msj-ring); outline-offset: 
         </div>
 
         <section id="msjPanelCola" role="tabpanel" aria-labelledby="msjTabCola" style="display: grid; gap: 14px;">
-            <?php foreach (['confirmacion', 'recordatorio', 'encuesta'] as $msjTipo): ?>
+            <?php foreach (['confirmacion', 'recordatorio', 'seguimiento', 'encuesta'] as $msjTipo): ?>
                 <?php
                     $items = $msjGrupos[$msjTipo] ?? [];
                     if (!$items) {

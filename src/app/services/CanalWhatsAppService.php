@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/ConfiguracionHotelRegistry.php';
 require_once __DIR__ . '/ReputacionService.php';
+require_once __DIR__ . '/EstanciaService.php';
 
 /**
  * CanalWhatsAppService (bloque canal_whatsapp, $199)
@@ -23,10 +24,10 @@ require_once __DIR__ . '/ReputacionService.php';
  */
 class CanalWhatsAppService
 {
-    public const TIPOS = ['confirmacion', 'recordatorio', 'anticipo', 'encuesta'];
+    public const TIPOS = ['confirmacion', 'recordatorio', 'anticipo', 'seguimiento', 'encuesta'];
 
     /** Tipos que alimentan la cola "por enviar hoy" (anticipo es contextual, vive en la ficha). */
-    public const TIPOS_COLA = ['confirmacion', 'recordatorio', 'encuesta'];
+    public const TIPOS_COLA = ['confirmacion', 'recordatorio', 'seguimiento', 'encuesta'];
 
     /** Dias hacia atras que una reserva recien creada espera su confirmacion en la cola. */
     private const DIAS_VENTANA_CONFIRMACION = 7;
@@ -122,6 +123,14 @@ class CanalWhatsAppService
                 . "En cuanto lo hagas, mándanos tu comprobante por aquí para "
                 . "registrarlo. ¡Gracias!",
 
+            // "¿Todo bien?" durante la estancia: atrapa la queja mientras el
+            // huesped sigue en el hotel. La linea del enlace se cae sola si el
+            // hotel no tiene el QR en la habitacion (ver componer()).
+            'seguimiento' => "¡Hola {huesped}! ¿Cómo va todo en tu habitación {habitacion}? 😊\n"
+                . "Si necesitas algo (toallas, limpieza o si algo no funciona), respóndenos por aquí.\n"
+                . "También puedes pedirlo desde este enlace y le llega directo al equipo: {link_estancia}\n"
+                . "¡Que disfrutes tu estancia en {hotel}!",
+
             'encuesta' => "¡Gracias por tu visita, {huesped}! 💛 En {hotel} nos "
                 . "encantó recibirte.\n"
                 . "¿Nos regalas un minuto? Cuéntanos cómo fue tu estancia:\n"
@@ -154,6 +163,7 @@ class CanalWhatsAppService
             'confirmacion' => ConfiguracionHotelRegistry::getBool('canal_whatsapp.confirmacion_activa', true, $hotelId),
             'recordatorio' => ConfiguracionHotelRegistry::getBool('canal_whatsapp.recordatorio_activo', true, $hotelId),
             'anticipo' => ConfiguracionHotelRegistry::getBool('canal_whatsapp.anticipo_activo', true, $hotelId),
+            'seguimiento' => ConfiguracionHotelRegistry::getBool('canal_whatsapp.seguimiento_activo', true, $hotelId),
             'encuesta' => ConfiguracionHotelRegistry::getBool('canal_whatsapp.encuesta_activa', true, $hotelId),
         ];
 
@@ -246,6 +256,17 @@ class CanalWhatsAppService
                 $maps = '[falta capturar el link de Maps del hotel]';
             }
             $variables['{link_maps}'] = $maps;
+        }
+
+        if (strpos($plantilla, '{link_estancia}') !== false) {
+            $linkEstancia = $this->linkEstancia($hotelId, (int) ($reservacion['primera_habitacion_id'] ?? 0));
+            if ($linkEstancia === null) {
+                // Sin QR en la habitacion (bloque apagado o reserva sin cuarto):
+                // se cae la LINEA entera que lo menciona, no queda un hueco.
+                $plantilla = self::quitarLineasCon($plantilla, '{link_estancia}');
+            } else {
+                $variables['{link_estancia}'] = $linkEstancia;
+            }
         }
 
         if (strpos($plantilla, '{link_encuesta}') !== false) {
@@ -504,6 +525,10 @@ class CanalWhatsAppService
                 continue;
             }
 
+            if ($tipo === 'seguimiento' && $estado !== 'checked_in') {
+                continue;
+            }
+
             if ($tipo === 'anticipo'
                 && $this->saldoPendiente($hotelId, (int) ($reservacion['id'] ?? 0), (float) ($reservacion['precio_total'] ?? 0)) <= 0.004) {
                 continue;
@@ -627,6 +652,12 @@ class CanalWhatsAppService
             case 'recordatorio':
                 return "r.estado = 'confirmada' AND r.fecha_entrada = CURDATE() + INTERVAL 1 DAY";
 
+            case 'seguimiento':
+                // La manana siguiente a la llegada y solo si aun se queda otra
+                // noche: preguntar "¿todo bien?" el dia de la salida ya no deja
+                // margen para arreglar nada (para eso esta la encuesta).
+                return "r.estado = 'checked_in' AND r.fecha_entrada < CURDATE() AND r.fecha_salida > CURDATE()";
+
             case 'encuesta':
                 return "r.estado = 'checked_out' AND r.fecha_salida = CURDATE()";
         }
@@ -661,7 +692,8 @@ class CanalWhatsAppService
                         h.id AS huesped_id,
                         h.nombre_completo AS huesped_nombre,
                         h.telefono AS huesped_telefono,
-                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
+                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones,
+                        SUBSTRING_INDEX(GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ','), ',', 1) AS primera_habitacion_id
                  FROM reservaciones r
                  INNER JOIN huespedes h ON r.huesped_id = h.id
                  LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
@@ -717,7 +749,8 @@ class CanalWhatsAppService
                 "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida, r.precio_total,
                         h.nombre_completo AS huesped_nombre,
                         h.telefono AS huesped_telefono,
-                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
+                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones,
+                        SUBSTRING_INDEX(GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ','), ',', 1) AS primera_habitacion_id
                  FROM reservaciones r
                  INNER JOIN huespedes h ON r.huesped_id = h.id
                  LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
@@ -765,6 +798,37 @@ class CanalWhatsAppService
                 $datos['usuario_id'] ?? null,
             ]
         );
+    }
+
+    /**
+     * Link del QR de la habitacion (EstanciaService) para el "¿todo bien?".
+     * null si el hotel no tiene el QR o la reserva no tiene cuarto. Crear el
+     * token aqui es inocuo: es de la HABITACION, no del huesped, y es el
+     * mismo que se imprime.
+     */
+    private function linkEstancia(int $hotelId, int $habitacionId): ?string
+    {
+        if ($habitacionId <= 0 || !EstanciaService::disponible($hotelId)) {
+            return null;
+        }
+
+        try {
+            return (new EstanciaService($this->db))->linkPublico($hotelId, $habitacionId, true);
+        } catch (Throwable $e) {
+            error_log('CanalWhatsApp: fallo linkEstancia (habitacion ' . $habitacionId . '): ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /** Quita de la plantilla toda linea que contenga $marcador. PURA. */
+    public static function quitarLineasCon(string $plantilla, string $marcador): string
+    {
+        $lineas = preg_split("/\r\n|\n|\r/", $plantilla) ?: [];
+        $lineas = array_filter($lineas, static function ($linea) use ($marcador) {
+            return strpos($linea, $marcador) === false;
+        });
+
+        return implode("\n", $lineas);
     }
 
     /** Link publico de la encuesta post-estancia (mecanismo del bloque reputacion). */

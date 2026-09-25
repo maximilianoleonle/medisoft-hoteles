@@ -81,6 +81,9 @@ $mostrarCopilotoPanel = $menuModuloActivo('copiloto') && $puede('copiloto.valor'
 $mostrarWhatsApp = $menuModuloActivo('whatsapp') && $puede('whatsapp.view');
 $mostrarMensajes = $menuModuloActivo('canal_whatsapp') && $puede('mensajes.view');
 $mostrarCheckinDigital = $menuModuloActivo('checkin_digital') && $puede('checkin_digital.view');
+// Peticiones del QR en la habitacion (bloque reputacion): las atiende recepcion,
+// limpieza o mantenimiento, asi que se abre con cualquiera de sus permisos.
+$mostrarPeticiones = $menuModuloActivo('reputacion') && $puede('habitaciones.view', 'camarista.view', 'tareas.view', 'reputacion.view');
 $mostrarCanales = $menuModuloActivo('canales_ical') && $puede('canales.view');
 $mostrarCamarista = $menuModuloActivo('camarista') && $puede('camarista.view', 'tareas.view');
 $mostrarReputacion = $menuModuloActivo('reputacion') && $puede('reputacion.view');
@@ -88,7 +91,7 @@ $mostrarNightAudit = $menuModuloActivo('night_audit') && $puede('night_audit.vie
 $mostrarLealtad = $menuModuloActivo('lealtad') && $puede('lealtad.view');
 // Agrupación del menú: Recepción incluye check-in digital; Operación incluye limpieza;
 // Ventas y canales agrupa los bloques comerciales; Configuración va aparte de Administración.
-$mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital;
+$mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes || $mostrarCheckinDigital || $mostrarPeticiones;
 $mostrarOperacionInterna = $mostrarTareas || $mostrarMantenimiento || $mostrarLavanderia || $mostrarCamarista || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos || $mostrarNightAudit;
 $mostrarVentasCanales = $mostrarMotorReservas || $mostrarCanales || $mostrarWhatsApp || $mostrarMensajes || $mostrarIaEjecutiva || $mostrarReputacion || $mostrarLealtad;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNomina || $mostrarAuditoria);
@@ -143,6 +146,7 @@ $sidebarActiveWhatsApp = $sidebarPathStarts('whatsapp');
 $sidebarActiveMensajes = $sidebarPathStarts('mensajes');
 $sidebarActiveReputacion = $sidebarPathStarts('reputacion');
 $sidebarActiveCheckinDigital = $sidebarPathStarts('checkin-digital');
+$sidebarActivePeticiones = $sidebarPathStarts('peticiones');
 $sidebarActiveCanales = $sidebarPathStarts('canales');
 $sidebarActiveCamarista = $sidebarPathStarts('camarista');
 $sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas') && !$sidebarPathStarts('configuracion/roles');
@@ -517,6 +521,18 @@ if (is_array($sidebarConfigApp) && !empty($sidebarConfigApp['version'])) {
                     <?= $sidebarBadge('checkin-digital', $sidebarActiveCheckinDigital) ?>
                 </div>
                 <span class="nav-text">Check-in digital</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarPeticiones): ?>
+            <a href="<?= url('peticiones') ?>"
+               class="nav-item <?= $sidebarActivePeticiones ? 'active' : '' ?>"
+               title="Lo que tus huéspedes piden desde el QR de su habitación">
+                <div class="nav-icon">
+                    <i class="fas fa-bell-concierge"></i>
+                    <?= $sidebarBadge('peticiones', $sidebarActivePeticiones) ?>
+                </div>
+                <span class="nav-text">Peticiones de huéspedes</span>
             </a>
             <?php endif; ?>
         </div>

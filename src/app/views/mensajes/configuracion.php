@@ -16,10 +16,11 @@ $msjTiposMeta = [
     'confirmacion' => ['confirmacion_activa', 'Confirmación de reserva', 'Al crear una reserva, ofrece confirmarla por WhatsApp con fechas, habitación y total.', 'fa-calendar-check'],
     'recordatorio' => ['recordatorio_activo', 'Recordatorio de llegada', 'Un día antes de la llegada: "te esperamos mañana", hora de check-in y cómo llegar.', 'fa-bell'],
     'anticipo' => ['anticipo_activo', 'Aviso de anticipo', 'Mensaje informativo con el monto sugerido y tus datos de depósito. No registra pagos.', 'fa-building-columns'],
+    'seguimiento' => ['seguimiento_activo', '¿Todo bien? durante la estancia', 'La mañana siguiente a la llegada, si aún se queda otra noche: pregunta si todo va bien y comparte el QR de su habitación para pedir lo que necesite.', 'fa-hand-holding-heart'],
     'encuesta' => ['encuesta_activa', 'Encuesta post-estancia', 'Al salir el huésped, agradece la visita y comparte el link de tu encuesta.', 'fa-star'],
 ];
 
-$msjVariables = '{huesped} {hotel} {fecha_llegada} {fecha_salida} {habitacion} {total} {anticipo} {datos_deposito} {link_maps} {link_encuesta} {hora_checkin}';
+$msjVariables = '{huesped} {hotel} {fecha_llegada} {fecha_salida} {habitacion} {total} {anticipo} {datos_deposito} {link_maps} {link_encuesta} {link_estancia} {hora_checkin}';
 ?>
 
 <style>

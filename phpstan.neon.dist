@@ -38,3 +38,6 @@ parameters:
         - src/app/helpers/pwa.php
         - src/app/helpers/sidebar_novedades.php
         - src/app/helpers/view_helpers.php
+        # Solo la clase del codificador 2D (QR de habitaciones, EstanciaService):
+        # el resto del TCPDF sigue fuera por tamaño.
+        - src/app/libs/TCPDF/tcpdf_barcodes_2d.php

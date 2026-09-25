@@ -781,6 +781,7 @@ transacción como bandera de venta (los competidores que cobran % son odiados).
 | P15 | Estilos de un modal/bottom-sheet scopeados bajo un wrapper (`.vista .sheet{…}`) cuando el nodo del sheet puede quedar FUERA de ese wrapper en el DOM | Es la causa REAL de "hoja/modal en blanco en móvil" (pagado en el bottom-sheet de /habitaciones, jul 2026): el bloque entero de reglas (posición fija, `bottom:0`, y el clon del contenido en flujo) vivía bajo `.habitaciones-view`, pero el markup del sheet quedaba fuera de ese contenedor → ninguna regla aplicaba, el sheet no se anclaba al viewport y el contenido clonado conservaba su `position:absolute; top:100%`, empujándose ~una pantalla abajo (fuera de vista) → BLANCO. Reglas: (a) el sheet/modal NO debe depender de un ancestro-wrapper para sus estilos base — o se scopean con su propia clase raíz, o se garantiza en JS que viva dentro del wrapper al abrir (`if (sheet.parentElement !== wrapper) wrapper.appendChild(sheet)`); (b) mover un `position:fixed` dentro de un wrapper es seguro SOLO si ese wrapper no crea bloque-contenedor (sin `transform`/`filter`/`contain`/`will-change`). GOTCHA de diagnóstico que ahorró horas: cuando el bug NO reproduce en escritorio/Chromium (aunque cargues TODAS las hojas y el tema), instrumenta el dispositivo REAL con un panel `position:fixed;z-index:max` que vuelque rects/offsetTop/ancestros al abrir; una sola captura del usuario da la causa exacta. No asumir "es de iOS" sin ese dato — la primera hipótesis (`-webkit-overflow-scrolling:touch`) fue errónea y no costó nada verificarla mal |
 | P16 | Dump de esquema para tests que se actualiza "a mano" (o nunca) | Pagado jul 2026: 13 errores/día de `Unknown column 'activo_id'` porque los tests recreaban la BD de prueba desde un `schema.sql` congelado meses atrás de las migraciones — el bug ni existía en la app real, solo en la BD de tests. En Laravel `RefreshDatabase` corre las MIGRACIONES (nunca un dump); si algún test usa dump/squash, su regeneración es un comando del repo y el CI compara dump vs migraciones. Bonus pagado el mismo día: dos suites de tests corriendo EN PARALELO contra la misma BD de prueba (dos sesiones/PCs) producen fallas fantasma (deadlocks, `1146 table doesn't exist`, semillas duplicadas) — ante fallas absurdas, primero `SHOW PROCESSLIST` |
 | P17 | Datos del PRIMER cliente cableados como default del producto (nombres de socios, tipos de habitación, categorías) | Pagado jul 2026 en Medisoft: `hotel_owner_distribution_default()` devolvía a "Manolo" y "Elia" (los dueños del hotel original) y, como la pantalla de configuración pre-llenaba el formulario con ese default, **cualquier hotel que guardara configuración terminaba con esos dos socios escritos en su fila** — aparecían en cortes, reportes PDF y en la tarjeta de cada habitación de hoteles que jamás los conocieron. Peor: el normalizador reinyectaba la semilla cuando la lista llegaba vacía, así que era **imposible borrarlos** ("Debes configurar al menos un propietario"). Reglas: (a) el default de una feature multi-tenant es el estado APAGADO (lista vacía), nunca un ejemplo con datos reales; (b) toda feature opcional debe poder volver a cero — si el validador exige ≥1 elemento, la feature no se puede desinstalar; (c) los `placeholder` de los formularios también son documentación: `socio_1`, no el nombre del cliente; (d) al apagar la semilla, la migración de limpieza borra SOLO las filas idénticas al default intacto (candado por JSON), porque el cliente original SÍ la usa de verdad |
+| P18 | Avisos operativos dirigidos SOLO al rol que ejecuta (limpieza, mantenimiento) | Pagado sep 2026 en Medisoft (QR de habitación): en el negocio chico ese rol no tiene cuenta y el aviso no lo ve nadie, y como la bandeja comparaba el rol por TEXTO, ni recepción ni el dueño lo veían. Todo aviso operativo nombra también a quien atiende al cliente y al dueño/gerente, y se prueba con el filtro REAL de la bandeja por rol, no leyendo el campo guardado |
 
 ---
 
@@ -874,7 +875,8 @@ Compras+proveedores · Inventario multi-ubicación · Personal+nómina con
 adaptador de giro · Tareas operativas con personal obligatorio · Centro de
 notificaciones+push por rol · WhatsApp saliente · Reportes+links públicos
 firmados · Motor público de venta (pagos Stripe, cupones, holds) · Check-in/
-pre-registro digital público · Encuestas de reputación · Lealtad · Sync iCal ·
+pre-registro digital público · Encuestas de reputación · QR en la unidad
+(peticiones del cliente en sitio) · Lealtad · Sync iCal ·
 Copiloto IA (Anthropic, revendible) · Cierre diario (night audit) · Auditoría
 + vigilancia financiera · Guardián (patrones de comportamiento por usuario) ·
 Lavandería (insumo con ciclo + servicio cobrable) · Health/backups/offsite.
@@ -938,6 +940,34 @@ activo en el reporte ("este boiler te ha costado $X en el año" = el dato que
 vende). GOTCHA pagado: el validador global de formularios trata cualquier
 input *_costo/*_monto como numérico — los campos de texto libre no se nombran
 así.
+
+**Receta portada — QR en la unidad (sep-2026, vale para TODO giro donde el
+cliente ocupa una unidad un rato: hotel/habitación, hospital/cama,
+restaurante/mesa, coworking/escritorio, renta vacacional):** (1) token por
+UNIDAD, no por cliente (tabla propia, UNIQUE tenant+unidad, 128 bits,
+"Regenerar" para cuando se filtra). Como el QR impreso es permanente, quien
+autoriza no es el token sino el ESTADO: la petición solo entra si hay una
+estancia ACTIVA en esa unidad (check-in hecho) y se liga a ESA estancia, así
+el siguiente cliente no ve lo del anterior y un link compartido después de
+irse solo informa. (2) La página vale aunque nadie pida nada: primero lo
+útil de solo lectura (Wi-Fi con botón copiar, horarios, reglas, contacto) y
+después un catálogo CERRADO de 4-5 peticiones con divulgación progresiva
+(detalle obligatorio solo donde hace falta, foto solo en "algo no funciona").
+(3) La ruta pública queda exenta de sesión y CSRF, así que los frenos viven
+en el servicio: tope por IP, tope por unidad por hora, y el doble toque (mismo
+tipo y texto en N minutos) se serializa con FOR UPDATE sobre la fila del
+token; POST con redirect a un código de resultado en lista blanca. (4) Foto:
+tipo por contenido, nombre del servidor, almacenamiento privado y servida por
+controlador con ruta confinada (realpath) y nosniff. (5) Bandeja del personal
+con máquina de estados y candado optimista (WHERE estado=anterior; "alguien
+más ya la tomó") y el cliente ve el avance en la misma página (Recibida → En
+camino → Resuelta) sin el texto; el aviso va al rol que ejecuta MÁS mostrador
+y dueño (ver P18). (6) El QR se genera en el servidor de forma determinista
+(semilla fija: las librerías eligen la máscara al azar y cada reimpresión
+cambiaría el dibujo) y se verifica decodificándolo del render, no a ojo.
+Palanca de venta: un mensaje saliente "¿Todo bien?" la mañana siguiente a la
+llegada con el link de SU unidad; la queja llega como petición y no como
+reseña.
 
 ### 7b. Aumentables (receta corta, construir bajo demanda)
 | Módulo | Brilla en | Receta |

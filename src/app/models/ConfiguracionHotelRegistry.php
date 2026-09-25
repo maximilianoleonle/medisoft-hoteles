@@ -293,6 +293,47 @@ class ConfiguracionHotelRegistry
             'default' => '',
             'description' => 'Plantilla propia del hotel para la invitacion a la encuesta; vacio = usar la sugerida.',
         ],
+        'canal_whatsapp.seguimiento_activo' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'Ofrecer el "¿todo bien?" a los huespedes hospedados desde ayer que aun se quedan otra noche.',
+        ],
+        'canal_whatsapp.plantilla_seguimiento' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Plantilla propia del hotel para el "¿todo bien?"; vacio = usar la sugerida.',
+        ],
+        // QR en la habitacion (EstanciaService, dentro del bloque reputacion).
+        'estancia.peticiones_activas' => [
+            'type' => 'boolean',
+            'default' => true,
+            'description' => 'El QR de la habitacion acepta peticiones del huesped (si no, solo muestra la informacion).',
+        ],
+        'estancia.wifi_red' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Nombre de la red Wi-Fi que ve el huesped en el QR de su habitacion.',
+        ],
+        'estancia.wifi_clave' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Contrasena del Wi-Fi que ve el huesped en el QR de su habitacion.',
+        ],
+        'estancia.contacto_whatsapp' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'WhatsApp de recepcion para el boton "Escribir a recepcion" (vacio = telefono del hotel).',
+        ],
+        'estancia.info' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Informacion util para el huesped (horarios de desayuno, alberca, servicios).',
+        ],
+        'estancia.reglamento' => [
+            'type' => 'string',
+            'default' => '',
+            'description' => 'Reglamento del hotel que el huesped puede consultar desde el QR.',
+        ],
     ];
 
     private static $legacyFallbacks = [
@@ -399,6 +440,21 @@ class ConfiguracionHotelRegistry
     public static function allForHotel(?int $hotelId = null): array
     {
         return self::getMany(array_keys(self::$definitions), $hotelId);
+    }
+
+    /**
+     * Olvida las filas leidas de un hotel (o de todos) en este proceso. Lo
+     * llama quien acaba de escribir hotel_configuracion y vuelve a leer en el
+     * MISMO request (cada request web ya empieza con el cache vacio).
+     */
+    public static function limpiarCache(?int $hotelId = null): void
+    {
+        if ($hotelId === null) {
+            self::$cache = [];
+            return;
+        }
+
+        unset(self::$cache[$hotelId]);
     }
 
     public static function hasKey(string $key): bool

@@ -157,6 +157,10 @@ $totalCheckouts = count($filas);
     font-weight: 500;
     line-height: 1.5;
 }
+.rep-hero-side { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.rep-hero-link { text-decoration: none; min-height: 40px; }
+.rep-hero-link:hover { filter: brightness(.97); }
+.rep-hero-link:focus-visible { outline: 3px solid var(--rep-gold-line); outline-offset: 2px; }
 .rep-status-pill {
     display: inline-flex;
     align-items: center;
@@ -469,6 +473,7 @@ $totalCheckouts = count($filas);
         gap: 12px;
     }
     .rep-status-pill { justify-self: start; }
+    .rep-hero-side { justify-content: flex-start; }
     .rep-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .rep-config-grid { grid-template-columns: 1fr; }
 }
@@ -525,10 +530,18 @@ $totalCheckouts = count($filas);
                     <p class="rep-subtitle">Manda la encuesta a tus checkouts recientes: concentra las opiniones, te avisa cuando alguien queda insatisfecho e invita a dejar rese&ntilde;a en Google.</p>
                 </div>
             </div>
-            <span class="rep-status-pill">
-                <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-                Ultimos 30 dias
-            </span>
+            <div class="rep-hero-side">
+                <span class="rep-status-pill">
+                    <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                    Ultimos 30 dias
+                </span>
+                <?php if (!function_exists('can_any') || can_any(['habitaciones.view', 'camarista.view', 'tareas.view', 'reputacion.view'])): /* QR en la habitacion: vive en este bloque */ ?>
+                <a class="rep-status-pill rep-hero-link" href="<?= url('peticiones') ?>">
+                    <i class="fa-solid fa-bell-concierge" aria-hidden="true"></i>
+                    Peticiones desde el QR
+                </a>
+                <?php endif; ?>
+            </div>
         </section>
 
         <?php if ($mensaje = get_mensaje()): ?>

@@ -221,6 +221,10 @@ $router->get('/checkin-digital/id/{id:[0-9]+}', ['controller' => 'CheckinDigital
 $router->get('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}', ['controller' => 'ReputacionPublico', 'action' => 'formulario']);
 $router->post('/h/{slug:[a-z0-9-]+}/encuesta/{token:[a-f0-9]+}/responder', ['controller' => 'ReputacionPublico', 'action' => 'responder']);
 
+// QR en la habitacion publico (dentro del bloque reputacion; token = credencial de la habitacion)
+$router->get('/h/{slug:[a-z0-9-]+}/estancia/{token:[a-f0-9]+}', ['controller' => 'EstanciaPublico', 'action' => 'portal']);
+$router->post('/h/{slug:[a-z0-9-]+}/estancia/{token:[a-f0-9]+}/pedir', ['controller' => 'EstanciaPublico', 'action' => 'pedir']);
+
 // Forecast de ocupacion (bloque forecast, solo lectura)
 $router->get('/forecast', ['controller' => 'Forecast', 'action' => 'index']);
 // Calendario de temporadas del hotel (alimenta forecast y consejo del Copiloto)
@@ -304,6 +308,15 @@ $router->get('/reputacion', ['controller' => 'Reputacion', 'action' => 'index'])
 $router->post('/reputacion/generar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'generar']);
 $router->post('/reputacion/enviar/{id:[0-9]+}', ['controller' => 'Reputacion', 'action' => 'enviar']);
 $router->post('/reputacion/config', ['controller' => 'Reputacion', 'action' => 'config']);
+
+// Peticiones de huespedes desde el QR de la habitacion (bandeja + QR imprimibles)
+$router->get('/peticiones', ['controller' => 'Peticiones', 'action' => 'index']);
+$router->post('/peticiones/{id:[0-9]+}/estado', ['controller' => 'Peticiones', 'action' => 'estado']);
+$router->get('/peticiones/{id:[0-9]+}/foto', ['controller' => 'Peticiones', 'action' => 'foto']);
+$router->get('/peticiones/qr', ['controller' => 'Peticiones', 'action' => 'qr']);
+$router->post('/peticiones/qr/configuracion', ['controller' => 'Peticiones', 'action' => 'guardarConfiguracion']);
+$router->post('/peticiones/qr/regenerar/{id:[0-9]+}', ['controller' => 'Peticiones', 'action' => 'regenerar']);
+$router->get('/peticiones/qr/imprimir', ['controller' => 'Peticiones', 'action' => 'imprimir']);
 
 // Canales iCal publico (bloque canales_ical; token de exportacion = credencial)
 $router->get('/h/{slug:[a-z0-9-]+}/ical/{token:[a-f0-9]+}/{habitacionid:[0-9]+}.ics', ['controller' => 'IcalPublico', 'action' => 'feed']);

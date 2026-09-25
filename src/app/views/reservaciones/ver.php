@@ -4667,6 +4667,7 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                 'confirmacion' => ['Confirmación', 'fa-calendar-check'],
                                 'anticipo' => ['Anticipo', 'fa-building-columns'],
                                 'recordatorio' => ['Recordatorio', 'fa-bell'],
+                                'seguimiento' => ['¿Todo bien?', 'fa-hand-holding-heart'],
                                 'encuesta' => ['Encuesta', 'fa-star'],
                             ];
                             $cwTimeline = $canalWhatsApp['timeline'] ?? [];
@@ -4716,7 +4717,9 @@ a.rdv3-badge--edit:hover { background: #e3defc; }
                                         $cwPuedeEnviar = $cwAplica && $cwTelOk && empty($cwFaltan);
                                         $cwNota = '';
                                         if ($cwEstado !== 'enviado' && !$cwAplica) {
-                                            $cwNota = $cwTipo === 'encuesta' ? 'Se ofrece tras el check-out' : 'Ya no aplica para el estado actual';
+                                            $cwNota = $cwTipo === 'encuesta'
+                                                ? 'Se ofrece tras el check-out'
+                                                : ($cwTipo === 'seguimiento' ? 'Se ofrece con el huésped hospedado' : 'Ya no aplica para el estado actual');
                                             if (in_array($cwTipo, ['confirmacion', 'recordatorio', 'anticipo'], true) && ($reservacion['estado'] ?? '') === 'confirmada') {
                                                 $cwNota = 'Sin saldo pendiente'; // unico motivo de no-aplicar estando confirmada
                                             }
