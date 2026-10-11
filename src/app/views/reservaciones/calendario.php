@@ -1982,7 +1982,10 @@ function exportarCalendario() {
     const tabla = document.getElementById('hcalTable');
     if (!tabla) return;
 
-    let csv = 'data:text/csv;charset=utf-8,';
+    // Texto plano + Blob (no `data:` + encodeURI): encodeURI NO escapa '#', así que
+    // un nombre con '#' cortaba el archivo ahí. El BOM hace que Excel lea UTF-8 y
+    // no destroce acentos ni ñ (oct-11).
+    let csv = '﻿';
     csv += `Calendario de Reservaciones - ${mesNombre} ${anio}\n\n`;
     csv += 'Habitacion';
     for (let d = 1; d <= <?= (int)$diasEnMes ?>; d++) csv += `,${d}`;
@@ -2006,12 +2009,21 @@ function exportarCalendario() {
         csv += '\n';
     });
 
+    const nombre = `calendario_${mesNombre}_${anio}.csv`;
+    const archivo = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    // Con aviso "CSV descargado" (antes bajaba sin ninguna señal).
+    if (window.MedisoftMobileFiles && window.MedisoftMobileFiles.saveBlob) {
+        window.MedisoftMobileFiles.saveBlob(archivo, nombre, 'CSV');
+        return;
+    }
     const link = document.createElement('a');
-    link.href = encodeURI(csv);
-    link.download = `calendario_${mesNombre}_${anio}.csv`;
+    const objeto = URL.createObjectURL(archivo);
+    link.href = objeto;
+    link.download = nombre;
     document.body.appendChild(link);
     link.click();
     link.remove();
+    setTimeout(() => URL.revokeObjectURL(objeto), 30000);
 }
 
 function imprimirCalendario() {

@@ -321,7 +321,9 @@
     { pattern: /\/reportes\/gerencial-diario\/pdf(?:[?#]|$)/i, label: 'PDF del reporte' },
     { pattern: /\/reportes\/exportar-pdf(?:[?#]|$)/i, label: 'PDF del reporte' },
     { pattern: /\/reservaciones\/exportar-excel(?:[?#]|$)/i, label: 'Excel' },
-    { pattern: /\/documentos\/\d+\/descargar(?:[?#]|$)/i, label: 'Documento' }
+    { pattern: /\/documentos\/\d+\/descargar(?:[?#]|$)/i, label: 'Documento' },
+    { pattern: /\/nomina\/periodos\/\d+\/exportar(?:[?#]|$)/i, label: 'CSV' },
+    { pattern: /\/trabajadores\/(?:nomina\/(?:periodos(?:\/pagos-snapshot)?|auditoria|expediente|preview)|pagos-caja\/reporte)\/exportar(?:[?#]|$)/i, label: 'CSV' }
   ];
 
   function downloadEndpoint(url) {
@@ -497,6 +499,14 @@
     const coincide = disposicion.match(/filename="?([^";]+)"?/i);
     const nombre = coincide ? coincide[1] : (options?.fallbackName || 'archivo');
 
+    return saveBlob(archivo, nombre, label);
+  }
+
+  /**
+   * Entrega un archivo YA armado en el navegador (CSV del calendario, reportes
+   * offline) con el mismo aviso "<label> descargado" que las descargas del servidor.
+   */
+  function saveBlob(archivo, nombre, label) {
     const enlace = document.createElement('a');
     const objeto = URL.createObjectURL(archivo);
     enlace.href = objeto;
@@ -506,7 +516,7 @@
     enlace.remove();
     window.setTimeout(() => URL.revokeObjectURL(objeto), 30000);
 
-    showToast('fa-circle-check', `${label} descargado`, `${nombre} · Lo encuentras en tu carpeta de Descargas.`, 9000);
+    showToast('fa-circle-check', `${label || 'Archivo'} descargado`, `${nombre} · Lo encuentras en tu carpeta de Descargas.`, 9000);
     return nombre;
   }
 
@@ -601,6 +611,7 @@
 
   helper.open = openFile;
   helper.download = downloadFile;
+  helper.saveBlob = saveBlob;
   helper.isMobile = isMobileLike;
   helper.showHint = showHint;
   helper.bind = bindExistingElements;
