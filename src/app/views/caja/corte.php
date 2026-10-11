@@ -1114,11 +1114,28 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
     }
 });
 
+// Descarga sin salir de la pantalla y con aviso "Excel descargado"; si algo falla
+// cae a la navegación de siempre (MedisoftMobileFiles.download, oct-10).
+function cajaDescargarExcel(url) {
+    const archivos = window.MedisoftMobileFiles;
+    if (!archivos || !archivos.download) {
+        window.location.href = url;
+        return;
+    }
+    archivos.download(url, { label: 'Excel' }).catch(function() {
+        window.location.href = url;
+    });
+}
+
 function exportarMovimientos(formato = 'excel') {
     const formatoSeguro = formato === 'pdf' ? 'pdf' : 'excel';
     const exportUrl = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>&formato=' + formatoSeguro;
     if (formatoSeguro === 'pdf' && window.MedisoftMobileFiles) {
         window.MedisoftMobileFiles.open(exportUrl, { label: 'PDF de movimientos' });
+        return;
+    }
+    if (formatoSeguro === 'excel') {
+        cajaDescargarExcel(exportUrl);
         return;
     }
     window.location.href = exportUrl;

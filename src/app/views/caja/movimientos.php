@@ -2935,12 +2935,25 @@ function cerrarModalDetalle() {
     document.body.classList.remove('overflow-hidden');
 }
 
+// Descarga sin salir de la pantalla y con aviso "Excel descargado"; si algo falla
+// cae a la navegación de siempre (MedisoftMobileFiles.download, oct-10).
+function cajaDescargarExcel(url) {
+    const archivos = window.MedisoftMobileFiles;
+    if (!archivos || !archivos.download) {
+        window.location.href = url;
+        return;
+    }
+    archivos.download(url, { label: 'Excel' }).catch(function() {
+        window.location.href = url;
+    });
+}
+
 function exportarMovimientos() {
     const params = new URLSearchParams(window.location.search);
     params.set('formato', 'excel');
     params.set('corte_id', '<?= $corteActual['id'] ?? 0 ?>');
 
-    window.location.href = '<?= url('caja/exportar') ?>?' + params.toString();
+    cajaDescargarExcel('<?= url('caja/exportar') ?>?' + params.toString());
 }
 
 document.getElementById('modalEditar')?.addEventListener('click', function(e) {

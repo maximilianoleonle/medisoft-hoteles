@@ -5294,7 +5294,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <p class="res-export-sub">Hoja de cálculo de reservaciones</p>
                 </div>
             </div>
-            <form id="formExportarExcel" class="res-export-body">
+            <form id="formExportarExcel" class="res-export-body" data-mobile-file-ignore>
+                <?php /* data-mobile-file-ignore: sin él, mobile-file-return.js (en móvil) secuestra
+                   este form por su icono + "Descargar" y abre /reservaciones?fecha= en vez del archivo. */ ?>
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportarExcel" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>
@@ -7081,14 +7083,38 @@ document.getElementById('formExportarExcel')?.addEventListener('submit', async f
         return;
     }
 
+    // Se descarga desde ESTA pantalla y avisa al terminar (MedisoftMobileFiles.download):
+    // la pestaña aparte se cerraba sola sin dejar indicio y el hotelero lo
+    // reportaba como "no se descarga" (oct-10).
     const url = baseUrl + '/reservaciones/exportar-excel?fecha=' + encodeURIComponent(fecha);
-    const ventana = window.open(url, '_blank');
-    if (!ventana) {
-        resIndexToast('El navegador bloqueó la nueva pestaña. Abriré el Excel aquí.', 'warning');
+    if (!window.MedisoftMobileFiles || !window.MedisoftMobileFiles.download) {
         window.location.href = url;
         return;
     }
-    cerrarModalExportarExcel();
+    const boton = this.querySelector('button[type="submit"]');
+    const textoOriginal = boton ? boton.innerHTML : '';
+    if (boton) {
+        boton.disabled = true;
+        boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Descargando…';
+    }
+
+    try {
+        await window.MedisoftMobileFiles.download(url, {
+            label: 'Excel',
+            fallbackName: `Reservaciones_${fecha}.xlsx`,
+        });
+        cerrarModalExportarExcel();
+    } catch (err) {
+        resMostrarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError',
+            err && err.message === 'sesion'
+                ? 'Tu sesión expiró. Recarga la página e inicia sesión para descargar el Excel.'
+                : 'No se pudo descargar el Excel. Revisa tu conexión e inténtalo de nuevo.');
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.innerHTML = textoOriginal;
+        }
+    }
 });
 
 document.getElementById('fechaExportarExcel')?.addEventListener('input', function() {

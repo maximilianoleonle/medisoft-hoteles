@@ -1576,7 +1576,20 @@ function imprimirCorte(id) {
     window.open('<?= url('caja/corte/') ?>' + id + '?print=1', '_blank');
 }
 
+// Descarga sin salir de la pantalla y con aviso "Excel descargado"; si algo falla
+// cae a la navegación de siempre (MedisoftMobileFiles.download, oct-10).
+function cajaDescargarExcel(url) {
+    const archivos = window.MedisoftMobileFiles;
+    if (!archivos || !archivos.download) {
+        window.location.href = url;
+        return;
+    }
+    archivos.download(url, { label: 'Excel' }).catch(function() {
+        window.location.href = url;
+    });
+}
+
 function exportarCorte(id) {
-    window.location.href = '<?= url('caja/exportar?formato=excel&corte_id=') ?>' + id;
+    cajaDescargarExcel('<?= url('caja/exportar?formato=excel&corte_id=') ?>' + id);
 }
 </script>

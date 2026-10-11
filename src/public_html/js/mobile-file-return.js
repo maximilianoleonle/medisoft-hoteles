@@ -195,6 +195,10 @@
       document.body.appendChild(toast);
     }
 
+    const icono = toast.querySelector('.ms-mobile-file-toast__icon');
+    if (icono) {
+      icono.innerHTML = '<i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>';
+    }
     const copy = toast.querySelector('.ms-mobile-file-toast__copy');
     if (copy) {
       copy.innerHTML = blocked
@@ -323,7 +327,92 @@
     showHint(label, false);
   }, true);
 
+  /**
+   * Descarga un archivo del sistema SIN salir de la pantalla y AVISA que bajó.
+   * Navegar al export (pestaña nueva o location.href) dejaba al hotelero sin
+   * ninguna señal —la pestaña se cerraba sola y la app instalada no muestra la
+   * burbuja de descargas— y lo reportaba como "no se descarga" (oct-10).
+   * Un fetch simple no es navegación: el SW lo manda directo a red, sin caché.
+   * Rechaza con Error('sesion') si la sesión venció o Error('servidor') si llegó HTML.
+   */
+  async function downloadFile(href, options) {
+    const url = absoluteUrl(href);
+    if (!url) {
+      throw new Error('servidor');
+    }
+
+    const resp = await fetch(url.href, { credentials: 'same-origin', cache: 'no-store' });
+    const tipo = resp.headers.get('content-type') || '';
+    if (!resp.ok || resp.redirected || tipo.includes('text/html')) {
+      // Sesión vencida = redirige al login; error del export = redirige a la lista.
+      throw new Error(resp.redirected && /\/login(?:[/?#]|$)/.test(resp.url) ? 'sesion' : 'servidor');
+    }
+
+    const archivo = await resp.blob();
+    const disposicion = resp.headers.get('content-disposition') || '';
+    const coincide = disposicion.match(/filename="?([^";]+)"?/i);
+    const nombre = coincide ? coincide[1] : (options?.fallbackName || 'archivo');
+
+    const enlace = document.createElement('a');
+    const objeto = URL.createObjectURL(archivo);
+    enlace.href = objeto;
+    enlace.download = nombre;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objeto), 30000);
+
+    showDownloaded(options?.label || 'Archivo', nombre);
+    return nombre;
+  }
+
+  function showDownloaded(label, nombre) {
+    if (!document.body) {
+      return;
+    }
+
+    injectStyles();
+
+    let toast = document.getElementById(toastId);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      toast.className = 'ms-mobile-file-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      toast.innerHTML = `
+        <span class="ms-mobile-file-toast__icon"></span>
+        <span class="ms-mobile-file-toast__copy"></span>
+        <button type="button" class="ms-mobile-file-toast__close" aria-label="Cerrar aviso"><i class="fas fa-times" aria-hidden="true"></i></button>
+      `;
+      toast.querySelector('button')?.addEventListener('click', () => toast.classList.remove('is-visible'));
+      document.body.appendChild(toast);
+    }
+
+    const icono = toast.querySelector('.ms-mobile-file-toast__icon');
+    if (icono) {
+      icono.innerHTML = '<i class="fas fa-circle-check" aria-hidden="true"></i>';
+    }
+    const copy = toast.querySelector('.ms-mobile-file-toast__copy');
+    if (copy) {
+      copy.innerHTML = '';
+      const titulo = document.createElement('strong');
+      titulo.textContent = `${label} descargado`;
+      const detalle = document.createElement('span');
+      detalle.textContent = `${nombre} · Lo encuentras en tu carpeta de Descargas.`;
+      copy.append(titulo, detalle);
+    }
+
+    window.clearTimeout(toast._hideTimer);
+    // Reflow forzado en vez de requestAnimationFrame: arranca la transición aunque
+    // el navegador esté limitando cuadros (pestaña recién enfocada tras la descarga).
+    void toast.offsetWidth;
+    toast.classList.add('is-visible');
+    toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 9000);
+  }
+
   helper.open = openFile;
+  helper.download = downloadFile;
   helper.isMobile = isMobileLike;
   helper.showHint = showHint;
   helper.bind = bindExistingElements;
