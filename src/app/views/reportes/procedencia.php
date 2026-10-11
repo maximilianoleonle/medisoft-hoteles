@@ -1726,20 +1726,16 @@ function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=procedencia' +
                 '&fecha_inicio=<?= $fecha_inicio ?>' +
                 '&fecha_fin=<?= $fecha_fin ?>';
+    // En cualquier pantalla: el helper descarga el adjunto con aviso visible
+    // (el iframe oculto de abajo descargaba sin ninguna señal — oct-10).
     const mobileFileHelper = window.MedisoftMobileFiles;
-    const isNarrowViewport = window.matchMedia('(max-width: 820px)').matches;
-    const isStandaloneTablet = window.matchMedia('(display-mode: standalone)').matches &&
-        window.innerWidth <= 1024;
-    const shouldUseMobileFileHelper = mobileFileHelper &&
-        (isNarrowViewport || isStandaloneTablet);
-
-    if (shouldUseMobileFileHelper) {
+    if (mobileFileHelper) {
         mobileFileHelper.open(url, { label: 'PDF del reporte' });
         return;
     }
 
-    // Descargar el adjunto en un contexto oculto evita que algunos navegadores
-    // sustituyan el reporte por una pantalla en blanco.
+    // Respaldo sin helper: contexto oculto para que el navegador no sustituya
+    // el reporte por una pantalla en blanco.
     let downloadFrame = document.getElementById('procedenciaPdfDownloadFrame');
     if (!downloadFrame) {
         downloadFrame = document.createElement('iframe');

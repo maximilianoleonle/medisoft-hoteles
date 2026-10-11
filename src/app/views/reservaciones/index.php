@@ -5266,7 +5266,9 @@ tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-a
                     <p class="res-export-sub">Reporte de reservaciones del día</p>
                 </div>
             </div>
-            <form id="formExportarPDF" class="res-export-body">
+            <form id="formExportarPDF" class="res-export-body" data-mobile-file-ignore>
+                <?php /* Igual que el de Excel: sin esto el interceptor móvil secuestra el form
+                   (icono + "PDF") y abre /reservaciones?fecha= además del reporte. */ ?>
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportar" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>

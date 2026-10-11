@@ -544,7 +544,8 @@ function exportarStockActual() {
         <input type="hidden" name="fecha_hasta" value="${fechaHoyExportacion}">
     `;
     document.body.appendChild(form);
-    form.submit();
+    // requestSubmit (no submit): dispara el evento y mobile-file-return.js descarga con aviso.
+    form.requestSubmit ? form.requestSubmit() : form.submit();
 }
 
 function exportarMovimientosHoy() {
@@ -558,7 +559,8 @@ function exportarMovimientosHoy() {
         <input type="hidden" name="fecha_hasta" value="${hoy}">
     `;
     document.body.appendChild(form);
-    form.submit();
+    // requestSubmit (no submit): dispara el evento y mobile-file-return.js descarga con aviso.
+    form.requestSubmit ? form.requestSubmit() : form.submit();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

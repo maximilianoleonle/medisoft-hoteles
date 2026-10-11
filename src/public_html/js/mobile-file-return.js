@@ -168,6 +168,12 @@
       @media (min-width: 821px) {
         .ms-mobile-file-toast { max-width: 390px; left: auto; }
       }
+
+      .is-ms-downloading {
+        opacity: .6;
+        cursor: progress !important;
+        pointer-events: none;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -218,6 +224,22 @@
       return null;
     }
 
+    // Un adjunto abierto "aparte" deja una pestaña que se cierra sola y ninguna
+    // señal: se descarga aquí con aviso. Respaldo = abrirlo como antes.
+    const endpoint = downloadEndpoint(url);
+    if (endpoint) {
+      startDownload(url.href, {
+        label: options?.downloadLabel || endpoint.label,
+        trigger: options?.trigger || null,
+        fallback: () => openFileDirect(url, label, options)
+      });
+      return true;
+    }
+
+    return openFileDirect(url, label, options);
+  }
+
+  function openFileDirect(url, label, options) {
     try {
       window.sessionStorage.setItem('medisoft:last-system-url', window.location.href);
     } catch (error) {}
@@ -281,6 +303,111 @@
     });
   }
 
+  /*
+   * Endpoints que responden ADJUNTO (Content-Disposition: attachment). Navegar
+   * hacia ellos —enlace, window.open, form, iframe oculto— no deja NINGUNA señal
+   * en pantalla y el hotelero lo reporta como "no se descarga" (oct-10). Todo lo
+   * que apunte aquí se descarga con download(): aviso "Preparando…" → "descargado".
+   * Los PDF que se ABREN en visor (cotizaciones, reporte del día) no van aquí.
+   * El orden importa: la primera coincidencia gana.
+   */
+  const downloadEndpoints = [
+    { pattern: /\/caja\/descargar-pdf\/\d+(?:[?#]|$)/i, label: 'PDF del corte' },
+    { pattern: /\/caja\/exportar\?(?:.*&)?formato=pdf(?:[&#]|$)/i, label: 'PDF de movimientos' },
+    { pattern: /\/caja\/exportar(?:[?#]|$)/i, label: 'Excel' },
+    { pattern: /\/inventario\/generarPdfMovimientos(?:[?#]|$)/i, label: 'PDF de inventario' },
+    { pattern: /\/nomina\/recibos\/\d+\/pdf(?:[?#]|$)/i, label: 'Recibo PDF' },
+    { pattern: /\/trabajadores\/\d+\/recibo-laboral\/pdf(?:[?#]|$)/i, label: 'Recibo PDF' },
+    { pattern: /\/reportes\/gerencial-diario\/pdf(?:[?#]|$)/i, label: 'PDF del reporte' },
+    { pattern: /\/reportes\/exportar-pdf(?:[?#]|$)/i, label: 'PDF del reporte' },
+    { pattern: /\/reservaciones\/exportar-excel(?:[?#]|$)/i, label: 'Excel' },
+    { pattern: /\/documentos\/\d+\/descargar(?:[?#]|$)/i, label: 'Documento' }
+  ];
+
+  function downloadEndpoint(url) {
+    if (!url || !isSameAppUrl(url)) {
+      return null;
+    }
+    const href = url.pathname + url.search;
+    return downloadEndpoints.find(endpoint => endpoint.pattern.test(href)) || null;
+  }
+
+  // Enlaces a un adjunto, en CUALQUIER tamaño de pantalla. Va antes que el
+  // interceptor móvil de abajo, que respeta defaultPrevented.
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+    if (!link || link.closest('[data-mobile-file-ignore]')) {
+      return;
+    }
+
+    const url = absoluteUrl(link.getAttribute('href'));
+    const endpoint = downloadEndpoint(url);
+    if (!endpoint) {
+      return;
+    }
+
+    event.preventDefault();
+    if (link.getAttribute('aria-busy') === 'true') {
+      return;
+    }
+    startDownload(url.href, {
+      label: endpoint.label,
+      trigger: link,
+      fallback: () => { window.location.href = url.href; }
+    });
+  }, true);
+
+  // Formularios (GET o POST) cuyo action es un adjunto.
+  document.addEventListener('submit', event => {
+    if (event.defaultPrevented || !(event.target instanceof HTMLFormElement)) {
+      return;
+    }
+
+    const form = event.target;
+    if (form.closest('[data-mobile-file-ignore]')) {
+      return;
+    }
+
+    const action = absoluteUrl(form.getAttribute('action') || window.location.href);
+    const endpoint = downloadEndpoint(action);
+    if (!endpoint) {
+      return;
+    }
+
+    event.preventDefault();
+    const trigger = event.submitter || form.querySelector('[type="submit"]');
+    if (trigger && trigger.getAttribute('aria-busy') === 'true') {
+      return;
+    }
+
+    const method = (form.getAttribute('method') || 'GET').toUpperCase();
+    if (method === 'GET') {
+      const url = formUrl(form);
+      if (!url) {
+        return;
+      }
+      startDownload(url.href, {
+        label: endpoint.label,
+        trigger,
+        fallback: () => { window.location.href = url.href; }
+      });
+      return;
+    }
+
+    startDownload(action.href, {
+      label: endpoint.label,
+      trigger,
+      method: 'POST',
+      body: new FormData(form),
+      // submit() nativo no dispara 'submit': no se vuelve a interceptar.
+      fallback: () => HTMLFormElement.prototype.submit.call(form)
+    });
+  }, true);
+
   document.addEventListener('click', event => {
     if (!isMobileLike() || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
@@ -332,7 +459,8 @@
    * Navegar al export (pestaña nueva o location.href) dejaba al hotelero sin
    * ninguna señal —la pestaña se cerraba sola y la app instalada no muestra la
    * burbuja de descargas— y lo reportaba como "no se descarga" (oct-10).
-   * Un fetch simple no es navegación: el SW lo manda directo a red, sin caché.
+   * Un fetch no es navegación: el SW lo manda directo a red, sin caché.
+   * Opciones: label, fallbackName, method + body (POST con FormData).
    * Rechaza con Error('sesion') si la sesión venció o Error('servidor') si llegó HTML.
    */
   async function downloadFile(href, options) {
@@ -341,9 +469,25 @@
       throw new Error('servidor');
     }
 
-    const resp = await fetch(url.href, { credentials: 'same-origin', cache: 'no-store' });
+    const label = options?.label || 'Archivo';
+    showToast('fa-spinner fa-spin', `Preparando ${label}…`, 'En un momento empieza la descarga.', 0);
+
+    let resp;
+    try {
+      resp = await fetch(url.href, {
+        method: options?.method || 'GET',
+        body: options?.body,
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+    } catch (error) {
+      hideToast();
+      throw new Error('red');
+    }
+
     const tipo = resp.headers.get('content-type') || '';
     if (!resp.ok || resp.redirected || tipo.includes('text/html')) {
+      hideToast();
       // Sesión vencida = redirige al login; error del export = redirige a la lista.
       throw new Error(resp.redirected && /\/login(?:[/?#]|$)/.test(resp.url) ? 'sesion' : 'servidor');
     }
@@ -362,11 +506,45 @@
     enlace.remove();
     window.setTimeout(() => URL.revokeObjectURL(objeto), 30000);
 
-    showDownloaded(options?.label || 'Archivo', nombre);
+    showToast('fa-circle-check', `${label} descargado`, `${nombre} · Lo encuentras en tu carpeta de Descargas.`, 9000);
     return nombre;
   }
 
-  function showDownloaded(label, nombre) {
+  /**
+   * download() + estado ocupado en el botón/enlace que lo disparó + respaldo: si
+   * algo falla, se hace lo de siempre (navegar o enviar el form), que al menos
+   * muestra el error del servidor o el login.
+   */
+  function startDownload(href, options) {
+    const trigger = options?.trigger || null;
+    setBusy(trigger, true);
+    return downloadFile(href, options)
+      .catch(error => {
+        if (typeof options?.fallback === 'function') {
+          options.fallback(error);
+        }
+        return null;
+      })
+      .finally(() => setBusy(trigger, false));
+  }
+
+  function setBusy(element, busy) {
+    if (!element) {
+      return;
+    }
+    injectStyles();
+    element.classList.toggle('is-ms-downloading', busy);
+    if (busy) {
+      element.setAttribute('aria-busy', 'true');
+    } else {
+      element.removeAttribute('aria-busy');
+    }
+    if ('disabled' in element && element.tagName === 'BUTTON') {
+      element.disabled = busy;
+    }
+  }
+
+  function showToast(iconClass, title, detail, hideAfterMs) {
     if (!document.body) {
       return;
     }
@@ -391,15 +569,15 @@
 
     const icono = toast.querySelector('.ms-mobile-file-toast__icon');
     if (icono) {
-      icono.innerHTML = '<i class="fas fa-circle-check" aria-hidden="true"></i>';
+      icono.innerHTML = `<i class="fas ${iconClass}" aria-hidden="true"></i>`;
     }
     const copy = toast.querySelector('.ms-mobile-file-toast__copy');
     if (copy) {
       copy.innerHTML = '';
       const titulo = document.createElement('strong');
-      titulo.textContent = `${label} descargado`;
+      titulo.textContent = title;
       const detalle = document.createElement('span');
-      detalle.textContent = `${nombre} · Lo encuentras en tu carpeta de Descargas.`;
+      detalle.textContent = detail;
       copy.append(titulo, detalle);
     }
 
@@ -408,7 +586,17 @@
     // el navegador esté limitando cuadros (pestaña recién enfocada tras la descarga).
     void toast.offsetWidth;
     toast.classList.add('is-visible');
-    toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 9000);
+    if (hideAfterMs > 0) {
+      toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), hideAfterMs);
+    }
+  }
+
+  function hideToast() {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+      window.clearTimeout(toast._hideTimer);
+      toast.classList.remove('is-visible');
+    }
   }
 
   helper.open = openFile;
