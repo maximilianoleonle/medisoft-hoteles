@@ -950,47 +950,41 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
             ];
 
         $nombreArchivo = function_exists('hotel_export_filename')
-            ? hotel_export_filename('Movimientos_Corte_' . (int)$corte_id, 'xls', false)
-            : 'Movimientos_Corte_' . (int)$corte_id . '.xls';
+            ? hotel_export_filename('Movimientos_Corte_' . (int)$corte_id, 'xlsx', false)
+            : 'Movimientos_Corte_' . (int)$corte_id . '.xlsx';
 
-        $bufferLevel = ob_get_level();
-        while ($bufferLevel-- > 0) {
-            @ob_end_clean();
-        }
+        // .xlsx real: el HTML con extensión .xls disparaba "formato y extensión no coinciden" en Excel
+        require_once APP_PATH . '/services/XlsxWriter.php';
+        $xlsx = new XlsxWriter('Movimientos');
+        $xlsx->defineStyle('th', ['bold' => true, 'color' => '#FFFFFF', 'fill' => '#1F2937', 'border' => true]);
+        $xlsx->defineStyle('td', ['border' => true]);
+        $xlsx->defineStyle('monto', ['border' => true, 'align' => 'right', 'numFmt' => '"$"#,##0.00']);
+        $xlsx->defineStyle('vacio', ['color' => '#64748B']);
 
-        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '"');
-        header('Cache-Control: max-age=0, no-cache, must-revalidate');
-        header('Pragma: public');
-
-        echo "\xEF\xBB\xBF";
-        echo '<!doctype html><html><head><meta charset="UTF-8"></head><body>';
-        echo '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;">';
-        echo '<tr>';
+        $anchos = [];
         foreach ($columnas as $columna) {
-            echo '<th style="background:#1f2937;color:#ffffff;font-weight:bold;text-align:left;">'
-                . $this->excelCell($columna)
-                . '</th>';
+            $anchos[] = in_array($columna, ['Descripcion', 'Descripción'], true) ? 40 : 18;
         }
-        echo '</tr>';
+        $xlsx->setColumnWidths($anchos);
+        $xlsx->addRow($columnas, 'th');
 
         if (empty($movimientos)) {
-            echo '<tr><td colspan="' . max(1, count($columnas)) . '" style="color:#64748b;">Sin movimientos para exportar</td></tr>';
+            $xlsx->addRow([['v' => 'Sin movimientos para exportar', 's' => 'vacio']]);
         } else {
             foreach ($movimientos as $movimiento) {
-                echo '<tr>';
+                $fila = [];
                 foreach ($columnas as $columna) {
                     $valor = $movimiento[$columna] ?? '';
-                    $align = $columna === 'Monto' ? 'right' : 'left';
-                    echo '<td style="text-align:' . $align . ';">'
-                        . $this->excelCell($this->formatExcelValue($columna, $valor))
-                        . '</td>';
+                    // Los textos van como inlineStr (nunca fórmula): no hace falta el prefijo ' anti-inyección
+                    $fila[] = ($columna === 'Monto' && is_numeric($valor))
+                        ? ['v' => (float)$valor, 's' => 'monto']
+                        : ['v' => (string)($valor ?? ''), 's' => 'td'];
                 }
-                echo '</tr>';
+                $xlsx->addRow($fila);
             }
         }
 
-        echo '</table></body></html>';
+        $xlsx->download($nombreArchivo);
         exit;
     }
 

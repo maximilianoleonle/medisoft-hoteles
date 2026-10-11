@@ -2039,40 +2039,33 @@ public function obtenerNotasAction() {
 
             // Nombre de archivo
             $nombre_archivo = function_exists('hotel_export_filename')
-                ? hotel_export_filename('Reservaciones_' . str_replace('-', '', $fecha), 'xls', false)
-                : 'Reservaciones_' . str_replace('-', '', $fecha) . '.xls';
+                ? hotel_export_filename('Reservaciones_' . str_replace('-', '', $fecha), 'xlsx', false)
+                : 'Reservaciones_' . str_replace('-', '', $fecha) . '.xlsx';
 
-            // Headers para descarga de Excel
-            header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="' . $nombre_archivo . '"');
-            header('Cache-Control: max-age=0');
-            header('Pragma: public');
-
-            // BOM para UTF-8
-            echo "\xEF\xBB\xBF";
-
-            echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            echo '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
-            echo '<x:Name>Reservaciones</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
-            echo '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-            echo '<body>';
+            // .xlsx real: el HTML con extensión .xls disparaba "formato y extensión no coinciden" en Excel
+            require_once APP_PATH . '/services/XlsxWriter.php';
+            $xlsx = new XlsxWriter('Reservaciones');
+            $xlsx->setColumnWidths([32, 15, 24, 12, 12, 9, 26, 24]);
+            $xlsx->defineStyle('fecha', ['bold' => true, 'size' => 11]);
+            $xlsx->defineStyle('th', ['bold' => true, 'color' => '#FFFFFF', 'fill' => '#2E7D32', 'align' => 'center', 'border' => true]);
+            foreach (['checkin' => '#FFCDD2', 'reservada' => '#E1BEE7', 'libre' => '#C8E6C9'] as $clave => $bg) {
+                $xlsx->defineStyle($clave, ['fill' => $bg, 'border' => true]);
+                $xlsx->defineStyle($clave . '_c', ['fill' => $bg, 'border' => true, 'align' => 'center']);
+                $xlsx->defineStyle($clave . '_hab', ['fill' => $bg, 'border' => true, 'align' => 'center', 'bold' => true]);
+                $xlsx->defineStyle($clave . '_monto', ['fill' => $bg, 'border' => true, 'align' => 'right', 'numFmt' => '"$"#,##0']);
+            }
 
             // Helper para generar una sección
-            $generarSeccion = function($lista_habs) use ($ocupacion, $fecha_bonita, $preciosTemporada) {
-                $estilo_th = 'background:#2E7D32;color:white;font-weight:bold;padding:6px 8px;text-align:center;font-size:10pt;';
+            $generarSeccion = function($lista_habs) use ($ocupacion, $fecha_bonita, $preciosTemporada, $xlsx) {
                 $columnas = ['HUÉSPED', 'TELÉFONO', 'PROCEDENCIA', 'HABITACIÓN', 'COSTO', 'FACTURA', 'VEHÍCULO', 'TIPO/ESTADO DE PAGO'];
 
-                echo '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Arial;font-size:10pt;margin-bottom:10px;">';
-                
                 // Fila de fecha
-                echo '<tr><td colspan="8" style="font-weight:bold;padding:8px;font-size:11pt;">' . htmlspecialchars($fecha_bonita) . '</td></tr>';
+                $xlsx->addRow([['v' => $fecha_bonita, 's' => 'fecha']]);
+                $fila = $xlsx->rowCount();
+                $xlsx->merge('A' . $fila . ':H' . $fila);
 
                 // Encabezados
-                echo '<tr>';
-                foreach ($columnas as $col) {
-                    echo '<td style="' . $estilo_th . '">' . $col . '</td>';
-                }
-                echo '</tr>';
+                $xlsx->addRow($columnas, 'th');
 
                 // Filas
                 foreach ($lista_habs as $hab) {
@@ -2081,13 +2074,14 @@ public function obtenerNotasAction() {
 
                     if ($ocupada) {
                         $es_checkin = ($res['estado'] == 'checked_in');
-                        $bg = $es_checkin ? '#FFCDD2' : '#E1BEE7';
+                        $s = $es_checkin ? 'checkin' : 'reservada';
 
                         // Procedencia
                         $procedencia = trim(($res['procedencia_ciudad'] ?? '') . ' ' . ($res['procedencia_estado'] ?? ''));
 
                         // Precio de esta habitación (vendida: manda el precio congelado)
-                        $precio_fmt = self::costoReporteDia($hab, $res, $preciosTemporada)['texto'];
+                        $costo = self::costoReporteDia($hab, $res, $preciosTemporada);
+                        $precio = !empty($res['es_cortesia_hab']) ? $costo['texto'] : (float) $costo['monto'];
 
                         // Vehículo
                         $vehiculo = '';
@@ -2110,34 +2104,34 @@ public function obtenerNotasAction() {
                         // Factura
                         $factura_txt = isset($res['tiene_factura']) ? 'Sí' : '';
 
-                        echo '<tr>';
-                        echo '<td style="background:' . $bg . ';padding:5px 8px;">' . htmlspecialchars($res['nombre_completo'] ?? '') . '</td>';
-                        echo '<td style="background:' . $bg . ';text-align:center;">' . htmlspecialchars($res['telefono'] ?? '') . '</td>';
-                        echo '<td style="background:' . $bg . ';">' . htmlspecialchars($procedencia) . '</td>';
-                        echo '<td style="background:' . $bg . ';font-weight:bold;text-align:center;">' . htmlspecialchars($hab['numero']) . '</td>';
-                        echo '<td style="background:' . $bg . ';text-align:right;">' . $precio_fmt . '</td>';
-                        echo '<td style="background:' . $bg . ';text-align:center;">' . $factura_txt . '</td>';
-                        echo '<td style="background:' . $bg . ';">' . htmlspecialchars($vehiculo) . '</td>';
-                        echo '<td style="background:' . $bg . ';">' . htmlspecialchars($tipo_pago) . '</td>';
-                        echo '</tr>';
+                        $xlsx->addRow([
+                            ['v' => (string) ($res['nombre_completo'] ?? ''), 's' => $s],
+                            ['v' => (string) ($res['telefono'] ?? ''), 's' => $s . '_c'],
+                            ['v' => $procedencia, 's' => $s],
+                            ['v' => (string) $hab['numero'], 's' => $s . '_hab'],
+                            ['v' => $precio, 's' => $s . '_monto'],
+                            ['v' => $factura_txt, 's' => $s . '_c'],
+                            ['v' => $vehiculo, 's' => $s],
+                            ['v' => $tipo_pago, 's' => $s],
+                        ]);
                     } else {
                         // Habitación disponible — número y precio CON la temporada vigente
                         // de esa fecha (es la cotización para un walk-in, no el precio base).
-                        $precio_fmt = self::costoReporteDia($hab, null, $preciosTemporada)['texto'];
-                        echo '<tr>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '<td style="background:#C8E6C9;font-weight:bold;text-align:center;">' . htmlspecialchars($hab['numero']) . '</td>';
-                        echo '<td style="background:#C8E6C9;text-align:right;">' . $precio_fmt . '</td>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '<td style="background:#C8E6C9;"></td>';
-                        echo '</tr>';
+                        $xlsx->addRow([
+                            ['v' => '', 's' => 'libre'],
+                            ['v' => '', 's' => 'libre'],
+                            ['v' => '', 's' => 'libre'],
+                            ['v' => (string) $hab['numero'], 's' => 'libre_hab'],
+                            ['v' => (float) self::costoReporteDia($hab, null, $preciosTemporada)['monto'], 's' => 'libre_monto'],
+                            ['v' => '', 's' => 'libre'],
+                            ['v' => '', 's' => 'libre'],
+                            ['v' => '', 's' => 'libre'],
+                        ]);
                     }
                 }
 
-                echo '</table>';
+                // Separador entre secciones
+                $xlsx->addRow([]);
             };
 
             // Sección 1: Habitaciones numéricas
@@ -2150,7 +2144,7 @@ public function obtenerNotasAction() {
                 $generarSeccion($hab_color);
             }
 
-            echo '</body></html>';
+            $xlsx->download($nombre_archivo);
             exit;
 
         } catch (Exception $e) {
